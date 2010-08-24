@@ -11,4 +11,4 @@ set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY "${LxEngine_BINARY_DIR}")
 # 
 # Sub-projects
 #
-add_subdirectory( sandbox );
+add_subdirectory( sandbox )
