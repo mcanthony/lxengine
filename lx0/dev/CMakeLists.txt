@@ -3,12 +3,14 @@ project(lx0)
 #
 # CMake configuration
 #
+
 cmake_minimum_required(VERSION 2.8)
 set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/config/cmake")
 
 #
 # Look for prebuilt binaries
 #
+
 IF(EXISTS "${CMAKE_SOURCE_DIR}/external/prebuilt/msvc10-mtgd/OgreSDK_vc10_v1-7-1")
    set(PREBUILT_DIR "${CMAKE_SOURCE_DIR}/external/prebuilt/msvc10-mtgd")
    message(STATUS "Using pre-built binaries at: ${PREBUILT_DIR}")
@@ -21,15 +23,20 @@ IF(EXISTS "${CMAKE_SOURCE_DIR}/external/prebuilt/msvc10-mtgd/OgreSDK_vc10_v1-7-1
 ELSE()
     message (STATUS "Pre-built binaries not found.  Relying on CMake Find modules to locate dependencies.")
 ENDIF()
+
+
 #
 # Dependencies
 #
+
 find_package(OGRE REQUIRED)
 find_package(BOOST REQUIRED)
+
 
 #
 # Project-wide settings
 #
+
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${PROJECT_BINARY_DIR}")
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${PROJECT_BINARY_DIR}")
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY "${PROJECT_BINARY_DIR}")
@@ -48,8 +55,41 @@ file(GLOB ASSETS "$ENV{OGRE_HOME}/bin/debug/*.dll")
 INSTALL(FILES ${ASSETS} DESTINATION ${PROJECT_BINARY_DIR})
 configure_file($ENV{OGRE_HOME}/bin/debug/plugins_d.cfg ${PROJECT_BINARY_DIR}/plugins.cfg COPYONLY)
 
-# 
+#
+# Helper macros
+#
+
+macro(simple_executable EXENAME)
+
+   set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR} )
+   
+   file(GLOB_RECURSE SRCFILES *.cpp)
+   file(GLOB_RECURSE HDRFILES *.h)
+   
+   set(SOURCES ${SRCFILES} ${HDRFILES})
+   add_executable(${EXENAME} ${SOURCES})
+   target_link_libraries(${EXENAME} ${OGRE_LIBRARIES}) 
+
+endmacro(simple_executable EXENAME)
+
+
+#
 # Sub-projects
 #
-add_subdirectory( samples )
-add_subdirectory( sandbox )
+# Recursively add all subdirectories containing a CMakeLists.txt.
+#
+
+macro(recurse_subdirectories BASEDIR)
+   message(STATUS "Recursively adding subdirectories for: ${BASEDIR}")
+   file(GLOB_RECURSE SUBFILES RELATIVE "${CMAKE_CURRENT_SOURCE_DIR}" "${CMAKE_CURRENT_SOURCE_DIR}/${BASEDIR}/*/CMakeLists.txt")
+   foreach(FILE ${SUBFILES})
+      get_filename_component(FILE ${FILE} PATH)
+      if (NOT ${FILE} EQUAL "")
+         message(STATUS "    Adding ${FILE}")
+         add_subdirectory( "${FILE}" )
+      endif()
+   endforeach(FILE)
+endmacro(recurse_subdirectories BASEDIR)
+
+recurse_subdirectories(samples)
+recurse_subdirectories(sandbox)
