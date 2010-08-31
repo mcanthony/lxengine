@@ -2,70 +2,10 @@
 #include <functional>
 #include <string>
 
+#include <Ogre/OgreVector3.h>
+
 namespace lx { namespace core {
 
-    namespace detail
-    {
-        /*!
-            Base class used to consolidate common code in
-            3-tuple classes.
-         */
-        class base_tuple3
-        {
-        public:
-            base_tuple3() : x(0.0f), y(0.0f), z(0.0f) {}
-            base_tuple3(float x0, float y0, float z0) : x(x0), y(y0), z(z0) {}
-        
-            union
-            {
-                struct 
-                {
-                    float x, y, z;
-                };
-                float elem[3];
-            };    
-        };
-    }
-    
-
-    class tuple3 
-        : public detail::base_tuple3
-    {
-    public: 
-    };
-    
-    inline tuple3
-    add (const tuple3& a, const tuple3& b)
-    {
-        tuple3 r;
-        r.x = a.x + b.x;
-        r.y = a.y + b.y;
-        r.z = a.z + b.z;
-        return r;
-    }
-    
-    inline tuple3
-    sub (const tuple3& a, const tuple3& b)
-    {
-        tuple3 r;
-        r.x = a.x - b.x;
-        r.y = a.y - b.y;
-        r.z = a.z - b.z;
-        return r;
-    }
-    
-    class vector3 
-        : public detail::base_tuple3
-    {
-    };
-    
-    class point3 
-        : public detail::base_tuple3
-    {
-    public:
-
-    };
-    
     namespace detail
     {
         template <typename To, typename From>
@@ -73,28 +13,7 @@ namespace lx { namespace core {
         {
             enum { value = 0 };
         };
-        
-        template <> struct cast_is_safe<tuple3&,        point3>         { enum { value = 1 }; };
-        template <> struct cast_is_safe<const tuple3&,  point3>         { enum { value = 1 }; };
-        template <> struct cast_is_safe<const tuple3&,  const point3>   { enum { value = 1 }; }; 
-        template <> struct cast_is_safe<tuple3&,        vector3>        { enum { value = 1 }; };
-        template <> struct cast_is_safe<const tuple3&,  vector3>        { enum { value = 1 }; };
-        template <> struct cast_is_safe<const tuple3&,  const vector3>  { enum { value = 1 }; };
-        
-        template <> struct cast_is_safe<point3&,        tuple3>         { enum { value = 1 }; };
-        template <> struct cast_is_safe<const point3&,  tuple3>         { enum { value = 1 }; };
-        template <> struct cast_is_safe<const point3&,  const tuple3>   { enum { value = 1 }; };
-        template <> struct cast_is_safe<point3&,        vector3>        { enum { value = 1 }; };
-        template <> struct cast_is_safe<const point3&,  vector3>        { enum { value = 1 }; };
-        template <> struct cast_is_safe<const point3&,  const vector3>  { enum { value = 1 }; };
-        
-        template <> struct cast_is_safe<vector3&,       tuple3>         { enum { value = 1 }; };
-        template <> struct cast_is_safe<const vector3&, tuple3>         { enum { value = 1 }; };
-        template <> struct cast_is_safe<const vector3&, const tuple3>   { enum { value = 1 }; };
-        template <> struct cast_is_safe<vector3&,       point3>         { enum { value = 1 }; };
-        template <> struct cast_is_safe<const vector3&, point3>         { enum { value = 1 }; };
-        template <> struct cast_is_safe<const vector3&, const point3>   { enum { value = 1 }; };        
-        
+         
         template <typename To, typename From, bool Valid>
         struct cast_imp
         {
@@ -115,11 +34,12 @@ namespace lx { namespace core {
         {
             static To cast (From& f)
             {
+                static_assert(sizeof(To) == sizeof(From), "lx::core::cast between different sized types is not allowed");
                 return reinterpret_cast<To>(f);
             }
         };
     }
-
+    
     template <typename To,typename From>
     To cast (From& f)
     {
@@ -127,13 +47,127 @@ namespace lx { namespace core {
             detail::cast_is_safe<To,From>::value >::cast(f);
     } 
 
-     
-    inline point3
-    add (const point3& p, const vector3& v)
+
+    namespace detail
     {
-        add( cast<const tuple3&>(p), cast<const tuple3&>(v) );
-        tuple3 r;
-        return cast<const point3&>(r);
+        /*!
+            Base class used to consolidate common code in
+            3-tuple classes.
+         */
+        class base_tuple3
+        {
+        public:
+            base_tuple3() : x(0.0f), y(0.0f), z(0.0f) {}
+            base_tuple3(float x0, float y0, float z0) : x(x0), y(y0), z(z0) {}
+        
+            union
+            {
+                struct 
+                {
+                    float x, y, z;
+                };
+                
+                float elem[3];
+                
+                // The anonymous struct allows a class with a non-trivial ctor
+                // to be used inside the union.  A compiler with full C++x0 
+                // support should not require this.
+                struct 
+                { 
+                    Ogre::Vector3 ogreVec; 
+                };
+            };    
+        };
+    }
+    
+
+    class tuple3 
+        : public detail::base_tuple3
+    {
+    public: 
+    };
+
+    namespace detail
+    {
+        template <> struct cast_is_safe<tuple3&,        Ogre::Vector3>         { enum { value = 1 }; };
+        template <> struct cast_is_safe<const tuple3&,  Ogre::Vector3>         { enum { value = 1 }; };
+        template <> struct cast_is_safe<const tuple3&,  const Ogre::Vector3>   { enum { value = 1 }; }; 
+    }
+    
+    inline tuple3   add             (const tuple3& a, const tuple3& b) { return cast<tuple3&>(a.ogreVec + b.ogreVec); }
+    inline tuple3   sub             (const tuple3& a, const tuple3& b) { return cast<tuple3&>(a.ogreVec - b.ogreVec); }
+    
+    class vector3 
+        : public detail::base_tuple3
+    {
+    };
+
+    namespace detail
+    {
+        template <> struct cast_is_safe<vector3&,       Ogre::Vector3>         { enum { value = 1 }; };
+        template <> struct cast_is_safe<const vector3&, Ogre::Vector3>         { enum { value = 1 }; };
+        template <> struct cast_is_safe<const vector3&, const Ogre::Vector3>   { enum { value = 1 }; }; 
+    }
+
+    inline float    dot             (const vector3& a, const vector3& b) { return a.ogreVec.dotProduct(b.ogreVec); }
+    inline float    abs_dot         (const vector3& a, const vector3& b) { return abs(dot(a, b)); }
+    inline vector3  cross           (const vector3& a, const vector3& b) { return cast<vector3&>(a.ogreVec.crossProduct(b.ogreVec)); }
+    inline vector3  normalize       (const vector3& a)                   { vector3 t = a; t.ogreVec.normalise(); return t; }
+    inline float    length          (const vector3& a)                   { return a.ogreVec.length(); }
+
+    inline float    angle_between   (const vector3& a, const vector3& b) 
+    {
+        // Work around a bug in OGRE 1.7.1: angleBetween should be const
+        // See http://ogre3d.org/forums/viewtopic.php?f=3&t=56750&p=402888#p402888
+        return const_cast<Ogre::Vector3&>(a.ogreVec).angleBetween(b.ogreVec).valueRadians() ; 
+    }
+    
+    //=======================================================================//
+    //! A single-precision, 3-space point class
+    /*!
+     */
+    class point3 
+        : public detail::base_tuple3
+    {
+    public:
+
+    };
+
+    namespace detail
+    {
+        template <> struct cast_is_safe<point3&,       Ogre::Vector3>         { enum { value = 1 }; };
+        template <> struct cast_is_safe<const point3&, Ogre::Vector3>         { enum { value = 1 }; };
+        template <> struct cast_is_safe<const point3&, const Ogre::Vector3>   { enum { value = 1 }; }; 
+    }
+
+    inline point3   add             (const point3& p, const vector3& v) { return cast<point3&>(p.ogreVec + v.ogreVec); }
+    inline point3   sub             (const point3& p, const vector3& v) { return cast<point3&>(p.ogreVec - v.ogreVec); }
+
+    inline float    distance        (const point3& a, const point3& b)  { return a.ogreVec.distance(b.ogreVec); }
+    inline point3   mid_point       (const point3& a, const point3& b)  { return cast<point3&>(a.ogreVec.midPoint(b.ogreVec)); }
+    
+    namespace detail
+    {
+        template <> struct cast_is_safe<tuple3&,        point3>         { enum { value = 1 }; };
+        template <> struct cast_is_safe<const tuple3&,  point3>         { enum { value = 1 }; };
+        template <> struct cast_is_safe<const tuple3&,  const point3>   { enum { value = 1 }; }; 
+        template <> struct cast_is_safe<tuple3&,        vector3>        { enum { value = 1 }; };
+        template <> struct cast_is_safe<const tuple3&,  vector3>        { enum { value = 1 }; };
+        template <> struct cast_is_safe<const tuple3&,  const vector3>  { enum { value = 1 }; };
+        
+        template <> struct cast_is_safe<point3&,        tuple3>         { enum { value = 1 }; };
+        template <> struct cast_is_safe<const point3&,  tuple3>         { enum { value = 1 }; };
+        template <> struct cast_is_safe<const point3&,  const tuple3>   { enum { value = 1 }; };
+        template <> struct cast_is_safe<point3&,        vector3>        { enum { value = 1 }; };
+        template <> struct cast_is_safe<const point3&,  vector3>        { enum { value = 1 }; };
+        template <> struct cast_is_safe<const point3&,  const vector3>  { enum { value = 1 }; };
+        
+        template <> struct cast_is_safe<vector3&,       tuple3>         { enum { value = 1 }; };
+        template <> struct cast_is_safe<const vector3&, tuple3>         { enum { value = 1 }; };
+        template <> struct cast_is_safe<const vector3&, const tuple3>   { enum { value = 1 }; };
+        template <> struct cast_is_safe<vector3&,       point3>         { enum { value = 1 }; };
+        template <> struct cast_is_safe<const vector3&, point3>         { enum { value = 1 }; };
+        template <> struct cast_is_safe<const vector3&, const point3>   { enum { value = 1 }; };      
     }
 
 }};
