@@ -4,10 +4,12 @@
 #include <functional>
 #include <vector>
 #include <map>
+#include <deque>
 
 #include <lx0/engine.hpp>
 #include <lx0/document.hpp>
 #include <lx0/space.hpp>
+#include <lx0/element.hpp>
 #include <lx0/view.hpp>
 #include <lx0/controller.hpp>
 
@@ -22,6 +24,8 @@ main (int argc, char** argv)
 
    std::shared_ptr<Document> spDocument;
    std::shared_ptr<Space> spSpace;
+
+   ElementPtr spElement(new Element);
 
    std::shared_ptr<View> spView;
    std::shared_ptr<Controller> spController;
