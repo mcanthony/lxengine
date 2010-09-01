@@ -41,6 +41,10 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${PROJECT_BINARY_DIR}")
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${PROJECT_BINARY_DIR}")
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY "${PROJECT_BINARY_DIR}")
 
+# LxEngine
+
+include_directories( libs/core/include )
+
 # Boost
 include_directories(${Boost_INCLUDE_DIR})
 link_directories(${Boost_LIBRARY_DIRS})
@@ -59,6 +63,8 @@ configure_file($ENV{OGRE_HOME}/bin/debug/plugins_d.cfg ${PROJECT_BINARY_DIR}/plu
 # Helper macros
 #
 
+set( LX_ALL_LIBS ${OGRE_LIBRARIES} lx0 )
+
 macro(simple_executable EXENAME)
 
    set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR} )
@@ -68,16 +74,11 @@ macro(simple_executable EXENAME)
    
    set(SOURCES ${SRCFILES} ${HDRFILES})
    add_executable(${EXENAME} ${SOURCES})
-   target_link_libraries(${EXENAME} ${OGRE_LIBRARIES}) 
+   target_link_libraries(${EXENAME} ${LX_ALL_LIBS}) 
 
 endmacro(simple_executable EXENAME)
 
-
-#
-# Sub-projects
-#
 # Recursively add all subdirectories containing a CMakeLists.txt.
-#
 
 macro(recurse_subdirectories BASEDIR)
    message(STATUS "Recursively adding subdirectories for: ${BASEDIR}")
@@ -91,5 +92,10 @@ macro(recurse_subdirectories BASEDIR)
    endforeach(FILE)
 endmacro(recurse_subdirectories BASEDIR)
 
+#
+# Sub-projects
+#
+
+recurse_subdirectories(libs)
 recurse_subdirectories(samples)
 recurse_subdirectories(sandbox)

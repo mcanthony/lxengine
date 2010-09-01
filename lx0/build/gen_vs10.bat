@@ -9,6 +9,7 @@
 )
 
 echo.
+erase CMakeCache.txt
 cmake ..\dev -G "Visual Studio 10"
 echo.
 dir /b *.sln
