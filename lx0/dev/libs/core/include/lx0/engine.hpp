@@ -2,6 +2,8 @@
 
 #include <memory>
 
+#include <lx0/detail/forward_decls.hpp>
+
 namespace lx0 { namespace core {
 
 //===========================================================================//
