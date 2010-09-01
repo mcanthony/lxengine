@@ -6,6 +6,13 @@
 
 namespace lx0 { namespace core {
 
+    slot<void (const char*)> slotFatal;
+    slot<void (const char*)> slotError;
+    slot<void (const char*)> slotWarn;
+    slot<void (const char*)> slotLog;
+    slot<void (const char*)> slotAssert;
+    slot<void (const char*)> slotDebug;
+
     void 
     log (const char* format, ...)
     {
@@ -15,7 +22,7 @@ namespace lx0 { namespace core {
         va_start(args, format);
         vsnprintf_s(buffer, sizeof(buffer), _TRUNCATE, format, args);
 
-        std::cout << buffer << std::endl;
+        slotLog(buffer);
     }
 
 }}
