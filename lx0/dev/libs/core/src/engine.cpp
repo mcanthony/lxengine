@@ -1,5 +1,6 @@
 #include <iostream>
 
+#include <lx0/core.hpp>
 #include <lx0/engine.hpp>
 
 namespace lx0 { namespace core {
@@ -20,12 +21,12 @@ Engine::acquire()
 
 Engine::Engine()
 {
-   std::cerr << "LOG: lx::core::Engine ctor" << std::endl;
+   log("LOG: lx::core::Engine ctor");
 }
 
 Engine::~Engine()
 {
-   std::cerr << "LOG: lx::core::Engine dtor" << std::endl;
+   log("LOG: lx::core::Engine dtor");
 }
 
 }}
