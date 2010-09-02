@@ -25,14 +25,12 @@ main (int argc, char** argv)
    std::cout << "Hello World!" << std::endl;
 
    DocumentPtr spDocument;
-   SpacePtr spSpace;
+   SpacePtr spSpace;            // TODO: Should this class be deprecated?
 
    ElementPtr spElement(new Element);
    TransactionPtr spTransaction = spDocument->transaction();
-   //spTransaction->add("/", spElement);
-   //ElementPtr spRoot = spTransaction->openForWrite("/");
-   //spRoot->append(spElement);
-
+   ElementPtr spRoot = spTransaction->write( spDocument->root() );
+   spRoot->append(spElement);
 
    ViewPtr spView;
    ControllerPtr spController;

@@ -14,8 +14,11 @@ cmake ..\dev -G "Visual Studio 10"
 echo.
 dir /b *.sln
 echo.
-echo To build from the command line, run "msbuild lx0.sln".
-echo Otherwise, run "devenv lx0.sln" to bring up the IDE.
-echo Run "msbuild install.vcxproj" once to install dependent 
-echo binaries.
+echo Run:
+echo --------------------------------------------------------------------------
+echo msbuild lx0.sln         - to build from the command line
+echo devenv lx0.sln          - to bring up the Visual Studio IDE
+echo msbuild install.vcxproj - to install dependent echo binaries 
+echo.
+echo (Need Help? Visit http://www.athile.net support or to leave suggestions.)
 echo.

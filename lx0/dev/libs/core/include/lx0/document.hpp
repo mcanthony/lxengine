@@ -12,10 +12,14 @@ namespace lx0 { namespace core {
     public:
         TransactionPtr  transaction ();
 
+        ElementCPtr     root() { return m_spRoot; }
+
     protected:
 
         typedef std::vector< TransactionWPtr > TrWList;
 
         TrWList m_openTransactions;
+
+        ElementPtr  m_spRoot;
     };
 }}
