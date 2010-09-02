@@ -21,4 +21,6 @@ namespace lx0 { namespace core {
     extern slot<void (const char*)> slotAssert;
     extern slot<void (const char*)> slotDebug;
     
+    class error_exception : public std::exception { };
+    class fatal_exception : public std::exception { };
 }}

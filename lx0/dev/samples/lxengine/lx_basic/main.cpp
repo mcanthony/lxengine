@@ -12,6 +12,7 @@
 #include <lx0/element.hpp>
 #include <lx0/view.hpp>
 #include <lx0/controller.hpp>
+#include <lx0/transaction.hpp>
 
 
 using namespace lx0::core;
@@ -29,6 +30,9 @@ main (int argc, char** argv)
    ElementPtr spElement(new Element);
    TransactionPtr spTransaction = spDocument->transaction();
    //spTransaction->add("/", spElement);
+   //ElementPtr spRoot = spTransaction->openForWrite("/");
+   //spRoot->append(spElement);
+
 
    ViewPtr spView;
    ControllerPtr spController;

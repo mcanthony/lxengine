@@ -13,11 +13,21 @@ namespace lx0 { namespace core {
     slot<void (const char*)> slotAssert;
     slot<void (const char*)> slotDebug;
 
+    void
+    error (const char* format, ...)
+    {
+        char buffer[512] = "";
+        va_list args;
+        va_start(args, format);
+        vsnprintf_s(buffer, sizeof(buffer), _TRUNCATE, format, args);
+
+        slotError(buffer);
+    }
+
     void 
     log (const char* format, ...)
     {
         char buffer[512] = "";
-
         va_list args;
         va_start(args, format);
         vsnprintf_s(buffer, sizeof(buffer), _TRUNCATE, format, args);

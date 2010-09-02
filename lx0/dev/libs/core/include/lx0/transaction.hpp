@@ -14,8 +14,8 @@ namespace lx0 { namespace core {
 
         void        add (std::string path, ElementPtr spElem);
 
-        ObjectCPtr  openForRead   (std::string name);
-        ObjectPtr   openForWrite  (std::string name);
+        void  openForRead   (std::string name);
+        void  openForWrite  (std::string name);
 
         bool submit();
         void revert();
