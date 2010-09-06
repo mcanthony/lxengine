@@ -113,6 +113,8 @@ namespace lx0 { namespace core {
             m_messageQueue.pop_front();
         }
 
+        m_spOgre->spRoot->startRendering();
+
 		return 0;
 	}
 

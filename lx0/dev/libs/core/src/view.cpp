@@ -68,6 +68,10 @@ namespace lx0 { namespace core {
 
         Ogre::Root& root = Ogre::Root::getSingleton();
 
+        // The render window creation also creates many internal OGRE data objects; therefore,
+        // create it first.  Otherwise objects like the Camera won't even work.
+        m_pRenderWindow = root.initialise(true, "View" );  
+
         Ogre::SceneManager* pSceneMgr = root.createSceneManager(Ogre::ST_GENERIC, "generic");
 
         Ogre::Camera* mCamera = pSceneMgr->createCamera("Camera");
@@ -76,7 +80,7 @@ namespace lx0 { namespace core {
         mCamera->setNearClipDistance(1.0f);
         mCamera->setFarClipDistance(5000.0f);
 
-        m_pRenderWindow = root.initialise(true, "View" );   
+         
 
         Ogre::Viewport* mViewport = m_pRenderWindow->addViewport(mCamera);
         mViewport->setBackgroundColour(Ogre::ColourValue(0.0f,0.0f,0.0f));
