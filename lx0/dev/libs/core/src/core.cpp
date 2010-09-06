@@ -29,6 +29,7 @@
 #include <iostream>
 #include <cstdio> 
 #include <cstdarg>
+#include <exception>
 
 #include <lx0/core.hpp>
 
@@ -42,6 +43,19 @@ namespace lx0 { namespace core {
     slot<void (const char*)> slotDebug;
 
     void
+    fatal (const char* format, ...)
+    {
+        char buffer[512] = "";
+        va_list args;
+        va_start(args, format);
+        vsnprintf_s(buffer, sizeof(buffer), _TRUNCATE, format, args);
+
+        slotFatal(buffer);
+
+        throw std::exception("Fatal run-time error.  Rethrow this exception after catching it and saving whatever data possible.");
+    }
+
+    void
     error (const char* format, ...)
     {
         char buffer[512] = "";
@@ -50,6 +64,17 @@ namespace lx0 { namespace core {
         vsnprintf_s(buffer, sizeof(buffer), _TRUNCATE, format, args);
 
         slotError(buffer);
+    }
+
+    void
+    warn (const char* format, ...)
+    {
+        char buffer[512] = "";
+        va_list args;
+        va_start(args, format);
+        vsnprintf_s(buffer, sizeof(buffer), _TRUNCATE, format, args);
+
+        slotWarn(buffer);
     }
 
     void 

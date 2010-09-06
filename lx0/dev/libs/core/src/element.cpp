@@ -27,6 +27,9 @@
 */
 //===========================================================================//
 
+
+#include <cassert>
+
 #include <lx0/core.hpp>
 #include <lx0/element.hpp>
 #include <lx0/object.hpp>
@@ -43,8 +46,7 @@ namespace lx0 { namespace core {
     {
         if (spElem->parent().get())
         {
-            error("Cannot append element.  The element to be appended already has "
-                "a parent");
+            error("Cannot append element.  The element to be appended already has a parent");
             return;
         }
     }
@@ -80,11 +82,19 @@ namespace lx0 { namespace core {
     ElementPtr      
     Element::_clone () const
     {
+        if (this == 0)
+        {
+            warn("Cloning a null pointer!");
+            assert(0);
+            return ElementPtr();
+        }
+
         Element* pClone = new Element;
         pClone->m_attributes = m_attributes;
         pClone->m_spParent = m_spParent;
         pClone->m_children = m_children;
-        pClone->m_spValue = m_spValue->clone();
+        if (m_spValue.get())
+            pClone->m_spValue = m_spValue->clone();
         return ElementPtr(pClone);
     }
 

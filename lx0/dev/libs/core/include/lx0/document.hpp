@@ -10,6 +10,7 @@ namespace lx0 { namespace core {
     class Document
     {
     public:
+        Document();
         TransactionPtr  transaction ();
 
         ElementCPtr     root() { return m_spRoot; }

@@ -26,6 +26,7 @@
 */
 //===========================================================================//
 
+#include <cassert>
 
 #include <lx0/transaction.hpp>
 #include <lx0/element.hpp>
@@ -42,6 +43,8 @@ namespace lx0 { namespace core {
         // when no one else is using the old item, but the flag will indicate
         // that open for write / submit operation will succeed on the stale
         /// object).
+
+        assert(spElement.get());
 
         ElementPtr spWritable = spElement->_clone();
 

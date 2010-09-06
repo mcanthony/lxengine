@@ -11,14 +11,17 @@ set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/config/cmake")
 # Look for prebuilt binaries
 #
 
-IF(EXISTS "${CMAKE_SOURCE_DIR}/external/prebuilt/msvc10-mtgd/OgreSDK_vc10_v1-7-1")
-   set(PREBUILT_DIR "${CMAKE_SOURCE_DIR}/external/prebuilt/msvc10-mtgd")
-   message(STATUS "Using pre-built binaries at: ${PREBUILT_DIR}")
+IF(EXISTS "${CMAKE_SOURCE_DIR}/external/prebuilt/msvc10-mtgd/ogre_1_7_1")
+    set(PREBUILT_DIR "${CMAKE_SOURCE_DIR}/external/prebuilt/msvc10-mtgd")
+    message(STATUS "Using pre-built binaries at: ${PREBUILT_DIR}")
    
-   set(ENV{OGRE_HOME} "${PREBUILT_DIR}/OgreSDK_vc10_v1-7-1")
+    set(ENV{OGRE_HOME} "${PREBUILT_DIR}/ogre_1_7_1")
  
-   set(ENV{BOOST_ROOT} "${PREBUILT_DIR}/boost_1_42_0")
-   set(ENV{BOOST_LIBRARYDIR} "$ENV{BOOST_ROOT}/stage/lib")
+    set(ENV{BOOST_ROOT} "${PREBUILT_DIR}/boost_1_44_0")
+    set(Boost_USE_STATIC_LIBS   ON)
+    set(Boost_USE_MULTITHREADED ON)
+    set(ENV{BOOST_INCLUDEDIR} "${BOOST_ROOT}/include")
+    set(ENV{BOOST_LIBRARYDIR} "${BOOST_ROOT}/lib")   
 
 ELSE()
     message (STATUS "Pre-built binaries not found.  Relying on CMake Find modules to locate dependencies.")
@@ -48,6 +51,7 @@ include_directories( libs/core/include )
 # Boost
 include_directories(${Boost_INCLUDE_DIR})
 link_directories(${Boost_LIBRARY_DIRS})
+
 
 # OGRE
 include_directories(${OGRE_INCLUDE_DIR})

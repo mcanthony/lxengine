@@ -27,14 +27,25 @@
 */
 //===========================================================================//
 
+#include <cassert>
 #include <lx0/document.hpp>
+#include <lx0/transaction.hpp>
+#include <lx0/element.hpp>
 
 namespace lx0 { namespace core {
+
+    Document::Document()
+        : m_spRoot (new Element)
+    {
+    }
+
 
     TransactionPtr 
     Document::transaction ()
     {
-        TransactionPtr sp;
+        assert(this);
+
+        TransactionPtr sp(new Transaction);
         m_openTransactions.push_back(sp);
         return sp;
     }
