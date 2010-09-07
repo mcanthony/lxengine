@@ -102,6 +102,7 @@ IF NOT EXIST stage\lib\libboost_iostreams-vc100-mt-gd-1_44.lib (
 
     call bootstrap.bat
     bjam.exe
+    bjam.exe install --prefix=sdk
 
 ) ELSE (
     echo * BOOST: Found at least one Boost library.  Assuming Boost has already been built.
@@ -146,6 +147,9 @@ IF EXIST bin\debug\OgreMain_d.dll (
         goto END
     )
     msbuild ALL_BUILD.vcxproj
+    msbuild INSTALL.vcxproj
+    copy bin\Debug\*.pdb sdk\bin\Debug
+    copy bin\Debug\*.cfg sdk\bin\Debug
     
     IF NOT EXIST bin\debug\OgreMain_d.dll (
         echo.

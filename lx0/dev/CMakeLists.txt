@@ -11,20 +11,19 @@ set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/config/cmake")
 # Look for prebuilt binaries
 #
 
-IF(EXISTS "${CMAKE_SOURCE_DIR}/external/prebuilt/msvc10-mtgd/ogre_1_7_1")
-    set(PREBUILT_DIR "${CMAKE_SOURCE_DIR}/external/prebuilt/msvc10-mtgd")
-    message(STATUS "Using pre-built binaries at: ${PREBUILT_DIR}")
+IF(EXISTS "${CMAKE_SOURCE_DIR}/dependencies/ogre_1_7_1/ogre_build/sdk")
+    set(DEPS_DIR "${CMAKE_SOURCE_DIR}/dependencies")
    
-    set(ENV{OGRE_HOME} "${PREBUILT_DIR}/ogre_1_7_1")
+    set(ENV{OGRE_HOME} "${DEPS_DIR}/ogre_1_7_1/ogre_build/sdk")
  
-    set(ENV{BOOST_ROOT} "${PREBUILT_DIR}/boost_1_44_0")
+    set(ENV{BOOST_ROOT} "${DEPS_DIR}/boost_1_44_0/boost_1_44_0/sdk")
+    message(STATUS "Boost root: $ENV{BOOST_ROOT}")
     set(Boost_USE_STATIC_LIBS   ON)
     set(Boost_USE_MULTITHREADED ON)
-    set(ENV{BOOST_INCLUDEDIR} "${BOOST_ROOT}/include")
-    set(ENV{BOOST_LIBRARYDIR} "${BOOST_ROOT}/lib")   
-
+    set(ENV{BOOST_INCLUDEDIR} "$ENV{BOOST_ROOT}/include/boost-1_44")
+    set(ENV{BOOST_LIBRARYDIR} "$ENV{BOOST_ROOT}/lib")   
 ELSE()
-    message (STATUS "Pre-built binaries not found.  Relying on CMake Find modules to locate dependencies.")
+    message (FATAL_ERROR "Dependencies not found.  See dev/dependencies/build_vs10.bat")
 ENDIF()
 
 
