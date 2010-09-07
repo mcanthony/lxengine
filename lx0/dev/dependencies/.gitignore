@@ -1,3 +1,6 @@
-*
-!.gitignore
-!build_vs10.bat
+_clean
+boost_1_44_0
+bullet_2_76
+ogre_1_7_1
+7za.exe
+dependencies.7z

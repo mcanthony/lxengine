@@ -12,6 +12,48 @@ echo.
 echo.
 
 REM ===========================================================================
+REM Grab the dependencies
+REM ===========================================================================
+
+IF NOT EXIST 7za.exe (
+    echo.
+    echo ======================= IMPORTANT NOTE ===============================
+    echo.
+    echo Detected that the dependencies are not yet installed.  The batch file 
+    echo will now attempt to download and extract them.  This can take a LONG
+    echo TIME as the dependencies are over 100 MB in size.
+    echo.
+    echo ======================================================================
+    echo.
+    echo.
+
+    wget http://www.athile.net/files/7za.exe
+    
+    IF NOT EXIST 7za.exe (
+        echo.
+        echo ERROR: Failed to download dependencies.  Is your computer connected
+        echo to the internet?
+        echo.
+        goto END
+    )
+    
+    IF NOT EXIST dependencies.7z (
+        wget http://www.athile.net/files/dependencies.7z
+    )
+    IF NOT EXIST dependencies.7z (
+        echo.
+        echo ERROR: Failed to download dependencies.  Is your computer connected
+        echo to the internet?
+        echo.
+        goto END
+    ) 
+    
+    7za x dependencies.7z   
+)
+
+goto END
+
+REM ===========================================================================
 REM Ensure Visual Studio 10 command-line is available
 REM ===========================================================================
 
