@@ -31,46 +31,38 @@
 #include <memory>
 #include <deque>
 #include <string>
+#include <vector>
 
 #include <lx0/detail/forward_decls.hpp>
 
 namespace lx0 { namespace core {
 
-    namespace detail {
+    //===========================================================================//
+    //!
+    /*!
+     */
+    class Engine
+    {
+    public:
 
-        _LX_FORWARD_DECL_PTRS(OgreSubsystem);
+        //! Acquire the Singleton for the Engine
+        static EnginePtr acquire() { return detail::acquireSingleton<Engine>(s_wpEngine); }
+
+        void    connect     (DocumentPtr spDocument);
+
+        void   sendMessage (const char* message);
+        int	  run();
+
+    protected:
+        template <typename T> friend std::shared_ptr<T> detail::acquireSingleton (std::weak_ptr<T>&);
+        static std::weak_ptr<Engine> s_wpEngine;
+
+        Engine();
+        ~Engine(); 
+
+
+        std::vector<DocumentPtr>    m_documents;
+        std::deque<std::string>     m_messageQueue;
     };
-
-//===========================================================================//
-//!
-/*!
- */
-class Engine
-{
-public:
-   static std::shared_ptr<Engine> acquire();
-
-   void   sendMessage (const char* message);
-   int	  run();
-
-protected:
-   static std::weak_ptr<Engine> s_wpEngine;
-
-   Engine();
-   ~Engine();
-
-   
-   // DeleteFunctor is used to expose access to the destructor to shared_ptr
-   // but no one else.  
-   // See: http://beta.boost.org/doc/libs/1_42_0/libs/smart_ptr/sp_techniques.html
-   struct DeleteFunctor
-   { 
-      void operator()(Engine* p) { delete p; }
-   };   
-
-   detail::OgreSubsystemPtr m_spOgre;
-
-   std::deque<std::string>  m_messageQueue;
-};
 
 }}

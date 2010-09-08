@@ -53,6 +53,7 @@ link_directories(${Boost_LIBRARY_DIRS})
 
 
 # OGRE
+message(STATUS "Ogre include dir: ${OGRE_INCLUDE_DIR}")
 include_directories(${OGRE_INCLUDE_DIR})
 link_directories (${OGRE_LIB_DIR}) 
 file(GLOB ASSETS "$ENV{OGRE_HOME}/bin/debug/*.dll")

@@ -30,29 +30,25 @@
 
 #include <lx0/detail/forward_decls.hpp>
 
-namespace Ogre {
-    class RenderWindow;
-}
-
 
 namespace lx0 { namespace core {
 
     namespace detail {
-
-        _LX_FORWARD_DECL_PTRS(ViewImp);
+        _LX_FORWARD_DECL_PTRS(LxOgre);
     };
-
 
     class View
     {
     public:
         View();
+        ~View();
         
-        void connect (DocumentCPtr spDoc);
         void show();
-    protected:
 
-        detail::ViewImpPtr  m_spImp;
-        Ogre::RenderWindow* m_pRenderWindow;
+        void run();
+    protected:
+        detail::LxOgrePtr       mspLxOgre;
+        Ogre::RenderWindow*     mpRenderWindow; //! OGRE owns this pointer
+        Ogre::SceneManager*     mpSceneMgr;     //! OGRE owns this pointer
     };
 }}

@@ -57,8 +57,10 @@ main (int argc, char** argv)
    ElementPtr spRoot = spTransaction->write( spDocument->root() );
    spRoot->append(spElement);
 
+   spEngine->connect(spDocument);
+
    ViewPtr spView(new View);
-   spView->connect(spDocument);
+   spDocument->connect(spView);
    spView->show();
 
    ControllerPtr spController;

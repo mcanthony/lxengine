@@ -31,14 +31,14 @@
 
 #include <memory>
 
-namespace lx0 { namespace core {
-
 #define _LX_FORWARD_DECL_PTRS(Klass) \
     class Klass; \
     typedef std::shared_ptr<Klass> Klass ## Ptr; \
     typedef std::shared_ptr<const Klass> Klass ## CPtr; \
     typedef std::weak_ptr<Klass> Klass ## WPtr; \
     typedef std::weak_ptr<const Klass> Klass ## CWPtr; 
+
+namespace lx0 { namespace core {
 
     _LX_FORWARD_DECL_PTRS(Object);
     _LX_FORWARD_DECL_PTRS(Element);
@@ -50,5 +50,67 @@ namespace lx0 { namespace core {
     _LX_FORWARD_DECL_PTRS(Controller);
 
 
+    namespace detail {
+   
+        //! Helper function for correctly making a Singleton of a class
+        /*!
+            This helper works by expecting that a single global, std::weak_ptr<> is used to track
+            the singleton and std::shared_ptr<>'s are used to access the singleton.  The first
+            shared_ptr<> acquisition results in creation of the Singleton.  The last release of
+            the shared_ptr<> results in deletion of the Singleton.
+
+            To use:
+            
+            1. Declare a protected/private constructor and destructor on the class.
+
+            2. Declare a static member of type std::weak_ptr<> to point to the singleton.
+            
+            3. Declare and define a public acquire method on the class using the following syntax.
+            This example assumes the class is called "MyClass" and the static member pointer has
+            been declared as "static_singleton_weak_ptr":
+
+            <pre>
+template <typename T> friend std::shared_ptr<T> detail::acquireSingleton (std::weak_ptr<T>&);
+static std::shared_ptr<MyClass> acquire() { return detail::acquireSingleton<MyClass>(static_singleton_weak_ptr); }
+            </pre>
+
+            @remark
+            Note that there is no corresponding release() required, as shared_ptr<> is used to 
+            implicity release the Singleton when the last reference is gone.
+
+         */
+        template <typename Klass>
+        std::shared_ptr<Klass> 
+        acquireSingleton (std::weak_ptr<Klass>& global_wptr)
+        {
+            // DeleteFunctor is used to expose access to the destructor to shared_ptr
+            // but no one else.  
+            // See: http://beta.boost.org/doc/libs/1_42_0/libs/smart_ptr/sp_techniques.html
+            struct DeleteFunctor
+            { 
+                void operator()(Klass* p) { delete p; }
+            }; 
+
+            std::shared_ptr<Klass> sp( global_wptr.lock() );
+            if (!sp.get())
+            {
+                sp.reset( new Klass, DeleteFunctor() );
+                global_wptr = sp;
+            }  
+            return sp;
+        }
+    };
+
 
 }}
+
+namespace Ogre
+{
+    //
+    // Note: This "pollutes" the Ogre namespace with Lx typedefs.  This is not
+    // ideal.  A better solution should be found for the future.
+    //
+    _LX_FORWARD_DECL_PTRS(Root);
+    _LX_FORWARD_DECL_PTRS(RenderWindow);
+    _LX_FORWARD_DECL_PTRS(SceneManager);
+}

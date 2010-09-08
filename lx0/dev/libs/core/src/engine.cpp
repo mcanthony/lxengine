@@ -31,6 +31,7 @@
 
 #include <lx0/core.hpp>
 #include <lx0/engine.hpp>
+#include <lx0/document.hpp>
 
 #include <OGRE/OgreRoot.h>
 #include <OGRE/OgreSceneManager.h>
@@ -39,30 +40,10 @@ namespace lx0 { namespace core {
 
     namespace detail
     {
-        class OgreSubsystem
-        {
-        public:
-            std::shared_ptr<Ogre::Root> spRoot;
-            std::shared_ptr<Ogre::SceneManager> spSceneMgr;
-        };
+
     }
-
-    using detail::OgreSubsystem;
-
 
     std::weak_ptr<Engine> Engine::s_wpEngine;
-
-    std::shared_ptr<Engine>
-    Engine::acquire()
-    {
-       std::shared_ptr<Engine> sp( s_wpEngine.lock() );
-       if (!sp.get())
-       {
-          sp.reset( new Engine, DeleteFunctor() );
-          s_wpEngine = sp;
-       }  
-       return sp;
-    }
 
     Engine::Engine()
     {
@@ -78,24 +59,17 @@ namespace lx0 { namespace core {
         slotFatal   = prefix_print("FATAL: ");
 
         log("lx::core::Engine ctor");
-
-        // Initialize OGRE
-        m_spOgre.reset(new OgreSubsystem);
-        try 
-        {
-            m_spOgre->spRoot.reset(new Ogre::Root);
-            m_spOgre->spRoot->showConfigDialog();
-        }
-        catch (std::exception& e)
-        {
-            fatal("OGRE exception caught during initialization");
-            throw e;
-        }
     }
 
     Engine::~Engine()
     {
        log("lx::core::Engine dtor");
+    }
+
+    void    
+    Engine::connect (DocumentPtr spDocument)
+    {
+        m_documents.push_back(spDocument);
     }
 
 	void   
@@ -113,7 +87,10 @@ namespace lx0 { namespace core {
             m_messageQueue.pop_front();
         }
 
-        m_spOgre->spRoot->startRendering();
+        ///@todo Devise a better way to hand time-slices from the main loop to the individual documents
+        /// for updates.  Also consider multi-threading.
+        for(auto it = m_documents.begin(); it != m_documents.end(); ++it)
+            (*it)->run();
 
 		return 0;
 	}

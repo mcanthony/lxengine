@@ -31,6 +31,7 @@
 #include <lx0/document.hpp>
 #include <lx0/transaction.hpp>
 #include <lx0/element.hpp>
+#include <lx0/view.hpp>
 
 namespace lx0 { namespace core {
 
@@ -48,6 +49,19 @@ namespace lx0 { namespace core {
         TransactionPtr sp(new Transaction);
         m_openTransactions.push_back(sp);
         return sp;
+    }
+
+    void            
+    Document::connect (ViewPtr spView)
+    {
+        m_views.push_back(spView);
+    }
+
+    void            
+    Document::run()
+    {
+        for (auto it = m_views.begin(); it != m_views.end(); ++it)
+            (*it)->run();
     }
 
 }}

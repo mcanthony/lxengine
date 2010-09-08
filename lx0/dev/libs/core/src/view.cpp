@@ -29,33 +29,80 @@
 #pragma once
 
 #include <cassert>
+#include <memory>
 
 #include <lx0/view.hpp>
+#include <lx0/core.hpp>
 
 #include <OGRE/OgreRoot.h>
 #include <OGRE/OgreRenderWindow.h>
+#include <OGRE/OgreWindowEventUtilities.h>
 
 namespace lx0 { namespace core {
 
     namespace detail {
-        class ViewImp
+
+        class LxOgre
         {
+        public:
+            template <typename T> friend std::shared_ptr<T> acquireSingleton (std::weak_ptr<T>&);
+            static LxOgrePtr acquire() { return acquireSingleton<LxOgre>(s_wpLxOgre); }
+
+            Ogre::Root* root() { return mpRoot; }
+            Ogre::Root* mpRoot;
+
+        protected:
+            ~LxOgre() 
+            {
+                //@todo Leaking mpRoot!  Crash on shutdown otherwise due to a corrupt std::vector<>
+            }
+
+            LxOgre()
+            {
+                // Initialize OGRE
+                try 
+                {
+                    mpRoot = new Ogre::Root;
+                    mpRoot->showConfigDialog();
+                }
+                catch (std::exception& e)
+                {
+                    fatal("OGRE exception caught during initialization");
+                    throw e;
+                }
+            }
+
+            static LxOgreWPtr s_wpLxOgre;
+        };
+
+        LxOgreWPtr LxOgre::s_wpLxOgre;
+
+
+        class LxWindowEventListener : public Ogre::WindowEventListener
+        {
+        public:
+            virtual void windowClosed(Ogre::RenderWindow* pRenderWindow)
+            {
+                 LxOgre::acquire()->root()->queueEndRendering();
+            }
         };
     }
 
+    using namespace detail;
+
     View::View()
-        :  m_pRenderWindow (NULL)
+        : mspLxOgre         ( LxOgre::acquire() )
+        , mpRenderWindow    (0)
+        , mpSceneMgr        (0)
     {
     }
 
-    /*!
-        Assigns the view a data source.
-
-        A view may display the entire document or a portion of it.  
-     */
-    void 
-    View::connect (DocumentCPtr spDoc)
+    View::~View()
     {
+        // These pointers are owned by OGRE.  Do not delete.  Set to NULL for
+        // documentation purposes.
+        mpRenderWindow = 0;
+        mpSceneMgr  = 0;
     }
 
     /*!
@@ -64,27 +111,36 @@ namespace lx0 { namespace core {
     void 
     View::show()
     {
-        assert(m_pRenderWindow == NULL);
+        assert(mpRenderWindow == NULL);
 
-        Ogre::Root& root = Ogre::Root::getSingleton();
+        Ogre::Root& root = *mspLxOgre->root();
 
         // The render window creation also creates many internal OGRE data objects; therefore,
         // create it first.  Otherwise objects like the Camera won't even work.
-        m_pRenderWindow = root.initialise(true, "View" );  
+        mpRenderWindow = root.initialise(true, "View" );  
 
-        Ogre::SceneManager* pSceneMgr = root.createSceneManager(Ogre::ST_GENERIC, "generic");
+        mpSceneMgr = root.createSceneManager(Ogre::ST_GENERIC, "generic");
 
-        Ogre::Camera* mCamera = pSceneMgr->createCamera("Camera");
+        Ogre::Camera* mCamera = mpSceneMgr->createCamera("Camera");
         mCamera->setPosition(Ogre::Vector3(0.0f,0.0f,500.0f));
         mCamera->lookAt(Ogre::Vector3(0.0f,0.0f,0.0f));
         mCamera->setNearClipDistance(1.0f);
         mCamera->setFarClipDistance(5000.0f);
 
-         
-
-        Ogre::Viewport* mViewport = m_pRenderWindow->addViewport(mCamera);
-        mViewport->setBackgroundColour(Ogre::ColourValue(0.0f,0.0f,0.0f));
+        Ogre::Viewport* mViewport = mpRenderWindow->addViewport(mCamera);
+        mViewport->setBackgroundColour(Ogre::ColourValue(1.0f,1.0f,0.98f));
 
         mCamera->setAspectRatio(Ogre::Real(mViewport->getActualWidth()) / Ogre::Real(mViewport->getActualHeight()));
+    }
+
+    void
+    View::run()
+    {
+        std::auto_ptr<LxWindowEventListener> spWindowEventListener(new LxWindowEventListener);
+        Ogre::WindowEventUtilities::addWindowEventListener(mpRenderWindow, spWindowEventListener.get());
+
+        mspLxOgre->root()->startRendering();
+
+        Ogre::WindowEventUtilities::removeWindowEventListener(mpRenderWindow, spWindowEventListener.get());
     }
 }}
