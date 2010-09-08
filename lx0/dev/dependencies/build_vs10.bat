@@ -86,7 +86,6 @@ if NOT EXIST bullet_2_76 (
     goto END
 )
 
-
 set PYTHONEXE_PATH=%SystemDrive%\Python27
 IF EXIST "%PYTHONEXE_PATH%\python.exe" ( goto PYTHONFOUND )
 set PYTHONEXE_PATH=%SystemDrive%\Python26
@@ -104,6 +103,12 @@ IF NOT EXIST "%PYTHONEXE_PATH%\Scripts\scons.bat" (
     goto END
 )
 
+
+IF "%DXSDK_DIR%" == "" (
+    echo ERROR: Could not find DirectX SDK!
+    echo.
+    goto END
+)
 
 REM ===========================================================================
 REM Build Boost
@@ -177,6 +182,34 @@ IF EXIST bin\debug\OgreMain_d.dll (
     )
 )
 
+popd
+
+REM ===========================================================================
+REM Build OIS
+REM ===========================================================================
+
+pushd .
+cd ois_1_2_0\ois
+
+IF EXIST lib\OIS_static_d.lib (
+    echo * OIS: Found OIS_static_d.lib
+) ELSE (
+    echo.
+    echo * OIS: Building...
+    echo.
+ 
+    cd Win32
+    msbuild OIS.vcxproj
+    cd ..
+    
+    IF NOT EXIST lib\OIS_static_d.lib (
+        echo.
+        echo ERROR: OIS build failed.  Could not find lib\OIS_static_d.lib
+        echo.
+        popd
+        goto END
+    )
+)
 popd
 
 REM ===========================================================================
