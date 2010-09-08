@@ -2,5 +2,6 @@ _clean
 boost_1_44_0
 bullet_2_76
 ogre_1_7_1
+v8
 7za.exe
 dependencies.7z

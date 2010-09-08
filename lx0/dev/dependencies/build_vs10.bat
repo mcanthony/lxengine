@@ -51,8 +51,6 @@ IF NOT EXIST 7za.exe (
     7za x dependencies.7z   
 )
 
-goto END
-
 REM ===========================================================================
 REM Ensure Visual Studio 10 command-line is available
 REM ===========================================================================
@@ -87,6 +85,25 @@ if NOT EXIST bullet_2_76 (
     echo ERROR: Could not find Bullet in dependencies\bullet_2_76!
     goto END
 )
+
+
+set PYTHONEXE_PATH=%SystemDrive%\Python27
+IF EXIST "%PYTHONEXE_PATH%\python.exe" ( goto PYTHONFOUND )
+set PYTHONEXE_PATH=%SystemDrive%\Python26
+IF EXIST "%PYTHONEXE_PATH%\python.exe" ( goto PYTHONFOUND )
+set PYTHONEXE_PATH=%SystemDrive%\Python25
+IF EXIST "%PYTHONEXE_PATH%\python.exe" ( goto PYTHONFOUND )
+echo ERROR: Could not locate Python installation!
+echo.
+goto END
+
+:PYTHONFOUND
+IF NOT EXIST "%PYTHONEXE_PATH%\Scripts\scons.bat" (
+    echo ERROR: Could not find scons installed within %PYTHONPATH%
+    echo.
+    goto END
+)
+
 
 REM ===========================================================================
 REM Build Boost
@@ -198,6 +215,41 @@ IF EXIST lib\Debug\BulletCollision.lib (
     )
 )
 
+popd
+
+REM ===========================================================================
+REM Build Google V8
+REM ===========================================================================
+
+pushd .
+cd v8\v8
+
+IF EXIST sdk\lib\v8.lib (
+    echo * V8: Found v8.lib.  Presuming V8 has been built already.
+) ELSE (
+    echo.
+    echo * V8: Building...
+    echo.
+ 
+    call "%PYTHONEXE_PATH%\Scripts\scons.bat" env="PATH:%PATH%,INCLUDE:%INCLUDE%,LIB:%LIB%"
+    
+    IF EXIST v8.lib (
+        mkdir sdk
+        mkdir sdk\lib
+        mkdir sdk\include
+        mkdir sdk\include\v8
+        call copy v8.lib sdk\lib
+        call copy include\* sdk\include\v8
+    )
+        
+    IF NOT EXIST sdk\lib\v8.lib (
+        echo.
+        echo ERROR: V8 build failed.  Could not find sdk\lib\v8.lib
+        echo.
+        popd
+        goto END
+    )
+)
 popd
 
 
