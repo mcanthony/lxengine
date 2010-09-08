@@ -1,9 +1,27 @@
+#
+# Glob a directory and move all files in that directory into the same
+# Visual Studio source grouping.  Then, if there is a corresponding
+# header in the include/lx0 directory include that in the source grouping
+# as well (to keep the cpp and header next to each other in the IDE).
+#
+macro(lx_source_group FOLDER)
+    file(GLOB_RECURSE FILELIST src/${FOLDER}/*.cpp)
+    foreach(F ${FILELIST})
+        source_group(${FOLDER} FILES ${F})
+        get_filename_component(H ${F} NAME_WE)
+        set(H "${CMAKE_CURRENT_SOURCE_DIR}/include/lx0/${H}.hpp")
+        source_group(${FOLDER} FILES ${H})
+    endforeach(F)
+endmacro(lx_source_group)
 
 file(GLOB_RECURSE SRCFILES src/*.cpp)
 file(GLOB_RECURSE HFILES include/*.hpp)
 file(GLOB_RECURSE HPPFILES include/*.h)
-
 set(SOURCES ${SRCFILES} ${HFILES} ${HPPFILES})
-source_group(src FILES ${SOURCES} )
+
+lx_source_group("core")
+lx_source_group("dom")
+lx_source_group("engine")
+
 
 add_library( lx0 ${SOURCES} )
