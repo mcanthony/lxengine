@@ -120,6 +120,12 @@ if NOT EXIST openal_1_1 (
     goto END
 )
 
+if NOT EXIST audiere_1_9_4 (
+    echo ERROR: Could not find Audiere in dependencies\audiere_1_9_4!
+    goto END
+)
+
+
 set PYTHONEXE_PATH=%SystemDrive%\Python27
 IF EXIST "%PYTHONEXE_PATH%\python.exe" ( goto PYTHONFOUND )
 set PYTHONEXE_PATH=%SystemDrive%\Python26
@@ -338,8 +344,8 @@ IF EXIST OpenAL-Soft\build\Debug\openal32.lib (
     echo * OpenAL: Building...
     echo.
  
-    cd OpenAL-Soft\build
     pushd .
+    cd OpenAL-Soft\build
     cmake ..
     msbuild OpenAL.sln /p:Configuration=Debug
     msbuild OpenAL.sln /p:Configuration=Release
@@ -355,6 +361,36 @@ IF EXIST OpenAL-Soft\build\Debug\openal32.lib (
 )
 popd
 
+REM ===========================================================================
+REM Build Audiere
+REM ===========================================================================
+
+pushd .
+cd audiere_1_9_4\audiere
+
+IF EXIST vc10\bin\Debug\audiere.dll (
+    echo * Audiere: Found audiere.dll.  Presuming Audiere has been built already.
+) ELSE (
+    echo.
+    echo * Audiere: Building...
+    echo.
+ 
+    pushd .
+    cd vc10
+    cmake ..
+    msbuild audiere\audiere.vcxproj /p:Configuration=Debug
+    msbuild audiere\audiere.vcxproj /p:Configuration=Release
+    popd
+           
+    IF NOT EXIST vc10\bin\Debug\audiere.dll (
+        echo.
+        echo ERROR: Audiere build failed.  Could not find vc10\bin\Debug\audiere.dll
+        echo.
+        popd
+        goto END
+    )
+)
+popd
 
 REM ===========================================================================
 REM Clean-up and verification
