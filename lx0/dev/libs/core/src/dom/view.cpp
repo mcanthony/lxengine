@@ -40,6 +40,8 @@
 #include <OGRE/OgreManualObject.h>
 #include <OGRE/OgreMaterial.h>
 #include <OGRE/OgreMaterialManager.h>
+#include <OGRE/OgreEntity.h>
+#include <OGRE/OgreQuaternion.h>
 
 namespace lx0 { namespace core {
 
@@ -126,24 +128,30 @@ namespace lx0 { namespace core {
         mpSceneMgr = root.createSceneManager(Ogre::ST_GENERIC, "generic");
 
         Ogre::Camera* mCamera = mpSceneMgr->createCamera("Camera");
+
+        // Make Z-up on the OGRE camera
+        // See http://www.gamedev.net/community/forums/topic.asp?topic_id=452424
+        mCamera->roll(Ogre::Radian(1.57079633f));
+        mCamera->setFixedYawAxis(true, Ogre::Vector3::UNIT_Z);
+
         mCamera->setPosition(Ogre::Vector3(9.0f,8.0f,10.0f));
         mCamera->lookAt(Ogre::Vector3(0.0f,0.0f,0.0f));
         mCamera->setNearClipDistance(0.1f);
         mCamera->setFarClipDistance(100.0f);
 
         Ogre::Viewport* mViewport = mpRenderWindow->addViewport(mCamera);
-        mViewport->setBackgroundColour(Ogre::ColourValue(0.1f,0.1f,0.16f));
+        mViewport->setBackgroundColour(Ogre::ColourValue(0.1f, 0.1f, 0.16f));
 
         mCamera->setAspectRatio(Ogre::Real(mViewport->getActualWidth()) / Ogre::Real(mViewport->getActualHeight()));
 
         // Add ambient light since there currently are not standard lights
-        mpSceneMgr->setAmbientLight(Ogre::ColourValue(0.2, 0.2, 0.1));
+        mpSceneMgr->setAmbientLight(Ogre::ColourValue(0.2f, 0.2f, 0.1f));
 
         {
             Ogre::Light* light = mpSceneMgr->createLight("Light");
             light->setType(Ogre::Light::LT_POINT);
-            light->setDiffuseColour(Ogre::ColourValue(1.0f,1.0f,1.0f));
-            light->setSpecularColour(Ogre::ColourValue(1.0f,1.0f,1.0f));
+            light->setDiffuseColour(Ogre::ColourValue(1.0f, 1.0f, 1.0f));
+            light->setSpecularColour(Ogre::ColourValue(1.0f, 1.0f, 1.0f));
             light->setPosition(10, 13, 18);
             light->setAttenuation(1000, 1, 0, 0);
         }
@@ -151,23 +159,14 @@ namespace lx0 { namespace core {
         {
             Ogre::MaterialPtr spMat = Ogre::MaterialManager::getSingleton().create("LxMaterial", Ogre::ResourceGroupManager::INTERNAL_RESOURCE_GROUP_NAME);
             spMat->setLightingEnabled(true);
-            spMat->setAmbient(.1, .1, .1);
+            spMat->setAmbient(.1f, .1f, .1f);
             spMat->setDiffuse(1, 1, 1, 1);
             spMat->setSpecular(0, 0, 0, 0);
         }
 
         // See http://www.ogre3d.org/tikiwiki/ManualObject
-        //
+        // See http://www.ogre3d.org/tikiwiki/tutorial+manual+object+to+mesh
         {
-            Ogre::Vector3 a (-1, -1, -1);
-            Ogre::Vector3 b (-1,  1, -1);
-            Ogre::Vector3 c ( 1, -1, -1);
-            Ogre::Vector3 d ( 1,  1, -1);
-            Ogre::Vector3 e (-1, -1,  1);
-            Ogre::Vector3 f (-1,  1,  1);
-            Ogre::Vector3 g ( 1, -1,  1);
-            Ogre::Vector3 h ( 1,  1,  1);
-
             Ogre::ManualObject* pObject = mpSceneMgr->createManualObject("manual");
 
             auto add_quad = [pObject] (Ogre::Vector3& v0, Ogre::Vector3& v1, Ogre::Vector3& v2, Ogre::Vector3& v3) -> void {
@@ -189,6 +188,16 @@ namespace lx0 { namespace core {
                 pObject->normal(normal);
             };
 
+            const float p = 0.5f;
+            Ogre::Vector3 a (-p, -p, -p);
+            Ogre::Vector3 b (-p,  p, -p);
+            Ogre::Vector3 c ( p, -p, -p);
+            Ogre::Vector3 d ( p,  p, -p);
+            Ogre::Vector3 e (-p, -p,  p);
+            Ogre::Vector3 f (-p,  p,  p);
+            Ogre::Vector3 g ( p, -p,  p);
+            Ogre::Vector3 h ( p,  p,  p);
+
             pObject->begin("LxMaterial", Ogre::RenderOperation::OT_TRIANGLE_LIST);
                 add_quad(h, g, c, d); // X+    
                 add_quad(e, f, b, a); // X- 
@@ -197,7 +206,26 @@ namespace lx0 { namespace core {
                 add_quad(f, e, g, h); // Z+
                 add_quad(a, b, d, c); // Z-
             pObject->end();
-            mpSceneMgr->getRootSceneNode()->createChildSceneNode("Cube")->attachObject(pObject);
+
+            pObject->convertToMesh("LxCube");
+
+            for (int gy = 0; gy < 3; gy ++)
+            {
+                for (int gx = 0; gx < 3; gx ++)
+                {
+                    std::ostringstream nameo;
+                    nameo << "Cube" << (gy * 3 + gx);
+                    std::string name = nameo.str();
+
+                    auto g2w = [](int i) { return (i - 1) * 1.5f; };
+                    const Ogre::Vector3 pos( g2w(gx), g2w(gy), 0.5f);
+                   
+                    Ogre::Entity* pEntity = mpSceneMgr->createEntity("LxCube");
+                    Ogre::SceneNode* pNode = mpSceneMgr->getRootSceneNode()->createChildSceneNode(name);
+                    pNode->attachObject(pEntity);
+                    pNode->setPosition(pos);
+                }
+            }
         }
     }
 
