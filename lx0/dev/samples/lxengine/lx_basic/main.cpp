@@ -48,22 +48,33 @@ using namespace lx0::core;
 int 
 main (int argc, char** argv)
 {
-   EnginePtr spEngine( Engine::acquire() );
+    EnginePtr spEngine( Engine::acquire() );
 
-   DocumentPtr spDocument(new Document);
+    DocumentPtr spDocument(new Document);
 
-   ElementPtr spElement(new Element);
-   TransactionPtr spTransaction = spDocument->transaction();
-   ElementPtr spRoot = spTransaction->write( spDocument->root() );
-   spRoot->append(spElement);
+    ElementPtr spElement(new Element);
+    TransactionPtr spTransaction = spDocument->transaction();
+    ElementPtr spRoot = spTransaction->write( spDocument->root() );
+    spRoot->append(spElement);
 
-   spEngine->connect(spDocument);
+    spEngine->connect(spDocument);
 
-   ViewPtr spView(new View);
-   spDocument->connect(spView);
-   spView->show();
+    {
+        ViewPtr spView(new View);
+        spDocument->connect("view", spView);
+        spView->show();
+    }
 
-   ControllerPtr spController;
+
+
+    ControllerPtr spController;
    
-   return spEngine->run();
+    int exitCode = spEngine->run();
+
+    // Demostrating that views *can* be detached by name.  This is not
+    // necessary, as the Document releases all views on destruction 
+    // automatically
+    spDocument->disconnect("view");
+
+    return exitCode;
 }

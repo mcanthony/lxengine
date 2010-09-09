@@ -32,6 +32,7 @@
 #include <lx0/transaction.hpp>
 #include <lx0/element.hpp>
 #include <lx0/view.hpp>
+#include <lx0/core.hpp>
 
 namespace lx0 { namespace core {
 
@@ -52,16 +53,28 @@ namespace lx0 { namespace core {
     }
 
     void            
-    Document::connect (ViewPtr spView)
+    Document::connect (std::string name, ViewPtr spView)
     {
-        m_views.push_back(spView);
+        m_views.insert(std::make_pair(name, spView));
+    }
+
+    void
+    Document::disconnect (std::string name)
+    {
+        auto it = m_views.find(name);
+        if (it != m_views.end())
+        {
+            m_views.erase(it);
+        }
+        else
+            error("Could name find view '%s' on document.", name.c_str());
     }
 
     void            
     Document::run()
     {
         for (auto it = m_views.begin(); it != m_views.end(); ++it)
-            (*it)->run();
+            it->second->run();
     }
 
 }}

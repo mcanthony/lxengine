@@ -30,6 +30,7 @@
 
 #include <memory>
 #include <vector>
+#include <map>
 
 #include <lx0/detail/forward_decls.hpp>
 
@@ -41,7 +42,8 @@ namespace lx0 { namespace core {
         Document();
         TransactionPtr  transaction ();
 
-        void            connect (ViewPtr spView);
+        void            connect     (std::string name, ViewPtr spView);
+        void            disconnect  (std::string name);
 
         ElementCPtr     root() { return m_spRoot; }
 
@@ -55,6 +57,6 @@ namespace lx0 { namespace core {
 
         ElementPtr  m_spRoot;
 
-        std::vector<ViewPtr> m_views;
+        std::map<std::string, ViewPtr> m_views;
     };
 }}

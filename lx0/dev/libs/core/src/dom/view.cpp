@@ -37,6 +37,9 @@
 #include <OGRE/OgreRoot.h>
 #include <OGRE/OgreRenderWindow.h>
 #include <OGRE/OgreWindowEventUtilities.h>
+#include <OGRE/OgreManualObject.h>
+#include <OGRE/OgreMaterial.h>
+#include <OGRE/OgreMaterialManager.h>
 
 namespace lx0 { namespace core {
 
@@ -48,13 +51,12 @@ namespace lx0 { namespace core {
             template <typename T> friend std::shared_ptr<T> acquireSingleton (std::weak_ptr<T>&);
             static LxOgrePtr acquire() { return acquireSingleton<LxOgre>(s_wpLxOgre); }
 
-            Ogre::Root* root() { return mpRoot; }
-            Ogre::Root* mpRoot;
+            Ogre::Root* root() { return mspRoot.get(); }
+
 
         protected:
             ~LxOgre() 
             {
-                //@todo Leaking mpRoot!  Crash on shutdown otherwise due to a corrupt std::vector<>
             }
 
             LxOgre()
@@ -62,8 +64,8 @@ namespace lx0 { namespace core {
                 // Initialize OGRE
                 try 
                 {
-                    mpRoot = new Ogre::Root;
-                    mpRoot->showConfigDialog();
+                    mspRoot.reset(new Ogre::Root);
+                    mspRoot->showConfigDialog();
                 }
                 catch (std::exception& e)
                 {
@@ -73,6 +75,8 @@ namespace lx0 { namespace core {
             }
 
             static LxOgreWPtr s_wpLxOgre;
+
+            std::auto_ptr<Ogre::Root>   mspRoot;
         };
 
         LxOgreWPtr LxOgre::s_wpLxOgre;
@@ -122,15 +126,79 @@ namespace lx0 { namespace core {
         mpSceneMgr = root.createSceneManager(Ogre::ST_GENERIC, "generic");
 
         Ogre::Camera* mCamera = mpSceneMgr->createCamera("Camera");
-        mCamera->setPosition(Ogre::Vector3(0.0f,0.0f,500.0f));
+        mCamera->setPosition(Ogre::Vector3(9.0f,8.0f,10.0f));
         mCamera->lookAt(Ogre::Vector3(0.0f,0.0f,0.0f));
-        mCamera->setNearClipDistance(1.0f);
-        mCamera->setFarClipDistance(5000.0f);
+        mCamera->setNearClipDistance(0.1f);
+        mCamera->setFarClipDistance(100.0f);
 
         Ogre::Viewport* mViewport = mpRenderWindow->addViewport(mCamera);
-        mViewport->setBackgroundColour(Ogre::ColourValue(1.0f,1.0f,0.98f));
+        mViewport->setBackgroundColour(Ogre::ColourValue(0.1f,0.1f,0.16f));
 
         mCamera->setAspectRatio(Ogre::Real(mViewport->getActualWidth()) / Ogre::Real(mViewport->getActualHeight()));
+
+        // Add ambient light since there currently are not standard lights
+        mpSceneMgr->setAmbientLight(Ogre::ColourValue(0.2, 0.2, 0.1));
+
+        {
+            Ogre::Light* light = mpSceneMgr->createLight("Light");
+            light->setType(Ogre::Light::LT_POINT);
+            light->setDiffuseColour(Ogre::ColourValue(1.0f,1.0f,1.0f));
+            light->setSpecularColour(Ogre::ColourValue(1.0f,1.0f,1.0f));
+            light->setPosition(10, 13, 18);
+            light->setAttenuation(1000, 1, 0, 0);
+        }
+
+        {
+            Ogre::MaterialPtr spMat = Ogre::MaterialManager::getSingleton().create("LxMaterial", Ogre::ResourceGroupManager::INTERNAL_RESOURCE_GROUP_NAME);
+            spMat->setLightingEnabled(true);
+            spMat->setAmbient(.1, .1, .1);
+            spMat->setDiffuse(1, 1, 1, 1);
+            spMat->setSpecular(0, 0, 0, 0);
+        }
+
+        // See http://www.ogre3d.org/tikiwiki/ManualObject
+        //
+        {
+            Ogre::Vector3 a (-1, -1, -1);
+            Ogre::Vector3 b (-1,  1, -1);
+            Ogre::Vector3 c ( 1, -1, -1);
+            Ogre::Vector3 d ( 1,  1, -1);
+            Ogre::Vector3 e (-1, -1,  1);
+            Ogre::Vector3 f (-1,  1,  1);
+            Ogre::Vector3 g ( 1, -1,  1);
+            Ogre::Vector3 h ( 1,  1,  1);
+
+            Ogre::ManualObject* pObject = mpSceneMgr->createManualObject("manual");
+
+            auto add_quad = [pObject] (Ogre::Vector3& v0, Ogre::Vector3& v1, Ogre::Vector3& v2, Ogre::Vector3& v3) -> void {
+                Ogre::Vector3 normal = (v1 - v0).crossProduct(v2 - v1);
+                normal.normalise();
+
+                pObject->position(v0); 
+                pObject->normal(normal);
+                pObject->position(v1);
+                pObject->normal(normal);
+                pObject->position(v2);
+                pObject->normal(normal);
+
+                pObject->position(v2); 
+                pObject->normal(normal);
+                pObject->position(v3);
+                pObject->normal(normal);
+                pObject->position(v0);
+                pObject->normal(normal);
+            };
+
+            pObject->begin("LxMaterial", Ogre::RenderOperation::OT_TRIANGLE_LIST);
+                add_quad(h, g, c, d); // X+    
+                add_quad(e, f, b, a); // X- 
+                add_quad(f, h, d, b); // Y+
+                add_quad(g, e, a, c); // Y-
+                add_quad(f, e, g, h); // Z+
+                add_quad(a, b, d, c); // Z-
+            pObject->end();
+            mpSceneMgr->getRootSceneNode()->createChildSceneNode("Cube")->attachObject(pObject);
+        }
     }
 
     void
