@@ -1,12 +1,33 @@
 @echo off
 
+REM ===========================================================================
+REM Todos
+REM ===========================================================================
+REM
+REM TODO: Convert this to a CMake file.  It can handle all this logic and will
+REM       make building for the "current" configuration easier.
+REM 
+REM TODO: Move dependencies into a dependencies/src directory, then COPY all 
+REM       built files (bin, lib, include, pdb) into a dependencies/sdk 
+REM       directory
+REM
+REM TODO: Add 64-bit / 32-bit support
+REM TODO: Add VS2008 support (convert to CMake first)
+REM
+REM ===========================================================================
+
+
+REM ===========================================================================
+REM Beginning of script
+REM ===========================================================================
+
 echo.
 echo --------------------------------------------------------------------------
 echo LxEngine automated dependency builder
 echo (alpha)
 echo.
-echo Please let us know whether or not this batch file works correctly for you.
-echo We are trying to improve it as much as possible.
+echo As this dependency builder is in active development, feedback is 
+echo appreciated on what did or did not work for you.
 echo --------------------------------------------------------------------------
 echo.
 echo.
@@ -19,9 +40,17 @@ IF NOT EXIST 7za.exe (
     echo.
     echo ======================= IMPORTANT NOTE ===============================
     echo.
-    echo Detected that the dependencies are not yet installed.  The batch file 
-    echo will now attempt to download and extract them.  This can take a LONG
-    echo TIME as the dependencies are over 100 MB in size.
+    echo Detected that the dependencies are not yet installed or build.  The 
+    echo batch file will now attempt to download and extract them.  
+    echo.
+    echo.
+    echo    !!!  THIS MAY TAKE AN EXTREMELY LONG TIME TO FINISH  !!!
+    echo.
+    echo.
+    echo The build process involves downloading over 100 MBs of source code and
+    echo building multiple configurations, including the optimized versions.
+    echo This process should only have to be run once, but it may take quite
+    echo some time to finish.
     echo.
     echo ======================================================================
     echo.
@@ -83,6 +112,11 @@ if NOT EXIST ogre_1_7_1 (
 )
 if NOT EXIST bullet_2_76 (
     echo ERROR: Could not find Bullet in dependencies\bullet_2_76!
+    goto END
+)
+
+if NOT EXIST openal_1_1 (
+    echo ERROR: Could not find OpenAL in dependencies\openal_1_1!
     goto END
 )
 
@@ -168,10 +202,13 @@ IF EXIST bin\debug\OgreMain_d.dll (
         popd
         goto END
     )
-    msbuild ALL_BUILD.vcxproj
+    msbuild ALL_BUILD.vcxproj /p:Configuration=Debug
+    msbuild ALL_BUILD.vcxproj /p:Configuration=Release
     msbuild INSTALL.vcxproj
     copy bin\Debug\*.pdb sdk\bin\Debug
     copy bin\Debug\*.cfg sdk\bin\Debug
+    copy bin\Release\*.pdb sdk\bin\Release
+    copy bin\Release\*.cfg sdk\bin\Release
     
     IF NOT EXIST bin\debug\OgreMain_d.dll (
         echo.
@@ -199,7 +236,8 @@ IF EXIST lib\OIS_static_d.lib (
     echo.
  
     cd Win32
-    msbuild OIS.vcxproj
+    msbuild OIS.vcxproj /p:Configuration=Debug
+    msbuild OIS.vcxproj /p:Configuration=Release
     cd ..
     
     IF NOT EXIST lib\OIS_static_d.lib (
@@ -237,7 +275,8 @@ IF EXIST lib\Debug\BulletCollision.lib (
         popd
         goto END
     )
-    msbuild ALL_BUILD.vcxproj
+    msbuild ALL_BUILD.vcxproj /p:Configuration=Debug
+    msbuild ALL_BUILD.vcxproj /p:Configuration=Release
         
     IF NOT EXIST lib\Debug\BulletCollision.lib (
         echo.
@@ -278,6 +317,37 @@ IF EXIST sdk\lib\v8.lib (
     IF NOT EXIST sdk\lib\v8.lib (
         echo.
         echo ERROR: V8 build failed.  Could not find sdk\lib\v8.lib
+        echo.
+        popd
+        goto END
+    )
+)
+popd
+
+REM ===========================================================================
+REM Build OpenAL Software Implementation
+REM ===========================================================================
+
+pushd .
+cd openal_1_1\openal
+
+IF EXIST OpenAL-Soft\build\Debug\openal32.lib (
+    echo * OpenAL: Found openal32.lib.  Presuming OpenAL has been built already.
+) ELSE (
+    echo.
+    echo * OpenAL: Building...
+    echo.
+ 
+    cd OpenAL-Soft\build
+    pushd .
+    cmake ..
+    msbuild OpenAL.sln /p:Configuration=Debug
+    msbuild OpenAL.sln /p:Configuration=Release
+    popd
+           
+    IF NOT EXIST OpenAL-Soft\build\Debug\openal32.lib (
+        echo.
+        echo ERROR: OpenAL build failed.  Could not find OpenAL-Soft\build\Debug\openal32.lib
         echo.
         popd
         goto END
