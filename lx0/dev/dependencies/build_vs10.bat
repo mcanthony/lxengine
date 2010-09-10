@@ -125,6 +125,11 @@ if NOT EXIST audiere_1_9_4 (
     goto END
 )
 
+if NOT EXIST freetype_2_4_2 (
+    echo ERROR: Could not find FreeType in dependencies\freetype_2_4_2!
+    goto END
+)
+
 
 set PYTHONEXE_PATH=%SystemDrive%\Python27
 IF EXIST "%PYTHONEXE_PATH%\python.exe" ( goto PYTHONFOUND )
@@ -377,7 +382,6 @@ IF EXIST vc10\bin\Debug\audiere.dll (
  
     pushd .
     cd vc10
-    cmake ..
     msbuild audiere\audiere.vcxproj /p:Configuration=Debug
     msbuild audiere\audiere.vcxproj /p:Configuration=Release
     popd
@@ -385,6 +389,36 @@ IF EXIST vc10\bin\Debug\audiere.dll (
     IF NOT EXIST vc10\bin\Debug\audiere.dll (
         echo.
         echo ERROR: Audiere build failed.  Could not find vc10\bin\Debug\audiere.dll
+        echo.
+        popd
+        goto END
+    )
+)
+popd
+
+REM ===========================================================================
+REM Build FreeType
+REM ===========================================================================
+
+pushd .
+cd freetype_2_4_2\freetype
+
+IF EXIST objs\win32\vc2008\freetype242_D.lib (
+    echo * FreeType: Found freetype242_D.lib.  Presuming FreeType has been built already.
+) ELSE (
+    echo.
+    echo * FreeType: Building...
+    echo.
+ 
+    pushd .
+    cd builds\win32\vc2010
+    msbuild freetype.vcxproj /p:Configuration=Debug
+    msbuild freetype.vcxproj /p:Configuration=Release
+    popd
+           
+    IF NOT EXIST objs\win32\vc2008\freetype242_D.lib (
+        echo.
+        echo ERROR: FreeType build failed.  Could not find objs\win32\vc2008\freetype242_D.lib
         echo.
         popd
         goto END
