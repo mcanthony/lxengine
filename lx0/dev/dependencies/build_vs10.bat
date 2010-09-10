@@ -208,13 +208,12 @@ IF NOT EXIST "%PYTHONEXE_PATH%\Scripts\scons.bat" (
     goto:EOF
 )
 
-
-IF "%DXSDK_DIR%" == "" (
+IF "%DXSDK_DIR%"=="" (
     echo ERROR: Could not find DirectX SDK!
     echo.
     goto END
 ) ELSE (
-    echo Found DirectX at %DXSDK_DIR%
+    echo Found DirectX at "%DXSDK_DIR%"
 )
 
 
