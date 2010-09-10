@@ -1,20 +1,65 @@
 @echo off
+setlocal
 
 REM ===========================================================================
-REM Todos
+REM LxEngine Windows Dependency Builder
 REM ===========================================================================
 REM
-REM TODO: Convert this to a CMake file.  It can handle all this logic and will
-REM       make building for the "current" configuration easier.
+REM This script builds and packages several open source software libraries for
+REM use on Windows.  It requires Visual Studio 2010 or Visual Studio 2010 and
+REM requires a specific package of the software libraries to work correctly as
+REM some have been modified very slightly to compile with VS 2010.
+REM
+REM The script does the following:
 REM 
-REM TODO: Move dependencies into a dependencies/src directory, then COPY all 
-REM       built files (bin, lib, include, pdb) into a dependencies/sdk 
-REM       directory
+REM - Does minimal CMake-like compiler and tool detection [1]
+REM - Executes the necessary DOS commands to compile the various packages
+REM - Copies the resulting binaries and *debug information* to a uniform layout
+REM - Provides a CMake include file to will subsequently detect the packages
 REM
-REM TODO: Add 64-bit / 32-bit support
-REM TODO: Add VS2008 support (convert to CMake first)
+REM [1] An attempt was made to implement this script directly in the CMake
+REM     language, but the result was too cumbersome and largely unnecessary
+REM     since this script is intentionally tailored to support only Visual
+REM     Studio compilers.
+REM 
+REM TODO
+REM - Copy resulting binaries to uniform sdk layout
+REM - Test VS2008 support
+REM - Test x64 support
+REM
+REM
+REM LICENSE 
+REM (http://www.opensource.org/licenses/mit-license.php)
+REM
+REM Copyright (c) 2010 athile@athile.net (http://www.athile.net)
+REM
+REM Permission is hereby granted, free of charge, to any person obtaining a 
+REM copy of this software and associated documentation files (the "Software"), 
+REM to deal in the Software without restriction, including without limitation 
+REM the rights to use, copy, modify, merge, publish, distribute, sublicense, 
+REM and/or sell copies of the Software, and to permit persons to whom the 
+REM Software is furnished to do so, subject to the following conditions:
+REM
+REM The above copyright notice and this permission notice shall be included in
+REM all copies or substantial portions of the Software.
+REM
+REM THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+REM IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+REM FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+REM AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+REM LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
+REM FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS 
+REM IN THE SOFTWARE.
 REM
 REM ===========================================================================
+
+
+REM ===========================================================================
+REM Global settings
+REM ===========================================================================
+
+set DOWNLOAD_SITE=http://www.athile.net/files
+set DEPENDENCY_FILE=dependencies.7z
 
 
 REM ===========================================================================
@@ -23,7 +68,7 @@ REM ===========================================================================
 
 echo.
 echo --------------------------------------------------------------------------
-echo LxEngine automated dependency builder
+echo LxEngine Automated Windows Dependency Builder
 echo (alpha)
 echo.
 echo As this dependency builder is in active development, feedback is 
@@ -32,11 +77,63 @@ echo --------------------------------------------------------------------------
 echo.
 echo.
 
+set FAILURE=0
+
 REM ===========================================================================
-REM Grab the dependencies
+REM Ensure Visual Studio command-line is available
 REM ===========================================================================
 
-IF NOT EXIST 7za.exe (
+echo.
+echo Checking for Visual Studio installation...
+echo.
+
+REM TODO: It would be nice to invoke cmake here to get this information for us.
+REM 
+
+IF NOT "%VS100COMNTOOLS%"=="" (
+    echo Found Visual Studio 2010
+    set VCVER=10
+    set VSVARS_BAT="%VS100COMNTOOLS%\vsvars32.bat"
+    set VCPROJEXT=vcxproj
+) ELSE IF NOT "%VS90COMNTOOLS%"=="" (
+    echo Found Visual Studio 2009
+    set VCVER=9
+    set VSVARS_BAT="%VS90COMNTOOLS%\varvars32.bat"
+    set VCPROJEXT=vcproj
+) ELSE (
+    echo.
+    echo ERROR: Could not find installation of Visual Studio 2010 or 2009!
+    echo.
+    goto:EOF
+)
+
+REM Check if the Visual Studio command-line tools are there.
+REM Don't always run it or else it will duplicately add paths to PATH
+REM
+IF "%VSINSTALLDIR%"=="" (
+    echo Setting up Visual Studio command line tools
+    call %VSVARS_BAT%
+) ELSE (
+    echo Visual Studio command line tools appear to be setup already.
+)
+IF "%VSINSTALLDIR%"=="" (
+    echo ERROR: Failed to set up Visual Studio command-line tools!
+    goto:EOF
+)
+
+REM ===========================================================================
+REM Grab the dependencies
+REM
+REM - Download 7zip
+REM - Download the dependencies zip
+REM - Extract the zip
+REM ===========================================================================
+
+echo.
+echo Ensuring dependency source is available...
+echo.
+
+IF NOT EXIST boost_1_44_0 (
     echo.
     echo ======================= IMPORTANT NOTE ===============================
     echo.
@@ -56,80 +153,42 @@ IF NOT EXIST 7za.exe (
     echo.
     echo.
 
-    wget http://www.athile.net/files/7za.exe
+    call:auto_download 7za.exe
+    IF %FAILURE%==1 ( goto:EOF )
     
-    IF NOT EXIST 7za.exe (
-        echo.
-        echo ERROR: Failed to download dependencies.  Is your computer connected
-        echo to the internet?
-        echo.
-        goto END
-    )
-    
-    IF NOT EXIST dependencies.7z (
-        wget http://www.athile.net/files/dependencies.7z
-    )
-    IF NOT EXIST dependencies.7z (
-        echo.
-        echo ERROR: Failed to download dependencies.  Is your computer connected
-        echo to the internet?
-        echo.
-        goto END
-    ) 
-    
+    call:auto_download %DEPENDENCY_FILE%
+    IF %FAILURE%==1 ( goto:EOF )
+      
     7za x dependencies.7z   
-)
-
-REM ===========================================================================
-REM Ensure Visual Studio 10 command-line is available
-REM ===========================================================================
-
-IF "%VSINSTALLDIR%" == "" (
-    IF "%VS100COMNTOOLS%" == "" (
-        echo Error: Could not find Visual Studio 2010 installation!
-        echo Normally the VS100COMNTOOLS environment variable will be set
-        echo if Visual Studio 2010 is installed.
-        echo.
-        echo Exiting!
-        echo.
-        goto END
-    ) ELSE (
-        call "%VS100COMNTOOLS%\vsvars32.bat"
-    )
+) ELSE (
+    echo Found boost_1_44_0 subdirectory.  Assuming dependencies extracted.
 )
 
 REM ===========================================================================
 REM Check the dependency source is installed properly
 REM ===========================================================================
 
-IF NOT EXIST boost_1_44_0 (
-    echo ERROR: Could not find Boost in dependencies\boost_1_44_0!
-    goto END
-)
-if NOT EXIST ogre_1_7_1 (
-    echo ERROR: Could not find Ogre in dependencies\ogre_1_7_1!
-    goto END
-)
-if NOT EXIST bullet_2_76 (
-    echo ERROR: Could not find Bullet in dependencies\bullet_2_76!
-    goto END
-)
-
-if NOT EXIST openal_1_1 (
-    echo ERROR: Could not find OpenAL in dependencies\openal_1_1!
-    goto END
+call:ensure_directory boost_1_44_0
+call:ensure_directory ogre_1_7_1
+call:ensure_directory bullet_2_76
+call:ensure_directory openal_1_1
+call:ensure_directory audiere_1_9_4
+call:ensure_directory freetype_2_4_2
+if %FAILURE%==1 ( 
+    echo.
+    echo ERROR: It appears the dependencies did not extract correctly.
+    echo You may wish to extract them manually and rerun the script.
+    echo.
+    goto:EOF 
 )
 
-if NOT EXIST audiere_1_9_4 (
-    echo ERROR: Could not find Audiere in dependencies\audiere_1_9_4!
-    goto END
-)
+REM ===========================================================================
+REM Find Python & Scons for the Google V8 build
+REM ===========================================================================
 
-if NOT EXIST freetype_2_4_2 (
-    echo ERROR: Could not find FreeType in dependencies\freetype_2_4_2!
-    goto END
-)
-
+echo.
+echo Searching for required tools...
+echo.
 
 set PYTHONEXE_PATH=%SystemDrive%\Python27
 IF EXIST "%PYTHONEXE_PATH%\python.exe" ( goto PYTHONFOUND )
@@ -137,15 +196,16 @@ set PYTHONEXE_PATH=%SystemDrive%\Python26
 IF EXIST "%PYTHONEXE_PATH%\python.exe" ( goto PYTHONFOUND )
 set PYTHONEXE_PATH=%SystemDrive%\Python25
 IF EXIST "%PYTHONEXE_PATH%\python.exe" ( goto PYTHONFOUND )
+
 echo ERROR: Could not locate Python installation!
 echo.
-goto END
+goto:EOF
 
 :PYTHONFOUND
 IF NOT EXIST "%PYTHONEXE_PATH%\Scripts\scons.bat" (
     echo ERROR: Could not find scons installed within %PYTHONPATH%
     echo.
-    goto END
+    goto:EOF
 )
 
 
@@ -153,278 +213,164 @@ IF "%DXSDK_DIR%" == "" (
     echo ERROR: Could not find DirectX SDK!
     echo.
     goto END
+) ELSE (
+    echo Found DirectX at %DXSDK_DIR%
 )
+
+
+REM ===========================================================================
+REM
+REM Build Packages....
+REM
+REM ===========================================================================
+
+echo.
+echo Building packges...
+echo.
 
 REM ===========================================================================
 REM Build Boost
 REM ===========================================================================
 
-pushd .
-cd boost_1_44_0\boost_1_44_0
-    
-IF NOT EXIST stage\lib\libboost_iostreams-vc100-mt-gd-1_44.lib (
-    echo.
-    echo * BOOST: Building...
-    echo.
+set PROJECT=Boost
+set TESTFILE=stage\lib\libboost_iostreams-vc100-mt-gd-1_44.lib 
+set ROOTDIR=boost_1_44_0\boost_1_44_0
+echo call bootstrap.bat >_t.bat
+echo bjam.exe >>_t.bat
+echo bjam.exe install --prefix=sdk >>_t.bat
 
-    call bootstrap.bat
-    bjam.exe
-    bjam.exe install --prefix=sdk
+call:build_project %PROJECT% %ROOTDIR% %TESTFILE%
+IF %FAILURE%=1 (goto:EOF)
 
-) ELSE (
-    echo * BOOST: Found at least one Boost library.  Assuming Boost has already been built.
-)
-
-REM
-REM Check that it really did succeed
-REM
-
-IF NOT EXIST stage\lib\libboost_iostreams-vc100-mt-gd-1_44.lib (
-    echo.
-    echo ERROR: Cannot find compiled Boost libraries!  Did Boost fail to 
-    echo compile?
-    echo.
-    popd
-    goto END
-)
-popd
 
 REM ===========================================================================
 REM Build OGRE
 REM ===========================================================================
 
-pushd .
-cd ogre_1_7_1\ogre_build
+REM TODO: This still has a VS2010 dependency
 
-IF EXIST bin\debug\OgreMain_d.dll (
-    echo * OGRE: Found OgreMain_d.dll.  Presuming OGRE has been built already.
-) ELSE (
-    echo.
-    echo * OGRE: Building...
-    echo.
-    
-    cmake ..\ogre_src -DOGRE_DEPENDENCIES_DIR=..\OgreDependencies_MSVC_20100501\Dependencies -DBOOST_ROOT=..\..\boost_1_44_0\boost_1_44_0
-    
-    IF NOT EXIST ALL_BUILD.vcxproj (
-        echo.
-        echo ERROR: CMake failed to generate project files for building OGRE!
-        echo See CMake error log.
-        echo.
-        popd
-        goto END
-    )
-    msbuild ALL_BUILD.vcxproj /p:Configuration=Debug
-    msbuild ALL_BUILD.vcxproj /p:Configuration=Release
-    msbuild INSTALL.vcxproj
-    copy bin\Debug\*.pdb sdk\bin\Debug
-    copy bin\Debug\*.cfg sdk\bin\Debug
-    copy bin\Release\*.pdb sdk\bin\Release
-    copy bin\Release\*.cfg sdk\bin\Release
-    
-    IF NOT EXIST bin\debug\OgreMain_d.dll (
-        echo.
-        echo ERROR: OGRE build failed.  Could not find bin\debug\OgreMain_d.dll.
-        echo.
-        popd
-        goto END
-    )
-)
+set PROJECT=OGRE
+set TESTFILE=bin\debug\OgreMain_d.dll
+set ROOTDIR=ogre_1_7_1\ogre_build
 
-popd
+echo cmake ..\ogre_src -DOGRE_DEPENDENCIES_DIR=..\OgreDependencies_MSVC_20100501\Dependencies -DBOOST_ROOT=..\..\boost_1_44_0\boost_1_44_0 >_t.bat
+echo msbuild ALL_BUILD.vcxproj /p:Configuration=Debug >>_t.bat
+echo msbuild ALL_BUILD.vcxproj /p:Configuration=Release >>_t.bat
+echo msbuild INSTALL.vcxproj >>_t.bat
+echo copy bin\Debug\*.pdb sdk\bin\Debug >>_t.bat
+echo copy bin\Debug\*.cfg sdk\bin\Debug >>_t.bat
+echo copy bin\Release\*.pdb sdk\bin\Release >>_t.bat
+echo copy bin\Release\*.cfg sdk\bin\Release >>_t.bat
+
+call:build_project %PROJECT% %ROOTDIR% %TESTFILE%
+IF %FAILURE%=1 (goto:EOF)
 
 REM ===========================================================================
 REM Build OIS
 REM ===========================================================================
 
-pushd .
-cd ois_1_2_0\ois
+set PROJECT=OIS
+set ROOTDIR=ois_1_2_0\ois
+set TESTFILE=lib\OIS_static_d.lib
 
-IF EXIST lib\OIS_static_d.lib (
-    echo * OIS: Found OIS_static_d.lib
-) ELSE (
-    echo.
-    echo * OIS: Building...
-    echo.
- 
-    cd Win32
-    msbuild OIS.vcxproj /p:Configuration=Debug
-    msbuild OIS.vcxproj /p:Configuration=Release
-    cd ..
-    
-    IF NOT EXIST lib\OIS_static_d.lib (
-        echo.
-        echo ERROR: OIS build failed.  Could not find lib\OIS_static_d.lib
-        echo.
-        popd
-        goto END
-    )
-)
-popd
+echo cd Win32 >_t.bat
+echo msbuild OIS.vcxproj /p:Configuration=Debug >>_t.bat
+echo msbuild OIS.vcxproj /p:Configuration=Release >>_t.bat
+echo cd .. >>_t.bat
+
+call:build_project %PROJECT% %ROOTDIR% %TESTFILE%
+IF %FAILURE%=1 (goto:EOF)
+
 
 REM ===========================================================================
 REM Build Bullet
 REM ===========================================================================
 
+set PROJECT=Bullet
+set ROOTDIR=bullet_2_76\bullet_build
+set TESTFILE=lib\Debug\BulletCollision.lib
 
-pushd .
-cd bullet_2_76\bullet_build
+echo cmake ..\bullet_src >_t.bat
+echo msbuild ALL_BUILD.vcxproj /p:Configuration=Debug >>_t.bat
+echo msbuild ALL_BUILD.vcxproj /p:Configuration=Release >>_t.bat
 
-IF EXIST lib\Debug\BulletCollision.lib (
-    echo * BULLET: Found BulletCollision.lib.  Presuming Bullet has been built already.
-) ELSE (
-    echo.
-    echo * BULLET: Building...
-    echo.
-    
-    cmake ..\bullet_src 
-    
-    IF NOT EXIST ALL_BUILD.vcxproj (
-        echo.
-        echo ERROR: CMake failed to generate project files for building Bullet!
-        echo See CMake error log.
-        echo.
-        popd
-        goto END
-    )
-    msbuild ALL_BUILD.vcxproj /p:Configuration=Debug
-    msbuild ALL_BUILD.vcxproj /p:Configuration=Release
+call:build_project %PROJECT% %ROOTDIR% %TESTFILE%
+IF %FAILURE%=1 (goto:EOF)
         
-    IF NOT EXIST lib\Debug\BulletCollision.lib (
-        echo.
-        echo ERROR: Bullet build failed.  Could not find lib\Debug\BulletCollision.lib.
-        echo.
-        popd
-        goto END
-    )
-)
-
-popd
 
 REM ===========================================================================
 REM Build Google V8
 REM ===========================================================================
 
-pushd .
-cd v8\v8
+set PROJECT=V8
+set ROOTDIR=v8\v8
+set TESTFILE=sdk\lib\v8.lib
 
-IF EXIST sdk\lib\v8.lib (
-    echo * V8: Found v8.lib.  Presuming V8 has been built already.
-) ELSE (
-    echo.
-    echo * V8: Building...
-    echo.
- 
-    call "%PYTHONEXE_PATH%\Scripts\scons.bat" env="PATH:%PATH%,INCLUDE:%INCLUDE%,LIB:%LIB%"
-    
-    IF EXIST v8.lib (
-        mkdir sdk
-        mkdir sdk\lib
-        mkdir sdk\include
-        mkdir sdk\include\v8
-        call copy v8.lib sdk\lib
-        call copy include\* sdk\include\v8
-    )
-        
-    IF NOT EXIST sdk\lib\v8.lib (
-        echo.
-        echo ERROR: V8 build failed.  Could not find sdk\lib\v8.lib
-        echo.
-        popd
-        goto END
-    )
-)
-popd
+echo call "%PYTHONEXE_PATH%\Scripts\scons.bat" env="PATH:%PATH%,INCLUDE:%INCLUDE%,LIB:%LIB%" >_t.bat
+
+echo mkdir sdk>_t.bat
+echo mkdir sdk\lib>>_t.bat
+echo mkdir sdk\include>>_t.bat
+echo mkdir sdk\include\v8>>_t.bat
+echo call copy v8.lib sdk\lib>>_t.bat
+echo call copy include\* sdk\include\v8>>_t.bat
+
+call:build_project %PROJECT% %ROOTDIR% %TESTFILE%
+IF %FAILURE%=1 (goto:EOF)
 
 REM ===========================================================================
 REM Build OpenAL Software Implementation
 REM ===========================================================================
 
-pushd .
-cd openal_1_1\openal
+set PROJECT=OpenAL
+set ROOTDIR=openal_1_1\openal
+set TESTFILE=OpenAL-Soft\build\Debug\openal32.lib
 
-IF EXIST OpenAL-Soft\build\Debug\openal32.lib (
-    echo * OpenAL: Found openal32.lib.  Presuming OpenAL has been built already.
-) ELSE (
-    echo.
-    echo * OpenAL: Building...
-    echo.
- 
-    pushd .
-    cd OpenAL-Soft\build
-    cmake ..
-    msbuild OpenAL.sln /p:Configuration=Debug
-    msbuild OpenAL.sln /p:Configuration=Release
-    popd
-           
-    IF NOT EXIST OpenAL-Soft\build\Debug\openal32.lib (
-        echo.
-        echo ERROR: OpenAL build failed.  Could not find OpenAL-Soft\build\Debug\openal32.lib
-        echo.
-        popd
-        goto END
-    )
-)
-popd
+echo pushd .>_t.bat
+echo cd OpenAL-Soft\build>>_t.bat
+echo cmake .. >>_t.bat
+echo msbuild OpenAL.sln /p:Configuration=Debug >>_t.bat
+echo msbuild OpenAL.sln /p:Configuration=Release >>_t.bat
+echo popd >>_t.bat
+
+call:build_project %PROJECT% %ROOTDIR% %TESTFILE%
+IF %FAILURE%=1 (goto:EOF)
+
 
 REM ===========================================================================
 REM Build Audiere
 REM ===========================================================================
 
-pushd .
-cd audiere_1_9_4\audiere
+set PROJECT=Audiere
+set ROOTDIR=audiere_1_9_4\audiere
+set TESTFILE=vc10\bin\Debug\audiere.dll
 
-IF EXIST vc10\bin\Debug\audiere.dll (
-    echo * Audiere: Found audiere.dll.  Presuming Audiere has been built already.
-) ELSE (
-    echo.
-    echo * Audiere: Building...
-    echo.
- 
-    pushd .
-    cd vc10
-    msbuild audiere\audiere.vcxproj /p:Configuration=Debug
-    msbuild audiere\audiere.vcxproj /p:Configuration=Release
-    popd
-           
-    IF NOT EXIST vc10\bin\Debug\audiere.dll (
-        echo.
-        echo ERROR: Audiere build failed.  Could not find vc10\bin\Debug\audiere.dll
-        echo.
-        popd
-        goto END
-    )
-)
-popd
+echo pushd .>_t.bat
+echo cd vc10>>_t.bat
+echo msbuild audiere\audiere.vcxproj /p:Configuration=Debug>>_t.bat
+echo msbuild audiere\audiere.vcxproj /p:Configuration=Release>>_t.bat
+echo popd>>_t.bat
+
+call:build_project %PROJECT% %ROOTDIR% %TESTFILE%
+IF %FAILURE%=1 (goto:EOF)
+
 
 REM ===========================================================================
 REM Build FreeType
 REM ===========================================================================
 
-pushd .
-cd freetype_2_4_2\freetype
+set PROJECT=FreeType
+set ROOTDIR=freetype_2_4_2\freetype
+set TESTFILE=objs\win32\vc2008\freetype242_D.lib
 
-IF EXIST objs\win32\vc2008\freetype242_D.lib (
-    echo * FreeType: Found freetype242_D.lib.  Presuming FreeType has been built already.
-) ELSE (
-    echo.
-    echo * FreeType: Building...
-    echo.
- 
-    pushd .
-    cd builds\win32\vc2010
-    msbuild freetype.vcxproj /p:Configuration=Debug
-    msbuild freetype.vcxproj /p:Configuration=Release
-    popd
-           
-    IF NOT EXIST objs\win32\vc2008\freetype242_D.lib (
-        echo.
-        echo ERROR: FreeType build failed.  Could not find objs\win32\vc2008\freetype242_D.lib
-        echo.
-        popd
-        goto END
-    )
-)
-popd
+echo pushd .>_t.bat
+echo cd builds\win32\vc2010>>_t.bat
+echo msbuild freetype.vcxproj /p:Configuration=Debug>>_t.bat
+echo msbuild freetype.vcxproj /p:Configuration=Release>>_t.bat
+echo popd>>_t.bat
+
+call:build_project %PROJECT% %ROOTDIR% %TESTFILE%
+IF %FAILURE%=1 (goto:EOF)
 
 REM ===========================================================================
 REM Clean-up and verification
@@ -433,6 +379,107 @@ REM ===========================================================================
 :SUCCESS
 echo.
 echo Build script appears to have succeeded.
-goto END
+goto:EOF
 
-:END
+
+REM ===========================================================================
+REM Helper Functions
+REM ===========================================================================
+
+REM auto_download
+REM
+REM Checks if a file exists, if it does not, attempts to download it using
+REM wget.  If the file is still not present, it sets FAILURE=1.
+REM
+REM If the file already exists, does nothing.
+REM
+REM
+:auto_download
+
+    IF NOT EXIST %1 ( 
+        wget %DOWNLOAD_SITE%/%1 
+    ) ELSE (
+        echo Found %1.  Skipping download.
+    )
+    
+    IF NOT EXIST %1 (
+        echo.
+        echo ERROR: Failed to download dependent file:
+        echo    %1
+        echo.
+        echo This may be due to an inaccessible internet connection or the
+        echo download site may be down.  Please attempt to extract the
+        echo dependencies manually then rerun the script to continue the build
+        echo and install process.
+        echo.
+        set FAILURE=1
+    )
+goto:EOF
+
+REM ensure_directory
+REM
+REM Sets FAILURE=1 if the given file/directory does not exist.
+REM
+REM Useful for basic sanity checking that the files are where
+REM they are expected.
+REM
+:ensure_directory
+    IF NOT EXIST %1 (
+        echo ERROR: Could not find directory %1!
+        set FAILURE=1
+    ) ELSE (
+        echo Found directory %1
+    )
+goto:EOF
+
+REM build_project
+REM
+REM Changes the working directory, checks for the existence of a test file
+REM to determine if the project has already built, and then - if that file
+REM does not exist - calls "_t.bat" which is the script file the caller
+REM should have generated that contains the build steps.
+REM
+:build_project
+    set PROJECT=%1
+    set ROOTDIR=%2
+    set TESTFILE=%3
+
+    REM The caller is supposed to generate a file called _t.bat containing
+    REM the build steps before calling build_project.
+    REM
+    IF NOT EXIST _t.bat (
+        echo INTERNAL ERROR: Could not find build commands in _t.bat for
+        echo project %PROJECT%!
+        set FAILURE=1
+        goto:EOF
+    )
+
+    move _t.bat %ROOTDIR%
+    pushd .
+    cd %ROOTDIR%
+    
+    REM The TESTFILE is the sentinel used to determine if a build succeeded
+    REM or not.  This is not foolproof - for example, a particularly 
+    REM successful build could generate false positives.
+    REM
+    IF NOT EXIST %TESTFILE% (
+        echo.
+        echo * %PROJECT%: Building...
+        echo.
+
+        call _t.bat
+        erase _t.bat
+        
+        IF NOT EXIST %TESTFILE% (
+            echo.
+            echo %PROJECT%: ERROR Could not find %TESTFILE%!
+            echo Assuming build failed.
+            echo.
+            set FAILURE=1
+        )
+    ) ELSE (
+        echo * %PROJECT%: Found %TESTFILE%.  Assuming already built.
+    )
+    popd
+    
+goto:EOF
