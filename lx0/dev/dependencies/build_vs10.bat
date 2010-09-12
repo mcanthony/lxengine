@@ -239,7 +239,7 @@ echo bjam.exe >>_t.bat
 echo bjam.exe install --prefix=sdk >>_t.bat
 
 call:build_project %PROJECT% %ROOTDIR% %TESTFILE%
-IF %FAILURE%=1 (goto:EOF)
+IF %FAILURE%==1 (goto:EOF)
 
 
 REM ===========================================================================
@@ -262,7 +262,7 @@ echo copy bin\Release\*.pdb sdk\bin\Release >>_t.bat
 echo copy bin\Release\*.cfg sdk\bin\Release >>_t.bat
 
 call:build_project %PROJECT% %ROOTDIR% %TESTFILE%
-IF %FAILURE%=1 (goto:EOF)
+IF %FAILURE%==1 (goto:EOF)
 
 REM ===========================================================================
 REM Build OIS
@@ -278,7 +278,7 @@ echo msbuild OIS.vcxproj /p:Configuration=Release >>_t.bat
 echo cd .. >>_t.bat
 
 call:build_project %PROJECT% %ROOTDIR% %TESTFILE%
-IF %FAILURE%=1 (goto:EOF)
+IF %FAILURE%==1 (goto:EOF)
 
 
 REM ===========================================================================
@@ -294,7 +294,7 @@ echo msbuild ALL_BUILD.vcxproj /p:Configuration=Debug >>_t.bat
 echo msbuild ALL_BUILD.vcxproj /p:Configuration=Release >>_t.bat
 
 call:build_project %PROJECT% %ROOTDIR% %TESTFILE%
-IF %FAILURE%=1 (goto:EOF)
+IF %FAILURE%==1 (goto:EOF)
         
 
 REM ===========================================================================
@@ -315,7 +315,7 @@ echo call copy v8.lib sdk\lib>>_t.bat
 echo call copy include\* sdk\include\v8>>_t.bat
 
 call:build_project %PROJECT% %ROOTDIR% %TESTFILE%
-IF %FAILURE%=1 (goto:EOF)
+IF %FAILURE%==1 (goto:EOF)
 
 REM ===========================================================================
 REM Build OpenAL Software Implementation
@@ -333,7 +333,7 @@ echo msbuild OpenAL.sln /p:Configuration=Release >>_t.bat
 echo popd >>_t.bat
 
 call:build_project %PROJECT% %ROOTDIR% %TESTFILE%
-IF %FAILURE%=1 (goto:EOF)
+IF %FAILURE%==1 (goto:EOF)
 
 
 REM ===========================================================================
@@ -351,7 +351,7 @@ echo msbuild audiere\audiere.vcxproj /p:Configuration=Release>>_t.bat
 echo popd>>_t.bat
 
 call:build_project %PROJECT% %ROOTDIR% %TESTFILE%
-IF %FAILURE%=1 (goto:EOF)
+IF %FAILURE%==1 (goto:EOF)
 
 
 REM ===========================================================================
@@ -369,7 +369,7 @@ echo msbuild freetype.vcxproj /p:Configuration=Release>>_t.bat
 echo popd>>_t.bat
 
 call:build_project %PROJECT% %ROOTDIR% %TESTFILE%
-IF %FAILURE%=1 (goto:EOF)
+IF %FAILURE%==1 (goto:EOF)
 
 REM ===========================================================================
 REM Clean-up and verification
