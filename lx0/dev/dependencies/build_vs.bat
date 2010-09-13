@@ -26,6 +26,7 @@ REM TODO
 REM - Copy resulting binaries to uniform sdk layout
 REM - Test VS2008 support
 REM - Test x64 support
+REM - Call CMake to set up compiler-dependent settings
 REM
 REM
 REM LICENSE 
@@ -95,11 +96,13 @@ IF NOT "%VS100COMNTOOLS%"=="" (
     set VCVER=10
     set VSVARS_BAT="%VS100COMNTOOLS%\vsvars32.bat"
     set VCPROJEXT=vcxproj
+    set PSDK=sdk\msvc10
 ) ELSE IF NOT "%VS90COMNTOOLS%"=="" (
     echo Found Visual Studio 2009
     set VCVER=9
     set VSVARS_BAT="%VS90COMNTOOLS%\varvars32.bat"
     set VCPROJEXT=vcproj
+    set PSDK=sdk\msvc9
 ) ELSE (
     echo.
     echo ERROR: Could not find installation of Visual Studio 2010 or 2009!
@@ -236,11 +239,13 @@ set TESTFILE=stage\lib\libboost_iostreams-vc100-mt-gd-1_44.lib
 set ROOTDIR=boost_1_44_0\boost_1_44_0
 echo call bootstrap.bat >_t.bat
 echo bjam.exe >>_t.bat
-echo bjam.exe install --prefix=sdk >>_t.bat
+echo bjam.exe install --prefix=..\..\sdk\boost >>_t.bat
 
 call:build_project %PROJECT% %ROOTDIR% %TESTFILE%
 IF %FAILURE%==1 (goto:EOF)
 
+call:copy_directory %ROOTDIR%\sdk\include\boost-1_44 %PSDK%\boost\include
+call:copy_directory %ROOTDIR%\sdk\lib %PSDK%\boost\lib
 
 REM ===========================================================================
 REM Build OGRE
@@ -263,6 +268,8 @@ echo copy bin\Release\*.cfg sdk\bin\Release >>_t.bat
 
 call:build_project %PROJECT% %ROOTDIR% %TESTFILE%
 IF %FAILURE%==1 (goto:EOF)
+
+call:copy_directory %ROOTDIR%\sdk %PSDK%\ogre
 
 REM ===========================================================================
 REM Build OIS
@@ -371,12 +378,13 @@ call:build_project %PROJECT% %ROOTDIR% %TESTFILE%
 IF %FAILURE%==1 (goto:EOF)
 
 REM ===========================================================================
-REM Clean-up and verification
+REM Build process complete
 REM ===========================================================================
 
-:SUCCESS
 echo.
-echo Build script appears to have succeeded.
+echo Build process appears to have succeeded.
+echo.
+
 goto:EOF
 
 
@@ -414,6 +422,7 @@ REM
     )
 goto:EOF
 
+
 REM ensure_directory
 REM
 REM Sets FAILURE=1 if the given file/directory does not exist.
@@ -429,6 +438,16 @@ REM
         echo Found directory %1
     )
 goto:EOF
+
+
+REM copy_directory
+REM
+REM
+:copy_directory
+IF NOT EXIST %2 ( mkdir %2 )
+xcopy %1\* %2 /D /E /Y
+goto:EOF
+
 
 REM build_project
 REM

@@ -10,20 +10,17 @@ set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/config/cmake")
 #
 # Look for prebuilt binaries
 #
+IF(${MSVC10})
+    SET(DEPS_SDK ${CMAKE_SOURCE_DIR}/dependencies/sdk/msvc10)
+ELSEIF(${MSVC90})
+    SET(DEPS_SDK ${CMAKE_SOURCE_DIR}/dependencies/sdk/msvc9)
+ENDIF()
 
-IF(EXISTS "${CMAKE_SOURCE_DIR}/dependencies/ogre_1_7_1/ogre_build/sdk")
-    set(DEPS_DIR "${CMAKE_SOURCE_DIR}/dependencies")
-   
-    set(ENV{OGRE_HOME} "${DEPS_DIR}/ogre_1_7_1/ogre_build/sdk")
- 
-    set(ENV{BOOST_ROOT} "${DEPS_DIR}/boost_1_44_0/boost_1_44_0/sdk")
-    message(STATUS "Boost root: $ENV{BOOST_ROOT}")
-    set(Boost_USE_STATIC_LIBS   ON)
-    set(Boost_USE_MULTITHREADED ON)
-    set(ENV{BOOST_INCLUDEDIR} "$ENV{BOOST_ROOT}/include/boost-1_44")
-    set(ENV{BOOST_LIBRARYDIR} "$ENV{BOOST_ROOT}/lib")   
+IF(EXISTS "${DEPS_SDK}")
+    message(STATUS "Using pre-built dependencies in ${DEPS_SDK}")
+    include(${CMAKE_SOURCE_DIR}/dependencies/IncludeDependencies.cmake)
 ELSE()
-    message (FATAL_ERROR "Dependencies not found.  See dev/dependencies/build_vs10.bat")
+    message (STATUS "Pre-built dependencies not found.  Relying on CMake to find the packages.")
 ENDIF()
 
 
