@@ -306,8 +306,7 @@ set ROOTDIR=v8\v8
 set TESTFILE=sdk\lib\v8.lib
 
 echo call "%PYTHONEXE_PATH%\Scripts\scons.bat" env="PATH:%PATH%,INCLUDE:%INCLUDE%,LIB:%LIB%" >_t.bat
-
-echo mkdir sdk>_t.bat
+echo mkdir sdk>>_t.bat
 echo mkdir sdk\lib>>_t.bat
 echo mkdir sdk\include>>_t.bat
 echo mkdir sdk\include\v8>>_t.bat
@@ -453,6 +452,7 @@ REM
         goto:EOF
     )
 
+    copy /Y _t.bat _buildlast.bat
     move _t.bat %ROOTDIR%
     pushd .
     cd %ROOTDIR%
@@ -480,5 +480,7 @@ REM
         echo * %PROJECT%: Found %TESTFILE%.  Assuming already built.
     )
     popd
+    
+    IF %FAILURE%==0 ( erase _buildlast.bat )
     
 goto:EOF
