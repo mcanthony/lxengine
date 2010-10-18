@@ -35,6 +35,8 @@
 #include <lx0/core.hpp>
 #include <lx0/document.hpp>
 #include <lx0/element.hpp>
+#include <lx0/mesh.hpp>
+#include <lx0/point3.hpp>
 
 #include <OGRE/OgreRoot.h>
 #include <OGRE/OgreRenderWindow.h>
@@ -128,6 +130,59 @@ namespace lx0 { namespace core {
         mpDocument = nullptr;
     }
 
+
+    void
+    View::_addMesh (std::string name, MeshPtr spMesh)
+    {
+        // See http://www.ogre3d.org/tikiwiki/ManualObject
+        // See http://www.ogre3d.org/tikiwiki/tutorial+manual+object+to+mesh
+        
+        Ogre::ManualObject* pObject = mpSceneMgr->createManualObject((name + "-manual").c_str());
+
+        auto add_quad = [pObject] (Ogre::Vector3& v0, Ogre::Vector3& v1, Ogre::Vector3& v2, Ogre::Vector3& v3) -> void {
+            Ogre::Vector3 normal = (v1 - v0).crossProduct(v2 - v1);
+            normal.normalise();
+
+            pObject->position(v0); 
+            pObject->normal(normal);
+            pObject->position(v1);
+            pObject->normal(normal);
+            pObject->position(v2);
+            pObject->normal(normal);
+
+            pObject->position(v2); 
+            pObject->normal(normal);
+            pObject->position(v3);
+            pObject->normal(normal);
+            pObject->position(v0);
+            pObject->normal(normal);
+        };
+
+        const float p = 0.5f;
+        Ogre::Vector3 a (-p, -p, -p);
+        Ogre::Vector3 b (-p,  p, -p);
+        Ogre::Vector3 c ( p, -p, -p);
+        Ogre::Vector3 d ( p,  p, -p);
+        Ogre::Vector3 e (-p, -p,  p);
+        Ogre::Vector3 f (-p,  p,  p);
+        Ogre::Vector3 g ( p, -p,  p);
+        Ogre::Vector3 h ( p,  p,  p);
+
+        pObject->begin("LxMaterial", Ogre::RenderOperation::OT_TRIANGLE_LIST);
+        for (auto fi = spMesh->mFaces.begin(); fi != spMesh->mFaces.end(); ++fi)
+        {
+            ///@todo Why isn't lx::core::cast<> working here?
+            add_quad(
+                reinterpret_cast<Ogre::Vector3&>(spMesh->mVertices[fi->index[0]]),
+                reinterpret_cast<Ogre::Vector3&>(spMesh->mVertices[fi->index[1]]),
+                reinterpret_cast<Ogre::Vector3&>(spMesh->mVertices[fi->index[2]]),
+                reinterpret_cast<Ogre::Vector3&>(spMesh->mVertices[fi->index[3]]));
+        }
+        pObject->end();
+
+        pObject->convertToMesh(name.c_str());
+    }
+
     /*!
         Makes the view or window visible.
      */
@@ -191,10 +246,11 @@ namespace lx0 { namespace core {
 
                 for (int j = 0; j < spChild->childCount(); ++j)
                 {
-                    ElementCPtr spMesh = spChild->child(j);
-                    if (spMesh->type() == "Mesh")
+                    ElementCPtr spMeshElem = spChild->child(j);
+                    if (spMeshElem->type() == "Mesh")
                     {
-
+                        MeshPtr spMesh = std::dynamic_pointer_cast<Mesh>(spMeshElem->value());
+                        _addMesh(spMeshElem->attr("id").asString(), spMesh);
                     }
                 }
             }
@@ -205,74 +261,23 @@ namespace lx0 { namespace core {
                 for (int j = 0; j < spChild->childCount(); ++j)
                 {
                     ElementCPtr spRef = spChild->child(j);
+                    static int refCount = 0;
                     if (spRef->type() == "Ref")
                     {
+                        std::ostringstream nameo;
+                        nameo << "anonymousRef" << (refCount++);
+                        std::string name = nameo.str();
 
-                    }
-                }
-            }
-        }
+                        std::string ref = spRef->attr("ref").asString();
 
-        // See http://www.ogre3d.org/tikiwiki/ManualObject
-        // See http://www.ogre3d.org/tikiwiki/tutorial+manual+object+to+mesh
-        {
-            Ogre::ManualObject* pObject = mpSceneMgr->createManualObject("manual");
-
-            auto add_quad = [pObject] (Ogre::Vector3& v0, Ogre::Vector3& v1, Ogre::Vector3& v2, Ogre::Vector3& v3) -> void {
-                Ogre::Vector3 normal = (v1 - v0).crossProduct(v2 - v1);
-                normal.normalise();
-
-                pObject->position(v0); 
-                pObject->normal(normal);
-                pObject->position(v1);
-                pObject->normal(normal);
-                pObject->position(v2);
-                pObject->normal(normal);
-
-                pObject->position(v2); 
-                pObject->normal(normal);
-                pObject->position(v3);
-                pObject->normal(normal);
-                pObject->position(v0);
-                pObject->normal(normal);
-            };
-
-            const float p = 0.5f;
-            Ogre::Vector3 a (-p, -p, -p);
-            Ogre::Vector3 b (-p,  p, -p);
-            Ogre::Vector3 c ( p, -p, -p);
-            Ogre::Vector3 d ( p,  p, -p);
-            Ogre::Vector3 e (-p, -p,  p);
-            Ogre::Vector3 f (-p,  p,  p);
-            Ogre::Vector3 g ( p, -p,  p);
-            Ogre::Vector3 h ( p,  p,  p);
-
-            pObject->begin("LxMaterial", Ogre::RenderOperation::OT_TRIANGLE_LIST);
-                add_quad(h, g, c, d); // X+    
-                add_quad(e, f, b, a); // X- 
-                add_quad(f, h, d, b); // Y+
-                add_quad(g, e, a, c); // Y-
-                add_quad(f, e, g, h); // Z+
-                add_quad(a, b, d, c); // Z-
-            pObject->end();
-
-            pObject->convertToMesh("LxCube");
-
-            for (int gy = 0; gy < 3; gy ++)
-            {
-                for (int gx = 0; gx < 3; gx ++)
-                {
-                    std::ostringstream nameo;
-                    nameo << "Cube" << (gy * 3 + gx);
-                    std::string name = nameo.str();
-
-                    auto g2w = [](int i) { return (i - 1) * 1.5f; };
-                    const Ogre::Vector3 pos( g2w(gx), g2w(gy), 0.5f);
+                        auto pos2 = asPoint3( spRef->attr("translation") );
+                        const Ogre::Vector3 pos = reinterpret_cast<Ogre::Vector3&>(pos2);
                    
-                    Ogre::Entity* pEntity = mpSceneMgr->createEntity("LxCube");
-                    Ogre::SceneNode* pNode = mpSceneMgr->getRootSceneNode()->createChildSceneNode(name);
-                    pNode->attachObject(pEntity);
-                    pNode->setPosition(pos);
+                        Ogre::Entity* pEntity = mpSceneMgr->createEntity(ref);
+                        Ogre::SceneNode* pNode = mpSceneMgr->getRootSceneNode()->createChildSceneNode(name);
+                        pNode->attachObject(pEntity);
+                        pNode->setPosition(pos);
+                    }
                 }
             }
         }

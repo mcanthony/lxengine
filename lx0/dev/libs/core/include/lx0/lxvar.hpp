@@ -188,5 +188,8 @@ namespace lx0 { namespace core {
         };
     }
 
+    class point3;
+
+    point3 asPoint3 (const lxvar& lx);
 
 }}

@@ -40,6 +40,7 @@
 #include <lx0/space.hpp>
 #include <lx0/element.hpp>
 #include <lx0/object.hpp>
+#include <lx0/mesh.hpp>
 #include <lx0/view.hpp>
 #include <lx0/controller.hpp>
 #include <lx0/transaction.hpp>
@@ -76,33 +77,6 @@ create_cube()
     mesh.insert("faces", faces);
 
     return mesh;
-}
-
-// WIP object - assumes quad lists
-class Mesh : public lx0::core::Object
-{
-public:
-    struct Quad
-    {
-        int index[4];
-    };
-
-    std::vector<point3> mVertices;
-    std::vector<Quad>   mFaces;
-};
-
-_LX_FORWARD_DECL_PTRS(Mesh);
-
-point3 asPoint3 (const lxvar& lx)
-{
-    lx_check_error(lx.isArray());
-    lx_check_error(lx.size() == 3);
-
-    point3 p;
-    p.x = lx.at(0).asFloat();
-    p.y = lx.at(1).asFloat();
-    p.z = lx.at(2).asFloat();
-    return p;
 }
 
 // Deserialize the lxvar representation into the run-time object
@@ -192,6 +166,8 @@ main (int argc, char** argv)
                         spRef->type("Ref");
                         spRef->attr("translation", pos);
                         spRef->attr("ref", "unit_cube");
+
+                        spScene->append(spRef);
                     }
                 }
             }

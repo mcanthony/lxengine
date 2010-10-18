@@ -28,10 +28,14 @@
 
 #pragma once
 
+#include <string>
+
 #include <lx0/detail/forward_decls.hpp>
 
 
 namespace lx0 { namespace core {
+
+    _LX_FORWARD_DECL_PTRS(Mesh);
 
     namespace detail {
         _LX_FORWARD_DECL_PTRS(LxOgre);
@@ -43,14 +47,16 @@ namespace lx0 { namespace core {
         View();
         ~View();
         
-        void show();
+        void        show            (void);
 
-        void run();
+        void        run             (void);
 
-        void attach (Document* pDocument);
-        void detach (Document* pDocument);
+        void        attach          (Document* pDocument);
+        void        detach          (Document* pDocument);
 
     protected:
+        void        _addMesh        (std::string name, MeshPtr spMesh);
+
         detail::LxOgrePtr       mspLxOgre;
         Ogre::RenderWindow*     mpRenderWindow; //! Non-owning pointer.  OGRE owns this pointer.
         Ogre::SceneManager*     mpSceneMgr;     //! Non-owning pointer.  OGRE owns this pointer.

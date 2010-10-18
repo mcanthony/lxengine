@@ -83,7 +83,31 @@ namespace lx0 { namespace core {
     inline tuple3   add             (const tuple3& a, const tuple3& b) { return cast<tuple3&>(a.ogreVec + b.ogreVec); }
     inline tuple3   sub             (const tuple3& a, const tuple3& b) { return cast<tuple3&>(a.ogreVec - b.ogreVec); }
     
- 
+    class point3;
+    class vector3;
 
+    namespace detail
+    {
+        template <> struct cast_is_safe<tuple3&,        point3>         { enum { value = 1 }; };
+        template <> struct cast_is_safe<const tuple3&,  point3>         { enum { value = 1 }; };
+        template <> struct cast_is_safe<const tuple3&,  const point3>   { enum { value = 1 }; }; 
+        template <> struct cast_is_safe<tuple3&,        vector3>        { enum { value = 1 }; };
+        template <> struct cast_is_safe<const tuple3&,  vector3>        { enum { value = 1 }; };
+        template <> struct cast_is_safe<const tuple3&,  const vector3>  { enum { value = 1 }; };
+        
+        template <> struct cast_is_safe<point3&,        tuple3>         { enum { value = 1 }; };
+        template <> struct cast_is_safe<const point3&,  tuple3>         { enum { value = 1 }; };
+        template <> struct cast_is_safe<const point3&,  const tuple3>   { enum { value = 1 }; };
+        template <> struct cast_is_safe<point3&,        vector3>        { enum { value = 1 }; };
+        template <> struct cast_is_safe<const point3&,  vector3>        { enum { value = 1 }; };
+        template <> struct cast_is_safe<const point3&,  const vector3>  { enum { value = 1 }; };
+        
+        template <> struct cast_is_safe<vector3&,       tuple3>         { enum { value = 1 }; };
+        template <> struct cast_is_safe<const vector3&, tuple3>         { enum { value = 1 }; };
+        template <> struct cast_is_safe<const vector3&, const tuple3>   { enum { value = 1 }; };
+        template <> struct cast_is_safe<vector3&,       point3>         { enum { value = 1 }; };
+        template <> struct cast_is_safe<const vector3&, point3>         { enum { value = 1 }; };
+        template <> struct cast_is_safe<const vector3&, const point3>   { enum { value = 1 }; };      
+    }
 
 }};

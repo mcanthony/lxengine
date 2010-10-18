@@ -109,6 +109,16 @@ namespace lx0 { namespace core {
         mAttributes[name] = value;
     }
 
+    const lxvar     
+    Element::attr (std::string name) const
+    {
+        auto it = mAttributes.find(name);
+        if (it != mAttributes.end())
+            return it->second;
+        else
+            return lxvar();
+    }
+
     void
     Element::value(ObjectPtr spValue)
     {
