@@ -40,8 +40,19 @@ namespace lx0 { namespace core {
     namespace detail 
     {
         class lxvalue;
+        
+        class lxundefined;
+        class lxint;
+        class lxfloat;
+        class lxstring;
+        class lxarray;
+        class lxstringmap;
     }
         
+    /*!
+        @todo Review for a good const-ness strategy for this class.  Non-trivial 
+            given the reference-counted nature of the underlying objects.
+     */
     class lxvar
     {
     public:
@@ -53,18 +64,47 @@ namespace lx0 { namespace core {
         lxvar   (float a, float b, float c);
         lxvar   (const char* s);
 
-        lxvar   clone  () const;        //!< Create a deep clone of the lxvar
+        lxvar       clone       (void) const;        //!< Create a deep clone of the lxvar
 
-        void    push   (const lxvar& e);
+        bool        isUndefined (void) const            { return _isType<detail::lxundefined>(); }
 
-        void    insert (const char* key, const lxvar& value);
+        bool        isInt       (void) const            { return _isType<detail::lxint>(); }
+        int         asInt       (void) const;
+
+        bool        isFloat     (void) const            { return _isType<detail::lxfloat>(); }
+        float       asFloat     (void) const;
+
+        bool        isString    (void) const            { return _isType<detail::lxstring>(); }
+        std::string asString    (void) const;
+        bool        equals      (const char* s) const;
+
+        bool        isArray     (void) const            { return _isType<detail::lxarray>(); }
+        int         size        (void) const;
+        lxvar       at          (int index) const;
+        void        push        (const lxvar& e);
+
+        bool        isMap       (void) const;
+        bool        containsKey (const char* key) const;
+        lxvar       find        (const char* key) const;
+        void        insert      (const char* key, const lxvar& value);
 
     protected:
+        template <typename T>   bool    _isType (void) const;
+        template <typename T>   T*      _castTo (void) const;
 
-        template <typename T>   T*    _castTo ();
-
-        std::shared_ptr<detail::lxvalue> mValue;
+        mutable std::shared_ptr<detail::lxvalue> mValue;
     };
+
+    template <typename T>   
+    bool    
+    lxvar::_isType (void) const
+    {
+        // A bit quicker than a dynamic_cast<> since the check is for an
+        // exact type match - not a match with regards to the inheritance
+        // tree.
+        //
+        return typeid(*mValue.get()) == typeid(T);
+    }
 
     namespace detail
     {
@@ -100,7 +140,6 @@ namespace lx0 { namespace core {
             virtual bool        sharedType  (void) const { return false; }
             virtual lxvalue*    clone       (void) const { return new lxint(mValue); }
 
-        protected:
             int mValue;
         };
 

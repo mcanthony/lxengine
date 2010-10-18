@@ -56,6 +56,7 @@ namespace lx0 { namespace core {
     Document::connect (std::string name, ViewPtr spView)
     {
         m_views.insert(std::make_pair(name, spView));
+        spView->attach(this);
     }
 
     void
@@ -64,6 +65,7 @@ namespace lx0 { namespace core {
         auto it = m_views.find(name);
         if (it != m_views.end())
         {
+            it->second->detach(this);
             m_views.erase(it);
         }
         else

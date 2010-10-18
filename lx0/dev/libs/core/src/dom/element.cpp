@@ -44,11 +44,10 @@ namespace lx0 { namespace core {
     void
     Element::append (ElementPtr spElem)
     {
-        if (spElem->parent().get())
-        {
-            error("Cannot append element.  The element to be appended already has a parent");
-            return;
-        }
+        lx_check_error(spElem->parent().get() == nullptr);
+       
+        spElem->mspParent = shared_from_this();
+        mChildren.push_back(spElem);
     }
 
     /*
@@ -79,6 +78,12 @@ namespace lx0 { namespace core {
         }
     }
 
+    int
+    Element::childCount (void) const
+    {
+        return int(mChildren.size());
+    }
+
     ElementPtr      
     Element::_clone () const
     {
@@ -105,12 +110,9 @@ namespace lx0 { namespace core {
     }
 
     void
-    Element::value(lxvar v)
+    Element::value(ObjectPtr spValue)
     {
-        LxVar* pVar = new LxVar;
-        pVar->mValue = v;
-
-        mspValue.reset(pVar);
+        mspValue = spValue;
     }
 
 }}

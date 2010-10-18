@@ -34,9 +34,6 @@
 
 namespace lx0 { namespace core {
 
-    //void assert (bool condition);
-    //void assert (bool condition, const char* format, ...);
-
     void lx_assert (bool condition);
 
     void fatal  (const char* format, ...);
@@ -45,6 +42,8 @@ namespace lx0 { namespace core {
     void log    (const char* format, ...);
     void debug  (const char* format, ...);
     
+    void lx_check_error (bool condition);
+
     extern slot<void (const char*)> slotFatal;
     extern slot<void (const char*)> slotError;
     extern slot<void (const char*)> slotWarn;
@@ -54,4 +53,6 @@ namespace lx0 { namespace core {
     
     class error_exception : public std::exception { };
     class fatal_exception : public std::exception { };
+
+
 }}

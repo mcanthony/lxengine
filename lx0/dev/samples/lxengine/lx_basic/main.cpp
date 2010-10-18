@@ -39,13 +39,16 @@
 #include <lx0/document.hpp>
 #include <lx0/space.hpp>
 #include <lx0/element.hpp>
+#include <lx0/object.hpp>
 #include <lx0/view.hpp>
 #include <lx0/controller.hpp>
 #include <lx0/transaction.hpp>
+#include <lx0/point3.hpp>
 
 using namespace lx0::core;
 
-ElementPtr 
+// Create the serialized lxvar representation
+lxvar 
 create_cube()
 {
     lxvar mesh;
@@ -72,11 +75,73 @@ create_cube()
     faces.push( lxvar(0, 1, 3, 2) ); // Z-
     mesh.insert("faces", faces);
 
-    ElementPtr spElement(new Element);
-    spElement->attr("id", "unit_cube");
-    spElement->value(mesh);
+    return mesh;
+}
 
-    return spElement;
+// WIP object - assumes quad lists
+class Mesh : public lx0::core::Object
+{
+public:
+    struct Quad
+    {
+        int index[4];
+    };
+
+    std::vector<point3> mVertices;
+    std::vector<Quad>   mFaces;
+};
+
+_LX_FORWARD_DECL_PTRS(Mesh);
+
+point3 asPoint3 (const lxvar& lx)
+{
+    lx_check_error(lx.isArray());
+    lx_check_error(lx.size() == 3);
+
+    point3 p;
+    p.x = lx.at(0).asFloat();
+    p.y = lx.at(1).asFloat();
+    p.z = lx.at(2).asFloat();
+    return p;
+}
+
+// Deserialize the lxvar representation into the run-time object
+MeshPtr create_mesh (lxvar v)
+{
+    lx_check_error(v.isMap());
+    lx_check_error(v.containsKey("type"));
+    lx_check_error(v.containsKey("vertices"));
+    lx_check_error(v.containsKey("faces"));
+
+    // Temporary limitation
+    lx_check_error(v.find("type").equals("quad_list"));
+
+    MeshPtr spMesh (new Mesh);
+    
+    {
+        lxvar lxverts = v.find("vertices");
+        const int vertexCount = lxverts.size();
+        spMesh->mVertices.reserve(vertexCount);
+        for (int i = 0; i < vertexCount; ++i)
+        {
+            spMesh->mVertices.push_back( asPoint3(lxverts.at(i)) );
+        }
+    }
+
+    {
+        lxvar lxfaces = v.find("faces");
+        const int faceCount = lxfaces.size();
+        spMesh->mFaces.reserve(faceCount);
+        for (int i = 0; i < faceCount; ++i)
+        {
+            Mesh::Quad q;
+            for (int j = 0; j < 4; ++j)
+                q.index[j] = lxfaces.at(i).at(j).asInt();
+            spMesh->mFaces.push_back(q);
+        }
+    }
+
+    return spMesh;
 }
 
 int 
@@ -91,16 +156,46 @@ main (int argc, char** argv)
         DocumentPtr spDocument(new Document);
 
         ElementPtr spElement(new Element);
-        TransactionPtr spTransaction = spDocument->transaction();
-        ElementPtr spRoot = spTransaction->write( spDocument->root() );
+        //TransactionPtr spTransaction = spDocument->transaction();
+        //ElementPtr spRoot = spTransaction->write( spDocument->root() );
+        ElementPtr spRoot = spDocument->root();
         spRoot->append(spElement);
 
         {
             ElementPtr spLib(new Element);
             spLib->type("Library");
-            spLib->append(create_cube());
-
+            {
+                ElementPtr spElement(new Element);
+                spElement->type("Mesh");
+                spElement->attr("id", "unit_cube");
+                spElement->value(create_mesh(create_cube()));
+                spLib->append(spElement);
+            }    
             spRoot->append(spLib);
+        }
+        {
+            ElementPtr spScene(new Element);
+            spScene->type("Scene");
+            {
+                for (int gy = 0; gy < 3; gy ++)
+                {
+                    for (int gx = 0; gx < 3; gx ++)
+                    {
+                        // g2w = grid to world coordinate
+                        auto g2w = [](int i) { return (i - 1) * 1.5f; };
+                        lxvar pos;
+                        pos.push(g2w(gx));
+                        pos.push(g2w(gy));
+                        pos.push(0.5f);
+
+                        ElementPtr spRef (new Element);
+                        spRef->type("Ref");
+                        spRef->attr("translation", pos);
+                        spRef->attr("ref", "unit_cube");
+                    }
+                }
+            }
+            spRoot->append(spScene);
         }
 
         spEngine->connect(spDocument);

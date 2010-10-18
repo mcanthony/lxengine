@@ -27,55 +27,50 @@
 */
 //===========================================================================//
 
+
 #pragma once
-
-#include <map>
-#include <deque>
-#include <memory>
-#include <string>
-
-#include <lx0/detail/forward_decls.hpp>
-#include <lx0/lxvar.hpp>
-
 
 namespace lx0 { namespace core {
 
-    class Object;
-
-    class Element 
-        : public std::enable_shared_from_this<Element>
+    namespace detail
     {
-    public:
-        std::string     type        (void) const { return mType; }
-        void            type        (const char* s) { mType = s; }
+        template <typename To, typename From>
+        struct cast_is_safe
+        {
+            enum { value = 0 };
+        };
+         
+        template <typename To, typename From, bool Valid>
+        struct cast_imp
+        {
+        };
+        
+        template <typename To, typename From>
+        struct cast_imp<To,From,false>
+        {
+            static To cast (From& f)
+            {
+                static_assert(false, "Not a valid lx::core::cast()");
+                throw std::exception();
+            }
+        };
+        
+        template <typename To, typename From>
+        struct cast_imp<To,From,true>
+        {
+            static To cast (From& f)
+            {
+                static_assert(sizeof(To) == sizeof(From), "lx::core::cast between different sized types is not allowed");
+                return reinterpret_cast<To>(f);
+            }
+        };
+    }
+    
+    template <typename To,typename From>
+    To cast (From& f)
+    {
+        return detail::cast_imp<To,From, 
+            detail::cast_is_safe<To,From>::value >::cast(f);
+    } 
 
-        const lxvar     attr        (std::string name) const;
-        void            attr        (std::string name, lxvar value);      
-
-        ElementCPtr     parent      () const;
-        ElementCPtr     child       (int i) const;
-        int             childCount  (void) const;
-
-        const ObjectPtr value       () const;
-        void            value       (ObjectPtr spValue);
-
-        void            prepend     (ElementPtr spElem);
-        void            append      (ElementPtr spElem);
-
-        ElementPtr      _clone () const;
-
-    protected:
-        typedef std::map<std::string, lxvar> AttrMap;
-        typedef std::deque<ElementPtr>       ElemList;
-
-        std::string mType;
-        AttrMap     mAttributes;
-        ElementPtr  mspParent;
-        ElemList    mChildren;
-        ObjectPtr   mspValue;      // May be a proxy object for delay-loading
-    };
-
-    typedef std::shared_ptr<Element> ElementPtr;
-
-}}
-
+}};

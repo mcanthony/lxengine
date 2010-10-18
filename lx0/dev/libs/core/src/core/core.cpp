@@ -49,6 +49,13 @@ namespace lx0 { namespace core {
             *(char*)(void*)(0x0) = 'a';
     }
 
+    void 
+    lx_check_error (bool condition)
+    {
+        if (!condition)
+            error("Error condition encountered!");
+    }
+
     void
     fatal (const char* format, ...)
     {

@@ -3,7 +3,6 @@
                                    LxEngine
 
     LICENSE
-    * MIT License (http://www.opensource.org/licenses/mit-license.php)
 
     Copyright (c) 2010 athile@athile.net (http://www.athile.net)
 
@@ -26,24 +25,3 @@
     IN THE SOFTWARE.
 */
 //===========================================================================//
-
-#pragma once
-
-#include <memory>
-#include <lx0/lxvar.hpp>
-
-namespace lx0 { namespace core {
-
-    class Object
-    {
-    public:
-        typedef std::shared_ptr<Object> ObjectPtr;
-
-        virtual ObjectPtr clone() const { return ObjectPtr(); }
-    
-    protected:
-    };
-
-    typedef std::shared_ptr<Object> ObjectPtr;
-
-}}

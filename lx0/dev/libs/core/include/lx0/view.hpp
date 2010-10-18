@@ -46,9 +46,14 @@ namespace lx0 { namespace core {
         void show();
 
         void run();
+
+        void attach (Document* pDocument);
+        void detach (Document* pDocument);
+
     protected:
         detail::LxOgrePtr       mspLxOgre;
-        Ogre::RenderWindow*     mpRenderWindow; //! OGRE owns this pointer
-        Ogre::SceneManager*     mpSceneMgr;     //! OGRE owns this pointer
+        Ogre::RenderWindow*     mpRenderWindow; //! Non-owning pointer.  OGRE owns this pointer.
+        Ogre::SceneManager*     mpSceneMgr;     //! Non-owning pointer.  OGRE owns this pointer.
+        Document*               mpDocument;     //! Non-owning pointer.  Document will detach itself.
     };
 }}

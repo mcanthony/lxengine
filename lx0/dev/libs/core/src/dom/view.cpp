@@ -33,6 +33,8 @@
 
 #include <lx0/view.hpp>
 #include <lx0/core.hpp>
+#include <lx0/document.hpp>
+#include <lx0/element.hpp>
 
 #include <OGRE/OgreRoot.h>
 #include <OGRE/OgreRenderWindow.h>
@@ -100,6 +102,7 @@ namespace lx0 { namespace core {
         : mspLxOgre         ( LxOgre::acquire() )
         , mpRenderWindow    (0)
         , mpSceneMgr        (0)
+        , mpDocument        (nullptr)
     {
     }
 
@@ -109,6 +112,20 @@ namespace lx0 { namespace core {
         // documentation purposes.
         mpRenderWindow = 0;
         mpSceneMgr  = 0;
+    }
+
+    void  
+    View::attach (Document* pDocument)
+    {
+        lx_check_error(mpDocument == nullptr);
+        mpDocument = pDocument;
+    }
+
+    void  
+    View::detach (Document* pDocument)
+    {
+        lx_check_error(mpDocument == pDocument);
+        mpDocument = nullptr;
     }
 
     /*!
@@ -162,6 +179,38 @@ namespace lx0 { namespace core {
             spMat->setAmbient(.1f, .1f, .1f);
             spMat->setDiffuse(1, 1, 1, 1);
             spMat->setSpecular(0, 0, 0, 0);
+        }
+
+        ElementPtr spRoot = mpDocument->root();
+        for (int i = 0; i < spRoot->childCount(); ++i)
+        {
+            ElementCPtr spChild = spRoot->child(i);
+            if (spChild->type() == "Library")
+            {
+                std::cout << "View found Library element" << std::endl;
+
+                for (int j = 0; j < spChild->childCount(); ++j)
+                {
+                    ElementCPtr spMesh = spChild->child(j);
+                    if (spMesh->type() == "Mesh")
+                    {
+
+                    }
+                }
+            }
+            else if (spChild->type() == "Scene")
+            {
+                std::cout << "View found Scene element" << std::endl;
+
+                for (int j = 0; j < spChild->childCount(); ++j)
+                {
+                    ElementCPtr spRef = spChild->child(j);
+                    if (spRef->type() == "Ref")
+                    {
+
+                    }
+                }
+            }
         }
 
         // See http://www.ogre3d.org/tikiwiki/ManualObject

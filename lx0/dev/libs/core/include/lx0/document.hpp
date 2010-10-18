@@ -45,7 +45,8 @@ namespace lx0 { namespace core {
         void            connect     (std::string name, ViewPtr spView);
         void            disconnect  (std::string name);
 
-        ElementCPtr     root() { return m_spRoot; }
+        ElementCPtr     root() const { return m_spRoot; }
+        ElementPtr      root()       { return m_spRoot; }
 
         void            run();
 

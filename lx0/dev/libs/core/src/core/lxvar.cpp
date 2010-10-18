@@ -93,14 +93,14 @@ namespace lx0 { namespace core {
 
     template <typename T>
     T*    
-    lxvar::_castTo ()
+    lxvar::_castTo () const
     {
         // mValue should always be set to a value.  lxundefined represents the case where
         // the lxvar does not point to any object or value.
         lxvalue* pBase = mValue.get();
         lx_assert(pBase != nullptr);
 
-        if (typeid(*pBase) == typeid(lxundefined))
+        if (_isType<lxundefined>())
         {
             T* pNew = new T;
             mValue.reset(pNew);
@@ -116,11 +116,71 @@ namespace lx0 { namespace core {
         }
     }
 
+    int 
+    lxvar::asInt (void) const
+    {
+        return _castTo<lxint>()->mValue;
+    }
+
+    float 
+    lxvar::asFloat (void) const
+    {
+        return _castTo<lxfloat>()->mValue;
+    }
+
+    std::string 
+    lxvar::asString (void) const
+    {
+        return _castTo<lxstring>()->mValue;
+    }
+
+    bool    
+    lxvar::equals (const char* s) const
+    {
+        return (isString() && asString() == s);
+    }
+
+    int
+    lxvar::size (void) const
+    {
+        return int( _castTo<lxarray>()->mValues.size() );
+    }
+
+    lxvar 
+    lxvar::at (int index) const
+    {
+        return _castTo<lxarray>()->mValues[index];
+    }
+
     void
     lxvar::push (const lxvar& v)
     {
         lxarray* pArray = _castTo<lxarray>();
         pArray->mValues.push_back(v);
+    }
+
+    bool
+    lxvar::isMap (void) const
+    {
+        return _isType<lxstringmap>();
+    }
+
+    bool
+    lxvar::containsKey (const char* key) const
+    {
+         auto map = _castTo<lxstringmap>()->mValue;
+         return map.find(key) != map.end();
+    }
+
+    lxvar
+    lxvar::find (const char* key) const
+    {
+        auto map = _castTo<lxstringmap>()->mValue;
+        auto it = map.find(key);
+        if (it != map.end())
+            return it->second;
+        else
+            return lxvar();
     }
 
     void 

@@ -20,8 +20,11 @@ file(GLOB_RECURSE HPPFILES include/*.h)
 set(SOURCES ${SRCFILES} ${HFILES} ${HPPFILES})
 
 lx_source_group("core")
+lx_source_group("primitives")
 lx_source_group("dom")
 lx_source_group("engine")
 
+source_group("_detail" "include/lx0/detail/forward_decls.hpp")
+source_group("core" include/lx0/cast.hpp)
 
 add_library( lx0 ${SOURCES} )
