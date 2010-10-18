@@ -32,6 +32,7 @@
 #include <map>
 #include <deque>
 #include <memory>
+#include <string>
 
 #include <lx0/detail/forward_decls.hpp>
 #include <lx0/lxvar.hpp>
@@ -44,12 +45,20 @@ namespace lx0 { namespace core {
     class Element
     {
     public:
-        const lxvar     attr(std::string name) const;
-        ElementCPtr     parent() const;
-        ElementCPtr     child(int i) const;
+        std::string     type        (void) const { return mType; }
+        void            type        (const char* s) { mType = s; }
 
-        void    prepend (ElementPtr spElem);
-        void    append  (ElementPtr spElem);
+        const lxvar     attr        (std::string name) const;
+        void            attr        (std::string name, lxvar value);      
+
+        ElementCPtr     parent      () const;
+        ElementCPtr     child       (int i) const;
+
+        const lxvar     value       () const;
+        void            value       (lxvar v);
+
+        void            prepend     (ElementPtr spElem);
+        void            append      (ElementPtr spElem);
 
         ElementPtr      _clone () const;
 
@@ -57,10 +66,11 @@ namespace lx0 { namespace core {
         typedef std::map<std::string, lxvar> AttrMap;
         typedef std::deque<ElementPtr>       ElemList;
 
-        AttrMap     m_attributes;
-        ElementPtr  m_spParent;
-        ElemList    m_children;
-        ObjectPtr   m_spValue;      // May be a proxy object for delay-loading
+        std::string mType;
+        AttrMap     mAttributes;
+        ElementPtr  mspParent;
+        ElemList    mChildren;
+        ObjectPtr   mspValue;      // May be a proxy object for delay-loading
     };
 
     typedef std::shared_ptr<Element> ElementPtr;

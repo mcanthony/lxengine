@@ -30,6 +30,7 @@
 #pragma once
 
 #include <memory>
+#include <lx0/lxvar.hpp>
 
 namespace lx0 { namespace core {
 
@@ -41,9 +42,14 @@ namespace lx0 { namespace core {
         virtual ObjectPtr clone() const { return ObjectPtr(); }
     
     protected:
-
     };
 
     typedef std::shared_ptr<Object> ObjectPtr;
+
+    class LxVar : public Object
+    {
+    public:
+        lxvar mValue;
+    };
 
 }}

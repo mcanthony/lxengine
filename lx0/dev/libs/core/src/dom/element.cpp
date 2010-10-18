@@ -62,15 +62,15 @@ namespace lx0 { namespace core {
     ElementCPtr     
     Element::parent() const
     {
-        return m_spParent;
+        return mspParent;
     }
     
     ElementCPtr     
     Element::child(int i) const
     {
-        if (i >= 0 && i < int(m_children.size()))
+        if (i >= 0 && i < int(mChildren.size()))
         {
-            return m_children[i];
+            return mChildren[i];
         }
         else
         {
@@ -90,12 +90,27 @@ namespace lx0 { namespace core {
         }
 
         Element* pClone = new Element;
-        pClone->m_attributes = m_attributes;
-        pClone->m_spParent = m_spParent;
-        pClone->m_children = m_children;
-        if (m_spValue.get())
-            pClone->m_spValue = m_spValue->clone();
+        pClone->mAttributes = mAttributes;
+        pClone->mspParent = mspParent;
+        pClone->mChildren = mChildren;
+        if (mspValue.get())
+            pClone->mspValue = mspValue->clone();
         return ElementPtr(pClone);
+    }
+
+    void
+    Element::attr(std::string name, lxvar value)
+    {
+        mAttributes[name] = value;
+    }
+
+    void
+    Element::value(lxvar v)
+    {
+        LxVar* pVar = new LxVar;
+        pVar->mValue = v;
+
+        mspValue.reset(pVar);
     }
 
 }}

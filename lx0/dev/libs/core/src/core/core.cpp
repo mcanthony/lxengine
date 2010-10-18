@@ -42,6 +42,13 @@ namespace lx0 { namespace core {
     slot<void (const char*)> slotAssert;
     slot<void (const char*)> slotDebug;
 
+    void 
+    lx_assert (bool condition)
+    {
+        if (!condition)
+            *(char*)(void*)(0x0) = 'a';
+    }
+
     void
     fatal (const char* format, ...)
     {
@@ -64,6 +71,8 @@ namespace lx0 { namespace core {
         vsnprintf_s(buffer, sizeof(buffer), _TRUNCATE, format, args);
 
         slotError(buffer);
+
+        throw std::exception("Error.  Rethrow if the error is not recoverable.");
     }
 
     void
