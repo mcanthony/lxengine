@@ -33,10 +33,31 @@
 
 namespace lx0 { namespace serial {
 
+    namespace detail {
+        class BaseParser
+        {
+        protected:
+                            BaseParser();
+
+            void            _reset              (const char* pStream);
+
+            char            _peek               (void);
+            char            _advance            (void);
+            void            _consume            (char c);
+            bool            _consumeConditional (char c);
+
+            int             _lineNumber         (void) const { return mLineNumber; }
+
+        public:
+            const char*     mpStream;
+            int             mLineNumber;
+        };
+    }
+
     /*!
         @todo Split into a callback parser and an lxvar builder
      */
-    class JsonParser
+    class JsonParser : public detail::BaseParser
     {
     public:
         typedef lx0::core::lxvar        lxvar;
@@ -44,16 +65,11 @@ namespace lx0 { namespace serial {
         lxvar           parse (const char* s);
 
     protected:
-        void            _consume            (char c);
-        bool            _consumeConditional (char c);
         void            _skipWhitespace     (void);
         lxvar           _readObject         (void);
         std::string     _readString         (void);
         lxvar           _readNumber         (void);
         lxvar           _readValue          (void);
-
-        const char*     mpStream;
-        int             mLineNumber;
     };
 
 }}

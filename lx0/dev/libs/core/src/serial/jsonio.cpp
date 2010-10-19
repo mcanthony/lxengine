@@ -33,46 +33,74 @@ using namespace lx0::core;
 
 namespace lx0 { namespace serial {
 
+    namespace detail {
+
+        BaseParser::BaseParser()
+        {
+            _reset(nullptr);
+        }
+
+        void
+        BaseParser::_reset (const char* pStream)
+        {
+            mpStream = pStream;
+            mLineNumber = 1;
+        }
+
+        char
+        BaseParser::_peek (void)
+        {
+            return *mpStream;
+        }
+
+        char            
+        BaseParser::_advance (void)
+        {
+            if (*mpStream == '\n')
+                mLineNumber++;
+
+            return *mpStream++;
+        }
+
+        void
+        BaseParser::_consume (char c)
+        {
+            if (_peek() == c)
+                _advance();
+            else
+                lx_error("Did not find expected character '%c'.  Found '%c' instead.  Around line %d.",
+                         c, *mpStream, mLineNumber);
+        }
+
+        bool
+        BaseParser::_consumeConditional (char c)
+        {
+            if (_peek() == c)
+            {
+                _advance();
+                return true;
+            }
+            else
+                return false;
+        }
+    }
+
+    using namespace detail;
+
     lxvar
     JsonParser::parse (const char* pStream)
     {
-        mpStream = pStream;
-        mLineNumber = 1;
-
+        _reset(pStream);
         return _readObject();
     }
 
-    void
-    JsonParser::_consume (char c)
-    {
-        if (*mpStream == c)
-            mpStream ++;
-        else
-            lx_error("Did not find expected character '%c'.  Found '%c' instead.  Around line %d.",
-                     c, *mpStream, mLineNumber);
-    }
 
-    bool
-    JsonParser::_consumeConditional (char c)
-    {
-        if (*mpStream == c)
-        {
-            mpStream ++;
-            return true;
-        }
-        else
-            return false;
-    }
 
     void            
     JsonParser::_skipWhitespace (void)
     {
-        while( isspace(*mpStream) ) 
-        {
-            if (*mpStream == '\n')
-                mLineNumber++;
-            mpStream++;
-        }
+        while( isspace(_peek()) ) 
+            _advance();
     }
 
     lxvar 
@@ -82,25 +110,25 @@ namespace lx0 { namespace serial {
 
         lxvar w;
         int i = 0;
-        while(isdigit(*mpStream))
+        while(isdigit(_peek()))
         {
-            int t = *mpStream - '0';
+            int t = _peek() - '0';
             i = 10 * i + t;
-            mpStream++;
+            _advance();
         }
         w = i;
 
     
-        if (*mpStream == '.')
+        if (_peek() == '.')
         {
-            mpStream++;
+            _advance();
             double f = i;
             int divisor = 10;
-            while (isdigit(*mpStream))
+            while (isdigit(_peek()))
             {
-                int t = *mpStream - '0';
+                int t = _peek() - '0';
                 f += double(t) / divisor;
-                mpStream++;
+                _advance();
                 divisor *= 10;
             }
             w = float(f);
@@ -118,13 +146,13 @@ namespace lx0 { namespace serial {
 
         _skipWhitespace();
         _consume('\"');
-        while (*mpStream != '\"')
+        while (_peek() != '\"')
         {
-            t += *mpStream++;
+            t += _advance();
         }
-        lx_check_error(*mpStream == '\"');
+        lx_check_error(_peek() == '\"');
 
-        mpStream++;
+        _advance();
         _skipWhitespace();
 
         return t;
@@ -142,7 +170,7 @@ namespace lx0 { namespace serial {
         lxvar r;
 
         _skipWhitespace();
-        switch (*mpStream)
+        switch (_peek())
         {
         case '\"'   : return lxvar( _readString().c_str() );
         case '{'    : return _readObject();
@@ -151,7 +179,7 @@ namespace lx0 { namespace serial {
         case 'f'    : break;
         case 'n'    : break;
         default:
-            if (isdigit(*mpStream)) 
+            if (isdigit(_peek())) 
                 r = _readNumber();
             else
                 lx_error("Unknown parse error");
