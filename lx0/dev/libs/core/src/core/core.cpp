@@ -30,6 +30,7 @@
 #include <cstdio> 
 #include <cstdarg>
 #include <exception>
+#include <string>
 
 #include <lx0/core.hpp>
 
@@ -66,7 +67,8 @@ namespace lx0 { namespace core {
 
         slotFatal(buffer);
 
-        throw std::exception("Fatal run-time error.  Rethrow this exception after catching it and saving whatever data possible.");
+        std::string err("lx_fatal (save all data and exit).\n");
+        throw std::exception((err + buffer).c_str());
     }
 
     void
@@ -79,7 +81,8 @@ namespace lx0 { namespace core {
 
         slotError(buffer);
 
-        throw std::exception("Error.  Rethrow if the error is not recoverable.");
+        std::string err("lx_error (re-throw if error is non-recoverable).\n");
+        throw std::exception((err + buffer).c_str());
     }
 
     void

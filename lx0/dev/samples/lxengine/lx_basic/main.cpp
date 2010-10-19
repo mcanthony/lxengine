@@ -45,39 +45,9 @@
 #include <lx0/controller.hpp>
 #include <lx0/transaction.hpp>
 #include <lx0/point3.hpp>
+#include <lx0/jsonio.hpp>
 
 using namespace lx0::core;
-
-// Create the serialized lxvar representation
-lxvar 
-create_cube()
-{
-    lxvar mesh;
-    mesh.insert("type", "quad_list");
-
-    const float p = 0.5f;
-    lxvar vertices; 
-    vertices.push( lxvar(-p, -p, -p) );  // 0 a
-    vertices.push( lxvar(-p,  p, -p) );  // 1 b
-    vertices.push( lxvar( p, -p, -p) );  // 2 c
-    vertices.push( lxvar( p,  p, -p) );  // 3 d
-    vertices.push( lxvar(-p, -p,  p) );  // 4 e
-    vertices.push( lxvar(-p,  p,  p) );  // 5 f
-    vertices.push( lxvar( p, -p,  p) );  // 6 g
-    vertices.push( lxvar( p,  p,  p) );  // 7 h
-    mesh.insert("vertices", vertices);
-
-    lxvar faces;
-    faces.push( lxvar(7, 6, 2, 3) ); // X+ 
-    faces.push( lxvar(4, 5, 1, 0) ); // X- 
-    faces.push( lxvar(5, 7, 3, 1) ); // Y+
-    faces.push( lxvar(6, 4, 0, 2) ); // Y-
-    faces.push( lxvar(5, 4, 6, 7) ); // Z+
-    faces.push( lxvar(0, 1, 3, 2) ); // Z-
-    mesh.insert("faces", faces);
-
-    return mesh;
-}
 
 // Deserialize the lxvar representation into the run-time object
 MeshPtr create_mesh (lxvar v)
@@ -115,7 +85,65 @@ MeshPtr create_mesh (lxvar v)
         }
     }
 
+    lx_check_error(spMesh);
     return spMesh;
+}
+
+lxvar deserialize (const char* pszFilename)
+{
+    std::string s;
+    FILE* fp;
+    fopen_s(&fp, pszFilename, "r");
+
+    lx_check_error(fp != nullptr);
+
+    char szString[4096];
+    while (fgets(szString, 4096, fp) != NULL) {
+        s += std::string(szString);
+    }
+    fclose(fp);
+
+    const char* p = s.c_str();
+    lx0::serial::JsonParser parser;
+    return parser.parse(p);
+}
+
+/*!
+    @todo Eventually documents should be built from XML + JSON, not pure JSON.
+ */
+ElementPtr 
+buildDocument (lxvar var)
+{
+    lx_check_error(var.isMap());
+    
+    ElementPtr spElem( new Element );
+
+    auto type = var.find("type");
+    spElem->type( type.asString() );
+    
+    auto attrs = var.find("attributes");
+    for (auto it = attrs.beginMap(); it != attrs.endMap(); ++it)
+    {
+        spElem->attr( it->first.c_str(), it->second );
+    }
+
+    auto children = var.find("children");
+    for (auto it = children.beginArray(); it != children.endArray(); ++it)
+    {
+        spElem->append( buildDocument(*it) );
+    }
+
+    auto value = var.find("value");
+    if (value.isDefined())
+    {
+        // This should be controlled in a more dynamic, pluggable fashion
+        if (spElem->type() == "Mesh")
+            spElem->value( create_mesh(value) );
+        else
+            lx_error("No deserializer available for element of type '%s'", spElem->type().c_str());
+    }
+
+    return spElem;
 }
 
 int 
@@ -129,28 +157,17 @@ main (int argc, char** argv)
 
         DocumentPtr spDocument(new Document);
 
-        ElementPtr spElement(new Element);
-        //TransactionPtr spTransaction = spDocument->transaction();
-        //ElementPtr spRoot = spTransaction->write( spDocument->root() );
-        ElementPtr spRoot = spDocument->root();
-        spRoot->append(spElement);
+        lxvar doc = deserialize("scene_000.json");
+        lx_check_error(doc.isMap());
+        ElementPtr spRoot = buildDocument(doc);
+        spDocument->root(spRoot);
+        
+        spEngine->connect(spDocument);
 
-        {
-            ElementPtr spLib(new Element);
-            spLib->type("Library");
-            {
-                ElementPtr spElement(new Element);
-                spElement->type("Mesh");
-                spElement->attr("id", "unit_cube");
-                spElement->value(create_mesh(create_cube()));
-                spLib->append(spElement);
-            }    
-            spRoot->append(spLib);
-        }
-        {
-            ElementPtr spScene(new Element);
-            spScene->type("Scene");
-            {
+        /*
+            @todo Need to embed a JS script to generate the grid rather than
+                hardcode it into the data file
+
                 for (int gy = 0; gy < 3; gy ++)
                 {
                     for (int gx = 0; gx < 3; gx ++)
@@ -169,12 +186,7 @@ main (int argc, char** argv)
 
                         spScene->append(spRef);
                     }
-                }
-            }
-            spRoot->append(spScene);
-        }
-
-        spEngine->connect(spDocument);
+        */
 
         {
             ViewPtr spView(new View);

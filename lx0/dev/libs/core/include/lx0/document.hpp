@@ -45,10 +45,11 @@ namespace lx0 { namespace core {
         void            connect     (std::string name, ViewPtr spView);
         void            disconnect  (std::string name);
 
-        ElementCPtr     root() const { return m_spRoot; }
-        ElementPtr      root()       { return m_spRoot; }
+        ElementCPtr     root        (void) const        { return m_spRoot; }
+        ElementPtr      root        (void)              { return m_spRoot; }
+        void            root        (ElementPtr spRoot) { m_spRoot = spRoot; }
 
-        void            run();
+        void            run         (void);
 
     protected:
 

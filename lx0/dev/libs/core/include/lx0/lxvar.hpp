@@ -56,6 +56,10 @@ namespace lx0 { namespace core {
     class lxvar
     {
     public:
+        typedef std::vector<lxvar>::iterator           ArrayIterator;
+        typedef std::map<std::string, lxvar>::iterator MapIterator;
+
+
         lxvar   (void);
         lxvar   (const lxvar& that);
         lxvar   (int i);
@@ -67,6 +71,7 @@ namespace lx0 { namespace core {
         lxvar       clone       (void) const;        //!< Create a deep clone of the lxvar
 
         bool        isUndefined (void) const            { return _isType<detail::lxundefined>(); }
+        bool        isDefined   (void) const            { return !isUndefined(); }
 
         bool        isInt       (void) const            { return _isType<detail::lxint>(); }
         int         asInt       (void) const;
@@ -79,11 +84,17 @@ namespace lx0 { namespace core {
         bool        equals      (const char* s) const;
 
         bool        isArray     (void) const            { return _isType<detail::lxarray>(); }
+        void        toArray     (void);
+        ArrayIterator beginArray(void);
+        ArrayIterator endArray  (void);
         int         size        (void) const;
         lxvar       at          (int index) const;
         void        push        (const lxvar& e);
 
         bool        isMap       (void) const;
+        void        toMap       (void);
+        MapIterator beginMap    (void);
+        MapIterator endMap      (void);
         bool        containsKey (const char* key) const;
         lxvar       find        (const char* key) const;
         void        insert      (const char* key, const lxvar& value);

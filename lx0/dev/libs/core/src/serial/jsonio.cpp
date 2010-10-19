@@ -43,6 +43,8 @@ namespace lx0 { namespace serial {
         void
         BaseParser::_reset (const char* pStream)
         {
+            mpStartText = pStream;
+            mpStartLine = pStream;
             mpStream = pStream;
             mLineNumber = 1;
             mColumn = 0;
@@ -60,6 +62,7 @@ namespace lx0 { namespace serial {
             if (*mpStream == '\n')
             {
                 mLineNumber++;
+                mpStartLine = mpStream + 1;
                 mColumn = 0;
             }
             else
@@ -74,8 +77,18 @@ namespace lx0 { namespace serial {
             if (_peek() == c)
                 _advance();
             else
-                lx_error("Did not find expected character '%c'.  Found '%c' instead.  Around line %d.",
-                         c, *mpStream, mLineNumber);
+            {
+                std::string carrot;
+                carrot.reserve(_column());
+                for (int i = 0; i < _column() - 1; ++i)
+                    carrot += " ";
+                carrot += "^";
+
+                lx_error(
+                    "JSON Parse Error, line %d.\n%s\n%s\n"
+                    "Did not find expected character '%c'.  Found '%c' instead.",
+                         mLineNumber, _currentLine().c_str(), carrot.c_str(), c, *mpStream);
+            }
         }
 
         bool
@@ -89,6 +102,24 @@ namespace lx0 { namespace serial {
             else
                 return false;
         }
+
+        
+        void            
+        BaseParser::_skipWhitespace (void)
+        {
+            while( isspace(_peek()) ) 
+                _advance();
+        }
+
+        std::string     
+        BaseParser::_currentLine (void) const
+        {
+            const char* p = mpStartLine;
+            std::string line;
+            while (*p != '\n' && *p)
+                line += *p++;
+            return line;
+        }
     }
 
     using namespace detail;
@@ -100,15 +131,6 @@ namespace lx0 { namespace serial {
         return _readObject();
     }
 
-
-
-    void            
-    JsonParser::_skipWhitespace (void)
-    {
-        while( isspace(_peek()) ) 
-            _advance();
-    }
-
     lxvar 
     JsonParser::_readNumber ()
     {
@@ -116,13 +138,21 @@ namespace lx0 { namespace serial {
 
         lxvar w;
         int i = 0;
+
+        int sign = 1;
+        if (_consumeConditional('-'))
+        {
+            sign = -1;
+            _skipWhitespace();
+        }
+
         while(isdigit(_peek()))
         {
             int t = _peek() - '0';
             i = 10 * i + t;
             _advance();
         }
-        w = i;
+        w = sign * i;
 
     
         if (_peek() == '.')
@@ -137,7 +167,7 @@ namespace lx0 { namespace serial {
                 _advance();
                 divisor *= 10;
             }
-            w = float(f);
+            w = float(sign * f);
         }
 
         _skipWhitespace();
@@ -145,6 +175,9 @@ namespace lx0 { namespace serial {
         return w;
     }
 
+    /*!
+        @todo Escape character handling.
+     */
     std::string 
     JsonParser::_readString (void)
     {
@@ -156,56 +189,52 @@ namespace lx0 { namespace serial {
         {
             t += _advance();
         }
-        lx_check_error(_peek() == '\"');
-
-        _advance();
-        _skipWhitespace();
+        _consume('\"');
 
         return t;
     }
 
-    // Split this into a "well-formed" handler and a tolerant handler
-    // so that
-    //  key_name : "value"
-    // is accepted even though it should be
-    //  "key_name" : "value"
-    // 
-    lxvar
-    JsonParser::_readValue (void)
+    lxvar 
+    JsonParser::_readArray (void)
     {
-        lxvar r;
+        lxvar obj;
+        obj.toArray();
 
         _skipWhitespace();
-        switch (_peek())
+        _consume('[');
+
+        do
         {
-        case '\"'   : return lxvar( _readString().c_str() );
-        case '{'    : return _readObject();
-        case '['    : lx_error("Arrays not yet supported"); break;
-        case 't'    : break;
-        case 'f'    : break;
-        case 'n'    : break;
-        default:
-            if (isdigit(_peek())) 
-                r = _readNumber();
-            else
-                lx_error("Unknown parse error");
-        };
-        _skipWhitespace();
+            _skipWhitespace();
+            if (_peek() == ']')
+                break;
 
-        return r;
+            lxvar value = _readValue();
+            obj.push(value);
+
+        } while ( _consumeConditional(',') );
+
+        _skipWhitespace();
+        _consume(']');
+
+        return obj;
     }
 
     lxvar 
     JsonParser::_readObject (void)
     {
         lxvar obj;
+        obj.toMap();
     
         _skipWhitespace();
         _consume('{');
-        _skipWhitespace();
-        
+
         do 
         {
+            _skipWhitespace();
+            if (_peek() == '}')
+                break;
+
             ///@todo Limitation: currently assumes keys are always strings
             _skipWhitespace();
             std::string key = _readString();
@@ -222,9 +251,34 @@ namespace lx0 { namespace serial {
         } while ( _consumeConditional(',') );
 
         _skipWhitespace();
+
         _consume('}');
 
         return obj;
+    }
+
+    lxvar
+    JsonParser::_readValue (void)
+    {
+        lxvar r;
+
+        _skipWhitespace();
+        switch (_peek())
+        {
+        case '\"'   : return lxvar( _readString().c_str() );
+        case '{'    : return _readObject();
+        case '['    : return _readArray();
+        case 't'    : break;
+        case 'f'    : break;
+        case 'n'    : break;
+        default:
+            if (strchr("0123456789.-", _peek()))
+                r = _readNumber();
+            else
+                lx_error("Unknown parse error.  Lead character '%c'.", _peek());
+        };
+
+        return r;
     }
 
 }}

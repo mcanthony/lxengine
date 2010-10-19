@@ -125,7 +125,10 @@ namespace lx0 { namespace core {
     float 
     lxvar::asFloat (void) const
     {
-        return _castTo<lxfloat>()->mValue;
+        if (_isType<lxint>())
+            return float( _castTo<lxint>()->mValue );
+        else
+            return _castTo<lxfloat>()->mValue;
     }
 
     std::string 
@@ -138,6 +141,27 @@ namespace lx0 { namespace core {
     lxvar::equals (const char* s) const
     {
         return (isString() && asString() == s);
+    }
+
+    /*!
+        Converts the undefined variable to an empty map.
+     */
+    void       
+    lxvar::toArray (void)
+    {
+        _castTo<lxarray>();
+    }
+
+    lxvar::ArrayIterator
+    lxvar::beginArray (void)
+    {
+        return _castTo<lxarray>()->mValues.begin();
+    }
+
+    lxvar::ArrayIterator 
+    lxvar::endArray (void)
+    {
+        return _castTo<lxarray>()->mValues.end();
     }
 
     int
@@ -163,6 +187,27 @@ namespace lx0 { namespace core {
     lxvar::isMap (void) const
     {
         return _isType<lxstringmap>();
+    }
+
+    /*!
+        Converts the undefined variable to an empty map.
+     */
+    void       
+    lxvar::toMap (void)
+    {
+        _castTo<lxstringmap>();
+    }
+
+    lxvar::MapIterator
+    lxvar::beginMap (void)
+    {
+        return _castTo<lxstringmap>()->mValue.begin();
+    }
+
+    lxvar::MapIterator 
+    lxvar::endMap (void)
+    {
+        return _castTo<lxstringmap>()->mValue.end();
     }
 
     bool

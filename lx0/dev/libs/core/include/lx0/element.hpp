@@ -48,6 +48,7 @@ namespace lx0 { namespace core {
     public:
         std::string     type        (void) const { return mType; }
         void            type        (const char* s) { mType = s; }
+        void            type        (const std::string& s) { type(s.c_str()); }
 
         const lxvar     attr        (std::string name) const;
         void            attr        (std::string name, lxvar value);      

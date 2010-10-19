@@ -1,0 +1,37 @@
+{
+    "type" : "Root",
+    "attributes : { },
+    "value" : { },
+    "children" : [
+        {
+            "type"  :   "Library",
+            "children" : [
+                {
+                    "type" : "Mesh",
+                    "attributes" : {
+                        "id" : "unit_cube"
+                    },
+                },
+            ],
+        },
+        {
+            "type" : "Scene",
+            "children" : [
+                {
+                    "type"  : "Ref",
+                    "attributes" : { 
+                        "ref"   :   "unit_cube",
+                        "translation" : [ -1.5, 0, 0.5 ],
+                    },
+                },
+                {
+                    "type"  : "Ref",
+                    "attributes" : { 
+                        "ref"   :   "unit_cube",
+                        "translation" : [ 0, 0, 0.5 ],
+                    },
+                },
+            ],
+        },
+    ],
+}

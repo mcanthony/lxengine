@@ -134,6 +134,9 @@ namespace lx0 { namespace core {
     void
     View::_addMesh (std::string name, MeshPtr spMesh)
     {
+        // The mesh pointer should not be null
+        lx_check_error(spMesh);
+
         // See http://www.ogre3d.org/tikiwiki/ManualObject
         // See http://www.ogre3d.org/tikiwiki/tutorial+manual+object+to+mesh
         
@@ -157,16 +160,6 @@ namespace lx0 { namespace core {
             pObject->position(v0);
             pObject->normal(normal);
         };
-
-        const float p = 0.5f;
-        Ogre::Vector3 a (-p, -p, -p);
-        Ogre::Vector3 b (-p,  p, -p);
-        Ogre::Vector3 c ( p, -p, -p);
-        Ogre::Vector3 d ( p,  p, -p);
-        Ogre::Vector3 e (-p, -p,  p);
-        Ogre::Vector3 f (-p,  p,  p);
-        Ogre::Vector3 g ( p, -p,  p);
-        Ogre::Vector3 h ( p,  p,  p);
 
         pObject->begin("LxMaterial", Ogre::RenderOperation::OT_TRIANGLE_LIST);
         for (auto fi = spMesh->mFaces.begin(); fi != spMesh->mFaces.end(); ++fi)

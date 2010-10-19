@@ -34,6 +34,7 @@
 namespace lx0 { namespace serial {
 
     namespace detail {
+
         class BaseParser
         {
         protected:
@@ -45,10 +46,15 @@ namespace lx0 { namespace serial {
             char            _advance            (void);
             void            _consume            (char c);
             bool            _consumeConditional (char c);
+            void            _skipWhitespace     (void);
 
             int             _lineNumber         (void) const { return mLineNumber; }
+            int             _column             (void) const { return mColumn; }
+            std::string     _currentLine        (void) const;
 
         public:
+            const char*     mpStartText;
+            const char*     mpStartLine;
             const char*     mpStream;
             int             mLineNumber;
             int             mColumn;
@@ -66,8 +72,8 @@ namespace lx0 { namespace serial {
         lxvar           parse (const char* s);
 
     protected:
-        void            _skipWhitespace     (void);
         lxvar           _readObject         (void);
+        lxvar           _readArray          (void);
         std::string     _readString         (void);
         lxvar           _readNumber         (void);
         lxvar           _readValue          (void);
