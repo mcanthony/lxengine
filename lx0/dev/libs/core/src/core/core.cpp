@@ -53,11 +53,11 @@ namespace lx0 { namespace core {
     lx_check_error (bool condition)
     {
         if (!condition)
-            error("Error condition encountered!");
+            lx_error("Error condition encountered!");
     }
 
     void
-    fatal (const char* format, ...)
+    lx_fatal (const char* format, ...)
     {
         char buffer[512] = "";
         va_list args;
@@ -70,7 +70,7 @@ namespace lx0 { namespace core {
     }
 
     void
-    error (const char* format, ...)
+    lx_error (const char* format, ...)
     {
         char buffer[512] = "";
         va_list args;
@@ -83,7 +83,7 @@ namespace lx0 { namespace core {
     }
 
     void
-    warn (const char* format, ...)
+    lx_warn (const char* format, ...)
     {
         char buffer[512] = "";
         va_list args;
@@ -94,7 +94,7 @@ namespace lx0 { namespace core {
     }
 
     void 
-    log (const char* format, ...)
+    lx_log (const char* format, ...)
     {
         char buffer[512] = "";
         va_list args;

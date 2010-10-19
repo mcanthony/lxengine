@@ -3,7 +3,6 @@
                                    LxEngine
 
     LICENSE
-    * MIT License (http://www.opensource.org/licenses/mit-license.php)
 
     Copyright (c) 2010 athile@athile.net (http://www.athile.net)
 
@@ -27,32 +26,35 @@
 */
 //===========================================================================//
 
-
 #pragma once
 
 #include <lx0/slot.hpp>
+#include <lx0/lxvar.hpp>
 
-namespace lx0 { namespace core {
+namespace lx0 { namespace serial {
 
-    void lx_assert (bool condition);
+    /*!
+        @todo Split into a callback parser and an lxvar builder
+     */
+    class JsonParser
+    {
+    public:
+        typedef lx0::core::lxvar        lxvar;
 
-    void lx_fatal  (const char* format, ...);
-    void lx_error  (const char* format, ...);
-    void lx_warn   (const char* format, ...);
-    void lx_log    (const char* format, ...);
-    void lx_debug  (const char* format, ...);
-    
-    void lx_check_error (bool condition);
+        lxvar           parse (const char* s);
 
-    extern slot<void (const char*)> slotFatal;
-    extern slot<void (const char*)> slotError;
-    extern slot<void (const char*)> slotWarn;
-    extern slot<void (const char*)> slotLog;
-    extern slot<void (const char*)> slotAssert;
-    extern slot<void (const char*)> slotDebug;
-    
-    class error_exception : public std::exception { };
-    class fatal_exception : public std::exception { };
+    protected:
+        void            _consume            (char c);
+        bool            _consumeConditional (char c);
+        void            _skipWhitespace     (void);
+        lxvar           _readObject         (void);
+        std::string     _readString         (void);
+        lxvar           _readNumber         (void);
+        lxvar           _readValue          (void);
 
+        const char*     mpStream;
+        int             mLineNumber;
+    };
 
 }}
+

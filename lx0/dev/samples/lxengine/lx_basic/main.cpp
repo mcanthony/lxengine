@@ -194,7 +194,7 @@ main (int argc, char** argv)
     }
     catch (std::exception& e)
     {
-        lx0::core::fatal("Fatal: unhandled exception.\nException: %s\n", e.what());
+        lx_fatal("Fatal: unhandled exception.\nException: %s\n", e.what());
     }
 
     return exitCode;

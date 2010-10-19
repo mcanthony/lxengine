@@ -110,7 +110,7 @@ namespace lx0 { namespace core {
         {
             T* pDerived = dynamic_cast<T*>(pBase);
             if (!pDerived)
-                error("lxvar treated as incompatible type");
+                lx_error("lxvar treated as incompatible type");
 
             return pDerived;
         }

@@ -75,7 +75,7 @@ namespace lx0 { namespace core {
                 }
                 catch (std::exception& e)
                 {
-                    fatal("OGRE exception caught during initialization");
+                    lx_fatal("OGRE exception caught during initialization");
                     throw e;
                 }
             }

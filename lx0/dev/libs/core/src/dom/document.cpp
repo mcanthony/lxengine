@@ -69,7 +69,7 @@ namespace lx0 { namespace core {
             m_views.erase(it);
         }
         else
-            error("Could name find view '%s' on document.", name.c_str());
+            lx_error("Could name find view '%s' on document.", name.c_str());
     }
 
     void            

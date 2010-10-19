@@ -73,7 +73,7 @@ namespace lx0 { namespace core {
         }
         else
         {
-            error("Index %d out of range in Element::child()", i);
+            lx_error("Index %d out of range in Element::child()", i);
             return ElementCPtr();
         }
     }
@@ -89,7 +89,7 @@ namespace lx0 { namespace core {
     {
         if (this == 0)
         {
-            warn("Cloning a null pointer!");
+            lx_warn("Cloning a null pointer!");
             assert(0);
             return ElementPtr();
         }

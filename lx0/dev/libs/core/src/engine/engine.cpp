@@ -58,12 +58,12 @@ namespace lx0 { namespace core {
         slotError   = prefix_print("ERROR: ");
         slotFatal   = prefix_print("FATAL: ");
 
-        log("lx::core::Engine ctor");
+        lx_log("lx::core::Engine ctor");
     }
 
     Engine::~Engine()
     {
-       log("lx::core::Engine dtor");
+       lx_log("lx::core::Engine dtor");
     }
 
     void    
