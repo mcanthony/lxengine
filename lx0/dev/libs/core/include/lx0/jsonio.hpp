@@ -51,6 +51,7 @@ namespace lx0 { namespace serial {
         public:
             const char*     mpStream;
             int             mLineNumber;
+            int             mColumn;
         };
     }
 

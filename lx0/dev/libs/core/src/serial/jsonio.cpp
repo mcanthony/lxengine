@@ -45,6 +45,7 @@ namespace lx0 { namespace serial {
         {
             mpStream = pStream;
             mLineNumber = 1;
+            mColumn = 0;
         }
 
         char
@@ -57,7 +58,12 @@ namespace lx0 { namespace serial {
         BaseParser::_advance (void)
         {
             if (*mpStream == '\n')
+            {
                 mLineNumber++;
+                mColumn = 0;
+            }
+            else
+                ++mColumn;
 
             return *mpStream++;
         }
