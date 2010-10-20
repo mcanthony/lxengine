@@ -57,6 +57,13 @@ namespace lx0 { namespace core {
             lx_error("Error condition encountered!");
     }
 
+    void 
+    lx_check_fatal (bool condition)
+    {
+        if (!condition)
+            lx_fatal("Error condition encountered!");
+    }
+
     void
     lx_fatal (const char* format, ...)
     {
@@ -105,6 +112,19 @@ namespace lx0 { namespace core {
         vsnprintf_s(buffer, sizeof(buffer), _TRUNCATE, format, args);
 
         slotLog(buffer);
+    }
+
+    void 
+    lx_debug (const char* format, ...)
+    {
+#ifndef NDEBUG
+        char buffer[512] = "";
+        va_list args;
+        va_start(args, format);
+        vsnprintf_s(buffer, sizeof(buffer), _TRUNCATE, format, args);
+
+        slotDebug(buffer);
+#endif
     }
 
 }}

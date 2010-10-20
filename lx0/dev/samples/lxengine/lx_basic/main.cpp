@@ -49,46 +49,6 @@
 
 using namespace lx0::core;
 
-// Deserialize the lxvar representation into the run-time object
-MeshPtr create_mesh (lxvar v)
-{
-    lx_check_error(v.isMap());
-    lx_check_error(v.containsKey("type"));
-    lx_check_error(v.containsKey("vertices"));
-    lx_check_error(v.containsKey("faces"));
-
-    // Temporary limitation
-    lx_check_error(v.find("type").equals("quad_list"));
-
-    MeshPtr spMesh (new Mesh);
-    
-    {
-        lxvar lxverts = v.find("vertices");
-        const int vertexCount = lxverts.size();
-        spMesh->mVertices.reserve(vertexCount);
-        for (int i = 0; i < vertexCount; ++i)
-        {
-            spMesh->mVertices.push_back( asPoint3(lxverts.at(i)) );
-        }
-    }
-
-    {
-        lxvar lxfaces = v.find("faces");
-        const int faceCount = lxfaces.size();
-        spMesh->mFaces.reserve(faceCount);
-        for (int i = 0; i < faceCount; ++i)
-        {
-            Mesh::Quad q;
-            for (int j = 0; j < 4; ++j)
-                q.index[j] = lxfaces.at(i).at(j).asInt();
-            spMesh->mFaces.push_back(q);
-        }
-    }
-
-    lx_check_error(spMesh);
-    return spMesh;
-}
-
 lxvar deserialize (const char* pszFilename)
 {
     std::string s;
@@ -137,8 +97,12 @@ buildDocument (lxvar var)
     if (value.isDefined())
     {
         // This should be controlled in a more dynamic, pluggable fashion
-        if (spElem->type() == "Mesh")
-            spElem->value( create_mesh(value) );
+        if (spElem->type() == "Mesh") 
+        {
+            MeshPtr spMesh (new Mesh);
+            spMesh->deserialize(value);
+            spElem->value(spMesh);
+        }
         else
             lx_error("No deserializer available for element of type '%s'", spElem->type().c_str());
     }
@@ -150,7 +114,7 @@ int
 main (int argc, char** argv)
 {
     int exitCode = -1;
-
+    lxvar t;
     try
     {
         EnginePtr spEngine( Engine::acquire() );
@@ -203,6 +167,8 @@ main (int argc, char** argv)
         // necessary, as the Document releases all views on destruction 
         // automatically
         spDocument->disconnect("view");
+
+        spEngine->shutdown();
     }
     catch (std::exception& e)
     {

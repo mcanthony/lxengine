@@ -31,8 +31,45 @@
 #include <cassert>
 
 #include <lx0/core.hpp>
-#include <lx0/object.hpp>
+#include <lx0/mesh.hpp>
 
 namespace lx0 { namespace core {
+
+    void 
+    Mesh::deserialize(lxvar v)
+    {
+        lx_check_error(v.isMap());
+        lx_check_error(v.containsKey("type"));
+        lx_check_error(v.containsKey("vertices"));
+        lx_check_error(v.containsKey("faces"));
+
+        // Temporary limitation
+        lx_check_error(v.find("type").equals("quad_list"));
+
+        // Deserialize the vertices list
+        {
+            lxvar lxverts = v.find("vertices");
+            const int vertexCount = lxverts.size();
+            mVertices.reserve(vertexCount);
+            for (int i = 0; i < vertexCount; ++i)
+            {
+                mVertices.push_back( asPoint3(lxverts.at(i)) );
+            }
+        }
+
+        // Deserialize the face list
+        {
+            lxvar lxfaces = v.find("faces");
+            const int faceCount = lxfaces.size();
+            mFaces.reserve(faceCount);
+            for (int i = 0; i < faceCount; ++i)
+            {
+                Mesh::Quad q;
+                for (int j = 0; j < 4; ++j)
+                    q.index[j] = lxfaces.at(i).at(j).asInt();
+                mFaces.push_back(q);
+            }
+        }
+    }
 
 }}

@@ -39,6 +39,8 @@ namespace lx0 { namespace core {
     class Mesh : public lx0::core::Object
     {
     public:
+        virtual void    deserialize     (lxvar value);
+
         struct Quad
         {
             int index[4];

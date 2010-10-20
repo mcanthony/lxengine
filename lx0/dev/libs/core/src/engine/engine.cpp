@@ -40,8 +40,27 @@ namespace lx0 { namespace core {
 
     namespace detail
     {
+        ObjectCount::ObjectCount (size_t current)
+            : mCurrent (current)
+            , mTotal   (current)
+        {
+        }
 
+        void   
+        ObjectCount::inc (void)
+        {
+            mCurrent++;
+            mTotal++;
+        }
+
+        void   
+        ObjectCount::dec (void)
+        {
+            mCurrent--;
+        }
     }
+
+    using namespace detail;
 
     std::weak_ptr<Engine> Engine::s_wpEngine;
 
@@ -61,9 +80,55 @@ namespace lx0 { namespace core {
         lx_log("lx::core::Engine ctor");
     }
 
+    /*!
+        Subject to future change.
+
+        An explicit shutdown method, in addition to the normal destructor, is currently required
+        to ensure a proper order of events for object destruction.
+     */
+    void
+    Engine::shutdown()
+    {
+        // Explicitly free all references to shared objects so that memory leak checks will work
+       m_documents.clear();
+    }
+
     Engine::~Engine()
     {
        lx_log("lx::core::Engine dtor");
+
+       // Check for memory leaks of Engine-related objects
+       for (auto it = m_objectCounts.begin(); it != m_objectCounts.end(); ++it)
+       {
+           if (it->second.current() != 0)
+               lx_warn("Leaked %u %s objects", it->second.current(), it->first.c_str());
+           else
+               lx_debug("Allocated %u %s objects.  0 leaked.", it->second.total(), it->first.c_str()); 
+       }
+    }
+
+    /*!
+        @todo This method is inefficient; but it is simple.  Until 1.0 is complete, simplicity
+            is favored over efficiency.
+     */
+    void
+    Engine::incObjectCount  (std::string name)
+    {
+        auto it = m_objectCounts.find(name);
+        if (it == m_objectCounts.end())
+            m_objectCounts.insert(std::make_pair(name, ObjectCount(1)));
+        else
+            it->second.inc();
+    }
+
+    void 
+    Engine::decObjectCount  (std::string name)
+    {
+        auto it = m_objectCounts.find(name);
+        lx_check_error (it != m_objectCounts.end());
+        lx_check_fatal(it->second.current() >= 1);
+
+        it->second.dec();
     }
 
     void    

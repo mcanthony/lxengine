@@ -37,6 +37,7 @@
 #include <lx0/element.hpp>
 #include <lx0/mesh.hpp>
 #include <lx0/point3.hpp>
+#include <lx0/engine.hpp>
 
 #include <OGRE/OgreRoot.h>
 #include <OGRE/OgreRenderWindow.h>
@@ -106,6 +107,7 @@ namespace lx0 { namespace core {
         , mpSceneMgr        (0)
         , mpDocument        (nullptr)
     {
+        Engine::acquire()->incObjectCount("View");
     }
 
     View::~View()
@@ -114,6 +116,8 @@ namespace lx0 { namespace core {
         // documentation purposes.
         mpRenderWindow = 0;
         mpSceneMgr  = 0;
+
+        Engine::acquire()->decObjectCount("View");
     }
 
     void  

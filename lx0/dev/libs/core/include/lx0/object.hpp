@@ -40,6 +40,8 @@ namespace lx0 { namespace core {
         typedef std::shared_ptr<Object> ObjectPtr;
 
         virtual ObjectPtr clone() const { return ObjectPtr(); }
+
+        virtual void deserialize(lxvar value) = 0;
     
     protected:
     };

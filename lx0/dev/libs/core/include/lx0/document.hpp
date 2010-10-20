@@ -39,7 +39,9 @@ namespace lx0 { namespace core {
     class Document
     {
     public:
-        Document();
+                        Document();
+                        ~Document();
+
         TransactionPtr  transaction ();
 
         void            connect     (std::string name, ViewPtr spView);
@@ -52,7 +54,6 @@ namespace lx0 { namespace core {
         void            run         (void);
 
     protected:
-
         typedef std::vector< TransactionWPtr > TrWList;
 
         TrWList m_openTransactions;

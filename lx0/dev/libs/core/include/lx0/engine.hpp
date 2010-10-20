@@ -32,10 +32,30 @@
 #include <deque>
 #include <string>
 #include <vector>
+#include <map>
 
 #include <lx0/detail/forward_decls.hpp>
 
 namespace lx0 { namespace core {
+
+    namespace detail
+    {
+        class ObjectCount
+        {
+        public:
+                    ObjectCount (size_t current);
+
+            void    inc      (void);
+            void    dec      (void);
+            
+            size_t  current  (void) const { return mCurrent; }
+            size_t  total    (void) const { return mTotal; }
+
+        protected:
+            size_t mCurrent;
+            size_t mTotal;
+        };
+    };
 
     //===========================================================================//
     //!
@@ -47,11 +67,17 @@ namespace lx0 { namespace core {
 
         //! Acquire the Singleton for the Engine
         static EnginePtr acquire() { return detail::acquireSingleton<Engine>(s_wpEngine); }
+        
+        void    shutdown    (void);
 
         void    connect     (DocumentPtr spDocument);
 
         void   sendMessage (const char* message);
         int	  run();
+
+        // Stats
+        void    incObjectCount  (std::string name);
+        void    decObjectCount  (std::string name);
 
     protected:
         template <typename T> friend std::shared_ptr<T> detail::acquireSingleton (std::weak_ptr<T>&);
@@ -60,9 +86,10 @@ namespace lx0 { namespace core {
         Engine();
         ~Engine(); 
 
-
         std::vector<DocumentPtr>    m_documents;
         std::deque<std::string>     m_messageQueue;
+
+        std::map<std::string, detail::ObjectCount>   m_objectCounts;
     };
 
 }}

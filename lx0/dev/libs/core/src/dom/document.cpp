@@ -33,12 +33,19 @@
 #include <lx0/element.hpp>
 #include <lx0/view.hpp>
 #include <lx0/core.hpp>
+#include <lx0/engine.hpp>
 
 namespace lx0 { namespace core {
 
     Document::Document()
         : m_spRoot (new Element)
     {
+        Engine::acquire()->incObjectCount("Document");
+    }
+
+    Document::~Document()
+    {
+        Engine::acquire()->decObjectCount("Document");
     }
 
 
