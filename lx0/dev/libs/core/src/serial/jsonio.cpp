@@ -128,7 +128,7 @@ namespace lx0 { namespace serial {
     JsonParser::parse (const char* pStream)
     {
         _reset(pStream);
-        return _readObject();
+        return _readValue();
     }
 
     lxvar 
@@ -184,12 +184,15 @@ namespace lx0 { namespace serial {
         std::string t;
 
         _skipWhitespace();
-        _consume('\"');
-        while (_peek() != '\"')
+
+        const char delimiter = (_peek() == '\'') ? '\'' : '\"';
+
+        _consume(delimiter);
+        while (_peek() != delimiter)
         {
             t += _advance();
         }
-        _consume('\"');
+        _consume(delimiter);
 
         return t;
     }
@@ -265,12 +268,16 @@ namespace lx0 { namespace serial {
         _skipWhitespace();
         switch (_peek())
         {
+        case '\''   : // fall through
         case '\"'   : return lxvar( _readString().c_str() );
+
         case '{'    : return _readObject();
         case '['    : return _readArray();
+        
         case 't'    : break;
         case 'f'    : break;
         case 'n'    : break;
+        
         default:
             if (strchr("0123456789.-", _peek()))
                 r = _readNumber();

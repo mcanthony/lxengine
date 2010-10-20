@@ -189,6 +189,12 @@ namespace lx0 { namespace core {
         return _isType<lxstringmap>();
     }
 
+    int
+    lxvar::count (void) const
+    {
+        return int( _castTo<lxstringmap>()->mValue.size() );
+    }
+
     /*!
         Converts the undefined variable to an empty map.
      */

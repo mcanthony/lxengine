@@ -95,6 +95,7 @@ namespace lx0 { namespace core {
         void        toMap       (void);
         MapIterator beginMap    (void);
         MapIterator endMap      (void);
+        int         count       (void) const;
         bool        containsKey (const char* key) const;
         lxvar       find        (const char* key) const;
         void        insert      (const char* key, const lxvar& value);

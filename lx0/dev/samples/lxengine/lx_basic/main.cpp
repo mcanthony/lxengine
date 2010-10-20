@@ -114,7 +114,7 @@ int
 main (int argc, char** argv)
 {
     int exitCode = -1;
-    lxvar t;
+
     try
     {
         EnginePtr spEngine( Engine::acquire() );
