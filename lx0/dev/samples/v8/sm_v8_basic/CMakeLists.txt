@@ -1,3 +1,3 @@
-simple_executable( v8_simple )
+simple_executable( sm_v8_basic )
 
-target_link_libraries ( v8_simple ${V8_LIBS} ) 
+target_link_libraries ( sm_v8_basic ${V8_LIBS} ) 
