@@ -24,6 +24,7 @@ lx_source_group("primitives")
 lx_source_group("dom")
 lx_source_group("engine")
 lx_source_group("serial")
+lx_source_group("util")
 
 source_group("_detail" "include/lx0/detail/forward_decls.hpp")
 source_group("core" include/lx0/cast.hpp)

@@ -46,22 +46,13 @@
 #include <lx0/transaction.hpp>
 #include <lx0/point3.hpp>
 #include <lx0/jsonio.hpp>
+#include <lx0/util.hpp>
 
 using namespace lx0::core;
 
 lxvar deserialize (const char* pszFilename)
 {
-    std::string s;
-    FILE* fp;
-    fopen_s(&fp, pszFilename, "r");
-
-    lx_check_error(fp != nullptr);
-
-    char szString[4096];
-    while (fgets(szString, 4096, fp) != NULL) {
-        s += std::string(szString);
-    }
-    fclose(fp);
+    std::string s = lx0::util::lx_file_to_string(pszFilename);
 
     const char* p = s.c_str();
     lx0::serial::JsonParser parser;
