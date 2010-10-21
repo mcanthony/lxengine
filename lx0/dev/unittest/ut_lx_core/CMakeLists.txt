@@ -4,6 +4,6 @@ file(GLOB_RECURSE SRCFILES *.cpp)
 file(GLOB_RECURSE HDRFILES *.h)
 
 set(SOURCES ${SRCFILES} ${HDRFILES})
-add_executable(vector ${SOURCES})
-target_link_libraries (vector ${OGRE_LIBRARIES}) 
+add_executable(ut_lx_vector ${SOURCES})
+target_link_libraries (ut_lx_vector ${OGRE_LIBRARIES}) 
 
