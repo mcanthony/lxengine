@@ -44,6 +44,7 @@ using namespace lx0::serial;
 int mChecksOkay;
 int mChecksTotal;
 std::vector<int> mFailLines;
+std::vector<std::string> mFailedTests;
 
 class Framework
 {
@@ -79,8 +80,12 @@ public:
                 std::cout << (bOk ? "    " : "FAIL") << "  " << nameCol << " (" << mChecksOkay << "/" << mChecksTotal << ")" << std::endl;
                 if (!mFailLines.empty())
                 {
-                    for (auto it = mFailLines.begin(); it != mFailLines.end(); ++it)
-                        std::cout << "\t* failure at line " << *it << std::endl;
+                    for (size_t i = 0; i < mFailLines.size(); ++i)
+                    {
+                        std::cout << "\t* failure at line " << mFailLines[i] << std::endl;
+                        if (!mFailedTests[i].empty())
+                            std::cout << "\t  " << mFailedTests[i] << std::endl;
+                    }
                 }
             }
             catch (std::exception& e)
@@ -96,22 +101,77 @@ public:
 
 Framework F;
 
-void check(int line, bool b)
+void check(int line, bool b, std::string source)
 {
     if (b)
         mChecksOkay++;
     else
+    {
         mFailLines.push_back(line);
+        mFailedTests.push_back(source);
+    }
     mChecksTotal++;
 }
 
-#define CHECK(b) check(__LINE__, b)
+void check_exception (int line, bool bShouldThrow, std::string source, std::function<void()> f)
+{
+    try 
+    { 
+        f(); 
+        check(line, !bShouldThrow, source); 
+    } 
+    catch (...) 
+    { 
+        check(line, bShouldThrow, source); 
+    }
+}
+
+#define CHECK(b) check(__LINE__, b, "")
+#define CHECK_EXCEPTION(Code) check_exception(__LINE__, true, #Code, [&]() Code )
 
 int 
 main (int argc, char** argv)
 {
     try
     {
+        F.add("lxvar tests", []() {
+            
+            lxvar v;
+            CHECK(v.isUndefined());
+            CHECK(!v.isDefined());
+            CHECK_EXCEPTION({ v.size(); });
+            CHECK_EXCEPTION({ v.at(0); });
+
+            v = 1;
+            CHECK(v.isInt());
+            CHECK_EXCEPTION({ v.size(); });
+
+            v = 1.1f;
+            CHECK(v.isFloat());
+            CHECK_EXCEPTION({ v.size(); });
+
+            v.undefine();
+            CHECK(v.isUndefined());
+            CHECK_EXCEPTION({ v.size(); });
+
+            v = lxvar::map();
+            CHECK(v.isDefined());
+            CHECK(v.isMap());
+            CHECK(v.size() == 0);
+            CHECK(v.find("a").isUndefined());
+            CHECK_EXCEPTION({ v.at(0); });
+
+            v = lxvar::array();
+            CHECK(v.isDefined());
+            CHECK(v.isArray());
+            CHECK(v.size() == 0);
+            CHECK_EXCEPTION({ v.at(0); });
+
+            v.push(1.1f);
+            CHECK( v.size() == 1 );
+            CHECK( v.at(0).isFloat() );
+            CHECK_EXCEPTION({ v.at(1); });
+        });
 
         F.add("parse simple", [] () {
             JsonParser parser;
@@ -119,33 +179,33 @@ main (int argc, char** argv)
 
             v = parser.parse("{}");
             CHECK(v.isMap());
-            CHECK(v.count() == 0);
+            CHECK(v.size() == 0);
 
             v = parser.parse(" { } ");
             CHECK(v.isMap());
-            CHECK(v.count() == 0);
+            CHECK(v.size() == 0);
 
             v = parser.parse("{ \"alpha\" : 1, \"beta\" : \"two\" }");
             CHECK(v.find("alpha").asInt() == 1);
             CHECK(v.find("beta").asString() == "two");
-            CHECK(v.count() == 2);
+            CHECK(v.size() == 2);
 
             // Trailing comma should be ok.
             v = parser.parse("{ \"alpha\" : 1, \"beta\" : \"two\", }");
             CHECK(v.find("alpha").asInt() == 1);
             CHECK(v.find("beta").asString() == "two");
-            CHECK(v.count() == 2);
+            CHECK(v.size() == 2);
 
             // Single quotes should be ok.
             v = parser.parse("{ 'alpha' : 1, 'beta' : 'two', }");
             CHECK(v.find("alpha").asInt() == 1);
             CHECK(v.find("beta").asString() == "two");
-            CHECK(v.count() == 2);
+            CHECK(v.size() == 2);
 
             v = parser.parse("{ 'al pha' : 1, \"beta \" :  ' two', }");
             CHECK(v.find("al pha").asInt() == 1);
             CHECK(v.find("beta ").asString() == " two");
-            CHECK(v.count() == 2);
+            CHECK(v.size() == 2);
             
         });
         F.add("parse non-standard", [] () {
@@ -171,7 +231,7 @@ main (int argc, char** argv)
             lxvar v = parser.parse("{}");
 
             try { v.push(3); CHECK(false); } catch (...) { CHECK(true); }
-            try { v.size(); CHECK(false);  } catch (...) { CHECK(true); }
+            try { v.size();  CHECK(true);  } catch (...) { CHECK(false); }
         });
 
         F.run();

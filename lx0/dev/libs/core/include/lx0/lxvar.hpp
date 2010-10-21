@@ -50,8 +50,22 @@ namespace lx0 { namespace core {
     }
         
     /*!
+        Dev Notes:
+
+        A major design decision, that requires consistency across the class is
+        type strictness.  For example, should querying the string value of a undefined lxvar
+        result in an empty string or a thrown exception?  The lxvar is intended to be a flexible,
+        scripting-like data type which would favor the idea of implicit conversions, however
+        a strict definition often leads to a more robust and well-defined class.   Another
+        example is comparisons: should an epsilon be implicit in floating point comparisons?
+        
+        The current design goal is to provide both strict and loose comparisons and conversions
+        under different, consistently-named methods.  
+
         @todo Review for a good const-ness strategy for this class.  Non-trivial 
             given the reference-counted nature of the underlying objects.
+        @todo Iterators should be use the pImpl approach so a begin() method can return either
+            an array or a map iterator.
      */
     class lxvar
     {
@@ -59,46 +73,58 @@ namespace lx0 { namespace core {
         typedef std::vector<lxvar>::iterator           ArrayIterator;
         typedef std::map<std::string, lxvar>::iterator MapIterator;
 
+                        lxvar           (void);
+                        lxvar           (const lxvar& that);
 
-        lxvar   (void);
-        lxvar   (const lxvar& that);
-        lxvar   (int i);
-        lxvar   (int a, int b, int c, int d);
-        lxvar   (float a);
-        lxvar   (float a, float b, float c);
-        lxvar   (const char* s);
+                        lxvar           (int i);
+                        lxvar           (int a, int b, int c, int d);
+                        lxvar           (float a);
+                        lxvar           (float a, float b, float c);
+                        lxvar           (const char* s);
 
-        lxvar       clone       (void) const;        //!< Create a deep clone of the lxvar
+        static lxvar    undefined       (void);                 //!< Return an undefined lxvar
+        static lxvar    map             (void);                 //!< Return an empty map
+        static lxvar    array           (void);                 //!< Return an empty array
 
-        bool        isUndefined (void) const            { return _isType<detail::lxundefined>(); }
-        bool        isDefined   (void) const            { return !isUndefined(); }
+        lxvar           clone           (void) const;           //!< Create a deep clone of the lxvar
 
-        bool        isInt       (void) const            { return _isType<detail::lxint>(); }
-        int         asInt       (void) const;
+        bool            equal           (const char* s) const;  //!< Is strictly equal: same type and same value
+        bool            equiv           (const char* s) const;  //!< Is equal, or is equal after a type conversion
 
-        bool        isFloat     (void) const            { return _isType<detail::lxfloat>(); }
-        float       asFloat     (void) const;
+        //@name Type checks
+        //@{
+        bool            isDefined       (void) const            { return !isUndefined(); }
+        bool            isUndefined     (void) const            { return _isType<detail::lxundefined>(); }
+        bool            isInt           (void) const            { return _isType<detail::lxint>(); }
+        bool            isFloat         (void) const            { return _isType<detail::lxfloat>(); }
+        bool            isString        (void) const            { return _isType<detail::lxstring>(); }
+        bool            isArray         (void) const            { return _isType<detail::lxarray>(); }
+        bool            isMap           (void) const;
 
-        bool        isString    (void) const            { return _isType<detail::lxstring>(); }
-        std::string asString    (void) const;
-        bool        equals      (const char* s) const;
+        bool            __isBoolean     (void) const;
+        bool            __isBinary      (void) const;           //!< Reserved for future binary blob support (specialization of an array)
+        //@}
 
-        bool        isArray     (void) const            { return _isType<detail::lxarray>(); }
-        void        toArray     (void);
-        ArrayIterator beginArray(void);
-        ArrayIterator endArray  (void);
-        int         size        (void) const;
-        lxvar       at          (int index) const;
-        void        push        (const lxvar& e);
+        int             asInt           (void) const;
+        float           asFloat         (void) const;
+        std::string     asString        (void) const;
 
-        bool        isMap       (void) const;
-        void        toMap       (void);
-        MapIterator beginMap    (void);
-        MapIterator endMap      (void);
-        int         count       (void) const;
-        bool        containsKey (const char* key) const;
-        lxvar       find        (const char* key) const;
-        void        insert      (const char* key, const lxvar& value);
+        void            toArray         (void);
+        void            toMap           (void);
+
+        void            undefine        (void);
+
+        ArrayIterator   beginArray      (void);
+        ArrayIterator   endArray        (void);
+        int             size            (void) const;
+        lxvar           at              (int index) const;
+        void            push            (const lxvar& e);
+
+        MapIterator     beginMap        (void);
+        MapIterator     endMap          (void);
+        bool            containsKey     (const char* key) const;
+        lxvar           find            (const char* key) const;
+        void            insert          (const char* key, const lxvar& value);
 
     protected:
         template <typename T>   bool    _isType (void) const;
@@ -123,10 +149,18 @@ namespace lx0 { namespace core {
         class lxvalue
         {
         public:
-            virtual ~lxvalue() {}
-            virtual bool sharedType() const = 0;
-            virtual lxvalue* clone() const = 0;
+            virtual             ~lxvalue() {}
+
+            virtual bool        sharedType  (void) const = 0;   //!< On a set operation, is the r-value referenced or copied?
+            virtual lxvalue*    clone       (void) const = 0;   //!< Deep clone of the value
+
+            virtual int         size        (void) const        { _invalid(); return 0; }
+            virtual lxvar       at          (int i)             { _invalid(); return lxvar(); }
+
+        protected:
+            void                _invalid    (void) const;
         };
+
 
         class lxundefined : public lxvalue
         {
@@ -186,7 +220,10 @@ namespace lx0 { namespace core {
             virtual bool        sharedType  (void) const { return true; }
             virtual lxvalue*    clone       (void) const;
 
-            std::vector<lxvar> mValues;
+            virtual int         size        (void) const { return int( mValue.size() ); }
+            virtual lxvar       at          (int i);
+
+            std::vector<lxvar> mValue;
         };
 
         class lxstringmap : public lxvalue
@@ -194,6 +231,8 @@ namespace lx0 { namespace core {
         public:
             virtual bool        sharedType  (void) const { return true; }
             virtual lxvalue*    clone       (void) const;
+
+            virtual int         size        (void) const { return int( mValue.size() ); }
 
             typedef std::map<std::string, lxvar> Map;
             Map mValue;

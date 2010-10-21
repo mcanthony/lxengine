@@ -44,7 +44,7 @@ namespace lx0 { namespace core {
         lx_check_error(v.containsKey("faces"));
 
         // Temporary limitation
-        lx_check_error(v.find("type").equals("quad_list"));
+        lx_check_error(v.find("type").equal("quad_list"));
 
         // Deserialize the vertices list
         {

@@ -14,10 +14,17 @@ namespace lx0 { namespace core {
         lxarray::clone (void) const
         {
             lxarray* pClone = new lxarray;
-            pClone->mValues.reserve(mValues.size());
-            for (auto it = mValues.begin(); it != mValues.end(); ++it)
-                pClone->mValues.push_back(it->clone());
+            pClone->mValue.reserve(mValue.size());
+            for (auto it = mValue.begin(); it != mValue.end(); ++it)
+                pClone->mValue.push_back(it->clone());
             return pClone;
+        }
+
+        lxvar 
+        lxarray::at (int i)      
+        {
+            lx_check_error(i >= 0 && i < int(mValue.size()));
+            return mValue[i]; 
         }
 
         lxvalue*    
@@ -29,6 +36,11 @@ namespace lx0 { namespace core {
             return pClone;
         }
 
+        void
+        lxvalue::_invalid (void) const
+        {
+            lx_error("Invalid operation for lxvar type");
+        }
     }
 
 
@@ -81,6 +93,34 @@ namespace lx0 { namespace core {
         lxstring* t = new lxstring;
         t->mValue = s;
         mValue.reset(t);
+    }
+
+    lxvar
+    lxvar::undefined (void)
+    {
+        return lxvar();
+    }
+
+    lxvar
+    lxvar::map (void)
+    {
+        lxvar v;
+        v._castTo<lxstringmap>();
+        return v;
+    }
+
+    lxvar
+    lxvar::array (void)
+    {
+        lxvar v;
+        v._castTo<lxarray>();
+        return v;
+    }
+
+    void 
+    lxvar::undefine (void)
+    {
+        mValue = lxundefined::acquire();
     }
 
     lxvar
@@ -138,7 +178,7 @@ namespace lx0 { namespace core {
     }
 
     bool    
-    lxvar::equals (const char* s) const
+    lxvar::equal (const char* s) const
     {
         return (isString() && asString() == s);
     }
@@ -155,44 +195,38 @@ namespace lx0 { namespace core {
     lxvar::ArrayIterator
     lxvar::beginArray (void)
     {
-        return _castTo<lxarray>()->mValues.begin();
+        return _castTo<lxarray>()->mValue.begin();
     }
 
     lxvar::ArrayIterator 
     lxvar::endArray (void)
     {
-        return _castTo<lxarray>()->mValues.end();
+        return _castTo<lxarray>()->mValue.end();
     }
 
     int
     lxvar::size (void) const
     {
-        return int( _castTo<lxarray>()->mValues.size() );
+        return mValue->size();
     }
 
     lxvar 
     lxvar::at (int index) const
     {
-        return _castTo<lxarray>()->mValues[index];
+        return mValue->at(index);
     }
 
     void
     lxvar::push (const lxvar& v)
     {
         lxarray* pArray = _castTo<lxarray>();
-        pArray->mValues.push_back(v);
+        pArray->mValue.push_back(v);
     }
 
     bool
     lxvar::isMap (void) const
     {
         return _isType<lxstringmap>();
-    }
-
-    int
-    lxvar::count (void) const
-    {
-        return int( _castTo<lxstringmap>()->mValue.size() );
     }
 
     /*!
