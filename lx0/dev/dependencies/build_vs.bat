@@ -5,18 +5,17 @@ REM ===========================================================================
 REM LxEngine Windows Dependency Builder
 REM ===========================================================================
 REM
-REM This script builds and packages several open source software libraries for
-REM use on Windows.  It requires Visual Studio 2010 or Visual Studio 2010 and
-REM requires a specific package of the software libraries to work correctly as
-REM some have been modified very slightly to compile with VS 2010.
+REM This script automates the following:
+REM - Download the correct version of dependency source code
+REM - Minimal CMake-like compiler & tool detection [1]
+REM - Build the dependencies 
+REM - Copy the built files to a standard layout
+REM - Provide a CMake include file to use the built files in LxEngine projects
 REM
-REM The script does the following:
-REM 
-REM - Does minimal CMake-like compiler and tool detection [1]
-REM - Executes the necessary DOS commands to compile the various packages
-REM - Copies the resulting binaries and *debug information* to a uniform layout
-REM - Provides a CMake include file to will subsequently detect the packages
+REM Currently only Visual Studio 2010 and Debug builds are supported.  This is
+REM due to development time constraints, not inherent technical limitations.
 REM
+REM Notes:
 REM [1] An attempt was made to implement this script directly in the CMake
 REM     language, but the result was too cumbersome and largely unnecessary
 REM     since this script is intentionally tailored to support only Visual
@@ -24,10 +23,10 @@ REM     Studio compilers.
 REM 
 REM TODO
 REM - Copy resulting binaries to uniform sdk layout
+REM - Move source into a root "packages" directory
+REM - Test Release build support
 REM - Test VS2008 support
 REM - Test x64 support
-REM - Call CMake to set up compiler-dependent settings
-REM
 REM
 REM LICENSE 
 REM (http://www.opensource.org/licenses/mit-license.php)
@@ -301,8 +300,7 @@ echo msbuild ALL_BUILD.vcxproj /p:Configuration=Debug >>_t.bat
 echo msbuild ALL_BUILD.vcxproj /p:Configuration=Release >>_t.bat
 
 call:build_project %PROJECT% %ROOTDIR% %TESTFILE%
-IF %FAILURE%==1 (goto:EOF)
-        
+IF %FAILURE%==1 (goto:EOF)   
 
 REM ===========================================================================
 REM Build Google V8
@@ -322,6 +320,8 @@ echo call copy include\* sdk\include\v8>>_t.bat
 
 call:build_project %PROJECT% %ROOTDIR% %TESTFILE%
 IF %FAILURE%==1 (goto:EOF)
+
+call:copy_directory %ROOTDIR%\sdk %PSDK%\v8
 
 REM ===========================================================================
 REM Build OpenAL Software Implementation
