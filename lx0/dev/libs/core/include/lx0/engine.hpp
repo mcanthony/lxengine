@@ -66,18 +66,19 @@ namespace lx0 { namespace core {
     public:
 
         //! Acquire the Singleton for the Engine
-        static EnginePtr acquire() { return detail::acquireSingleton<Engine>(s_wpEngine); }
+        static EnginePtr    acquire         () { return detail::acquireSingleton<Engine>(s_wpEngine); }
         
-        void    shutdown    (void);
+        void                shutdown        (void);
 
-        void    connect     (DocumentPtr spDocument);
+        DocumentPtr         loadDocument    (std::string filename);
+        void                connect         (DocumentPtr spDocument);
 
-        void   sendMessage (const char* message);
-        int	  run();
+        void                sendMessage     (const char* message);
+        int	                run             (void);
 
         // Stats
-        void    incObjectCount  (std::string name);
-        void    decObjectCount  (std::string name);
+        void                incObjectCount (std::string name);
+        void                decObjectCount (std::string name);
 
     protected:
         template <typename T> friend std::shared_ptr<T> detail::acquireSingleton (std::weak_ptr<T>&);
@@ -86,7 +87,9 @@ namespace lx0 { namespace core {
         Engine();
         ~Engine(); 
 
-        void        _runJavascript  (DocumentPtr spDocument, std::string source);
+        ElementPtr  _loadDocumentRoot   (std::string filename);
+
+        void        _runJavascript      (DocumentPtr spDocument, std::string source);
         
         std::vector<DocumentPtr>    m_documents;
         std::deque<std::string>     m_messageQueue;

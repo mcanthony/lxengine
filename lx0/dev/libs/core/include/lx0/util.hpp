@@ -30,9 +30,11 @@
 #pragma once
 
 #include <string>
+#include <lx0/lxvar.hpp>
 
 namespace lx0 { namespace util {
 
-    std::string lx_file_to_string (std::string filename);
+    std::string         lx_file_to_string   (std::string filename);
+    lx0::core::lxvar    lx_file_to_json     (const char* pszFilename);
 
 }}

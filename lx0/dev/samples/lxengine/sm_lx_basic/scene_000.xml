@@ -1,0 +1,11 @@
+<Root>
+    <Header>
+        <Script language="javascript" src="data/sm_lx_basic/script000.js" />
+    </Header>
+    <Library>
+        <Mesh id="unit_cube" src="data/sm_lx_basic/tree.json" />
+    </Library>
+    <Scene>
+        <Group id="grid" />
+    </Scene>
+</Root>

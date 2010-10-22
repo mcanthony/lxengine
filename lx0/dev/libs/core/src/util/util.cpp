@@ -29,6 +29,7 @@
 
 #include <lx0/core.hpp>
 #include <lx0/util.hpp>
+#include <lx0/jsonio.hpp>
 
 using namespace lx0::core;
 
@@ -37,7 +38,8 @@ namespace lx0 { namespace util {
     /*!
         Inefficient, but simple and convenient.
      */
-    std::string lx_file_to_string (std::string filename)
+    std::string 
+    lx_file_to_string (std::string filename)
     {
         std::string s;
         FILE* fp;
@@ -52,6 +54,16 @@ namespace lx0 { namespace util {
         fclose(fp);
 
         return s;
+    }
+
+    lx0::core::lxvar 
+    lx_file_to_json (const char* pszFilename)
+    {
+        std::string s = lx_file_to_string(pszFilename);
+
+        const char* p = s.c_str();
+        lx0::serial::JsonParser parser;
+        return parser.parse(p);
     }
 
 }}

@@ -30,11 +30,13 @@
 #include <string>
 
 #include <v8/v8.h>
+#include "../src/extern/tinyxml/tinyxml.h"
 
 #include <lx0/core.hpp>
 #include <lx0/engine.hpp>
 #include <lx0/document.hpp>
 #include <lx0/element.hpp>
+#include <lx0/mesh.hpp>
 #include <lx0/util.hpp>
 #include <lx0/v8bind.hpp>
 
@@ -134,6 +136,87 @@ namespace lx0 { namespace core {
         lx_check_fatal(it->second.current() >= 1);
 
         it->second.dec();
+    }
+
+    ElementPtr  
+    Engine::_loadDocumentRoot (std::string filename)
+    {
+        //
+        // Define a local structure within which the recursive loading function can be set
+        //
+        struct L
+        {
+            static ElementPtr build (TiXmlNode* pParent, int depth)
+            {
+                ElementPtr spElem (new Element);
+         
+                std::string value = pParent->Value();
+                for (int i = 0; i < depth; i++)
+                    std::cout << "    ";
+                std::cout << value << std::endl;
+
+                spElem->type(value);
+
+                if (TiXmlElement* pTiElement = pParent->ToElement())
+                {
+                    for (TiXmlAttribute* pAttrib= pTiElement->FirstAttribute(); pAttrib; pAttrib = pAttrib->Next())
+                    {
+                        std::string name = pAttrib->Name();
+                        std::string value = pAttrib->Value();
+                        spElem->attr(name, lxvar(value.c_str()));
+                    }
+                }
+
+                // This should be controlled in a more dynamic, pluggable fashion
+                if (spElem->type() == "Mesh") 
+                {
+                    MeshPtr spMesh (new Mesh);
+
+                    lxvar src = spElem->attr("src");
+                    if (src.isDefined())
+                    {
+                        lxvar value = lx0::util::lx_file_to_json(src.asString().c_str());
+                        spMesh->deserialize(value);
+                        spElem->value(spMesh);
+                    }
+                }
+
+                for (TiXmlNode* pChild = pParent->FirstChild(); pChild != 0; pChild = pChild->NextSibling())
+                {
+                    ElementPtr spLxElem = build(pChild, depth + 1);
+                    spElem->append(spLxElem);
+                }
+
+                return spElem;
+            }
+        };
+
+        ElementPtr spRoot(new Element);
+
+        TiXmlDocument doc(filename.c_str());
+        if (doc.LoadFile())
+        {
+            spRoot = L::build(doc.RootElement(), 0);
+        }
+        else
+            spRoot.reset();
+
+        return spRoot;
+    }
+
+    
+    DocumentPtr
+    Engine::loadDocument (std::string filename)
+    {
+        DocumentPtr spDocument(new Document);
+        ElementPtr spRoot = _loadDocumentRoot(filename);
+        spDocument->root(spRoot);
+        
+        // API Design question: does this belong here?  Is a load an implicit connection?
+        // What is an "unconnected" document good for?
+        this->connect(spDocument);
+
+        return spDocument;
     }
 
     void    

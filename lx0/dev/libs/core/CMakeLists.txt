@@ -14,10 +14,16 @@ macro(lx_source_group FOLDER)
     endforeach(F)
 endmacro(lx_source_group)
 
+file(GLOB_RECURSE TINYXML_SRC src/extern/tinyxml/*.cpp)
+file(GLOB_RECURSE TINYXML_HDR src/extern/tinyxml/*.h)
+set(EXTERN_SRC ${TINYXML_SRC} ${TINYXML_HDR})
+source_group("extern/tinymxl" FILES ${TINYXML_SRC})
+source_group("extern/tinymxl" FILES ${TINYXML_HDR})
+
 file(GLOB_RECURSE SRCFILES src/*.cpp)
 file(GLOB_RECURSE HFILES include/*.hpp)
 file(GLOB_RECURSE HPPFILES include/*.h)
-set(SOURCES ${SRCFILES} ${HFILES} ${HPPFILES})
+set(SOURCES ${SRCFILES} ${HFILES} ${HPPFILES} ${EXTERN_SRC})
 
 lx_source_group("core")
 lx_source_group("primitives")

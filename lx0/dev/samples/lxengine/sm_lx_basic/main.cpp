@@ -50,59 +50,6 @@
 
 using namespace lx0::core;
 
-lxvar deserialize (const char* pszFilename)
-{
-    std::string s = lx0::util::lx_file_to_string(pszFilename);
-
-    const char* p = s.c_str();
-    lx0::serial::JsonParser parser;
-    return parser.parse(p);
-}
-
-/*!
-    @todo Eventually documents should be built from XML + JSON, not pure JSON.
- */
-ElementPtr 
-buildDocument (lxvar var)
-{
-    lx_check_error(var.isMap());
-    
-    ElementPtr spElem( new Element );
-
-    auto type = var.find("type");
-    spElem->type( type.asString() );
-    
-    auto attrs = var.find("attributes");
-    for (auto it = attrs.beginMap(); it != attrs.endMap(); ++it)
-    {
-        spElem->attr( it->first.c_str(), it->second );
-    }
-
-    auto children = var.find("children");
-    for (auto it = children.beginArray(); it != children.endArray(); ++it)
-    {
-        spElem->append( buildDocument(*it) );
-    }
-
-    // This should be controlled in a more dynamic, pluggable fashion
-    if (spElem->type() == "Mesh") 
-    {
-        MeshPtr spMesh (new Mesh);
-
-        lxvar src = spElem->attr("src");
-        lxvar value; 
-        if (src.isDefined())
-            value = deserialize(src.asString().c_str());
-        else
-            value = var.find("value");
-        spMesh->deserialize(value);
-        
-        spElem->value(spMesh);
-    }
-
-    return spElem;
-}
-
 int 
 main (int argc, char** argv)
 {
@@ -112,14 +59,7 @@ main (int argc, char** argv)
     {
         EnginePtr spEngine( Engine::acquire() );
 
-        DocumentPtr spDocument(new Document);
-
-        lxvar doc = deserialize("scene_000.json");
-        lx_check_error(doc.isMap());
-        ElementPtr spRoot = buildDocument(doc);
-        spDocument->root(spRoot);
-        
-        spEngine->connect(spDocument);
+        DocumentPtr spDocument = spEngine->loadDocument("scene_000.xml");
 
         {
             ViewPtr spView(new View);
