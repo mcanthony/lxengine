@@ -197,6 +197,24 @@ namespace lx0 { namespace serial {
         return t;
     }
 
+    /*!
+        @todo Escape character handling.
+     */
+    std::string 
+    JsonParser::_readUnquotedString (void)
+    {
+        std::string t;
+
+        lx_check_error(isalpha(_peek()));
+
+        while (isalnum(_peek()) || _peek() == '_') 
+        {
+            t += _advance();
+        }
+
+        return t;
+    }
+
     lxvar 
     JsonParser::_readArray (void)
     {
@@ -223,6 +241,15 @@ namespace lx0 { namespace serial {
         return obj;
     }
 
+    std::string
+    JsonParser::_readKey (void)
+    {
+        if (isalpha(_peek()))
+            return _readUnquotedString();
+        else
+            return _readString();
+    }
+
     lxvar 
     JsonParser::_readObject (void)
     {
@@ -240,7 +267,7 @@ namespace lx0 { namespace serial {
 
             ///@todo Limitation: currently assumes keys are always strings
             _skipWhitespace();
-            std::string key = _readString();
+            std::string key = _readKey();
             _skipWhitespace();
 
             _consume(':');

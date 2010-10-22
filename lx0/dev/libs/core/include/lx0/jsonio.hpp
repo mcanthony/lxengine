@@ -75,6 +75,8 @@ namespace lx0 { namespace serial {
         lxvar           _readObject         (void);
         lxvar           _readArray          (void);
         std::string     _readString         (void);
+        std::string     _readUnquotedString (void);
+        std::string     _readKey            (void);
         lxvar           _readNumber         (void);
         lxvar           _readValue          (void);
     };

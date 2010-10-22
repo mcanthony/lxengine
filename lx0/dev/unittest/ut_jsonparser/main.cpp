@@ -206,6 +206,14 @@ main (int argc, char** argv)
             CHECK(v.find("al pha").asInt() == 1);
             CHECK(v.find("beta ").asString() == " two");
             CHECK(v.size() == 2);
+
+            // Unquoted associative array keys should be okay
+            v = parser.parse("{ alpha : 1, beta:' two', }");
+            CHECK(v.find("alpha").asInt() == 1);
+            CHECK(v.find("beta").asString() == " two");
+            CHECK(v.size() == 2);
+            CHECK_EXCEPTION({ parser.parse("{ al pha : 1, beta:' two', }"); });
+            CHECK_EXCEPTION({ parser.parse("{ alpha : 1, beta:two, }"); });
             
         });
         F.add("parse non-standard", [] () {
