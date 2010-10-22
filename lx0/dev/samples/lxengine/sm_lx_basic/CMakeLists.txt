@@ -1,5 +1,11 @@
+macro(lx_copy FILE)
+    configure_file(${FILE} ${CMAKE_BINARY_DIR}/data/sm_lx_basic/${FILE} COPYONLY)
+endmacro(lx_copy)
+
+
 simple_executable( sm_lx_basic )
-configure_file(scene_000.xml ${CMAKE_BINARY_DIR}/scene_000.xml COPYONLY)
-configure_file(script000.js ${CMAKE_BINARY_DIR}/data/sm_lx_basic/script000.js COPYONLY)
-configure_file(smooth_cube.json ${CMAKE_BINARY_DIR}/data/sm_lx_basic/smooth_cube.json COPYONLY)
-configure_file(tree.json ${CMAKE_BINARY_DIR}/data/sm_lx_basic/tree.json COPYONLY)
+lx_copy(scene_000.xml)
+lx_copy(script000.js)
+lx_copy(lxquery.js)
+lx_copy(smooth_cube.json)
+lx_copy(tree.json)

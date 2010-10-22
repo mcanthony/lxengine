@@ -59,7 +59,7 @@ main (int argc, char** argv)
     {
         EnginePtr spEngine( Engine::acquire() );
 
-        DocumentPtr spDocument = spEngine->loadDocument("scene_000.xml");
+        DocumentPtr spDocument = spEngine->loadDocument("data/sm_lx_basic/scene_000.xml");
 
         {
             ViewPtr spView(new View);

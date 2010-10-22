@@ -151,10 +151,6 @@ namespace lx0 { namespace core {
                 ElementPtr spElem (new Element);
          
                 std::string value = pParent->Value();
-                for (int i = 0; i < depth; i++)
-                    std::cout << "    ";
-                std::cout << value << std::endl;
-
                 spElem->type(value);
 
                 if (TiXmlElement* pTiElement = pParent->ToElement())
@@ -209,9 +205,11 @@ namespace lx0 { namespace core {
     Engine::loadDocument (std::string filename)
     {
         DocumentPtr spDocument(new Document);
+
         ElementPtr spRoot = _loadDocumentRoot(filename);
         spDocument->root(spRoot);
-        
+        lx_check_error(spRoot);
+
         // API Design question: does this belong here?  Is a load an implicit connection?
         // What is an "unconnected" document good for?
         this->connect(spDocument);
@@ -224,10 +222,10 @@ namespace lx0 { namespace core {
     {
         m_documents.push_back(spDocument);
 
-
         //
         // Not sure this is exactly the right place for the scripts to be run...
         //
+        std::vector<std::string> scripts;
         ElementPtr spRoot = spDocument->root();
         for (int i = 0; i < spRoot->childCount(); ++i)
         {
@@ -243,11 +241,15 @@ namespace lx0 { namespace core {
                         std::string src      = spElem->attr("src").asString();
 
                         std::string content = lx0::util::lx_file_to_string(src);
-                        _runJavascript(spDocument, content);
+                        scripts.push_back(content);
                     }
                 }
             }
         }
+
+        // Batch all the scripts together into one call so that they share the
+        // same execution context (i.e. global variables, etc. *should* affect each other).
+        _runJavascript(spDocument, scripts);
     }
 
 	void   
@@ -474,6 +476,18 @@ namespace lx0 { namespace core {
     void        
     Engine::_runJavascript (DocumentPtr spDocument, std::string sourceText)
     {
+        std::vector<std::string> sources;
+        sources.push_back(sourceText);
+
+        _runJavascript(spDocument, sources);
+    }
+
+    /*!
+        Run a set of Javascript source files together in the same execution context.
+     */
+    void
+    Engine::_runJavascript (DocumentPtr spDocument, std::vector<std::string> sources)
+    {
         using namespace v8;
         using namespace lx0::v8_bind;
 
@@ -506,10 +520,13 @@ namespace lx0 { namespace core {
             Persistent<Context> context = Context::New(0, global);
             Context::Scope context_scope(context);
 
-            Handle<String> source = String::New(sourceText.c_str());
-            Handle<Script> script = Script::Compile(source);
+            for (auto it = sources.begin(); it != sources.end(); ++it)
+            {
+                Handle<String> source = String::New(it->c_str());
+                Handle<Script> script = Script::Compile(source);
 
-            Handle<Value> result = script->Run();
+                Handle<Value> result = script->Run();
+            }
 
             context.Dispose();
         }
