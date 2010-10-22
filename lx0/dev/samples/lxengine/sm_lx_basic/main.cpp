@@ -119,36 +119,11 @@ main (int argc, char** argv)
         
         spEngine->connect(spDocument);
 
-        /*
-            @todo Need to embed a JS script to generate the grid rather than
-                hardcode it into the data file
-
-                for (int gy = 0; gy < 3; gy ++)
-                {
-                    for (int gx = 0; gx < 3; gx ++)
-                    {
-                        // g2w = grid to world coordinate
-                        auto g2w = [](int i) { return (i - 1) * 1.5f; };
-                        lxvar pos;
-                        pos.push(g2w(gx));
-                        pos.push(g2w(gy));
-                        pos.push(0.5f);
-
-                        ElementPtr spRef (new Element);
-                        spRef->type("Ref");
-                        spRef->attr("translation", pos);
-                        spRef->attr("ref", "unit_cube");
-
-                        spScene->append(spRef);
-                    }
-        */
-
         {
             ViewPtr spView(new View);
             spDocument->connect("view", spView);
             spView->show();
         }
-
 
         ControllerPtr spController;
    

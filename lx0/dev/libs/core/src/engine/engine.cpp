@@ -190,6 +190,11 @@ namespace lx0 { namespace core {
 		return 0;
 	}
 
+    /*
+        This class is used to convert from V8 values to primitive types,
+        including lxvar.  Better naming, unit testing, and completeness are
+        all lacking from the current code.
+     */
     struct Any
     {
         Any() : mValue( v8::Undefined() ) {}
@@ -383,8 +388,6 @@ namespace lx0 { namespace core {
         return Undefined();
     }
 
-    
-
     void        
     Engine::_runJavascript (DocumentPtr spDocument, std::string sourceText)
     {
@@ -394,13 +397,25 @@ namespace lx0 { namespace core {
         HandleScope handle_scope;
         Handle<ObjectTemplate> global = ObjectTemplate::New(); 
 
+        // Stand-alone DOM functions.  These are place-holders which eventually should be
+        // replaced with a "document" object in the global context.   The functions on
+        // that object should mirror those on the HTML DOM.
+        //
         global->Set(String::New("document_createElement"), FunctionTemplate::New(createElement));
         global->Set(String::New("document_getElementById"), FunctionTemplate::New(getElementById));
         global->Set(String::New("document_setAttribute"), FunctionTemplate::New(setAttribute));
         global->Set(String::New("document_append"), FunctionTemplate::New(appendElement));
         
+        // Internal debugging methods to make development a little easier.
+        //
         global->Set(String::New("__lx_print"), FunctionTemplate::New(print));
         
+        // For the duration of the script, keep a mapping table of all the
+        // referenced elements as well as the current document.  These are
+        // stored in global variables since the invokation functions in V8
+        // require statics.  It would be better to wrap this in some sort of
+        // execution context object.
+        //
         s_mappingTable.clear();
         s_spDocument = spDocument;
 
