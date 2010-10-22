@@ -26,42 +26,38 @@
 */
 //===========================================================================//
 
-#pragma once
+#include <lx0/core.hpp>
+#include <lx0/v8bind.hpp>
 
-#include <memory>
-#include <vector>
-#include <map>
+using namespace lx0::core;
 
-#include <lx0/detail/forward_decls.hpp>
+namespace lx0 { namespace v8_bind {
 
-namespace lx0 { namespace core {
+    V8Bind gV8Bind;
 
-    class Document
+    /*!
+    @todo This leaks memory.  The native object is allocated here, but there's no
+        notification mechanism to let the engine know that the script no longer
+        is using the native object.
+     */
+    v8::Handle<v8::Object>
+    V8Bind::newObject (std::string name)
     {
-    public:
-                        Document();
-                        ~Document();
+        Class& klass = mClasses.find(name)->second;
+        return wrapObject(name, klass.mCtor());
+    }
 
-        TransactionPtr  transaction     (void);
+    v8::Handle<v8::Object>
+    V8Bind::wrapObject (std::string name, void* pObject)
+    {
+        auto it = mClasses.find(name);
+        lx_check_error(it != mClasses.end());
+        
+        Class& klass = it->second;
+        v8::Handle<v8::Function> ctor = klass.mTemplate->GetFunction();
+        v8::Handle<v8::Object> obj = ctor->NewInstance();
+        obj->SetInternalField(0, v8::External::New(pObject));
 
-        void            connect         (std::string name, ViewPtr spView);
-        void            disconnect      (std::string name);
-
-        ElementCPtr     root            (void) const        { return m_spRoot; }
-        ElementPtr      root            (void)              { return m_spRoot; }
-        void            root            (ElementPtr spRoot) { m_spRoot = spRoot; }
-
-        ElementPtr      getElementById  (std::string id);
-
-        void            run             (void);
-
-    protected:
-        typedef std::vector< TransactionWPtr > TrWList;
-
-        TrWList m_openTransactions;
-
-        ElementPtr  m_spRoot;
-
-        std::map<std::string, ViewPtr> m_views;
-    };
+        return obj;
+    }
 }}

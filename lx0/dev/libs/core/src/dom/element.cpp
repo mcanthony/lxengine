@@ -39,11 +39,13 @@ namespace lx0 { namespace core {
     void    
     Element::prepend (ElementPtr spElem)
     {
+        lx_check_error(!"Not implemented");
     }
 
     void
     Element::append (ElementPtr spElem)
     {
+        lx_check_error(this);
         lx_check_error(spElem->parent().get() == nullptr);
        
         spElem->mspParent = shared_from_this();
@@ -75,6 +77,20 @@ namespace lx0 { namespace core {
         {
             lx_error("Index %d out of range in Element::child()", i);
             return ElementCPtr();
+        }
+    }
+
+    ElementPtr     
+    Element::child(int i)
+    {
+        if (i >= 0 && i < int(mChildren.size()))
+        {
+            return mChildren[i];
+        }
+        else
+        {
+            lx_error("Index %d out of range in Element::child()", i);
+            return ElementPtr();
         }
     }
 

@@ -3,6 +3,18 @@
     "attributes" : { },
     "children" : [
         {
+            "type"  :   "Header",
+            "children"  : [
+                {
+                    "type"  :   "Script",
+                    "attributes" : {
+                        "language"  :   "javascript",
+                        "src"       :   "data/sm_lx_basic/script000.js",
+                    },
+                },
+            ],
+        },
+        {
             "type"  :   "Library",
             "children" : [
                 {
@@ -504,17 +516,9 @@
             "type" : "Scene",
             "children" : [
                 {
-                    "type"  : "Ref",
-                    "attributes" : { 
-                        "ref"   :   "unit_cube",
-                        "translation" : [ -1.5, 0, 0.5 ],
-                    },
-                },
-                {
-                    "type"  : "Ref",
-                    "attributes" : { 
-                        "ref"   :   "unit_cube",
-                        "translation" : [ 0, 0, 0.5 ],
+                    "type"  : "Group",
+                    "attributes" : {
+                        "id" : "grid"
                     },
                 },
             ],

@@ -55,6 +55,7 @@ namespace lx0 { namespace core {
         void        detach          (Document* pDocument);
 
     protected:
+        void        _processGroup   (ElementPtr spElem);
         void        _addMesh        (std::string name, MeshPtr spMesh);
 
         detail::LxOgrePtr       mspLxOgre;

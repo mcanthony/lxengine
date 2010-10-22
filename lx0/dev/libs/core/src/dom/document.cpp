@@ -28,12 +28,15 @@
 //===========================================================================//
 
 #include <cassert>
+#include <string>
+
 #include <lx0/document.hpp>
 #include <lx0/transaction.hpp>
 #include <lx0/element.hpp>
 #include <lx0/view.hpp>
 #include <lx0/core.hpp>
 #include <lx0/engine.hpp>
+#include <lx0/lxvar.hpp>
 
 namespace lx0 { namespace core {
 
@@ -77,6 +80,36 @@ namespace lx0 { namespace core {
         }
         else
             lx_error("Could name find view '%s' on document.", name.c_str());
+    }
+
+    /*
+        This eventually needs to be cached, but for simplicity prior to v1.0,
+        just naively walk the whole document and return the first matching
+        element.
+     */
+    ElementPtr
+    Document::getElementById (std::string id)
+    {
+        struct L
+        {
+            static ElementPtr findId (std::string id, ElementPtr spElem)
+            {
+                lxvar v = spElem->attr("id");
+                if (v.isString() && v.asString() == id)
+                    return spElem;
+
+                for (int i = 0; i < spElem->childCount(); ++i)
+                {
+                    ElementPtr spMatch = findId(id, spElem->child(i));
+                    if (spMatch)
+                        return spMatch;
+                }
+                
+                return ElementPtr();
+            }
+        };
+
+        return L::findId(id, root());
     }
 
     void            

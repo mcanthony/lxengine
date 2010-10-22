@@ -55,6 +55,7 @@ namespace lx0 { namespace core {
 
         ElementCPtr     parent      () const;
         ElementCPtr     child       (int i) const;
+        ElementPtr      child       (int i);
         int             childCount  (void) const;
 
         const ObjectPtr value       (void) const    { return mspValue; }

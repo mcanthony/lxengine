@@ -86,6 +86,8 @@ namespace lx0 { namespace core {
         Engine();
         ~Engine(); 
 
+        void        _runJavascript  (DocumentPtr spDocument, std::string source);
+        
         std::vector<DocumentPtr>    m_documents;
         std::deque<std::string>     m_messageQueue;
 

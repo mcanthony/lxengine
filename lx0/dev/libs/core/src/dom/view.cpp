@@ -180,6 +180,37 @@ namespace lx0 { namespace core {
         pObject->convertToMesh(name.c_str());
     }
 
+    static int refCount = 0;
+
+    void        
+    View::_processGroup (ElementPtr spElem)
+    {
+        for (int j = 0; j < spElem->childCount(); ++j)
+        {
+            ElementPtr spChild = spElem->child(j);
+
+            if (spChild->type() == "Ref")
+            {
+                std::ostringstream nameo;
+                nameo << "anonymousRef" << (refCount++);
+                std::string name = nameo.str();
+                std::string ref = spChild->attr("ref").asString();
+
+                auto pos2 = asPoint3( spChild->attr("translation") );
+                const Ogre::Vector3 pos = reinterpret_cast<Ogre::Vector3&>(pos2);
+                   
+                Ogre::Entity* pEntity = mpSceneMgr->createEntity(ref);
+                Ogre::SceneNode* pNode = mpSceneMgr->getRootSceneNode()->createChildSceneNode(name);
+                pNode->attachObject(pEntity);
+                pNode->setPosition(pos);
+            }
+            else if (spChild->type() == "Group")
+            {
+                _processGroup(spChild);
+            }
+        }
+    }
+
     /*!
         Makes the view or window visible.
      */
@@ -236,10 +267,10 @@ namespace lx0 { namespace core {
         ElementPtr spRoot = mpDocument->root();
         for (int i = 0; i < spRoot->childCount(); ++i)
         {
-            ElementCPtr spChild = spRoot->child(i);
+            ElementPtr spChild = spRoot->child(i);
             if (spChild->type() == "Library")
             {
-                std::cout << "View found Library element" << std::endl;
+                lx_debug("View found Library element in Document");
 
                 for (int j = 0; j < spChild->childCount(); ++j)
                 {
@@ -253,29 +284,8 @@ namespace lx0 { namespace core {
             }
             else if (spChild->type() == "Scene")
             {
-                std::cout << "View found Scene element" << std::endl;
-
-                for (int j = 0; j < spChild->childCount(); ++j)
-                {
-                    ElementCPtr spRef = spChild->child(j);
-                    static int refCount = 0;
-                    if (spRef->type() == "Ref")
-                    {
-                        std::ostringstream nameo;
-                        nameo << "anonymousRef" << (refCount++);
-                        std::string name = nameo.str();
-
-                        std::string ref = spRef->attr("ref").asString();
-
-                        auto pos2 = asPoint3( spRef->attr("translation") );
-                        const Ogre::Vector3 pos = reinterpret_cast<Ogre::Vector3&>(pos2);
-                   
-                        Ogre::Entity* pEntity = mpSceneMgr->createEntity(ref);
-                        Ogre::SceneNode* pNode = mpSceneMgr->getRootSceneNode()->createChildSceneNode(name);
-                        pNode->attachObject(pEntity);
-                        pNode->setPosition(pos);
-                    }
-                }
+                lx_debug("View found Scene element in Document");
+                _processGroup(spChild);
             }
         }
     }

@@ -29,9 +29,14 @@
 #include <iostream>
 #include <string>
 
+#include <v8/v8.h>
+
 #include <lx0/core.hpp>
 #include <lx0/engine.hpp>
 #include <lx0/document.hpp>
+#include <lx0/element.hpp>
+#include <lx0/util.hpp>
+#include <lx0/v8bind.hpp>
 
 #include <OGRE/OgreRoot.h>
 #include <OGRE/OgreSceneManager.h>
@@ -135,6 +140,31 @@ namespace lx0 { namespace core {
     Engine::connect (DocumentPtr spDocument)
     {
         m_documents.push_back(spDocument);
+
+
+        //
+        // Not sure this is exactly the right place for the scripts to be run...
+        //
+        ElementPtr spRoot = spDocument->root();
+        for (int i = 0; i < spRoot->childCount(); ++i)
+        {
+            ElementCPtr spChild = spRoot->child(i);
+            if (spChild->type() == "Header")
+            {
+                for (int j = 0; j < spChild->childCount(); ++j)
+                {
+                    ElementCPtr spElem = spChild->child(j);
+                    if (spElem->type() == "Script")
+                    {
+                        std::string language = spElem->attr("language").asString();
+                        std::string src      = spElem->attr("src").asString();
+
+                        std::string content = lx0::util::lx_file_to_string(src);
+                        _runJavascript(spDocument, content);
+                    }
+                }
+            }
+        }
     }
 
 	void   
@@ -159,5 +189,235 @@ namespace lx0 { namespace core {
 
 		return 0;
 	}
+
+    struct Any
+    {
+        Any() : mValue( v8::Undefined() ) {}
+        Any(v8::Handle<v8::Value>&v) : mValue(v) {}
+        Any(v8::Handle<v8::Object>&v) : mValue(v) {}
+        Any(int i) { mValue = v8::Integer::New(i); }
+        Any(std::string s) 
+        {
+            mValue = v8::String::New(s.c_str());
+        }
+
+        v8::Handle<v8::Value> mValue;
+
+        v8::Handle<v8::Value> handle() { return mValue; }
+
+        operator std::string () 
+        {
+            v8::String::AsciiValue value (mValue);
+            return *value;
+        }
+        operator int ()
+        {
+            return mValue->Int32Value();
+        }
+        operator lxvar ()
+        {
+            using namespace v8;
+
+            if (mValue->IsUndefined())
+            {
+                return lxvar();
+            }
+            else if (mValue->IsString())
+            {
+                return lxvar( std::string( *this ).c_str() );
+            }
+            else if (mValue->IsArray())
+            {
+                Local<Array> arr = Array::Cast(*mValue);
+
+                lxvar v;
+                for (int i = 0; i < arr->Length(); ++i)
+                {
+                    Local<Value> e = arr->Get(i);
+                    v.push( Any(e) );
+                }
+                return v;
+            }
+            else if (mValue->IsObject())
+            {
+                lx_error("Not valid");
+            }
+            else if (mValue->IsInt32())
+            {
+                return lxvar( int(*this) );
+            }
+            else if (mValue->IsNumber())
+            {
+                return lxvar( float( mValue->NumberValue() ) );
+            }
+            else if (mValue->IsExternal())
+            {
+                lx_error("Not valid");
+            }
+            else if (mValue->IsFunction())
+            {
+                lx_error("Not valid");
+            }
+            else
+                lx_error("Cannot convert Javascript value to lxvar.");
+
+            lx_error("Unreachable code.");
+            return lxvar();
+        }
+    };
+
+    /*
+        Workaround until there's a better understanding of exposing C++ objects
+        in V8 works.  For now, expose the object via an int handle and do a 
+        mapping on every transition between C++/JS.  
+     */
+    class MappingTable
+    {
+    public:
+        int add (ElementPtr spElem)
+        {
+            lx_check_error(spElem);
+
+            int handle = int( mElems.size() );
+            mElems.push_back(spElem);
+            mHandles.insert(std::make_pair(spElem.get(), handle));
+            return handle;
+        }
+        ElementPtr find (int i)
+        {
+            return mElems[i];
+        }
+
+        int find (ElementPtr spElem)
+        {
+            auto it = mHandles.find(spElem.get());
+            lx_check_error(it != mHandles.end());
+            return it->second;
+        }
+
+        int findOrAdd (ElementPtr spElem)
+        {
+            lx_check_error(spElem);
+
+            auto it = mHandles.find(spElem.get());
+            if (it != mHandles.end())
+                return it->second;
+            else
+                return add(spElem);
+        }
+
+        void clear()
+        {
+            mHandles.clear();
+            mElems.clear();
+        }
+
+        std::vector<ElementPtr> mElems;
+        std::map<Element*,int> mHandles;
+    };
+
+    static MappingTable s_mappingTable;
+    static DocumentPtr  s_spDocument;
+
+    static v8::Handle<v8::Value> createElement (const v8::Arguments& args)
+    {
+        using namespace v8;
+
+        std::string name = Any(args[0]);
+        ElementPtr spElem( new Element );
+        spElem->type(name);
+        int handle = s_mappingTable.add(spElem);
+
+        return Integer::New(handle);
+    }
+
+    static v8::Handle<v8::Value> appendElement (const v8::Arguments& args)
+    {
+        using namespace v8;
+
+        int hParent = Any(args[0]);
+        int hChild = Any(args[1]);
+        ElementPtr spParent = s_mappingTable.find(hParent);
+        ElementPtr spChild = s_mappingTable.find(hChild);
+        
+        spParent->append(spChild);
+        return Undefined();
+    }
+
+    static v8::Handle<v8::Value> getElementById (const v8::Arguments& args)
+    {
+        using namespace v8;
+        lx_check_error(args.Length() == 1);
+
+        std::string id = Any(args[0]);
+        ElementPtr spElem = s_spDocument->getElementById(id);
+
+        // The code does not yet gracefully handle a failed search
+        if (!spElem)
+            lx_error("Could not find element with id '%s' in the document.", id.c_str());
+
+        int hElem = s_mappingTable.findOrAdd(spElem);
+        return Integer::New(hElem);
+    }
+
+    static v8::Handle<v8::Value> setAttribute (const v8::Arguments& args)
+    {
+        using namespace v8;
+
+        int hElem = Any(args[0]);
+        std::string name = Any(args[1]);
+        lxvar value = Any(args[2]);
+
+        ElementPtr spElem = s_mappingTable.find(hElem);
+        spElem->attr(name, value);
+        return Undefined();
+    }
+
+    static v8::Handle<v8::Value> print (const v8::Arguments& args)
+    {
+        using namespace v8;
+
+        std::string name = Any(args[0]);
+        std::cout << "JS print: " << name << std::endl;
+
+        return Undefined();
+    }
+
+    
+
+    void        
+    Engine::_runJavascript (DocumentPtr spDocument, std::string sourceText)
+    {
+        using namespace v8;
+        using namespace lx0::v8_bind;
+
+        HandleScope handle_scope;
+        Handle<ObjectTemplate> global = ObjectTemplate::New(); 
+
+        global->Set(String::New("document_createElement"), FunctionTemplate::New(createElement));
+        global->Set(String::New("document_getElementById"), FunctionTemplate::New(getElementById));
+        global->Set(String::New("document_setAttribute"), FunctionTemplate::New(setAttribute));
+        global->Set(String::New("document_append"), FunctionTemplate::New(appendElement));
+        
+        global->Set(String::New("__lx_print"), FunctionTemplate::New(print));
+        
+        s_mappingTable.clear();
+        s_spDocument = spDocument;
+
+        {
+            Persistent<Context> context = Context::New(0, global);
+            Context::Scope context_scope(context);
+
+            Handle<String> source = String::New(sourceText.c_str());
+            Handle<Script> script = Script::Compile(source);
+
+            Handle<Value> result = script->Run();
+
+            context.Dispose();
+        }
+
+        s_spDocument.reset();
+        s_mappingTable.clear();
+    }
 
 }}

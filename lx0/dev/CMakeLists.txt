@@ -64,7 +64,7 @@ configure_file($ENV{OGRE_HOME}/bin/debug/plugins_d.cfg ${PROJECT_BINARY_DIR}/plu
 # Helper macros
 #
 
-set( LX_ALL_LIBS ${OGRE_LIBRARIES} lx0 )
+set( LX_ALL_LIBS ${OGRE_LIBRARIES} lx0 ${V8_LIBS} )
 
 macro(simple_executable EXENAME)
 
