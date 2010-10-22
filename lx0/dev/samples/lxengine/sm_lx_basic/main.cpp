@@ -84,18 +84,20 @@ buildDocument (lxvar var)
         spElem->append( buildDocument(*it) );
     }
 
-    auto value = var.find("value");
-    if (value.isDefined())
+    // This should be controlled in a more dynamic, pluggable fashion
+    if (spElem->type() == "Mesh") 
     {
-        // This should be controlled in a more dynamic, pluggable fashion
-        if (spElem->type() == "Mesh") 
-        {
-            MeshPtr spMesh (new Mesh);
-            spMesh->deserialize(value);
-            spElem->value(spMesh);
-        }
+        MeshPtr spMesh (new Mesh);
+
+        lxvar src = spElem->attr("src");
+        lxvar value; 
+        if (src.isDefined())
+            value = deserialize(src.asString().c_str());
         else
-            lx_error("No deserializer available for element of type '%s'", spElem->type().c_str());
+            value = var.find("value");
+        spMesh->deserialize(value);
+        
+        spElem->value(spMesh);
     }
 
     return spElem;
