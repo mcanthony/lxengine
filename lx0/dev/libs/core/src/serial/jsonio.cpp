@@ -205,7 +205,7 @@ namespace lx0 { namespace serial {
     {
         std::string t;
 
-        lx_check_error(isalpha(_peek()));
+        lx_check_error(isalpha(_peek()) != 0);
 
         while (isalnum(_peek()) || _peek() == '_') 
         {

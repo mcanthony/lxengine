@@ -45,7 +45,7 @@ namespace lx0 { namespace core {
     void
     Element::append (ElementPtr spElem)
     {
-        lx_check_error(this);
+        lx_check_error(this != nullptr);
         lx_check_error(spElem->parent().get() == nullptr);
        
         spElem->mspParent = shared_from_this();

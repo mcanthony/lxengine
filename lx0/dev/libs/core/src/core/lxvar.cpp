@@ -89,10 +89,13 @@ namespace lx0 { namespace core {
     }
 
     lxvar::lxvar (const char* s)
+        : mValue(new lxstring(s))
     {
-        lxstring* t = new lxstring;
-        t->mValue = s;
-        mValue.reset(t);
+    }
+
+    lxvar::lxvar (std::string s)
+        : mValue(new lxstring(s))
+    {   
     }
 
     lxvar

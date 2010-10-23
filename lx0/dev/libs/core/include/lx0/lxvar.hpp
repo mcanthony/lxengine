@@ -70,6 +70,16 @@ namespace lx0 { namespace core {
     class lxvar
     {
     public:
+        struct auto_cast
+        {
+            auto_cast (lxvar& v) : mValue (v) {}
+            lxvar& mValue;
+
+            operator int ()         { return mValue.asInt(); }
+            operator float ()       { return mValue.asFloat(); }
+            operator std::string () { return mValue.asString(); }
+        };
+
         typedef std::vector<lxvar>::iterator           ArrayIterator;
         typedef std::map<std::string, lxvar>::iterator MapIterator;
 
@@ -81,6 +91,7 @@ namespace lx0 { namespace core {
                         lxvar           (float a);
                         lxvar           (float a, float b, float c);
                         lxvar           (const char* s);
+                        lxvar           (std::string s);
 
         static lxvar    undefined       (void);                 //!< Return an undefined lxvar
         static lxvar    map             (void);                 //!< Return an empty map
@@ -125,6 +136,8 @@ namespace lx0 { namespace core {
         bool            containsKey     (const char* key) const;
         lxvar           find            (const char* key) const;
         void            insert          (const char* key, const lxvar& value);
+
+        auto_cast       operator*       (void) { return auto_cast(*this); }
 
     protected:
         template <typename T>   bool    _isType (void) const;

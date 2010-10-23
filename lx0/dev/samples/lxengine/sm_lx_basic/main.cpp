@@ -26,6 +26,11 @@
 */
 //===========================================================================//
 
+//===========================================================================//
+//   H E A D E R S   &   D E C L A R A T I O N S 
+//===========================================================================//
+
+// Standard headers
 #include <iostream>
 #include <string>
 #include <memory> 
@@ -34,21 +39,74 @@
 #include <map>
 #include <deque>
 
+// Library headers
+#include <boost/program_options.hpp>
+
+// Lx0 headers
 #include <lx0/core.hpp>
 #include <lx0/engine.hpp>
 #include <lx0/document.hpp>
-#include <lx0/space.hpp>
 #include <lx0/element.hpp>
-#include <lx0/object.hpp>
-#include <lx0/mesh.hpp>
 #include <lx0/view.hpp>
 #include <lx0/controller.hpp>
-#include <lx0/transaction.hpp>
-#include <lx0/point3.hpp>
-#include <lx0/jsonio.hpp>
-#include <lx0/util.hpp>
 
 using namespace lx0::core;
+
+//===========================================================================//
+//  D E F I N I T I O N S
+//===========================================================================//
+
+
+static bool 
+parseOptions (int argc, char** argv, lxvar& options)
+{
+    // See http://www.boost.org/doc/libs/1_44_0/doc/html/program_options/tutorial.html
+    using namespace boost::program_options;
+
+    // 
+    // Build the description of the expected argument format and have
+    // Boost parse the command line args.
+    //
+    std::string caption ("Syntax: %1 [options] <file>.\nOptions:");
+    size_t p = caption.find("%1");
+    caption = caption.substr(0, p) + argv[0] + caption.substr(p + 2);
+
+    options_description desc (caption);
+    desc.add_options()
+        ("help", "Print usage information and exit.")
+        ("file", value<std::string>()->default_value("data/sm_lx_basic/scene_000.xml"), "Scene file to display.")
+        ;
+
+    positional_options_description pos;
+    pos.add("file", -1);
+
+    variables_map vars;
+    store(command_line_parser(argc, argv).options(desc).positional(pos).run(), vars);
+
+    //
+    // Now check the options for anything that might prevent execution 
+    //
+
+    if (vars.count("help"))
+    {
+        std::cout << desc << std::endl;
+        return false;
+    }
+    if (vars.count("file") != 1)
+    {
+        std::cout << "Error: expected exactly one scene file to be specified." << std::endl << std::endl;
+        std::cout << desc << std::endl;
+        return false;
+    }
+
+    options.insert("file", vars["file"].as<std::string>());
+    return true;
+}
+
+
+//===========================================================================//
+//   E N T R Y - P O I N T
+//===========================================================================//
 
 int 
 main (int argc, char** argv)
@@ -57,26 +115,30 @@ main (int argc, char** argv)
 
     try
     {
-        EnginePtr spEngine( Engine::acquire() );
-
-        DocumentPtr spDocument = spEngine->loadDocument("data/sm_lx_basic/scene_000.xml");
-
+        lxvar options;
+        if ( parseOptions(argc, argv, options) )
         {
-            ViewPtr spView(new View);
-            spDocument->connect("view", spView);
-            spView->show();
-        }
+            EnginePtr spEngine( Engine::acquire() );
 
-        ControllerPtr spController;
+            DocumentPtr spDocument = spEngine->loadDocument(*options.find("file"));
+
+            {
+                ViewPtr spView(new View);
+                spDocument->connect("view", spView);
+                spView->show();
+            }
+
+            ControllerPtr spController;
    
-        exitCode = spEngine->run();
+            exitCode = spEngine->run();
 
-        // Demostrating that views *can* be detached by name.  This is not
-        // necessary, as the Document releases all views on destruction 
-        // automatically
-        spDocument->disconnect("view");
+            // Demostrating that views *can* be detached by name.  This is not
+            // necessary, as the Document releases all views on destruction 
+            // automatically
+            spDocument->disconnect("view");
 
-        spEngine->shutdown();
+            spEngine->shutdown();
+        }
     }
     catch (std::exception& e)
     {
