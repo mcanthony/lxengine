@@ -16,4 +16,4 @@ set(ENV{BOOST_LIBRARYDIR} "$ENV{BOOST_ROOT}/lib")
 # V8
 include_directories("${DEPS_SDK}/v8/include")
 link_directories("${DEPS_SDK}/v8/lib")
-set(V8_LIBS v8.lib ws2_32.lib winmm.lib)
+set(V8_LIBS v8_g.lib ws2_32.lib winmm.lib)

@@ -310,12 +310,14 @@ set PROJECT=V8
 set ROOTDIR=v8\v8
 set TESTFILE=sdk\lib\v8.lib
 
-echo call "%PYTHONEXE_PATH%\Scripts\scons.bat" env="PATH:%PATH%,INCLUDE:%INCLUDE%,LIB:%LIB%" >_t.bat
+echo call "%PYTHONEXE_PATH%\Scripts\scons.bat" env="PATH:%PATH%,INCLUDE:%INCLUDE%,LIB:%LIB%" mode=debug >_t.bat
+echo call "%PYTHONEXE_PATH%\Scripts\scons.bat" env="PATH:%PATH%,INCLUDE:%INCLUDE%,LIB:%LIB%">>_t.bat
 echo mkdir sdk>>_t.bat
 echo mkdir sdk\lib>>_t.bat
 echo mkdir sdk\include>>_t.bat
 echo mkdir sdk\include\v8>>_t.bat
 echo call copy v8.lib sdk\lib>>_t.bat
+echo call copy v8_g.lib sdk\lib>>_t.bat
 echo call copy include\* sdk\include\v8>>_t.bat
 
 call:build_project %PROJECT% %ROOTDIR% %TESTFILE%
