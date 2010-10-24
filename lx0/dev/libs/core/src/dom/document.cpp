@@ -82,6 +82,17 @@ namespace lx0 { namespace core {
             lx_error("Could name find view '%s' on document.", name.c_str());
     }
 
+    ElementPtr     
+    Document::createElement (std::string type)
+    {
+        // At the moment, there's no need for this to be a method on Document - 
+        // but eventually Document may want to track the elements it creates.
+        
+        ElementPtr spElem(new Element);
+        spElem->type(type);
+        return spElem;
+    }
+
     /*
         This eventually needs to be cached, but for simplicity prior to v1.0,
         just naively walk the whole document and return the first matching

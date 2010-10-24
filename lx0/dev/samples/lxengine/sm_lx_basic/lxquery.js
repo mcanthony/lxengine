@@ -11,13 +11,13 @@ LxQuery.prototype = {
 
         var result = re_singleTag.exec(selector);
         if (result) {
-            var elem = document_createElement(result[1]);
+            var elem = document.createElement(result[1]);
             return this._select([elem]);
         }
 
         var result = re_id.exec(selector);
         if (result) {
-            var elem = document_getElementById(result[1]);
+            var elem = document.getElementById(result[1]);
             return this._select([elem]);
         }
         

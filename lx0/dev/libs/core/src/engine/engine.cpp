@@ -277,16 +277,17 @@ namespace lx0 { namespace core {
 
     /*
         This class is used to convert from V8 values to primitive types,
-        including lxvar.  Better naming, unit testing, and completeness are
-        all lacking from the current code.
+        including lxvar. 
+
+        See http://en.wikipedia.org/wiki/Marshalling_(computer_science)
      */
-    struct Any
+    struct _marshal
     {
-        Any() : mValue( v8::Undefined() ) {}
-        Any(v8::Handle<v8::Value>&v) : mValue(v) {}
-        Any(v8::Handle<v8::Object>&v) : mValue(v) {}
-        Any(int i) { mValue = v8::Integer::New(i); }
-        Any(std::string s) 
+        _marshal() : mValue( v8::Undefined() ) {}
+        _marshal(v8::Handle<v8::Value>&v) : mValue(v) {}
+        _marshal(v8::Handle<v8::Object>&v) : mValue(v) {}
+        _marshal(int i) { mValue = v8::Integer::New(i); }
+        _marshal(std::string s) 
         {
             mValue = v8::String::New(s.c_str());
         }
@@ -321,10 +322,10 @@ namespace lx0 { namespace core {
                 Local<Array> arr = Array::Cast(*mValue);
 
                 lxvar v;
-                for (int i = 0; i < arr->Length(); ++i)
+                for (int i = 0; i < int( arr->Length() ); ++i)
                 {
                     Local<Value> e = arr->Get(i);
-                    v.push( Any(e) );
+                    v.push( _marshal(e) );
                 }
                 return v;
             }
@@ -409,24 +410,14 @@ namespace lx0 { namespace core {
     static MappingTable s_mappingTable;
     static DocumentPtr  s_spDocument;
 
-    static v8::Handle<v8::Value> createElement (const v8::Arguments& args)
-    {
-        using namespace v8;
 
-        std::string name = Any(args[0]);
-        ElementPtr spElem( new Element );
-        spElem->type(name);
-        int handle = s_mappingTable.add(spElem);
-
-        return Integer::New(handle);
-    }
 
     static v8::Handle<v8::Value> appendElement (const v8::Arguments& args)
     {
         using namespace v8;
 
-        int hParent = Any(args[0]);
-        int hChild = Any(args[1]);
+        int hParent = _marshal(args[0]);
+        int hChild = _marshal(args[1]);
         ElementPtr spParent = s_mappingTable.find(hParent);
         ElementPtr spChild = s_mappingTable.find(hChild);
         
@@ -434,13 +425,58 @@ namespace lx0 { namespace core {
         return Undefined();
     }
 
-    static v8::Handle<v8::Value> getElementById (const v8::Arguments& args)
+    template <typename NativeType>
+    static NativeType*
+    _nativeThis (const v8::Arguments& args)
+    {
+        //
+        // Assumes the function was invoked with a this object (i.e. Holder is not null) and that
+        // the object was set with exactly one internal field of type T.   It is difficult to
+        // verify these assumptions at runtime, so this is a somewhat dangerous function.
+        //
+        using namespace v8;
+        using v8::Object;
+
+        Local<Object> self = args.Holder();
+
+        lx_check_error(self->InternalFieldCount() == 1);
+        Local<External> wrap = Local<External>::Cast(self->GetInternalField(0));
+        
+        NativeType* pThis = reinterpret_cast<NativeType*>( wrap->Value() );
+        lx_check_error(pThis);
+
+        return pThis;
+    }
+
+    /*
+        Wraps document.createElement()
+     */
+    static v8::Handle<v8::Value> 
+    createElement (const v8::Arguments& args)
+    {
+        Document* pThis     = _nativeThis<Document>(args);
+        std::string name    = _marshal(args[0]);
+        
+        ElementPtr spElem   = pThis->createElement(name);
+        
+        int handle = s_mappingTable.add(spElem);
+        return v8::Integer::New(handle);
+    }
+
+    /*
+        Wrapper on Document::getElementById()
+     */
+    static v8::Handle<v8::Value> 
+    getElementById (const v8::Arguments& args)
     {
         using namespace v8;
         lx_check_error(args.Length() == 1);
+        
 
-        std::string id = Any(args[0]);
-        ElementPtr spElem = s_spDocument->getElementById(id);
+        Document* pDoc = _nativeThis<Document>(args); 
+        std::string id = _marshal(args[0]);
+        
+        ElementPtr spElem = pDoc->getElementById(id);
 
         // The code does not yet gracefully handle a failed search
         if (!spElem)
@@ -454,9 +490,9 @@ namespace lx0 { namespace core {
     {
         using namespace v8;
 
-        int hElem = Any(args[0]);
-        std::string name = Any(args[1]);
-        lxvar value = Any(args[2]);
+        int hElem = _marshal(args[0]);
+        std::string name = _marshal(args[1]);
+        lxvar value = _marshal(args[2]);
 
         ElementPtr spElem = s_mappingTable.find(hElem);
         spElem->attr(name, value);
@@ -467,7 +503,7 @@ namespace lx0 { namespace core {
     {
         using namespace v8;
 
-        std::string name = Any(args[0]);
+        std::string name = _marshal(args[0]);
         std::cout << "JS print: " << name << std::endl;
 
         return Undefined();
@@ -491,21 +527,26 @@ namespace lx0 { namespace core {
         using namespace v8;
         using namespace lx0::v8_bind;
 
+        // Set up the global template before initiating the Context.   The ObjectTemplate lets
+        // FunctionTemplates be added for the free functions.  Context::Global() returns an
+        // Object, not an ObjectTemplate - therefore, it limits what can be added after the
+        // Context has been created.
+        //
         HandleScope handle_scope;
-        Handle<ObjectTemplate> global = ObjectTemplate::New(); 
+        Handle<ObjectTemplate> global_templ = ObjectTemplate::New(); 
 
         // Stand-alone DOM functions.  These are place-holders which eventually should be
         // replaced with a "document" object in the global context.   The functions on
         // that object should mirror those on the HTML DOM.
         //
-        global->Set(String::New("document_createElement"), FunctionTemplate::New(createElement));
-        global->Set(String::New("document_getElementById"), FunctionTemplate::New(getElementById));
-        global->Set(String::New("document_setAttribute"), FunctionTemplate::New(setAttribute));
-        global->Set(String::New("document_append"), FunctionTemplate::New(appendElement));
-        
+        global_templ->Set(String::New("document_createElement"), FunctionTemplate::New(createElement));
+        global_templ->Set(String::New("document_getElementById"), FunctionTemplate::New(getElementById));
+        global_templ->Set(String::New("document_setAttribute"), FunctionTemplate::New(setAttribute));
+        global_templ->Set(String::New("document_append"), FunctionTemplate::New(appendElement));
+       
         // Internal debugging methods to make development a little easier.
         //
-        global->Set(String::New("__lx_print"), FunctionTemplate::New(print));
+        global_templ->Set(String::New("__lx_print"), FunctionTemplate::New(print));
         
         // For the duration of the script, keep a mapping table of all the
         // referenced elements as well as the current document.  These are
@@ -517,8 +558,47 @@ namespace lx0 { namespace core {
         s_spDocument = spDocument;
 
         {
-            Persistent<Context> context = Context::New(0, global);
+            Persistent<Context> context = Context::New(0, global_templ);
             Context::Scope context_scope(context);
+
+            // Create the FunctionTemplate.  Think of the "Template" part as being the 
+            // descriptor or specification that is be used to create the actual Function
+            // when it is created and put into the V8 context.
+            //
+            // Note that this is essentially an anonymous function, since no name is assigned
+            // and the only way it is being accessed is via the V8 API.
+            //
+            v8::Handle<v8::FunctionTemplate> templ = FunctionTemplate::New();
+
+            // Get the ObjectTemplate for the Function.  This is the specification used when
+            // the function is invoked as a constructor (i.e. var obj = new my_func()).
+            //
+            // Note: it seems this needs to be set before the Function is actually created
+            // (http://code.google.com/p/v8/issues/detail?id=262).
+            //
+            Local<ObjectTemplate> objInst = templ->InstanceTemplate();
+            objInst->SetInternalFieldCount(1);
+
+            // Access the Javascript prototype for the function - i.e. my_func.prototype - 
+            // and add the necessary properties and methods.
+            //
+            v8::Local<v8::Template> proto_t = templ->PrototypeTemplate();
+            proto_t->Set("createElement",  v8::FunctionTemplate::New(createElement));
+            proto_t->Set("getElementById", v8::FunctionTemplate::New(getElementById));
+
+            // Now grab a handle to the Function.  This apparently (?) will invoke the
+            // FunctionTemplate to create actual function.  Then call NewInstance, which is
+            // the C++ equivalent of "new my_func()".   Then, since this is a wrapper on a
+            // C++ object, set the internal field to point to the C++ object.
+            //
+            v8::Handle<v8::Function> ctor = templ->GetFunction();
+            v8::Handle<v8::Object> obj = ctor->NewInstance();
+            obj->SetInternalField(0, v8::External::New(spDocument.get()));
+
+            // Create a name for the object in the global namespace (i.e. global variable).
+            //
+            context->Global()->Set(String::New("document"), obj);
+
 
             for (auto it = sources.begin(); it != sources.end(); ++it)
             {
