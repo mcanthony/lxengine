@@ -296,6 +296,20 @@ namespace lx0 { namespace core {
 
         v8::Handle<v8::Value> handle() { return mValue; }
 
+        template <typename T>
+        T* pointer ()
+        {
+            using namespace v8;
+            using v8::Object;
+
+            Handle<Object> obj( Handle<Object>::Cast(mValue) );
+            lx_check_error(obj->InternalFieldCount() == 1);
+            Local<External> wrap = Local<External>::Cast(obj->GetInternalField(0));
+        
+            T* pNative = reinterpret_cast<T*>( wrap->Value() );
+            return pNative;
+        }
+
         operator std::string () 
         {
             v8::String::AsciiValue value (mValue);
@@ -356,74 +370,11 @@ namespace lx0 { namespace core {
             return lxvar();
         }
     };
+    
 
-    /*
-        Workaround until there's a better understanding of exposing C++ objects
-        in V8 works.  For now, expose the object via an int handle and do a 
-        mapping on every transition between C++/JS.  
-     */
-    class MappingTable
-    {
-    public:
-        int add (ElementPtr spElem)
-        {
-            lx_check_error(spElem);
+    v8::Persistent<v8::Function> s_ElementFunc;
+    std::vector<ElementPtr>      s_Elements;
 
-            int handle = int( mElems.size() );
-            mElems.push_back(spElem);
-            mHandles.insert(std::make_pair(spElem.get(), handle));
-            return handle;
-        }
-        ElementPtr find (int i)
-        {
-            return mElems[i];
-        }
-
-        int find (ElementPtr spElem)
-        {
-            auto it = mHandles.find(spElem.get());
-            lx_check_error(it != mHandles.end());
-            return it->second;
-        }
-
-        int findOrAdd (ElementPtr spElem)
-        {
-            lx_check_error(spElem);
-
-            auto it = mHandles.find(spElem.get());
-            if (it != mHandles.end())
-                return it->second;
-            else
-                return add(spElem);
-        }
-
-        void clear()
-        {
-            mHandles.clear();
-            mElems.clear();
-        }
-
-        std::vector<ElementPtr> mElems;
-        std::map<Element*,int> mHandles;
-    };
-
-    static MappingTable s_mappingTable;
-    static DocumentPtr  s_spDocument;
-
-
-
-    static v8::Handle<v8::Value> appendElement (const v8::Arguments& args)
-    {
-        using namespace v8;
-
-        int hParent = _marshal(args[0]);
-        int hChild = _marshal(args[1]);
-        ElementPtr spParent = s_mappingTable.find(hParent);
-        ElementPtr spChild = s_mappingTable.find(hChild);
-        
-        spParent->append(spChild);
-        return Undefined();
-    }
 
     template <typename NativeType>
     static NativeType*
@@ -443,9 +394,47 @@ namespace lx0 { namespace core {
         Local<External> wrap = Local<External>::Cast(self->GetInternalField(0));
         
         NativeType* pThis = reinterpret_cast<NativeType*>( wrap->Value() );
-        lx_check_error(pThis);
+        lx_check_error(pThis != nullptr);
 
         return pThis;
+    }
+
+    static v8::Handle<v8::Object>
+    _wrapObject (v8::Handle<v8::Function>& ctor, void* pNative)
+    {
+        v8::Handle<v8::Object> obj = ctor->NewInstance();
+        obj->SetInternalField(0, v8::External::New(pNative));
+
+        return obj;
+    }
+
+    static v8::Handle<v8::Value> 
+    appendChild (const v8::Arguments& args)
+    {
+        using namespace v8;
+        using v8::Object;
+
+        Element* pThis = _nativeThis<Element>(args);
+        Element* pChild = _marshal(args[0]).pointer<Element>();
+        
+        pThis->append(pChild->shared_from_this());
+
+        return Undefined();
+    }
+
+    static v8::Handle<v8::Value> 
+    setAttribute (const v8::Arguments& args)
+    {
+        using namespace v8;
+        using v8::Object;
+
+        Element* pThis = _nativeThis<Element>(args);
+        std::string name = _marshal(args[0]);
+        lxvar value = _marshal(args[1]);
+
+        pThis->attr(name, value);
+
+        return Undefined();
     }
 
     /*
@@ -459,8 +448,14 @@ namespace lx0 { namespace core {
         
         ElementPtr spElem   = pThis->createElement(name);
         
-        int handle = s_mappingTable.add(spElem);
-        return v8::Integer::New(handle);
+        // The Javascript could continue to reference this open.   Keep a reference around to
+        // the element for the duration of the V8 context.   (The alternative would be to use
+        // V8 Persistent weak pointers that provide a callback on the last reference being
+        // removed.)
+        //
+        s_Elements.push_back(spElem);
+        
+        return _wrapObject(s_ElementFunc, spElem.get());
     }
 
     /*
@@ -482,21 +477,7 @@ namespace lx0 { namespace core {
         if (!spElem)
             lx_error("Could not find element with id '%s' in the document.", id.c_str());
 
-        int hElem = s_mappingTable.findOrAdd(spElem);
-        return Integer::New(hElem);
-    }
-
-    static v8::Handle<v8::Value> setAttribute (const v8::Arguments& args)
-    {
-        using namespace v8;
-
-        int hElem = _marshal(args[0]);
-        std::string name = _marshal(args[1]);
-        lxvar value = _marshal(args[2]);
-
-        ElementPtr spElem = s_mappingTable.find(hElem);
-        spElem->attr(name, value);
-        return Undefined();
+        return _wrapObject(s_ElementFunc, spElem.get());
     }
 
     static v8::Handle<v8::Value> print (const v8::Arguments& args)
@@ -535,27 +516,21 @@ namespace lx0 { namespace core {
         HandleScope handle_scope;
         Handle<ObjectTemplate> global_templ = ObjectTemplate::New(); 
 
+        //
         // Stand-alone DOM functions.  These are place-holders which eventually should be
         // replaced with a "document" object in the global context.   The functions on
         // that object should mirror those on the HTML DOM.
         //
-        global_templ->Set(String::New("document_createElement"), FunctionTemplate::New(createElement));
-        global_templ->Set(String::New("document_getElementById"), FunctionTemplate::New(getElementById));
-        global_templ->Set(String::New("document_setAttribute"), FunctionTemplate::New(setAttribute));
-        global_templ->Set(String::New("document_append"), FunctionTemplate::New(appendElement));
-       
+  
         // Internal debugging methods to make development a little easier.
         //
         global_templ->Set(String::New("__lx_print"), FunctionTemplate::New(print));
         
-        // For the duration of the script, keep a mapping table of all the
-        // referenced elements as well as the current document.  These are
-        // stored in global variables since the invokation functions in V8
-        // require statics.  It would be better to wrap this in some sort of
-        // execution context object.
-        //
-        s_mappingTable.clear();
-        s_spDocument = spDocument;
+        // For the duration of the script, keep a list of reference counted objects that
+        // get created.  Otherwise, the JS code might still be refering to the object but
+        // there are no internal C++ references to the object - resulting in a deleted
+        // object still being accessible from V8.
+        s_Elements.clear();
 
         {
             Persistent<Context> context = Context::New(0, global_templ);
@@ -600,6 +575,26 @@ namespace lx0 { namespace core {
             context->Global()->Set(String::New("document"), obj);
 
 
+            {
+                v8::Handle<v8::FunctionTemplate> templ = FunctionTemplate::New();
+
+                // Create an anonymous type which will be used for the Element wrapper
+                Local<ObjectTemplate> objInst = templ->InstanceTemplate();
+                objInst->SetInternalFieldCount(1);
+
+                // Access the Javascript prototype for the function - i.e. my_func.prototype - 
+                // and add the necessary properties and methods.
+                //
+                v8::Local<v8::Template> proto_t = templ->PrototypeTemplate();
+                proto_t->Set("setAttribute",  v8::FunctionTemplate::New(setAttribute));
+                proto_t->Set("appendChild", v8::FunctionTemplate::New(appendChild));
+
+                // Store a persistent reference to the function which will be used to create
+                // new object wrappers
+                s_ElementFunc = Persistent<Function>( templ->GetFunction() );
+            }
+
+
             for (auto it = sources.begin(); it != sources.end(); ++it)
             {
                 Handle<String> source = String::New(it->c_str());
@@ -608,11 +603,12 @@ namespace lx0 { namespace core {
                 Handle<Value> result = script->Run();
             }
 
+            
+            s_ElementFunc.Dispose();
             context.Dispose();
         }
+        s_Elements.clear();
 
-        s_spDocument.reset();
-        s_mappingTable.clear();
     }
 
 }}

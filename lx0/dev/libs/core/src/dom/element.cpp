@@ -122,12 +122,16 @@ namespace lx0 { namespace core {
     void
     Element::attr(std::string name, lxvar value)
     {
+        lx_check_error( this != nullptr );
+
         mAttributes[name] = value;
     }
 
     const lxvar     
     Element::attr (std::string name) const
     {
+        lx_check_error( this != nullptr );
+
         auto it = mAttributes.find(name);
         if (it != mAttributes.end())
             return it->second;

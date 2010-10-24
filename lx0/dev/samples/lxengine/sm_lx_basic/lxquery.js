@@ -34,7 +34,7 @@ LxQuery.prototype = {
         for (var i = 0; i < this._selection.length; ++i)
         {
             var elem = this._selection[i];
-            document_setAttribute(elem, name, value);
+            elem.setAttribute(name, value);
         }
         return this;
     },
@@ -44,7 +44,7 @@ LxQuery.prototype = {
         {
             var parent = this._selection[i];
             var child = elem._selection[0];
-            document_append(parent, child);
+            parent.appendChild(child);
         }
         return this;
     },
