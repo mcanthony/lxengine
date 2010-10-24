@@ -58,6 +58,20 @@ namespace lx0 { namespace core {
     }
 
     void 
+    lx_check_error (bool condition, const char* format, ...)
+    {
+        if (!condition)
+        {
+            char buffer[512] = "";
+            va_list args;
+            va_start(args, format);
+            vsnprintf_s(buffer, sizeof(buffer), _TRUNCATE, format, args);
+
+            lx_error("%s", buffer);
+        }
+    }
+
+    void 
     lx_check_fatal (bool condition)
     {
         if (!condition)

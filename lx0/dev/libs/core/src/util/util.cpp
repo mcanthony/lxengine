@@ -45,7 +45,7 @@ namespace lx0 { namespace util {
         FILE* fp;
         fopen_s(&fp, filename.c_str(), "r");
 
-        lx_check_error(fp != nullptr);
+        lx_check_error(fp != nullptr, "lx_file_to_string: file '%s' not found!", filename.c_str());
 
         char szString[4096];
         while (fgets(szString, 4096, fp) != NULL) {

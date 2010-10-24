@@ -4,7 +4,7 @@
         <Script language="javascript" src="data/sm_lx_basic/script000.js" />
     </Header>
     <Library>
-        <Mesh id="unit_cube" src="data/sm_lx_basic/tree.json" />
+        <Mesh id="unit_cube" src="data/sm_lx_basic/unit_cube.json" />
     </Library>
     <Scene>
         <Group id="grid" />

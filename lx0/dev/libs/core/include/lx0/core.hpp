@@ -44,6 +44,7 @@ namespace lx0 { namespace core {
     
     void lx_check_fatal (bool condition);
     void lx_check_error (bool condition);
+    void lx_check_error (bool condition, const char* format, ...);
 
     extern slot<void (const char*)> slotFatal;
     extern slot<void (const char*)> slotError;

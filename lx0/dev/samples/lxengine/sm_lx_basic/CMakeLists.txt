@@ -4,8 +4,12 @@ endmacro(lx_copy)
 
 
 simple_executable( sm_lx_basic )
+
 lx_copy(scene_000.xml)
+
 lx_copy(script000.js)
 lx_copy(lxquery.js)
+
 lx_copy(smooth_cube.json)
+lx_copy(unit_cube.json)
 lx_copy(tree.json)
