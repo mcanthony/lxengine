@@ -259,16 +259,30 @@ namespace lx0 { namespace core {
 	int
 	Engine::run()
 	{
-        while (!m_messageQueue.empty())
-        {
-            std::string msg = m_messageQueue.front();
-            m_messageQueue.pop_front();
-        }
-
-        ///@todo Devise a better way to hand time-slices from the main loop to the individual documents
-        /// for updates.  Also consider multi-threading.
         for(auto it = m_documents.begin(); it != m_documents.end(); ++it)
-            (*it)->run();
+            (*it)->updateBegin();
+
+        bool bDone = false;
+        do
+        {
+            while (!m_messageQueue.empty())
+            {
+                std::string msg = m_messageQueue.front();
+                m_messageQueue.pop_front();
+
+                if (msg == "quit")
+                    bDone = true;
+            }
+
+            ///@todo Devise a better way to hand time-slices from the main loop to the individual documents
+            /// for updates.  Also consider multi-threading.
+            for(auto it = m_documents.begin(); it != m_documents.end(); ++it)
+                (*it)->updateFrame();
+
+        } while (!bDone);
+
+        for(auto it = m_documents.begin(); it != m_documents.end(); ++it)
+            (*it)->updateEnd();
 
 		return 0;
 	}

@@ -94,7 +94,7 @@ namespace lx0 { namespace core {
         public:
             virtual void windowClosed(Ogre::RenderWindow* pRenderWindow)
             {
-                 LxOgre::acquire()->root()->queueEndRendering();
+                Engine::acquire()->sendMessage("quit");
             }
         };
     }
@@ -291,13 +291,35 @@ namespace lx0 { namespace core {
     }
 
     void
-    View::run()
+    View::updateBegin()
     {
-        std::auto_ptr<LxWindowEventListener> spWindowEventListener(new LxWindowEventListener);
-        Ogre::WindowEventUtilities::addWindowEventListener(mpRenderWindow, spWindowEventListener.get());
+        lx_check_error(mspWindowEventListener.get() == nullptr, "Window Event Listener already allocated: has updateBegin() been incorrectly called twice?");
 
-        mspLxOgre->root()->startRendering();
+        mspWindowEventListener.reset(new LxWindowEventListener);
+        Ogre::WindowEventUtilities::addWindowEventListener(mpRenderWindow, mspWindowEventListener.get());
 
-        Ogre::WindowEventUtilities::removeWindowEventListener(mpRenderWindow, spWindowEventListener.get());
+        Ogre::Root* pRoot = mspLxOgre->root();
+
+        lx_check_error(pRoot->getRenderSystem() != 0);
+        pRoot->getRenderSystem()->_initRenderTargets();
+
+        // Clear event times
+		pRoot->clearEventTimes();
+    }
+
+    void
+    View::updateEnd()
+    {
+        Ogre::WindowEventUtilities::removeWindowEventListener(mpRenderWindow, mspWindowEventListener.get());
+    }
+
+    void
+    View::updateFrame()
+    {
+		// Pump messages in all registered RenderWindow windows
+		Ogre::WindowEventUtilities::messagePump();
+
+        Ogre::Root* pRoot = mspLxOgre->root();
+        pRoot->renderOneFrame();
     }
 }}

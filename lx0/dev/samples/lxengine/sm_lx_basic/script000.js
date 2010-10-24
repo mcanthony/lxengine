@@ -1,7 +1,7 @@
 
-for (var grid_y = 0; grid_y < 3; grid_y++)
+for (var grid_y = 0; grid_y < 4; grid_y++)
 {
-    for (var grid_x = 0; grid_x < 3; grid_x++)
+    for (var grid_x = 0; grid_x < 4; grid_x++)
     {
         var tr = [];
         tr[0] = (grid_x - 1) * 1.5;

@@ -124,10 +124,24 @@ namespace lx0 { namespace core {
     }
 
     void            
-    Document::run()
+    Document::updateBegin()
     {
         for (auto it = m_views.begin(); it != m_views.end(); ++it)
-            it->second->run();
+            it->second->updateBegin();
+    }
+
+    void            
+    Document::updateEnd()
+    {
+        for (auto it = m_views.begin(); it != m_views.end(); ++it)
+            it->second->updateEnd();
+    }
+
+    void            
+    Document::updateFrame ()
+    {
+        for (auto it = m_views.begin(); it != m_views.end(); ++it)
+            it->second->updateFrame();
     }
 
 }}

@@ -29,6 +29,7 @@
 #pragma once
 
 #include <string>
+#include <memory>
 
 #include <lx0/detail/forward_decls.hpp>
 
@@ -39,6 +40,8 @@ namespace lx0 { namespace core {
 
     namespace detail {
         _LX_FORWARD_DECL_PTRS(LxOgre);
+
+        class LxWindowEventListener;
     };
 
     class View
@@ -49,7 +52,9 @@ namespace lx0 { namespace core {
         
         void        show            (void);
 
-        void        run             (void);
+        void        updateBegin     (void);
+        void        updateFrame     (void);
+        void        updateEnd       (void);
 
         void        attach          (Document* pDocument);
         void        detach          (Document* pDocument);
@@ -62,5 +67,7 @@ namespace lx0 { namespace core {
         Ogre::RenderWindow*     mpRenderWindow; //! Non-owning pointer.  OGRE owns this pointer.
         Ogre::SceneManager*     mpSceneMgr;     //! Non-owning pointer.  OGRE owns this pointer.
         Document*               mpDocument;     //! Non-owning pointer.  Document will detach itself.
+
+        std::unique_ptr<detail::LxWindowEventListener> mspWindowEventListener;
     };
 }}

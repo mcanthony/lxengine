@@ -54,7 +54,9 @@ namespace lx0 { namespace core {
         ElementPtr      createElement   (std::string type);
         ElementPtr      getElementById  (std::string id);
 
-        void            run             (void);
+        void            updateBegin     (void);
+        void            updateFrame     (void);
+        void            updateEnd       (void);
 
     protected:
         typedef std::vector< TransactionWPtr > TrWList;
