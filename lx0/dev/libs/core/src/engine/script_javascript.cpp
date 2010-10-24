@@ -307,12 +307,6 @@ namespace lx0 { namespace core {
         //
         HandleScope handle_scope;
         Handle<ObjectTemplate> global_templ = ObjectTemplate::New(); 
-
-        //
-        // Stand-alone DOM functions.  These are place-holders which eventually should be
-        // replaced with a "document" object in the global context.   The functions on
-        // that object should mirror those on the HTML DOM.
-        //
   
         // Internal debugging methods to make development a little easier.
         //

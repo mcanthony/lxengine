@@ -42,6 +42,9 @@
 // Library headers
 #include <boost/program_options.hpp>
 
+// Include necessary Bullet headers for this tutorial.
+#include <bullet/btBulletDynamicsCommon.h>
+
 // Lx0 headers
 #include <lx0/core.hpp>
 #include <lx0/engine.hpp>
@@ -103,6 +106,64 @@ parseOptions (int argc, char** argv, lxvar& options)
     return true;
 }
 
+static void
+bullet_test()
+{
+    std::shared_ptr<btBroadphaseInterface> spBroadphase( new btDbvtBroadphase );
+
+    std::shared_ptr<btDefaultCollisionConfiguration> spCollisionConfiguration( new btDefaultCollisionConfiguration );
+    std::shared_ptr<btCollisionDispatcher> spDispatcher( new btCollisionDispatcher(spCollisionConfiguration.get()) );
+
+    std::shared_ptr<btSequentialImpulseConstraintSolver> spSolver( new btSequentialImpulseConstraintSolver );
+
+    std::shared_ptr<btDiscreteDynamicsWorld> spDynamicsWorld( new btDiscreteDynamicsWorld(spDispatcher.get(), 
+                                                                                          spBroadphase.get(), 
+                                                                                          spSolver.get(), 
+                                                                                          spCollisionConfiguration.get()) );
+    spDynamicsWorld->setGravity(btVector3(0, 0, -9.81f));
+
+
+    // Create collison shapes - which are reusable between various objects
+    //
+    std::shared_ptr<btCollisionShape> spGroundShape(new btStaticPlaneShape(btVector3(0,0,1), 0) );
+    std::shared_ptr<btCollisionShape> spFallShape( new btSphereShape(0.5f) );
+
+    std::shared_ptr<btDefaultMotionState> spGroundMotionState( new btDefaultMotionState(btTransform(btQuaternion(0,0,0,1), btVector3(0, 0, 0))) );
+
+    const float fGroundMass = 0.0f;   // Infinite, immovable object
+    const btVector3 groundIntertia(0, 0, 0);
+    btRigidBody::btRigidBodyConstructionInfo groundRigidBodyCI(fGroundMass, spGroundMotionState.get(), spGroundShape.get(), groundIntertia);
+    std::shared_ptr<btRigidBody> spGroundRigidBody( new btRigidBody(groundRigidBodyCI) );
+
+    spDynamicsWorld->addRigidBody(spGroundRigidBody.get());
+
+
+    std::shared_ptr<btDefaultMotionState> spFallMotionState( new btDefaultMotionState(btTransform(btQuaternion(0,0,0,1),btVector3(0,0,2.5f))) );
+    const btScalar fFallMass = 1;
+    btVector3 fallInertia(0,0,0);
+    spFallShape->calculateLocalInertia(fFallMass, fallInertia);
+
+    btRigidBody::btRigidBodyConstructionInfo fallRigidBodyCI(fFallMass, spFallMotionState.get(), spFallShape.get(), fallInertia);
+    std::shared_ptr<btRigidBody> spFallRigidBody( new btRigidBody(fallRigidBodyCI) );
+
+    spDynamicsWorld->addRigidBody(spFallRigidBody.get());
+
+    for (int i = 0 ; i < 100; i++) 
+    {
+        const float fTimeSlice = 1.0f / 60.0f;
+        const int kMaxSubSteps = 10;
+        spDynamicsWorld->stepSimulation(fTimeSlice, kMaxSubSteps);
+ 
+        btTransform trans;
+        spFallRigidBody->getMotionState()->getWorldTransform(trans);
+ 
+        float h = trans.getOrigin().getZ();
+        std::cout << "sphere height: " << h << std::endl;
+    }
+
+    spDynamicsWorld->removeRigidBody(spFallRigidBody.get());
+    spDynamicsWorld->removeRigidBody(spGroundRigidBody.get());
+}
 
 //===========================================================================//
 //   E N T R Y - P O I N T
@@ -118,6 +179,8 @@ main (int argc, char** argv)
         lxvar options;
         if ( parseOptions(argc, argv, options) )
         {
+            bullet_test();
+
             EnginePtr spEngine( Engine::acquire() );
 
             DocumentPtr spDocument = spEngine->loadDocument(*options.find("file"));

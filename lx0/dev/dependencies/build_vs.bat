@@ -302,6 +302,9 @@ echo msbuild ALL_BUILD.vcxproj /p:Configuration=Release >>_t.bat
 call:build_project %PROJECT% %ROOTDIR% %TESTFILE%
 IF %FAILURE%==1 (goto:EOF)   
 
+call:copy_files %ROOTDIR%\..\bullet_src\src\*.h %PSDK%\bullet\include\bullet
+call:copy_directory %ROOTDIR%\lib %PSDK%\bullet\lib
+
 REM ===========================================================================
 REM Build Google V8
 REM ===========================================================================
@@ -448,6 +451,14 @@ REM
 :copy_directory
 IF NOT EXIST %2 ( mkdir %2 )
 xcopy %1\* %2 /D /E /Y
+goto:EOF
+
+REM copy_files
+REM
+REM
+:copy_files
+IF NOT EXIST %2 ( mkdir %2 )
+xcopy %1 %2 /D /S /Y
 goto:EOF
 
 

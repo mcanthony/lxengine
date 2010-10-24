@@ -17,3 +17,8 @@ set(ENV{BOOST_LIBRARYDIR} "$ENV{BOOST_ROOT}/lib")
 include_directories("${DEPS_SDK}/v8/include")
 link_directories("${DEPS_SDK}/v8/lib")
 set(V8_LIBS v8_g.lib ws2_32.lib winmm.lib)
+
+# Bullet
+include_directories("${DEPS_SDK}/bullet/include")
+link_directories("${DEPS_SDK}/bullet/lib/Debug")
+set(BULLET_LIBS BulletCollision.lib BulletDynamics.lib LinearMath.lib)
