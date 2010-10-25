@@ -12,4 +12,5 @@ lx_copy(lxquery.js)
 
 lx_copy(smooth_cube.json)
 lx_copy(unit_cube.json)
+lx_copy(unit_sphere.json)
 lx_copy(tree.json)

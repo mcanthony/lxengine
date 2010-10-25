@@ -5,6 +5,7 @@
     </Header>
     <Library>
         <Mesh id="unit_cube" src="data/sm_lx_basic/unit_cube.json" />
+        <!-- <Mesh id="unit_sphere" src="data/sm_lx_basic/unit_sphere.json" /> -->
     </Library>
     <Scene>
         <Group id="grid" />

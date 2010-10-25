@@ -182,6 +182,23 @@ namespace lx0 { namespace core {
 
     static int refCount = 0;
 
+    class OgreNodeLink : public Element::Component
+    {
+    public:
+        OgreNodeLink (Ogre::SceneNode* pNode) : mpNode(pNode) {} 
+        virtual void onAttributeChange(std::string name, lxvar value)
+        {
+            if (name == "translation")
+            {
+                auto pos2 = asPoint3(value);
+                const Ogre::Vector3 pos = reinterpret_cast<Ogre::Vector3&>(pos2);
+                mpNode->setPosition(pos);
+            }
+        }
+
+        Ogre::SceneNode* mpNode;
+    };
+
     void        
     View::_processGroup (ElementPtr spElem)
     {
@@ -203,6 +220,8 @@ namespace lx0 { namespace core {
                 Ogre::SceneNode* pNode = mpSceneMgr->getRootSceneNode()->createChildSceneNode(name);
                 pNode->attachObject(pEntity);
                 pNode->setPosition(pos);
+
+                spChild->attachComponent("OgreLink", new OgreNodeLink(pNode));
             }
             else if (spChild->type() == "Group")
             {

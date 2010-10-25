@@ -64,6 +64,10 @@ namespace lx0 { namespace core {
             mFaces.reserve(faceCount);
             for (int i = 0; i < faceCount; ++i)
             {
+                lx_check_error(lxfaces.at(i).size() == 4, 
+                    "Currently only quad lists are supported.  Face has %u vertices.", 
+                    lxfaces.at(i).size());
+
                 Mesh::Quad q;
                 for (int j = 0; j < 4; ++j)
                     q.index[j] = lxfaces.at(i).at(j).asInt();

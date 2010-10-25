@@ -260,7 +260,7 @@ namespace lx0 { namespace core {
 	Engine::run()
 	{
         for(auto it = m_documents.begin(); it != m_documents.end(); ++it)
-            (*it)->updateBegin();
+            (*it)->beginRun();
 
         bool bDone = false;
         do
@@ -277,12 +277,12 @@ namespace lx0 { namespace core {
             ///@todo Devise a better way to hand time-slices from the main loop to the individual documents
             /// for updates.  Also consider multi-threading.
             for(auto it = m_documents.begin(); it != m_documents.end(); ++it)
-                (*it)->updateFrame();
+                (*it)->updateRun();
 
         } while (!bDone);
 
         for(auto it = m_documents.begin(); it != m_documents.end(); ++it)
-            (*it)->updateEnd();
+            (*it)->endRun();
 
 		return 0;
 	}

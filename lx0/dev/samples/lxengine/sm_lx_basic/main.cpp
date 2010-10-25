@@ -52,6 +52,7 @@
 #include <lx0/element.hpp>
 #include <lx0/view.hpp>
 #include <lx0/controller.hpp>
+#include <lx0/point3.hpp>
 
 using namespace lx0::core;
 
@@ -106,64 +107,100 @@ parseOptions (int argc, char** argv, lxvar& options)
     return true;
 }
 
-static void
-bullet_test()
+
+class Physics
 {
-    std::shared_ptr<btBroadphaseInterface> spBroadphase( new btDbvtBroadphase );
-
-    std::shared_ptr<btDefaultCollisionConfiguration> spCollisionConfiguration( new btDefaultCollisionConfiguration );
-    std::shared_ptr<btCollisionDispatcher> spDispatcher( new btCollisionDispatcher(spCollisionConfiguration.get()) );
-
-    std::shared_ptr<btSequentialImpulseConstraintSolver> spSolver( new btSequentialImpulseConstraintSolver );
-
-    std::shared_ptr<btDiscreteDynamicsWorld> spDynamicsWorld( new btDiscreteDynamicsWorld(spDispatcher.get(), 
-                                                                                          spBroadphase.get(), 
-                                                                                          spSolver.get(), 
-                                                                                          spCollisionConfiguration.get()) );
-    spDynamicsWorld->setGravity(btVector3(0, 0, -9.81f));
-
-
-    // Create collison shapes - which are reusable between various objects
-    //
-    std::shared_ptr<btCollisionShape> spGroundShape(new btStaticPlaneShape(btVector3(0,0,1), 0) );
-    std::shared_ptr<btCollisionShape> spFallShape( new btSphereShape(0.5f) );
-
-    std::shared_ptr<btDefaultMotionState> spGroundMotionState( new btDefaultMotionState(btTransform(btQuaternion(0,0,0,1), btVector3(0, 0, 0))) );
-
-    const float fGroundMass = 0.0f;   // Infinite, immovable object
-    const btVector3 groundIntertia(0, 0, 0);
-    btRigidBody::btRigidBodyConstructionInfo groundRigidBodyCI(fGroundMass, spGroundMotionState.get(), spGroundShape.get(), groundIntertia);
-    std::shared_ptr<btRigidBody> spGroundRigidBody( new btRigidBody(groundRigidBodyCI) );
-
-    spDynamicsWorld->addRigidBody(spGroundRigidBody.get());
-
-
-    std::shared_ptr<btDefaultMotionState> spFallMotionState( new btDefaultMotionState(btTransform(btQuaternion(0,0,0,1),btVector3(0,0,2.5f))) );
-    const btScalar fFallMass = 1;
-    btVector3 fallInertia(0,0,0);
-    spFallShape->calculateLocalInertia(fFallMass, fallInertia);
-
-    btRigidBody::btRigidBodyConstructionInfo fallRigidBodyCI(fFallMass, spFallMotionState.get(), spFallShape.get(), fallInertia);
-    std::shared_ptr<btRigidBody> spFallRigidBody( new btRigidBody(fallRigidBodyCI) );
-
-    spDynamicsWorld->addRigidBody(spFallRigidBody.get());
-
-    for (int i = 0 ; i < 100; i++) 
+public:
+    Physics()
     {
-        const float fTimeSlice = 1.0f / 60.0f;
+        spBroadphase.reset( new btDbvtBroadphase );
+
+        spCollisionConfiguration.reset( new btDefaultCollisionConfiguration );
+        spDispatcher.reset( new btCollisionDispatcher(spCollisionConfiguration.get()) );
+
+        spSolver.reset( new btSequentialImpulseConstraintSolver );
+
+        spDynamicsWorld.reset( new btDiscreteDynamicsWorld(spDispatcher.get(), 
+                                                           spBroadphase.get(), 
+                                                           spSolver.get(), 
+                                                           spCollisionConfiguration.get()) );
+        spDynamicsWorld->setGravity(btVector3(0, 0, -9.81f));
+
+
+        // Create collison shapes - which are reusable between various objects
+        //
+        spGroundShape.reset(new btStaticPlaneShape(btVector3(0,0,1), 0) );
+        spFallShape.reset( new btSphereShape(0.5f) );
+
+        spGroundMotionState.reset( new btDefaultMotionState(btTransform(btQuaternion(0,0,0,1), btVector3(0, 0, 0))) );
+
+        const float fGroundMass = 0.0f;   // Infinite, immovable object
+        const btVector3 groundIntertia(0, 0, 0);
+        btRigidBody::btRigidBodyConstructionInfo groundRigidBodyCI(fGroundMass, spGroundMotionState.get(), spGroundShape.get(), groundIntertia);
+        spGroundRigidBody.reset( new btRigidBody(groundRigidBodyCI) );
+        spDynamicsWorld->addRigidBody(spGroundRigidBody.get());
+
+        spFallMotionState.reset( new btDefaultMotionState(btTransform(btQuaternion(0,0,0,1),btVector3(0,0,2.5f))) );
+        const btScalar fFallMass = 1;
+        btVector3 fallInertia(0,0,0);
+        spFallShape->calculateLocalInertia(fFallMass, fallInertia);
+
+        btRigidBody::btRigidBodyConstructionInfo fallRigidBodyCI(fFallMass, spFallMotionState.get(), spFallShape.get(), fallInertia);
+        spFallRigidBody.reset( new btRigidBody(fallRigidBodyCI) );
+        spDynamicsWorld->addRigidBody(spFallRigidBody.get());
+    }
+
+    ~Physics()
+    {
+        spDynamicsWorld->removeRigidBody(spFallRigidBody.get());
+        spDynamicsWorld->removeRigidBody(spGroundRigidBody.get());
+    }
+
+    void 
+    init (DocumentPtr spDocument)
+    {
+        auto spElem = spDocument->getElementById("fall");
+        auto pos = asPoint3( spElem->attr("translation") );
+
+        btTransform tform (btQuaternion(0,0,0,1), btVector3(pos.x, pos.y, pos.z));
+        spFallRigidBody->getMotionState()->setWorldTransform( tform );
+        spFallRigidBody->setCenterOfMassTransform(tform);
+    }
+
+    void 
+    update(DocumentPtr spDocument)
+    {
+        const float fTimeSlice = 1.0f / 600.0f;
         const int kMaxSubSteps = 10;
         spDynamicsWorld->stepSimulation(fTimeSlice, kMaxSubSteps);
  
         btTransform trans;
         spFallRigidBody->getMotionState()->getWorldTransform(trans);
  
-        float h = trans.getOrigin().getZ();
-        std::cout << "sphere height: " << h << std::endl;
+        const float h = trans.getOrigin().getZ();
+
+        auto spElem = spDocument->getElementById("fall");
+        lxvar pos = spElem->attr("translation");
+        pos.at(2, h);
+        spElem->attr("translation", pos);
     }
 
-    spDynamicsWorld->removeRigidBody(spFallRigidBody.get());
-    spDynamicsWorld->removeRigidBody(spGroundRigidBody.get());
-}
+protected:
+    std::shared_ptr<btBroadphaseInterface>                  spBroadphase;
+    std::shared_ptr<btDefaultCollisionConfiguration>        spCollisionConfiguration;
+    std::shared_ptr<btCollisionDispatcher>                  spDispatcher;
+    std::shared_ptr<btSequentialImpulseConstraintSolver>    spSolver;
+    std::shared_ptr<btDiscreteDynamicsWorld>                spDynamicsWorld;
+
+    std::shared_ptr<btCollisionShape>                       spGroundShape;
+    std::shared_ptr<btCollisionShape>                       spFallShape;
+
+    std::shared_ptr<btDefaultMotionState>                   spGroundMotionState;
+    std::shared_ptr<btRigidBody>                            spGroundRigidBody;
+
+    std::shared_ptr<btDefaultMotionState>                   spFallMotionState;
+    std::shared_ptr<btRigidBody>                            spFallRigidBody;
+};
 
 //===========================================================================//
 //   E N T R Y - P O I N T
@@ -179,8 +216,6 @@ main (int argc, char** argv)
         lxvar options;
         if ( parseOptions(argc, argv, options) )
         {
-            bullet_test();
-
             EnginePtr spEngine( Engine::acquire() );
 
             DocumentPtr spDocument = spEngine->loadDocument(*options.find("file"));
@@ -190,6 +225,10 @@ main (int argc, char** argv)
                 spDocument->connect("view", spView);
                 spView->show();
             }
+
+            Physics physics;
+            physics.init(spDocument);
+            spDocument->slotUpdateRun += [&] () { physics.update(spDocument); };
 
             ControllerPtr spController;
    

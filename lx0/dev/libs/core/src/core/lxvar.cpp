@@ -27,6 +27,13 @@ namespace lx0 { namespace core {
             return mValue[i]; 
         }
 
+        void 
+        lxarray::at (int i, lxvar value)      
+        {
+            lx_check_error(i >= 0 && i < int(mValue.size()));
+            mValue[i] = value;; 
+        }
+
         lxvalue*    
         lxstringmap::clone (void) const
         {
@@ -217,6 +224,12 @@ namespace lx0 { namespace core {
     lxvar::at (int index) const
     {
         return mValue->at(index);
+    }
+
+    void
+    lxvar::at (int index, lxvar value)
+    {
+        return mValue->at(index, value);
     }
 
     void

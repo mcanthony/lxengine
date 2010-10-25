@@ -32,6 +32,8 @@
 #include <exception>
 #include <string>
 
+#include <windows.h>
+
 #include <lx0/core.hpp>
 
 namespace lx0 { namespace core {
@@ -101,6 +103,11 @@ namespace lx0 { namespace core {
         vsnprintf_s(buffer, sizeof(buffer), _TRUNCATE, format, args);
 
         slotError(buffer);
+
+#if !defined(NDEBUG) && defined(_MSC_VER)
+        ::MessageBoxA(NULL, buffer, "LxEngine Error", MB_OK);
+        *(int*)0 = 0;
+#endif
 
         std::string err("lx_error (re-throw if error is non-recoverable).\n");
         throw std::exception((err + buffer).c_str());

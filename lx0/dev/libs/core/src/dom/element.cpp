@@ -124,6 +124,9 @@ namespace lx0 { namespace core {
     {
         lx_check_error( this != nullptr );
 
+        for (auto it = mComponents.begin(); it != mComponents.end(); ++it)
+            it->second->onAttributeChange(name, value);
+
         mAttributes[name] = value;
     }
 
@@ -143,6 +146,13 @@ namespace lx0 { namespace core {
     Element::value(ObjectPtr spValue)
     {
         mspValue = spValue;
+    }
+
+    void 
+    Element::attachComponent (std::string name, Component* pComponent)
+    {
+        std::shared_ptr<Component> spValue(pComponent);
+        mComponents.insert( std::make_pair(name, spValue) );
     }
 
 }}

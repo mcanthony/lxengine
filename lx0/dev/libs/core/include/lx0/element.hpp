@@ -46,6 +46,13 @@ namespace lx0 { namespace core {
         : public std::enable_shared_from_this<Element>
     {
     public:
+        class Component : public std::enable_shared_from_this<Component>
+        {
+        public:
+            virtual         ~Component() {}
+            virtual void    onAttributeChange   (std::string name, lxvar value) {}
+        };
+
         std::string     type        (void) const { return mType; }
         void            type        (const char* s) { mType = s; }
         void            type        (const std::string& s) { type(s.c_str()); }
@@ -67,15 +74,20 @@ namespace lx0 { namespace core {
 
         ElementPtr      _clone () const;
 
-    protected:
-        typedef std::map<std::string, lxvar> AttrMap;
-        typedef std::deque<ElementPtr>       ElemList;
+        void            attachComponent (std::string name, Component* pComponents);
 
-        std::string mType;
-        AttrMap     mAttributes;
-        ElementPtr  mspParent;
-        ElemList    mChildren;
-        ObjectPtr   mspValue;      // May be a proxy object for delay-loading
+    protected:
+        typedef std::map<std::string, lxvar>                      AttrMap;
+        typedef std::deque<ElementPtr>                            ElemList;
+        typedef std::map<std::string, std::shared_ptr<Component>> ComponentList;
+
+        std::string     mType;
+        AttrMap         mAttributes;
+        ElementPtr      mspParent;
+        ElemList        mChildren;
+        ObjectPtr       mspValue;      // May be a proxy object for delay-loading
+
+        ComponentList   mComponents;
     };
 
     typedef std::shared_ptr<Element> ElementPtr;

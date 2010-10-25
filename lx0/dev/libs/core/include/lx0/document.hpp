@@ -33,6 +33,7 @@
 #include <map>
 
 #include <lx0/detail/forward_decls.hpp>
+#include <lx0/slot.hpp>
 
 namespace lx0 { namespace core {
 
@@ -54,9 +55,11 @@ namespace lx0 { namespace core {
         ElementPtr      createElement   (std::string type);
         ElementPtr      getElementById  (std::string id);
 
-        void            updateBegin     (void);
-        void            updateFrame     (void);
-        void            updateEnd       (void);
+        void            beginRun        (void);
+        void            updateRun       (void);
+        void            endRun          (void);
+
+        slot<void()>    slotUpdateRun;
 
     protected:
         typedef std::vector< TransactionWPtr > TrWList;

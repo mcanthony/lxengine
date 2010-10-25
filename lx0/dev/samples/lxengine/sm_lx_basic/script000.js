@@ -15,3 +15,10 @@ for (var grid_y = 0; grid_y < 4; grid_y++)
     }
 }
 
+// Add a temporary cube to drop from the sky
+var ref = $("<Ref/>");
+ref.attr("id", "fall");
+ref.attr("ref", "unit_cube");
+ref.attr("translation", [ .25, -2.5, 5.5] );
+$("#grid").append(ref);
+

@@ -129,6 +129,7 @@ namespace lx0 { namespace core {
         ArrayIterator   endArray        (void);
         int             size            (void) const;
         lxvar           at              (int index) const;
+        void            at              (int index, lxvar value);
         void            push            (const lxvar& e);
 
         MapIterator     beginMap        (void);
@@ -167,8 +168,9 @@ namespace lx0 { namespace core {
             virtual bool        sharedType  (void) const = 0;   //!< On a set operation, is the r-value referenced or copied?
             virtual lxvalue*    clone       (void) const = 0;   //!< Deep clone of the value
 
-            virtual int         size        (void) const        { _invalid(); return 0; }
-            virtual lxvar       at          (int i)             { _invalid(); return lxvar(); }
+            virtual int         size        (void) const                { _invalid(); return 0; }
+            virtual lxvar       at          (int i)                     { _invalid(); return lxvar(); }
+            virtual void        at          (int index, lxvar value)    { _invalid(); }
 
         protected:
             void                _invalid    (void) const;
@@ -235,6 +237,7 @@ namespace lx0 { namespace core {
 
             virtual int         size        (void) const { return int( mValue.size() ); }
             virtual lxvar       at          (int i);
+            virtual void        at          (int index, lxvar value);
 
             std::vector<lxvar> mValue;
         };
