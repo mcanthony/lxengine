@@ -155,4 +155,14 @@ namespace lx0 { namespace core {
         mComponents.insert( std::make_pair(name, spValue) );
     }
 
+    std::shared_ptr<Element::Component> 
+    Element::getComponent (std::string name)
+    {
+        auto it = mComponents.find(name);
+        if (it != mComponents.end())
+            return it->second;
+        else
+            return std::shared_ptr<Component>();
+    }
+
 }}

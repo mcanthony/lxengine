@@ -75,6 +75,7 @@ namespace lx0 { namespace core {
         ElementPtr      _clone () const;
 
         void            attachComponent (std::string name, Component* pComponents);
+        std::shared_ptr<Component> getComponent (std::string name);
 
     protected:
         typedef std::map<std::string, lxvar>                      AttrMap;

@@ -93,6 +93,30 @@ namespace lx0 { namespace core {
         return spElem;
     }
 
+    bool
+    Document::_walkElements (std::function<bool (ElementPtr)> f)
+    {
+        struct L
+        {
+            static bool 
+            walk (std::function<bool (ElementPtr)> f, ElementPtr spElem)
+            {
+                if (f(spElem))
+                    return true;
+
+                for (int i = 0; i < spElem->childCount(); ++i)
+                {
+                    if (walk(f, spElem->child(i)))
+                        return true;
+                }
+                
+                return false;
+            }
+        };
+
+        return L::walk(f, root());
+    }
+
     /*
         This eventually needs to be cached, but for simplicity prior to v1.0,
         just naively walk the whole document and return the first matching
@@ -101,26 +125,30 @@ namespace lx0 { namespace core {
     ElementPtr
     Document::getElementById (std::string id)
     {
-        struct L
-        {
-            static ElementPtr findId (std::string id, ElementPtr spElem)
+        ElementPtr spMatch;
+        _walkElements([&](ElementPtr spElem) -> bool {
+            lxvar v = spElem->attr("id");
+            if (v.isString() && v.asString() == id)
             {
-                lxvar v = spElem->attr("id");
-                if (v.isString() && v.asString() == id)
-                    return spElem;
-
-                for (int i = 0; i < spElem->childCount(); ++i)
-                {
-                    ElementPtr spMatch = findId(id, spElem->child(i));
-                    if (spMatch)
-                        return spMatch;
-                }
-                
-                return ElementPtr();
+                spMatch = spElem;
+                return true;
             }
-        };
+            else
+                return false;
+        });
+        return spMatch;
+    }
 
-        return L::findId(id, root());
+    std::vector<ElementPtr> 
+    Document::getElementsByTagName (std::string name)
+    {
+        std::vector<ElementPtr> matches;
+        _walkElements([&](ElementPtr spElem) -> bool {
+            if (spElem->type() == name)
+                matches.push_back(spElem);
+            return false;
+        });
+        return matches;
     }
 
     void            

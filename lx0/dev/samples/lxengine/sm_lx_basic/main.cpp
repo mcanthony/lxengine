@@ -131,7 +131,8 @@ public:
         // Create collison shapes - which are reusable between various objects
         //
         mspGroundShape.reset(new btStaticPlaneShape(btVector3(0,0,1), 0) );
-        mspFallShape.reset( new btSphereShape(0.5f) );
+        mspSphereShape.reset( new btSphereShape(0.5f) );
+        mspCubeShape.reset( new btBoxShape(btVector3(0.5f, 0.5f, 0.5f)) );
 
         mspGroundMotionState.reset( new btDefaultMotionState(btTransform(btQuaternion(0,0,0,1), btVector3(0, 0, 0))) );
 
@@ -144,9 +145,9 @@ public:
         mspFallMotionState.reset( new btDefaultMotionState(btTransform(btQuaternion(0,0,0,1),btVector3(0,0,2.5f))) );
         const btScalar fFallMass = 1;
         btVector3 fallInertia(0,0,0);
-        mspFallShape->calculateLocalInertia(fFallMass, fallInertia);
+        mspCubeShape->calculateLocalInertia(fFallMass, fallInertia);
 
-        btRigidBody::btRigidBodyConstructionInfo fallRigidBodyCI(fFallMass, mspFallMotionState.get(), mspFallShape.get(), fallInertia);
+        btRigidBody::btRigidBodyConstructionInfo fallRigidBodyCI(fFallMass, mspFallMotionState.get(), mspCubeShape.get(), fallInertia);
         mspFallRigidBody.reset( new btRigidBody(fallRigidBodyCI) );
         mspDynamicsWorld->addRigidBody(mspFallRigidBody.get());
     }
@@ -155,6 +156,9 @@ public:
     {
         mspDynamicsWorld->removeRigidBody(mspFallRigidBody.get());
         mspDynamicsWorld->removeRigidBody(mspGroundRigidBody.get());
+
+        for (auto it = mRigidBodies.begin(); it != mRigidBodies.end(); ++it)
+            mspDynamicsWorld->removeRigidBody( it->get() );
     }
 
     void 
@@ -167,6 +171,31 @@ public:
         mspFallRigidBody->getMotionState()->setWorldTransform( tform );
         mspFallRigidBody->setCenterOfMassTransform(tform);
 
+        auto allElems = spDocument->getElementsByTagName("Ref");
+        for (auto it = allElems.begin(); it != allElems.end(); ++it)
+        {
+            auto spElem = *it;
+            auto id = spElem->attr("id");
+
+            if (!id.isString() || id.asString() != "fall")
+            {
+                auto pos = asPoint3( spElem->attr("translation") );
+                btTransform tform (btQuaternion(0,0,0,1), btVector3(pos.x, pos.y, pos.z));
+                std::shared_ptr<btDefaultMotionState> spMotionState( new btDefaultMotionState(tform) );
+                
+                const btScalar kfMass = 0;
+                btVector3 fallInertia(0,0,0);
+                mspCubeShape->calculateLocalInertia(kfMass, fallInertia);
+                btRigidBody::btRigidBodyConstructionInfo rigidBodyCI (kfMass, spMotionState.get(), mspCubeShape.get(), fallInertia);
+
+                std::shared_ptr<btRigidBody> spRigidBody( new btRigidBody(rigidBodyCI) );
+                mspDynamicsWorld->addRigidBody(spRigidBody.get());
+
+                mMotionStates.push_back( spMotionState );
+                mRigidBodies.push_back( spRigidBody);
+            }
+        }
+
         mLastUpdate = lx0::util::lx_milliseconds();
     }
 
@@ -174,8 +203,8 @@ public:
     update(DocumentPtr spDocument)
     {
         // In milliseconds...
-        const unsigned float kFps = 60.0f;
-        const unsigned int kFrameDurationMs = (1.0f / kFps) * 1000.0f;
+        const float kFps = 60.0f;
+        const unsigned int kFrameDurationMs = unsigned int( (1.0f / kFps) * 1000.0f );
 
         auto timeNow = lx0::util::lx_milliseconds();
 
@@ -206,13 +235,17 @@ protected:
     std::shared_ptr<btDiscreteDynamicsWorld>                mspDynamicsWorld;
 
     std::shared_ptr<btCollisionShape>                       mspGroundShape;
-    std::shared_ptr<btCollisionShape>                       mspFallShape;
+    std::shared_ptr<btCollisionShape>                       mspSphereShape;
+    std::shared_ptr<btCollisionShape>                       mspCubeShape;
 
     std::shared_ptr<btDefaultMotionState>                   mspGroundMotionState;
     std::shared_ptr<btRigidBody>                            mspGroundRigidBody;
 
     std::shared_ptr<btDefaultMotionState>                   mspFallMotionState;
     std::shared_ptr<btRigidBody>                            mspFallRigidBody;
+
+    std::vector< std::shared_ptr<btDefaultMotionState> >    mMotionStates;
+    std::vector< std::shared_ptr<btRigidBody> >             mRigidBodies;
 
     unsigned int                                            mLastUpdate;
 };

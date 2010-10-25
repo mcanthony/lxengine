@@ -52,8 +52,9 @@ namespace lx0 { namespace core {
         ElementPtr      root            (void)              { return m_spRoot; }
         void            root            (ElementPtr spRoot) { m_spRoot = spRoot; }
 
-        ElementPtr      createElement   (std::string type);
-        ElementPtr      getElementById  (std::string id);
+        ElementPtr              createElement           (std::string type);
+        ElementPtr              getElementById          (std::string id);
+        std::vector<ElementPtr> getElementsByTagName    (std::string name);
 
         void            beginRun        (void);
         void            updateRun       (void);
@@ -63,6 +64,8 @@ namespace lx0 { namespace core {
 
     protected:
         typedef std::vector< TransactionWPtr > TrWList;
+
+        bool            _walkElements   (std::function<bool (ElementPtr)> f);
 
         TrWList m_openTransactions;
 
