@@ -32,9 +32,8 @@
 #include <exception>
 #include <string>
 
-#include <windows.h>
-
 #include <lx0/core.hpp>
+#include <lx0/util.hpp>
 
 namespace lx0 { namespace core {
 
@@ -105,7 +104,7 @@ namespace lx0 { namespace core {
         slotError(buffer);
 
 #if !defined(NDEBUG) && defined(_MSC_VER)
-        ::MessageBoxA(NULL, buffer, "LxEngine Error", MB_OK);
+        lx0::util::lx_message_box("LxEngine Error", buffer);
         *(int*)0 = 0;
 #endif
 

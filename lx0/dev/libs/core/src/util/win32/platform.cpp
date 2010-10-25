@@ -3,7 +3,6 @@
                                    LxEngine
 
     LICENSE
-    * MIT License (http://www.opensource.org/licenses/mit-license.php)
 
     Copyright (c) 2010 athile@athile.net (http://www.athile.net)
 
@@ -27,17 +26,22 @@
 */
 //===========================================================================//
 
-#pragma once
+#include <lx0/util.hpp>
 
-#include <string>
-#include <lx0/lxvar.hpp>
+#include <windows.h>
 
 namespace lx0 { namespace util {
 
-    std::string         lx_file_to_string   (std::string filename);
-    lx0::core::lxvar    lx_file_to_json     (const char* pszFilename);
+    unsigned int        
+    lx_milliseconds (void)
+    {
+        return ::timeGetTime();
+    }
 
-    unsigned int        lx_milliseconds     (void);
-    void                lx_message_box      (std::string caption, std::string message);
+    void
+    lx_message_box (std::string caption, std::string message)
+    {
+        ::MessageBoxA(NULL, message.c_str(), caption.c_str(), MB_OK);
+    }
 
 }}
