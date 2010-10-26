@@ -28,3 +28,9 @@ ref.attr("translation", [-.65, .75, 8.5]);
 ref.attr("mass", 1.0);
 $("#grid").append(ref);
 
+ref = $("<Ref/>");
+ref.attr("ref", "unit_sphere");
+ref.attr("translation", [.29, -.47, 16.5]);
+ref.attr("mass", 0.5);
+$("#grid").append(ref);
+

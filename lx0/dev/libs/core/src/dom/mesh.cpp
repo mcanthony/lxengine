@@ -43,9 +43,6 @@ namespace lx0 { namespace core {
         lx_check_error(v.containsKey("vertices"));
         lx_check_error(v.containsKey("faces"));
 
-        // Temporary limitation
-        lx_check_error(v.find("type").equal("quad_list"));
-
         // Deserialize the vertices list
         {
             lxvar lxverts = v.find("vertices");
@@ -64,13 +61,15 @@ namespace lx0 { namespace core {
             mFaces.reserve(faceCount);
             for (int i = 0; i < faceCount; ++i)
             {
-                lx_check_error(lxfaces.at(i).size() == 4, 
-                    "Currently only quad lists are supported.  Face has %u vertices.", 
-                    lxfaces.at(i).size());
-
                 Mesh::Quad q;
-                for (int j = 0; j < 4; ++j)
-                    q.index[j] = lxfaces.at(i).at(j).asInt();
+           
+                q.index[0] = lxfaces.at(i).at(0).asInt();
+                q.index[1] = lxfaces.at(i).at(1).asInt();
+                q.index[2] = lxfaces.at(i).at(2).asInt();
+                q.index[3] = (lxfaces.at(i).size() == 4)
+                    ? lxfaces.at(i).at(3).asInt()
+                    : -1;
+
                 mFaces.push_back(q);
             }
         }

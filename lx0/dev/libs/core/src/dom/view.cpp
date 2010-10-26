@@ -48,6 +48,8 @@
 #include <OGRE/OgreEntity.h>
 #include <OGRE/OgreQuaternion.h>
 
+_ENABLE_LX_CAST(lx0::core::point3, Ogre::Vector3)
+
 namespace lx0 { namespace core {
 
     namespace detail {
@@ -146,6 +148,18 @@ namespace lx0 { namespace core {
         
         Ogre::ManualObject* pObject = mpSceneMgr->createManualObject((name + "-manual").c_str());
 
+        auto add_tri = [pObject] (Ogre::Vector3& v0, Ogre::Vector3& v1, Ogre::Vector3& v2) -> void {
+            Ogre::Vector3 normal = (v1 - v0).crossProduct(v2 - v1);
+            normal.normalise();
+
+            pObject->position(v0); 
+            pObject->normal(normal);
+            pObject->position(v1);
+            pObject->normal(normal);
+            pObject->position(v2);
+            pObject->normal(normal);
+        };
+
         auto add_quad = [pObject] (Ogre::Vector3& v0, Ogre::Vector3& v1, Ogre::Vector3& v2, Ogre::Vector3& v3) -> void {
             Ogre::Vector3 normal = (v1 - v0).crossProduct(v2 - v1);
             normal.normalise();
@@ -168,12 +182,21 @@ namespace lx0 { namespace core {
         pObject->begin("LxMaterial", Ogre::RenderOperation::OT_TRIANGLE_LIST);
         for (auto fi = spMesh->mFaces.begin(); fi != spMesh->mFaces.end(); ++fi)
         {
-            ///@todo Why isn't lx::core::cast<> working here?
-            add_quad(
-                reinterpret_cast<Ogre::Vector3&>(spMesh->mVertices[fi->index[0]]),
-                reinterpret_cast<Ogre::Vector3&>(spMesh->mVertices[fi->index[1]]),
-                reinterpret_cast<Ogre::Vector3&>(spMesh->mVertices[fi->index[2]]),
-                reinterpret_cast<Ogre::Vector3&>(spMesh->mVertices[fi->index[3]]));
+            Ogre::Vector3& v0 = reinterpret_cast<Ogre::Vector3&>(spMesh->mVertices[fi->index[0]]);
+            Ogre::Vector3& v1 = reinterpret_cast<Ogre::Vector3&>(spMesh->mVertices[fi->index[1]]);
+            Ogre::Vector3& v2 = reinterpret_cast<Ogre::Vector3&>(spMesh->mVertices[fi->index[2]]);
+            
+            if (fi->index[3] >= 0)
+            {
+                Ogre::Vector3& v3 = reinterpret_cast<Ogre::Vector3&>(spMesh->mVertices[fi->index[3]]);
+                add_quad(v0, v1, v2, v3);
+            }
+            else
+            {
+                // A final index of -1 is a special value indicating that this is a triangle,
+                // not a quad.
+                add_tri(v0, v1, v2);
+            }
         }
         pObject->end();
 
