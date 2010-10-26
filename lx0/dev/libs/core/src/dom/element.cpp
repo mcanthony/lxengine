@@ -142,6 +142,11 @@ namespace lx0 { namespace core {
             return lxvar();
     }
 
+    /*!
+        Convenience method for Element::attr().  In the case that the provided
+        attribute "name" does not exist on the Element or is of the wrong type
+        then the "defValue" will be returned instead.
+     */
     float
     Element::queryAttr (std::string name, float defValue)
     {
@@ -152,6 +157,11 @@ namespace lx0 { namespace core {
             return defValue;
     }
 
+    /*!
+        Convenience method for Element::attr().  In the case that the provided
+        attribute "name" does not exist on the Element or is of the wrong type
+        then the "defValue" will be returned instead.
+     */
     std::string
     Element::queryAttr (std::string name, std::string defValue)
     {

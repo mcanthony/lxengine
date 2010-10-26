@@ -164,7 +164,7 @@ namespace lx0 { namespace core {
                 ElementPtr spElem (new Element);
          
                 std::string value = pParent->Value();
-                spElem->type(value);
+                spElem->tagName(value);
 
                 if (TiXmlElement* pTiElement = pParent->ToElement())
                 {
@@ -177,7 +177,7 @@ namespace lx0 { namespace core {
                 }
 
                 // This should be controlled in a more dynamic, pluggable fashion
-                if (spElem->type() == "Mesh") 
+                if (spElem->tagName() == "Mesh") 
                 {
                     MeshPtr spMesh (new Mesh);
 
@@ -243,12 +243,12 @@ namespace lx0 { namespace core {
         for (int i = 0; i < spRoot->childCount(); ++i)
         {
             ElementCPtr spChild = spRoot->child(i);
-            if (spChild->type() == "Header")
+            if (spChild->tagName() == "Header")
             {
                 for (int j = 0; j < spChild->childCount(); ++j)
                 {
                     ElementCPtr spElem = spChild->child(j);
-                    if (spElem->type() == "Script")
+                    if (spElem->tagName() == "Script")
                     {
                         std::string language = spElem->attr("language").asString();
                         std::string src      = spElem->attr("src").asString();

@@ -238,7 +238,7 @@ namespace lx0 { namespace core {
         {
             ElementPtr spChild = spElem->child(j);
 
-            if (spChild->type() == "Ref")
+            if (spChild->tagName() == "Ref")
             {
                 std::ostringstream nameo;
                 nameo << "anonymousRef" << (refCount++);
@@ -255,7 +255,7 @@ namespace lx0 { namespace core {
 
                 spChild->attachComponent("OgreLink", new OgreNodeLink(pNode));
             }
-            else if (spChild->type() == "Group")
+            else if (spChild->tagName() == "Group")
             {
                 _processGroup(spChild);
             }
@@ -268,7 +268,7 @@ namespace lx0 { namespace core {
     void 
     View::show()
     {
-        assert(mpRenderWindow == NULL);
+        lx_check_error(mpRenderWindow == NULL);
 
         Ogre::Root& root = *mspLxOgre->root();
 
@@ -319,21 +319,21 @@ namespace lx0 { namespace core {
         for (int i = 0; i < spRoot->childCount(); ++i)
         {
             ElementPtr spChild = spRoot->child(i);
-            if (spChild->type() == "Library")
+            if (spChild->tagName() == "Library")
             {
                 lx_debug("View found Library element in Document");
 
                 for (int j = 0; j < spChild->childCount(); ++j)
                 {
                     ElementCPtr spMeshElem = spChild->child(j);
-                    if (spMeshElem->type() == "Mesh")
+                    if (spMeshElem->tagName() == "Mesh")
                     {
                         MeshPtr spMesh = std::dynamic_pointer_cast<Mesh>(spMeshElem->value());
                         _addMesh(spMeshElem->attr("id").asString(), spMesh);
                     }
                 }
             }
-            else if (spChild->type() == "Scene")
+            else if (spChild->tagName() == "Scene")
             {
                 lx_debug("View found Scene element in Document");
                 _processGroup(spChild);

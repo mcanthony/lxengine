@@ -84,6 +84,7 @@ public:
         mspGroundShape.reset(new btStaticPlaneShape(btVector3(0,0,1), 0) );
         mspSphereShape.reset( new btSphereShape(0.5f) );
         mspCubeShape.reset( new btBoxShape(btVector3(0.5f, 0.5f, 0.5f)) );
+        mspSmallSphereShape.reset( new btSphereShape(0.1f) );
 
         mspGroundMotionState.reset( new btDefaultMotionState(btTransform(btQuaternion(0,0,0,1), btVector3(0, 0, 0))) );
 
@@ -131,8 +132,19 @@ public:
                 
             const btScalar kfMass = spElem->queryAttr("mass", 0.0f);    
             btVector3 fallInertia(0, 0, 0);
-            mspCubeShape->calculateLocalInertia(kfMass, fallInertia);
-            btRigidBody::btRigidBodyConstructionInfo rigidBodyCI (kfMass, spMotionState.get(), mspCubeShape.get(), fallInertia);
+
+            std::string ref = spElem->queryAttr("ref", "");
+            std::shared_ptr<btCollisionShape> spShape;
+            if (ref == "small_sphere")
+                spShape = mspSmallSphereShape;
+            else if (ref == "unit_sphere")
+                spShape = mspSphereShape;
+            else
+                spShape = mspCubeShape;
+
+            spShape->calculateLocalInertia(kfMass, fallInertia);
+            
+            btRigidBody::btRigidBodyConstructionInfo rigidBodyCI (kfMass, spMotionState.get(), spShape.get(), fallInertia);
 
             std::shared_ptr<btRigidBody> spRigidBody( new btRigidBody(rigidBodyCI) );
             mspDynamicsWorld->addRigidBody(spRigidBody.get());
@@ -190,6 +202,8 @@ protected:
     std::shared_ptr<btCollisionShape>                       mspGroundShape;
     std::shared_ptr<btCollisionShape>                       mspSphereShape;
     std::shared_ptr<btCollisionShape>                       mspCubeShape;
+    std::shared_ptr<btCollisionShape>                       mspSmallSphereShape;
+
 
     std::shared_ptr<btDefaultMotionState>                   mspGroundMotionState;
     std::shared_ptr<btRigidBody>                            mspGroundRigidBody;

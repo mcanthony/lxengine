@@ -83,13 +83,13 @@ namespace lx0 { namespace core {
     }
 
     ElementPtr     
-    Document::createElement (std::string type)
+    Document::createElement (std::string tagName)
     {
         // At the moment, there's no need for this to be a method on Document - 
         // but eventually Document may want to track the elements it creates.
         
         ElementPtr spElem(new Element);
-        spElem->type(type);
+        spElem->tagName(tagName);
         return spElem;
     }
 
@@ -144,7 +144,7 @@ namespace lx0 { namespace core {
     {
         std::vector<ElementPtr> matches;
         _walkElements([&](ElementPtr spElem) -> bool {
-            if (spElem->type() == name)
+            if (spElem->tagName() == name)
                 matches.push_back(spElem);
             return false;
         });

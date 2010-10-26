@@ -72,9 +72,9 @@ namespace lx0 { namespace core {
             virtual void    onAttributeChange   (std::string name, lxvar value) {}
         };
 
-        std::string     type        (void) const { return mType; }                  //!< (DOM tagName)
-        void            type        (const char* s) { mType = s; }                  
-        void            type        (const std::string& s) { type(s.c_str()); }
+        std::string     tagName     (void) const            { return mTagName; }    //!< Get DOM tagName of the Element
+        void            tagName     (const char* s)         { mTagName = s; }       //!< Set DOM tagName of the Element
+        void            tagName     (const std::string& s)  { tagName(s.c_str()); } //!< Set DOM tagName of the Element
 
         const lxvar     attr        (std::string name) const;
         void            attr        (std::string name, lxvar value);      
@@ -107,7 +107,7 @@ namespace lx0 { namespace core {
 
         std::shared_ptr<Component>  _getComponentImp    (std::string name);
 
-        std::string     mType;
+        std::string     mTagName;
         AttrMap         mAttributes;
         ElementPtr      mspParent;
         ElemList        mChildren;
