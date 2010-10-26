@@ -41,7 +41,26 @@
 namespace lx0 { namespace core {
 
     class Object;
+    
 
+    // --------------------------------------------------------------------- //
+    //! Represents an Element in the Document Object Model.  
+    /*!
+        An Element has:
+        * A Tag Name
+        * A lxvar value
+        * A Set of Attributes
+        * A Set of Children
+
+        <b>Comparison to HTML DOM</b>
+        The HTML Document is composed of a tree of Nodes.  These nodes may be Elements, Text, Comments, 
+        Attributes, etc.  Lx simplifies the DOM to be a tree of nodes where every node is an Element.
+
+        In HTML, an Element can contains it's "value" as a set of child nodes - including text nodes.
+        Again, the Lx DOM is simplified: the Element contains a single value field (stored as an 
+        Object) and the notion of the Element's value is separate distinct and unrelated to the
+        Element's children.
+     */
     class Element 
         : public std::enable_shared_from_this<Element>
     {
@@ -53,8 +72,8 @@ namespace lx0 { namespace core {
             virtual void    onAttributeChange   (std::string name, lxvar value) {}
         };
 
-        std::string     type        (void) const { return mType; }
-        void            type        (const char* s) { mType = s; }
+        std::string     type        (void) const { return mType; }                  //!< (DOM tagName)
+        void            type        (const char* s) { mType = s; }                  
         void            type        (const std::string& s) { type(s.c_str()); }
 
         const lxvar     attr        (std::string name) const;

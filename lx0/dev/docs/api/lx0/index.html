@@ -1,0 +1,118 @@
+﻿<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
+  <head>
+      <title>LxEngine Documentation</title>
+      <meta http-equiv="Content-type" content="text/html;charset=UTF-8" />
+        <link rel="stylesheet" href="style/index.css" media="screen" /> 
+        <script type="text/javascript" src="scripts/extern/jquery-1.4.2.min.js"></script>
+        <script type="text/javascript">
+        <!--
+            function debug(s) {
+                var e = $("<div/>");
+                e.text(s);
+                $("#debug").append(e);
+            }
+
+            $(document).ready(function () {
+                $.ajax({ url: "xml/index.xml", dataType: "xml", success: parseXml });
+            });
+
+            function parseXml(xml) {
+
+                var classes = [];
+                var dirs = [];
+
+                $(xml).find("compound").each(function () {
+
+                    var kind = $(this).attr("kind");
+                    var name = $(this).children("name").text();
+
+                    var htmlName = $("<div/>");
+                    htmlName.text(name);
+
+                    if (kind == "class" && !name.match(/::detail/)) {
+                        classes.push(this);
+                    }
+                    else if (kind == "struct") {
+                        $("#structs").append(htmlName);
+                    }
+                    else if (kind == "dir") {
+                        dirs.push(this);
+                    }
+                    else {
+                        htmlName.text(name + " (" + kind + ")");
+                        $("#misc").append(htmlName);
+                    }
+                });
+
+                function sort_by_name (a, b) {
+                    var na = $(a).children("name").text().toUpperCase();
+                    var nb = $(b).children("name").text().toUpperCase();
+                    if (na == nb) return 0;
+                    return (na < nb) ? -1 : 1;
+                }
+
+                classes.sort(sort_by_name);
+                $.each(classes, function () {
+                    var name = $(this).children("name").text();
+                    var refid = $(this).attr("refid");
+                    var htmlName = $("<div/>");
+                    htmlName.attr("id", "ss_" + refid);
+                    htmlName.text(name);
+                    $("#classes").append(htmlName);
+
+                    var url = "xml/" + refid + ".xml";
+                    $.ajax({ url: url, dataType: "xml", success: function (data) {
+                        $(data).find("compounddef").each(function () {
+                            var id = $(this).attr("id");
+
+                            var brief = $(this).children("briefdescription");
+                            if (brief != undefined) {
+                                var html = $("<span/>");
+                                html.css("color", "gray");
+                                html.css("font-size", "75%");
+                                html.html(" - " + brief.text());
+                                $("#ss_" + id).append(html);
+                            }
+                        });
+                    }
+                    });
+                });
+
+                dirs.sort(sort_by_name);
+                $.each(dirs, function () {
+                    var name = $(this).children("name").text();
+
+                    var html = $("<li/>");
+                    html.text(name);
+                    $("#directory_structure").append(html);
+                });
+            }
+        -->
+        </script>
+  </head>
+  <body>
+    <h1>LxEngine</h1>
+
+    <h2>Public API</h2>
+    <h3>Classes</h3>
+    <div id="classes"></div>
+
+    <h3>Structs</h3>
+    <div id="structs"></div>
+
+    <h3>Directory Structure</h3>
+    <ul id="directory_structure">
+    </ul>
+    
+    <h2>Undocumented</h2>
+    <h3>Misc</h3>
+    <div id="misc"></div>
+
+    <div style="display: none"> 
+    <h2>Debug</h2>
+    <div id="debug" style="padding: 12px; font-size: 8pt; color: Gray">
+    </div>
+    </div>
+  </body>
+</html>
