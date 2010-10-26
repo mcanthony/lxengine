@@ -41,6 +41,9 @@ namespace lx0 { namespace core {
     public:
         virtual void    deserialize     (lxvar value);
 
+        float           boundingRadius  (void);
+        vector3         boundingVector  (void);
+
         struct Quad
         {
             int index[4];

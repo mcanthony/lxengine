@@ -87,6 +87,8 @@ namespace lx0 { namespace core {
         const ObjectPtr value       (void) const    { return mspValue; }
         ObjectPtr       value       (void)          { return mspValue; }
         void            value       (ObjectPtr spValue);
+        template <typename T>
+        std::shared_ptr<T> value    (void);
 
         void            prepend     (ElementPtr spElem);
         void            append      (ElementPtr spElem);
@@ -117,6 +119,13 @@ namespace lx0 { namespace core {
     };
 
     typedef std::shared_ptr<Element> ElementPtr;
+
+    template <typename T>
+    std::shared_ptr<T> 
+    Element::value (void)
+    {
+        return std::dynamic_pointer_cast<T>( value() );
+    }
 
     /*!
         Get a Component and dynamic cast it to the intended type.

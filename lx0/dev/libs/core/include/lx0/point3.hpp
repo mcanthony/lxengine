@@ -42,7 +42,8 @@ namespace lx0 { namespace core {
     class point3 : public detail::base_tuple3
     {
     public:
-
+        point3() {}
+        point3 (float x_, float y_, float z_) : base_tuple3(x_, y_, z_) {}
     };
 
     namespace detail
@@ -55,7 +56,10 @@ namespace lx0 { namespace core {
     inline point3   add             (const point3& p, const vector3& v) { return cast<point3&>(p.ogreVec + v.ogreVec); }
     inline point3   sub             (const point3& p, const vector3& v) { return cast<point3&>(p.ogreVec - v.ogreVec); }
 
-    inline float    distance        (const point3& a, const point3& b)  { return a.ogreVec.distance(b.ogreVec); }
+    inline float    distance                    (const point3& a, const point3& b)  { return a.ogreVec.distance(b.ogreVec); }
+    inline float    distance_squared            (const point3& a, const point3& b)  { return a.ogreVec.squaredDistance(b.ogreVec); }
+    inline float    distance_to_origin_squared  (const point3& p)                   { return p.x * p.x + p.y * p.y + p.z * p.z; }
+
     inline point3   mid_point       (const point3& a, const point3& b)  { return cast<point3&>(a.ogreVec.midPoint(b.ogreVec)); } 
     
 }};

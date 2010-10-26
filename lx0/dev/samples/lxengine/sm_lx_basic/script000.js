@@ -32,6 +32,7 @@ ref = $("<Ref/>");
 ref.attr("ref", "unit_sphere");
 ref.attr("translation", [.29, -.47, 16.5]);
 ref.attr("mass", 2.5);
+ref.attr("bounds_type", "sphere");
 $("#grid").append(ref);
 
 for (var gy = 0; gy < 5; ++gy) {
@@ -45,6 +46,7 @@ for (var gy = 0; gy < 5; ++gy) {
         ref.attr("ref", "small_sphere");
         ref.attr("translation", [px, py, pz]);
         ref.attr("mass", .01);
+        ref.attr("bounds_type", "sphere");
         $("#grid").append(ref);
     }
 }

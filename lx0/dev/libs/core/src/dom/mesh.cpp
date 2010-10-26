@@ -75,4 +75,40 @@ namespace lx0 { namespace core {
         }
     }
 
+    /*!
+        This assume the mesh is centered about a local origin of 0,0,0.
+     */
+    float   
+    Mesh::boundingRadius (void)
+    {
+        float rmax = 0.0f;
+        for (auto it = mVertices.begin(); it != mVertices.end(); ++it)
+        {
+            float r = distance_to_origin_squared(*it);
+            if (r > rmax)
+                rmax = r;
+        }
+        return sqrt(rmax);
+    }
+
+
+    /*!
+        This assume the mesh is centered about a local origin of 0,0,0.
+     */
+    vector3   
+    Mesh::boundingVector (void)
+    {
+        vector3 v(0, 0, 0);
+        for (auto it = mVertices.begin(); it != mVertices.end(); ++it)
+        {
+            vector3 u = abs_( cast<vector3&>(*it) );
+            for (int i = 0; i < 3; ++i)
+            {
+                if (u[i] > v[i])
+                    v[i] = u[i];
+            }
+        }
+        return v;
+    }
+
 }}

@@ -45,6 +45,9 @@ namespace lx0 { namespace core {
         public:
             base_tuple3() : x(0.0f), y(0.0f), z(0.0f) {}
             base_tuple3(float x0, float y0, float z0) : x(x0), y(y0), z(z0) {}
+
+            inline float&   operator[] (int i)          { return elem[i]; }
+            inline float    operator[] (int i) const    { return elem[i]; }
         
             union
             {

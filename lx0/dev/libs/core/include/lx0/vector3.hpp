@@ -39,6 +39,9 @@ namespace lx0 { namespace core {
      */
     class vector3 : public detail::base_tuple3
     {
+    public:
+        vector3() {}
+        vector3 (float x_, float y_, float z_) : base_tuple3(x_, y_, z_) {}
     };
 
     namespace detail
@@ -47,6 +50,8 @@ namespace lx0 { namespace core {
         template <> struct cast_is_safe<const vector3&, Ogre::Vector3>         { enum { value = 1 }; };
         template <> struct cast_is_safe<const vector3&, const Ogre::Vector3>   { enum { value = 1 }; }; 
     }
+
+    inline vector3  abs_            (const vector3& v)                   { return vector3(fabs(v.x), fabs(v.y), fabs(v.z)); }
 
     inline float    dot             (const vector3& a, const vector3& b) { return a.ogreVec.dotProduct(b.ogreVec); }
     inline float    abs_dot         (const vector3& a, const vector3& b) { return abs(dot(a, b)); }
