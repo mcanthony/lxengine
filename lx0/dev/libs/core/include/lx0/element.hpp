@@ -74,13 +74,19 @@ namespace lx0 { namespace core {
 
         ElementPtr      _clone () const;
 
-        void            attachComponent (std::string name, Component* pComponents);
-        std::shared_ptr<Component> getComponent (std::string name);
+        void                attachComponent (std::string name, Component* pComponents);
+        template <typename T>
+        std::shared_ptr<T>  getComponent    (std::string name);
+
+        float           queryAttr   (std::string name, float defValue);
+        std::string     queryAttr   (std::string name, std::string defValue);
 
     protected:
         typedef std::map<std::string, lxvar>                      AttrMap;
         typedef std::deque<ElementPtr>                            ElemList;
         typedef std::map<std::string, std::shared_ptr<Component>> ComponentList;
+
+        std::shared_ptr<Component>  _getComponentImp    (std::string name);
 
         std::string     mType;
         AttrMap         mAttributes;
@@ -92,6 +98,20 @@ namespace lx0 { namespace core {
     };
 
     typedef std::shared_ptr<Element> ElementPtr;
+
+    /*!
+        Get a Component and dynamic cast it to the intended type.
+
+        Example:
+
+        auto spPhysics = spElem->getComponent<PhysicsComponent>("physics");
+     */
+    template <typename T>
+    std::shared_ptr<T>  
+    Element::getComponent (std::string name)
+    {
+        return std::dynamic_pointer_cast<T>( _getComponentImp(name) );
+    }
 
 }}
 

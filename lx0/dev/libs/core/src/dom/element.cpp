@@ -142,6 +142,26 @@ namespace lx0 { namespace core {
             return lxvar();
     }
 
+    float
+    Element::queryAttr (std::string name, float defValue)
+    {
+        lxvar v = attr(name);
+        if (v.isFloat() || v.asInt())
+            return v.asFloat();
+        else
+            return defValue;
+    }
+
+    std::string
+    Element::queryAttr (std::string name, std::string defValue)
+    {
+        lxvar v = attr(name);
+        if (v.isString())
+            return v.asString();
+        else
+            return defValue;
+    }
+
     void
     Element::value(ObjectPtr spValue)
     {
@@ -156,7 +176,7 @@ namespace lx0 { namespace core {
     }
 
     std::shared_ptr<Element::Component> 
-    Element::getComponent (std::string name)
+    Element::_getComponentImp (std::string name)
     {
         auto it = mComponents.find(name);
         if (it != mComponents.end())

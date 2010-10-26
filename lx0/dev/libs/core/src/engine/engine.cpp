@@ -69,6 +69,21 @@ namespace lx0 { namespace core {
 
     std::weak_ptr<Engine> Engine::s_wpEngine;
 
+    Engine::Environment::Environment ()
+        : mTimeScale (1.0f)
+    {
+    }
+
+    void
+    Engine::Environment::setTimeScale (float s)
+    {
+        if (s < 0.0f)
+            lx_error("Time scale cannot be negative.  '%f' is not a valid value.", s);
+        else
+            mTimeScale = s;
+    }
+
+
     Engine::Engine()
     {
         // Define a helper lambda function that returns a function (this effectively 

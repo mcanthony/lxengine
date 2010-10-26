@@ -64,11 +64,25 @@ namespace lx0 { namespace core {
     class Engine
     {
     public:
+        class Environment
+        {
+        public:
+                            Environment     (void);
+
+            float           timeScale       (void) const    { return mTimeScale;}
+            void            setTimeScale    (float s);
+
+        protected:
+            float       mTimeScale;
+        };
+
 
         //! Acquire the Singleton for the Engine
         static EnginePtr    acquire         () { return detail::acquireSingleton<Engine>(s_wpEngine); }
         
         void                shutdown        (void);
+
+        Environment&        environment     (void)                      { return mEnvironment; }
 
         DocumentPtr         loadDocument    (std::string filename);
         void                connect         (DocumentPtr spDocument);
@@ -92,6 +106,7 @@ namespace lx0 { namespace core {
         void        _runJavascript      (DocumentPtr spDocument, std::vector<std::string> sources);
         void        _runJavascript      (DocumentPtr spDocument, std::string source);
         
+        Environment                 mEnvironment;
         std::vector<DocumentPtr>    m_documents;
         std::deque<std::string>     m_messageQueue;
 

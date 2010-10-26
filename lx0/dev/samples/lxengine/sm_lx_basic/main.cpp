@@ -141,66 +141,62 @@ public:
         btRigidBody::btRigidBodyConstructionInfo groundRigidBodyCI(fGroundMass, mspGroundMotionState.get(), mspGroundShape.get(), groundIntertia);
         mspGroundRigidBody.reset( new btRigidBody(groundRigidBodyCI) );
         mspDynamicsWorld->addRigidBody(mspGroundRigidBody.get());
-
-        mspFallMotionState.reset( new btDefaultMotionState(btTransform(btQuaternion(0,0,0,1),btVector3(0,0,2.5f))) );
-        const btScalar fFallMass = 1;
-        btVector3 fallInertia(0,0,0);
-        mspCubeShape->calculateLocalInertia(fFallMass, fallInertia);
-
-        btRigidBody::btRigidBodyConstructionInfo fallRigidBodyCI(fFallMass, mspFallMotionState.get(), mspCubeShape.get(), fallInertia);
-        mspFallRigidBody.reset( new btRigidBody(fallRigidBodyCI) );
-        mspDynamicsWorld->addRigidBody(mspFallRigidBody.get());
     }
 
     ~Physics()
     {
-        mspDynamicsWorld->removeRigidBody(mspFallRigidBody.get());
+        // The shared_ptr objects will deallocate everything on destruction, but the rigid
+        // body objects need to be removed from the world to ensure the destruction order
+        // is handled correctly.
+        //
         mspDynamicsWorld->removeRigidBody(mspGroundRigidBody.get());
 
         for (auto it = mRigidBodies.begin(); it != mRigidBodies.end(); ++it)
             mspDynamicsWorld->removeRigidBody( it->get() );
     }
 
+    class PhysicsComponent : public Element::Component
+    {
+    public:
+        PhysicsComponent (std::shared_ptr<btRigidBody> spRigidBody)
+            : mspRigidBody (spRigidBody)
+        {
+        }
+        
+        std::shared_ptr<btRigidBody> mspRigidBody;
+    };
+
     void 
     init (DocumentPtr spDocument)
     {
-        auto spElem = spDocument->getElementById("fall");
-        auto pos = asPoint3( spElem->attr("translation") );
-
-        btTransform tform (btQuaternion(0,0,0,1), btVector3(pos.x, pos.y, pos.z));
-        mspFallRigidBody->getMotionState()->setWorldTransform( tform );
-        mspFallRigidBody->setCenterOfMassTransform(tform);
-
         auto allElems = spDocument->getElementsByTagName("Ref");
         for (auto it = allElems.begin(); it != allElems.end(); ++it)
         {
             auto spElem = *it;
-            auto id = spElem->attr("id");
 
-            if (!id.isString() || id.asString() != "fall")
-            {
-                auto pos = asPoint3( spElem->attr("translation") );
-                btTransform tform (btQuaternion(0,0,0,1), btVector3(pos.x, pos.y, pos.z));
-                std::shared_ptr<btDefaultMotionState> spMotionState( new btDefaultMotionState(tform) );
+            auto pos = asPoint3( spElem->attr("translation") );
+            btTransform tform (btQuaternion(0,0,0,1), btVector3(pos.x, pos.y, pos.z));
+            std::shared_ptr<btDefaultMotionState> spMotionState( new btDefaultMotionState(tform) );
                 
-                const btScalar kfMass = 0;
-                btVector3 fallInertia(0,0,0);
-                mspCubeShape->calculateLocalInertia(kfMass, fallInertia);
-                btRigidBody::btRigidBodyConstructionInfo rigidBodyCI (kfMass, spMotionState.get(), mspCubeShape.get(), fallInertia);
+            const btScalar kfMass = spElem->queryAttr("mass", 0.0f);    
+            btVector3 fallInertia(0, 0, 0);
+            mspCubeShape->calculateLocalInertia(kfMass, fallInertia);
+            btRigidBody::btRigidBodyConstructionInfo rigidBodyCI (kfMass, spMotionState.get(), mspCubeShape.get(), fallInertia);
 
-                std::shared_ptr<btRigidBody> spRigidBody( new btRigidBody(rigidBodyCI) );
-                mspDynamicsWorld->addRigidBody(spRigidBody.get());
+            std::shared_ptr<btRigidBody> spRigidBody( new btRigidBody(rigidBodyCI) );
+            mspDynamicsWorld->addRigidBody(spRigidBody.get());
 
-                mMotionStates.push_back( spMotionState );
-                mRigidBodies.push_back( spRigidBody);
-            }
+            mMotionStates.push_back( spMotionState );
+            mRigidBodies.push_back( spRigidBody);
+
+            spElem->attachComponent("physics", new PhysicsComponent(spRigidBody) );
         }
 
         mLastUpdate = lx0::util::lx_milliseconds();
     }
 
     void 
-    update(DocumentPtr spDocument)
+    update (DocumentPtr spDocument)
     {
         // In milliseconds...
         const float kFps = 60.0f;
@@ -211,17 +207,22 @@ public:
         if (timeNow - mLastUpdate >= kFrameDurationMs)
         {
             const int kMaxSubSteps = 10;
-            mspDynamicsWorld->stepSimulation(kFrameDurationMs / 1000.0f, kMaxSubSteps);
+            const float kStep = Engine::acquire()->environment().timeScale() * kFrameDurationMs / 1000.0f;
+            mspDynamicsWorld->stepSimulation(kStep, kMaxSubSteps);
  
-            btTransform trans;
-            mspFallRigidBody->getMotionState()->getWorldTransform(trans);
- 
-            const float h = trans.getOrigin().getZ();
+            auto allRefs = spDocument->getElementsByTagName("Ref");
+            for (auto it = allRefs.begin(); it != allRefs.end(); ++it)
+            {
+                ElementPtr spElem = *it;
+                auto spPhysics = spElem->getComponent<PhysicsComponent>("physics");
 
-            auto spElem = spDocument->getElementById("fall");
-            lxvar pos = spElem->attr("translation");
-            pos.at(2, h);
-            spElem->attr("translation", pos);
+                btTransform trans;
+                spPhysics->mspRigidBody->getMotionState()->getWorldTransform(trans);
+                btVector3 posBt = trans.getOrigin();
+
+                lxvar pos(posBt.x(), posBt.y(), posBt.z());
+                spElem->attr("translation", pos);
+            }
 
             mLastUpdate = timeNow;
         }
@@ -240,9 +241,6 @@ protected:
 
     std::shared_ptr<btDefaultMotionState>                   mspGroundMotionState;
     std::shared_ptr<btRigidBody>                            mspGroundRigidBody;
-
-    std::shared_ptr<btDefaultMotionState>                   mspFallMotionState;
-    std::shared_ptr<btRigidBody>                            mspFallRigidBody;
 
     std::vector< std::shared_ptr<btDefaultMotionState> >    mMotionStates;
     std::vector< std::shared_ptr<btRigidBody> >             mRigidBodies;
@@ -265,6 +263,7 @@ main (int argc, char** argv)
         if ( parseOptions(argc, argv, options) )
         {
             EnginePtr spEngine( Engine::acquire() );
+            spEngine->environment().setTimeScale(1.1f);
 
             DocumentPtr spDocument = spEngine->loadDocument(*options.find("file"));
 

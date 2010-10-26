@@ -17,8 +17,14 @@ for (var grid_y = 0; grid_y < 4; grid_y++)
 
 // Add a temporary cube to drop from the sky
 var ref = $("<Ref/>");
-ref.attr("id", "fall");
 ref.attr("ref", "unit_cube");
-ref.attr("translation", [ .25, -.5, 5.5] );
+ref.attr("translation", [.25, -.5, 5.5]);
+ref.attr("mass", 1.0);
+$("#grid").append(ref);
+
+ref = $("<Ref/>");
+ref.attr("ref", "unit_cube");
+ref.attr("translation", [-.65, .75, 8.5]);
+ref.attr("mass", 1.0);
 $("#grid").append(ref);
 
