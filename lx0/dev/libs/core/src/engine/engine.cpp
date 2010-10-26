@@ -263,6 +263,9 @@ namespace lx0 { namespace core {
         // Batch all the scripts together into one call so that they share the
         // same execution context (i.e. global variables, etc. *should* affect each other).
         _runJavascript(spDocument, scripts);
+
+
+        _attachPhysics(spDocument);
     }
 
 	void   

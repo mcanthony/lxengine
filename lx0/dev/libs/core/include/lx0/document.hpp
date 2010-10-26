@@ -37,40 +37,67 @@
 
 namespace lx0 { namespace core {
 
+
     class Document
     {
     public:
-                        Document();
-                        ~Document();
+        class Component : public std::enable_shared_from_this<Component>
+        {
+        public:
+            virtual         ~Component() {}
+        };
 
-        TransactionPtr  transaction     (void);
+                                Document();
+                                ~Document();
 
-        void            connect         (std::string name, ViewPtr spView);
-        void            disconnect      (std::string name);
+        TransactionPtr          transaction     (void);
 
-        ElementCPtr     root            (void) const        { return m_spRoot; }
-        ElementPtr      root            (void)              { return m_spRoot; }
-        void            root            (ElementPtr spRoot) { m_spRoot = spRoot; }
+        void                    connect         (std::string name, ViewPtr spView);
+        void                    disconnect      (std::string name);
+
+        ElementCPtr             root            (void) const        { return m_spRoot; }
+        ElementPtr              root            (void)              { return m_spRoot; }
+        void                    root            (ElementPtr spRoot) { m_spRoot = spRoot; }
 
         ElementPtr              createElement           (std::string type);
         ElementPtr              getElementById          (std::string id);
         std::vector<ElementPtr> getElementsByTagName    (std::string name);
 
-        void            beginRun        (void);
-        void            updateRun       (void);
-        void            endRun          (void);
+        void                    beginRun        (void);
+        void                    updateRun       (void);
+        void                    endRun          (void);
 
-        slot<void()>    slotUpdateRun;
+
+        void                    attachComponent (std::string name, Component* pComponent);
+        template <typename T>
+        std::shared_ptr<T>      getComponent    (std::string name);
+
+        slot<void()>            slotUpdateRun;
 
     protected:
+        typedef std::map<std::string, std::shared_ptr<Component>> ComponentList;
         typedef std::vector< TransactionWPtr > TrWList;
 
-        bool            _walkElements   (std::function<bool (ElementPtr)> f);
+        std::shared_ptr<Component>  _getComponentImp    (std::string name);
+        bool                        _walkElements       (std::function<bool (ElementPtr)> f);
 
-        TrWList m_openTransactions;
-
-        ElementPtr  m_spRoot;
-
-        std::map<std::string, ViewPtr> m_views;
+        TrWList                         m_openTransactions;     //!< Not currently implemented
+        ElementPtr                      m_spRoot;
+        std::map<std::string, ViewPtr>  m_views;
+        ComponentList                   mComponents;
     };
+
+    /*!
+        Get a Component and dynamic cast it to the intended type.
+
+        Example:
+
+        auto spPhysics = spElem->getComponent<PhysicsComponent>("physics");
+     */
+    template <typename T>
+    std::shared_ptr<T>  
+    Document::getComponent (std::string name)
+    {
+        return std::dynamic_pointer_cast<T>( _getComponentImp(name) );
+    }
 }}

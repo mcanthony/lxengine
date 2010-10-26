@@ -186,6 +186,8 @@ namespace lx0 { namespace core {
             Ogre::Vector3& v1 = reinterpret_cast<Ogre::Vector3&>(spMesh->mVertices[fi->index[1]]);
             Ogre::Vector3& v2 = reinterpret_cast<Ogre::Vector3&>(spMesh->mVertices[fi->index[2]]);
             
+            // A final index of -1 is a special value indicating that this is a triangle,
+            // not a quad.
             if (fi->index[3] >= 0)
             {
                 Ogre::Vector3& v3 = reinterpret_cast<Ogre::Vector3&>(spMesh->mVertices[fi->index[3]]);
@@ -193,8 +195,6 @@ namespace lx0 { namespace core {
             }
             else
             {
-                // A final index of -1 is a special value indicating that this is a triangle,
-                // not a quad.
                 add_tri(v0, v1, v2);
             }
         }

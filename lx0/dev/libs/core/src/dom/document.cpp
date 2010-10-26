@@ -174,4 +174,21 @@ namespace lx0 { namespace core {
             it->second->updateFrame();
     }
 
+    void 
+    Document::attachComponent (std::string name, Component* pComponent)
+    {
+        std::shared_ptr<Component> spValue(pComponent);
+        mComponents.insert( std::make_pair(name, spValue) );
+    }
+
+    std::shared_ptr<Document::Component> 
+    Document::_getComponentImp (std::string name)
+    {
+        auto it = mComponents.find(name);
+        if (it != mComponents.end())
+            return it->second;
+        else
+            return std::shared_ptr<Component>();
+    }
+
 }}
