@@ -73,4 +73,45 @@ namespace lx0 { namespace core {
             detail::cast_is_safe<To,From>::value >::cast(f);
     } 
 
+
+    namespace detail
+    {
+        template <typename Base, typename To>
+        struct lx_cast_imp
+        {
+        };
+
+        template<typename B>
+        struct lx_cast_worker
+        {
+            lx_cast_worker (B& base) : mBase(base) {}
+            B& mBase;
+
+            template <typename T>
+            operator T () const 
+            { 
+                return lx_cast_imp<B,T>().cast(mBase); 
+            }
+        };
+    }
+
+    template <typename B>
+    detail::lx_cast_worker<B> 
+    lx_cast (B& b) 
+    { 
+        return detail::lx_cast_worker<B>(b); 
+    }
+
 }};
+
+#define _ENABLE_LX_CAST(From,To)                                \
+    namespace lx0 { namespace core { namespace detail {         \
+        template <>                                             \
+        struct lx_cast_imp<From, To>                            \
+        {                                                       \
+            To& cast(From& base)                                \
+            {                                                   \
+                return reinterpret_cast<To&>(base);             \
+            }                                                   \
+        };                                                      \
+    }}}

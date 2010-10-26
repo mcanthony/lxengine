@@ -54,6 +54,9 @@
 #include <lx0/controller.hpp>
 #include <lx0/point3.hpp>
 #include <lx0/util.hpp>
+#include <lx0/cast.hpp>
+
+_ENABLE_LX_CAST(btVector3, point3);
 
 using namespace lx0::core;
 
@@ -218,10 +221,11 @@ public:
 
                 btTransform trans;
                 spPhysics->mspRigidBody->getMotionState()->getWorldTransform(trans);
-                btVector3 posBt = trans.getOrigin();
+                point3 p = lx_cast( trans.getOrigin() );
+                btQuaternion q = trans.getRotation();
 
-                lxvar pos(posBt.x(), posBt.y(), posBt.z());
-                spElem->attr("translation", pos);
+                spElem->attr("translation", lxvar(p.x, p.y, p.z) );
+                spElem->attr("rotation", lxvar(q.x(), q.y(), q.z(), q.w()) );
             }
 
             mLastUpdate = timeNow;

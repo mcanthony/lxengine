@@ -90,6 +90,7 @@ namespace lx0 { namespace core {
                         lxvar           (int a, int b, int c, int d);
                         lxvar           (float a);
                         lxvar           (float a, float b, float c);
+                        lxvar           (float a, float b, float c, float d);
                         lxvar           (const char* s);
                         lxvar           (std::string s);
 

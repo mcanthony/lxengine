@@ -194,6 +194,15 @@ namespace lx0 { namespace core {
                 const Ogre::Vector3 pos = reinterpret_cast<Ogre::Vector3&>(pos2);
                 mpNode->setPosition(pos);
             }
+            else if (name == "rotation")
+            {
+                Ogre::Quaternion q;
+                q.x = value.at(0).asFloat();
+                q.y = value.at(1).asFloat();
+                q.z = value.at(2).asFloat();
+                q.w = value.at(3).asFloat();
+                mpNode->setOrientation(q);
+            }
         }
 
         Ogre::SceneNode* mpNode;

@@ -95,6 +95,15 @@ namespace lx0 { namespace core {
         push(c);
     }
 
+    lxvar::lxvar(float a, float b, float c, float d)
+        : mValue( lxundefined::acquire() )
+    {
+        push(a);
+        push(b);
+        push(c);
+        push(d);
+    }
+
     lxvar::lxvar (const char* s)
         : mValue(new lxstring(s))
     {
