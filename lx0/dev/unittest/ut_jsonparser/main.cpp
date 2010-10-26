@@ -126,7 +126,7 @@ void check_exception (int line, bool bShouldThrow, std::string source, std::func
     }
 }
 
-#define CHECK(b) check(__LINE__, b, "")
+#define CHECK(b) check(__LINE__, (b), "")
 #define CHECK_EXCEPTION(Code) check_exception(__LINE__, true, #Code, [&]() Code )
 
 int 
@@ -240,6 +240,51 @@ main (int argc, char** argv)
 
             try { v.push(3); CHECK(false); } catch (...) { CHECK(true); }
             try { v.size();  CHECK(true);  } catch (...) { CHECK(false); }
+        });
+
+        F.add("iterators", []() {
+            JsonParser parser;
+            lxvar v = parser.parse("[ 0, 1, 2, 3, 4, 5 ]");
+
+            try
+            {
+                int i = 0;
+                auto et = v.end();
+                for (auto it = v.begin(); it != v.end(); ++it)
+                {
+                    bool b = ((*it).asInt() == i);
+                    CHECK(b);
+                    i++;
+                }
+                CHECK(i == v.size()); 
+                CHECK(true);
+            } 
+            catch (...)
+            {
+                CHECK(false);
+            }
+
+
+            v = parser.parse("{ a:0, b:1, c:2, d:3, e:4, f:5 }");
+
+            try
+            {
+                int i = 0;
+                auto et = v.end();
+                for (auto it = v.begin(); it != v.end(); ++it)
+                {
+                    bool b = ((*it).asInt() == i);
+                    CHECK(b);
+                    i++;
+                }
+                CHECK(i == v.size()); 
+                CHECK(true);
+            } 
+            catch (...)
+            {
+                CHECK(false);
+            }
+
         });
 
         F.run();

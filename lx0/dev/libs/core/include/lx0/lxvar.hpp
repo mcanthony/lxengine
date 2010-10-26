@@ -40,6 +40,7 @@ namespace lx0 { namespace core {
     namespace detail 
     {
         class lxvalue;
+        class lxvalue_iterator;
         
         class lxundefined;
         class lxint;
@@ -70,6 +71,7 @@ namespace lx0 { namespace core {
     class lxvar
     {
     public:
+
         struct auto_cast
         {
             auto_cast (lxvar& v) : mValue (v) {}
@@ -80,8 +82,27 @@ namespace lx0 { namespace core {
             operator std::string () { return mValue.asString(); }
         };
 
-        typedef std::vector<lxvar>::iterator           ArrayIterator;
-        typedef std::map<std::string, lxvar>::iterator MapIterator;
+        class iterator
+        {
+        public:
+            iterator (void);
+            iterator (detail::lxvalue_iterator* pIter) : mValue(pIter) {}
+            iterator (const iterator& that);
+
+            void        operator=   (const iterator& that);
+
+            bool        operator== (iterator& that);
+            bool        operator!= (iterator& that);
+            void        operator++ (void);
+            void        operator++ (int);
+            lxvar       operator-> (void);
+            lxvar       operator*  (void);
+
+            std::string key        (void);
+
+        protected:
+            mutable std::shared_ptr<detail::lxvalue_iterator> mValue;
+        };
 
                         lxvar           (void);
                         lxvar           (const lxvar& that);
@@ -126,15 +147,14 @@ namespace lx0 { namespace core {
 
         void            undefine        (void);
 
-        ArrayIterator   beginArray      (void);
-        ArrayIterator   endArray        (void);
+        iterator        begin           (void);
+        iterator        end             (void);
+
         int             size            (void) const;
         lxvar           at              (int index) const;
         void            at              (int index, lxvar value);
         void            push            (const lxvar& e);
 
-        MapIterator     beginMap        (void);
-        MapIterator     endMap          (void);
         bool            containsKey     (const char* key) const;
         lxvar           find            (const char* key) const;
         void            insert          (const char* key, const lxvar& value);
@@ -161,6 +181,23 @@ namespace lx0 { namespace core {
 
     namespace detail
     {
+        class lxvalue_iterator
+        {
+        public:
+            virtual         ~lxvalue_iterator   () {}
+            
+            virtual lxvalue_iterator* clone     (void)                         { return new lxvalue_iterator(); }
+
+            virtual bool    equal               (const lxvalue_iterator& that) { _invalid(); return false; }
+            virtual void    inc                 (void)                         { _invalid(); }
+            virtual std::string key             (void)                         { _invalid(); return std::string(); }
+            virtual lxvar   dereference         (void)                         { _invalid(); return lxvar(); }
+
+        protected:
+            void            _invalid            (void) const;
+        };
+
+
         class lxvalue
         {
         public:
@@ -173,9 +210,13 @@ namespace lx0 { namespace core {
             virtual lxvar       at          (int i)                     { _invalid(); return lxvar(); }
             virtual void        at          (int index, lxvar value)    { _invalid(); }
 
+            virtual lxvar::iterator begin  (void)                      { _invalid(); return lxvar::iterator(); }
+            virtual lxvar::iterator end    (void)                      { _invalid(); return lxvar::iterator(); }
+
         protected:
             void                _invalid    (void) const;
         };
+
 
 
         class lxundefined : public lxvalue
@@ -230,9 +271,27 @@ namespace lx0 { namespace core {
             std::string mValue;
         };
 
+        /*!
+            Implementation for a generic array of lxvars.
+         */
         class lxarray : public lxvalue
         {
         public:
+            class iterator_imp : public lxvalue_iterator
+            {
+            public:
+                iterator_imp (std::vector<lxvar>::iterator it) : mIter(it) {}
+                virtual lxvalue_iterator* clone     (void)                         { return new iterator_imp(mIter); }
+
+                virtual bool    equal               (const lxvalue_iterator& that) { return mIter == dynamic_cast<const iterator_imp&>(that).mIter; }
+                virtual void    inc                 (void)                         { mIter++; }
+                virtual lxvar   dereference         (void)                         { return *mIter; }
+
+            protected:
+                std::vector<lxvar>::iterator    mIter;
+
+            };
+
             virtual bool        sharedType  (void) const { return true; }
             virtual lxvalue*    clone       (void) const;
 
@@ -240,16 +299,38 @@ namespace lx0 { namespace core {
             virtual lxvar       at          (int i);
             virtual void        at          (int index, lxvar value);
 
+            lxvar::iterator     begin           (void) { return lxvar::iterator(new iterator_imp(mValue.begin())); }
+            lxvar::iterator     end             (void) { return lxvar::iterator(new iterator_imp(mValue.end())); }
+
             std::vector<lxvar> mValue;
         };
 
         class lxstringmap : public lxvalue
         {
         public:
+            class iterator_imp : public lxvalue_iterator
+            {
+            public:
+                iterator_imp (std::map<std::string, lxvar>::iterator it) : mIter(it) {}
+                virtual lxvalue_iterator* clone     (void)                         { return new iterator_imp(mIter); }
+
+                virtual bool    equal               (const lxvalue_iterator& that) { return mIter == dynamic_cast<const iterator_imp&>(that).mIter; }
+                virtual void    inc                 (void)                         { mIter++; }
+                virtual std::string key             (void)                         { return mIter->first; }
+                virtual lxvar   dereference         (void)                         { return mIter->second; }
+
+            protected:
+                std::map<std::string, lxvar>::iterator    mIter;
+            };
+
+
             virtual bool        sharedType  (void) const { return true; }
             virtual lxvalue*    clone       (void) const;
 
             virtual int         size        (void) const { return int( mValue.size() ); }
+
+            lxvar::iterator     begin           (void) { return lxvar::iterator(new iterator_imp(mValue.begin())); }
+            lxvar::iterator     end             (void) { return lxvar::iterator(new iterator_imp(mValue.end())); }
 
             typedef std::map<std::string, lxvar> Map;
             Map mValue;

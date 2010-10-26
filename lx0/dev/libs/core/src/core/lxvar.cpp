@@ -48,8 +48,72 @@ namespace lx0 { namespace core {
         {
             lx_error("Invalid operation for lxvar type");
         }
+
+
+        void
+        lxvalue_iterator::_invalid (void) const
+        {
+            lx_error("Invalid operation for lxvar iterator type");
+        }
     }
 
+    lxvar::iterator::iterator (void)
+        : mValue(new lxvalue_iterator)
+    {
+    }
+
+    lxvar::iterator::iterator (const lxvar::iterator& that) 
+        : mValue( that.mValue->clone() ) 
+    {
+    }
+
+    void        
+    lxvar::iterator::operator= (const lxvar::iterator& that) 
+    { 
+        mValue.reset( that.mValue->clone() ); 
+    }
+
+    bool
+    lxvar::iterator::operator== (iterator& that)
+    {
+        return mValue->equal(*that.mValue);
+    }
+
+    bool
+    lxvar::iterator::operator!= (iterator& that)
+    {
+        return !mValue->equal(*that.mValue);
+    }
+
+    void
+    lxvar::iterator::operator++ (void)
+    {
+        return mValue->inc();
+    }
+
+    void
+    lxvar::iterator::operator++ (int)
+    {
+        return mValue->inc();
+    }
+
+    lxvar 
+    lxvar::iterator::operator-> (void)
+    {
+        return mValue->dereference();
+    }
+
+    lxvar 
+    lxvar::iterator::operator* (void)
+    {
+        return mValue->dereference();
+    }
+
+    std::string 
+    lxvar::iterator::key (void)
+    {
+        return mValue->key();
+    }
 
     lxvar::lxvar()
         : mValue( lxundefined::acquire() )
@@ -202,6 +266,19 @@ namespace lx0 { namespace core {
         return (isString() && asString() == s);
     }
 
+
+    lxvar::iterator
+    lxvar::begin (void)
+    {
+        return mValue->begin();
+    }
+
+    lxvar::iterator
+    lxvar::end (void)
+    {
+        return mValue->end();
+    }
+
     /*!
         Converts the undefined variable to an empty map.
      */
@@ -209,18 +286,6 @@ namespace lx0 { namespace core {
     lxvar::toArray (void)
     {
         _castTo<lxarray>();
-    }
-
-    lxvar::ArrayIterator
-    lxvar::beginArray (void)
-    {
-        return _castTo<lxarray>()->mValue.begin();
-    }
-
-    lxvar::ArrayIterator 
-    lxvar::endArray (void)
-    {
-        return _castTo<lxarray>()->mValue.end();
     }
 
     int
@@ -261,18 +326,6 @@ namespace lx0 { namespace core {
     lxvar::toMap (void)
     {
         _castTo<lxstringmap>();
-    }
-
-    lxvar::MapIterator
-    lxvar::beginMap (void)
-    {
-        return _castTo<lxstringmap>()->mValue.begin();
-    }
-
-    lxvar::MapIterator 
-    lxvar::endMap (void)
-    {
-        return _castTo<lxstringmap>()->mValue.end();
     }
 
     bool
