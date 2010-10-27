@@ -37,6 +37,7 @@
 #include <lx0/core.hpp>
 #include <lx0/engine.hpp>
 #include <lx0/lxvar.hpp>
+#include <lx0/util.hpp>
 
 namespace lx0 { namespace core {
 
@@ -67,8 +68,11 @@ namespace lx0 { namespace core {
     {
         m_views.insert(std::make_pair(name, spView));
         spView->attach(this);
-    }
 
+        // Forward the events along so they can be caught at any level
+        spView->slotKeyDown += [&]() { this->slotKeyDown(); };
+    }
+    
     void
     Document::disconnect (std::string name)
     {

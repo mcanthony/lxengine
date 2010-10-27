@@ -62,7 +62,8 @@ namespace lx0 { namespace core { namespace detail {
     {
     public:
         ///@todo pass in the window handle rather than an OGRE pointer - no need for OGRE here
-        InputImp (size_t hWindowHandle, unsigned int windowWidth, unsigned int windowHeight)
+        InputImp (LxInputManager* pInterface, size_t hWindowHandle, unsigned int windowWidth, unsigned int windowHeight)
+            : mpInterface (pInterface)
         {
             ParamList params;
             params.insert( std::make_pair(std::string("WINDOW"), lx_atoi(hWindowHandle)) );
@@ -129,6 +130,8 @@ namespace lx0 { namespace core { namespace detail {
 
         virtual bool keyPressed( const KeyEvent &arg )
         {
+            mpInterface->slotKeyDown();
+
             // true means to continue sending the event to any other listeners 
             return true;
         }
@@ -154,6 +157,7 @@ namespace lx0 { namespace core { namespace detail {
         }
 
     protected:
+        LxInputManager*         mpInterface;
         OIS::InputManager*      mpInputManager;
         OIS::Keyboard*          mpKeyboard;
         OIS::Mouse*             mpMouse;
@@ -162,10 +166,13 @@ namespace lx0 { namespace core { namespace detail {
 
 
     LxInputManager::LxInputManager (size_t hWindowHandle, unsigned int width, unsigned int height)
-        : mspImp ( new InputImp (hWindowHandle, width, height) )
+        : mspImp ( new InputImp (this, hWindowHandle, width, height) )
     {
     }
 
-    void LxInputManager::update() { mspImp->update(); }
+    void LxInputManager::update() 
+    { 
+        mspImp->update(); 
+    }
 
 }}}

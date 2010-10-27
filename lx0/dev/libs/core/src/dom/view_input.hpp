@@ -37,9 +37,13 @@ namespace lx0 { namespace core { namespace detail {
     class LxInputManager
     {
     public:
+        friend class InputImp;
+
         LxInputManager (size_t hWindowHandle, unsigned int width, unsigned int height);
 
         void update();
+
+        slot<void ()>       slotKeyDown;
 
     protected:
         std::shared_ptr<InputImp> mspImp;

@@ -75,6 +75,7 @@ namespace lx0 { namespace core {
         std::shared_ptr<T>      ensureComponent (std::string name, std::function<T* (void)> ctor);
 
         slot<void()>            slotUpdateRun;
+        slot<void()>            slotKeyDown;
 
     protected:
         typedef std::map<std::string, std::shared_ptr<Component>> ComponentList;

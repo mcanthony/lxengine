@@ -32,7 +32,7 @@
 #include <memory>
 
 #include <lx0/detail/forward_decls.hpp>
-
+#include <lx0/slot.hpp>
 
 namespace lx0 { namespace core {
 
@@ -69,6 +69,8 @@ namespace lx0 { namespace core {
 
         void        attach          (Document* pDocument);
         void        detach          (Document* pDocument);
+
+        slot<void ()>       slotKeyDown;
 
     protected:
         void        _updateFrameRenderingQueued();

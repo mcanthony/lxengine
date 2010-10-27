@@ -65,3 +65,4 @@ for (var i = 0; i < 40; i++) {
     $("#grid").append(ref);
 }
 
+window.onKeyDown(function () { alert("Key press detected."); });

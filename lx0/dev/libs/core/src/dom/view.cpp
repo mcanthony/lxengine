@@ -309,6 +309,8 @@ namespace lx0 { namespace core {
             mpRenderWindow->getMetrics(width, height, depth, left, top);
 
             mspLxInputManager.reset( new LxInputManager(hWindowHandle, width, height) );
+
+            mspLxInputManager->slotKeyDown += [&] () { this->slotKeyDown(); };
         }
 
         mpSceneMgr = root.createSceneManager(Ogre::ST_GENERIC, "generic");

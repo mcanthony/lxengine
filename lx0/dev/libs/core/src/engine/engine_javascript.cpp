@@ -35,9 +35,11 @@
 #include <lx0/mesh.hpp>
 #include <lx0/util.hpp>
 
-#include <lx0/v8bind.hpp>
+using namespace v8;
 
 namespace lx0 { namespace core { namespace detail {
+
+    using v8::Object;
 
     // --------------------------------------------------------------------- //
     //! Local utility class for converting JS <=> native values
@@ -59,13 +61,12 @@ namespace lx0 { namespace core { namespace detail {
         _marshal(std::string s)             : mValue( v8::String::New(s.c_str()) ) {}
 
         operator v8::Handle<v8::Value> ()   { return mValue; }
+        operator Handle<Function> ()        { return Handle<Function>::Cast(mValue); }
         operator std::string ()             { return *v8::String::AsciiValue(mValue);  }
         operator int ()                     { return mValue->Int32Value(); }
         
         operator lxvar ()
         {
-            using namespace v8;
-
             if (mValue->IsUndefined())
             {
                 return lxvar();
@@ -116,9 +117,6 @@ namespace lx0 { namespace core { namespace detail {
         template <typename T>
         T* pointer ()
         {
-            using namespace v8;
-            using v8::Object;
-
             Handle<Object> obj( Handle<Object>::Cast(mValue) );
             lx_check_error(obj->InternalFieldCount() == 1);
             Local<External> wrap = Local<External>::Cast(obj->GetInternalField(0));
@@ -144,9 +142,6 @@ namespace lx0 { namespace core { namespace detail {
         // the object was set with exactly one internal field of type T.   It is difficult to
         // verify these assumptions at runtime, so this is a somewhat dangerous function.
         //
-        using namespace v8;
-        using v8::Object;
-
         Local<Object> self = args.Holder();
 
         lx_check_error(self->InternalFieldCount() == 1);
@@ -181,6 +176,8 @@ namespace lx0 { namespace core { namespace detail {
         
         //@name Add functions/objects to JS context
         //@{
+        void                            _addGlobals     (v8::Handle<v8::ObjectTemplate>& globalTempl);
+        void                            _addWindow      (void);
         void                            _addDocument    (DocumentPtr spDocument);
         v8::Persistent<v8::Function>    _addElement     (void);
         void                            _addMath        (void);
@@ -189,31 +186,15 @@ namespace lx0 { namespace core { namespace detail {
         v8::Persistent<v8::Context>     mContext;
         v8::Persistent<v8::Function>    mElementCtor;
 
+        Persistent<Function>            mWindowOnKeyDown;
+
         std::vector<ElementPtr>         mElements;
     };
     
     JavascriptComponent* s_pActiveContext;
 
-    namespace internal {
-
-        static v8::Handle<v8::Value> print (const v8::Arguments& args)
-        {
-            using namespace v8;
-
-            std::string name = _marshal(args[0]);
-            std::cout << "JS print: " << name << std::endl;
-
-            return Undefined();
-        }
-    }
-
-
     JavascriptComponent::JavascriptComponent (DocumentPtr spDocument)
     {
-        using namespace v8;
-        using v8::Object;
-        using namespace lx0::core::detail::internal;
-
         // Set up the global template before initiating the Context.   The ObjectTemplate lets
         // FunctionTemplates be added for the free functions.  Context::Global() returns an
         // Object, not an ObjectTemplate - therefore, it limits what can be added after the
@@ -221,36 +202,40 @@ namespace lx0 { namespace core { namespace detail {
         //
         HandleScope handle_scope;
         Handle<ObjectTemplate> global_templ( ObjectTemplate::New() ); 
-  
-        // Internal debugging methods to make development a little easier.
-        //
-        global_templ->Set(String::New("__lx_print"), FunctionTemplate::New(print));
+
+        _addGlobals(global_templ);
         
         mContext = Context::New(0, global_templ);
 
         Context::Scope context_scope(mContext);
+        _addWindow();
         _addDocument(spDocument);
         mElementCtor = _addElement();
         _addMath();
+
+        spDocument->slotKeyDown += [&]() {
+            s_pActiveContext = this;
+            Context::Scope context_scope(mContext);
+
+            HandleScope handle_scope;
+            Handle<Value> callArgs[1];
+            Handle<Object> recv = mContext->Global();
+            mWindowOnKeyDown->Call(recv, 0, 0);
+
+            s_pActiveContext = nullptr;
+        };
     }
 
     JavascriptComponent::~JavascriptComponent()
     {
-        using namespace v8;
-        using v8::Object;
-
-
         mElementCtor.Dispose();
-
+        mWindowOnKeyDown.Dispose();
         mContext.Dispose();
     }
 
     void 
     JavascriptComponent::run (DocumentPtr spDocument, std::string text)
     {
-        using namespace v8;
-        using v8::Object;
-
         s_pActiveContext = this;
 
         Context::Scope context_scope(mContext);
@@ -275,11 +260,74 @@ namespace lx0 { namespace core { namespace detail {
     }
 
     void
+    JavascriptComponent::_addGlobals (v8::Handle<v8::ObjectTemplate>& globalTempl)
+    {
+        struct L
+        {
+            static v8::Handle<v8::Value> __lx_print (const v8::Arguments& args)
+            {
+                std::string name = _marshal(args[0]);
+                std::cout << "JS print: " << name << std::endl;
+                return Undefined();
+            }
+
+            static v8::Handle<v8::Value> alert (const v8::Arguments& args)
+            {
+                std::string text = _marshal(args[0]);
+                lx0::util::lx_message_box("Alert", text);
+                return Undefined();
+            }
+        };
+
+
+        // Internal debugging methods to make development a little easier.
+        //
+        globalTempl->Set(String::New("__lx_print"), FunctionTemplate::New(L::__lx_print));
+
+        globalTempl->Set(String::New("alert"), FunctionTemplate::New(L::alert));
+    }
+
+    void
+    JavascriptComponent::_addWindow (void)
+    {
+        struct Window
+        {
+            ///@todo This should be a property not a function.  I.e.:
+            // window.onKeyDown = function() { ... }; 
+            // vs.
+            // window.onKeyDown( function() { ... } );
+            static v8::Handle<v8::Value> 
+            onKeyDown (const v8::Arguments& args)
+            {
+                lx_check_error(args.Length() == 1);
+
+                auto*            pThis  = _nativeThis<Window>(args); 
+                Handle<Function> func   = _marshal(args[0]);
+
+                s_pActiveContext->mWindowOnKeyDown = Persistent<Function>::New(func);
+
+                return Undefined();
+            }
+        };
+
+        // Create the template and add the prototype methods
+        //
+        Handle<FunctionTemplate> templ( FunctionTemplate::New() );
+        Handle<ObjectTemplate> objInst( templ->InstanceTemplate() );
+        objInst->SetInternalFieldCount(1);
+
+        Handle<Template> proto_t( templ->PrototypeTemplate() );
+        proto_t->Set("onKeyDown",  FunctionTemplate::New(Window::onKeyDown));
+
+        // Add the object
+        Handle<Object> obj( templ->GetFunction()->NewInstance() );
+        obj->SetInternalField(0, External::New(new Window));
+        mContext->Global()->Set(String::New("window"), obj);
+    }
+
+    void
     JavascriptComponent::_addDocument (DocumentPtr spDocument)
     {
-        using namespace v8;
-        using v8::Object;
-
         // Local functions
         struct L
         {
@@ -310,7 +358,6 @@ namespace lx0 { namespace core { namespace detail {
             static v8::Handle<v8::Value> 
             getElementById (const v8::Arguments& args)
             {
-                using namespace v8;
                 lx_check_error(args.Length() == 1);
 
                 Document* pDoc = _nativeThis<Document>(args); 
@@ -369,17 +416,11 @@ namespace lx0 { namespace core { namespace detail {
     v8::Persistent<v8::Function>
     JavascriptComponent::_addElement (void)
     {
-        using namespace v8;
-        using v8::Object;
-
         struct L
         {
             static v8::Handle<v8::Value> 
             appendChild (const v8::Arguments& args)
             {
-                using namespace v8;
-                using v8::Object;
-
                 Element* pThis = _nativeThis<Element>(args);
                 Element* pChild = _marshal(args[0]).pointer<Element>();
         
@@ -391,9 +432,6 @@ namespace lx0 { namespace core { namespace detail {
             static v8::Handle<v8::Value> 
             setAttribute (const v8::Arguments& args)
             {
-                using namespace v8;
-                using v8::Object;
-
                 Element* pThis = _nativeThis<Element>(args);
                 std::string name = _marshal(args[0]);
                 lxvar value = _marshal(args[1]);
@@ -425,9 +463,6 @@ namespace lx0 { namespace core { namespace detail {
     void
     JavascriptComponent::_addMath (void)
     {
-        using namespace v8;
-        using v8::Object;
-
         struct Math
         {
             static v8::Handle<v8::Value> random (const v8::Arguments& args)
