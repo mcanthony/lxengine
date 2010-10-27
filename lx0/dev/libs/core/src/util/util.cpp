@@ -27,6 +27,10 @@
 */
 //===========================================================================//
 
+#include <iostream>
+#include <string>
+#include <sstream>
+
 #include <lx0/core.hpp>
 #include <lx0/util.hpp>
 #include <lx0/jsonio.hpp>
@@ -64,6 +68,14 @@ namespace lx0 { namespace util {
         const char* p = s.c_str();
         lx0::serial::JsonParser parser;
         return parser.parse(p);
+    }
+
+    std::string         
+    lx_atoi (size_t i)
+    {
+        std::ostringstream stream;
+        stream << i;
+        return stream.str();
     }
 
 }}

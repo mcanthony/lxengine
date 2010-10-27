@@ -31,6 +31,7 @@
 #include <cassert>
 #include <memory>
 
+// Public headers
 #include <lx0/view.hpp>
 #include <lx0/core.hpp>
 #include <lx0/document.hpp>
@@ -38,6 +39,9 @@
 #include <lx0/mesh.hpp>
 #include <lx0/point3.hpp>
 #include <lx0/engine.hpp>
+
+// Internal headers
+#include "view_input.hpp"
 
 #include <OGRE/OgreRoot.h>
 #include <OGRE/OgreRenderWindow.h>
@@ -107,6 +111,17 @@ namespace lx0 { namespace core {
                 Engine::acquire()->sendMessage("quit");
             }
         };
+
+        class LxFrameEventListener : public Ogre::FrameListener
+        {
+        public:
+            LxFrameEventListener(View* pView) : mpView(pView) {}
+            View* mpView;
+
+            virtual bool frameStarted(const Ogre::FrameEvent& evt) { return true; }
+            virtual bool frameRenderingQueued(const Ogre::FrameEvent& evt) { mpView->_updateFrameRenderingQueued(); return true; }
+            virtual bool frameEnded(const Ogre::FrameEvent& evt) { return true; }
+        };
     }
 
     using namespace detail;
@@ -122,7 +137,7 @@ namespace lx0 { namespace core {
 
     View::~View()
     {
-        // These pointers are owned by OGRE.  Do not delete.  Set to NULL for
+        // These pointers are owned by OGRE.  Do not delete.  Set to NULL only for
         // documentation purposes.
         mpRenderWindow = 0;
         mpSceneMgr  = 0;
@@ -282,7 +297,19 @@ namespace lx0 { namespace core {
 
         // The render window creation also creates many internal OGRE data objects; therefore,
         // create it first.  Otherwise objects like the Camera won't even work.
-        mpRenderWindow = root.initialise(true, "View" );  
+        mpRenderWindow = root.initialise(true, "View" ); 
+
+        // Create the input manager for the window, now that the window has been created
+        {
+            size_t hWindowHandle;
+            mpRenderWindow->getCustomAttribute("WINDOW", &hWindowHandle);
+            
+            unsigned int width, height, depth;
+            int top, left;
+            mpRenderWindow->getMetrics(width, height, depth, left, top);
+
+            mspLxInputManager.reset( new LxInputManager(hWindowHandle, width, height) );
+        }
 
         mpSceneMgr = root.createSceneManager(Ogre::ST_GENERIC, "generic");
 
@@ -359,6 +386,9 @@ namespace lx0 { namespace core {
 
         Ogre::Root* pRoot = mspLxOgre->root();
 
+        mspFrameEventListener.reset(new LxFrameEventListener(this));
+        pRoot->addFrameListener(mspFrameEventListener.get());
+
         lx_check_error(pRoot->getRenderSystem() != 0);
         pRoot->getRenderSystem()->_initRenderTargets();
 
@@ -369,7 +399,19 @@ namespace lx0 { namespace core {
     void
     View::updateEnd()
     {
+        mspLxOgre->root()->removeFrameListener(mspFrameEventListener.get());
         Ogre::WindowEventUtilities::removeWindowEventListener(mpRenderWindow, mspWindowEventListener.get());
+    }
+
+    /*
+        Called by OGRE between queuing up call the render calls and the GPU actually
+        blitting the frame: i.e. time when the CPU might potentially be idle waiting
+        for the GPU.
+     */
+    void
+    View::_updateFrameRenderingQueued()
+    {
+        mspLxInputManager->update();
     }
 
     void

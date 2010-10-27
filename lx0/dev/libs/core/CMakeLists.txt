@@ -5,7 +5,9 @@
 # as well (to keep the cpp and header next to each other in the IDE).
 #
 macro(lx_source_group FOLDER)
-    file(GLOB_RECURSE FILELIST src/${FOLDER}/*.cpp)
+    file(GLOB_RECURSE FILELIST1 src/${FOLDER}/*.cpp)
+    file(GLOB_RECURSE FILELIST2 src/${FOLDER}/*.hpp)
+    set(FILELIST ${FILELIST1} ${FILELIST2})
     foreach(F ${FILELIST})
         source_group(${FOLDER} FILES ${F})
         get_filename_component(H ${F} NAME_WE)
@@ -21,9 +23,10 @@ source_group("extern/tinymxl" FILES ${TINYXML_SRC})
 source_group("extern/tinymxl" FILES ${TINYXML_HDR})
 
 file(GLOB_RECURSE SRCFILES src/*.cpp)
+file(GLOB_RECURSE SRCHPPFILES src/*.hpp)
 file(GLOB_RECURSE HFILES include/*.hpp)
 file(GLOB_RECURSE HPPFILES include/*.h)
-set(SOURCES ${SRCFILES} ${HFILES} ${HPPFILES} ${EXTERN_SRC})
+set(SOURCES ${SRCFILES} ${SRCHPPFILES} ${HFILES} ${HPPFILES} ${EXTERN_SRC})
 
 lx_source_group("core")
 lx_source_group("primitives")

@@ -40,13 +40,24 @@ namespace lx0 { namespace core {
 
     namespace detail {
         _LX_FORWARD_DECL_PTRS(LxOgre);
+        _LX_FORWARD_DECL_PTRS(LxInputManager);
 
         class LxWindowEventListener;
+        class LxFrameEventListener;
     };
 
+    /*!
+        Developer notes:
+        
+        This class could use significant clean-up and componentization once 
+        the code progresses a bit further to make the class' responsibilities
+        more clear.
+     */
     class View
     {
     public:
+        friend class detail::LxFrameEventListener;
+
         View();
         ~View();
         
@@ -60,14 +71,18 @@ namespace lx0 { namespace core {
         void        detach          (Document* pDocument);
 
     protected:
+        void        _updateFrameRenderingQueued();
+
         void        _processGroup   (ElementPtr spElem);
         void        _addMesh        (std::string name, MeshPtr spMesh);
 
-        detail::LxOgrePtr       mspLxOgre;
-        Ogre::RenderWindow*     mpRenderWindow; //! Non-owning pointer.  OGRE owns this pointer.
-        Ogre::SceneManager*     mpSceneMgr;     //! Non-owning pointer.  OGRE owns this pointer.
-        Document*               mpDocument;     //! Non-owning pointer.  Document will detach itself.
+        detail::LxOgrePtr           mspLxOgre;
+        detail::LxInputManagerPtr   mspLxInputManager;
+        Ogre::RenderWindow*         mpRenderWindow; //! Non-owning pointer.  OGRE owns this pointer.
+        Ogre::SceneManager*         mpSceneMgr;     //! Non-owning pointer.  OGRE owns this pointer.
+        Document*                   mpDocument;     //! Non-owning pointer.  Document will detach itself.
 
         std::unique_ptr<detail::LxWindowEventListener> mspWindowEventListener;
+        std::unique_ptr<detail::LxFrameEventListener>  mspFrameEventListener;
     };
 }}

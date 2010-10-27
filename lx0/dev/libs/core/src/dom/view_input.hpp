@@ -3,7 +3,6 @@
                                    LxEngine
 
     LICENSE
-    * MIT License (http://www.opensource.org/licenses/mit-license.php)
 
     Copyright (c) 2010 athile@athile.net (http://www.athile.net)
 
@@ -27,21 +26,23 @@
 */
 //===========================================================================//
 
+#include <memory>
+
 #pragma once
 
-#include <string>
-#include <lx0/lxvar.hpp>
+namespace lx0 { namespace core { namespace detail {
 
-namespace lx0 { namespace util {
+    class InputImp;
 
-    void                lx_break_if_debugging   (void);
+    class LxInputManager
+    {
+    public:
+        LxInputManager (size_t hWindowHandle, unsigned int width, unsigned int height);
 
-    std::string         lx_file_to_string       (std::string filename);
-    lx0::core::lxvar    lx_file_to_json         (const char* pszFilename);
+        void update();
 
-    std::string         lx_atoi                 (size_t i);
+    protected:
+        std::shared_ptr<InputImp> mspImp;
+    };
 
-    unsigned int        lx_milliseconds         (void);
-    void                lx_message_box          (std::string caption, std::string message);
-
-}}
+}}}
