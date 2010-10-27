@@ -36,6 +36,7 @@
 #include <lx0/util.hpp>
 
 using namespace v8;
+using namespace lx0::util;
 
 namespace lx0 { namespace core { namespace detail {
 
@@ -174,6 +175,9 @@ namespace lx0 { namespace core { namespace detail {
 
         void            run (DocumentPtr spDocument, std::string source);
         
+
+        void            _processTimeoutQueue        (void);
+
         //@name Add functions/objects to JS context
         //@{
         void                            _addGlobals     (v8::Handle<v8::ObjectTemplate>& globalTempl);
@@ -186,7 +190,8 @@ namespace lx0 { namespace core { namespace detail {
         v8::Persistent<v8::Context>     mContext;
         v8::Persistent<v8::Function>    mElementCtor;
 
-        Persistent<Function>            mWindowOnKeyDown;
+        Persistent<Function>                              mWindowOnKeyDown;
+        std::vector<std::pair<int, Persistent<Function>>> mTimeoutQueue;
 
         std::vector<ElementPtr>         mElements;
     };
@@ -224,6 +229,41 @@ namespace lx0 { namespace core { namespace detail {
 
             s_pActiveContext = nullptr;
         };
+
+        spDocument->slotUpdateRun += [&]() {
+            this->_processTimeoutQueue();
+        };
+    }
+
+    void
+    JavascriptComponent::_processTimeoutQueue (void)
+    {
+        const int now = int( lx_milliseconds() );
+
+        s_pActiveContext = this;
+        Context::Scope context_scope(mContext);
+
+        HandleScope handle_scope;
+        Handle<Value> callArgs[1];
+        Handle<Object> recv = mContext->Global();
+
+        size_t i = 0; 
+        while (i < mTimeoutQueue.size())
+        {
+            auto item = mTimeoutQueue[i];
+            if (now >= item.first)
+            {
+                item.second->Call(recv, 0, 0);
+                item.second.Dispose();
+
+                mTimeoutQueue[i]  = mTimeoutQueue.back();
+                mTimeoutQueue.pop_back();
+            }
+            else
+                ++i;
+        }
+
+        s_pActiveContext = nullptr;
     }
 
     JavascriptComponent::~JavascriptComponent()
@@ -308,6 +348,25 @@ namespace lx0 { namespace core { namespace detail {
 
                 return Undefined();
             }
+            
+            static v8::Handle<v8::Value> 
+            setTimeout (const v8::Arguments& args)
+            {
+                lx_check_error(args.Length() == 2);
+                lx_check_error(args[0]->IsNumber());
+                lx_check_error(args[1]->IsFunction());
+
+                auto*            pThis  = _nativeThis<Window>(args); 
+                int              delay  = _marshal(args[0]);
+                Handle<Function> func   = _marshal(args[1]);
+                
+                delay += int(lx_milliseconds());
+
+                auto pair = std::make_pair(delay, Persistent<Function>::New(func));
+                s_pActiveContext->mTimeoutQueue.push_back(pair);
+
+                return Undefined();
+            }
         };
 
         // Create the template and add the prototype methods
@@ -317,6 +376,7 @@ namespace lx0 { namespace core { namespace detail {
         objInst->SetInternalFieldCount(1);
 
         Handle<Template> proto_t( templ->PrototypeTemplate() );
+        proto_t->Set("setTimeout",  FunctionTemplate::New(Window::setTimeout));
         proto_t->Set("onKeyDown",  FunctionTemplate::New(Window::onKeyDown));
 
         // Add the object

@@ -15,7 +15,6 @@ for (var grid_y = 0; grid_y < 4; grid_y++)
     }
 }
 
-// Add a temporary cube to drop from the sky
 var ref = $("<Ref/>");
 ref.attr("ref", "unit_cube");
 ref.attr("translation", [.25, -.5, 5.5]);
@@ -66,3 +65,4 @@ for (var i = 0; i < 40; i++) {
 }
 
 window.onKeyDown(function () { alert("Key press detected."); });
+window.setTimeout(5000, function () { alert("5 seconds have elapsed."); });
