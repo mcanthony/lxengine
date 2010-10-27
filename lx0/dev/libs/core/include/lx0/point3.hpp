@@ -59,6 +59,7 @@ namespace lx0 { namespace core {
     inline float    distance                    (const point3& a, const point3& b)  { return a.ogreVec.distance(b.ogreVec); }
     inline float    distance_squared            (const point3& a, const point3& b)  { return a.ogreVec.squaredDistance(b.ogreVec); }
     inline float    distance_to_origin_squared  (const point3& p)                   { return p.x * p.x + p.y * p.y + p.z * p.z; }
+    inline float    distance_to_origin          (const point3& p)                   { return sqrt( distance_to_origin_squared(p) ); }
 
     inline point3   mid_point       (const point3& a, const point3& b)  { return cast<point3&>(a.ogreVec.midPoint(b.ogreVec)); } 
     

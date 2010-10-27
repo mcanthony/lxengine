@@ -38,7 +38,7 @@
 namespace lx0 { namespace core {
 
 
-    class Document
+    class Document : public std::enable_shared_from_this<Document>
     {
     public:
         class Component : public std::enable_shared_from_this<Component>
@@ -71,6 +71,8 @@ namespace lx0 { namespace core {
         void                    attachComponent (std::string name, Component* pComponent);
         template <typename T>
         std::shared_ptr<T>      getComponent    (std::string name);
+        template <typename T>
+        std::shared_ptr<T>      ensureComponent (std::string name, std::function<T* (void)> ctor);
 
         slot<void()>            slotUpdateRun;
 
@@ -100,4 +102,18 @@ namespace lx0 { namespace core {
     {
         return std::dynamic_pointer_cast<T>( _getComponentImp(name) );
     }
+
+    template <typename T>
+    std::shared_ptr<T>
+    Document::ensureComponent (std::string name, std::function<T* (void)> ctor)
+    {
+        std::shared_ptr<Component> spComponent = _getComponentImp(name);
+        if (!spComponent)
+        {
+            spComponent.reset( ctor() );
+            mComponents.insert( std::make_pair(name, spComponent) );
+        }
+        return std::dynamic_pointer_cast<T>(spComponent);
+    }
+
 }}

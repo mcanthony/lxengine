@@ -118,13 +118,28 @@ namespace lx0 { namespace core {
        lx_log("lx::core::Engine dtor");
 
        // Check for memory leaks of Engine-related objects
+       bool bLeaksFound = false;
        for (auto it = m_objectCounts.begin(); it != m_objectCounts.end(); ++it)
        {
            if (it->second.current() != 0)
-               lx_warn("Leaked %u %s objects", it->second.current(), it->first.c_str());
+           {
+               lx_warn("Leaked %u %s objects (%.1f%%)", it->second.current(), it->first.c_str(),
+                   100.0f * float(it->second.current()) / float(it->second.total()));
+               bLeaksFound = true;   
+           }
            else
                lx_debug("Allocated %u %s objects.  0 leaked.", it->second.total(), it->first.c_str()); 
-       }
+        }
+        if (bLeaksFound)
+        {
+            lx_warn("Memory leaks detected!  All major Lx objects should be freed before the Engine "
+                    "object is freed.");
+
+            // Stop the debugger immediately if a memory leak is detected.
+            // It usually is a lot less difficult to track down leaks as 
+            // soon as they are introduced.
+            lx0::util::lx_break_if_debugging();
+        }
     }
 
     /*!
@@ -254,16 +269,11 @@ namespace lx0 { namespace core {
                         std::string src      = spElem->attr("src").asString();
 
                         std::string content = lx0::util::lx_file_to_string(src);
-                        scripts.push_back(content);
+                        _runJavascript(spDocument, content);
                     }
                 }
             }
         }
-
-        // Batch all the scripts together into one call so that they share the
-        // same execution context (i.e. global variables, etc. *should* affect each other).
-        _runJavascript(spDocument, scripts);
-
 
         _attachPhysics(spDocument);
     }

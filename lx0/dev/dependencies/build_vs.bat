@@ -286,6 +286,8 @@ echo cd .. >>_t.bat
 call:build_project %PROJECT% %ROOTDIR% %TESTFILE%
 IF %FAILURE%==1 (goto:EOF)
 
+call:copy_files %ROOTDIR%\lib\*.lib %PSDK%\ois\lib
+call:copy_directory %ROOTDIR%\includes %PSDK%\ois\include\ois
 
 REM ===========================================================================
 REM Build Bullet

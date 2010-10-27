@@ -198,6 +198,8 @@ namespace lx0 { namespace core { namespace detail {
     public:
         Physics()
         {
+            Engine::acquire()->incObjectCount("Physics");
+
             mspBroadphase.reset( new btDbvtBroadphase );
 
             mspCollisionConfiguration.reset( new btDefaultCollisionConfiguration );
@@ -234,6 +236,8 @@ namespace lx0 { namespace core { namespace detail {
 
             for (auto it = mRigidBodies.begin(); it != mRigidBodies.end(); ++it)
                 mspDynamicsWorld->removeRigidBody( it->get() );
+
+            Engine::acquire()->decObjectCount("Physics");
         }
 
         class PhysicsComponent : public Element::Component
@@ -389,7 +393,19 @@ namespace lx0 { namespace core {
         Physics* pPhysics = new Physics;
         spDocument->attachComponent("physicsSystem", pPhysics);
         pPhysics->init(spDocument);
-        spDocument->slotUpdateRun += [=] () { pPhysics->update(spDocument); };
+
+        //
+        // Ensure the lambda function copies a raw pointer not the shared pointer.
+        // Two notes about this:
+        // (1) The lamdba function local variable copies essentially have global 
+        //     scope, which means the shared_ptr copy would not be released until
+        //     shutdown.  That copied shared_ptr would make it impossible to free 
+        //     the Document memory during the session.
+        // (2) The Document lifetime is never less than slotUpdateRun, so there's
+        //     no need for a reference counted pointer in this specific case.
+        //
+        Document* pDocument = spDocument.get();
+        spDocument->slotUpdateRun += [=] () { pPhysics->update(pDocument->shared_from_this()); };
     }
 
 }}

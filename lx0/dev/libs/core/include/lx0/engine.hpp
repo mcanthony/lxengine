@@ -104,8 +104,6 @@ namespace lx0 { namespace core {
         ElementPtr  _loadDocumentRoot   (std::string filename);
  
         void        _attachPhysics      (DocumentPtr spDocument);
-
-        void        _runJavascript      (DocumentPtr spDocument, std::vector<std::string> sources);
         void        _runJavascript      (DocumentPtr spDocument, std::string source);
         
         Environment                 mEnvironment;

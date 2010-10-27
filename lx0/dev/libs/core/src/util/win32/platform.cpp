@@ -44,4 +44,15 @@ namespace lx0 { namespace util {
         ::MessageBoxA(NULL, message.c_str(), caption.c_str(), MB_OK);
     }
 
+    void
+    lx_break_if_debugging (void)
+    {
+#ifndef NDEBUG
+        if (::IsDebuggerPresent()) 
+        {
+            __debugbreak();
+        }
+#endif
+    }
+
 }}

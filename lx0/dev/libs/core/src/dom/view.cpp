@@ -73,6 +73,14 @@ namespace lx0 { namespace core {
                 // Initialize OGRE
                 try 
                 {
+                    // Create a LogManager manually before creating the root to intercept the
+                    // OGRE logging during initialization.
+                    // OGRE tracks these pointers internally - no need for the client to delete them.
+                    Ogre::LogManager* pLogManager = new Ogre::LogManager;
+                    Ogre::Log* pLog = pLogManager->createLog("ogre.log");
+                    pLog->setLogDetail(Ogre::LL_BOREME);
+                    pLog->setDebugOutputEnabled(false);
+
                     mspRoot.reset(new Ogre::Root);
                     mspRoot->showConfigDialog();
                 }

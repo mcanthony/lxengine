@@ -6,6 +6,11 @@
 # Ogre
 set(ENV{OGRE_HOME} "${DEPS_SDK}/ogre")
 
+# OIS
+include_directories("${DEPS_SDK}/ois/include")
+link_directories("${DEPS_SDK}/ois/lib")
+set(OIS_LIBS OIS_static_d.lib)
+
 # Boost
 set(ENV{BOOST_ROOT} "${DEPS_SDK}/boost")
 set(Boost_USE_STATIC_LIBS   ON)

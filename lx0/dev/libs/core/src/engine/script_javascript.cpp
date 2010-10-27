@@ -39,6 +39,8 @@
 
 namespace lx0 { namespace core { namespace detail {
 
+    // --------------------------------------------------------------------- //
+    //! Local utility class for converting JS <=> native values
     /*
         This class is used to convert from V8 values to primitive types,
         including lxvar. 
@@ -135,20 +137,9 @@ namespace lx0 { namespace core { namespace detail {
         }
     };
 
-    class LxContext
-    {
-    public:
-        ~LxContext()
-        {
-            mElementCtor.Dispose();
-        }
-
-        v8::Persistent<v8::Function> mElementCtor;
-        std::vector<ElementPtr>      mElements;
-    };
-    
-    std::unique_ptr<LxContext> s_pActiveContext;
-
+    //===========================================================================//
+    // Local Helpers
+    //===========================================================================//
 
     template <typename NativeType>
     static NativeType*
@@ -181,6 +172,26 @@ namespace lx0 { namespace core { namespace detail {
 
         return obj;
     }
+    
+    //===========================================================================//
+    // Document Component
+    //===========================================================================//
+
+    class JavascriptComponent : public Document::Component
+    {
+    public:
+                        JavascriptComponent(DocumentPtr spDocument);
+        virtual         ~JavascriptComponent();
+
+        void            run (DocumentPtr spDocument, std::string source);
+        
+        v8::Persistent<v8::Context>     mContext;
+        v8::Persistent<v8::Function>    mElementCtor;
+
+        std::vector<ElementPtr>         mElements;
+    };
+    
+    JavascriptComponent* s_pActiveContext;
 
     namespace wrappers {
 
@@ -267,6 +278,127 @@ namespace lx0 { namespace core { namespace detail {
         }
     }
 
+
+    JavascriptComponent::JavascriptComponent (DocumentPtr spDocument)
+    {
+        using namespace v8;
+        using v8::Object;
+        using namespace lx0::core::detail::wrappers;
+
+        // Set up the global template before initiating the Context.   The ObjectTemplate lets
+        // FunctionTemplates be added for the free functions.  Context::Global() returns an
+        // Object, not an ObjectTemplate - therefore, it limits what can be added after the
+        // Context has been created.
+        //
+        HandleScope handle_scope;
+        Handle<ObjectTemplate> global_templ( ObjectTemplate::New() ); 
+  
+        // Internal debugging methods to make development a little easier.
+        //
+        global_templ->Set(String::New("__lx_print"), FunctionTemplate::New(print));
+        
+        mContext = Context::New(0, global_templ);
+
+        Context::Scope context_scope(mContext);
+        {
+            // Create the FunctionTemplate.  Think of the "Template" part as being the 
+            // descriptor or specification that is be used to create the actual Function
+            // when it is created and put into the V8 context.
+            //
+            // Note that this is essentially an anonymous function, since no name is assigned
+            // and the only way it is being accessed is via the V8 API.
+            //
+            Handle<FunctionTemplate> templ( FunctionTemplate::New() );
+
+            // Get the ObjectTemplate for the Function.  This is the specification used when
+            // the function is invoked as a constructor (i.e. var obj = new my_func()).
+            //
+            // Note: it seems this needs to be set before the Function is actually created
+            // (http://code.google.com/p/v8/issues/detail?id=262).
+            //
+            Handle<ObjectTemplate> objInst( templ->InstanceTemplate() );
+            objInst->SetInternalFieldCount(1);
+
+            // Access the Javascript prototype for the function - i.e. my_func.prototype - 
+            // and add the necessary properties and methods.
+            //
+            Handle<Template> proto_t( templ->PrototypeTemplate() );
+            proto_t->Set("createElement",  FunctionTemplate::New(createElement));
+            proto_t->Set("getElementById", FunctionTemplate::New(getElementById));
+
+            // Now grab a handle to the Function.  This apparently (?) will invoke the
+            // FunctionTemplate to create actual function.  Then call NewInstance, which is
+            // the C++ equivalent of "new my_func()".   Then, since this is a wrapper on a
+            // C++ object, set the internal field to point to the C++ object.
+            //
+            Handle<Function> ctor( templ->GetFunction() );
+            Handle<Object> obj( ctor->NewInstance() );
+            obj->SetInternalField(0, External::New(spDocument.get()));
+
+            // Create a name for the object in the global namespace (i.e. global variable).
+            //
+            mContext->Global()->Set(String::New("document"), obj);
+        }
+        {
+            Handle<FunctionTemplate> templ( FunctionTemplate::New() );
+
+            // Create an anonymous type which will be used for the Element wrapper
+            Handle<ObjectTemplate> objInst( templ->InstanceTemplate() );
+            objInst->SetInternalFieldCount(1);
+
+            // Access the Javascript prototype for the function - i.e. my_func.prototype - 
+            // and add the necessary properties and methods.
+            //
+            Handle<Template> proto_t( templ->PrototypeTemplate() );
+            proto_t->Set("setAttribute",  FunctionTemplate::New(setAttribute));
+            proto_t->Set("appendChild", FunctionTemplate::New(appendChild));
+
+            // Store a persistent reference to the function which will be used to create
+            // new object wrappers
+            mElementCtor = Persistent<Function>::New( templ->GetFunction() );
+        }
+    }
+
+    JavascriptComponent::~JavascriptComponent()
+    {
+        using namespace v8;
+        using v8::Object;
+
+
+        mElementCtor.Dispose();
+
+        mContext.Dispose();
+    }
+
+    void 
+    JavascriptComponent::run (DocumentPtr spDocument, std::string text)
+    {
+        using namespace v8;
+        using v8::Object;
+
+        s_pActiveContext = this;
+
+        Context::Scope context_scope(mContext);
+
+        HandleScope    handle_scope;
+        Handle<String> source = String::New(text.c_str());
+        Handle<Script> script = Script::Compile(source);
+
+        // Run the script
+        {
+            TryCatch trycatch;
+            Handle<Value> result = script->Run();
+            if (result.IsEmpty()) {  
+                Handle<Value> exception = trycatch.Exception();
+                
+                String::AsciiValue exception_str(exception);
+                lx_warn("Javascript Exception: %s\n", *exception_str);
+            }
+        }
+
+        s_pActiveContext = nullptr;
+    }
+
 }}}
 
 //===========================================================================//
@@ -279,118 +411,14 @@ namespace lx0 { namespace core {
     using namespace detail::wrappers;
 
     /*!
-        Runs a single javascript source file in its own isolated 
-        execution context.
-     */
-    void        
-    Engine::_runJavascript (DocumentPtr spDocument, std::string sourceText)
-    {
-        std::vector<std::string> sources;
-        sources.push_back(sourceText);
-
-        _runJavascript(spDocument, sources);
-    }
-
-    /*!
         Run a set of Javascript source files together in the same execution context.
      */
     void
-    Engine::_runJavascript (DocumentPtr spDocument, std::vector<std::string> sources)
+    Engine::_runJavascript (DocumentPtr spDocument, std::string source)
     {
-        using namespace v8;
-        using v8::Object;
-
-        // Set up the global template before initiating the Context.   The ObjectTemplate lets
-        // FunctionTemplates be added for the free functions.  Context::Global() returns an
-        // Object, not an ObjectTemplate - therefore, it limits what can be added after the
-        // Context has been created.
-        //
-        HandleScope handle_scope;
-        Handle<ObjectTemplate> global_templ = ObjectTemplate::New(); 
-  
-        // Internal debugging methods to make development a little easier.
-        //
-        global_templ->Set(String::New("__lx_print"), FunctionTemplate::New(print));
-        
-        // For the duration of the script, keep a list of reference counted objects that
-        // get created.  Otherwise, the JS code might still be refering to the object but
-        // there are no internal C++ references to the object - resulting in a deleted
-        // object still being accessible from V8.
-        s_pActiveContext.reset(new LxContext);
-
-        {
-            Persistent<Context> context = Context::New(0, global_templ);
-            Context::Scope context_scope(context);
-
-            // Create the FunctionTemplate.  Think of the "Template" part as being the 
-            // descriptor or specification that is be used to create the actual Function
-            // when it is created and put into the V8 context.
-            //
-            // Note that this is essentially an anonymous function, since no name is assigned
-            // and the only way it is being accessed is via the V8 API.
-            //
-            Handle<FunctionTemplate> templ = FunctionTemplate::New();
-
-            // Get the ObjectTemplate for the Function.  This is the specification used when
-            // the function is invoked as a constructor (i.e. var obj = new my_func()).
-            //
-            // Note: it seems this needs to be set before the Function is actually created
-            // (http://code.google.com/p/v8/issues/detail?id=262).
-            //
-            Local<ObjectTemplate> objInst = templ->InstanceTemplate();
-            objInst->SetInternalFieldCount(1);
-
-            // Access the Javascript prototype for the function - i.e. my_func.prototype - 
-            // and add the necessary properties and methods.
-            //
-            Local<Template> proto_t = templ->PrototypeTemplate();
-            proto_t->Set("createElement",  FunctionTemplate::New(createElement));
-            proto_t->Set("getElementById", FunctionTemplate::New(getElementById));
-
-            // Now grab a handle to the Function.  This apparently (?) will invoke the
-            // FunctionTemplate to create actual function.  Then call NewInstance, which is
-            // the C++ equivalent of "new my_func()".   Then, since this is a wrapper on a
-            // C++ object, set the internal field to point to the C++ object.
-            //
-            Handle<Function> ctor = templ->GetFunction();
-            Handle<Object> obj = ctor->NewInstance();
-            obj->SetInternalField(0, External::New(spDocument.get()));
-
-            // Create a name for the object in the global namespace (i.e. global variable).
-            //
-            context->Global()->Set(String::New("document"), obj);
-
-
-            {
-                Handle<FunctionTemplate> templ = FunctionTemplate::New();
-
-                // Create an anonymous type which will be used for the Element wrapper
-                Local<ObjectTemplate> objInst = templ->InstanceTemplate();
-                objInst->SetInternalFieldCount(1);
-
-                // Access the Javascript prototype for the function - i.e. my_func.prototype - 
-                // and add the necessary properties and methods.
-                //
-                Local<Template> proto_t = templ->PrototypeTemplate();
-                proto_t->Set("setAttribute",  FunctionTemplate::New(setAttribute));
-                proto_t->Set("appendChild", FunctionTemplate::New(appendChild));
-
-                // Store a persistent reference to the function which will be used to create
-                // new object wrappers
-                s_pActiveContext->mElementCtor = Persistent<Function>( templ->GetFunction() );
-            }
-
-            for (auto it = sources.begin(); it != sources.end(); ++it)
-            {
-                Handle<String> source = String::New(it->c_str());
-                Handle<Script> script = Script::Compile(source);
-
-                Handle<Value> result = script->Run();
-            }
-
-            context.Dispose();
-        }
-        s_pActiveContext.reset();
+        auto ctor = [=]() { return new JavascriptComponent(spDocument); };
+        auto spComponent = spDocument->ensureComponent<JavascriptComponent>("javascript", ctor);
+        spComponent->run(spDocument, source);
     }
 
 }}

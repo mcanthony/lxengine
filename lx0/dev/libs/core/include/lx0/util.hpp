@@ -34,10 +34,12 @@
 
 namespace lx0 { namespace util {
 
-    std::string         lx_file_to_string   (std::string filename);
-    lx0::core::lxvar    lx_file_to_json     (const char* pszFilename);
+    void                lx_break_if_debugging   (void);
 
-    unsigned int        lx_milliseconds     (void);
-    void                lx_message_box      (std::string caption, std::string message);
+    std::string         lx_file_to_string       (std::string filename);
+    lx0::core::lxvar    lx_file_to_json         (const char* pszFilename);
+
+    unsigned int        lx_milliseconds         (void);
+    void                lx_message_box          (std::string caption, std::string message);
 
 }}
