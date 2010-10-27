@@ -51,3 +51,17 @@ for (var gy = 0; gy < 5; ++gy) {
     }
 }
 
+for (var i = 0; i < 40; i++) {
+    var pos = [
+        Math.random() * 6 - 3,
+        Math.random() * 6 - 3,
+        Math.random() * 5 + 6
+    ];
+    ref = $("<Ref/>");
+    ref.attr("ref", "small_sphere");
+    ref.attr("translation", pos);
+    ref.attr("mass", .01);
+    ref.attr("bounds_type", "sphere");
+    $("#grid").append(ref);
+}
+
