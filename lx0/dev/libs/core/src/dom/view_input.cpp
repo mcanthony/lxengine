@@ -44,7 +44,21 @@ using namespace lx0::util;
 
 namespace lx0 { namespace core { namespace detail {
 
+    /*
+        Developer notes:
+
+        In general, multiple inheritance is avoided as can unnecessarily complicate
+        the code.  For example, the View class does not inherit from OGRE's
+        FrameListener or WindowListener classes as that would expose OGRE in the
+        public header for the View (the goal is to keep the View as independent from
+        the implementation as possible so other implementations can be supported
+        in the future).  In this particular case, InputImp is a small leaf class 
+        that is internal only, so for simplicity, just go ahead and use multiple 
+        inhertance.
+     */
     class InputImp
+        : public OIS::KeyListener
+        , public OIS::MouseListener
     {
     public:
         ///@todo pass in the window handle rather than an OGRE pointer - no need for OGRE here
@@ -52,6 +66,10 @@ namespace lx0 { namespace core { namespace detail {
         {
             ParamList params;
             params.insert( std::make_pair(std::string("WINDOW"), lx_atoi(hWindowHandle)) );
+            
+            // Don't hide the cursor
+            params.insert( std::make_pair("w32_mouse", "DISCL_FOREGROUND") );
+            params.insert( std::make_pair("w32_mouse", "DISCL_NONEXCLUSIVE") );    
 
             mpInputManager = InputManager::createInputSystem(params);
 
@@ -78,14 +96,21 @@ namespace lx0 { namespace core { namespace detail {
             // Set the window size on the mouse
             mpMouse->getMouseState().width = windowWidth;
             mpMouse->getMouseState().height = windowHeight;
+
+            // Set up the event listeners
+            mpKeyboard->setEventCallback(this);
+            mpMouse->setEventCallback(this);
         }
 
 
         ~InputImp()
         {
-            lx_check_error( mpInputManager );
-            lx_check_error( mpKeyboard );
-            lx_check_error( mpMouse );
+            lx_check_error( mpInputManager != nullptr );
+            lx_check_error( mpKeyboard != nullptr );
+            lx_check_error( mpMouse != nullptr );
+
+            mpKeyboard->setEventCallback(nullptr);
+            mpMouse->setEventCallback(nullptr);
 
             mpInputManager->destroyInputObject( mpKeyboard );
             mpInputManager->destroyInputObject( mpMouse );
@@ -98,8 +123,34 @@ namespace lx0 { namespace core { namespace detail {
             mpKeyboard->capture();
 
             // Test code...
-            if (mpKeyboard->isKeyDown(OIS::KC_Q))
+            if (mpKeyboard->isKeyDown(OIS::KC_ESCAPE))
                 Engine::acquire()->sendMessage("quit");
+        }
+
+        virtual bool keyPressed( const KeyEvent &arg )
+        {
+            // true means to continue sending the event to any other listeners 
+            return true;
+        }
+
+		virtual bool keyReleased( const KeyEvent &arg )
+        {
+            return true;
+        }
+
+        virtual bool mouseMoved( const MouseEvent &arg )
+        {
+            return true;
+        }
+
+		virtual bool mousePressed( const MouseEvent &arg, MouseButtonID id )
+        {
+            return true;
+        }
+
+		virtual bool mouseReleased( const MouseEvent &arg, MouseButtonID id )
+        {
+            return true;
         }
 
     protected:
