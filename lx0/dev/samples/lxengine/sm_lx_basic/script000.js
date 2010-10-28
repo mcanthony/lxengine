@@ -80,7 +80,7 @@ window.onKeyDown(function () {
 window.setTimeout(8000, function () {
     var ref = $("<Ref/>");
     ref.attr("ref", "unit_sphere");
-    ref.attr("translation", [.25, -.5, 7.5]);
+    ref.attr("translation", [.25, -.5, 12.5]);
     ref.attr("mass", 5.5);
     ref.attr("bounds_type", "sphere");
     $("#grid").append(ref);

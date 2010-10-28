@@ -82,6 +82,9 @@ namespace lx0 { namespace core {
         
         void                shutdown        (void);
 
+        int                 versionMajor    (void)                      { return 0; }
+        int                 versionMinor    (void)                      { return 0; }
+
         Environment&        environment     (void)                      { return mEnvironment; }
 
         DocumentPtr         loadDocument    (std::string filename);

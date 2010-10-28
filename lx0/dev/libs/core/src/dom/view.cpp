@@ -52,6 +52,7 @@
 #include <OGRE/OgreMaterialManager.h>
 #include <OGRE/OgreEntity.h>
 #include <OGRE/OgreQuaternion.h>
+#include <OGRE/OgreMeshManager.h>
 
 _ENABLE_LX_CAST(lx0::core::point3, Ogre::Vector3)
 
@@ -178,7 +179,8 @@ namespace lx0 { namespace core {
         
         Ogre::ManualObject* pObject = mpSceneMgr->createManualObject((name + "-manual").c_str());
 
-        auto add_tri = [pObject] (Ogre::Vector3& v0, Ogre::Vector3& v1, Ogre::Vector3& v2) -> void {
+        int index = 0;
+        auto add_tri = [&index, pObject] (Ogre::Vector3& v0, Ogre::Vector3& v1, Ogre::Vector3& v2) -> void {
             Ogre::Vector3 normal = (v1 - v0).crossProduct(v2 - v1);
             normal.normalise();
 
@@ -188,9 +190,11 @@ namespace lx0 { namespace core {
             pObject->normal(normal);
             pObject->position(v2);
             pObject->normal(normal);
+            pObject->triangle(index, index + 1, index + 2);
+            index += 3;
         };
 
-        auto add_quad = [pObject] (Ogre::Vector3& v0, Ogre::Vector3& v1, Ogre::Vector3& v2, Ogre::Vector3& v3) -> void {
+        auto add_quad = [&index, pObject] (Ogre::Vector3& v0, Ogre::Vector3& v1, Ogre::Vector3& v2, Ogre::Vector3& v3) -> void {
             Ogre::Vector3 normal = (v1 - v0).crossProduct(v2 - v1);
             normal.normalise();
 
@@ -200,6 +204,8 @@ namespace lx0 { namespace core {
             pObject->normal(normal);
             pObject->position(v2);
             pObject->normal(normal);
+            pObject->triangle(index, index + 1, index + 2);
+            index += 3;
 
             pObject->position(v2); 
             pObject->normal(normal);
@@ -207,6 +213,8 @@ namespace lx0 { namespace core {
             pObject->normal(normal);
             pObject->position(v0);
             pObject->normal(normal);
+            pObject->triangle(index, index + 1, index + 2);
+            index += 3;
         };
 
         pObject->begin("LxMaterial", Ogre::RenderOperation::OT_TRIANGLE_LIST);
@@ -279,9 +287,12 @@ namespace lx0 { namespace core {
         const Ogre::Vector3 pos = reinterpret_cast<Ogre::Vector3&>(pos2);
                    
         Ogre::Entity* pEntity = mpSceneMgr->createEntity(ref);
+        pEntity->setCastShadows(true);
+
         Ogre::SceneNode* pNode = mpSceneMgr->getRootSceneNode()->createChildSceneNode(name);
         pNode->attachObject(pEntity);
         pNode->setPosition(pos);
+        
 
         spElem->attachComponent("OgreLink", new OgreNodeLink(pNode));
     }
@@ -332,6 +343,11 @@ namespace lx0 { namespace core {
 
         mpSceneMgr = root.createSceneManager(Ogre::ST_GENERIC, "generic");
 
+        // Note: SHADOWTYPE_STENCIL_ADDITIVE requires that meshes have index buffers
+        // (can't be pure vertex lists).
+        //
+        mpSceneMgr->setShadowTechnique(Ogre::SHADOWTYPE_STENCIL_ADDITIVE);
+
         Ogre::Camera* mCamera = mpSceneMgr->createCamera("Camera");
 
         // Make Z-up on the OGRE camera
@@ -367,6 +383,17 @@ namespace lx0 { namespace core {
             spMat->setAmbient(.1f, .1f, .1f);
             spMat->setDiffuse(1, 1, 1, 1);
             spMat->setSpecular(0, 0, 0, 0);
+        }
+
+        {
+            Ogre::Plane plane(Ogre::Vector3::UNIT_Z, 0);
+            Ogre::MeshManager::getSingleton().createPlane("ground", Ogre::ResourceGroupManager::DEFAULT_RESOURCE_GROUP_NAME,
+                plane, 150, 150, 20, 20, true, 1, 5, 5, Ogre::Vector3::UNIT_Y);
+ 
+            Ogre::Entity* pGround = mpSceneMgr->createEntity("GroundEntity", "ground");
+            pGround->setCastShadows(false);
+
+            mpSceneMgr->getRootSceneNode()->createChildSceneNode()->attachObject(pGround);
         }
 
         ElementPtr spRoot = mpDocument->root();
