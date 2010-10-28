@@ -59,6 +59,7 @@ namespace lx0 { namespace core {
         ElementPtr              root            (void)              { return m_spRoot; }
         void                    root            (ElementPtr spRoot) { m_spRoot = spRoot; }
 
+        ElementPtr              createElement           (void)                  { return createElement(""); }
         ElementPtr              createElement           (std::string type);
         ElementPtr              getElementById          (std::string id);
         std::vector<ElementPtr> getElementsByTagName    (std::string name);
@@ -73,6 +74,10 @@ namespace lx0 { namespace core {
         std::shared_ptr<T>      getComponent    (std::string name);
         template <typename T>
         std::shared_ptr<T>      ensureComponent (std::string name, std::function<T* (void)> ctor);
+
+        slot<void(ElementPtr)>  slotElementCreated;
+        slot<void(ElementPtr)>  slotElementAdded;
+        slot<void(ElementPtr)>  slotElementRemoved;
 
         slot<void()>            slotUpdateRun;
         slot<void()>            slotKeyDown;            // Key down on any of the Document's views

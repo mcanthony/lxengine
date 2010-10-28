@@ -75,7 +75,9 @@ namespace lx0 { namespace core {
     protected:
         void        _updateFrameRenderingQueued();
 
+        void        _onElementAdded (ElementPtr spElem);
         void        _processGroup   (ElementPtr spElem);
+        void        _processRef     (ElementPtr spElem);
         void        _addMesh        (std::string name, MeshPtr spMesh);
 
         detail::LxOgrePtr           mspLxOgre;

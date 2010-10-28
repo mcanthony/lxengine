@@ -71,7 +71,7 @@ namespace lx0 { namespace util {
     }
 
     std::string         
-    lx_atoi (size_t i)
+    lx_itoa (size_t i)
     {
         std::ostringstream stream;
         stream << i;

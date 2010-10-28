@@ -39,7 +39,7 @@ namespace lx0 { namespace util {
     std::string         lx_file_to_string       (std::string filename);
     lx0::core::lxvar    lx_file_to_json         (const char* pszFilename);
 
-    std::string         lx_atoi                 (size_t i);
+    std::string         lx_itoa                 (size_t i);
 
     unsigned int        lx_milliseconds         (void);
     void                lx_message_box          (std::string caption, std::string message);

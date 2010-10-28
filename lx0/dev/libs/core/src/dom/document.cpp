@@ -42,7 +42,7 @@
 namespace lx0 { namespace core {
 
     Document::Document()
-        : m_spRoot (new Element)
+        : m_spRoot ( new Element(this) )
     {
         Engine::acquire()->incObjectCount("Document");
     }
@@ -92,8 +92,11 @@ namespace lx0 { namespace core {
         // At the moment, there's no need for this to be a method on Document - 
         // but eventually Document may want to track the elements it creates.
         
-        ElementPtr spElem(new Element);
+        ElementPtr spElem(new Element(this));
         spElem->tagName(tagName);
+
+        slotElementCreated(spElem);
+
         return spElem;
     }
 

@@ -50,7 +50,7 @@ for (var gy = 0; gy < 5; ++gy) {
     }
 }
 
-for (var i = 0; i < 40; i++) {
+for (var i = 0; i < 20; i++) {
     var pos = [
         Math.random() * 6 - 3,
         Math.random() * 6 - 3,
@@ -64,5 +64,24 @@ for (var i = 0; i < 40; i++) {
     $("#grid").append(ref);
 }
 
-window.onKeyDown(function () { alert("Key press detected."); });
-window.setTimeout(5000, function () { alert("5 seconds have elapsed."); });
+window.onKeyDown(function () {
+    var pos = [
+        Math.random() * 6 - 3,
+        Math.random() * 6 - 3,
+        3
+    ];
+    var ref = $("<Ref/>");
+    ref.attr("ref", "small_sphere");
+    ref.attr("translation", pos);
+    ref.attr("mass", .01);
+    ref.attr("bounds_type", "sphere");
+    $("#grid").append(ref);
+});
+window.setTimeout(8000, function () {
+    var ref = $("<Ref/>");
+    ref.attr("ref", "unit_sphere");
+    ref.attr("translation", [.25, -.5, 7.5]);
+    ref.attr("mass", 5.5);
+    ref.attr("bounds_type", "sphere");
+    $("#grid").append(ref);
+});

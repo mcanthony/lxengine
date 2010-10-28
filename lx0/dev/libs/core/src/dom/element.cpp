@@ -33,8 +33,14 @@
 #include <lx0/core.hpp>
 #include <lx0/element.hpp>
 #include <lx0/object.hpp>
+#include <lx0/document.hpp>
 
 namespace lx0 { namespace core {
+
+    Element::Element (Document* pDocument)
+        : mpDocument (pDocument)
+    {
+    }
 
     void    
     Element::prepend (ElementPtr spElem)
@@ -50,6 +56,8 @@ namespace lx0 { namespace core {
        
         spElem->mspParent = shared_from_this();
         mChildren.push_back(spElem);
+
+        mpDocument->slotElementAdded(spElem);
     }
 
     /*
@@ -110,7 +118,7 @@ namespace lx0 { namespace core {
             return ElementPtr();
         }
 
-        Element* pClone = new Element;
+        Element* pClone = new Element(mpDocument);
         pClone->mAttributes = mAttributes;
         pClone->mspParent = mspParent;
         pClone->mChildren = mChildren;

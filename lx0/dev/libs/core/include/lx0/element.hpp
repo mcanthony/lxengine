@@ -72,6 +72,8 @@ namespace lx0 { namespace core {
             virtual void    onAttributeChange   (std::string name, lxvar value) {}
         };
 
+                        Element     (Document* pDocument);
+
         std::string     tagName     (void) const            { return mTagName; }    //!< Get DOM tagName of the Element
         void            tagName     (const char* s)         { mTagName = s; }       //!< Set DOM tagName of the Element
         void            tagName     (const std::string& s)  { tagName(s.c_str()); } //!< Set DOM tagName of the Element
@@ -109,11 +111,13 @@ namespace lx0 { namespace core {
 
         std::shared_ptr<Component>  _getComponentImp    (std::string name);
 
+        Document*       mpDocument;     // Non-owning pointer to host document
+
         std::string     mTagName;
         AttrMap         mAttributes;
         ElementPtr      mspParent;
         ElemList        mChildren;
-        ObjectPtr       mspValue;      // May be a proxy object for delay-loading
+        ObjectPtr       mspValue;       // May be a proxy object for delay-loading
 
         ComponentList   mComponents;
     };

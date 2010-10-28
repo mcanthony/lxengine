@@ -66,7 +66,7 @@ namespace lx0 { namespace core { namespace detail {
             : mpInterface (pInterface)
         {
             ParamList params;
-            params.insert( std::make_pair(std::string("WINDOW"), lx_atoi(hWindowHandle)) );
+            params.insert( std::make_pair(std::string("WINDOW"), lx_itoa(hWindowHandle)) );
             
             // Don't hide the cursor
             params.insert( std::make_pair("w32_mouse", "DISCL_FOREGROUND") );

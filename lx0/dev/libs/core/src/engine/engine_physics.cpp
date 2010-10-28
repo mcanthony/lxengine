@@ -251,6 +251,54 @@ namespace lx0 { namespace core { namespace detail {
             std::shared_ptr<btRigidBody> mspRigidBody;
         };
 
+        void 
+        _attachPhysicsToElement (DocumentPtr spDocument, ElementPtr spElem)
+        {
+            lx_check_error( spElem->getComponent<PhysicsComponent>("physics").get() == nullptr );
+
+            // Prepare the relevant variables that will be used
+            //
+            std::string    ref      = spElem->queryAttr("ref", "");
+            const btScalar kfMass   = spElem->queryAttr("mass", 0.0f);   
+            auto pos                = asPoint3( spElem->attr("translation") );
+
+            auto spMeshElem         = spDocument->getElementById(ref);
+            MeshPtr spMesh          = spMeshElem->value<Mesh>();
+
+            // Determine the transformation
+            //
+            btTransform tform (btQuaternion(0,0,0,1), btVector3(pos.x, pos.y, pos.z));
+            std::shared_ptr<btDefaultMotionState> spMotionState( new btDefaultMotionState(tform) );
+                      
+            // Determine and acquire the collision shape to use
+            //
+            btCollisionShapePtr spShape;
+            if (spElem->queryAttr("bounds_type", "box") == "box")
+                spShape = _acquireBoxShape( spMesh->boundingVector() );
+            else
+                spShape =  _acquireSphereShape( spMesh->boundingRadius() );
+
+            btVector3 fallInertia(0, 0, 0);
+            spShape->calculateLocalInertia(kfMass, fallInertia);
+            
+            // Create the RigidBody to put into the world
+            //
+            btRigidBody::btRigidBodyConstructionInfo rigidBodyCI (kfMass, spMotionState.get(), spShape.get(), fallInertia);
+            std::shared_ptr<btRigidBody> spRigidBody( new btRigidBody(rigidBodyCI) );
+            mspDynamicsWorld->addRigidBody(spRigidBody.get());
+
+            // Attach the custom logic to the Element (i.e. ensures the element will
+            // be updated as the physics simulation moves it)
+            //
+            spElem->attachComponent("physics", new PhysicsComponent(spRigidBody) );
+
+            // Track the created variables so that clean-up can be done correctly
+            //
+            mMotionStates.push_back( spMotionState );
+            mRigidBodies.push_back( spRigidBody);
+            mShapes.push_back( spShape );
+        }
+
         /*!
             Initializes the Physics subsystem for the document according to the Document's
             current state.
@@ -263,50 +311,12 @@ namespace lx0 { namespace core { namespace detail {
         {
             auto allElems = spDocument->getElementsByTagName("Ref");
             for (auto it = allElems.begin(); it != allElems.end(); ++it)
-            {
-                // Prepare the relevant variable that will be used
-                //
-                auto           spElem   = *it;
-                std::string    ref      = spElem->queryAttr("ref", "");
-                const btScalar kfMass   = spElem->queryAttr("mass", 0.0f);   
-                auto pos                = asPoint3( spElem->attr("translation") );
+                _attachPhysicsToElement(spDocument, *it);
 
-                auto spMeshElem         = spDocument->getElementById(ref);
-                MeshPtr spMesh          = spMeshElem->value<Mesh>();
-
-                // Determine the transformation
-                //
-                btTransform tform (btQuaternion(0,0,0,1), btVector3(pos.x, pos.y, pos.z));
-                std::shared_ptr<btDefaultMotionState> spMotionState( new btDefaultMotionState(tform) );
-                      
-                // Determine and acquire the collision shape to use
-                //
-                btCollisionShapePtr spShape;
-                if (spElem->queryAttr("bounds_type", "box") == "box")
-                    spShape = _acquireBoxShape( spMesh->boundingVector() );
-                else
-                    spShape =  _acquireSphereShape( spMesh->boundingRadius() );
-
-                btVector3 fallInertia(0, 0, 0);
-                spShape->calculateLocalInertia(kfMass, fallInertia);
-            
-                // Create the RigidBody to put into the world
-                //
-                btRigidBody::btRigidBodyConstructionInfo rigidBodyCI (kfMass, spMotionState.get(), spShape.get(), fallInertia);
-                std::shared_ptr<btRigidBody> spRigidBody( new btRigidBody(rigidBodyCI) );
-                mspDynamicsWorld->addRigidBody(spRigidBody.get());
-
-                // Attach the custom logic to the Element (i.e. ensures the element will
-                // be updated as the physics simulation moves it)
-                //
-                spElem->attachComponent("physics", new PhysicsComponent(spRigidBody) );
-
-                // Track the created variables so that clean-up can be done correctly
-                //
-                mMotionStates.push_back( spMotionState );
-                mRigidBodies.push_back( spRigidBody);
-                mShapes.push_back( spShape );
-            }
+            Document* pDoc = spDocument.get();
+            spDocument->slotElementAdded += [=] (ElementPtr spElem) {
+                this->_attachPhysicsToElement(pDoc->shared_from_this(), spElem);
+            };
 
             mLastUpdate = lx0::util::lx_milliseconds();
         }
@@ -331,6 +341,7 @@ namespace lx0 { namespace core { namespace detail {
                 {
                     ElementPtr spElem = *it;
                     auto spPhysics = spElem->getComponent<PhysicsComponent>("physics");
+                    lx_check_error(spPhysics.get() != nullptr, "All elements should have an associated physics component!");
 
                     btTransform trans;
                     spPhysics->mspRigidBody->getMotionState()->getWorldTransform(trans);

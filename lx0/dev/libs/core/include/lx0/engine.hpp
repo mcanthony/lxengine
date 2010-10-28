@@ -101,7 +101,7 @@ namespace lx0 { namespace core {
         Engine();
         ~Engine(); 
 
-        ElementPtr  _loadDocumentRoot   (std::string filename);
+        ElementPtr  _loadDocumentRoot   (DocumentPtr spDocument, std::string filename);
  
         void        _attachPhysics      (DocumentPtr spDocument);
         void        _runJavascript      (DocumentPtr spDocument, std::string source);

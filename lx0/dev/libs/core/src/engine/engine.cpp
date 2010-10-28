@@ -167,16 +167,16 @@ namespace lx0 { namespace core {
     }
 
     ElementPtr  
-    Engine::_loadDocumentRoot (std::string filename)
+    Engine::_loadDocumentRoot (DocumentPtr spDocument, std::string filename)
     {
         //
         // Define a local structure within which the recursive loading function can be set
         //
         struct L
         {
-            static ElementPtr build (TiXmlNode* pParent, int depth)
+            static ElementPtr build (DocumentPtr spDocument, TiXmlNode* pParent, int depth)
             {
-                ElementPtr spElem (new Element);
+                ElementPtr spElem ( spDocument->createElement() );
          
                 std::string value = pParent->Value();
                 spElem->tagName(value);
@@ -207,7 +207,7 @@ namespace lx0 { namespace core {
 
                 for (TiXmlNode* pChild = pParent->FirstChild(); pChild != 0; pChild = pChild->NextSibling())
                 {
-                    ElementPtr spLxElem = build(pChild, depth + 1);
+                    ElementPtr spLxElem = build(spDocument, pChild, depth + 1);
                     spElem->append(spLxElem);
                 }
 
@@ -215,12 +215,12 @@ namespace lx0 { namespace core {
             }
         };
 
-        ElementPtr spRoot(new Element);
+        ElementPtr spRoot = spDocument->createElement();
 
         TiXmlDocument doc(filename.c_str());
         if (doc.LoadFile())
         {
-            spRoot = L::build(doc.RootElement(), 0);
+            spRoot = L::build(spDocument, doc.RootElement(), 0);
         }
         else
             spRoot.reset();
@@ -234,7 +234,7 @@ namespace lx0 { namespace core {
     {
         DocumentPtr spDocument(new Document);
 
-        ElementPtr spRoot = _loadDocumentRoot(filename);
+        ElementPtr spRoot = _loadDocumentRoot(spDocument, filename);
         spDocument->root(spRoot);
         lx_check_error(spRoot);
 
