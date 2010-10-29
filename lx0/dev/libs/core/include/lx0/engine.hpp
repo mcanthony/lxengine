@@ -41,6 +41,7 @@
 
 // Lx headers
 #include <lx0/detail/forward_decls.hpp>
+#include <lx0/detail/dom_base.hpp>
 
 namespace lx0 { namespace core {
 
@@ -67,13 +68,20 @@ namespace lx0 { namespace core {
     //!
     /*!
      */
-    class Engine : public std::enable_shared_from_this<Engine>
+    class EngineComponent : public detail::_ComponentBase
     {
     public:
-        class Component : public std::enable_shared_from_this<Component>
-        {
-        };
+    };
 
+    //===========================================================================//
+    //!
+    /*!
+     */
+    class Engine 
+        : public std::enable_shared_from_this<Engine>
+        , public detail::_EnableComponentList<Engine, EngineComponent>
+    {
+    public:
         class Environment
         {
         public:

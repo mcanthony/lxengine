@@ -202,45 +202,28 @@ namespace lx0 { namespace core {
     void            
     Document::updateRun ()
     {
-        for (auto it = mComponents.begin(); it != mComponents.end(); ++it)
-            it->second->onUpdate(shared_from_this());
-
+        _foreach ([&](ComponentPtr it) {
+            it->onUpdate(shared_from_this());
+        });          
         slotUpdateRun();
 
         for (auto it = m_views.begin(); it != m_views.end(); ++it)
             it->second->updateFrame();
     }
 
-    void 
-    Document::attachComponent (std::string name, Component* pComponent)
-    {
-        std::shared_ptr<Component> spValue(pComponent);
-        mComponents.insert( std::make_pair(name, spValue) );
-    }
-
-    std::shared_ptr<Document::Component> 
-    Document::_getComponentImp (std::string name)
-    {
-        auto it = mComponents.find(name);
-        if (it != mComponents.end())
-            return it->second;
-        else
-            return std::shared_ptr<Component>();
-    }
-
     void Document::notifyElementAdded (ElementPtr spElem)
     {
-        for (auto it = mComponents.begin(); it != mComponents.end(); ++it)
-            it->second->onElementAdded(shared_from_this(), spElem);
-
+        _foreach ([&](ComponentPtr it) {
+            it->onElementAdded(shared_from_this(), spElem);
+        });   
         slotElementAdded(spElem);
     }
 
     void Document::notifyElementRemoved (ElementPtr spElem)
     {
-        for (auto it = mComponents.begin(); it != mComponents.end(); ++it)
-            it->second->onElementRemoved(this, spElem);
-
+        _foreach ([&](ComponentPtr it) {
+            it->onElementRemoved(this, spElem);
+        });  
         slotElementRemoved(spElem);
     }
 

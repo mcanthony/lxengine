@@ -41,76 +41,16 @@
 
 // Lx headers
 #include <lx0/detail/forward_decls.hpp>
+#include <lx0/detail/dom_base.hpp>
 #include <lx0/lxvar.hpp>
 
 
 namespace lx0 { namespace core {  
 
-    namespace detail
-    {
-        class _ComponentBase : public std::enable_shared_from_this<_ComponentBase>
-        {
-        public:
-            virtual ~_ComponentBase() {}
-        };
-
-        class _ComponentList
-        {
-        public:
-            typedef _ComponentBase                      Component;
-            typedef std::shared_ptr<Component>          ComponentPtr;
-            typedef std::map<std::string, ComponentPtr> Map;
-
-            void                attach  (std::string name, Component* pComponent);
-            ComponentPtr        get     (std::string name);
-            void                remove  (std::string name);
-
-            Map::iterator       begin   (void) { return mMap.begin(); }
-            Map::iterator       end     (void) { return mMap.end(); }
-
-        protected:
-            
-            Map mMap;
-        };
-
-        /*!
-            Get a Component and dynamic cast it to the intended type.
-
-            Example:
-
-            auto spPhysics = spElem->getComponent<PhysicsComponent>("physics");
-         */
-        template <typename Derived>
-        class _EnableComponentList
-        {
-        public:
-            typedef             Derived         Component;
-            typedef std::shared_ptr<Component>  ComponentPtr;
-
-            void                attachComponent (std::string name, Component* pComp) { mComponents.attach(name, pComp); }
-            template <typename T>
-            std::shared_ptr<T>  getComponent    (std::string name)                   { return std::dynamic_pointer_cast<T>( mComponents.get(name) ); }
-            void                removeComponent (std::string name)                   { mComponents.remove(name); }
-
-        protected:
-            typedef detail::_ComponentList      ComponentList;
-            
-
-            void                _foreach        (std::function<void(ComponentPtr)> f)
-            {
-                for (auto it = mComponents.begin(); it != mComponents.end(); ++it)
-                    f( std::dynamic_pointer_cast<Component>(it->second) );
-            }
-
-        private:
-            ComponentList       mComponents;
-        };
-    }
-
-    class EngineComponent : public detail::_ComponentBase
+    class ElementComponent : public detail::_ComponentBase
     {
     public:
-        virtual         ~EngineComponent() {}
+        virtual         ~ElementComponent() {}
 
         virtual void    onAttributeChange   (std::string name, lxvar value) {}
         virtual void    onAdded             (void) {}
@@ -137,11 +77,9 @@ namespace lx0 { namespace core {
      */
     class Element 
         : public std::enable_shared_from_this<Element>
-        , public detail::_EnableComponentList<EngineComponent>
+        , public detail::_EnableComponentList<Element, ElementComponent>
     {
     public:
-        typedef         EngineComponent         Component;
-
                         Element     (void);
                         ~Element    (void);
 

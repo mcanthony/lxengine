@@ -39,6 +39,7 @@
 
 // Lx headers
 #include <lx0/detail/forward_decls.hpp>
+#include <lx0/detail/dom_base.hpp>
 #include <lx0/slot.hpp>
 
 namespace lx0 { namespace core {
@@ -58,22 +59,29 @@ namespace lx0 { namespace core {
     //!
     /*!
      */
-    class Document : public std::enable_shared_from_this<Document>
+    class DocumentComponent : public detail::_ComponentBase
     {
     public:
-        class Component : public std::enable_shared_from_this<Component>
-        {
-        public:
-            virtual         ~Component() {}
+        virtual         ~DocumentComponent() {}
 
-            virtual void    onAttached          (DocumentPtr spDocument) {}
+        virtual void    onAttached          (DocumentPtr spDocument) {}
 
-            virtual void    onUpdate            (DocumentPtr spDocument) {}
+        virtual void    onUpdate            (DocumentPtr spDocument) {}
 
-            virtual void    onElementAdded      (DocumentPtr spDocument, ElementPtr spElem) {}
-            virtual void    onElementRemoved    (Document*   pDocument, ElementPtr spElem) {}
-        };
+        virtual void    onElementAdded      (DocumentPtr spDocument, ElementPtr spElem) {}
+        virtual void    onElementRemoved    (Document*   pDocument, ElementPtr spElem) {}
+    };
 
+    //===========================================================================//
+    //!
+    /*!
+     */
+    class Document 
+        : public std::enable_shared_from_this<Document>
+        , public detail::_EnableComponentList<Document, DocumentComponent>
+
+    {
+    public:
                                 Document();
                                 ~Document();
 
@@ -95,15 +103,9 @@ namespace lx0 { namespace core {
         void                    updateRun       (void);
         void                    endRun          (void);
 
-
-        void                    attachComponent (std::string name, Component* pComponent);
-        template <typename T>
-        std::shared_ptr<T>      getComponent    (std::string name);
-        template <typename T>
-        std::shared_ptr<T>      ensureComponent (std::string name, std::function<T* (void)> ctor);
-
-        virtual void            notifyElementAdded      (ElementPtr spElem);
-        virtual void            notifyElementRemoved    (ElementPtr spElem);
+        void                    notifyAttached          (ComponentPtr spComponent) { spComponent->onAttached(shared_from_this()); }
+        void                    notifyElementAdded      (ElementPtr spElem);
+        void                    notifyElementRemoved    (ElementPtr spElem);
 
         slot<void(ElementPtr)>  slotElementCreated;
         slot<void(ElementPtr)>  slotElementAdded;
@@ -118,42 +120,11 @@ namespace lx0 { namespace core {
         typedef std::map<std::string, std::shared_ptr<Component>> ComponentList;
         typedef std::vector< TransactionWPtr > TrWList;
 
-        std::shared_ptr<Component>  _getComponentImp    (std::string name);
         bool                        _walkElements       (std::function<bool (ElementPtr)> f);
 
         TrWList                         m_openTransactions;     //!< Not currently implemented
         ElementPtr                      m_spRoot;
         std::map<std::string, ViewPtr>  m_views;
-        ComponentList                   mComponents;
     };
-
-    /*!
-        Get a Component and dynamic cast it to the intended type.
-
-        Example:
-
-        auto spPhysics = spElem->getComponent<PhysicsComponent>("physics");
-     */
-    template <typename T>
-    std::shared_ptr<T>  
-    Document::getComponent (std::string name)
-    {
-        return std::dynamic_pointer_cast<T>( _getComponentImp(name) );
-    }
-
-    template <typename T>
-    std::shared_ptr<T>
-    Document::ensureComponent (std::string name, std::function<T* (void)> ctor)
-    {
-        std::shared_ptr<Component> spComponent = _getComponentImp(name);
-        if (!spComponent)
-        {
-            spComponent.reset( ctor() );
-            mComponents.insert( std::make_pair(name, spComponent) );
-
-            spComponent->onAttached(shared_from_this());
-        }
-        return std::dynamic_pointer_cast<T>(spComponent);
-    }
 
 }}

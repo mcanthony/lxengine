@@ -37,6 +37,8 @@ lx_source_group("script")
 lx_source_group("util")
 
 source_group("_detail" "include/lx0/detail/forward_decls.hpp")
+source_group("_detail" "include/lx0/detail/dom_base.hpp")
+source_group("_detail" "include/lx0/detail/dom_base.cpp")
 source_group("core" include/lx0/cast.hpp)
 
 add_library( lx0 ${SOURCES} )
