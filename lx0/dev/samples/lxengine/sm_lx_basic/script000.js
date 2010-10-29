@@ -64,19 +64,27 @@ for (var i = 0; i < 20; i++) {
     $("#grid").append(ref);
 }
 
-window.onKeyDown(function () {
-    var pos = [
-        Math.random() * 6 - 3,
-        Math.random() * 6 - 3,
-        3
-    ];
-    var ref = $("<Ref/>");
-    ref.attr("ref", "small_sphere");
-    ref.attr("translation", pos);
-    ref.attr("mass", .01);
-    ref.attr("bounds_type", "sphere");
-    $("#grid").append(ref);
-});
+window.onKeyDown = function (e) {
+
+    if (e.keyCode >= 1 && e.keyCode <= 9) {
+        // TBD: toggle hide/show of grid cube of the given number
+        alert("Key " + e.keyChar + " was pressed.");
+    }
+    else {
+        var pos = [
+            Math.random() * 6 - 3,
+            Math.random() * 6 - 3,
+            3
+        ];
+        var ref = $("<Ref/>");
+        ref.attr("ref", "small_sphere");
+        ref.attr("translation", pos);
+        ref.attr("mass", .01);
+        ref.attr("bounds_type", "sphere");
+        $("#grid").append(ref);
+    }
+};
+
 window.setTimeout(8000, function () {
     var ref = $("<Ref/>");
     ref.attr("ref", "unit_sphere");

@@ -37,6 +37,12 @@
 
 namespace lx0 { namespace core {
 
+    class KeyEvent
+    {
+    public:
+        int  keyCode;
+        char keyChar;
+    };
 
     class Document : public std::enable_shared_from_this<Document>
     {
@@ -80,7 +86,7 @@ namespace lx0 { namespace core {
         slot<void(ElementPtr)>  slotElementRemoved;
 
         slot<void()>            slotUpdateRun;
-        slot<void()>            slotKeyDown;            // Key down on any of the Document's views
+        slot<void(KeyEvent&)>   slotKeyDown;            // Key down on any of the Document's views
 
     protected:
         typedef std::map<std::string, std::shared_ptr<Component>> ComponentList;

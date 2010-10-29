@@ -134,9 +134,11 @@ namespace lx0 { namespace core { namespace detail {
     // Local Helpers
     //===========================================================================//
 
-    template <typename NativeType>
+
+
+    template <typename NativeType, typename Source>
     static NativeType*
-    _nativeThis (const v8::Arguments& args)
+    _nativeThisImp (const Source& args)
     {
         //
         // Assumes the function was invoked with a this object (i.e. Holder is not null) and that
@@ -152,6 +154,20 @@ namespace lx0 { namespace core { namespace detail {
         lx_check_error(pThis != nullptr);
 
         return pThis;
+    }
+
+    template <typename NativeType>
+    static NativeType*
+    _nativeThis (const v8::Arguments& args)
+    {
+        return _nativeThisImp<NativeType,Arguments>(args);
+    }
+
+    template <typename NativeType>
+    static NativeType*
+    _nativeThis (const v8::AccessorInfo& info)
+    {
+        return _nativeThisImp<NativeType,AccessorInfo>(info);
     }
 
     static v8::Handle<v8::Object>
@@ -184,11 +200,13 @@ namespace lx0 { namespace core { namespace detail {
         void                            _addWindow      (void);
         void                            _addDocument    (DocumentPtr spDocument);
         v8::Persistent<v8::Function>    _addElement     (void);
+        v8::Persistent<v8::Function>    _addKeyEvent    (void);
         void                            _addMath        (void);
         //@}
 
         v8::Persistent<v8::Context>     mContext;
         v8::Persistent<v8::Function>    mElementCtor;
+        v8::Persistent<v8::Function>    mKeyEventCtor;
 
         Persistent<Function>                              mWindowOnKeyDown;
         std::vector<std::pair<int, Persistent<Function>>> mTimeoutQueue;
@@ -216,16 +234,18 @@ namespace lx0 { namespace core { namespace detail {
         _addWindow();
         _addDocument(spDocument);
         mElementCtor = _addElement();
+        mKeyEventCtor = _addKeyEvent();
         _addMath();
 
-        spDocument->slotKeyDown += [&]() {
+        spDocument->slotKeyDown += [&](KeyEvent& e) {
             s_pActiveContext = this;
             Context::Scope context_scope(mContext);
 
             HandleScope handle_scope;
-            Handle<Value> callArgs[1];
             Handle<Object> recv = mContext->Global();
-            mWindowOnKeyDown->Call(recv, 0, 0);
+            Handle<Value> callArgs[1];
+            callArgs[0] = _wrapObject(s_pActiveContext->mKeyEventCtor, &e);
+            mWindowOnKeyDown->Call(recv, 1, callArgs);
 
             s_pActiveContext = nullptr;
         };
@@ -269,6 +289,7 @@ namespace lx0 { namespace core { namespace detail {
     JavascriptComponent::~JavascriptComponent()
     {
         mElementCtor.Dispose();
+        mKeyEventCtor.Dispose();
         mWindowOnKeyDown.Dispose();
         mContext.Dispose();
     }
@@ -332,21 +353,17 @@ namespace lx0 { namespace core { namespace detail {
     {
         struct Window
         {
-            ///@todo This should be a property not a function.  I.e.:
-            // window.onKeyDown = function() { ... }; 
-            // vs.
-            // window.onKeyDown( function() { ... } );
             static v8::Handle<v8::Value> 
-            onKeyDown (const v8::Arguments& args)
+            get_onKeyDown (Local<String> property, const AccessorInfo &info) 
             {
-                lx_check_error(args.Length() == 1);
+                return s_pActiveContext->mWindowOnKeyDown;
+            }
 
-                auto*            pThis  = _nativeThis<Window>(args); 
-                Handle<Function> func   = _marshal(args[0]);
-
+            static void
+            set_onKeyDown (Local<String> property, Local<Value> value, const AccessorInfo &info) 
+            {
+                Handle<Function> func   = _marshal(value);
                 s_pActiveContext->mWindowOnKeyDown = Persistent<Function>::New(func);
-
-                return Undefined();
             }
             
             static v8::Handle<v8::Value> 
@@ -375,9 +392,10 @@ namespace lx0 { namespace core { namespace detail {
         Handle<ObjectTemplate> objInst( templ->InstanceTemplate() );
         objInst->SetInternalFieldCount(1);
 
+        objInst->SetAccessor(String::New("onKeyDown"), Window::get_onKeyDown, Window::set_onKeyDown);
+
         Handle<Template> proto_t( templ->PrototypeTemplate() );
         proto_t->Set("setTimeout",  FunctionTemplate::New(Window::setTimeout));
-        proto_t->Set("onKeyDown",  FunctionTemplate::New(Window::onKeyDown));
 
         // Add the object
         Handle<Object> obj( templ->GetFunction()->NewInstance() );
@@ -514,6 +532,39 @@ namespace lx0 { namespace core { namespace detail {
         Handle<Template> proto_t( templ->PrototypeTemplate() );
         proto_t->Set("setAttribute",  FunctionTemplate::New(L::setAttribute));
         proto_t->Set("appendChild", FunctionTemplate::New(L::appendChild));
+
+        // Store a persistent reference to the function which will be used to create
+        // new object wrappers
+        return Persistent<Function>::New( templ->GetFunction() );
+    }
+
+    v8::Persistent<v8::Function>
+    JavascriptComponent::_addKeyEvent (void)
+    {
+        struct L
+        {
+            static Handle<Value> 
+            get_keyCode(Local<String> property, const AccessorInfo &info) 
+            {
+                return Integer::New( _nativeThis<KeyEvent>(info)->keyCode );
+            }
+
+            static Handle<Value> 
+            get_keyChar(Local<String> property, const AccessorInfo &info) 
+            {
+                auto* pThis = _nativeThis<KeyEvent>(info);
+                char buffer[2] = { pThis->keyChar, 0 };
+                return String::New(buffer);
+            }
+        };
+
+        Handle<FunctionTemplate> templ( FunctionTemplate::New() );
+
+        // Create an anonymous type which will be used for the Element wrapper
+        Handle<ObjectTemplate> objInst( templ->InstanceTemplate() );
+        objInst->SetInternalFieldCount(1);
+        objInst->SetAccessor(String::New("keyCode"),  L::get_keyCode);
+        objInst->SetAccessor(String::New("keyChar"),  L::get_keyChar);
 
         // Store a persistent reference to the function which will be used to create
         // new object wrappers

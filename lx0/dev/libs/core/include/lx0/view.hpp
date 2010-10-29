@@ -36,6 +36,7 @@
 
 namespace lx0 { namespace core {
 
+    class KeyEvent;
     _LX_FORWARD_DECL_PTRS(Mesh);
 
     namespace detail {
@@ -70,7 +71,7 @@ namespace lx0 { namespace core {
         void        attach          (Document* pDocument);
         void        detach          (Document* pDocument);
 
-        slot<void ()>       slotKeyDown;
+        slot<void (KeyEvent&)>      slotKeyDown;
 
     protected:
         void        _updateFrameRenderingQueued();

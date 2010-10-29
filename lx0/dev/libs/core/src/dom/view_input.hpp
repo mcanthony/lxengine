@@ -30,6 +30,10 @@
 
 #pragma once
 
+namespace lx0 { namespace core {
+    class KeyEvent;
+}}
+
 namespace lx0 { namespace core { namespace detail {
 
     class InputImp;
@@ -43,7 +47,7 @@ namespace lx0 { namespace core { namespace detail {
 
         void update();
 
-        slot<void ()>       slotKeyDown;
+        slot<void (KeyEvent&)>    slotKeyDown;
 
     protected:
         std::shared_ptr<InputImp> mspImp;

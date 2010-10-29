@@ -70,7 +70,7 @@ namespace lx0 { namespace core {
         spView->attach(this);
 
         // Forward the events along so they can be caught at any level
-        spView->slotKeyDown += [&]() { this->slotKeyDown(); };
+        spView->slotKeyDown += [&](KeyEvent& e) { this->slotKeyDown(e); };
     }
     
     void

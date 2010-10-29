@@ -338,7 +338,7 @@ namespace lx0 { namespace core {
 
             mspLxInputManager.reset( new LxInputManager(hWindowHandle, width, height) );
 
-            mspLxInputManager->slotKeyDown += [&] () { this->slotKeyDown(); };
+            mspLxInputManager->slotKeyDown += [&] (KeyEvent& e) { this->slotKeyDown(e); };
         }
 
         mpSceneMgr = root.createSceneManager(Ogre::ST_GENERIC, "generic");

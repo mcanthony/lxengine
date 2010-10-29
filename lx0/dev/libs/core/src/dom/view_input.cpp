@@ -32,6 +32,7 @@
 #include <lx0/core.hpp>
 #include <lx0/util.hpp>
 #include <lx0/engine.hpp>
+#include <lx0/document.hpp>
 #include "view_input.hpp"
 
 #include <OIS/OISMouse.h>
@@ -43,6 +44,8 @@ using namespace OIS;
 using namespace lx0::util;
 
 namespace lx0 { namespace core { namespace detail {
+
+    using OIS::KeyEvent;
 
     /*
         Developer notes:
@@ -130,7 +133,11 @@ namespace lx0 { namespace core { namespace detail {
 
         virtual bool keyPressed( const KeyEvent &arg )
         {
-            mpInterface->slotKeyDown();
+            lx0::core::KeyEvent e;
+            e.keyCode = int(arg.key);
+            e.keyChar = char(arg.text);
+
+            mpInterface->slotKeyDown(e);
 
             // true means to continue sending the event to any other listeners 
             return true;
