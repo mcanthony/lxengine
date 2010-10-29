@@ -46,6 +46,77 @@
 
 namespace lx0 { namespace core {  
 
+    namespace detail
+    {
+        class _ComponentBase : public std::enable_shared_from_this<_ComponentBase>
+        {
+        public:
+            virtual ~_ComponentBase() {}
+        };
+
+        class _ComponentList
+        {
+        public:
+            typedef _ComponentBase                      Component;
+            typedef std::shared_ptr<Component>          ComponentPtr;
+            typedef std::map<std::string, ComponentPtr> Map;
+
+            void                attach  (std::string name, Component* pComponent);
+            ComponentPtr        get     (std::string name);
+            void                remove  (std::string name);
+
+            Map::iterator       begin   (void) { return mMap.begin(); }
+            Map::iterator       end     (void) { return mMap.end(); }
+
+        protected:
+            
+            Map mMap;
+        };
+
+        /*!
+            Get a Component and dynamic cast it to the intended type.
+
+            Example:
+
+            auto spPhysics = spElem->getComponent<PhysicsComponent>("physics");
+         */
+        template <typename Derived>
+        class _EnableComponentList
+        {
+        public:
+            typedef             Derived         Component;
+            typedef std::shared_ptr<Component>  ComponentPtr;
+
+            void                attachComponent (std::string name, Component* pComp) { mComponents.attach(name, pComp); }
+            template <typename T>
+            std::shared_ptr<T>  getComponent    (std::string name)                   { return std::dynamic_pointer_cast<T>( mComponents.get(name) ); }
+            void                removeComponent (std::string name)                   { mComponents.remove(name); }
+
+        protected:
+            typedef detail::_ComponentList      ComponentList;
+            
+
+            void                _foreach        (std::function<void(ComponentPtr)> f)
+            {
+                for (auto it = mComponents.begin(); it != mComponents.end(); ++it)
+                    f( std::dynamic_pointer_cast<Component>(it->second) );
+            }
+
+        private:
+            ComponentList       mComponents;
+        };
+    }
+
+    class EngineComponent : public detail::_ComponentBase
+    {
+    public:
+        virtual         ~EngineComponent() {}
+
+        virtual void    onAttributeChange   (std::string name, lxvar value) {}
+        virtual void    onAdded             (void) {}
+        virtual void    onRemoved           (void) {}
+    };
+
     //===========================================================================//
     //! Represents an Element in the Document Object Model.  
     /*!
@@ -66,16 +137,10 @@ namespace lx0 { namespace core {
      */
     class Element 
         : public std::enable_shared_from_this<Element>
+        , public detail::_EnableComponentList<EngineComponent>
     {
     public:
-        class Component : public std::enable_shared_from_this<Component>
-        {
-        public:
-            virtual         ~Component() {}
-            virtual void    onAttributeChange   (std::string name, lxvar value) {}
-            virtual void    onAdded             (void) {}
-            virtual void    onRemoved           (void) {}
-        };
+        typedef         EngineComponent         Component;
 
                         Element     (void);
                         ~Element    (void);
@@ -105,11 +170,6 @@ namespace lx0 { namespace core {
 
         ElementPtr      _clone () const;
 
-        void                attachComponent (std::string name, Component* pComponents);
-        template <typename T>
-        std::shared_ptr<T>  getComponent    (std::string name);
-        void                removeComponent (std::string name);
-
         float           queryAttr   (std::string name, float defValue);
         std::string     queryAttr   (std::string name, std::string defValue);
 
@@ -117,11 +177,8 @@ namespace lx0 { namespace core {
         void            notifyRemoved   (Document* pDocument);
 
     protected:
-        typedef std::map<std::string, lxvar>                      AttrMap;
-        typedef std::deque<ElementPtr>                            ElemList;
-        typedef std::map<std::string, std::shared_ptr<Component>> ComponentList;
-
-        std::shared_ptr<Component>  _getComponentImp    (std::string name);
+        typedef std::map<std::string, lxvar>    AttrMap;
+        typedef std::deque<ElementPtr>          ElemList;
 
         void                        _setHostDocument    (Document* pDocument);
 
@@ -132,31 +189,13 @@ namespace lx0 { namespace core {
         ElementPtr      mspParent;
         ElemList        mChildren;
         ObjectPtr       mspValue;       // May be a proxy object for delay-loading
-
-        ComponentList   mComponents;
     };
-
-    typedef std::shared_ptr<Element> ElementPtr;
 
     template <typename T>
     std::shared_ptr<T> 
     Element::value (void)
     {
         return std::dynamic_pointer_cast<T>( value() );
-    }
-
-    /*!
-        Get a Component and dynamic cast it to the intended type.
-
-        Example:
-
-        auto spPhysics = spElem->getComponent<PhysicsComponent>("physics");
-     */
-    template <typename T>
-    std::shared_ptr<T>  
-    Element::getComponent (std::string name)
-    {
-        return std::dynamic_pointer_cast<T>( _getComponentImp(name) );
     }
 
 }}

@@ -40,6 +40,37 @@
 
 namespace lx0 { namespace core {
 
+    namespace detail {
+
+        void 
+        _ComponentList::attach (std::string name, _ComponentBase* pComponent)
+        {
+            ComponentPtr spValue(pComponent);
+            mMap.insert( std::make_pair(name, spValue) );
+        }
+
+        _ComponentList::ComponentPtr
+        _ComponentList::get (std::string name)
+        {
+            auto it = mMap.find(name);
+            if (it != mMap.end())
+                return it->second;
+            else
+                return ComponentPtr();
+        }
+
+        void
+        _ComponentList::remove (std::string name)
+        {
+            auto it = mMap.find(name);
+            if (it != mMap.end())
+                mMap.erase(it);
+            else
+                lx_error("Attempt to remove a Component '%s' that is not attached.", name.c_str());
+        }
+
+    }
+
     Element::Element (void)
         : mpDocument (nullptr)
     {
@@ -162,8 +193,9 @@ namespace lx0 { namespace core {
     {
         lx_check_error( this != nullptr );
 
-        for (auto it = mComponents.begin(); it != mComponents.end(); ++it)
-            it->second->onAttributeChange(name, value);
+        _foreach([&](ComponentPtr it) {
+            it->onAttributeChange(name, value);
+        });
 
         mAttributes[name] = value;
     }
@@ -216,33 +248,6 @@ namespace lx0 { namespace core {
         mspValue = spValue;
     }
 
-    void 
-    Element::attachComponent (std::string name, Component* pComponent)
-    {
-        std::shared_ptr<Component> spValue(pComponent);
-        mComponents.insert( std::make_pair(name, spValue) );
-    }
-
-    std::shared_ptr<Element::Component> 
-    Element::_getComponentImp (std::string name)
-    {
-        auto it = mComponents.find(name);
-        if (it != mComponents.end())
-            return it->second;
-        else
-            return std::shared_ptr<Component>();
-    }
-
-    void
-    Element::removeComponent (std::string name)
-    {
-        auto it = mComponents.find(name);
-        if (it != mComponents.end())
-            mComponents.erase(it);
-        else
-            lx_error("Attempt to remove a Component '%s' that is not attached.", name.c_str());
-    }
-
     void
     Element::_setHostDocument (Document* pDocument)
     {
@@ -268,8 +273,9 @@ namespace lx0 { namespace core {
 
         _setHostDocument(pDocument);
 
-        for (auto it = mComponents.begin(); it != mComponents.end(); ++it)
-            it->second->onAdded();
+        _foreach([](ComponentPtr it) {
+            it->onAdded();
+        });
 
         pDocument->notifyElementAdded(shared_from_this());
 
@@ -285,8 +291,9 @@ namespace lx0 { namespace core {
 
         _setHostDocument(nullptr);
 
-        for (auto it = mComponents.begin(); it != mComponents.end(); ++it)
-            it->second->onRemoved();
+        _foreach([](ComponentPtr it) {
+            it->onRemoved();
+        });
 
         pDocument->notifyElementRemoved(shared_from_this());
 
