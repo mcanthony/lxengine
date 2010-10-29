@@ -45,6 +45,8 @@
 #include <OGRE/OgreRoot.h>
 #include <OGRE/OgreSceneManager.h>
 
+using namespace lx0::util;
+
 //===========================================================================//
 //   I M P L E M E N T A T I O N 
 //===========================================================================//
@@ -108,16 +110,19 @@ namespace lx0 { namespace core {
         lx_log("lx::core::Engine ctor");
 
         {
+            lx_debug("    current time: %s", lx_ctime().c_str());
             lx_debug("    version %d.%d", versionMajor(), versionMinor());
             lx_debug("    build date:  %s %s", __DATE__, __TIME__);
             lx_debug("    _MSC_VER = 0x%04x", _MSC_VER);
             lx_debug("    sizeof(int) = %u bytes", sizeof(int));
             lx_debug("    sizeof(float) = %u bytes", sizeof(float));
             lx_debug("    sizeof(void*) = %u bytes", sizeof(void*));
+            lx_debug("    sizeof(std::unique_ptr<int>) = %u bytes", sizeof(std::unique_ptr<int>));
+            lx_debug("    sizeof(std::shared_ptr<int>) = %u bytes", sizeof(std::shared_ptr<int>));
+            lx_debug("    sizeof(std::weak_ptr<int>) = %u bytes", sizeof(std::weak_ptr<int>));
             lx_debug("    sizeof(Engine) = %u bytes", sizeof(Engine));
             lx_debug("    sizeof(Document) = %u bytes", sizeof(Document));
             lx_debug("    sizeof(Element) = %u bytes", sizeof(Element));
-            lx_debug("    sizeof(ElementPtr) = %u bytes", sizeof(ElementPtr));
         }
     }
 

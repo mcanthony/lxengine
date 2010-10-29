@@ -66,6 +66,10 @@ namespace lx0 { namespace core {
         public:
             virtual         ~Component() {}
 
+            virtual void    onAttached          (DocumentPtr spDocument) {}
+
+            virtual void    onUpdate            (DocumentPtr spDocument) {}
+
             virtual void    onElementAdded      (DocumentPtr spDocument, ElementPtr spElem) {}
             virtual void    onElementRemoved    (Document*   pDocument, ElementPtr spElem) {}
         };
@@ -146,6 +150,8 @@ namespace lx0 { namespace core {
         {
             spComponent.reset( ctor() );
             mComponents.insert( std::make_pair(name, spComponent) );
+
+            spComponent->onAttached(shared_from_this());
         }
         return std::dynamic_pointer_cast<T>(spComponent);
     }

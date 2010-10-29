@@ -202,6 +202,9 @@ namespace lx0 { namespace core {
     void            
     Document::updateRun ()
     {
+        for (auto it = mComponents.begin(); it != mComponents.end(); ++it)
+            it->second->onUpdate(shared_from_this());
+
         slotUpdateRun();
 
         for (auto it = m_views.begin(); it != m_views.end(); ++it)

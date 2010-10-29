@@ -67,9 +67,13 @@ namespace lx0 { namespace core {
     //!
     /*!
      */
-    class Engine
+    class Engine : public std::enable_shared_from_this<Engine>
     {
     public:
+        class Component : public std::enable_shared_from_this<Component>
+        {
+        };
+
         class Environment
         {
         public:

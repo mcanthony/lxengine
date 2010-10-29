@@ -65,7 +65,7 @@ typedef std::weak_ptr<btCollisionShape>     btCollisionShapeWPtr;
 
 namespace lx0 { namespace core { namespace detail {
 
-    // --------------------------------------------------------------------- //
+    //-----------------------------------------------------------------------//
     //! Base class for the Shape cache keys.
     /*!
         The shape caches are used to ensure that if two objects with the same
@@ -94,8 +94,11 @@ namespace lx0 { namespace core { namespace detail {
         }
     };
 
+    //-----------------------------------------------------------------------//
     //! Key used for caching btBoxShape
     /*!
+        Determines (a) which cache element to use for a given bounding box, (b) how to 
+        create new a cache element for the bounds if one does not exist.
      */
     struct BoxKey : public ShapeKeyBase
     {
@@ -130,8 +133,11 @@ namespace lx0 { namespace core { namespace detail {
         int xyz[3];
     };
 
+    //-----------------------------------------------------------------------//
     //! Key used for caching btSphereShape
     /*!
+        Determines (a) which cache element to use for a given bounding sphere, (b) how to 
+        create new a cache element for the bounds if one does not exist.
      */
     struct SphereKey : public ShapeKeyBase
     {
@@ -159,6 +165,7 @@ namespace lx0 { namespace core { namespace detail {
         int key;
     };
 
+    //-----------------------------------------------------------------------//
     //! Wrapper on std::map<> to manage cached btCollisionShapes
     /*!
      */
@@ -190,195 +197,33 @@ namespace lx0 { namespace core { namespace detail {
         std::map<Key, btCollisionShapeWPtr>     mCache;
     };
 
+    //-----------------------------------------------------------------------//
     //! The internal physics subsystem
     /*!
      */
-    class Physics : public Document::Component
+    class PhysicsDoc : public Document::Component
     {
     public:
-        Physics()
-        {
-            Engine::acquire()->incObjectCount("Physics");
+                        PhysicsDoc();
+                        ~PhysicsDoc();
 
-            mspBroadphase.reset( new btDbvtBroadphase );
+        virtual void    onAttached          (DocumentPtr spDocument);
 
-            mspCollisionConfiguration.reset( new btDefaultCollisionConfiguration );
-            mspDispatcher.reset( new btCollisionDispatcher(mspCollisionConfiguration.get()) );
+        virtual void    onElementAdded      (DocumentPtr spDocument, ElementPtr spElem);
+        virtual void    onElementRemoved    (Document* pDocument, ElementPtr spElem);
 
-            mspSolver.reset( new btSequentialImpulseConstraintSolver );
+        virtual void    onUpdate            (DocumentPtr spDocument);
 
-            mspDynamicsWorld.reset( new btDiscreteDynamicsWorld(mspDispatcher.get(), 
-                                                                mspBroadphase.get(), 
-                                                                mspSolver.get(), 
-                                                                mspCollisionConfiguration.get()) );
-            mspDynamicsWorld->setGravity(btVector3(0, 0, -9.81f));
-
-
-            // Create a global ground plane
-            //
-            mspGroundShape.reset(new btStaticPlaneShape(btVector3(0,0,1), 0) );
-            mspGroundMotionState.reset( new btDefaultMotionState(btTransform(btQuaternion(0,0,0,1), btVector3(0, 0, 0))) );
-
-            const float fGroundMass = 0.0f;   // Infinite, immovable object
-            const btVector3 groundIntertia(0, 0, 0);
-            btRigidBody::btRigidBodyConstructionInfo groundRigidBodyCI(fGroundMass, mspGroundMotionState.get(), mspGroundShape.get(), groundIntertia);
-            mspGroundRigidBody.reset( new btRigidBody(groundRigidBodyCI) );
-            mspDynamicsWorld->addRigidBody(mspGroundRigidBody.get());
-        }
-
-        ~Physics()
-        {
-            // The shared_ptr objects will deallocate everything on destruction, but the rigid
-            // body objects need to be removed from the world to ensure the destruction order
-            // is handled correctly.
-            //
-            mspDynamicsWorld->removeRigidBody(mspGroundRigidBody.get());
-
-            for (auto it = mRigidBodies.begin(); it != mRigidBodies.end(); ++it)
-                mspDynamicsWorld->removeRigidBody( it->get() );
-
-            Engine::acquire()->decObjectCount("Physics");
-        }
-
-        class PhysicsComponent : public Element::Component
-        {
-        public:
-            PhysicsComponent (DocumentPtr spDocument, ElementPtr spElem, Physics* pPhysics)
-                : mpDocPhysics (pPhysics)
-                , mspRigidBody (nullptr)
-            {
-                 lx_check_error( spElem->getComponent<PhysicsComponent>("physics").get() == nullptr );
-
-                // Prepare the relevant variables that will be used
-                //
-                std::string    ref      = spElem->queryAttr("ref", "");
-                const btScalar kfMass   = spElem->queryAttr("mass", 0.0f);   
-                auto pos                = asPoint3( spElem->attr("translation") );
-
-                auto spMeshElem         = spDocument->getElementById(ref);
-                MeshPtr spMesh          = spMeshElem->value<Mesh>();
-
-                // Determine the transformation
-                //
-                btTransform tform (btQuaternion(0,0,0,1), btVector3(pos.x, pos.y, pos.z));
-                std::shared_ptr<btDefaultMotionState> spMotionState( new btDefaultMotionState(tform) );
-                      
-                // Determine and acquire the collision shape to use
-                //
-                btCollisionShapePtr spShape;
-                if (spElem->queryAttr("bounds_type", "box") == "box")
-                    spShape = pPhysics->_acquireBoxShape( spMesh->boundingVector() );
-                else
-                    spShape =  pPhysics->_acquireSphereShape( spMesh->boundingRadius() );
-
-                btVector3 fallInertia(0, 0, 0);
-                spShape->calculateLocalInertia(kfMass, fallInertia);
-            
-                // Create the RigidBody to put into the world
-                //
-                btRigidBody::btRigidBodyConstructionInfo rigidBodyCI (kfMass, spMotionState.get(), spShape.get(), fallInertia);
-                std::shared_ptr<btRigidBody> spRigidBody( new btRigidBody(rigidBodyCI) );
-                pPhysics->mspDynamicsWorld->addRigidBody(spRigidBody.get());
-
-
-
-                // Track the created variables so that clean-up can be done correctly
-                //
-                mspMotionState = spMotionState;
-                mspRigidBody = spRigidBody;
-                mspShape = spShape;
-            }
-
-            ~PhysicsComponent()
-            {
-                mpDocPhysics->mspDynamicsWorld->removeRigidBody(mspRigidBody.get());
-            }
-        
-            Physics*                                mpDocPhysics;
-            std::shared_ptr<btDefaultMotionState>   mspMotionState;
-            std::shared_ptr<btRigidBody>            mspRigidBody;
-            std::shared_ptr<btCollisionShape>       mspShape;
-        };
-
-        virtual void onElementAdded(DocumentPtr spDocument, ElementPtr spElem)
-        {
-            if (spElem->tagName() == "Ref")
-            {
-                // Attach the custom logic to the Element (i.e. ensures the element will
-                // be updated as the physics simulation moves it)
-                //
-                lx_check_error( spElem->getComponent<PhysicsComponent>("physics").get() == nullptr );
-
-                spElem->attachComponent("physics", new PhysicsComponent(spDocument, spElem, this) );
-            }
-        }
-
-        virtual void onElementRemoved(Document* pDocument, ElementPtr spElem)
-        {
-            if (spElem->tagName() == "Ref")
-            {
-                spElem->removeComponent("physics");
-            }
-        }
-
-
-        /*!
-            Initializes the Physics subsystem for the document according to the Document's
-            current state.
-
-            Dev. note: would it be cleaner to incrementally do this by registering an 
-            onAdded() callback?
-         */
-        void 
-        init (DocumentPtr spDocument)
-        {
-            mLastUpdate = lx0::util::lx_milliseconds();
-        }
-
-        void 
-        update (DocumentPtr spDocument)
-        {
-            // In milliseconds...
-            const float kFps = 60.0f;
-            const unsigned int kFrameDurationMs = unsigned int( (1.0f / kFps) * 1000.0f );
-
-            auto timeNow = lx0::util::lx_milliseconds();
-
-            if (timeNow - mLastUpdate >= kFrameDurationMs)
-            {
-                const int kMaxSubSteps = 10;
-                const float kStep = Engine::acquire()->environment().timeScale() * kFrameDurationMs / 1000.0f;
-                mspDynamicsWorld->stepSimulation(kStep, kMaxSubSteps);
- 
-                auto allRefs = spDocument->getElementsByTagName("Ref");
-                for (auto it = allRefs.begin(); it != allRefs.end(); ++it)
-                {
-                    ElementPtr spElem = *it;
-                    auto spPhysics = spElem->getComponent<PhysicsComponent>("physics");
-                    lx_check_error(spPhysics.get() != nullptr, "All elements should have an associated physics component!");
-
-                    btTransform trans;
-                    spPhysics->mspRigidBody->getMotionState()->getWorldTransform(trans);
-                    point3 p = lx_cast( trans.getOrigin() );
-                    btQuaternion q = trans.getRotation();
-
-                    spElem->attr("translation", lxvar(p.x, p.y, p.z) );
-                    spElem->attr("rotation", lxvar(q.x(), q.y(), q.z(), q.w()) );
-                }
-
-                mLastUpdate = timeNow;
-            }
-        }
-
-    protected:
         btCollisionShapePtr         _acquireSphereShape         (float radius);
         btCollisionShapePtr         _acquireBoxShape            (const vector3& halfBounds);
 
+        std::shared_ptr<btDiscreteDynamicsWorld>                mspDynamicsWorld;
+
+    protected:
         std::shared_ptr<btBroadphaseInterface>                  mspBroadphase;
         std::shared_ptr<btDefaultCollisionConfiguration>        mspCollisionConfiguration;
         std::shared_ptr<btCollisionDispatcher>                  mspDispatcher;
         std::shared_ptr<btSequentialImpulseConstraintSolver>    mspSolver;
-        std::shared_ptr<btDiscreteDynamicsWorld>                mspDynamicsWorld;
 
         std::shared_ptr<btCollisionShape>                       mspGroundShape;
 
@@ -388,24 +233,176 @@ namespace lx0 { namespace core { namespace detail {
         std::shared_ptr<btDefaultMotionState>                   mspGroundMotionState;
         std::shared_ptr<btRigidBody>                            mspGroundRigidBody;
 
-        std::vector< std::shared_ptr<btDefaultMotionState> >    mMotionStates;
-        std::vector< std::shared_ptr<btRigidBody> >             mRigidBodies;
-        std::vector< btCollisionShapePtr >                      mShapes;
-
         unsigned int                                            mLastUpdate;
     };
 
+    class PhysicsElem : public Element::Component
+    {
+    public:
+        PhysicsElem (DocumentPtr spDocument, ElementPtr spElem, PhysicsDoc* pPhysics)
+            : mpDocPhysics (pPhysics)
+        {
+            lx_check_error( spElem->getComponent<PhysicsElem>("physics").get() == nullptr );
+
+            // Prepare the relevant variables that will be used
+            //
+            std::string    ref      = spElem->queryAttr("ref", "");
+            const btScalar kfMass   = spElem->queryAttr("mass", 0.0f);   
+            auto pos                = asPoint3( spElem->attr("translation") );
+
+            auto spMeshElem         = spDocument->getElementById(ref);
+            MeshPtr spMesh          = spMeshElem->value<Mesh>();
+
+            // Determine the transformation
+            //
+            btTransform tform (btQuaternion(0,0,0,1), btVector3(pos.x, pos.y, pos.z));
+            mspMotionState.reset( new btDefaultMotionState(tform) );
+                      
+            // Determine and acquire the collision shape to use
+            //
+            if (spElem->queryAttr("bounds_type", "box") == "box")
+                mspShape = pPhysics->_acquireBoxShape( spMesh->boundingVector() );
+            else
+                mspShape =  pPhysics->_acquireSphereShape( spMesh->boundingRadius() );
+
+            btVector3 fallInertia(0, 0, 0);
+            mspShape->calculateLocalInertia(kfMass, fallInertia);
+            
+            // Create the RigidBody to put into the world
+            //
+            btRigidBody::btRigidBodyConstructionInfo rigidBodyCI (kfMass, mspMotionState.get(), mspShape.get(), fallInertia);
+            mspRigidBody.reset( new btRigidBody(rigidBodyCI) );
+            pPhysics->mspDynamicsWorld->addRigidBody(mspRigidBody.get());
+        }
+
+        ~PhysicsElem()
+        {
+            mpDocPhysics->mspDynamicsWorld->removeRigidBody(mspRigidBody.get());
+        }
+        
+        PhysicsDoc*                             mpDocPhysics;
+        std::unique_ptr<btDefaultMotionState>   mspMotionState;
+        std::unique_ptr<btRigidBody>            mspRigidBody;
+        std::shared_ptr<btCollisionShape>       mspShape;
+    };
+
+    PhysicsDoc::PhysicsDoc()
+    {
+        Engine::acquire()->incObjectCount("Physics");
+
+        mspBroadphase.reset( new btDbvtBroadphase );
+
+        mspCollisionConfiguration.reset( new btDefaultCollisionConfiguration );
+        mspDispatcher.reset( new btCollisionDispatcher(mspCollisionConfiguration.get()) );
+
+        mspSolver.reset( new btSequentialImpulseConstraintSolver );
+
+        mspDynamicsWorld.reset( new btDiscreteDynamicsWorld(mspDispatcher.get(), 
+                                                            mspBroadphase.get(), 
+                                                            mspSolver.get(), 
+                                                            mspCollisionConfiguration.get()) );
+        mspDynamicsWorld->setGravity(btVector3(0, 0, -9.81f));
+
+
+        // Create a global ground plane
+        //
+        mspGroundShape.reset(new btStaticPlaneShape(btVector3(0,0,1), 0) );
+        mspGroundMotionState.reset( new btDefaultMotionState(btTransform(btQuaternion(0,0,0,1), btVector3(0, 0, 0))) );
+
+        const float fGroundMass = 0.0f;   // Infinite, immovable object
+        const btVector3 groundIntertia(0, 0, 0);
+        btRigidBody::btRigidBodyConstructionInfo groundRigidBodyCI(fGroundMass, mspGroundMotionState.get(), mspGroundShape.get(), groundIntertia);
+        mspGroundRigidBody.reset( new btRigidBody(groundRigidBodyCI) );
+        mspDynamicsWorld->addRigidBody(mspGroundRigidBody.get());
+    }
+
+    PhysicsDoc::~PhysicsDoc()
+    {
+        // The shared_ptr objects will deallocate everything on destruction, but the rigid
+        // body objects need to be removed from the world to ensure the destruction order
+        // is handled correctly.
+        //
+        mspDynamicsWorld->removeRigidBody(mspGroundRigidBody.get());
+
+        Engine::acquire()->decObjectCount("Physics");
+    }
+
+    
+    void 
+    PhysicsDoc::onAttached (DocumentPtr spDocument)
+    {
+        mLastUpdate = lx0::util::lx_milliseconds();
+    }
+
+
+    void PhysicsDoc::onElementAdded(DocumentPtr spDocument, ElementPtr spElem)
+    {
+        if (spElem->tagName() == "Ref")
+        {
+            // Attach the custom logic to the Element (i.e. ensures the element will
+            // be updated as the physics simulation moves it)
+            //
+            lx_check_error( spElem->getComponent<PhysicsElem>("physics").get() == nullptr );
+
+            spElem->attachComponent("physics", new PhysicsElem(spDocument, spElem, this) );
+        }
+    }
+
+    void PhysicsDoc::onElementRemoved(Document* pDocument, ElementPtr spElem)
+    {
+        if (spElem->tagName() == "Ref")
+        {
+            spElem->removeComponent("physics");
+        }
+    }
+
+    void 
+    PhysicsDoc::onUpdate (DocumentPtr spDocument)
+    {
+        // In milliseconds...
+        const float kFps = 60.0f;
+        const unsigned int kFrameDurationMs = unsigned int( (1.0f / kFps) * 1000.0f );
+
+        auto timeNow = lx0::util::lx_milliseconds();
+
+        if (timeNow - mLastUpdate >= kFrameDurationMs)
+        {
+            const int kMaxSubSteps = 10;
+            const float kStep = Engine::acquire()->environment().timeScale() * kFrameDurationMs / 1000.0f;
+            mspDynamicsWorld->stepSimulation(kStep, kMaxSubSteps);
+ 
+            auto allRefs = spDocument->getElementsByTagName("Ref");
+            for (auto it = allRefs.begin(); it != allRefs.end(); ++it)
+            {
+                ElementPtr spElem = *it;
+                auto spPhysics = spElem->getComponent<PhysicsElem>("physics");
+                lx_check_error(spPhysics.get() != nullptr, "All elements should have an associated physics component!");
+
+                btTransform trans;
+                spPhysics->mspRigidBody->getMotionState()->getWorldTransform(trans);
+                point3 p = lx_cast( trans.getOrigin() );
+                btQuaternion q = trans.getRotation();
+
+                spElem->attr("translation", lxvar(p.x, p.y, p.z) );
+                spElem->attr("rotation", lxvar(q.x(), q.y(), q.z(), q.w()) );
+            }
+
+            mLastUpdate = timeNow;
+        }
+    }
+
     btCollisionShapePtr
-    Physics::_acquireSphereShape (float radius)
+    PhysicsDoc::_acquireSphereShape (float radius)
     {
         return mSphereShapeCache.acquire(SphereKey(radius));  
     }
 
     btCollisionShapePtr      
-    Physics::_acquireBoxShape (const vector3& halfBounds)
+    PhysicsDoc::_acquireBoxShape (const vector3& halfBounds)
     {
         return mBoxShapeCache.acquire(BoxKey (halfBounds));
     }
+
 }}}
 
 namespace lx0 { namespace core {
@@ -415,22 +412,7 @@ namespace lx0 { namespace core {
     void
     Engine::_attachPhysics (DocumentPtr spDocument)
     {
-        Physics* pPhysics = new Physics;
-        spDocument->attachComponent("physicsSystem", pPhysics);
-        pPhysics->init(spDocument);
-
-        //
-        // Ensure the lambda function copies a raw pointer not the shared pointer.
-        // Two notes about this:
-        // (1) The lamdba function local variable copies essentially have global 
-        //     scope, which means the shared_ptr copy would not be released until
-        //     shutdown.  That copied shared_ptr would make it impossible to free 
-        //     the Document memory during the session.
-        // (2) The Document lifetime is never less than slotUpdateRun, so there's
-        //     no need for a reference counted pointer in this specific case.
-        //
-        Document* pDocument = spDocument.get();
-        spDocument->slotUpdateRun += [=] () { pPhysics->update(pDocument->shared_from_this()); };
+        spDocument->attachComponent("physicsSystem", new PhysicsDoc);
     }
 
 }}

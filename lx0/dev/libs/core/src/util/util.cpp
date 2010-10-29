@@ -30,6 +30,7 @@
 #include <iostream>
 #include <string>
 #include <sstream>
+#include <ctime>
 
 #include <lx0/core.hpp>
 #include <lx0/util.hpp>
@@ -76,6 +77,14 @@ namespace lx0 { namespace util {
         std::ostringstream stream;
         stream << i;
         return stream.str();
+    }
+
+    std::string
+    lx_ctime (void)
+    {
+        time_t rawtime;
+        time(&rawtime);
+        return ctime(&rawtime);
     }
 
 }}

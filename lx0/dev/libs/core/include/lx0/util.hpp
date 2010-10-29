@@ -40,6 +40,7 @@ namespace lx0 { namespace util {
     lx0::core::lxvar    lx_file_to_json         (const char* pszFilename);
 
     std::string         lx_itoa                 (size_t i);
+    std::string         lx_ctime                (void);
 
     unsigned int        lx_milliseconds         (void);
     void                lx_message_box          (std::string caption, std::string message);
