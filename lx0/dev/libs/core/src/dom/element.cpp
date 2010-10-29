@@ -31,7 +31,7 @@
 //   H E A D E R S
 //===========================================================================//
 
-#include <cassert>
+#include <algorithm>
 
 #include <lx0/core.hpp>
 #include <lx0/element.hpp>
@@ -42,6 +42,10 @@ namespace lx0 { namespace core {
 
     Element::Element (Document* pDocument)
         : mpDocument (pDocument)
+    {
+    }
+
+    Element::~Element ()
     {
     }
 
@@ -73,6 +77,12 @@ namespace lx0 { namespace core {
      */
     ElementCPtr     
     Element::parent() const
+    {
+        return mspParent;
+    }
+
+    ElementPtr     
+    Element::parent()
     {
         return mspParent;
     }
@@ -111,13 +121,24 @@ namespace lx0 { namespace core {
         return int(mChildren.size());
     }
 
+    void
+    Element::removeChild (ElementPtr spElem)
+    {
+        auto it = std::find(mChildren.begin(), mChildren.end(), spElem);
+        if (it != mChildren.end())
+        {
+            mChildren.erase(it);
+        }
+        else
+            lx_warn("Trying to remove an element that is not a child of this element");
+    }
+
     ElementPtr      
     Element::_clone () const
     {
         if (this == 0)
         {
-            lx_warn("Cloning a null pointer!");
-            assert(0);
+            lx_error("Cloning a null pointer!");
             return ElementPtr();
         }
 

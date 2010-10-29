@@ -504,6 +504,22 @@ namespace lx0 { namespace core { namespace detail {
     {
         struct L
         {
+            static Handle<Value> 
+            get_parentNode (Local<String> property, const AccessorInfo &info) 
+            {
+                Element* pThis = _nativeThis<Element>(info);
+                return _wrapObject(s_pActiveContext->mElementCtor, pThis->parent().get());
+            }
+
+            static v8::Handle<v8::Value> 
+            removeChild (const v8::Arguments& args)
+            {
+                Element* pThis = _nativeThis<Element>(args);
+                Element* pChild = _marshal(args[0]).pointer<Element>();
+                pThis->removeChild(pChild->shared_from_this());
+                return Undefined();
+            }
+
             static v8::Handle<v8::Value> 
             appendChild (const v8::Arguments& args)
             {
@@ -533,6 +549,7 @@ namespace lx0 { namespace core { namespace detail {
         // Create an anonymous type which will be used for the Element wrapper
         Handle<ObjectTemplate> objInst( templ->InstanceTemplate() );
         objInst->SetInternalFieldCount(1);
+        objInst->SetAccessor(String::New("parentNode"),  L::get_parentNode);
 
         // Access the Javascript prototype for the function - i.e. my_func.prototype - 
         // and add the necessary properties and methods.
@@ -540,6 +557,7 @@ namespace lx0 { namespace core { namespace detail {
         Handle<Template> proto_t( templ->PrototypeTemplate() );
         proto_t->Set("setAttribute",  FunctionTemplate::New(L::setAttribute));
         proto_t->Set("appendChild", FunctionTemplate::New(L::appendChild));
+        proto_t->Set("removeChild", FunctionTemplate::New(L::removeChild));
 
         // Store a persistent reference to the function which will be used to create
         // new object wrappers

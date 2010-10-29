@@ -76,6 +76,7 @@ namespace lx0 { namespace core {
         };
 
                         Element     (Document* pDocument);
+                        ~Element    (void);
 
         std::string     tagName     (void) const            { return mTagName; }    //!< Get DOM tagName of the Element
         void            tagName     (const char* s)         { mTagName = s; }       //!< Set DOM tagName of the Element
@@ -85,9 +86,11 @@ namespace lx0 { namespace core {
         void            attr        (std::string name, lxvar value);      
 
         ElementCPtr     parent      () const;
+        ElementPtr      parent      (void);
         ElementCPtr     child       (int i) const;
         ElementPtr      child       (int i);
         int             childCount  (void) const;
+        void            removeChild (ElementPtr spElem);
 
         const ObjectPtr value       (void) const    { return mspValue; }
         ObjectPtr       value       (void)          { return mspValue; }

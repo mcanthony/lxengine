@@ -50,23 +50,44 @@ for (var gy = 0; gy < 5; ++gy) {
     }
 }
 
-var rainDrop = function () {
-    var pos = [
-        Math.random() * 6 - 3,
-        Math.random() * 6 - 3,
-        12
-    ];
-    ref = $("<Ref/>");
-    ref.attr("ref", "small_sphere");
-    ref.attr("translation", pos);
-    ref.attr("mass", .01);
-    ref.attr("bounds_type", "sphere");
-    $("#grid").append(ref);
+var rain = {
+    time : 0,
+    freq : 100,
+    live : [],
+    drop : function () {
+        if (rain.freq > 0) {
 
-    window.setTimeout(100, rainDrop);
-}
+            for (var i = 0; i < rain.live.length;) {
+                if (rain.live[i][0] < rain.time) {
+                    rain.live[i][1].remove();
+                    rain.live.shift();
+                }
+                else
+                    ++i;
+            }
 
-window.setTimeout(10000, rainDrop);
+            var pos = [
+                Math.random() * 6 - 3,
+                Math.random() * 6 - 3,
+                12
+            ];
+            ref = $("<Ref/>");
+            ref.attr("ref", "small_sphere");
+            ref.attr("translation", pos);
+            ref.attr("mass", .01);
+            ref.attr("bounds_type", "sphere");
+            $("#grid").append(ref);
+
+            rain.live.push([ rain.time + 8000, ref]);
+        }
+        rain.time += rain.freq;
+        window.setTimeout(rain.freq, rain.drop);
+    },
+};
+
+
+
+window.setTimeout(10000, rain.drop);
 
 window.setTimeout(6000, function () {
     var ref = $("<Ref/>");
@@ -84,7 +105,14 @@ window.onKeyDown = function (e) {
         alert("Key " + e.keyChar + " was pressed.");
     }
     else if (e.keyChar == "r") {
-        // TBD: Cycle through cube rain intensity
+        // Cycle through cube rain intensity
+        var tr = {};
+        tr[1000] = 600;
+        tr[600] = 200;
+        tr[200] = 100;
+        tr[100] = 0;
+        tr[0] = 1000;
+        rain.freq = tr[rain.freq];
     }
     else if (e.keyChar == "w") {
         // TBD: Cycle through wind intensity

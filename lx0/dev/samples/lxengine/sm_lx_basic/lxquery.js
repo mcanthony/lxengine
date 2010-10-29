@@ -38,6 +38,15 @@ LxQuery.prototype = {
         }
         return this;
     },
+    remove : function ()
+    {
+        for (var i = 0; i < this._selection.length; ++i)
+        {
+            var elem = this._selection[i];
+            elem.parentNode.removeChild(elem);
+        }
+        return this;
+    },
     append : function (elem)
     {
         for (var i = 0; i < this._selection.length; ++i)
