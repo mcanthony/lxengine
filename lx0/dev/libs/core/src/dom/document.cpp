@@ -46,13 +46,17 @@
 namespace lx0 { namespace core {
 
     Document::Document()
-        : m_spRoot ( new Element(this) )
+        : m_spRoot ( new Element )
     {
         Engine::acquire()->incObjectCount("Document");
+
+        m_spRoot->notifyAdded(this);
     }
 
     Document::~Document()
     {
+        m_spRoot->notifyRemoved(this);
+
         Engine::acquire()->decObjectCount("Document");
     }
 
@@ -90,13 +94,23 @@ namespace lx0 { namespace core {
             lx_error("Could name find view '%s' on document.", name.c_str());
     }
 
+    void
+    Document::root (ElementPtr spRoot) 
+    {
+        ElementPtr spOldRoot = m_spRoot;
+        m_spRoot = spRoot; 
+
+        spOldRoot->notifyRemoved(this);
+        m_spRoot->notifyAdded(this);
+    }
+
     ElementPtr     
     Document::createElement (std::string tagName)
     {
         // At the moment, there's no need for this to be a method on Document - 
         // but eventually Document may want to track the elements it creates.
         
-        ElementPtr spElem(new Element(this));
+        ElementPtr spElem(new Element);
         spElem->tagName(tagName);
 
         slotElementCreated(spElem);
@@ -126,6 +140,15 @@ namespace lx0 { namespace core {
         };
 
         return L::walk(f, root());
+    }
+
+    bool
+    Document::_containsElement (ElementPtr spElem)
+    {
+        bool bFound = _walkElements([&](ElementPtr spCurrent) {
+            return spCurrent.get() == spElem.get();
+        });
+        return bFound;
     }
 
     /*
@@ -200,6 +223,22 @@ namespace lx0 { namespace core {
             return it->second;
         else
             return std::shared_ptr<Component>();
+    }
+
+    void Document::notifyElementAdded (ElementPtr spElem)
+    {
+        for (auto it = mComponents.begin(); it != mComponents.end(); ++it)
+            it->second->onElementAdded(shared_from_this(), spElem);
+
+        slotElementAdded(spElem);
+    }
+
+    void Document::notifyElementRemoved (ElementPtr spElem)
+    {
+        for (auto it = mComponents.begin(); it != mComponents.end(); ++it)
+            it->second->onElementRemoved(this, spElem);
+
+        slotElementRemoved(spElem);
     }
 
 }}

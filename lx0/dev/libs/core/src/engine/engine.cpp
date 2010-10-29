@@ -254,6 +254,8 @@ namespace lx0 { namespace core {
     Engine::loadDocument (std::string filename)
     {
         DocumentPtr spDocument(new Document);
+ 
+        _attachPhysics(spDocument);
 
         ElementPtr spRoot = _loadDocumentRoot(spDocument, filename);
         spDocument->root(spRoot);
@@ -296,7 +298,6 @@ namespace lx0 { namespace core {
             }
         }
 
-        _attachPhysics(spDocument);
     }
 
 	void   

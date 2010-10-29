@@ -158,6 +158,9 @@ namespace lx0 { namespace core {
         lx_check_error(mpDocument == nullptr);
         mpDocument = pDocument;
 
+        mpDocument->slotElementRemoved += [&](ElementPtr spElem) { 
+            _onElementRemoved(spElem);
+        };
         mpDocument->slotElementAdded += [&](ElementPtr spElem) { 
             _onElementAdded(spElem);
         };
@@ -249,7 +252,30 @@ namespace lx0 { namespace core {
     class OgreNodeLink : public Element::Component
     {
     public:
-        OgreNodeLink (Ogre::SceneNode* pNode) : mpNode(pNode) {} 
+        OgreNodeLink (Ogre::SceneManager* mpSceneMgr, ElementPtr spElem) 
+            : mpNode(nullptr) 
+        {
+            std::string name("anonymousRef");
+            name += lx_itoa(refCount++);
+            std::string ref = spElem->attr("ref").asString();
+
+            auto pos2 = asPoint3( spElem->attr("translation") );
+            const Ogre::Vector3 pos = reinterpret_cast<Ogre::Vector3&>(pos2);
+                   
+            Ogre::Entity* pEntity = mpSceneMgr->createEntity(ref);
+            pEntity->setCastShadows(true);
+
+            Ogre::SceneNode* pNode = mpSceneMgr->getRootSceneNode()->createChildSceneNode(name);
+            pNode->attachObject(pEntity);
+            pNode->setPosition(pos);
+
+            mpNode = pNode;
+        }
+        OgreNodeLink::~OgreNodeLink()
+        {
+            mpNode->getParent()->removeChild(mpNode);
+        }
+
         virtual void onAttributeChange(std::string name, lxvar value)
         {
             if (name == "translation")
@@ -280,24 +306,16 @@ namespace lx0 { namespace core {
     }
 
     void
+    View::_onElementRemoved (ElementPtr spElem)
+    {
+        if (spElem->tagName() == "Ref")
+            spElem->removeComponent("OgreLink");
+    }
+
+    void
     View::_processRef (ElementPtr spElem)
     {
-        std::string name("anonymousRef");
-        name += lx_itoa(refCount++);
-        std::string ref = spElem->attr("ref").asString();
-
-        auto pos2 = asPoint3( spElem->attr("translation") );
-        const Ogre::Vector3 pos = reinterpret_cast<Ogre::Vector3&>(pos2);
-                   
-        Ogre::Entity* pEntity = mpSceneMgr->createEntity(ref);
-        pEntity->setCastShadows(true);
-
-        Ogre::SceneNode* pNode = mpSceneMgr->getRootSceneNode()->createChildSceneNode(name);
-        pNode->attachObject(pEntity);
-        pNode->setPosition(pos);
-        
-
-        spElem->attachComponent("OgreLink", new OgreNodeLink(pNode));
+        spElem->attachComponent("OgreLink", new OgreNodeLink(mpSceneMgr, spElem));
     }
 
     void        

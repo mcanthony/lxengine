@@ -40,13 +40,14 @@
 
 namespace lx0 { namespace core {
 
-    Element::Element (Document* pDocument)
-        : mpDocument (pDocument)
+    Element::Element (void)
+        : mpDocument (nullptr)
     {
     }
 
     Element::~Element ()
     {
+        lx_assert(mpDocument == nullptr, "Element being deleted whilst actively in a Document");
     }
 
     void    
@@ -64,7 +65,8 @@ namespace lx0 { namespace core {
         spElem->mspParent = shared_from_this();
         mChildren.push_back(spElem);
 
-        mpDocument->slotElementAdded(spElem);
+        if (mpDocument)
+            spElem->notifyAdded(mpDocument);
     }
 
     /*
@@ -128,6 +130,9 @@ namespace lx0 { namespace core {
         if (it != mChildren.end())
         {
             mChildren.erase(it);
+
+            if (mpDocument)
+                spElem->notifyRemoved(mpDocument);
         }
         else
             lx_warn("Trying to remove an element that is not a child of this element");
@@ -142,7 +147,8 @@ namespace lx0 { namespace core {
             return ElementPtr();
         }
 
-        Element* pClone = new Element(mpDocument);
+        Element* pClone = new Element;
+        pClone->mpDocument = nullptr;           // mpDocument is NOT copied!  The clone is not part of the document
         pClone->mAttributes = mAttributes;
         pClone->mspParent = mspParent;
         pClone->mChildren = mChildren;
@@ -225,6 +231,69 @@ namespace lx0 { namespace core {
             return it->second;
         else
             return std::shared_ptr<Component>();
+    }
+
+    void
+    Element::removeComponent (std::string name)
+    {
+        auto it = mComponents.find(name);
+        if (it != mComponents.end())
+            mComponents.erase(it);
+        else
+            lx_error("Attempt to remove a Component '%s' that is not attached.", name.c_str());
+    }
+
+    void
+    Element::_setHostDocument (Document* pDocument)
+    {
+        if (pDocument)
+        {
+            lx_check_error(mpDocument == nullptr);
+            mpDocument = pDocument;
+        }
+        else
+        {
+            lx_check_error(mpDocument != nullptr);
+            mpDocument = nullptr;
+        }
+    }
+
+    void
+    Element::notifyAdded (Document* pDocument)
+    {        
+        if (mpDocument == pDocument)
+            lx_error("Element already added to this Document.");
+        lx_check_error(mpDocument == nullptr, 
+            "Element notified that it being added to a Document, but already belongs to a Document");
+
+        _setHostDocument(pDocument);
+
+        for (auto it = mComponents.begin(); it != mComponents.end(); ++it)
+            it->second->onAdded();
+
+        pDocument->notifyElementAdded(shared_from_this());
+
+        for (auto it = mChildren.begin(); it != mChildren.end(); ++it)
+            (*it)->notifyAdded(pDocument);
+    }
+
+    void
+    Element::notifyRemoved (Document* pDocument)
+    {
+        lx_check_error(mpDocument == pDocument, 
+            "Element notified that it being removed from a Document that it did not belong to.");
+
+        _setHostDocument(nullptr);
+
+        for (auto it = mComponents.begin(); it != mComponents.end(); ++it)
+            it->second->onRemoved();
+
+        pDocument->notifyElementRemoved(shared_from_this());
+
+        for (auto it = mChildren.begin(); it != mChildren.end(); ++it)
+            (*it)->notifyRemoved(pDocument);
+
+        lx_check_error(mpDocument == nullptr);
     }
 
 }}

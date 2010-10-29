@@ -132,15 +132,8 @@ main (int argc, char** argv)
                 spDocument->connect("view", spView);
                 spView->show();
             }
-
-            ControllerPtr spController;
-   
+  
             exitCode = spEngine->run();
-
-            // Demostrating that views *can* be detached by name.  This is not
-            // necessary, as the Document releases all views on destruction 
-            // automatically
-            spDocument->disconnect("view");
 
             spEngine->shutdown();
         }

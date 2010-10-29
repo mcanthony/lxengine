@@ -65,6 +65,9 @@ namespace lx0 { namespace core {
         {
         public:
             virtual         ~Component() {}
+
+            virtual void    onElementAdded      (DocumentPtr spDocument, ElementPtr spElem) {}
+            virtual void    onElementRemoved    (Document*   pDocument, ElementPtr spElem) {}
         };
 
                                 Document();
@@ -77,7 +80,7 @@ namespace lx0 { namespace core {
 
         ElementCPtr             root            (void) const        { return m_spRoot; }
         ElementPtr              root            (void)              { return m_spRoot; }
-        void                    root            (ElementPtr spRoot) { m_spRoot = spRoot; }
+        void                    root            (ElementPtr spRoot);
 
         ElementPtr              createElement           (void)                  { return createElement(""); }
         ElementPtr              createElement           (std::string type);
@@ -95,12 +98,17 @@ namespace lx0 { namespace core {
         template <typename T>
         std::shared_ptr<T>      ensureComponent (std::string name, std::function<T* (void)> ctor);
 
+        virtual void            notifyElementAdded      (ElementPtr spElem);
+        virtual void            notifyElementRemoved    (ElementPtr spElem);
+
         slot<void(ElementPtr)>  slotElementCreated;
         slot<void(ElementPtr)>  slotElementAdded;
         slot<void(ElementPtr)>  slotElementRemoved;
 
         slot<void()>            slotUpdateRun;
         slot<void(KeyEvent&)>   slotKeyDown;            // Key down on any of the Document's views
+
+        bool                    _containsElement    (ElementPtr spElementPtr);
 
     protected:
         typedef std::map<std::string, std::shared_ptr<Component>> ComponentList;

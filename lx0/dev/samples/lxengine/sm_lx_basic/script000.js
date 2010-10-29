@@ -113,6 +113,7 @@ window.onKeyDown = function (e) {
         tr[100] = 0;
         tr[0] = 1000;
         rain.freq = tr[rain.freq];
+        __lx_print("Rain frequency: " + rain.freq);
     }
     else if (e.keyChar == "w") {
         // TBD: Cycle through wind intensity

@@ -73,9 +73,11 @@ namespace lx0 { namespace core {
         public:
             virtual         ~Component() {}
             virtual void    onAttributeChange   (std::string name, lxvar value) {}
+            virtual void    onAdded             (void) {}
+            virtual void    onRemoved           (void) {}
         };
 
-                        Element     (Document* pDocument);
+                        Element     (void);
                         ~Element    (void);
 
         std::string     tagName     (void) const            { return mTagName; }    //!< Get DOM tagName of the Element
@@ -106,9 +108,13 @@ namespace lx0 { namespace core {
         void                attachComponent (std::string name, Component* pComponents);
         template <typename T>
         std::shared_ptr<T>  getComponent    (std::string name);
+        void                removeComponent (std::string name);
 
         float           queryAttr   (std::string name, float defValue);
         std::string     queryAttr   (std::string name, std::string defValue);
+
+        void            notifyAdded     (Document* pDocument);
+        void            notifyRemoved   (Document* pDocument);
 
     protected:
         typedef std::map<std::string, lxvar>                      AttrMap;
@@ -116,6 +122,8 @@ namespace lx0 { namespace core {
         typedef std::map<std::string, std::shared_ptr<Component>> ComponentList;
 
         std::shared_ptr<Component>  _getComponentImp    (std::string name);
+
+        void                        _setHostDocument    (Document* pDocument);
 
         Document*       mpDocument;     // Non-owning pointer to host document
 
