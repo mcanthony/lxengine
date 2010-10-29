@@ -28,22 +28,36 @@
 
 #pragma once
 
+//===========================================================================//
+//   H E A D E R S
+//===========================================================================//
+
+// Standard headers
 #include <memory>
 #include <vector>
 #include <map>
 
+// Lx headers
 #include <lx0/detail/forward_decls.hpp>
 #include <lx0/slot.hpp>
 
 namespace lx0 { namespace core {
 
+    //===========================================================================//
+    //!
+    /*!
+     */    
     class KeyEvent
     {
     public:
-        int  keyCode;
+        int  keyCode;           //!< Currently the OIS key code mapping; subject to change.
         char keyChar;
     };
 
+    //===========================================================================//
+    //!
+    /*!
+     */
     class Document : public std::enable_shared_from_this<Document>
     {
     public:

@@ -28,7 +28,16 @@
 
 #pragma once
 
+//===========================================================================//
+//   H E A D E R S
+//===========================================================================//
+
+// Standard headers
 #include <memory>
+
+//===========================================================================//
+//  F O R W A R D   D E C L A R A T I O N S 
+//===========================================================================//
 
 #define _LX_FORWARD_DECL_PTRS(Klass) \
     class Klass; \
@@ -47,7 +56,9 @@ namespace lx0 { namespace core {
     _LX_FORWARD_DECL_PTRS(Engine);
     _LX_FORWARD_DECL_PTRS(View);
     _LX_FORWARD_DECL_PTRS(Controller);
+    _LX_FORWARD_DECL_PTRS(Mesh);
 
+    class KeyEvent;
 
     namespace detail {
    

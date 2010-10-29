@@ -50,11 +50,11 @@ for (var gy = 0; gy < 5; ++gy) {
     }
 }
 
-for (var i = 0; i < 20; i++) {
+var rainDrop = function () {
     var pos = [
         Math.random() * 6 - 3,
         Math.random() * 6 - 3,
-        Math.random() * 5 + 6
+        12
     ];
     ref = $("<Ref/>");
     ref.attr("ref", "small_sphere");
@@ -62,7 +62,20 @@ for (var i = 0; i < 20; i++) {
     ref.attr("mass", .01);
     ref.attr("bounds_type", "sphere");
     $("#grid").append(ref);
+
+    window.setTimeout(100, rainDrop);
 }
+
+window.setTimeout(10000, rainDrop);
+
+window.setTimeout(6000, function () {
+    var ref = $("<Ref/>");
+    ref.attr("ref", "unit_sphere");
+    ref.attr("translation", [-.25, .65, 12.5]);
+    ref.attr("mass", 5.5);
+    ref.attr("bounds_type", "sphere");
+    $("#grid").append(ref);
+});
 
 window.onKeyDown = function (e) {
 
@@ -70,26 +83,10 @@ window.onKeyDown = function (e) {
         // TBD: toggle hide/show of grid cube of the given number
         alert("Key " + e.keyChar + " was pressed.");
     }
-    else {
-        var pos = [
-            Math.random() * 6 - 3,
-            Math.random() * 6 - 3,
-            3
-        ];
-        var ref = $("<Ref/>");
-        ref.attr("ref", "small_sphere");
-        ref.attr("translation", pos);
-        ref.attr("mass", .01);
-        ref.attr("bounds_type", "sphere");
-        $("#grid").append(ref);
+    else if (e.keyChar == "r") {
+        // TBD: Cycle through cube rain intensity
+    }
+    else if (e.keyChar == "w") {
+        // TBD: Cycle through wind intensity
     }
 };
-
-window.setTimeout(8000, function () {
-    var ref = $("<Ref/>");
-    ref.attr("ref", "unit_sphere");
-    ref.attr("translation", [.25, -.5, 12.5]);
-    ref.attr("mass", 5.5);
-    ref.attr("bounds_type", "sphere");
-    $("#grid").append(ref);
-});

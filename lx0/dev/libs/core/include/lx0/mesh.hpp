@@ -35,7 +35,10 @@
 
 namespace lx0 { namespace core {
 
-    // WIP object - assumes quad lists
+    //===========================================================================//
+    //!
+    /*!
+     */   
     class Mesh : public lx0::core::Object
     {
     public:

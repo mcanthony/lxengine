@@ -28,12 +28,18 @@
 
 #pragma once
 
+//===========================================================================//
+//   H E A D E R S
+//===========================================================================//
+
+// Standard headers
 #include <memory>
 #include <deque>
 #include <string>
 #include <vector>
 #include <map>
 
+// Lx headers
 #include <lx0/detail/forward_decls.hpp>
 
 namespace lx0 { namespace core {

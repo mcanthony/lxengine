@@ -26,6 +26,16 @@
 */
 //===========================================================================//
 
+//===========================================================================//
+//   I M P O R T A N T   N O T E :
+//===========================================================================//
+/*
+    The code in this file is not currently used and may possibly be 
+    deprecated.  It will be deemed at a later date whether or not V8 helper
+    bindings are necessary or if the V8 APIs can simply be used directly.
+ */
+//===========================================================================//
+
 #pragma once
 
 #include <memory>

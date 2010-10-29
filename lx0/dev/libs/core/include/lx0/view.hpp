@@ -36,9 +36,6 @@
 
 namespace lx0 { namespace core {
 
-    class KeyEvent;
-    _LX_FORWARD_DECL_PTRS(Mesh);
-
     namespace detail {
         _LX_FORWARD_DECL_PTRS(LxOgre);
         _LX_FORWARD_DECL_PTRS(LxInputManager);
@@ -47,6 +44,10 @@ namespace lx0 { namespace core {
         class LxFrameEventListener;
     };
 
+    //===========================================================================//
+    //!
+    /*!
+     */   
     /*!
         Developer notes:
         

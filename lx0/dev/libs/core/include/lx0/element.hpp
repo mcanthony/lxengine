@@ -29,21 +29,24 @@
 
 #pragma once
 
+//===========================================================================//
+//   H E A D E R S   &   D E C L A R A T I O N S 
+//===========================================================================//
+
+// Standard headers
 #include <map>
 #include <deque>
 #include <memory>
 #include <string>
 
+// Lx headers
 #include <lx0/detail/forward_decls.hpp>
 #include <lx0/lxvar.hpp>
 
 
-namespace lx0 { namespace core {
+namespace lx0 { namespace core {  
 
-    class Object;
-    
-
-    // --------------------------------------------------------------------- //
+    //===========================================================================//
     //! Represents an Element in the Document Object Model.  
     /*!
         An Element has:
