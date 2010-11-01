@@ -68,6 +68,8 @@ namespace lx0 { namespace core {
             };    
         };
     }
+
+    inline void     set             (detail::base_tuple3& t, float x, float y, float z)  { t.x = x; t.y = y; t.z = z; }
     
 
     class tuple3 
@@ -83,8 +85,8 @@ namespace lx0 { namespace core {
         template <> struct cast_is_safe<const tuple3&,  const Ogre::Vector3>   { enum { value = 1 }; }; 
     }
     
-    inline tuple3   add             (const tuple3& a, const tuple3& b) { return cast<tuple3&>(a.ogreVec + b.ogreVec); }
-    inline tuple3   sub             (const tuple3& a, const tuple3& b) { return cast<tuple3&>(a.ogreVec - b.ogreVec); }
+    inline tuple3   add             (const tuple3& a, const tuple3& b)      { return cast<tuple3&>(a.ogreVec + b.ogreVec); }
+    inline tuple3   sub             (const tuple3& a, const tuple3& b)      { return cast<tuple3&>(a.ogreVec - b.ogreVec); }
     
     class point3;
     class vector3;

@@ -467,6 +467,23 @@ namespace lx0 { namespace core { namespace detail {
 
                 return _wrapObject(s_pActiveContext->mElementCtor, spElem.get());
             }
+
+            static v8::Handle<v8::Value> 
+            getElementsByTagName (const v8::Arguments& args)
+            {
+                lx_check_error(args.Length() == 1);
+
+                Document* pDoc = _nativeThis<Document>(args); 
+                std::string tag = _marshal(args[0]);
+        
+                auto elems = pDoc->getElementsByTagName(tag);
+                Local<Array> results = Array::New(elems.size()); 
+                for (int i = 0; i < int(elems.size()); ++i)
+                    results->Set(i, _wrapObject(s_pActiveContext->mElementCtor, elems[i].get()) );
+                
+                return results;
+            }
+
         };
 
 
@@ -494,6 +511,7 @@ namespace lx0 { namespace core { namespace detail {
         Handle<Template> proto_t( templ->PrototypeTemplate() );
         proto_t->Set("createElement",  FunctionTemplate::New(L::createElement));
         proto_t->Set("getElementById", FunctionTemplate::New(L::getElementById));
+        proto_t->Set("getElementsByTagName", FunctionTemplate::New(L::getElementsByTagName));
 
         // Now grab a handle to the Function.  This apparently (?) will invoke the
         // FunctionTemplate to create actual function.  Then call NewInstance, which is

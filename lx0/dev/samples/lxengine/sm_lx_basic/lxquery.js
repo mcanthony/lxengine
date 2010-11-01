@@ -8,6 +8,7 @@ LxQuery.prototype = {
     init: function (selector) {
         var re_singleTag = /^<(\w+)\s*\/?>(?:<\/\1>)?$/;
         var re_id = /^#(\w+)$/;
+        var re_tag = /^(\w+)$/;
 
         var result = re_singleTag.exec(selector);
         if (result) {
@@ -19,6 +20,12 @@ LxQuery.prototype = {
         if (result) {
             var elem = document.getElementById(result[1]);
             return this._select([elem]);
+        }
+
+        var result = re_tag.exec(selector);
+        if (result) {
+            var elems = document.getElementsByTagName(result[1]);
+            return this._select(elems);
         }
 
         alert("Could not find elem for selector '" + selector + "'");

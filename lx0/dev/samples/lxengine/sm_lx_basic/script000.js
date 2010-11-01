@@ -118,6 +118,10 @@ window.onKeyDown = function (e) {
         __lx_print("Rain frequency: " + rain.freq);
     }
     else if (e.keyChar == "w") {
-        // TBD: Cycle through wind intensity
+        var tr = {};
+        tr["calm"] = "gale";
+        tr["gale"] = "calm";
+        $("Scene").attr("wind_velocity", "gale");
+        __lx_print("Wind velocity: " + $("Scene").attr("wind_velocity"));
     }
 };

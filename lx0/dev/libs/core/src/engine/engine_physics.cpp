@@ -217,10 +217,16 @@ namespace lx0 { namespace core { namespace detail {
         btCollisionShapePtr         _acquireSphereShape         (float radius);
         btCollisionShapePtr         _acquireBoxShape            (const vector3& halfBounds);
 
+        void            setWindVelocity     (float v)           { mfWindVelocity = v; }
+        void            setWindDirection    (const vector3& v)  { mWindDirection = normalize(v); }
+
         std::shared_ptr<btDiscreteDynamicsWorld>                mspDynamicsWorld;
 
     protected:
-         void           _applyWind          (const float timeStep);
+        void            _applyWind      (const float timeStep);
+
+        float           mfWindVelocity;
+        vector3         mWindDirection;
 
         std::shared_ptr<btBroadphaseInterface>                  mspBroadphase;
         std::shared_ptr<btDefaultCollisionConfiguration>        mspCollisionConfiguration;
@@ -236,6 +242,85 @@ namespace lx0 { namespace core { namespace detail {
         std::shared_ptr<btRigidBody>                            mspGroundRigidBody;
 
         unsigned int                                            mLastUpdate;
+    };
+
+    class SceneElem : public Element::Component
+    {
+    public:
+        SceneElem (DocumentPtr spDocument, ElementPtr spElem, PhysicsDoc* pPhysics)
+            : mpDocPhysics (pPhysics)
+        {
+            lx_check_error( spElem->getComponent<SceneElem>("physics").get() == nullptr );
+        }
+
+        virtual void onAttributeChange(std::string name, lxvar value)
+        {
+            if (name == "wind_velocity")
+            {
+                float velocity = 0.0f;
+                if (value.isString())
+                {
+                   std::string w = value.asString();
+               
+                   struct Table
+                   {
+                       const char* name;
+                       float       minVec;
+                       float       maxVec;
+                   };
+                   
+                   Table table[] = { 
+                       { "none", 0.0f, 0.0f }, 
+                       { "calm", 0.0f, 0.277f },
+                       { "light air", 0.277f, 1.389f },
+                       { "light breeze", 1.389f, 3.055f },
+                       { "gentle breeze", 3.055f, 5.278f },
+                       { "moderate breeze", 5.278f, 8.056f },
+                       { "fresh breeze", 8.056f, 10.556f },
+                       { "strong breeze", 10.556f, 14.167f },
+                       { "near gale", 14.167f, 16.944f },
+                       { "gale", 16.944f, 20.556f },
+                       { "strong gale", 20.556f, 23.889f },
+                       { "whole gale", 23.889f, 28.056f },
+                       { "storm", 28.056f, 33.333f }, 
+                       { "hurricane", 33.333f, 50.0f },
+                   };
+
+                    for (int i = 0; i < sizeof(table) / sizeof(table[0]); ++i)
+                    {
+                        if (w == table[i].name)
+                        {
+                            velocity = table[i].maxVec;
+                            break;
+                        }
+                    }
+                }
+                mpDocPhysics->setWindVelocity(velocity);
+            }
+            else if (name == "wind_direction")
+            {
+                vector3 dir;
+                if (value.isString())
+                {
+                    std::string d = value.asString();
+                    
+                    if (d == "north")
+                        dir = vector3(0, 1, 0);
+                    else if (d == "east")
+                        dir = vector3(1, 0, 0);
+                    else if (d == "east")
+                        dir = vector3(1, 0, 0);
+                    else if (d == "east")
+                        dir = vector3(1, 0, 0);
+                    else
+                        lx_error("Unexpected wind direction");
+                }
+                mpDocPhysics->setWindDirection(dir);
+            }
+        }
+
+    protected:
+        PhysicsDoc*     mpDocPhysics;
     };
 
     class PhysicsElem : public Element::Component
@@ -317,6 +402,8 @@ namespace lx0 { namespace core { namespace detail {
     };
 
     PhysicsDoc::PhysicsDoc()
+        : mfWindVelocity    (0.0f)
+        , mWindDirection    (-1, 0, 0)
     {
         Engine::acquire()->incObjectCount("Physics");
 
@@ -378,6 +465,8 @@ namespace lx0 { namespace core { namespace detail {
 
             spElem->attachComponent("physics", new PhysicsElem(spDocument, spElem, this) );
         }
+        else if (spElem->tagName() == "Scene")
+            spElem->attachComponent("physics", new SceneElem(spDocument, spElem, this) );
     }
 
     void PhysicsDoc::onElementRemoved(Document* pDocument, ElementPtr spElem)
@@ -391,6 +480,10 @@ namespace lx0 { namespace core { namespace detail {
     void
     PhysicsDoc::_applyWind (const float timeStep)
     {
+        // Early out if there's no wind
+        if (mfWindVelocity < 0.001f)
+            return;
+
         const btVector3 airVelocity (1.4, 0, 0);      // 1.4 m/s ~= 5 km / hr
         const btScalar  airDensity = 1.29;            // kg/ m^3
 
