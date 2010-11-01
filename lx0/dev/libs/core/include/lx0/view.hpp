@@ -32,6 +32,7 @@
 #include <memory>
 
 #include <lx0/detail/forward_decls.hpp>
+#include <lx0/detail/dom_base.hpp>
 #include <lx0/slot.hpp>
 
 namespace lx0 { namespace core {
@@ -55,7 +56,7 @@ namespace lx0 { namespace core {
         the code progresses a bit further to make the class' responsibilities
         more clear.
      */
-    class View
+    class View 
     {
     public:
         friend class detail::LxFrameEventListener;

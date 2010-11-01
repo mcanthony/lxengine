@@ -47,25 +47,6 @@ namespace lx0 { namespace core {  namespace detail {
         virtual ~_ComponentBase() {}
     };
 
-    class _ComponentList
-    {
-    public:
-        typedef _ComponentBase                      Component;
-        typedef std::shared_ptr<Component>          ComponentPtr;
-        typedef std::map<std::string, ComponentPtr> Map;
-
-        ComponentPtr        attach  (std::string name, Component* pComponent);
-        ComponentPtr        get     (std::string name);
-        void                remove  (std::string name);
-
-        Map::iterator       begin   (void) { return mMap.begin(); }
-        Map::iterator       end     (void) { return mMap.end(); }
-
-    protected:
-            
-        Map mMap;
-    };
-
     /*!
         Example:
         auto spPhysics = spElem->getComponent<PhysicsComponent>("physics");
@@ -84,14 +65,37 @@ namespace lx0 { namespace core {  namespace detail {
     class _EnableComponentList
     {
     public:
-        typedef             DerivedType     Derived;
-        typedef             ComponentType   Component;
-        typedef std::shared_ptr<Component>  ComponentPtr;
+        typedef             DerivedType             Derived;
+        typedef             ComponentType           Component;
+        typedef std::shared_ptr<Component>          ComponentPtr;
+        typedef std::map<std::string, ComponentPtr> Map;
 
-        ComponentPtr        attachComponent (std::string name, Component* pComp) { return std::dynamic_pointer_cast<Component>( mComponents.attach(name, pComp) ); }
+        ComponentPtr attachComponent (std::string name, Component* pComponent) 
+        { 
+            ComponentPtr spValue(pComponent);
+            mComponents.insert( std::make_pair(name, spValue) );
+            return spValue;
+        }
+        
+        
         template <typename T>
-        std::shared_ptr<T>  getComponent    (std::string name)                   { return std::dynamic_pointer_cast<T>( mComponents.get(name) ); }
-        void                removeComponent (std::string name)                   { mComponents.remove(name); }
+        std::shared_ptr<T>  getComponent    (std::string name)                   
+        { 
+            auto it = mComponents.find(name);
+            if (it != mComponents.end())
+                return std::dynamic_pointer_cast<T>(it->second);
+            else
+                return std::shared_ptr<T>();
+        }
+
+        void removeComponent (std::string name)
+        {
+            auto it = mComponents.find(name);
+            if (it != mComponents.end())
+                mComponents.erase(it);
+            else
+                lx_error("Attempt to remove a Component '%s' that is not attached.", name.c_str());
+        }
 
         template <typename T>
         std::shared_ptr<T>  ensureComponent (std::string name, std::function<T* (void)> ctor)
@@ -105,18 +109,15 @@ namespace lx0 { namespace core {  namespace detail {
             return std::dynamic_pointer_cast<T>(spComponent);
         }
 
-    protected:
-        typedef detail::_ComponentList      ComponentList;
-            
+    protected:         
 
-        void                _foreach        (std::function<void(ComponentPtr)> f)
+        void _foreach        (std::function<void(ComponentPtr)> f)
         {
             for (auto it = mComponents.begin(); it != mComponents.end(); ++it)
-                f( std::dynamic_pointer_cast<Component>(it->second) );
+                f( it->second );
         }
 
-    private:
-        ComponentList       mComponents;
+        Map mComponents;
     };
    
 }}}

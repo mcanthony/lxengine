@@ -40,35 +40,4 @@
 
 namespace lx0 { namespace core {
 
-    namespace detail {
-
-        _ComponentList::ComponentPtr 
-        _ComponentList::attach (std::string name, _ComponentBase* pComponent)
-        {
-            ComponentPtr spValue(pComponent);
-            mMap.insert( std::make_pair(name, spValue) );
-            return spValue;
-        }
-
-        _ComponentList::ComponentPtr
-        _ComponentList::get (std::string name)
-        {
-            auto it = mMap.find(name);
-            if (it != mMap.end())
-                return it->second;
-            else
-                return ComponentPtr();
-        }
-
-        void
-        _ComponentList::remove (std::string name)
-        {
-            auto it = mMap.find(name);
-            if (it != mMap.end())
-                mMap.erase(it);
-            else
-                lx_error("Attempt to remove a Component '%s' that is not attached.", name.c_str());
-        }
-
-    }
 }}
