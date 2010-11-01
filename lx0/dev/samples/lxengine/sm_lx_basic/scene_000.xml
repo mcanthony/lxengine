@@ -2,7 +2,7 @@
     <Header>
         <Script language="javascript" src="data/sm_lx_basic/lxquery.js" />
         <Script language="javascript" src="data/sm_lx_basic/lxquery_wind.js" />
-        <Script language="javascript" src="data/sm_lx_basic/script000.js" />
+        <Script language="javascript" src="data/sm_lx_basic/cube_rain.js" />
     </Header>
     <Library>
         <Mesh id="unit_cube" src="data/sm_lx_basic/unit_cube.json" />
