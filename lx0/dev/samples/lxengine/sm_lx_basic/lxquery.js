@@ -40,10 +40,14 @@ LxQuery.prototype = {
     attr: function (name, value) {
         if (value != undefined)
         {
-            for (var i = 0; i < this._selection.length; ++i) {
-                var elem = this._selection[i];
-                elem.setAttribute(name, value);
+            if (this._psuedoAttributes[name] === undefined) {
+                for (var i = 0; i < this._selection.length; ++i) {
+                    var elem = this._selection[i];           
+                    elem.setAttribute(name, value);
+                }
             }
+            else
+                this._psuedoAttributes[name].call(this, value);
         }
         else
             return this._selection[0].getAttribute(name);
@@ -93,4 +97,5 @@ LxQuery.prototype = {
         }
     },
 
+    _psuedoAttributes : {},
 };

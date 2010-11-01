@@ -101,6 +101,8 @@ window.setTimeout(6000, function () {
     $("#grid").append(ref);
 });
 
+var wind_cycle = 0;
+
 window.onKeyDown = function (e) {
 
     if (e.keyCode >= 1 && e.keyCode <= 9) {
@@ -118,10 +120,25 @@ window.onKeyDown = function (e) {
         __lx_print("Rain frequency: " + rain.freq);
     }
     else if (e.keyChar == "w") {
-        var tr = {};
-        tr["calm"] = "gale";
-        tr["gale"] = "calm";
-        $("Scene").attr("wind_velocity", "gale");
-        __lx_print("Wind velocity: " + $("Scene").attr("wind_velocity"));
+        var tr = [
+            "none",
+            "calm",
+            "light air",
+            "light breeze",
+            "gentle breeze",
+            "moderate breeze",
+            "fresh breeze",
+            "strong breeze",
+            "near gale",
+            "gale",
+            "strong gale",
+            "whole gale",
+            "storm",
+            "hurricane"
+        ];
+        wind_cycle = (++wind_cycle) % tr.length;
+        var current = tr[wind_cycle];
+        $("Scene").attr("wind", current + " west");
+        __lx_print("Wind: " + current + " " + $("Scene").attr("wind_velocity") + " m/s");
     }
 };

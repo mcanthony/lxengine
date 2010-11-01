@@ -80,6 +80,10 @@ namespace lx0 { namespace core { namespace detail {
                 mValue = Undefined();
             else if (v.isString())
                 *this = _marshal(v.asString());
+            else if (v.isFloat())
+                *this = _marshal(v.asFloat());
+            else if (v.isInt())
+                *this = _marshal(v.asInt());
             else
                 lx_error("Not implemented");
         }

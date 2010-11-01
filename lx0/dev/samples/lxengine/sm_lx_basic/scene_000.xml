@@ -1,6 +1,7 @@
 <Root>
     <Header>
         <Script language="javascript" src="data/sm_lx_basic/lxquery.js" />
+        <Script language="javascript" src="data/sm_lx_basic/lxquery_wind.js" />
         <Script language="javascript" src="data/sm_lx_basic/script000.js" />
     </Header>
     <Library>

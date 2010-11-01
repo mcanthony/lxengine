@@ -9,6 +9,7 @@ lx_copy(scene_000.xml)
 
 lx_copy(script000.js)
 lx_copy(lxquery.js)
+lx_copy(lxquery_wind.js)
 
 lx_copy(smooth_cube.json)
 lx_copy(small_sphere.json)
