@@ -246,8 +246,8 @@ namespace lx0 { namespace core { namespace detail {
 
             // Prepare the relevant variables that will be used
             //
-            std::string    ref      = spElem->queryAttr("ref", "");
-            const btScalar kfMass   = spElem->queryAttr("mass", 0.0f);   
+            std::string    ref      = spElem->attr("ref").query("");
+            const btScalar kfMass   = spElem->attr("mass").query(0.0f);   
             auto pos                = asPoint3( spElem->attr("translation") );
 
             auto spMeshElem         = spDocument->getElementById(ref);
@@ -260,7 +260,7 @@ namespace lx0 { namespace core { namespace detail {
                       
             // Determine and acquire the collision shape to use
             //
-            if (spElem->queryAttr("bounds_type", "box") == "box")
+            if (spElem->attr("bounds_type").query("box") == "box")
                 mspShape = pPhysics->_acquireBoxShape( spMesh->boundingVector() );
             else
                 mspShape =  pPhysics->_acquireSphereShape( spMesh->boundingRadius() );
@@ -272,10 +272,37 @@ namespace lx0 { namespace core { namespace detail {
             //
             btRigidBody::btRigidBodyConstructionInfo rigidBodyCI (kfMass, mspMotionState.get(), mspShape.get(), fallInertia);
             mspRigidBody.reset( new btRigidBody(rigidBodyCI) );
-            pPhysics->mspDynamicsWorld->addRigidBody(mspRigidBody.get());
+            mspRigidBody->setRestitution( spElem->attr("restitution").query(0.1f) );
+            _addToWorld();
         }
 
         ~PhysicsElem()
+        {
+            _removeFromWorld();
+        }
+
+        virtual void onAttributeChange(std::string name, lxvar value)
+        {
+            if (name == "display")
+            {
+                if (value.equal("block"))
+                    _addToWorld();
+                else if (value.equal("none"))
+                    _removeFromWorld();
+                else
+                    lx_error("Unexpected value for display attribute");
+            }
+            else if (name == "restitution")
+            {
+                mspRigidBody->setRestitution( value.query(0.1f) );
+            }
+        }
+
+        void _addToWorld()
+        {
+            mpDocPhysics->mspDynamicsWorld->addRigidBody(mspRigidBody.get());
+        }
+        void _removeFromWorld()
         {
             mpDocPhysics->mspDynamicsWorld->removeRigidBody(mspRigidBody.get());
         }
@@ -313,6 +340,7 @@ namespace lx0 { namespace core { namespace detail {
         const btVector3 groundIntertia(0, 0, 0);
         btRigidBody::btRigidBodyConstructionInfo groundRigidBodyCI(fGroundMass, mspGroundMotionState.get(), mspGroundShape.get(), groundIntertia);
         mspGroundRigidBody.reset( new btRigidBody(groundRigidBodyCI) );
+        mspGroundRigidBody->setRestitution(0.1f);
         mspDynamicsWorld->addRigidBody(mspGroundRigidBody.get());
     }
 

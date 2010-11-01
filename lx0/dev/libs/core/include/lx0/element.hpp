@@ -108,9 +108,6 @@ namespace lx0 { namespace core {
 
         ElementPtr      _clone () const;
 
-        float           queryAttr   (std::string name, float defValue);
-        std::string     queryAttr   (std::string name, std::string defValue);
-
         void            notifyAdded     (Document* pDocument);
         void            notifyRemoved   (Document* pDocument);
 

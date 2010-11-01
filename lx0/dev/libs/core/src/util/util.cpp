@@ -84,7 +84,20 @@ namespace lx0 { namespace util {
     {
         time_t rawtime;
         time(&rawtime);
-        return ctime(&rawtime);
+        std::string s( ctime(&rawtime) );
+
+        // Trim trailing whitespace
+        size_t whitespaceCount = 0;
+        for (auto it = s.rbegin(); it != s.rend(); it++)
+        {
+            if (isspace(*it))
+                whitespaceCount++;
+            else
+                break;
+        }
+        s.resize( s.size() - whitespaceCount );
+
+        return s;
     }
 
 }}

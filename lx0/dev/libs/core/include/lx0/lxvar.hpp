@@ -121,8 +121,14 @@ namespace lx0 { namespace core {
 
         lxvar           clone           (void) const;           //!< Create a deep clone of the lxvar
 
-        bool            equal           (const char* s) const;  //!< Is strictly equal: same type and same value
+        bool            equal           (int i) const           { return (isInt() && asInt() == i); } //!< Is strictly equal: same type and same value
+        bool            equal           (std::string s) const   { return (isString() && asString() == s);}
+
         bool            equiv           (const char* s) const;  //!< Is equal, or is equal after a type conversion
+
+        int             query           (int def) const         { return isInt() ? asInt() : def; }
+        std::string     query           (std::string def) const { return isString() ? asString() : def; }
+        float           query           (float def) const       { return isFloat() ? asFloat() : (isInt() ? asInt() : def); }
 
         //@name Type checks
         //@{

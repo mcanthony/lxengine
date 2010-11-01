@@ -253,7 +253,7 @@ namespace lx0 { namespace core {
     {
     public:
         OgreNodeLink (Ogre::SceneManager* mpSceneMgr, ElementPtr spElem) 
-            : mpNode(nullptr) 
+            : mpEntity(nullptr) 
         {
             std::string name("anonymousRef");
             name += lx_itoa(refCount++);
@@ -269,11 +269,11 @@ namespace lx0 { namespace core {
             pNode->attachObject(pEntity);
             pNode->setPosition(pos);
 
-            mpNode = pNode;
+            mpEntity = pEntity;
         }
         OgreNodeLink::~OgreNodeLink()
         {
-            mpNode->getParent()->removeChild(mpNode);
+            _node()->getParent()->removeChild(_node());
         }
 
         virtual void onAttributeChange(std::string name, lxvar value)
@@ -282,7 +282,7 @@ namespace lx0 { namespace core {
             {
                 auto pos2 = asPoint3(value);
                 const Ogre::Vector3 pos = reinterpret_cast<Ogre::Vector3&>(pos2);
-                mpNode->setPosition(pos);
+                _node()->setPosition(pos);
             }
             else if (name == "rotation")
             {
@@ -291,11 +291,22 @@ namespace lx0 { namespace core {
                 q.y = value.at(1).asFloat();
                 q.z = value.at(2).asFloat();
                 q.w = value.at(3).asFloat();
-                mpNode->setOrientation(q);
+                _node()->setOrientation(q);
+            }
+            else if (name == "display")
+            {
+                if (value.equal("block"))
+                    mpEntity->setVisible(true);
+                else if (value.equal("none"))
+                    mpEntity->setVisible(false);
+                else
+                    lx_error("Unexpected value for display attribute");
             }
         }
 
-        Ogre::SceneNode* mpNode;
+        Ogre::SceneNode* _node() { return mpEntity->getParentSceneNode(); }
+
+        Ogre::Entity*    mpEntity;
     };
 
     void

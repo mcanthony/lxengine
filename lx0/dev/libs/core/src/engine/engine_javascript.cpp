@@ -74,6 +74,16 @@ namespace lx0 { namespace core { namespace detail {
         operator std::string ()             { return *v8::String::AsciiValue(mValue);  }
         operator int ()                     { return mValue->Int32Value(); }
         
+        _marshal (lxvar v)
+        {
+            if (v.isUndefined())
+                mValue = Undefined();
+            else if (v.isString())
+                *this = _marshal(v.asString());
+            else
+                lx_error("Not implemented");
+        }
+
         operator lxvar ()
         {
             if (mValue->IsUndefined())
@@ -532,6 +542,16 @@ namespace lx0 { namespace core { namespace detail {
             }
 
             static v8::Handle<v8::Value> 
+            getAttribute (const v8::Arguments& args)
+            {
+                Element* pThis = _nativeThis<Element>(args);
+                std::string name = _marshal(args[0]);
+                lxvar value = pThis->attr(name);
+
+                return _marshal(value);
+            }
+
+            static v8::Handle<v8::Value> 
             setAttribute (const v8::Arguments& args)
             {
                 Element* pThis = _nativeThis<Element>(args);
@@ -555,6 +575,7 @@ namespace lx0 { namespace core { namespace detail {
         // and add the necessary properties and methods.
         //
         Handle<Template> proto_t( templ->PrototypeTemplate() );
+        proto_t->Set("getAttribute",  FunctionTemplate::New(L::getAttribute));
         proto_t->Set("setAttribute",  FunctionTemplate::New(L::setAttribute));
         proto_t->Set("appendChild", FunctionTemplate::New(L::appendChild));
         proto_t->Set("removeChild", FunctionTemplate::New(L::removeChild));

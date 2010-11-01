@@ -1,7 +1,8 @@
 
-for (var grid_y = 0; grid_y < 4; grid_y++)
+var cube_id = 0;
+for (var grid_y = 0; grid_y < 3; grid_y++)
 {
-    for (var grid_x = 0; grid_x < 4; grid_x++)
+    for (var grid_x = 0; grid_x < 3; grid_x++)
     {
         var tr = [];
         tr[0] = (grid_x - 1) * 1.5;
@@ -9,6 +10,7 @@ for (var grid_y = 0; grid_y < 4; grid_y++)
         tr[2] = 0.5;
        
         var ref = $("<Ref/>");
+        ref.attr("id", "cube" + (cube_id++));
         ref.attr("ref", "unit_cube");
         ref.attr("translation", tr);
         $("#grid").append(ref);
@@ -74,8 +76,9 @@ var rain = {
             ref = $("<Ref/>");
             ref.attr("ref", "small_sphere");
             ref.attr("translation", pos);
-            ref.attr("mass", .01);
             ref.attr("bounds_type", "sphere");
+            ref.attr("mass", .01);
+            ref.attr("restitution", 0.8);
             $("#grid").append(ref);
 
             rain.live.push([ rain.time + 8000, ref]);
@@ -101,8 +104,7 @@ window.setTimeout(6000, function () {
 window.onKeyDown = function (e) {
 
     if (e.keyCode >= 1 && e.keyCode <= 9) {
-        // TBD: toggle hide/show of grid cube of the given number
-        alert("Key " + e.keyChar + " was pressed.");
+        $("#cube" + e.keyChar).toggle();
     }
     else if (e.keyChar == "r") {
         // Cycle through cube rain intensity

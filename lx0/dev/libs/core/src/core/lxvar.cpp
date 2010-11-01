@@ -292,13 +292,6 @@ namespace lx0 { namespace core {
         return _castTo<lxstring>()->mValue;
     }
 
-    bool    
-    lxvar::equal (const char* s) const
-    {
-        return (isString() && asString() == s);
-    }
-
-
     lxvar::iterator
     lxvar::begin (void)
     {

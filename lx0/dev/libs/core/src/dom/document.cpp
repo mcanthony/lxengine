@@ -162,13 +162,16 @@ namespace lx0 { namespace core {
         ElementPtr spMatch;
         _walkElements([&](ElementPtr spElem) -> bool {
             lxvar v = spElem->attr("id");
-            if (v.isString() && v.asString() == id)
+            if (v.isString())
             {
-                spMatch = spElem;
-                return true;
+                std::string elemId = v.asString();
+                if (elemId == id)
+                {
+                    spMatch = spElem;
+                    return true;
+                }
             }
-            else
-                return false;
+            return false;
         });
         return spMatch;
     }
