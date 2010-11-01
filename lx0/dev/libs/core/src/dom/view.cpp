@@ -61,6 +61,24 @@ _ENABLE_LX_CAST(lx0::core::point3, Ogre::Vector3)
 
 using namespace lx0::util;
 
+namespace lx0 { namespace core { namespace detail {
+
+    void _convert(lxvar& v, Ogre::Vector3& u)
+    {
+        lx_check_error(v.size() == 3);
+        u = Ogre::Vector3(v.at(0).asFloat(), v.at(1).asFloat(), v.at(2).asFloat());
+    }
+
+    void _convert(lxvar& value, Ogre::Quaternion& q)
+    {
+        lx_check_error(value.size() == 4);
+        q.x = value.at(0).asFloat();
+        q.y = value.at(1).asFloat();
+        q.z = value.at(2).asFloat();
+        q.w = value.at(3).asFloat();
+    }
+}}}
+
 namespace lx0 { namespace core {
 
     namespace detail {
@@ -258,41 +276,50 @@ namespace lx0 { namespace core {
             std::string name("anonymousRef");
             name += lx_itoa(refCount++);
             std::string ref = spElem->attr("ref").asString();
-
-            auto pos2 = asPoint3( spElem->attr("translation") );
-            const Ogre::Vector3 pos = reinterpret_cast<Ogre::Vector3&>(pos2);
                    
             Ogre::Entity* pEntity = mpSceneMgr->createEntity(ref);
             pEntity->setCastShadows(true);
 
             Ogre::SceneNode* pNode = mpSceneMgr->getRootSceneNode()->createChildSceneNode(name);
             pNode->attachObject(pEntity);
-            pNode->setPosition(pos);
 
             mpEntity = pEntity;
+
+            _setColor( spElem->attr("color") );
+            _setTranslation( spElem->attr("translation") );
         }
         OgreNodeLink::~OgreNodeLink()
         {
             _node()->getParent()->removeChild(_node());
         }
 
+        void _setTranslation (lxvar& v)
+        {
+            if (v.isDefined())
+                _node()->setPosition(*v);
+        }
+
+        void _setColor(lxvar& v)
+        {
+            if (v.isDefined())
+            {
+                Ogre::Vector3 color(*v);
+                
+                Ogre::MaterialPtr spMat = Ogre::MaterialManager::getSingleton().create("LxMaterial", Ogre::ResourceGroupManager::INTERNAL_RESOURCE_GROUP_NAME);
+                spMat->setLightingEnabled(true);
+                spMat->setAmbient(.1f, .1f, .1f);
+                spMat->setDiffuse(color.x, color.y, color.z, 1);
+                spMat->setSpecular(0, 0, 0, 0);
+                mpEntity->setMaterial(spMat);
+            }
+        }
+
         virtual void onAttributeChange(std::string name, lxvar value)
         {
             if (name == "translation")
-            {
-                auto pos2 = asPoint3(value);
-                const Ogre::Vector3 pos = reinterpret_cast<Ogre::Vector3&>(pos2);
-                _node()->setPosition(pos);
-            }
+                _setTranslation(value);
             else if (name == "rotation")
-            {
-                Ogre::Quaternion q;
-                q.x = value.at(0).asFloat();
-                q.y = value.at(1).asFloat();
-                q.z = value.at(2).asFloat();
-                q.w = value.at(3).asFloat();
-                _node()->setOrientation(q);
-            }
+                _node()->setOrientation(*value);
             else if (name == "display")
             {
                 if (value.equal("block"))
@@ -302,6 +329,8 @@ namespace lx0 { namespace core {
                 else
                     lx_error("Unexpected value for display attribute");
             }
+            else if (name == "color")
+                _setColor(value);
         }
 
         Ogre::SceneNode* _node() { return mpEntity->getParentSceneNode(); }

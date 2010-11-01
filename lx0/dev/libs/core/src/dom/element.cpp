@@ -169,7 +169,7 @@ namespace lx0 { namespace core {
         mAttributes[name] = value;
     }
 
-    const lxvar     
+    lxvar     
     Element::attr (std::string name) const
     {
         lx_check_error( this != nullptr );

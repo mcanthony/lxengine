@@ -48,8 +48,6 @@ namespace lx0 { namespace core {
     //===========================================================================//
     //!
     /*!
-     */   
-    /*!
         Developer notes:
         
         This class could use significant clean-up and componentization once 

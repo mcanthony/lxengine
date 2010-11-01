@@ -80,6 +80,9 @@ namespace lx0 { namespace core {
             operator int ()         { return mValue.asInt(); }
             operator float ()       { return mValue.asFloat(); }
             operator std::string () { return mValue.asString(); }
+
+            template <typename T>
+            operator T ()           { T t; detail::_convert(mValue, t); return t; }
         };
 
         class iterator

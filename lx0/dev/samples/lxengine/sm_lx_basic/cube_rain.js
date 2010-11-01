@@ -67,21 +67,31 @@ var rain = {
                 else
                     ++i;
             }
+            var color = Math.random();
+            if (color < .15)
+                color = [ 122.0 / 255.0, 120.0 / 255.0, 131.0 / 255.0 ];
+            else if (color < .3)
+                color = [ 96.0 / 255.0, 203.0 / 255.0, 175.0 / 255.0 ];
+            else if (color < .45)
+                color = [ 181.0 / 255.0, 170.0 / 255.0, 246.0 / 255.0 ];
+            else
+                color = [ 247.0 / 255.0, 253.0 / 255.0, 255.0 / 255.0 ];    
 
             var pos = [
                 Math.random() * 6 - 3,
                 Math.random() * 6 - 3,
-                12
+                11
             ];
             ref = $("<Ref/>");
             ref.attr("ref", "small_sphere");
             ref.attr("translation", pos);
             ref.attr("bounds_type", "sphere");
-            ref.attr("mass", .1);
-            ref.attr("restitution", 0.8);
+            ref.attr("color", color);
+            ref.attr("mass", .1 + Math.random() * .5);
+            ref.attr("restitution", 0.4);
             $("#grid").append(ref);
 
-            rain.live.push([ rain.time + 8000, ref]);
+            rain.live.push([ rain.time + 9000, ref]);
         }
         rain.time += rain.freq;
         window.setTimeout(rain.freq, rain.drop);

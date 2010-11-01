@@ -87,7 +87,7 @@ namespace lx0 { namespace core {
         void            tagName     (const char* s)         { mTagName = s; }       //!< Set DOM tagName of the Element
         void            tagName     (const std::string& s)  { tagName(s.c_str()); } //!< Set DOM tagName of the Element
 
-        const lxvar     attr        (std::string name) const;
+        lxvar           attr        (std::string name) const;
         void            attr        (std::string name, lxvar value);      
 
         ElementCPtr     parent      () const;
