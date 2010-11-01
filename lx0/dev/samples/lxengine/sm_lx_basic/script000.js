@@ -46,7 +46,7 @@ for (var gy = 0; gy < 5; ++gy) {
         ref = $("<Ref/>");
         ref.attr("ref", "small_sphere");
         ref.attr("translation", [px, py, pz]);
-        ref.attr("mass", .01);
+        ref.attr("mass", .1);
         ref.attr("bounds_type", "sphere");
         $("#grid").append(ref);
     }
@@ -77,7 +77,7 @@ var rain = {
             ref.attr("ref", "small_sphere");
             ref.attr("translation", pos);
             ref.attr("bounds_type", "sphere");
-            ref.attr("mass", .01);
+            ref.attr("mass", .1);
             ref.attr("restitution", 0.8);
             $("#grid").append(ref);
 

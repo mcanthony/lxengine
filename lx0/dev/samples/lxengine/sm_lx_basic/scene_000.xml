@@ -8,7 +8,7 @@
         <Mesh id="unit_sphere" src="data/sm_lx_basic/unit_sphere.json" />
         <Mesh id="small_sphere"  src="data/sm_lx_basic/small_sphere.json" />
     </Library>
-    <Scene>
+    <Scene wind="none">
         <Group id="grid" />
     </Scene>
 </Root>

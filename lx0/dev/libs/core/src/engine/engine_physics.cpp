@@ -220,6 +220,8 @@ namespace lx0 { namespace core { namespace detail {
         std::shared_ptr<btDiscreteDynamicsWorld>                mspDynamicsWorld;
 
     protected:
+         void           _applyWind          (const float timeStep);
+
         std::shared_ptr<btBroadphaseInterface>                  mspBroadphase;
         std::shared_ptr<btDefaultCollisionConfiguration>        mspCollisionConfiguration;
         std::shared_ptr<btCollisionDispatcher>                  mspDispatcher;
@@ -273,6 +275,7 @@ namespace lx0 { namespace core { namespace detail {
             btRigidBody::btRigidBodyConstructionInfo rigidBodyCI (kfMass, mspMotionState.get(), mspShape.get(), fallInertia);
             mspRigidBody.reset( new btRigidBody(rigidBodyCI) );
             mspRigidBody->setRestitution( spElem->attr("restitution").query(0.1f) );
+            mspRigidBody->setFriction( spElem->attr("friction").query(0.5f) );
             _addToWorld();
         }
 
@@ -293,9 +296,9 @@ namespace lx0 { namespace core { namespace detail {
                     lx_error("Unexpected value for display attribute");
             }
             else if (name == "restitution")
-            {
                 mspRigidBody->setRestitution( value.query(0.1f) );
-            }
+            else if (name == "friction")
+                mspRigidBody->setFriction( value.query(0.5f) );
         }
 
         void _addToWorld()
@@ -341,6 +344,7 @@ namespace lx0 { namespace core { namespace detail {
         btRigidBody::btRigidBodyConstructionInfo groundRigidBodyCI(fGroundMass, mspGroundMotionState.get(), mspGroundShape.get(), groundIntertia);
         mspGroundRigidBody.reset( new btRigidBody(groundRigidBodyCI) );
         mspGroundRigidBody->setRestitution(0.1f);
+        mspGroundRigidBody->setFriction(0.5f);
         mspDynamicsWorld->addRigidBody(mspGroundRigidBody.get());
     }
 
@@ -384,6 +388,37 @@ namespace lx0 { namespace core { namespace detail {
         }
     }
 
+    void
+    PhysicsDoc::_applyWind (const float timeStep)
+    {
+        const btVector3 airVelocity (1.4, 0, 0);      // 1.4 m/s ~= 5 km / hr
+        const btScalar  airDensity = 1.29;            // kg/ m^3
+
+        btCollisionObjectArray objects = mspDynamicsWorld->getCollisionObjectArray();
+        mspDynamicsWorld->clearForces();
+        for (int i = 0; i < objects.size(); i++) 
+        {
+            btRigidBody* pRigidBody = btRigidBody::upcast(objects[i]);
+            if (pRigidBody) 
+            {
+                // Compute an approximate surface area in each direct by simply taking some
+                // percentage of the bounding radius.
+                //
+                btScalar radius;
+                btCollisionShape* pShape = pRigidBody->getCollisionShape();
+                pShape->getBoundingSphere(btVector3(0,0,0), radius);
+                btScalar approxArea = radius * radius * .66f;
+                btVector3 surfaceArea (approxArea, approxArea, approxArea);
+
+                // Velocity * density * surface area = amount of mass per second hitting the area
+                // " * time * velocity = momentum of that mass over that period of time
+                //
+                btVector3 impulse = (airVelocity * airDensity * surfaceArea * timeStep) * airVelocity;
+                pRigidBody->applyCentralImpulse(impulse);
+            }
+        }
+    }
+
     void 
     PhysicsDoc::onUpdate (DocumentPtr spDocument)
     {
@@ -398,6 +433,8 @@ namespace lx0 { namespace core { namespace detail {
             const int kMaxSubSteps = 10;
             const float kStep = Engine::acquire()->environment().timeScale() * kFrameDurationMs / 1000.0f;
             mspDynamicsWorld->stepSimulation(kStep, kMaxSubSteps);
+
+            _applyWind(kStep);
  
             auto allRefs = spDocument->getElementsByTagName("Ref");
             for (auto it = allRefs.begin(); it != allRefs.end(); ++it)
