@@ -369,6 +369,53 @@ call:copy_files %ROOTDIR%\alut_build_debug\Debug\*.dll %PSDK%\openal\bin\Debug
 call:copy_files %ROOTDIR%\alut_build_release\Release\*.dll %PSDK%\openal\bin\Release
 
 REM ===========================================================================
+REM Build Ogg
+REM ===========================================================================
+
+set PROJECT=Ogg
+set ROOTDIR=libogg-1.2.1
+set TESTFILE=win32\VS2010\Win32\Debug\libogg.lib 
+
+echo pushd .>_t.bat
+echo msbuild win32\VS2010\libogg_dynamic.sln /p:Configuration=Debug >>_t.bat
+echo msbuild win32\VS2010\libogg_dynamic.sln /p:Configuration=Release >>_t.bat
+echo popd >>_t.bat
+
+call:build_project %PROJECT% %ROOTDIR% %TESTFILE%
+IF %FAILURE%==1 (goto:EOF)
+
+call:copy_files %ROOTDIR%\include\ogg\*.h %PSDK%\libogg\include\ogg
+call:copy_files %ROOTDIR%\win32\VS2010\Win32\Debug\*.lib %PSDK%\libogg\lib\Debug
+call:copy_files %ROOTDIR%\win32\VS2010\Win32\Debug\*.dll %PSDK%\libogg\bin\Debug
+call:copy_files %ROOTDIR%\win32\VS2010\Win32\Release\*.lib %PSDK%\libogg\lib\Release
+call:copy_files %ROOTDIR%\win32\VS2010\Win32\Release\*.dll %PSDK%\libogg\bin\Release
+
+REM ===========================================================================
+REM Build Vorbis
+REM ===========================================================================
+
+set PROJECT=Vorbis
+set ROOTDIR=libvorbis-1.3.2
+set TESTFILE=win32\VS2010\Win32\Debug\libvorbis.lib 
+
+echo pushd .>_t.bat
+echo cd win32\VS2010>>_t.bat
+echo pushd .>>_t.bat
+echo msbuild vorbis_dynamic.sln /p:"Configuration=Debug">>_t.bat
+echo msbuild vorbis_dynamic.sln /p:"Configuration=Release">>_t.bat
+echo popd >>_t.bat
+echo popd >>_t.bat
+
+call:build_project %PROJECT% %ROOTDIR% %TESTFILE%
+IF %FAILURE%==1 (goto:EOF)
+
+call:copy_files %ROOTDIR%\include\vorbis\*.h %PSDK%\libvorbis\include\vorbis
+call:copy_files %ROOTDIR%\win32\VS2010\Win32\Debug\*.lib %PSDK%\libvorbis\lib\Debug
+call:copy_files %ROOTDIR%\win32\VS2010\Win32\Debug\*.dll %PSDK%\libvorbis\bin\Debug
+call:copy_files %ROOTDIR%\win32\VS2010\Win32\Release\*.lib %PSDK%\libvorbis\lib\Release
+call:copy_files %ROOTDIR%\win32\VS2010\Win32\Release\*.dll %PSDK%\libvorbis\bin\Release
+
+REM ===========================================================================
 REM Build Audiere
 REM ===========================================================================
 
