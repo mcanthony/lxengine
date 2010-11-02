@@ -18,3 +18,5 @@ lx_copy(tree.json)
 
 configure_file("data/sound/bounce/bounce.wav" "${CMAKE_BINARY_DIR}/data/sm_lx_basic/bounce.wav" COPYONLY)
 configure_file("data/music/germanic_peace_3/germanic_peace_3.ogg" "${CMAKE_BINARY_DIR}/data/sm_lx_basic/germanic_peace_3.ogg" COPYONLY)
+configure_file("data/ogre/overlay/FadeInOut.overlay" "${CMAKE_BINARY_DIR}/data/sm_lx_basic/FadeInOut.overlay" COPYONLY)
+configure_file("data/ogre/material/Overlay.material" "${CMAKE_BINARY_DIR}/data/sm_lx_basic/Overlay.material" COPYONLY)

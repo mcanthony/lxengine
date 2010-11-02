@@ -80,6 +80,7 @@ namespace lx0 { namespace core {
         void        _onElementRemoved (ElementPtr spElem);
         void        _processGroup   (ElementPtr spElem);
         void        _processRef     (ElementPtr spElem);
+        void        _processScene   (ElementPtr spElem);
         void        _addMesh        (std::string name, MeshPtr spMesh);
 
         detail::LxOgrePtr           mspLxOgre;

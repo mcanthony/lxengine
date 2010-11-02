@@ -442,7 +442,7 @@ namespace lx0 { namespace core { namespace detail {
 
         const vector3 airVecTemp = mfWindVelocity * mWindDirection;
         const btVector3 airVelocity( airVecTemp.x, airVecTemp.y, airVecTemp.z);
-        const btScalar  airDensity = 1.29;            // kg/ m^3
+        const btScalar  airDensity = 1.29f;            // kg / m^3
 
         btCollisionObjectArray objects = mspDynamicsWorld->getCollisionObjectArray();
         mspDynamicsWorld->clearForces();

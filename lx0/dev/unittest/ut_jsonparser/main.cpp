@@ -177,6 +177,12 @@ main (int argc, char** argv)
             JsonParser parser;
             lxvar v;
 
+            v = parser.parse("0.8");
+            CHECK(v.isFloat());
+
+            v = parser.parse(" 0.8");
+            CHECK(v.isFloat());
+
             v = parser.parse("{}");
             CHECK(v.isMap());
             CHECK(v.size() == 0);

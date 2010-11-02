@@ -197,6 +197,15 @@ namespace lx0 { namespace serial {
         return t;
     }
 
+    std::string 
+    JsonParser::_readToEnd (void)
+    {
+        std::string t;
+        while (_peek())
+            t += _advance();
+        return t;
+    }
+
     /*!
         @todo Escape character handling.
      */
@@ -309,7 +318,7 @@ namespace lx0 { namespace serial {
             if (strchr("0123456789.-", _peek()))
                 r = _readNumber();
             else
-                lx_error("Unknown parse error.  Lead character '%c'.", _peek());
+                r = _readToEnd();
         };
 
         return r;

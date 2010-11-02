@@ -72,6 +72,7 @@ namespace lx0 { namespace serial {
         lxvar           parse (const char* s);
 
     protected:
+        std::string     _readToEnd          (void);
         lxvar           _readObject         (void);
         lxvar           _readArray          (void);
         std::string     _readString         (void);

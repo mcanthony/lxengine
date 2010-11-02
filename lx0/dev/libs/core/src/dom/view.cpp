@@ -53,6 +53,7 @@
 #include <OGRE/OgreManualObject.h>
 #include <OGRE/OgreMaterial.h>
 #include <OGRE/OgreMaterialManager.h>
+#include <OGRE/OgreOverlayManager.h>
 #include <OGRE/OgreEntity.h>
 #include <OGRE/OgreQuaternion.h>
 #include <OGRE/OgreMeshManager.h>
@@ -60,6 +61,10 @@
 _ENABLE_LX_CAST(lx0::core::point3, Ogre::Vector3)
 
 using namespace lx0::util;
+
+//===========================================================================//
+//   Detail
+//===========================================================================//
 
 namespace lx0 { namespace core { namespace detail {
 
@@ -265,6 +270,63 @@ namespace lx0 { namespace core {
         pObject->convertToMesh(name.c_str());
     }
 
+    class SceneElem : public Element::Component
+    {
+    public:
+        SceneElem   (ElementPtr spElem);
+
+        virtual void onAttributeChange(ElementPtr spElem, std::string name, lxvar value);
+
+    protected:
+        void    _reset  (ElementPtr spElem);
+
+        Ogre::Overlay*              mpOverlay;
+        Ogre::TextureUnitState*     mpTexUnit;
+    };
+
+    SceneElem::SceneElem(ElementPtr spElem)
+        : mpOverlay (nullptr) 
+        , mpTexUnit (nullptr)
+    {
+        // Credit to: http://www.ogre3d.org/tikiwiki/FadeEffectOverlay&structure=Cookbook
+        
+        Ogre::ResourceGroupManager::getSingleton().addResourceLocation("data/sm_lx_basic", "FileSystem");
+        Ogre::ResourceGroupManager::getSingleton().initialiseAllResourceGroups();
+
+        Ogre::ResourcePtr spResource = Ogre::MaterialManager::getSingleton().getByName("Materials/OverlayMaterial");
+        Ogre::Material* pMat = dynamic_cast<Ogre::Material*>(spResource.getPointer());
+
+        Ogre::Technique* pTech = pMat->getTechnique(0);
+        mpTexUnit = pTech->getPass(0)->getTextureUnitState(0);
+
+        mpOverlay = Ogre::OverlayManager::getSingleton().getByName("Overlays/FadeInOut");
+
+        _reset(spElem);
+    }
+
+    void 
+    SceneElem::onAttributeChange(ElementPtr spElem, std::string name, lxvar value)
+    {
+        _reset(spElem);
+    }
+
+    void
+    SceneElem::_reset  (ElementPtr spElem)
+    {
+        float fade = spElem->attr("fade").query(0.0f);
+
+        if (fade < 0.01f)
+        {
+            mpTexUnit->setAlphaOperation(Ogre::LBX_MODULATE, Ogre::LBS_MANUAL, Ogre::LBS_TEXTURE, 0.0f);
+            mpOverlay->hide();
+        }
+        else
+        {
+            mpOverlay->show();
+            mpTexUnit->setAlphaOperation(Ogre::LBX_MODULATE, Ogre::LBS_MANUAL, Ogre::LBS_TEXTURE, fade);
+        }
+    }
+
     static int refCount = 0;
 
     class OgreNodeLink : public Element::Component
@@ -354,6 +416,8 @@ namespace lx0 { namespace core {
     {
         if (spElem->tagName() == "Ref")
             _processRef(spElem);
+        else if (spElem->tagName() == "Scene")
+            _processScene(spElem);
     }
 
     void
@@ -361,6 +425,12 @@ namespace lx0 { namespace core {
     {
         if (spElem->tagName() == "Ref")
             spElem->removeComponent("OgreLink");
+    }
+
+    void
+    View::_processScene (ElementPtr spElem)
+    {
+        spElem->attachComponent("OgreSceneElem", new SceneElem(spElem));
     }
 
     void
@@ -457,6 +527,7 @@ namespace lx0 { namespace core {
             spMat->setSpecular(0, 0, 0, 0);
         }
 
+        // Add a fixed ground plane.  This is going to have to go away...
         {
             Ogre::Plane plane(Ogre::Vector3::UNIT_Z, 0);
             Ogre::MeshManager::getSingleton().createPlane("ground", Ogre::ResourceGroupManager::DEFAULT_RESOURCE_GROUP_NAME,
@@ -489,6 +560,7 @@ namespace lx0 { namespace core {
             else if (spChild->tagName() == "Scene")
             {
                 lx_debug("View found Scene element in Document");
+                _processScene(spChild);
                 _processGroup(spChild);
             }
         }

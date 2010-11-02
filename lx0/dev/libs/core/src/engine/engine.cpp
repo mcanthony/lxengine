@@ -41,6 +41,7 @@
 #include <lx0/element.hpp>
 #include <lx0/mesh.hpp>
 #include <lx0/util.hpp>
+#include <lx0/jsonio.hpp>
 
 #include <OGRE/OgreRoot.h>
 #include <OGRE/OgreSceneManager.h>
@@ -215,7 +216,8 @@ namespace lx0 { namespace core {
                     {
                         std::string name = pAttrib->Name();
                         std::string value = pAttrib->Value();
-                        spElem->attr(name, lxvar(value.c_str()));
+                        lxvar parsedValue = lx0::serial::JsonParser().parse(value.c_str());
+                        spElem->attr(name, parsedValue);
                     }
                 }
 
