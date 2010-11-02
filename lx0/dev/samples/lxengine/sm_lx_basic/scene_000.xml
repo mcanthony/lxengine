@@ -13,7 +13,7 @@
     </Library>
     <Scene wind_velocity="none">
       <SoundSource id="bounce" ref="snd_bounce" />
-      <SoundSource id="background_music" ref="snd_background_music" sound_state="stopped" />
+      <SoundSource id="background_music" ref="snd_background_music" volume="0.6" loop="1" sound_state="stopped" />
       <Group id="grid" />
     </Scene>
 </Root>

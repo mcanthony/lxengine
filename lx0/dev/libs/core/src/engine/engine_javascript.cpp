@@ -465,11 +465,10 @@ namespace lx0 { namespace core { namespace detail {
         
                 ElementPtr spElem = pDoc->getElementById(id);
 
-                // The code does not yet gracefully handle a failed search
                 if (!spElem)
-                    lx_error("Could not find element with id '%s' in the document.", id.c_str());
-
-                return _wrapObject(s_pActiveContext->mElementCtor, spElem.get());
+                    return Undefined();
+                else
+                    return _wrapObject(s_pActiveContext->mElementCtor, spElem.get());
             }
 
             static v8::Handle<v8::Value> 

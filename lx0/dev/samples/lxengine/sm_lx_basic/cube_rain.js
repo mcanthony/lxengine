@@ -4,15 +4,21 @@ for (var grid_y = 0; grid_y < 3; grid_y++)
 {
     for (var grid_x = 0; grid_x < 3; grid_x++)
     {
+        var color = [];
+        color[0] = 0.8;
+        color[1] = 0.5 + 0.5 * (grid_y / 3.0);
+        color[2] = 0.6 + 0.2 * (grid_x / 3.0);
+
         var tr = [];
         tr[0] = (grid_x - 1) * 1.5;
         tr[1] = (grid_y - 1) * 1.5;
         tr[2] = 0.5;
        
         var ref = $("<Ref/>");
-        ref.attr("id", "cube" + (cube_id++));
+        ref.attr("id", "cube" + (++cube_id));
         ref.attr("ref", "unit_cube");
         ref.attr("translation", tr);
+        ref.attr("color", color);
         $("#grid").append(ref);
     }
 }
@@ -132,7 +138,9 @@ var wind_cycle = 0;
 
 window.onKeyDown = function (e) {
 
-    if (e.keyCode >= 1 && e.keyCode <= 9) {
+    if (e.keyCode >= 2 && e.keyCode <= 10) {
+        $("#bounce").attr("sound_state", "playing");
+        __lx_print("cube id " + e.keyChar);
         $("#cube" + e.keyChar).toggle();
     }
     else if (e.keyChar == "r") {
@@ -167,9 +175,5 @@ window.onKeyDown = function (e) {
         var current = tr[wind_cycle];
         $("Scene").attr("wind", current + " west");
         __lx_print("Wind: " + current + " " + $("Scene").attr("wind_velocity") + " m/s");
-    }
-    else if (e.keyChar == "e")
-    {
-        $("#bounce").attr("sound_state", "playing");
     }
 };

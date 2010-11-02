@@ -425,6 +425,9 @@ namespace lx0 { namespace core { namespace detail {
 
         std::string state = spElem->attr("state").query("stopped");
 
+        float volume = spElem->attr("volume").query(1.0f);
+        bool  bLoop = spElem->attr("loop").query(0) ? true : false;
+
         if (buffer)
         {
             alGenSources(1, &mSource);
@@ -433,10 +436,10 @@ namespace lx0 { namespace core { namespace detail {
             vector3 velocity(0, 0, 0);
             alSourcei (mSource, AL_BUFFER,   buffer);
             alSourcef (mSource, AL_PITCH,    1.0f );
-            alSourcef (mSource, AL_GAIN,     1.0f );
+            alSourcef (mSource, AL_GAIN,     volume);
             alSourcefv(mSource, AL_POSITION, &mPosition.x);
             alSourcefv(mSource, AL_VELOCITY, &velocity.x);
-            alSourcei (mSource, AL_LOOPING,  false );
+            alSourcei (mSource, AL_LOOPING,  bLoop );
 
             lx_check_error(alGetError() == AL_NO_ERROR);
 
