@@ -32,5 +32,5 @@ set(BULLET_LIBS BulletCollision.lib BulletDynamics.lib LinearMath.lib)
 include_directories("${DEPS_SDK}/openal/include")
 include_directories("${DEPS_SDK}/openal/include/AL")    # Unfortunately necessary for alut.h's references to al.h
 link_directories("${DEPS_SDK}/openal/lib/Debug")
-set(OPENAL_LIBS OpenAL32.lib)
-
+set(OPENAL_LIBS OpenAL32.lib alut.lib)
+INSTALL(FILES "${DEPS_SDK}/openal/bin/Debug/alut.dll" DESTINATION ${PROJECT_BINARY_DIR})

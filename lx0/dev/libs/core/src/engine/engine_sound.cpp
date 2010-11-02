@@ -170,7 +170,7 @@ namespace lx0 { namespace core { namespace detail {
 
 
         // Initialize ALUT
-        //alutInit(0, NULL);
+        alutInit(0, NULL);
 
         // Clear the error bit
         alGetError();

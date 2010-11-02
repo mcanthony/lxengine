@@ -344,6 +344,17 @@ echo cmake .. >>_t.bat
 echo msbuild OpenAL.sln /p:Configuration=Debug >>_t.bat
 echo msbuild OpenAL.sln /p:Configuration=Release >>_t.bat
 echo popd >>_t.bat
+echo pushd .>>_t.bat
+echo mkdir alut_build_debug >>_t.bat
+echo cd alut_build_debug >>_t.bat
+echo cmake -DOPENAL_LIB_DIR=..\OpenAL-Soft\build\Debug -DOPENAL_INCLUDE_DIR=..\include ..\alut>>_t.bat
+echo msbuild Alut.sln /p:Configuration=Debug >>_t.bat
+echo cd ..>>_t.bat
+echo mkdir alut_build_release >>_t.bat
+echo cd alut_build_release >>_t.bat
+echo cmake -DOPENAL_LIB_DIR=..\OpenAL-Soft\build\Release -DOPENAL_INCLUDE_DIR=..\include ..\alut>>_t.bat
+echo msbuild Alut.sln /p:Configuration=Release >>_t.bat
+echo popd >>_t.bat
 
 call:build_project %PROJECT% %ROOTDIR% %TESTFILE%
 IF %FAILURE%==1 (goto:EOF)
@@ -352,6 +363,10 @@ call:copy_files %ROOTDIR%\include\AL\*.h %PSDK%\openal\include\AL
 call:copy_files %ROOTDIR%\alut\include\AL\*.h %PSDK%\openal\include\AL
 call:copy_files %ROOTDIR%\OpenAL-Soft\build\Debug\*.lib %PSDK%\openal\lib\Debug
 call:copy_files %ROOTDIR%\OpenAL-Soft\build\Release\*.lib %PSDK%\openal\lib\Release
+call:copy_files %ROOTDIR%\alut_build_debug\Debug\*.lib %PSDK%\openal\lib\Debug
+call:copy_files %ROOTDIR%\alut_build_release\Release\*.lib %PSDK%\openal\lib\Release
+call:copy_files %ROOTDIR%\alut_build_debug\Debug\*.dll %PSDK%\openal\bin\Debug
+call:copy_files %ROOTDIR%\alut_build_release\Release\*.dll %PSDK%\openal\bin\Release
 
 REM ===========================================================================
 REM Build Audiere
