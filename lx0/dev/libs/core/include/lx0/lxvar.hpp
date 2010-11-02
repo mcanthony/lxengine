@@ -80,6 +80,12 @@ namespace lx0 { namespace core {
             operator int ()         { return mValue.asInt(); }
             operator float ()       { return mValue.asFloat(); }
             operator std::string () { return mValue.asString(); }
+        };
+
+        struct auto_cast2
+        {
+            auto_cast2 (lxvar& v) : mValue (v) {}
+            lxvar& mValue;
 
             template <typename T>
             operator T ()           { T t; detail::_convert(mValue, t); return t; }
@@ -124,8 +130,7 @@ namespace lx0 { namespace core {
 
         lxvar           clone           (void) const;           //!< Create a deep clone of the lxvar
 
-        template <typename T>
-        T               convert         (void)                  { return T(*(*this)); }
+        auto_cast2      convert         (void)                  { return auto_cast2(*this); }
 
         bool            equal           (int i) const           { return (isInt() && asInt() == i); } //!< Is strictly equal: same type and same value
         bool            equal           (std::string s) const   { return (isString() && asString() == s);}

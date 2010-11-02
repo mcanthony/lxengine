@@ -111,6 +111,8 @@ namespace lx0 { namespace core {
         void            notifyAdded     (Document* pDocument);
         void            notifyRemoved   (Document* pDocument);
 
+        DocumentPtr     document        (void);
+
     protected:
         typedef std::map<std::string, lxvar>    AttrMap;
         typedef std::deque<ElementPtr>          ElemList;

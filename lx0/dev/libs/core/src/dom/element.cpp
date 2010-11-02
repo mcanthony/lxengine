@@ -242,4 +242,10 @@ namespace lx0 { namespace core {
         lx_check_error(mpDocument == nullptr);
     }
 
+    DocumentPtr
+    Element::document (void)
+    { 
+        return mpDocument->shared_from_this(); 
+    }
+
 }}

@@ -113,7 +113,9 @@ var rain = {
 
 
 
-window.setTimeout(10000, rain.drop);
+window.setTimeout(10000, function() {
+    rain.drop();
+});
 
 window.setTimeout(6000, function () {
     var ref = $("<Ref/>");
@@ -163,5 +165,9 @@ window.onKeyDown = function (e) {
         var current = tr[wind_cycle];
         $("Scene").attr("wind", current + " west");
         __lx_print("Wind: " + current + " " + $("Scene").attr("wind_velocity") + " m/s");
+    }
+    else if (e.keyChar == "e")
+    {
+        $("#bounce").attr("sound_state", "playing");
     }
 };

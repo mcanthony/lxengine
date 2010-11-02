@@ -80,6 +80,7 @@ namespace lx0 { namespace core { namespace detail {
     {
     public:
         SoundEngine();
+        ~SoundEngine();
 
         virtual void        onDocumentCreated   (EnginePtr spEngine, DocumentPtr spDocument);
 
@@ -106,9 +107,17 @@ namespace lx0 { namespace core { namespace detail {
     class SoundBufferElem : public Element::Component
     {
     public:
-                SoundBufferElem();
+                SoundBufferElem(ElementPtr spElem);
                 ~SoundBufferElem();
+
+        virtual void    onAttributeChange   (ElementPtr spElem, std::string name, lxvar value);
+
+        ALuint  buffer          (void) const { return mBuffer; }
+    
     protected:
+        void    _releaseBuffer  (void);
+        void    _reset          (ElementPtr spElem);
+
         ALuint  mBuffer;
     };
 
@@ -119,11 +128,18 @@ namespace lx0 { namespace core { namespace detail {
     class SoundSourceElem : public Element::Component
     {
     public:
-                SoundSourceElem();
+                SoundSourceElem(ElementPtr spElem);
+                ~SoundSourceElem();
+
+        virtual void    onAttributeChange   (ElementPtr spElem, std::string name, lxvar value);
+
     protected:
+        void    _release        (void);
+        void    _reset          (ElementPtr spElem);
+        void    _changeState    (lxvar value);
+
         ALuint      mSource;
         point3      mPosition;
-        vector3     mVelocity;
     };
 
 
@@ -177,6 +193,11 @@ namespace lx0 { namespace core { namespace detail {
         lx_check_error (alGetError() == AL_NO_ERROR);
     }
 
+    SoundEngine::~SoundEngine()
+    {
+        alutExit();
+    }
+
     void 
     SoundEngine::onDocumentCreated (EnginePtr spEngine, DocumentPtr spDocument)
     {
@@ -193,36 +214,183 @@ namespace lx0 { namespace core { namespace detail {
         std::string tag = spElem->tagName();
 
         if (tag == "SoundBuffer")
-            spElem->attachComponent("sound", new SoundBufferElem);
+            spElem->attachComponent("SoundBuffer", new SoundBufferElem(spElem));
+        else if (tag == "SoundSource")
+            spElem->attachComponent("SoundSource", new SoundSourceElem(spElem));
     }
 
     //===========================================================================//
     // SoundBufferElem
     //===========================================================================//
 
-    SoundBufferElem::SoundBufferElem()
+    SoundBufferElem::SoundBufferElem(ElementPtr spElem)
         : mBuffer (0)
     {
-        alGenBuffers(1, &mBuffer);
-        lx_check_error (alGetError() == AL_NO_ERROR);
+        _reset(spElem);
     }
 
     SoundBufferElem::~SoundBufferElem()
     {
+        _releaseBuffer();
+    }
+
+    void
+    SoundBufferElem::_releaseBuffer()
+    {
         if (mBuffer != 0)
         {
             alDeleteBuffers(1, &mBuffer);
+            mBuffer = 0;
         }
     }
+
+    void
+    SoundBufferElem::onAttributeChange (ElementPtr spElem, std::string name, lxvar value) 
+    {
+        // Reset everything on an attribute change.  This is a bit heavy-weight, but
+        // simpler until there's a use case for SoundBuffer elements being changed
+        // with frequency.
+        //
+        _reset(spElem);
+    }
+
+     void    
+     SoundBufferElem::_reset (ElementPtr spElem)
+     {
+        _releaseBuffer();
+
+        std::string filename = spElem->attr("src").query("");
+
+        if (!filename.empty())
+        {
+            lx_check_error (alGetError() == AL_NO_ERROR);
+
+            alGenBuffers(1, &mBuffer);
+            lx_check_error (alGetError() == AL_NO_ERROR);
+
+            ALenum format;
+            ALsizei size;
+            ALvoid* data;
+            ALsizei freq;
+            ALboolean loop;
+            ALbyte* pFilename = (ALbyte*)filename.c_str();
+            alutLoadWAVFile(pFilename, &format, &data, &size, &freq, &loop);
+            alBufferData(mBuffer, format, data, size, freq);
+            alutUnloadWAV(format, data, size, freq);
+        }
+     }
+
 
     //===========================================================================//
     // SoundSourceElem
     //===========================================================================//
 
-    SoundSourceElem::SoundSourceElem()
-        : mPosition (0, 0, 0)
-        , mVelocity (0, 0, 0)
+    SoundSourceElem::SoundSourceElem(ElementPtr spElem)
+        : mSource   (0)
     {
+        _reset(spElem);
+    }
+
+    SoundSourceElem::~SoundSourceElem()
+    {
+        _release();
+    }
+
+    void
+    SoundSourceElem::_release ()
+    {
+        if (mSource != 0)
+        {
+            alDeleteSources(1, &mSource);
+            mSource = 0;
+        }
+    }
+
+
+    void
+    SoundSourceElem::onAttributeChange (ElementPtr spElem, std::string name, lxvar value) 
+    {
+        if (name == "sound_state")
+            _changeState(value);
+        else
+            _reset(spElem);
+    }
+
+    void
+    SoundSourceElem::_reset (ElementPtr spElem)
+    {
+        lx_check_error(alGetError() == AL_NO_ERROR);
+
+        _release();
+
+        ALuint buffer = 0;
+
+        std::string ref = spElem->attr("ref").query("");
+        if (!ref.empty())
+        {
+            ElementPtr spSource = spElem->document()->getElementById(ref);
+            if (spSource.get())
+            {
+                auto spBuffer = spSource->getComponent<SoundBufferElem>("SoundBuffer");
+                buffer = spBuffer->buffer();
+            }
+        }
+
+        std::string state = spElem->attr("state").query("stopped");
+
+        if (buffer)
+        {
+            alGenSources(1, &mSource);
+            lx_check_error(alGetError() == AL_NO_ERROR);
+
+            vector3 velocity(0, 0, 0);
+            alSourcei (mSource, AL_BUFFER,   buffer);
+            alSourcef (mSource, AL_PITCH,    1.0f );
+            alSourcef (mSource, AL_GAIN,     1.0f );
+            alSourcefv(mSource, AL_POSITION, &mPosition.x);
+            alSourcefv(mSource, AL_VELOCITY, &velocity.x);
+            alSourcei (mSource, AL_LOOPING,  false );
+
+            lx_check_error(alGetError() == AL_NO_ERROR);
+
+             _changeState(spElem->attr("sound_state"));
+        }
+    }
+
+    void
+    SoundSourceElem::_changeState (lxvar value)
+    {
+        if (mSource)
+        {
+            int state;
+            if (value.isString())
+            {
+                std::string s = *value;
+                if (s == "playing")
+                    state = 1;
+                else if (s == "stopped")
+                    state = 0;
+                else if (s == "paused")
+                    state = 2;
+            }
+            else 
+                state = 0;
+
+            lx_check_error(alGetError() == AL_NO_ERROR);
+            switch (state)
+            {
+            case 0:
+                alSourceStop(mSource);
+                break;
+            case 1:
+                alSourcePlay(mSource);
+                break;
+            case 2:
+                alSourcePause(mSource);
+                break;
+            }   
+            lx_check_error(alGetError() == AL_NO_ERROR);
+        }
     }
 
 }}}

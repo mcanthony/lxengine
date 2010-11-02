@@ -296,7 +296,7 @@ namespace lx0 { namespace core {
         void _setTranslation (lxvar& v)
         {
             if (v.isDefined())
-                _node()->setPosition(*v);
+                _node()->setPosition(v.convert());
         }
 
         void _setMaterial(ElementPtr spElem)
@@ -310,9 +310,9 @@ namespace lx0 { namespace core {
             lxvar elemShininess = spElem->attr("shininess");
 
             if (elemDiffuse.isDefined())
-                diffuse = elemDiffuse.convert<Ogre::Vector3>();
+                diffuse = (Ogre::Vector3)elemDiffuse.convert();
             if (elemSpecular.isDefined())
-                specular = elemSpecular.convert<Ogre::Vector3>();
+                specular = (Ogre::Vector3)elemSpecular.convert();
             if (elemShininess.isDefined())
                 shininess = *elemShininess;
                
@@ -330,7 +330,7 @@ namespace lx0 { namespace core {
             if (name == "translation")
                 _setTranslation(value);
             else if (name == "rotation")
-                _node()->setOrientation(*value);
+                _node()->setOrientation(value.convert());
             else if (name == "display")
             {
                 if (value.equal("block"))

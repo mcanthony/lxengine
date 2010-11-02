@@ -15,3 +15,5 @@ lx_copy(small_sphere.json)
 lx_copy(unit_cube.json)
 lx_copy(unit_sphere.json)
 lx_copy(tree.json)
+
+configure_file("data/sound/bounce/bounce.wav" "${CMAKE_BINARY_DIR}/data/sm_lx_basic/bounce.wav" COPYONLY)

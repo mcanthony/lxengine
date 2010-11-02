@@ -11,6 +11,7 @@
         <SoundBuffer id="snd_bounce" src="data/sm_lx_basic/bounce.wav" />
     </Library>
     <Scene wind_velocity="none">
+        <SoundSource id="bounce" ref="snd_bounce" />
         <Group id="grid" />
     </Scene>
 </Root>
