@@ -45,6 +45,9 @@
 #include <AL/alc.h>
 #include <AL/alut.h>
 
+// Ogg Vorbis
+#include <vorbis/vorbisfile.h>
+
 // Lx
 #include <lx0/core.hpp>
 #include <lx0/engine.hpp>
@@ -117,6 +120,8 @@ namespace lx0 { namespace core { namespace detail {
     protected:
         void    _releaseBuffer  (void);
         void    _reset          (ElementPtr spElem);
+        void    _loadWav        (std::string filename);
+        void    _loadOgg        (std::string filename);
 
         ALuint  mBuffer;
     };
@@ -254,31 +259,113 @@ namespace lx0 { namespace core { namespace detail {
         _reset(spElem);
     }
 
-     void    
-     SoundBufferElem::_reset (ElementPtr spElem)
-     {
+    void
+    SoundBufferElem::_loadWav (std::string filename)
+    {
+        ALenum format;
+        ALsizei size;
+        ALvoid* data;
+        ALsizei freq;
+        ALboolean loop;
+        ALbyte* pFilename = (ALbyte*)filename.c_str();
+        alutLoadWAVFile(pFilename, &format, &data, &size, &freq, &loop);
+        alBufferData(mBuffer, format, data, size, freq);
+        alutUnloadWAV(format, data, size, freq);
+    }
+    
+    /*!
+        Developer Notes:
+
+        This needs to be converted to handle large files as streams to
+        reduce the unnecessary memory footprint:
+        http://www.devmaster.net/articles/openal-tutorials/lesson8.php
+     */
+    void
+    SoundBufferElem::_loadOgg (std::string filename)
+    {
+        lx_debug("Loading ogg file '%s'", filename.c_str());
+
+        // Open for binary reading
+        FILE* fp = fopen(filename.c_str(), "rb");
+        if (fp)
+        {
+            OggVorbis_File oggFile;
+            ov_open(fp, &oggFile, NULL, 0);
+
+            // Read the header info
+            vorbis_info* pInfo = ov_info(&oggFile, -1);
+            ALenum format = (pInfo->channels == 1)
+                    ? AL_FORMAT_MONO16
+                    : AL_FORMAT_STEREO16;
+            ALsizei freq = pInfo->rate;
+
+            // Read the data
+            std::vector<char> buffer;
+            long bytesRead;
+            do 
+            {
+                const size_t kChunk = 4096;
+                buffer.resize(buffer.size() + kChunk);
+
+                const int kEndian = 0;
+                const int kWordSize = 2;    // Always use 16-bit samples
+                const int kSigned = 1;      // true / false for signed data
+                int bitStream;
+                bytesRead = ov_read(&oggFile, 
+                                    &buffer[buffer.size() - kChunk], kChunk, 
+                                    kEndian, kWordSize, kSigned, 
+                                    &bitStream);
+
+                // Keep the buffer size in sync with what was read
+                buffer.resize( buffer.size() - (kChunk - bytesRead) );
+
+            } while (bytesRead > 0);
+
+            ov_clear(&oggFile);
+
+            alBufferData(mBuffer, format, 
+                         &buffer[0], static_cast<ALsizei>(buffer.size()), 
+                         freq);
+            lx_check_error (alGetError() == AL_NO_ERROR);
+        }
+    }
+
+    void    
+    SoundBufferElem::_reset (ElementPtr spElem)
+    {
         _releaseBuffer();
 
         std::string filename = spElem->attr("src").query("");
+        std::string type = spElem->attr("type").query("");
 
         if (!filename.empty())
         {
+            if (type.empty())
+            {
+                std::string ext = filename.substr(filename.length() - 4, 4);
+                std::transform(ext.begin(), ext.end(), ext.begin(), tolower);
+
+                if (ext == ".wav")
+                    type = "wav";
+                else if (ext == ".ogg")
+                    type = "ogg";
+                else
+                    lx_error("No type specified and could not determine type from extension for '%s'", filename.c_str());
+            }
+
             lx_check_error (alGetError() == AL_NO_ERROR);
 
             alGenBuffers(1, &mBuffer);
             lx_check_error (alGetError() == AL_NO_ERROR);
 
-            ALenum format;
-            ALsizei size;
-            ALvoid* data;
-            ALsizei freq;
-            ALboolean loop;
-            ALbyte* pFilename = (ALbyte*)filename.c_str();
-            alutLoadWAVFile(pFilename, &format, &data, &size, &freq, &loop);
-            alBufferData(mBuffer, format, data, size, freq);
-            alutUnloadWAV(format, data, size, freq);
+            if (type == "wav")
+                _loadWav(filename);
+            else if (type == "ogg")
+                _loadOgg(filename);
+            else
+                lx_error("Unrecognized type: '%s'", type.c_str());
         }
-     }
+    }
 
 
     //===========================================================================//

@@ -111,8 +111,6 @@ var rain = {
     },
 };
 
-
-
 window.setTimeout(10000, function() {
     rain.drop();
 });
@@ -124,6 +122,10 @@ window.setTimeout(6000, function () {
     ref.attr("mass", 5.5);
     ref.attr("bounds_type", "sphere");
     $("#grid").append(ref);
+});
+
+window.setTimeout(4500, function() {
+    $("#background_music").attr("sound_state", "playing");
 });
 
 var wind_cycle = 0;

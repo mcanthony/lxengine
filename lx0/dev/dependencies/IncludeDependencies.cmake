@@ -34,3 +34,14 @@ include_directories("${DEPS_SDK}/openal/include/AL")    # Unfortunately necessar
 link_directories("${DEPS_SDK}/openal/lib/Debug")
 set(OPENAL_LIBS OpenAL32.lib alut.lib)
 INSTALL(FILES "${DEPS_SDK}/openal/bin/Debug/alut.dll" DESTINATION ${PROJECT_BINARY_DIR})
+
+# Ogg Vorbis
+include_directories("${DEPS_SDK}/libogg/include")
+link_directories("${DEPS_SDK}/libogg/lib/Debug")
+INSTALL(FILES "${DEPS_SDK}/libogg/bin/Debug/libogg.dll" DESTINATION ${PROJECT_BINARY_DIR})
+
+include_directories("${DEPS_SDK}/libvorbis/include")
+link_directories("${DEPS_SDK}/libvorbis/lib/Debug")
+INSTALL(FILES "${DEPS_SDK}/libvorbis/bin/Debug/libvorbis.dll" DESTINATION ${PROJECT_BINARY_DIR})
+INSTALL(FILES "${DEPS_SDK}/libvorbis/bin/Debug/libvorbisfile.dll" DESTINATION ${PROJECT_BINARY_DIR})
+set(VORBIS_LIBS libvorbis.lib libvorbisfile.lib libogg.lib)
