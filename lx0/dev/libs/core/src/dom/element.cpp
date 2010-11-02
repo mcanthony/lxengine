@@ -163,7 +163,7 @@ namespace lx0 { namespace core {
         lx_check_error( this != nullptr );
 
         _foreach([&](ComponentPtr it) {
-            it->onAttributeChange(name, value);
+            it->onAttributeChange(shared_from_this(), name, value);
         });
 
         mAttributes[name] = value;

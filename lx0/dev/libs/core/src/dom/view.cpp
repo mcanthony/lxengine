@@ -285,7 +285,7 @@ namespace lx0 { namespace core {
 
             mpEntity = pEntity;
 
-            _setColor( spElem->attr("color") );
+            _setMaterial(spElem);
             _setTranslation( spElem->attr("translation") );
         }
         OgreNodeLink::~OgreNodeLink()
@@ -299,22 +299,33 @@ namespace lx0 { namespace core {
                 _node()->setPosition(*v);
         }
 
-        void _setColor(lxvar& v)
+        void _setMaterial(ElementPtr spElem)
         {
-            if (v.isDefined())
-            {
-                Ogre::Vector3 color(*v);
-                
-                Ogre::MaterialPtr spMat = Ogre::MaterialManager::getSingleton().create("LxMaterial", Ogre::ResourceGroupManager::INTERNAL_RESOURCE_GROUP_NAME);
-                spMat->setLightingEnabled(true);
-                spMat->setAmbient(.1f, .1f, .1f);
-                spMat->setDiffuse(color.x, color.y, color.z, 1);
-                spMat->setSpecular(0, 0, 0, 0);
-                mpEntity->setMaterial(spMat);
-            }
+            Ogre::Vector3 diffuse (1, 1, 1);
+            Ogre::Vector3 specular (0, 0, 0);
+            float shininess = 1;
+
+            lxvar elemDiffuse = spElem->attr("color");
+            lxvar elemSpecular = spElem->attr("specular");
+            lxvar elemShininess = spElem->attr("shininess");
+
+            if (elemDiffuse.isDefined())
+                diffuse = elemDiffuse.convert<Ogre::Vector3>();
+            if (elemSpecular.isDefined())
+                specular = elemSpecular.convert<Ogre::Vector3>();
+            if (elemShininess.isDefined())
+                shininess = *elemShininess;
+               
+            Ogre::MaterialPtr spMat = Ogre::MaterialManager::getSingleton().create("LxMaterial", Ogre::ResourceGroupManager::INTERNAL_RESOURCE_GROUP_NAME);
+            spMat->setLightingEnabled(true);
+            spMat->setAmbient(.1f, .1f, .1f);
+            spMat->setDiffuse(diffuse.x, diffuse.y, diffuse.z, 1);
+            spMat->setSpecular(specular.x, specular.y, specular.z, 0);
+            spMat->setShininess(shininess);
+            mpEntity->setMaterial(spMat);
         }
 
-        virtual void onAttributeChange(std::string name, lxvar value)
+        virtual void onAttributeChange(ElementPtr spElem, std::string name, lxvar value)
         {
             if (name == "translation")
                 _setTranslation(value);
@@ -329,8 +340,8 @@ namespace lx0 { namespace core {
                 else
                     lx_error("Unexpected value for display attribute");
             }
-            else if (name == "color")
-                _setColor(value);
+            else if (name == "color" || name == "specular")
+                _setMaterial(spElem);
         }
 
         Ogre::SceneNode* _node() { return mpEntity->getParentSceneNode(); }

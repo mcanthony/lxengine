@@ -253,7 +253,7 @@ namespace lx0 { namespace core { namespace detail {
             lx_check_error( spElem->getComponent<SceneElem>("physics").get() == nullptr );
         }
 
-        virtual void onAttributeChange(std::string name, lxvar value)
+        virtual void onAttributeChange(ElementPtr spElem, std::string name, lxvar value)
         {
             if (name == "wind_velocity")
             {
@@ -319,7 +319,7 @@ namespace lx0 { namespace core { namespace detail {
             _removeFromWorld();
         }
 
-        virtual void onAttributeChange(std::string name, lxvar value)
+        virtual void onAttributeChange(ElementPtr spElem, std::string name, lxvar value)
         {
             if (name == "display")
             {

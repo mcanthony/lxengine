@@ -67,15 +67,26 @@ var rain = {
                 else
                     ++i;
             }
+            var shin = 1;
+            var spec = [ 0, 0, 0 ];
             var color = Math.random();
             if (color < .15)
-                color = [ 122.0 / 255.0, 120.0 / 255.0, 131.0 / 255.0 ];
-            else if (color < .3)
+                color = [ 22.0 / 255.0, 120.0 / 255.0, 181.0 / 255.0 ];
+            else if (color < .3) {
                 color = [ 96.0 / 255.0, 203.0 / 255.0, 175.0 / 255.0 ];
-            else if (color < .45)
+                spec = [0, 0, .5 ];
+                shin = 32;
+            }
+            else if (color < .45) {
                 color = [ 181.0 / 255.0, 170.0 / 255.0, 246.0 / 255.0 ];
-            else
-                color = [ 247.0 / 255.0, 253.0 / 255.0, 255.0 / 255.0 ];    
+                spec = [ .5, .5, 0];
+                shin = 128;
+            }
+            else {
+                color = [ 51.0 / 255.0, 88.0 / 255.0, 249.0 / 255.0 ]; 
+                spec = [ .5, .5, .5];
+                shin = 256;
+            }   
 
             var pos = [
                 Math.random() * 6 - 3,
@@ -87,6 +98,8 @@ var rain = {
             ref.attr("translation", pos);
             ref.attr("bounds_type", "sphere");
             ref.attr("color", color);
+            ref.attr("specular", spec);
+            ref.attr("shininess", shin)
             ref.attr("mass", .1 + Math.random() * .5);
             ref.attr("restitution", 0.4);
             $("#grid").append(ref);

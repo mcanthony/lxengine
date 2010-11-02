@@ -52,7 +52,7 @@ namespace lx0 { namespace core {
     public:
         virtual         ~ElementComponent() {}
 
-        virtual void    onAttributeChange   (std::string name, lxvar value) {}
+        virtual void    onAttributeChange   (ElementPtr spElem, std::string name, lxvar value) {}
         virtual void    onAdded             (void) {}
         virtual void    onRemoved           (void) {}
     };
