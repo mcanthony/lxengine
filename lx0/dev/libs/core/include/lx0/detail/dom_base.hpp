@@ -113,8 +113,18 @@ namespace lx0 { namespace core {  namespace detail {
 
         void _foreach        (std::function<void(ComponentPtr)> f)
         {
-            for (auto it = mComponents.begin(); it != mComponents.end(); ++it)
-                f( it->second );
+            // Structure the loop so that the iterator is advanced before the callback 
+            // is called.  This allows the callback to remove itself from the ComponentList
+            // safely (see http://www.sgi.com/tech/stl/Map.html, std::map::erase() only
+            // invalidates the current iterator).
+            //
+            auto it = mComponents.begin(); 
+            while (it != mComponents.end()) 
+            {
+                auto spCurrent = it->second;
+                ++it;
+                f(spCurrent);
+            }
         }
 
         Map mComponents;

@@ -47,6 +47,10 @@ namespace lx0 { namespace core {
 
     namespace detail
     {
+        //===========================================================================//
+        //!
+        /*!
+         */
         class ObjectCount
         {
         public:
@@ -62,16 +66,18 @@ namespace lx0 { namespace core {
             size_t mCurrent;
             size_t mTotal;
         };
-    };
 
-    //===========================================================================//
-    //!
-    /*!
-     */
-    class EngineComponent : public detail::_ComponentBase
-    {
-    public:
-    };
+        //===========================================================================//
+        //!
+        /*!
+         */
+        class EngineComponent : public detail::_ComponentBase
+        {
+        public:
+            virtual void        onDocumentCreated   (EnginePtr spEngine, DocumentPtr spDocument) {}
+        };
+
+}   ;
 
     //===========================================================================//
     //!
@@ -79,7 +85,7 @@ namespace lx0 { namespace core {
      */
     class Engine 
         : public std::enable_shared_from_this<Engine>
-        , public detail::_EnableComponentList<Engine, EngineComponent>
+        , public detail::_EnableComponentList<Engine, detail::EngineComponent>
     {
     public:
         class Environment
@@ -122,10 +128,13 @@ namespace lx0 { namespace core {
         Engine();
         ~Engine(); 
 
-        ElementPtr  _loadDocumentRoot   (DocumentPtr spDocument, std::string filename);
+        ElementPtr  _loadDocumentRoot       (DocumentPtr spDocument, std::string filename);
+
+        void        _notifyDocumentCreated  (DocumentPtr spDocument);
  
-        void        _attachPhysics      (DocumentPtr spDocument);
-        void        _runJavascript      (DocumentPtr spDocument, std::string source);
+        void        _attachSound            (void);
+        void        _attachPhysics          (DocumentPtr spDocument);
+        void        _runJavascript          (DocumentPtr spDocument, std::string source);
         
         Environment                 mEnvironment;
         std::vector<DocumentPtr>    m_documents;

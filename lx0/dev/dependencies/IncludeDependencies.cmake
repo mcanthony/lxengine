@@ -27,3 +27,10 @@ set(V8_LIBS v8_g.lib ws2_32.lib winmm.lib)
 include_directories("${DEPS_SDK}/bullet/include")
 link_directories("${DEPS_SDK}/bullet/lib/Debug")
 set(BULLET_LIBS BulletCollision.lib BulletDynamics.lib LinearMath.lib)
+
+# OpenAL
+include_directories("${DEPS_SDK}/openal/include")
+include_directories("${DEPS_SDK}/openal/include/AL")    # Unfortunately necessary for alut.h's references to al.h
+link_directories("${DEPS_SDK}/openal/lib/Debug")
+set(OPENAL_LIBS OpenAL32.lib)
+

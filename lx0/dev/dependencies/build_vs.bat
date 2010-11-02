@@ -348,6 +348,10 @@ echo popd >>_t.bat
 call:build_project %PROJECT% %ROOTDIR% %TESTFILE%
 IF %FAILURE%==1 (goto:EOF)
 
+call:copy_files %ROOTDIR%\include\AL\*.h %PSDK%\openal\include\AL
+call:copy_files %ROOTDIR%\alut\include\AL\*.h %PSDK%\openal\include\AL
+call:copy_files %ROOTDIR%\OpenAL-Soft\build\Debug\*.lib %PSDK%\openal\lib\Debug
+call:copy_files %ROOTDIR%\OpenAL-Soft\build\Release\*.lib %PSDK%\openal\lib\Release
 
 REM ===========================================================================
 REM Build Audiere

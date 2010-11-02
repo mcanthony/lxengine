@@ -124,6 +124,8 @@ namespace lx0 { namespace core {
             lx_debug("    sizeof(Document) = %u bytes", sizeof(Document));
             lx_debug("    sizeof(Element) = %u bytes", sizeof(Element));
         }
+
+        _attachSound();
     }
 
     /*!
@@ -254,11 +256,21 @@ namespace lx0 { namespace core {
         return spRoot;
     }
 
+    void
+    Engine::_notifyDocumentCreated (DocumentPtr spDocument)
+    {
+        _foreach([&] (ComponentPtr spComponent) {
+            spComponent->onDocumentCreated(shared_from_this(), spDocument);
+        });
+    }
+
     
     DocumentPtr
     Engine::loadDocument (std::string filename)
     {
         DocumentPtr spDocument(new Document);
+
+        _notifyDocumentCreated(spDocument);
  
         _attachPhysics(spDocument);
 

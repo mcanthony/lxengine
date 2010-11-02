@@ -40,9 +40,10 @@
 #include <map>
 #include <deque>
 
-// Include necessary Bullet headers for this tutorial.
+// Bullet
 #include <bullet/btBulletDynamicsCommon.h>
 
+// LxEngine
 #include <lx0/core.hpp>
 #include <lx0/engine.hpp>
 #include <lx0/document.hpp>
