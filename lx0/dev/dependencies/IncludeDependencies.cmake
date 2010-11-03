@@ -3,6 +3,11 @@
 # is in.
 #
 
+macro(install_debrel FOLDER FILE)
+    MESSAGE(STATUS "Installing ${FILE}")
+    INSTALL(FILES "${DEPS_SDK}/${FOLDER}/Debug/${FILE}" DESTINATION ${PROJECT_BINARY_DIR}/Debug)
+    INSTALL(FILES "${DEPS_SDK}/${FOLDER}/Release/${FILE}" DESTINATION ${PROJECT_BINARY_DIR}/Release)
+endmacro(install_debrel)
 
 #
 # Ogre
@@ -53,8 +58,7 @@ link_directories("${DEPS_SDK}/openal/lib")
 set(OPENAL_LIBS 
     OpenAL32.lib 
     alut.lib)
-INSTALL(FILES "${DEPS_SDK}/openal/bin/Debug/alut.dll" DESTINATION ${PROJECT_BINARY_DIR})
-
+install_debrel("openal/bin" "alut.dll")
 
 #
 # Ogg Vorbis
@@ -67,6 +71,6 @@ include_directories("${DEPS_SDK}/libvorbis/include")
 link_directories("${DEPS_SDK}/libvorbis/lib")
 set(VORBIS_LIBS libvorbis.lib libvorbisfile.lib libogg.lib)
 
-INSTALL(FILES "${DEPS_SDK}/libvorbis/bin/Debug/libvorbis.dll" DESTINATION ${PROJECT_BINARY_DIR})
-INSTALL(FILES "${DEPS_SDK}/libvorbis/bin/Debug/libvorbisfile.dll" DESTINATION ${PROJECT_BINARY_DIR})
+install_debrel("libvorbis/bin" "libvorbis.dll")
+install_debrel("libvorbis/bin" "libvorbisfile.dll")
 

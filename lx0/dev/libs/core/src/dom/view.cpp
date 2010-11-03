@@ -115,7 +115,12 @@ namespace lx0 { namespace core {
                     pLog->setLogDetail(Ogre::LL_BOREME);
                     pLog->setDebugOutputEnabled(false);
 
-                    mspRoot.reset(new Ogre::Root);
+#ifndef _DEBUG
+                    std::string pluginsCfgFile("plugins.cfg");
+#else
+                    std::string pluginsCfgFile("plugins_d.cfg");
+#endif
+                    mspRoot.reset(new Ogre::Root(pluginsCfgFile.c_str()));
                     mspRoot->showConfigDialog();
                 }
                 catch (std::exception& e)

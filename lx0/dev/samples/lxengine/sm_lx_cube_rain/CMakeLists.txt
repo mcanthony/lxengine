@@ -20,6 +20,9 @@ lx_copy(unit_cube.json)
 lx_copy(unit_sphere.json)
 lx_copy(tree.json)
 
+configure_file("plugins_d.cfg" "${CMAKE_BINARY_DIR}/plugins_d.cfg" COPYONLY)
+configure_file("plugins.cfg" "${CMAKE_BINARY_DIR}/plugins.cfg" COPYONLY)
+
 configure_file("data/sound/bounce/bounce.wav" "${CMAKE_BINARY_DIR}/data/${APPNAME}/bounce.wav" COPYONLY)
 configure_file("data/music/germanic_peace_3/germanic_peace_3.ogg" "${CMAKE_BINARY_DIR}/data/${APPNAME}/germanic_peace_3.ogg" COPYONLY)
 configure_file("data/ogre/overlay/FadeInOut.overlay" "${CMAKE_BINARY_DIR}/data/${APPNAME}/FadeInOut.overlay" COPYONLY)

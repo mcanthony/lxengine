@@ -54,11 +54,9 @@ message(STATUS "Ogre include dir: ${OGRE_INCLUDE_DIR}")
 include_directories(${OGRE_INCLUDE_DIR})
 link_directories (${OGRE_LIB_DIR}) 
 file(GLOB ASSETS "$ENV{OGRE_HOME}/bin/debug/*.dll")
-
-# Note: is there any way to use INSTALL to install a renamed file?  Using a
-# mix of install and configure_file seems confusing.
-INSTALL(FILES ${ASSETS} DESTINATION ${PROJECT_BINARY_DIR})
-configure_file($ENV{OGRE_HOME}/bin/debug/plugins_d.cfg ${PROJECT_BINARY_DIR}/plugins.cfg COPYONLY)
+INSTALL(FILES ${ASSETS} DESTINATION ${PROJECT_BINARY_DIR}/Debug)
+file(GLOB ASSETS "$ENV{OGRE_HOME}/bin/Release/*.dll")
+INSTALL(FILES ${ASSETS} DESTINATION ${PROJECT_BINARY_DIR}/Release)
 
 message(STATUS "CMAKE_CXX_FLAGS_DEBUG=${CMAKE_CXX_FLAGS_DEBUG}")
 message(STATUS "CMAKE_CXX_FLAGS_RELEASE=${CMAKE_CXX_FLAGS_RELEASE}")

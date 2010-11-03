@@ -1,3 +1,4 @@
 lx0/build
 !lx0/build/gen_*.bat
 !lx0/build/env_*.bat
+!lx0/build/build_*.bat

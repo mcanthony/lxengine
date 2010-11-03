@@ -1,6 +1,6 @@
 @echo off
 
-call vs10env.bat
+call env_vs10.bat
 
 echo.
 erase CMakeCache.txt

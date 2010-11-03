@@ -121,7 +121,6 @@ function fadeIn()
 {
     var scene = $("Scene");
     var fade = scene.attr("fade");
-    __lx_print("Fade = " + fade);
     if (fade > 0.01)
     {
         fade -= 0.025;
@@ -156,7 +155,6 @@ window.onKeyDown = function (e) {
 
     if (e.keyCode >= 2 && e.keyCode <= 10) {
         $("#bounce").attr("sound_state", "playing");
-        __lx_print("cube id " + e.keyChar);
         $("#cube" + e.keyChar).toggle();
     }
     else if (e.keyChar == "r") {
