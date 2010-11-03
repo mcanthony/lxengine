@@ -66,6 +66,13 @@ typedef std::weak_ptr<btCollisionShape>     btCollisionShapeWPtr;
 
 namespace lx0 { namespace core { namespace detail {
 
+    void _convert(lxvar& v, point3& p)
+    {
+        p.x = v.at(0).asFloat();
+        p.y = v.at(1).asFloat();
+        p.z = v.at(2).asFloat();
+    }
+
     //-----------------------------------------------------------------------//
     //! Base class for the Shape cache keys.
     /*!
@@ -286,7 +293,8 @@ namespace lx0 { namespace core { namespace detail {
             //
             std::string    ref      = spElem->attr("ref").query("");
             const btScalar kfMass   = spElem->attr("mass").query(0.0f);   
-            auto pos                = asPoint3( spElem->attr("translation") );
+            auto posAttr            = spElem->attr("translation");
+            point3 pos              = posAttr.isDefined() ? point3(posAttr.convert()) : point3(0, 0, 0);
 
             auto spMeshElem         = spDocument->getElementById(ref);
             MeshPtr spMesh          = spMeshElem->value<Mesh>();

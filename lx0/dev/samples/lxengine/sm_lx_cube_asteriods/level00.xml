@@ -1,0 +1,11 @@
+<Root>
+    <Header>
+        <Script language="javascript" src="data/sm_lx_cube_rain/lxquery.js" />
+    </Header>
+    <Library>
+        <Mesh id="mesh_ship" src="media/models/ship_00.lxson" />
+    </Library>
+    <Scene>
+      <Ref id="ship" ref="mesh_ship" />
+    </Scene>
+</Root>

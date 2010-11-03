@@ -260,16 +260,24 @@ namespace lx0 { namespace core { namespace detail {
         _addMath();
 
         spDocument->slotKeyDown += [&](KeyEvent& e) {
-            s_pActiveContext = this;
-            Context::Scope context_scope(mContext);
 
-            HandleScope handle_scope;
-            Handle<Object> recv = mContext->Global();
-            Handle<Value> callArgs[1];
-            callArgs[0] = _wrapObject(s_pActiveContext->mKeyEventCtor, &e);
-            mWindowOnKeyDown->Call(recv, 1, callArgs);
+            if (!mWindowOnKeyDown.IsEmpty())
+            {
+                // This callback could be invoked outside the normal execution of a JS script.
+                // Therefore, it's necessary to set up the right context to call the Function
+                // before invoking it.
+                //
+                s_pActiveContext = this;
+                Context::Scope context_scope(mContext);
 
-            s_pActiveContext = nullptr;
+                HandleScope handle_scope;
+                Handle<Object> recv = mContext->Global();
+                Handle<Value> callArgs[1];
+                callArgs[0] = _wrapObject(s_pActiveContext->mKeyEventCtor, &e);
+                mWindowOnKeyDown->Call(recv, 1, callArgs);
+
+                s_pActiveContext = nullptr;
+            }
         };
 
         spDocument->slotUpdateRun += [&]() {
