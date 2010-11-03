@@ -392,7 +392,7 @@ namespace lx0 { namespace core { namespace detail {
             setTimeout (const v8::Arguments& args)
             {
                 lx_check_error(args.Length() == 2);
-                lx_check_error(args[0]->IsNumber());
+                lx_check_error(args[0]->IsNumber(), "Expected a number for first argument to window.setTimeout()");
                 lx_check_error(args[1]->IsFunction());
 
                 auto*            pThis  = _nativeThis<Window>(args); 

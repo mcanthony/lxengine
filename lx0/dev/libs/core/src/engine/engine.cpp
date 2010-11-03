@@ -277,8 +277,10 @@ namespace lx0 { namespace core {
         _attachPhysics(spDocument);
 
         ElementPtr spRoot = _loadDocumentRoot(spDocument, filename);
+        if (!spRoot)
+            lx_error("Could not load document.  Does file '%s' exist?", filename.c_str());
+
         spDocument->root(spRoot);
-        lx_check_error(spRoot);
 
         // API Design question: does this belong here?  Is a load an implicit connection?
         // What is an "unconnected" document good for?

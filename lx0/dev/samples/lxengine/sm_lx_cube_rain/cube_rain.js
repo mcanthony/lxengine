@@ -117,6 +117,22 @@ var rain = {
     },
 };
 
+function fadeIn()
+{
+    var scene = $("Scene");
+    var fade = scene.attr("fade");
+    __lx_print("Fade = " + fade);
+    if (fade > 0.01)
+    {
+        fade -= 0.025;
+        scene.attr("fade", fade);
+        window.setTimeout(50, fadeIn);
+    }
+    else
+        scene.attr("fade", 0);
+}
+window.setTimeout(2000, fadeIn);
+
 window.setTimeout(10000, function() {
     rain.drop();
 });

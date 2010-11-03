@@ -53,7 +53,7 @@ link_directories("${DEPS_SDK}/openal/lib")
 set(OPENAL_LIBS 
     OpenAL32.lib 
     alut.lib)
-INSTALL(FILES "${DEPS_SDK}/openal/bin/${CMAKE_BUILD_TYPE}/alut.dll" DESTINATION ${PROJECT_BINARY_DIR})
+INSTALL(FILES "${DEPS_SDK}/openal/bin/Debug/alut.dll" DESTINATION ${PROJECT_BINARY_DIR})
 
 
 #
@@ -61,12 +61,12 @@ INSTALL(FILES "${DEPS_SDK}/openal/bin/${CMAKE_BUILD_TYPE}/alut.dll" DESTINATION 
 #
 include_directories("${DEPS_SDK}/libogg/include")
 link_directories("${DEPS_SDK}/libogg/lib")
-INSTALL(FILES "${DEPS_SDK}/libogg/bin/${CMAKE_BUILD_TYPE}/libogg.dll" DESTINATION ${PROJECT_BINARY_DIR})
+INSTALL(FILES "${DEPS_SDK}/libogg/bin/Debug/libogg.dll" DESTINATION ${PROJECT_BINARY_DIR})
 
 include_directories("${DEPS_SDK}/libvorbis/include")
 link_directories("${DEPS_SDK}/libvorbis/lib")
 set(VORBIS_LIBS libvorbis.lib libvorbisfile.lib libogg.lib)
 
-INSTALL(FILES "${DEPS_SDK}/libvorbis/bin/${CMAKE_BUILD_TYPE}/libvorbis.dll" DESTINATION ${PROJECT_BINARY_DIR})
-INSTALL(FILES "${DEPS_SDK}/libvorbis/bin/${CMAKE_BUILD_TYPE}/libvorbisfile.dll" DESTINATION ${PROJECT_BINARY_DIR})
+INSTALL(FILES "${DEPS_SDK}/libvorbis/bin/Debug/libvorbis.dll" DESTINATION ${PROJECT_BINARY_DIR})
+INSTALL(FILES "${DEPS_SDK}/libvorbis/bin/Debug/libvorbisfile.dll" DESTINATION ${PROJECT_BINARY_DIR})
 

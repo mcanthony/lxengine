@@ -290,11 +290,12 @@ namespace lx0 { namespace core {
     {
         // Credit to: http://www.ogre3d.org/tikiwiki/FadeEffectOverlay&structure=Cookbook
         
-        Ogre::ResourceGroupManager::getSingleton().addResourceLocation("data/sm_lx_basic", "FileSystem");
+        Ogre::ResourceGroupManager::getSingleton().addResourceLocation("data/sm_lx_cube_rain", "FileSystem");
         Ogre::ResourceGroupManager::getSingleton().initialiseAllResourceGroups();
 
         Ogre::ResourcePtr spResource = Ogre::MaterialManager::getSingleton().getByName("Materials/OverlayMaterial");
         Ogre::Material* pMat = dynamic_cast<Ogre::Material*>(spResource.getPointer());
+        lx_check_error(pMat != nullptr, "Could not load OGRE material");
 
         Ogre::Technique* pTech = pMat->getTechnique(0);
         mpTexUnit = pTech->getPass(0)->getTextureUnitState(0);

@@ -304,7 +304,7 @@ namespace lx0 { namespace core { namespace detail {
             long bytesRead;
             do 
             {
-                const size_t kChunk = 4096;
+                const size_t kChunk = 4096 * 4;
                 buffer.resize(buffer.size() + kChunk);
 
                 const int kEndian = 0;
