@@ -88,7 +88,7 @@ main (int argc, char** argv)
         auto start = lx_milliseconds();
         time_lxvar();
         auto end = lx_milliseconds();
-        std::cout << "std::vector = " << (end - start) << std::endl;
+        std::cout << "      lxvar = " << (end - start) << std::endl;
     }
     return 0;
 }

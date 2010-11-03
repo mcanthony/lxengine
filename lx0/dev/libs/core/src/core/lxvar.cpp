@@ -40,7 +40,7 @@ namespace lx0 { namespace core {
 
     namespace detail
     {
-        std::weak_ptr<lxundefined> lxundefined::uwpSingleton;
+        lxundefined lxundefined::s_singleton;
 
         lxvalue*    
         lxarray::clone (void) const

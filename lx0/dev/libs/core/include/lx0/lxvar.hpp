@@ -48,6 +48,52 @@ namespace lx0 { namespace core {
         class lxstring;
         class lxarray;
         class lxstringmap;
+
+        /*!
+            This is effectively a boost::intrusive_ptr<>.   The fact that it
+            (a) does not support weak pointers and (b) stores the reference
+            count on the object rather than on the pointer itself, makes this
+            noticeably faster and half the size of std::shared_ptr<>.  For a
+            small, performance sensitive object like lxvar, using a custom
+            class is warranted.
+         */
+        template <typename T>
+        struct lxshared_ptr
+        {
+            lxshared_ptr (T* p) 
+                : mPtr (p)
+            {
+                if (mPtr)
+                    mPtr->_incRef();                    
+            }
+            ~lxshared_ptr ()
+            {
+                if (mPtr)
+                    mPtr->_decRef();
+            }
+            lxshared_ptr(const lxshared_ptr& that)
+                : mPtr (that.mPtr)
+            {
+                if (mPtr)
+                    mPtr->_addRef();
+            }
+            void operator= (const lxshared_ptr& that)
+            {
+                if (that.mPtr)
+                    that.mPtr->_incRef();
+                if (mPtr)
+                    mPtr->_decRef();
+                mPtr = that.mPtr;
+            }
+
+            T*      operator->  () { return mPtr; }
+            T*      get         () { return mPtr; }
+            void    reset       () { if (mPtr) mPtr->_decRef(); mPtr = 0; }
+            void    reset       (T* p) { if (p) p->_incRef(); if (mPtr) mPtr->_decRef(); mPtr = p; }
+
+        protected:
+            T* mPtr;
+        };
     }
         
     /*!
@@ -182,7 +228,7 @@ namespace lx0 { namespace core {
         template <typename T>   bool    _isType (void) const;
         template <typename T>   T*      _castTo (void) const;
 
-        mutable std::shared_ptr<detail::lxvalue> mValue;
+        mutable detail::lxshared_ptr<detail::lxvalue> mValue;
     };
 
     template <typename T>   
@@ -218,7 +264,11 @@ namespace lx0 { namespace core {
         class lxvalue
         {
         public:
+                                lxvalue() : mRefCount (0) {}
             virtual             ~lxvalue() {}
+
+            void                _incRef     (void)          { mRefCount++; }
+            void                _decRef     (void)          { if (--mRefCount == 0) delete this; }
 
             virtual bool        sharedType  (void) const = 0;   //!< On a set operation, is the r-value referenced or copied?
             virtual lxvalue*    clone       (void) const = 0;   //!< Deep clone of the value
@@ -232,6 +282,8 @@ namespace lx0 { namespace core {
 
         protected:
             void                _invalid    (void) const;
+
+            unsigned int        mRefCount;
         };
 
 
@@ -239,16 +291,15 @@ namespace lx0 { namespace core {
         class lxundefined : public lxvalue
         {
         public:
-            static std::shared_ptr<lxvalue> acquire() { return acquireSingleton<lxundefined>(uwpSingleton); }
+            static lxvalue*     acquire() { return &s_singleton; }
 
-            virtual bool sharedType() const { return true; }
-            virtual lxvalue* clone() const { return const_cast<lxundefined*>(this); }
+            virtual bool        sharedType() const { return true; }
+            virtual lxvalue*    clone() const { return const_cast<lxundefined*>(this); }
 
         private:
-            lxundefined() {}
+            lxundefined() { _incRef(); }
             ~lxundefined() {}
-            template <typename T> friend std::shared_ptr<T> detail::acquireSingleton (std::weak_ptr<T>&);
-            static std::weak_ptr<lxundefined> uwpSingleton;
+            static lxundefined s_singleton;
         };
 
         class lxint : public lxvalue
