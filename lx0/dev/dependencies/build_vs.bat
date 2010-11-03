@@ -226,7 +226,7 @@ REM
 REM ===========================================================================
 
 echo.
-echo Building packges...
+echo Building packages...
 echo.
 
 REM ===========================================================================
@@ -253,17 +253,29 @@ REM ===========================================================================
 REM TODO: This still has a VS2010 dependency
 
 set PROJECT=OGRE
-set TESTFILE=bin\debug\OgreMain_d.dll
+set TESTFILE=sdk\bin\Release\OgreMain.dll
 set ROOTDIR=ogre_1_7_1\ogre_build
 
-echo cmake ..\ogre_src -DOGRE_DEPENDENCIES_DIR=..\OgreDependencies_MSVC_20100501\Dependencies -DBOOST_ROOT=..\..\boost_1_44_0\boost_1_44_0 >_t.bat
+echo pushd.>_t.bat
+echo cd ..\Dependencies\src>>_t.bat
+echo title Building OGRE Debug Dependencies>>_t.bat
+echo msbuild OgreDependencies.VS2010.sln /p:Configuration=Debug >>_t.bat
+echo title Building OGRE Release Dependencies>>_t.bat
+echo msbuild OgreDependencies.VS2010.sln /p:Configuration=Release >>_t.bat
+echo popd.>>_t.bat
+echo title Configuring OGRE>>_t.bat
+echo cmake ..\ogre_src -DOGRE_DEPENDENCIES_DIR=..\Dependencies -DBOOST_ROOT=..\..\boost_1_44_0\boost_1_44_0>>_t.bat
+echo title Building OGRE Debug>>_t.bat
 echo msbuild ALL_BUILD.vcxproj /p:Configuration=Debug >>_t.bat
+echo title Building OGRE Release>>_t.bat
 echo msbuild ALL_BUILD.vcxproj /p:Configuration=Release >>_t.bat
-echo msbuild INSTALL.vcxproj >>_t.bat
+echo msbuild INSTALL.vcxproj /p:Configuration=Debug >>_t.bat
+echo msbuild INSTALL.vcxproj /p:Configuration=Release >>_t.bat
 echo copy bin\Debug\*.pdb sdk\bin\Debug >>_t.bat
 echo copy bin\Debug\*.cfg sdk\bin\Debug >>_t.bat
 echo copy bin\Release\*.pdb sdk\bin\Release >>_t.bat
 echo copy bin\Release\*.cfg sdk\bin\Release >>_t.bat
+echo title build_vs.bat>>_t.bat
 
 call:build_project %PROJECT% %ROOTDIR% %TESTFILE%
 IF %FAILURE%==1 (goto:EOF)
@@ -276,7 +288,7 @@ REM ===========================================================================
 
 set PROJECT=OIS
 set ROOTDIR=ois_1_2_0\ois
-set TESTFILE=lib\OIS_static_d.lib
+set TESTFILE=lib\OIS_static.lib
 
 echo cd Win32 >_t.bat
 echo msbuild OIS.vcxproj /p:Configuration=Debug >>_t.bat

@@ -98,6 +98,7 @@ endmacro(recurse_subdirectories BASEDIR)
 #
 
 recurse_subdirectories(libs)
+recurse_subdirectories(benchmarks)
 recurse_subdirectories(samples)
 recurse_subdirectories(sandbox)
 recurse_subdirectories(unittest)

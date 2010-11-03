@@ -121,6 +121,7 @@ namespace lx0 { namespace core {
             lx_debug("    sizeof(std::unique_ptr<int>) = %u bytes", sizeof(std::unique_ptr<int>));
             lx_debug("    sizeof(std::shared_ptr<int>) = %u bytes", sizeof(std::shared_ptr<int>));
             lx_debug("    sizeof(std::weak_ptr<int>) = %u bytes", sizeof(std::weak_ptr<int>));
+            lx_debug("    sizeof(std::string) = %u bytes", sizeof(std::string));
             lx_debug("    sizeof(Engine) = %u bytes", sizeof(Engine));
             lx_debug("    sizeof(Document) = %u bytes", sizeof(Document));
             lx_debug("    sizeof(Element) = %u bytes", sizeof(Element));
