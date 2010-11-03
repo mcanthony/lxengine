@@ -60,6 +60,11 @@ file(GLOB ASSETS "$ENV{OGRE_HOME}/bin/debug/*.dll")
 INSTALL(FILES ${ASSETS} DESTINATION ${PROJECT_BINARY_DIR})
 configure_file($ENV{OGRE_HOME}/bin/debug/plugins_d.cfg ${PROJECT_BINARY_DIR}/plugins.cfg COPYONLY)
 
+message(STATUS "CMAKE_CXX_FLAGS_DEBUG=${CMAKE_CXX_FLAGS_DEBUG}")
+message(STATUS "CMAKE_CXX_FLAGS_RELEASE=${CMAKE_CXX_FLAGS_RELEASE}")
+message(STATUS "CMAKE_CXX_FLAGS_RELWITHDEBINFO=${CMAKE_CXX_FLAGS_RELWITHDEBINFO}")
+message(STATUS "CMAKE_EXE_LINKER_FLAGS=${CMAKE_EXE_LINKER_FLAGS}")
+
 #
 # Helper macros
 #
@@ -102,4 +107,5 @@ recurse_subdirectories(benchmarks)
 recurse_subdirectories(samples)
 recurse_subdirectories(sandbox)
 recurse_subdirectories(unittest)
+
 
