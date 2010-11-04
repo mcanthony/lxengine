@@ -30,7 +30,6 @@
 #pragma once
 
 #include <lx0/detail/forward_decls.hpp>
-#include <lx0/lxvar.hpp>
 #include <lx0/object.hpp>
 #include <lx0/point3.hpp>
 
@@ -40,11 +39,10 @@ namespace lx0 { namespace core {
     //!
     /*!
      */   
-    class Mesh : public lx0::core::detail::lxvalue
+    class Mesh : public Object
     {
     public:
         Mesh (lxvar& src);
-
 
         virtual lxvalue*    clone       (void) const { return nullptr; }
 
@@ -60,10 +58,7 @@ namespace lx0 { namespace core {
 
         std::vector<point3> mVertices;
         std::vector<Quad>   mFaces;
-
     };
-    typedef lx0::core::detail::lxshared_ptr<lx0::core::detail::lxvalue> LxValuePtr;
-    typedef lx0::core::detail::lxshared_ptr<Mesh> MeshPtr;
 
 }}
 

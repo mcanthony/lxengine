@@ -35,16 +35,24 @@
 namespace lx0 { namespace core {
 
     //===========================================================================//
-    //! DEPRECATED
+    //! 
     /*!
+        Developer Notes:
+
+        Currently unused, but may be useful for some features such as 
+        serialization.  For example, a generalized serializer could simply
+        walk all the properties (treating the lxvar any old lxvar), but 
+        a custom serialization method would be more efficient.  That would
+        also provide an immediate solution for the notion of transient 
+        properties that are useful during runtime but do not need to be
+        saved.  Another example might be compression: the object might know
+        how to store itself in a different format than the run-time format.
+
+        In any case, this class may eventually serve a useful purpose.
      */   
-    class Object 
+    class Object : public lx0::core::detail::lxvalue
     {
     public:
-        virtual     ~Object() {}
-
-        virtual ObjectPtr   clone       (void) const    { return ObjectPtr(); }
-        virtual void        deserialize (lxvar value)   = 0;
     };
 
 

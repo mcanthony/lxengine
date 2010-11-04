@@ -80,31 +80,31 @@ namespace lx0 { namespace core {
         , public detail::_EnableComponentList<Element, ElementComponent>
     {
     public:
-                        Element     (void);
-                        ~Element    (void);
+                        Element         (void);
+                        ~Element        (void);
 
-        std::string     tagName     (void) const            { return mTagName; }    //!< Get DOM tagName of the Element
-        void            tagName     (const char* s)         { mTagName = s; }       //!< Set DOM tagName of the Element
-        void            tagName     (const std::string& s)  { tagName(s.c_str()); } //!< Set DOM tagName of the Element
+        std::string     tagName         (void) const            { return mTagName; }    //!< Get DOM tagName of the Element
+        void            tagName         (const char* s)         { mTagName = s; }       //!< Set DOM tagName of the Element
+        void            tagName         (const std::string& s)  { tagName(s.c_str()); } //!< Set DOM tagName of the Element
 
-        lxvar           attr        (std::string name) const;
-        void            attr        (std::string name, lxvar value);      
+        lxvar           attr            (std::string name) const;
+        void            attr            (std::string name, lxvar value);      
 
-        ElementCPtr     parent      () const;
-        ElementPtr      parent      (void);
-        ElementCPtr     child       (int i) const;
-        ElementPtr      child       (int i);
-        int             childCount  (void) const;
-        void            removeChild (ElementPtr spElem);
+        ElementCPtr     parent          (void) const;
+        ElementPtr      parent          (void);
+        ElementCPtr     child           (int i) const;
+        ElementPtr      child           (int i);
+        int             childCount      (void) const;
+        void            removeChild     (ElementPtr spElem);
 
-        lxvar           value       (void) const    { return mValue; }
-        lxvar           value       (void)          { return mValue; }
-        void            value       (lxvar v);
+        lxvar           value           (void) const    { return mValue; }
+        lxvar           value           (void)          { return mValue; }
+        void            value           (lxvar v);
 
-        void            prepend     (ElementPtr spElem);
-        void            append      (ElementPtr spElem);
+        void            prepend         (ElementPtr spElem);
+        void            append          (ElementPtr spElem);
 
-        ElementPtr      _clone () const;
+        ElementPtr      _clone          (void) const;
 
         void            notifyAdded     (Document* pDocument);
         void            notifyRemoved   (Document* pDocument);
@@ -115,7 +115,7 @@ namespace lx0 { namespace core {
         typedef std::map<std::string, lxvar>    AttrMap;
         typedef std::deque<ElementPtr>          ElemList;
 
-        void                        _setHostDocument    (Document* pDocument);
+        void            _setHostDocument    (Document* pDocument);
 
         Document*       mpDocument;     // Non-owning pointer to host document
 
