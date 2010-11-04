@@ -38,18 +38,27 @@ namespace lx0 { namespace core {
     //!
     /*!
      */   
-    class Object
+    class Object 
     {
     public:
-        typedef std::shared_ptr<Object> ObjectPtr;
+        virtual     ~Object() {}
 
-        virtual ObjectPtr clone() const { return ObjectPtr(); }
-
-        virtual void deserialize(lxvar value) = 0;
-    
-    protected:
+        virtual ObjectPtr   clone       (void) const    { return ObjectPtr(); }
+        virtual void        deserialize (lxvar value)   = 0;
     };
 
-    typedef std::shared_ptr<Object> ObjectPtr;
+    //===========================================================================//
+    //!
+    /*!
+     */ 
+    class LxVarObject : public Object
+    {
+    public:
+        LxVarObject () {}
+        virtual ObjectPtr   clone() const { std::shared_ptr<LxVarObject> sp(new LxVarObject); sp->mValue = mValue.clone(); return sp; }
+        virtual void deserialize(lxvar value) { mValue = value; }
+    protected:
+        lxvar mValue;
+    };
 
 }}

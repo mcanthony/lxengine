@@ -48,7 +48,7 @@
 
 namespace lx0 { namespace core {
 
-    _LX_FORWARD_DECL_PTRS(Object);
+    
     _LX_FORWARD_DECL_PTRS(Element);
     _LX_FORWARD_DECL_PTRS(Transaction);
     _LX_FORWARD_DECL_PTRS(Document);
@@ -56,7 +56,10 @@ namespace lx0 { namespace core {
     _LX_FORWARD_DECL_PTRS(Engine);
     _LX_FORWARD_DECL_PTRS(View);
     _LX_FORWARD_DECL_PTRS(Controller);
+
+    _LX_FORWARD_DECL_PTRS(Object);
     _LX_FORWARD_DECL_PTRS(Mesh);
+    _LX_FORWARD_DECL_PTRS(LxVarObject);
 
     class KeyEvent;
 

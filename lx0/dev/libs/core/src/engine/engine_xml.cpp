@@ -97,10 +97,22 @@ namespace lx0 { namespace core {
 
                 lx_check_error(childElemCount == 0 || childTextCount == 0, "Unexpected XML element with both text and child nodes!");
 
-                if (!elemText.empty())
+                // This is a special-case that needs to be removed eventually.
+                //
+                lxvar elemValue;
+                lxvar srcAttr = spElem->attr("src");
+                if (srcAttr.isDefined() 
+                    && (tagName == "Mesh" || tagName == "Camera"))
                 {
-                    ///@todo This should be set to the element value
-                    lxvar value = lxvar::parse(elemText.c_str());
+                    if (!elemText.empty())
+                        lx_warn("Element has both a 'src' attribute and an inline value!  "
+                                "The src attribute overrides the value.");
+
+                    elemValue = lx0::util::lx_file_to_json(srcAttr.asString().c_str());
+                }
+                else if (!elemText.empty())
+                {
+                    elemValue = lxvar::parse(elemText.c_str());
                 }
 
                 ///@todo This doesn't have a clean fit with the rest of the architecture...
@@ -109,15 +121,16 @@ namespace lx0 { namespace core {
                 if (tagName == "Mesh") 
                 {
                     MeshPtr spMesh (new Mesh);
-
-                    lxvar src = spElem->attr("src");
-                    if (src.isDefined())
-                    {
-                        lxvar value = lx0::util::lx_file_to_json(src.asString().c_str());
-                        spMesh->deserialize(value);
-                        spElem->value(spMesh);
-                    }
+                    spMesh->deserialize(elemValue);
+                    spElem->value(spMesh);
                 }
+                else
+                {
+                    LxVarObjectPtr spGeneric (new LxVarObject);
+                    spGeneric->deserialize(elemValue);
+                    spElem->value(spGeneric);
+                }
+
 
                 return spElem;
             }
