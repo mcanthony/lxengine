@@ -46,7 +46,61 @@
     typedef std::weak_ptr<Klass> Klass ## WPtr; \
     typedef std::weak_ptr<const Klass> Klass ## CWPtr; 
 
+#define _LX_FORWARD_DECL_LXPTRS(Klass) \
+    class Klass; \
+    typedef detail::lxshared_ptr<Klass> Klass ## Ptr; \
+    typedef detail::lxshared_ptr<const Klass> Klass ## CPtr; \
+
 namespace lx0 { namespace core {
+
+    namespace detail {
+
+        /*!
+            This is effectively a boost::intrusive_ptr<>.   The fact that it
+            (a) does not support weak pointers and (b) stores the reference
+            count on the object rather than on the pointer itself, makes this
+            noticeably faster and half the size of std::shared_ptr<>.  For a
+            small, performance sensitive object like lxvar, using a custom
+            class is warranted.
+         */
+        template <typename T>
+        struct lxshared_ptr
+        {
+            lxshared_ptr (T* p) 
+                : mPtr (p)
+            {
+                if (mPtr)
+                    mPtr->_incRef();                    
+            }
+            ~lxshared_ptr ()
+            {
+                if (mPtr)
+                    mPtr->_decRef();
+            }
+            lxshared_ptr(const lxshared_ptr& that)
+                : mPtr (that.mPtr)
+            {
+                if (mPtr)
+                    mPtr->_incRef();
+            }
+            void operator= (const lxshared_ptr& that)
+            {
+                if (that.mPtr)
+                    that.mPtr->_incRef();
+                if (mPtr)
+                    mPtr->_decRef();
+                mPtr = that.mPtr;
+            }
+
+            T*      operator->  () { return mPtr; }
+            T*      get         () { return mPtr; }
+            void    reset       () { if (mPtr) mPtr->_decRef(); mPtr = 0; }
+            void    reset       (T* p) { if (p) p->_incRef(); if (mPtr) mPtr->_decRef(); mPtr = p; }
+
+        protected:
+            T* mPtr;
+        };
+    }
 
     
     _LX_FORWARD_DECL_PTRS(Element);
@@ -58,8 +112,9 @@ namespace lx0 { namespace core {
     _LX_FORWARD_DECL_PTRS(Controller);
 
     _LX_FORWARD_DECL_PTRS(Object);
-    _LX_FORWARD_DECL_PTRS(Mesh);
     _LX_FORWARD_DECL_PTRS(LxVarObject);
+
+    _LX_FORWARD_DECL_LXPTRS(Mesh);
 
     class KeyEvent;
 

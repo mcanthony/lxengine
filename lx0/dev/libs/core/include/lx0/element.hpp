@@ -97,11 +97,9 @@ namespace lx0 { namespace core {
         int             childCount  (void) const;
         void            removeChild (ElementPtr spElem);
 
-        const ObjectPtr value       (void) const    { return mspValue; }
-        ObjectPtr       value       (void)          { return mspValue; }
-        void            value       (ObjectPtr spValue);
-        template <typename T>
-        std::shared_ptr<T> value    (void);
+        lxvar           value       (void) const    { return mValue; }
+        lxvar           value       (void)          { return mValue; }
+        void            value       (lxvar v);
 
         void            prepend     (ElementPtr spElem);
         void            append      (ElementPtr spElem);
@@ -125,15 +123,8 @@ namespace lx0 { namespace core {
         AttrMap         mAttributes;
         ElementPtr      mspParent;
         ElemList        mChildren;
-        ObjectPtr       mspValue;       // May be a proxy object for delay-loading
+        mutable lxvar   mValue; 
     };
-
-    template <typename T>
-    std::shared_ptr<T> 
-    Element::value (void)
-    {
-        return std::dynamic_pointer_cast<T>( value() );
-    }
 
 }}
 

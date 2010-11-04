@@ -38,9 +38,14 @@
 
 namespace lx0 { namespace core {
 
-    void 
-    Mesh::deserialize(lxvar v)
+    /*!
+        Deserialize the input src var into a Mesh object
+     */
+    Mesh::Mesh (lxvar& v)
     {
+        // if src.type() == Mesh, set *this to a clone
+
+
         lx_check_error(v.isMap());
         lx_check_error(v.containsKey("type"));
         lx_check_error(v.containsKey("vertices"));
@@ -78,7 +83,7 @@ namespace lx0 { namespace core {
         }
     }
 
-    /*!
+        /*!
         This assume the mesh is centered about a local origin of 0,0,0.
      */
     float   

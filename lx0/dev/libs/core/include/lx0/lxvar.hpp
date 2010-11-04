@@ -48,52 +48,6 @@ namespace lx0 { namespace core {
         class lxstring;
         class lxarray;
         class lxstringmap;
-
-        /*!
-            This is effectively a boost::intrusive_ptr<>.   The fact that it
-            (a) does not support weak pointers and (b) stores the reference
-            count on the object rather than on the pointer itself, makes this
-            noticeably faster and half the size of std::shared_ptr<>.  For a
-            small, performance sensitive object like lxvar, using a custom
-            class is warranted.
-         */
-        template <typename T>
-        struct lxshared_ptr
-        {
-            lxshared_ptr (T* p) 
-                : mPtr (p)
-            {
-                if (mPtr)
-                    mPtr->_incRef();                    
-            }
-            ~lxshared_ptr ()
-            {
-                if (mPtr)
-                    mPtr->_decRef();
-            }
-            lxshared_ptr(const lxshared_ptr& that)
-                : mPtr (that.mPtr)
-            {
-                if (mPtr)
-                    mPtr->_addRef();
-            }
-            void operator= (const lxshared_ptr& that)
-            {
-                if (that.mPtr)
-                    that.mPtr->_incRef();
-                if (mPtr)
-                    mPtr->_decRef();
-                mPtr = that.mPtr;
-            }
-
-            T*      operator->  () { return mPtr; }
-            T*      get         () { return mPtr; }
-            void    reset       () { if (mPtr) mPtr->_decRef(); mPtr = 0; }
-            void    reset       (T* p) { if (p) p->_incRef(); if (mPtr) mPtr->_decRef(); mPtr = p; }
-
-        protected:
-            T* mPtr;
-        };
     }
         
     /*!
@@ -162,6 +116,8 @@ namespace lx0 { namespace core {
                         lxvar           (void);
                         lxvar           (const lxvar& that);
 
+                        lxvar           (detail::lxvalue* imp);
+
                         lxvar           (int i);
                         lxvar           (int a, int b, int c, int d);
                         lxvar           (float a);
@@ -175,6 +131,10 @@ namespace lx0 { namespace core {
         static lxvar    array           (void);                 //!< Return an empty array
 
         static lxvar    parse           (const char* s);
+
+        template <typename T>
+        detail::lxshared_ptr<T>
+                        imp             (void)                  { return detail::lxshared_ptr<T>( dynamic_cast<T*>(mValue.get()) ); }
 
         lxvar           clone           (void) const;           //!< Create a deep clone of the lxvar
 
@@ -271,9 +231,10 @@ namespace lx0 { namespace core {
 
             void                _incRef     (void)          { mRefCount++; }
             void                _decRef     (void)          { if (--mRefCount == 0) delete this; }
+            unsigned int        _refCount   (void) const    { return mRefCount; }
 
-            virtual bool        sharedType  (void) const = 0;   //!< On a set operation, is the r-value referenced or copied?
-            virtual lxvalue*    clone       (void) const = 0;   //!< Deep clone of the value
+            virtual bool        sharedType  (void) const    { return true; }    //!< On a set operation, is the r-value referenced or copied?
+            virtual lxvalue*    clone       (void) const = 0;                   //!< Deep clone of the value
 
             virtual int         size        (void) const                { _invalid(); return 0; }
             virtual lxvar       at          (int i)                     { _invalid(); return lxvar(); }

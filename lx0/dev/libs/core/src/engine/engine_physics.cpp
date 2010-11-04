@@ -297,7 +297,7 @@ namespace lx0 { namespace core { namespace detail {
             point3 pos              = posAttr.isDefined() ? point3(posAttr.convert()) : point3(0, 0, 0);
 
             auto spMeshElem         = spDocument->getElementById(ref);
-            MeshPtr spMesh          = spMeshElem->value<Mesh>();
+            MeshPtr spMesh         = spMeshElem->value().imp<Mesh>();
 
             // Determine the transformation
             //

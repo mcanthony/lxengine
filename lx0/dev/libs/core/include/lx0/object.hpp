@@ -35,7 +35,7 @@
 namespace lx0 { namespace core {
 
     //===========================================================================//
-    //!
+    //! DEPRECATED
     /*!
      */   
     class Object 
@@ -47,18 +47,5 @@ namespace lx0 { namespace core {
         virtual void        deserialize (lxvar value)   = 0;
     };
 
-    //===========================================================================//
-    //!
-    /*!
-     */ 
-    class LxVarObject : public Object
-    {
-    public:
-        LxVarObject () {}
-        virtual ObjectPtr   clone() const { std::shared_ptr<LxVarObject> sp(new LxVarObject); sp->mValue = mValue.clone(); return sp; }
-        virtual void deserialize(lxvar value) { mValue = value; }
-    protected:
-        lxvar mValue;
-    };
 
 }}

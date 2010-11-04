@@ -152,8 +152,7 @@ namespace lx0 { namespace core {
         pClone->mAttributes = mAttributes;
         pClone->mspParent = mspParent;
         pClone->mChildren = mChildren;
-        if (mspValue.get())
-            pClone->mspValue = mspValue->clone();
+        pClone->mValue = mValue.clone();
         return ElementPtr(pClone);
     }
 
@@ -182,9 +181,9 @@ namespace lx0 { namespace core {
     }
 
     void
-    Element::value(ObjectPtr spValue)
+    Element::value(lxvar v)
     {
-        mspValue = spValue;
+        mValue = v;
     }
 
     void

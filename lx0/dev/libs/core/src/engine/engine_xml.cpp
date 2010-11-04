@@ -115,23 +115,11 @@ namespace lx0 { namespace core {
                     elemValue = lxvar::parse(elemText.c_str());
                 }
 
-                ///@todo This doesn't have a clean fit with the rest of the architecture...
-                //
+
                 // This should be controlled in a more dynamic, pluggable fashion
                 if (tagName == "Mesh") 
-                {
-                    MeshPtr spMesh (new Mesh);
-                    spMesh->deserialize(elemValue);
-                    spElem->value(spMesh);
-                }
-                else
-                {
-                    LxVarObjectPtr spGeneric (new LxVarObject);
-                    spGeneric->deserialize(elemValue);
-                    spElem->value(spGeneric);
-                }
-
-
+                    spElem->value(new Mesh(elemValue));
+ 
                 return spElem;
             }
         };

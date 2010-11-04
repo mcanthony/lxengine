@@ -214,7 +214,7 @@ namespace lx0 { namespace core {
     View::_addMesh (std::string name, MeshPtr spMesh)
     {
         // The mesh pointer should not be null
-        lx_check_error(spMesh);
+        lx_check_error(spMesh.get() != nullptr);
 
         // See http://www.ogre3d.org/tikiwiki/ManualObject
         // See http://www.ogre3d.org/tikiwiki/tutorial+manual+object+to+mesh
@@ -593,7 +593,7 @@ namespace lx0 { namespace core {
                     ElementCPtr spMeshElem = spChild->child(j);
                     if (spMeshElem->tagName() == "Mesh")
                     {
-                        MeshPtr spMesh = std::dynamic_pointer_cast<Mesh>(spMeshElem->value());
+                        MeshPtr spMesh = spMeshElem->value().imp<Mesh>();
                         _addMesh(spMeshElem->attr("id").asString(), spMesh);
                     }
                 }

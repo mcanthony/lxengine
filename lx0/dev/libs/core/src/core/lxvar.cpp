@@ -166,6 +166,13 @@ namespace lx0 { namespace core {
         }
     }
 
+    lxvar::lxvar (detail::lxvalue* imp)
+        : mValue ( imp )
+    {
+        if (!imp->sharedType())
+            mValue = mValue->clone();
+    }
+
     lxvar::lxvar(int i)
         : mValue( new lxint(i) )
     {
