@@ -34,7 +34,6 @@
 
 #include <lx0/core.hpp>
 #include <lx0/util.hpp>
-#include <lx0/jsonio.hpp>
 
 using namespace lx0::core;
 
@@ -67,8 +66,7 @@ namespace lx0 { namespace util {
         std::string s = lx_file_to_string(pszFilename);
 
         const char* p = s.c_str();
-        lx0::serial::JsonParser parser;
-        return parser.parse(p);
+        return lxvar::parse(p);
     }
 
     std::string         

@@ -34,6 +34,8 @@
 #include <lx0/lxvar.hpp>
 #include <lx0/point3.hpp>
 
+#include "lxvar_parser.hpp"
+
 namespace lx0 { namespace core {
 
     using namespace detail;
@@ -390,4 +392,13 @@ namespace lx0 { namespace core {
         p.z = lx.at(2).asFloat();
         return p;
     }
+
+
+    lxvar    
+    lxvar::parse (const char* s)
+    {
+        detail::JsonParser parser;
+        return parser.parse(s);
+    }
+
 }};

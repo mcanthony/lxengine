@@ -35,11 +35,9 @@
 #include <deque>
 
 #include <lx0/core.hpp>
-#include <lx0/jsonio.hpp>
+#include <lx0/lxvar.hpp>
 
 using namespace lx0::core;
-using namespace lx0::serial;
-
 
 int mChecksOkay;
 int mChecksTotal;
@@ -174,83 +172,79 @@ main (int argc, char** argv)
         });
 
         F.add("parse simple", [] () {
-            JsonParser parser;
             lxvar v;
 
-            v = parser.parse("0.8");
+            v = lxvar::parse("0.8");
             CHECK(v.isFloat());
 
-            v = parser.parse(" 0.8");
+            v = lxvar::parse(" 0.8");
             CHECK(v.isFloat());
 
-            v = parser.parse("{}");
+            v = lxvar::parse("{}");
             CHECK(v.isMap());
             CHECK(v.size() == 0);
 
-            v = parser.parse(" { } ");
+            v = lxvar::parse(" { } ");
             CHECK(v.isMap());
             CHECK(v.size() == 0);
 
-            v = parser.parse("{ \"alpha\" : 1, \"beta\" : \"two\" }");
+            v = lxvar::parse("{ \"alpha\" : 1, \"beta\" : \"two\" }");
             CHECK(v.find("alpha").asInt() == 1);
             CHECK(v.find("beta").asString() == "two");
             CHECK(v.size() == 2);
 
             // Trailing comma should be ok.
-            v = parser.parse("{ \"alpha\" : 1, \"beta\" : \"two\", }");
+            v = lxvar::parse("{ \"alpha\" : 1, \"beta\" : \"two\", }");
             CHECK(v.find("alpha").asInt() == 1);
             CHECK(v.find("beta").asString() == "two");
             CHECK(v.size() == 2);
 
             // Single quotes should be ok.
-            v = parser.parse("{ 'alpha' : 1, 'beta' : 'two', }");
+            v = lxvar::parse("{ 'alpha' : 1, 'beta' : 'two', }");
             CHECK(v.find("alpha").asInt() == 1);
             CHECK(v.find("beta").asString() == "two");
             CHECK(v.size() == 2);
 
-            v = parser.parse("{ 'al pha' : 1, \"beta \" :  ' two', }");
+            v = lxvar::parse("{ 'al pha' : 1, \"beta \" :  ' two', }");
             CHECK(v.find("al pha").asInt() == 1);
             CHECK(v.find("beta ").asString() == " two");
             CHECK(v.size() == 2);
 
             // Unquoted associative array keys should be okay
-            v = parser.parse("{ alpha : 1, beta:' two', }");
+            v = lxvar::parse("{ alpha : 1, beta:' two', }");
             CHECK(v.find("alpha").asInt() == 1);
             CHECK(v.find("beta").asString() == " two");
             CHECK(v.size() == 2);
-            CHECK_EXCEPTION({ parser.parse("{ al pha : 1, beta:' two', }"); });
-            CHECK_EXCEPTION({ parser.parse("{ alpha : 1, beta:two, }"); });
+            CHECK_EXCEPTION({ lxvar::parse("{ al pha : 1, beta:' two', }"); });
+            CHECK_EXCEPTION({ lxvar::parse("{ alpha : 1, beta:two, }"); });
             
         });
         F.add("parse non-standard", [] () {
-            JsonParser parser;
             lxvar v;
 
-            v = parser.parse("0");
+            v = lxvar::parse("0");
             CHECK(v.isInt() && v.asInt() == 0);
 
-            v = parser.parse("123");
+            v = lxvar::parse("123");
             CHECK(v.isInt() && v.asInt() == 123);
 
-            v = parser.parse("1.1");
+            v = lxvar::parse("1.1");
             CHECK(v.isFloat() && v.asFloat() == 1.1f);
 
-            v = parser.parse("\"This is a string.\"");
+            v = lxvar::parse("\"This is a string.\"");
             CHECK(v.isString());
             CHECK(v.asString() == "This is a string.");
         });
 
         F.add("invalid ops", []() {
-            JsonParser parser;
-            lxvar v = parser.parse("{}");
+            lxvar v = lxvar::parse("{}");
 
             try { v.push(3); CHECK(false); } catch (...) { CHECK(true); }
             try { v.size();  CHECK(true);  } catch (...) { CHECK(false); }
         });
 
         F.add("iterators", []() {
-            JsonParser parser;
-            lxvar v = parser.parse("[ 0, 1, 2, 3, 4, 5 ]");
+            lxvar v = lxvar::parse("[ 0, 1, 2, 3, 4, 5 ]");
 
             try
             {
@@ -271,7 +265,7 @@ main (int argc, char** argv)
             }
 
 
-            v = parser.parse("{ a:0, b:1, c:2, d:3, e:4, f:5 }");
+            v = lxvar::parse("{ a:0, b:1, c:2, d:3, e:4, f:5 }");
 
             try
             {

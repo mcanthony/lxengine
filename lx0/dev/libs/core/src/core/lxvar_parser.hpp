@@ -31,39 +31,36 @@
 #include <lx0/slot.hpp>
 #include <lx0/lxvar.hpp>
 
-namespace lx0 { namespace serial {
+namespace lx0 { namespace core { namespace detail {
 
-    namespace detail {
+    class BaseParser
+    {
+    protected:
+                        BaseParser();
 
-        class BaseParser
-        {
-        protected:
-                            BaseParser();
+        void            _reset              (const char* pStream);
 
-            void            _reset              (const char* pStream);
+        char            _peek               (void);
+        char            _advance            (void);
+        void            _consume            (char c);
+        bool            _consumeConditional (char c);
+        void            _skipWhitespace     (void);
 
-            char            _peek               (void);
-            char            _advance            (void);
-            void            _consume            (char c);
-            bool            _consumeConditional (char c);
-            void            _skipWhitespace     (void);
+        int             _lineNumber         (void) const { return mLineNumber; }
+        int             _column             (void) const { return mColumn; }
+        std::string     _currentLine        (void) const;
 
-            int             _lineNumber         (void) const { return mLineNumber; }
-            int             _column             (void) const { return mColumn; }
-            std::string     _currentLine        (void) const;
-
-        public:
-            const char*     mpStartText;
-            const char*     mpStartLine;
-            const char*     mpStream;
-            int             mLineNumber;
-            int             mColumn;
-        };
-    }
+    public:
+        const char*     mpStartText;
+        const char*     mpStartLine;
+        const char*     mpStream;
+        int             mLineNumber;
+        int             mColumn;
+    };
 
     /*!
         @todo Split into a callback parser and an lxvar builder
-     */
+        */
     class JsonParser : public detail::BaseParser
     {
     public:
@@ -82,5 +79,5 @@ namespace lx0 { namespace serial {
         lxvar           _readValue          (void);
     };
 
-}}
+}}}
 

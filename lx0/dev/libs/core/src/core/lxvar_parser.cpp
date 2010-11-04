@@ -27,11 +27,11 @@
 //===========================================================================//
 
 #include <lx0/core.hpp>
-#include <lx0/jsonio.hpp>
+#include "lxvar_parser.hpp"
 
 using namespace lx0::core;
 
-namespace lx0 { namespace serial {
+namespace lx0 { namespace core {
 
     namespace detail {
 

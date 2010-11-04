@@ -82,6 +82,14 @@ namespace lx0 { namespace core { namespace detail {
         q.z = value.at(2).asFloat();
         q.w = value.at(3).asFloat();
     }
+
+    void _convert(lxvar& value, vector3& v)
+    {
+        lx_check_error(value.size() == 3);
+        v.x = value.at(0).asFloat();
+        v.y = value.at(1).asFloat();
+        v.z = value.at(2).asFloat();
+    }
 }}}
 
 namespace lx0 { namespace core {
@@ -355,6 +363,7 @@ namespace lx0 { namespace core {
 
             _setMaterial(spElem);
             _setTranslation( spElem->attr("translation") );
+            _setMaxExtent(spElem->attr("max_extent"));
         }
         OgreNodeLink::~OgreNodeLink()
         {
@@ -393,12 +402,36 @@ namespace lx0 { namespace core {
             mpEntity->setMaterial(spMat);
         }
 
+        void _setMaxExtent (lxvar value)
+        {
+            if (value.isUndefined())
+            {
+                // Empty value means use the original scale
+                _node()->setScale(1, 1, 1);
+            }
+            else if (value.isFloat())
+            {
+                float maxExtent = *value;
+                if (maxExtent > 0.0f)
+                {
+                    auto extents = _mesh()->getBounds().getSize();
+                    float f = maxExtent / std::max(extents.x, std::max(extents.y, extents.z));
+                    
+                    _node()->setScale(f, f, f);
+                }
+                else
+                    lx_warn("Invalid max_extent value %f", maxExtent);
+            }
+        }
+
         virtual void onAttributeChange(ElementPtr spElem, std::string name, lxvar value)
         {
             if (name == "translation")
                 _setTranslation(value);
             else if (name == "rotation")
                 _node()->setOrientation(value.convert());
+            else if (name == "max_extent")
+                _setMaxExtent(value);
             else if (name == "display")
             {
                 if (value.equal("block"))
@@ -412,6 +445,8 @@ namespace lx0 { namespace core {
                 _setMaterial(spElem);
         }
 
+        Ogre::Mesh*      _mesh()   { return mpEntity->getMesh().get(); }
+        Ogre::Entity*    _entity() { return mpEntity; }
         Ogre::SceneNode* _node() { return mpEntity->getParentSceneNode(); }
 
         Ogre::Entity*    mpEntity;

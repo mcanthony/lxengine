@@ -174,6 +174,8 @@ namespace lx0 { namespace core {
         static lxvar    map             (void);                 //!< Return an empty map
         static lxvar    array           (void);                 //!< Return an empty array
 
+        static lxvar    parse           (const char* s);
+
         lxvar           clone           (void) const;           //!< Create a deep clone of the lxvar
 
         auto_cast2      convert         (void)                  { return auto_cast2(*this); }

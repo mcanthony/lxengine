@@ -6,6 +6,14 @@
         <Mesh id="mesh_ship" src="media/models/ship_00.lxson" />
     </Library>
     <Scene>
-      <Ref id="ship" ref="mesh_ship" />
+      <Camera>
+        {
+          position : [ 9.0, 8.0, 10.0 ],
+          lookAt   : [ 0.0, 0.0, 0.0 ],
+          near     : 0.1,
+          far      : 100,
+        }
+      </Camera>
+      <Ref id="ship" ref="mesh_ship" max_extent="1.0"/>
     </Scene>
 </Root>
