@@ -66,12 +66,9 @@ main (int argc, char** argv)
     int exitCode = -1;
     try
     {
-        EnginePtr spEngine( Engine::acquire() );
-
+        EnginePtr   spEngine   = Engine::acquire();
         DocumentPtr spDocument = spEngine->loadDocument("data/sm_lx_cube_asteriods/level00.xml");
-
-        ViewPtr spView(new View);
-        spDocument->connect("view", spView);
+        ViewPtr     spView     = spDocument->createView("OGRE", "view");
         spView->show();
   
         exitCode = spEngine->run();

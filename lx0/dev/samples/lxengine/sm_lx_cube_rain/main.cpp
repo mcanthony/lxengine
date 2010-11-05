@@ -126,12 +126,8 @@ main (int argc, char** argv)
             spEngine->environment().setTimeScale(1.1f);
 
             DocumentPtr spDocument = spEngine->loadDocument(*options.find("file"));
-
-            {
-                ViewPtr spView(new View);
-                spDocument->connect("view", spView);
-                spView->show();
-            }
+            ViewPtr spView( spDocument->createView("OGRE", "view") );
+            spView->show();
   
             exitCode = spEngine->run();
 

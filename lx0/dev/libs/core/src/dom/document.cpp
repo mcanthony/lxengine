@@ -71,23 +71,25 @@ namespace lx0 { namespace core {
         return sp;
     }
 
-    void            
-    Document::connect (std::string name, ViewPtr spView)
+    ViewPtr
+    Document::createView (std::string type, std::string name)
     {
+        ViewPtr spView( new View(this) );
+
         m_views.insert(std::make_pair(name, spView));
-        spView->attach(this);
 
         // Forward the events along so they can be caught at any level
         spView->slotKeyDown += [&](KeyEvent& e) { this->slotKeyDown(e); };
+
+        return spView;
     }
     
     void
-    Document::disconnect (std::string name)
+    Document::destroyView (std::string name)
     {
         auto it = m_views.find(name);
         if (it != m_views.end())
         {
-            it->second->detach(this);
             m_views.erase(it);
         }
         else

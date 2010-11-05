@@ -97,6 +97,11 @@ macro(recurse_subdirectories BASEDIR)
 endmacro(recurse_subdirectories BASEDIR)
 
 #
+# Media
+#
+configure_file( media/scripts/base/ois_constants.js      ${CMAKE_BINARY_DIR}/media/scripts/base/ois_constants.js      COPYONLY)
+
+#
 # Sub-projects
 #
 

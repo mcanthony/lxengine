@@ -94,195 +94,6 @@ namespace lx0 { namespace core { namespace detail {
 
 namespace lx0 { namespace core {
 
-    namespace detail {
-
-        class LxOgre
-        {
-        public:
-            template <typename T> friend std::shared_ptr<T> acquireSingleton (std::weak_ptr<T>&);
-            static LxOgrePtr acquire() { return acquireSingleton<LxOgre>(s_wpLxOgre); }
-
-            Ogre::Root* root() { return mspRoot.get(); }
-
-
-        protected:
-            ~LxOgre() 
-            {
-            }
-
-            LxOgre()
-            {
-                // Initialize OGRE
-                try 
-                {
-                    // Create a LogManager manually before creating the root to intercept the
-                    // OGRE logging during initialization.
-                    // OGRE tracks these pointers internally - no need for the client to delete them.
-                    Ogre::LogManager* pLogManager = new Ogre::LogManager;
-                    Ogre::Log* pLog = pLogManager->createLog("ogre.log");
-                    pLog->setLogDetail(Ogre::LL_BOREME);
-                    pLog->setDebugOutputEnabled(false);
-
-#ifndef _DEBUG
-                    std::string pluginsCfgFile("plugins.cfg");
-#else
-                    std::string pluginsCfgFile("plugins_d.cfg");
-#endif
-                    mspRoot.reset(new Ogre::Root(pluginsCfgFile.c_str()));
-                    mspRoot->showConfigDialog();
-                }
-                catch (std::exception& e)
-                {
-                    lx_fatal("OGRE exception caught during initialization");
-                    throw e;
-                }
-            }
-
-            static LxOgreWPtr s_wpLxOgre;
-
-            std::auto_ptr<Ogre::Root>   mspRoot;
-        };
-
-        LxOgreWPtr LxOgre::s_wpLxOgre;
-
-
-        class LxWindowEventListener : public Ogre::WindowEventListener
-        {
-        public:
-            virtual void windowClosed(Ogre::RenderWindow* pRenderWindow)
-            {
-                Engine::acquire()->sendMessage("quit");
-            }
-        };
-
-        class LxFrameEventListener : public Ogre::FrameListener
-        {
-        public:
-            LxFrameEventListener(View* pView) : mpView(pView) {}
-            View* mpView;
-
-            virtual bool frameStarted(const Ogre::FrameEvent& evt) { return true; }
-            virtual bool frameRenderingQueued(const Ogre::FrameEvent& evt) { mpView->_updateFrameRenderingQueued(); return true; }
-            virtual bool frameEnded(const Ogre::FrameEvent& evt) { return true; }
-        };
-    }
-
-    using namespace detail;
-
-    View::View()
-        : mspLxOgre         ( LxOgre::acquire() )
-        , mpRenderWindow    (0)
-        , mpSceneMgr        (0)
-        , mpDocument        (nullptr)
-    {
-        Engine::acquire()->incObjectCount("View");
-    }
-
-    View::~View()
-    {
-        // These pointers are owned by OGRE.  Do not delete.  Set to NULL only for
-        // documentation purposes.
-        mpRenderWindow = 0;
-        mpSceneMgr  = 0;
-
-        Engine::acquire()->decObjectCount("View");
-    }
-
-    void  
-    View::attach (Document* pDocument)
-    {
-        lx_check_error(mpDocument == nullptr);
-        mpDocument = pDocument;
-
-        mpDocument->slotElementRemoved += [&](ElementPtr spElem) { 
-            _onElementRemoved(spElem);
-        };
-        mpDocument->slotElementAdded += [&](ElementPtr spElem) { 
-            _onElementAdded(spElem);
-        };
-    }
-
-    void  
-    View::detach (Document* pDocument)
-    {
-        lx_check_error(mpDocument == pDocument);
-        mpDocument = nullptr;
-    }
-
-
-    void
-    View::_addMesh (std::string name, MeshPtr spMesh)
-    {
-        // The mesh pointer should not be null
-        lx_check_error(spMesh.get() != nullptr);
-
-        // See http://www.ogre3d.org/tikiwiki/ManualObject
-        // See http://www.ogre3d.org/tikiwiki/tutorial+manual+object+to+mesh
-        
-        Ogre::ManualObject* pObject = mpSceneMgr->createManualObject((name + "-manual").c_str());
-
-        int index = 0;
-        auto add_tri = [&index, pObject] (Ogre::Vector3& v0, Ogre::Vector3& v1, Ogre::Vector3& v2) -> void {
-            Ogre::Vector3 normal = (v1 - v0).crossProduct(v2 - v1);
-            normal.normalise();
-
-            pObject->position(v0); 
-            pObject->normal(normal);
-            pObject->position(v1);
-            pObject->normal(normal);
-            pObject->position(v2);
-            pObject->normal(normal);
-            pObject->triangle(index, index + 1, index + 2);
-            index += 3;
-        };
-
-        auto add_quad = [&index, pObject] (Ogre::Vector3& v0, Ogre::Vector3& v1, Ogre::Vector3& v2, Ogre::Vector3& v3) -> void {
-            Ogre::Vector3 normal = (v1 - v0).crossProduct(v2 - v1);
-            normal.normalise();
-
-            pObject->position(v0); 
-            pObject->normal(normal);
-            pObject->position(v1);
-            pObject->normal(normal);
-            pObject->position(v2);
-            pObject->normal(normal);
-            pObject->triangle(index, index + 1, index + 2);
-            index += 3;
-
-            pObject->position(v2); 
-            pObject->normal(normal);
-            pObject->position(v3);
-            pObject->normal(normal);
-            pObject->position(v0);
-            pObject->normal(normal);
-            pObject->triangle(index, index + 1, index + 2);
-            index += 3;
-        };
-
-        pObject->begin("LxMaterial", Ogre::RenderOperation::OT_TRIANGLE_LIST);
-        for (auto fi = spMesh->mFaces.begin(); fi != spMesh->mFaces.end(); ++fi)
-        {
-            Ogre::Vector3& v0 = reinterpret_cast<Ogre::Vector3&>(spMesh->mVertices[fi->index[0]]);
-            Ogre::Vector3& v1 = reinterpret_cast<Ogre::Vector3&>(spMesh->mVertices[fi->index[1]]);
-            Ogre::Vector3& v2 = reinterpret_cast<Ogre::Vector3&>(spMesh->mVertices[fi->index[2]]);
-            
-            // A final index of -1 is a special value indicating that this is a triangle,
-            // not a quad.
-            if (fi->index[3] >= 0)
-            {
-                Ogre::Vector3& v3 = reinterpret_cast<Ogre::Vector3&>(spMesh->mVertices[fi->index[3]]);
-                add_quad(v0, v1, v2, v3);
-            }
-            else
-            {
-                add_tri(v0, v1, v2);
-            }
-        }
-        pObject->end();
-
-        pObject->convertToMesh(name.c_str());
-    }
-
     class SceneElem : public Element::Component
     {
     public:
@@ -297,56 +108,12 @@ namespace lx0 { namespace core {
         Ogre::TextureUnitState*     mpTexUnit;
     };
 
-    SceneElem::SceneElem(ElementPtr spElem)
-        : mpOverlay (nullptr) 
-        , mpTexUnit (nullptr)
-    {
-        // Credit to: http://www.ogre3d.org/tikiwiki/FadeEffectOverlay&structure=Cookbook
-        
-        Ogre::ResourceGroupManager::getSingleton().addResourceLocation("data/sm_lx_cube_rain", "FileSystem");
-        Ogre::ResourceGroupManager::getSingleton().initialiseAllResourceGroups();
-
-        Ogre::ResourcePtr spResource = Ogre::MaterialManager::getSingleton().getByName("Materials/OverlayMaterial");
-        Ogre::Material* pMat = dynamic_cast<Ogre::Material*>(spResource.getPointer());
-        lx_check_error(pMat != nullptr, "Could not load OGRE material");
-
-        Ogre::Technique* pTech = pMat->getTechnique(0);
-        mpTexUnit = pTech->getPass(0)->getTextureUnitState(0);
-
-        mpOverlay = Ogre::OverlayManager::getSingleton().getByName("Overlays/FadeInOut");
-
-        _reset(spElem);
-    }
-
-    void 
-    SceneElem::onAttributeChange(ElementPtr spElem, std::string name, lxvar value)
-    {
-        _reset(spElem);
-    }
-
-    void
-    SceneElem::_reset  (ElementPtr spElem)
-    {
-        float fade = spElem->attr("fade").query(0.0f);
-
-        if (fade < 0.01f)
-        {
-            mpTexUnit->setAlphaOperation(Ogre::LBX_MODULATE, Ogre::LBS_MANUAL, Ogre::LBS_TEXTURE, 0.0f);
-            mpOverlay->hide();
-        }
-        else
-        {
-            mpOverlay->show();
-            mpTexUnit->setAlphaOperation(Ogre::LBX_MODULATE, Ogre::LBS_MANUAL, Ogre::LBS_TEXTURE, fade);
-        }
-    }
-
     static int refCount = 0;
 
-    class OgreNodeLink : public Element::Component
+    class RefElem : public Element::Component
     {
     public:
-        OgreNodeLink (Ogre::SceneManager* mpSceneMgr, ElementPtr spElem) 
+        RefElem (Ogre::SceneManager* mpSceneMgr, ElementPtr spElem) 
             : mpEntity(nullptr) 
         {
             std::string name("anonymousRef");
@@ -365,7 +132,7 @@ namespace lx0 { namespace core {
             _setTranslation( spElem->attr("translation") );
             _setMaxExtent(spElem->attr("max_extent"));
         }
-        OgreNodeLink::~OgreNodeLink()
+        RefElem::~RefElem()
         {
             _node()->getParent()->removeChild(_node());
         }
@@ -452,114 +219,174 @@ namespace lx0 { namespace core {
         Ogre::Entity*    mpEntity;
     };
 
-    void
-    View::_onElementAdded (ElementPtr spElem)
-    {
-        if (spElem->tagName() == "Ref")
-            _processRef(spElem);
-        else if (spElem->tagName() == "Scene")
-            _processScene(spElem);
-    }
+    namespace detail {
 
-    void
-    View::_onElementRemoved (ElementPtr spElem)
-    {
-        if (spElem->tagName() == "Ref")
-            spElem->removeComponent("OgreLink");
-    }
-
-    void
-    View::_processScene (ElementPtr spElem)
-    {
-        spElem->attachComponent("OgreSceneElem", new SceneElem(spElem));
-    }
-
-    void
-    View::_processRef (ElementPtr spElem)
-    {
-        spElem->attachComponent("OgreLink", new OgreNodeLink(mpSceneMgr, spElem));
-    }
-
-    void        
-    View::_processGroup (ElementPtr spElem)
-    {
-        for (int j = 0; j < spElem->childCount(); ++j)
+        class LxOgre
         {
-            ElementPtr spChild = spElem->child(j);
+        public:
+                       
+                        LxOgre      (View* pHostView);
+                        ~LxOgre     (void);
 
-            if (spChild->tagName() == "Ref")
-                _processRef(spChild);
-            else if (spChild->tagName() == "Group")
+            Ogre::Root* root() { return mspRoot.get(); }
+
+            void        createWindow    (View* pHostView, size_t& handle, unsigned int& width, unsigned int& height);
+            void        show            (View* pHostView, Document* pDocument);
+
+
+            void        _updateFrameRenderingQueued ();
+            void        _onElementAdded             (ElementPtr spElem);
+            void        _onElementRemoved           (ElementPtr spElem);
+
+            void        updateBegin     (void);
+            void        updateFrame     (void);
+            void        updateEnd       (void);
+
+        protected:
+            void        _addLighting        (Ogre::SceneManager* pSceneMgr);
+            void        _addMaterials       (void);
+            void        _addGroundPlane     (Ogre::SceneManager* pSceneMgr);
+
+            void        _processDocument    (View* pHostView, Document* pDocument);
+            void        _processGroup       (ElementPtr spElem);
+            void        _processRef         (ElementPtr spElem);
+            void        _processScene       (ElementPtr spElem);
+            void        _processMesh        (std::string name, MeshPtr spMesh);
+
+            static LxOgreWPtr s_wpLxOgre;
+
+
+            View*                       mpHostView;
+            std::auto_ptr<Ogre::Root>   mspRoot;
+            Ogre::SceneManager*         mpSceneMgr;     //! Non-owning pointer.  OGRE owns this pointer
+            Ogre::RenderWindow*         mpRenderWindow; //! Non-owning pointer.  OGRE owns this pointer.
+            std::unique_ptr<detail::LxWindowEventListener> mspWindowEventListener;
+            std::unique_ptr<detail::LxFrameEventListener>  mspFrameEventListener;
+        };
+
+        class LxWindowEventListener : public Ogre::WindowEventListener
+        {
+        public:
+            virtual void windowClosed(Ogre::RenderWindow* pRenderWindow)
             {
-                _processGroup(spChild);
+                Engine::acquire()->sendMessage("quit");
+            }
+        };
+
+        class LxFrameEventListener : public Ogre::FrameListener
+        {
+        public:
+            LxFrameEventListener(LxOgre* pView) : mpView(pView) {}
+            LxOgre* mpView;
+
+            virtual bool frameStarted(const Ogre::FrameEvent& evt) { return true; }
+            virtual bool frameRenderingQueued(const Ogre::FrameEvent& evt) { mpView->_updateFrameRenderingQueued(); return true; }
+            virtual bool frameEnded(const Ogre::FrameEvent& evt) { return true; }
+        };
+
+        LxOgre::~LxOgre() 
+        {
+        }
+
+        LxOgre::LxOgre (View* pHostView)
+            : mpHostView        (pHostView)
+            , mpSceneMgr        (0)
+        {
+            // Initialize OGRE
+            try 
+            {
+                // Create a LogManager manually before creating the root to intercept the
+                // OGRE logging during initialization.
+                // OGRE tracks these pointers internally - no need for the client to delete them.
+                Ogre::LogManager* pLogManager = new Ogre::LogManager;
+                Ogre::Log* pLog = pLogManager->createLog("ogre.log");
+                pLog->setLogDetail(Ogre::LL_BOREME);
+                pLog->setDebugOutputEnabled(false);
+
+#ifndef _DEBUG
+                std::string pluginsCfgFile("plugins.cfg");
+#else
+                std::string pluginsCfgFile("plugins_d.cfg");
+#endif
+                mspRoot.reset(new Ogre::Root(pluginsCfgFile.c_str()));
+                mspRoot->showConfigDialog();
+            }
+            catch (std::exception& e)
+            {
+                lx_fatal("OGRE exception caught during initialization");
+                throw e;
             }
         }
-    }
 
-    /*!
-        Makes the view or window visible.
-     */
-    void 
-    View::show()
-    {
-        lx_check_error(mpRenderWindow == NULL);
-
-        Ogre::Root& root = *mspLxOgre->root();
-
-        // The render window creation also creates many internal OGRE data objects; therefore,
-        // create it first.  Otherwise objects like the Camera won't even work.
-        mpRenderWindow = root.initialise(true, "View" ); 
-
-        // Create the input manager for the window, now that the window has been created
+        void
+        LxOgre::createWindow (View* pHostView, size_t& handle, unsigned int& width, unsigned int& height)
         {
-            size_t hWindowHandle;
-            mpRenderWindow->getCustomAttribute("WINDOW", &hWindowHandle);
+            // The render window creation also creates many internal OGRE data objects; therefore,
+            // the client must create it first.  Otherwise, objects like the Camera won't even work.
+            //
+            mpRenderWindow = mspRoot->initialise(true, "View" ); 
+
+            // Get the handle to the window
+            mpRenderWindow->getCustomAttribute("WINDOW", &handle);
             
-            unsigned int width, height, depth;
+            // Get the dimensions of the window
+            unsigned int depth;
             int top, left;
             mpRenderWindow->getMetrics(width, height, depth, left, top);
-
-            mspLxInputManager.reset( new LxInputManager(hWindowHandle, width, height) );
-
-            mspLxInputManager->slotKeyDown += [&] (KeyEvent& e) { this->slotKeyDown(e); };
         }
 
-        mpSceneMgr = root.createSceneManager(Ogre::ST_GENERIC, "generic");
-
-        // Note: SHADOWTYPE_STENCIL_ADDITIVE requires that meshes have index buffers
-        // (can't be pure vertex lists).
-        //
-        mpSceneMgr->setShadowTechnique(Ogre::SHADOWTYPE_STENCIL_ADDITIVE);
-
-        Ogre::Camera* mCamera = mpSceneMgr->createCamera("Camera");
-
-        // Make Z-up on the OGRE camera
-        // See http://www.gamedev.net/community/forums/topic.asp?topic_id=452424
-        mCamera->roll(Ogre::Radian(1.57079633f));
-        mCamera->setFixedYawAxis(true, Ogre::Vector3::UNIT_Z);
-
-        mCamera->setPosition(Ogre::Vector3(9.0f,8.0f,10.0f));
-        mCamera->lookAt(Ogre::Vector3(0.0f,0.0f,0.0f));
-        mCamera->setNearClipDistance(0.1f);
-        mCamera->setFarClipDistance(100.0f);
-
-        Ogre::Viewport* mViewport = mpRenderWindow->addViewport(mCamera);
-        mViewport->setBackgroundColour(Ogre::ColourValue(0.1f, 0.1f, 0.16f));
-
-        mCamera->setAspectRatio(Ogre::Real(mViewport->getActualWidth()) / Ogre::Real(mViewport->getActualHeight()));
-
-        // Add ambient light since there currently are not standard lights
-        mpSceneMgr->setAmbientLight(Ogre::ColourValue(0.2f, 0.2f, 0.1f));
-
+        void
+        LxOgre::show (View* pHostView, Document* pDocument)
         {
-            Ogre::Light* light = mpSceneMgr->createLight("Light");
-            light->setType(Ogre::Light::LT_POINT);
-            light->setDiffuseColour(Ogre::ColourValue(1.0f, 1.0f, 1.0f));
-            light->setSpecularColour(Ogre::ColourValue(1.0f, 1.0f, 1.0f));
-            light->setPosition(10, 13, 18);
-            light->setAttenuation(1000, 1, 0, 0);
+            mpSceneMgr = mspRoot->createSceneManager(Ogre::ST_GENERIC, "generic");
+
+            // Note: SHADOWTYPE_STENCIL_ADDITIVE requires that meshes have index buffers
+            // (can't be pure vertex lists).
+            //
+            mpSceneMgr->setShadowTechnique(Ogre::SHADOWTYPE_STENCIL_ADDITIVE);
+
+            Ogre::Camera* mCamera = mpSceneMgr->createCamera("Camera");
+
+            // Make Z-up on the OGRE camera
+            // See http://www.gamedev.net/community/forums/topic.asp?topic_id=452424
+            mCamera->roll(Ogre::Radian(1.57079633f));
+            mCamera->setFixedYawAxis(true, Ogre::Vector3::UNIT_Z);
+
+            mCamera->setPosition(Ogre::Vector3(9.0f,8.0f,10.0f));
+            mCamera->lookAt(Ogre::Vector3(0.0f,0.0f,0.0f));
+            mCamera->setNearClipDistance(0.1f);
+            mCamera->setFarClipDistance(100.0f);
+
+            Ogre::Viewport* mViewport = mpRenderWindow->addViewport(mCamera);
+            mViewport->setBackgroundColour(Ogre::ColourValue(0.1f, 0.1f, 0.16f));
+
+            mCamera->setAspectRatio(Ogre::Real(mViewport->getActualWidth()) / Ogre::Real(mViewport->getActualHeight()));
+
+            _addLighting(mpSceneMgr);
+            _addMaterials();
+            _addGroundPlane(mpSceneMgr);
+
+            _processDocument(pHostView, pDocument);
         }
 
+        void
+        LxOgre::_addLighting (Ogre::SceneManager* pSceneMgr)
+        {
+            // Add ambient light since there currently are not standard lights
+            pSceneMgr->setAmbientLight(Ogre::ColourValue(0.2f, 0.2f, 0.1f));
+
+            {
+                Ogre::Light* light = pSceneMgr->createLight("Light");
+                light->setType(Ogre::Light::LT_POINT);
+                light->setDiffuseColour(Ogre::ColourValue(1.0f, 1.0f, 1.0f));
+                light->setSpecularColour(Ogre::ColourValue(1.0f, 1.0f, 1.0f));
+                light->setPosition(10, 13, 18);
+                light->setAttenuation(1000, 1, 0, 0);
+            }
+        }
+
+        void
+        LxOgre::_addMaterials (void)
         {
             Ogre::MaterialPtr spMat = Ogre::MaterialManager::getSingleton().create("LxMaterial", Ogre::ResourceGroupManager::INTERNAL_RESOURCE_GROUP_NAME);
             spMat->setLightingEnabled(true);
@@ -568,70 +395,322 @@ namespace lx0 { namespace core {
             spMat->setSpecular(0, 0, 0, 0);
         }
 
-        // Add a fixed ground plane.  This is going to have to go away...
+        void
+        LxOgre::_addGroundPlane (Ogre::SceneManager* pSceneMgr)
         {
             Ogre::Plane plane(Ogre::Vector3::UNIT_Z, 0);
             Ogre::MeshManager::getSingleton().createPlane("ground", Ogre::ResourceGroupManager::DEFAULT_RESOURCE_GROUP_NAME,
                 plane, 150, 150, 20, 20, true, 1, 5, 5, Ogre::Vector3::UNIT_Y);
  
-            Ogre::Entity* pGround = mpSceneMgr->createEntity("GroundEntity", "ground");
+            Ogre::Entity* pGround = pSceneMgr->createEntity("GroundEntity", "ground");
             pGround->setCastShadows(false);
 
-            mpSceneMgr->getRootSceneNode()->createChildSceneNode()->attachObject(pGround);
+            pSceneMgr->getRootSceneNode()->createChildSceneNode()->attachObject(pGround);
         }
 
-        ElementPtr spRoot = mpDocument->root();
-        for (int i = 0; i < spRoot->childCount(); ++i)
+        void
+        LxOgre::_processDocument (View* pHostView, Document* pDocument)
         {
-            ElementPtr spChild = spRoot->child(i);
-            if (spChild->tagName() == "Library")
+            ElementPtr spRoot = pDocument->root();
+            for (int i = 0; i < spRoot->childCount(); ++i)
             {
-                lx_debug("View found Library element in Document");
-
-                for (int j = 0; j < spChild->childCount(); ++j)
+                ElementPtr spChild = spRoot->child(i);
+                if (spChild->tagName() == "Library")
                 {
-                    ElementCPtr spMeshElem = spChild->child(j);
-                    if (spMeshElem->tagName() == "Mesh")
+                    lx_debug("View found Library element in Document");
+
+                    for (int j = 0; j < spChild->childCount(); ++j)
                     {
-                        MeshPtr spMesh = spMeshElem->value().imp<Mesh>();
-                        _addMesh(spMeshElem->attr("id").asString(), spMesh);
+                        ElementCPtr spMeshElem = spChild->child(j);
+                        if (spMeshElem->tagName() == "Mesh")
+                        {
+                            MeshPtr spMesh = spMeshElem->value().imp<Mesh>();
+                            _processMesh(spMeshElem->attr("id").asString(), spMesh);
+                        }
                     }
                 }
-            }
-            else if (spChild->tagName() == "Scene")
-            {
-                lx_debug("View found Scene element in Document");
-                _processScene(spChild);
-                _processGroup(spChild);
+                else if (spChild->tagName() == "Scene")
+                {
+                    lx_debug("View found Scene element in Document");
+                    _processScene(spChild);
+                    _processGroup(spChild);
+                }
             }
         }
+
+        void
+        LxOgre::_processScene (ElementPtr spElem)
+        {
+            spElem->attachComponent("OgreSceneElem", new SceneElem(spElem));
+        }
+
+        void
+        LxOgre::_processRef (ElementPtr spElem)
+        {
+            spElem->attachComponent("OgreRefElem", new RefElem(mpSceneMgr, spElem));
+        }
+
+        void        
+        LxOgre::_processGroup (ElementPtr spElem)
+        {
+            for (int j = 0; j < spElem->childCount(); ++j)
+            {
+                ElementPtr spChild = spElem->child(j);
+
+                if (spChild->tagName() == "Ref")
+                    _processRef(spChild);
+                else if (spChild->tagName() == "Group")
+                {
+                    _processGroup(spChild);
+                }
+            }
+        }
+
+        void
+        LxOgre::_processMesh (std::string name, MeshPtr spMesh)
+        {
+            // The mesh pointer should not be null
+            lx_check_error(spMesh.get() != nullptr);
+
+            // See http://www.ogre3d.org/tikiwiki/ManualObject
+            // See http://www.ogre3d.org/tikiwiki/tutorial+manual+object+to+mesh
+        
+            Ogre::ManualObject* pObject = mpSceneMgr->createManualObject((name + "-manual").c_str());
+
+            int index = 0;
+            auto add_tri = [&index, pObject] (Ogre::Vector3& v0, Ogre::Vector3& v1, Ogre::Vector3& v2) -> void {
+                Ogre::Vector3 normal = (v1 - v0).crossProduct(v2 - v1);
+                normal.normalise();
+
+                pObject->position(v0); 
+                pObject->normal(normal);
+                pObject->position(v1);
+                pObject->normal(normal);
+                pObject->position(v2);
+                pObject->normal(normal);
+                pObject->triangle(index, index + 1, index + 2);
+                index += 3;
+            };
+
+            auto add_quad = [&index, pObject] (Ogre::Vector3& v0, Ogre::Vector3& v1, Ogre::Vector3& v2, Ogre::Vector3& v3) -> void {
+                Ogre::Vector3 normal = (v1 - v0).crossProduct(v2 - v1);
+                normal.normalise();
+
+                pObject->position(v0); 
+                pObject->normal(normal);
+                pObject->position(v1);
+                pObject->normal(normal);
+                pObject->position(v2);
+                pObject->normal(normal);
+                pObject->triangle(index, index + 1, index + 2);
+                index += 3;
+
+                pObject->position(v2); 
+                pObject->normal(normal);
+                pObject->position(v3);
+                pObject->normal(normal);
+                pObject->position(v0);
+                pObject->normal(normal);
+                pObject->triangle(index, index + 1, index + 2);
+                index += 3;
+            };
+
+            pObject->begin("LxMaterial", Ogre::RenderOperation::OT_TRIANGLE_LIST);
+            for (auto fi = spMesh->mFaces.begin(); fi != spMesh->mFaces.end(); ++fi)
+            {
+                Ogre::Vector3& v0 = reinterpret_cast<Ogre::Vector3&>(spMesh->mVertices[fi->index[0]]);
+                Ogre::Vector3& v1 = reinterpret_cast<Ogre::Vector3&>(spMesh->mVertices[fi->index[1]]);
+                Ogre::Vector3& v2 = reinterpret_cast<Ogre::Vector3&>(spMesh->mVertices[fi->index[2]]);
+            
+                // A final index of -1 is a special value indicating that this is a triangle,
+                // not a quad.
+                if (fi->index[3] >= 0)
+                {
+                    Ogre::Vector3& v3 = reinterpret_cast<Ogre::Vector3&>(spMesh->mVertices[fi->index[3]]);
+                    add_quad(v0, v1, v2, v3);
+                }
+                else
+                {
+                    add_tri(v0, v1, v2);
+                }
+            }
+            pObject->end();
+
+            pObject->convertToMesh(name.c_str());
+        }
+
+        void
+        LxOgre::_onElementAdded (ElementPtr spElem)
+        {
+            if (spElem->tagName() == "Ref")
+                _processRef(spElem);
+            else if (spElem->tagName() == "Scene")
+                _processScene(spElem);
+        }
+
+        void
+        LxOgre::_onElementRemoved (ElementPtr spElem)
+        {
+            if (spElem->tagName() == "Ref")
+                spElem->removeComponent("OgreRefElem");
+        }
+
+        void
+        LxOgre::_updateFrameRenderingQueued ()
+        {
+            mpHostView->_updateFrameRenderingQueued();
+        }
+
+        void
+        LxOgre::updateBegin()
+        {
+            lx_check_error(mspWindowEventListener.get() == nullptr, 
+                "Window Event Listener already allocated: has updateBegin() been incorrectly called twice?");
+
+            mspWindowEventListener.reset(new LxWindowEventListener);
+            Ogre::WindowEventUtilities::addWindowEventListener(mpRenderWindow, mspWindowEventListener.get()); 
+
+            mspFrameEventListener.reset(new LxFrameEventListener(this));
+            mspRoot->addFrameListener(mspFrameEventListener.get());
+
+            lx_check_error(mspRoot->getRenderSystem() != 0);
+            mspRoot->getRenderSystem()->_initRenderTargets();
+
+            // Clear event times
+		    mspRoot->clearEventTimes();
+        }
+
+        void
+        LxOgre::updateEnd()
+        {
+            mspRoot->removeFrameListener(mspFrameEventListener.get());
+            Ogre::WindowEventUtilities::removeWindowEventListener(mpRenderWindow, mspWindowEventListener.get());
+
+            mspFrameEventListener.release();
+            mspWindowEventListener.release();
+        }
+
+        void
+        LxOgre::updateFrame()
+        {
+		    // Pump messages in all registered RenderWindow windows
+		    Ogre::WindowEventUtilities::messagePump();
+
+            mspRoot->renderOneFrame();
+        }
+    }
+
+    SceneElem::SceneElem(ElementPtr spElem)
+        : mpOverlay (nullptr) 
+        , mpTexUnit (nullptr)
+    {
+        // Credit to: http://www.ogre3d.org/tikiwiki/FadeEffectOverlay&structure=Cookbook
+        
+        Ogre::ResourceGroupManager::getSingleton().addResourceLocation("data/sm_lx_cube_rain", "FileSystem");
+        Ogre::ResourceGroupManager::getSingleton().initialiseAllResourceGroups();
+
+        Ogre::ResourcePtr spResource = Ogre::MaterialManager::getSingleton().getByName("Materials/OverlayMaterial");
+        Ogre::Material* pMat = dynamic_cast<Ogre::Material*>(spResource.getPointer());
+        lx_check_error(pMat != nullptr, "Could not load OGRE material");
+
+        Ogre::Technique* pTech = pMat->getTechnique(0);
+        mpTexUnit = pTech->getPass(0)->getTextureUnitState(0);
+
+        mpOverlay = Ogre::OverlayManager::getSingleton().getByName("Overlays/FadeInOut");
+
+        _reset(spElem);
+    }
+
+    void 
+    SceneElem::onAttributeChange(ElementPtr spElem, std::string name, lxvar value)
+    {
+        _reset(spElem);
+    }
+
+    void
+    SceneElem::_reset (ElementPtr spElem)
+    {
+        float fade = spElem->attr("fade").query(0.0f);
+
+        if (fade < 0.01f)
+        {
+            mpTexUnit->setAlphaOperation(Ogre::LBX_MODULATE, Ogre::LBS_MANUAL, Ogre::LBS_TEXTURE, 0.0f);
+            mpOverlay->hide();
+        }
+        else
+        {
+            mpOverlay->show();
+            mpTexUnit->setAlphaOperation(Ogre::LBX_MODULATE, Ogre::LBS_MANUAL, Ogre::LBS_TEXTURE, fade);
+        }
+    }
+
+
+    using namespace detail;
+
+    View::View (Document* pDocument)
+        : mspLxOgre         ( new LxOgre(this) )
+        , mpDocument        (pDocument)
+    {
+        Engine::acquire()->incObjectCount("View");
+
+        lx_check_error(pDocument != nullptr, "Views must have a valid host Document");
+
+        //
+        // Hook into Document events
+        //
+        mpDocument->slotElementRemoved += [&](ElementPtr spElem) { 
+            _onElementRemoved(spElem);
+        };
+        mpDocument->slotElementAdded += [&](ElementPtr spElem) { 
+            _onElementAdded(spElem);
+        };
+    }
+
+    View::~View()
+    {
+        Engine::acquire()->decObjectCount("View");
+    }
+
+    void
+    View::_onElementAdded (ElementPtr spElem)
+    {
+        mspLxOgre->_onElementAdded(spElem);
+    }
+
+    void
+    View::_onElementRemoved (ElementPtr spElem)
+    {
+        mspLxOgre->_onElementRemoved(spElem);
+    }
+
+    /*!
+        Makes the view or window visible.
+     */
+    void 
+    View::show()
+    {
+        size_t hWindowHandle;
+        unsigned int width, height;
+        mspLxOgre->createWindow(this, hWindowHandle, width, height);
+
+
+        // Create the input manager for the window, now that the window has been created
+        mspLxInputManager.reset( new LxInputManager(hWindowHandle, width, height) );
+        mspLxInputManager->slotKeyDown += [&] (KeyEvent& e) { this->slotKeyDown(e); };
+    
+        mspLxOgre->show(this, mpDocument);
     }
 
     void
     View::updateBegin()
     {
-        lx_check_error(mspWindowEventListener.get() == nullptr, "Window Event Listener already allocated: has updateBegin() been incorrectly called twice?");
-
-        mspWindowEventListener.reset(new LxWindowEventListener);
-        Ogre::WindowEventUtilities::addWindowEventListener(mpRenderWindow, mspWindowEventListener.get());
-
-        Ogre::Root* pRoot = mspLxOgre->root();
-
-        mspFrameEventListener.reset(new LxFrameEventListener(this));
-        pRoot->addFrameListener(mspFrameEventListener.get());
-
-        lx_check_error(pRoot->getRenderSystem() != 0);
-        pRoot->getRenderSystem()->_initRenderTargets();
-
-        // Clear event times
-		pRoot->clearEventTimes();
+        mspLxOgre->updateBegin();
     }
 
     void
     View::updateEnd()
     {
-        mspLxOgre->root()->removeFrameListener(mspFrameEventListener.get());
-        Ogre::WindowEventUtilities::removeWindowEventListener(mpRenderWindow, mspWindowEventListener.get());
+        mspLxOgre->updateEnd();
     }
 
     /*
@@ -648,10 +727,6 @@ namespace lx0 { namespace core {
     void
     View::updateFrame()
     {
-		// Pump messages in all registered RenderWindow windows
-		Ogre::WindowEventUtilities::messagePump();
-
-        Ogre::Root* pRoot = mspLxOgre->root();
-        pRoot->renderOneFrame();
+        mspLxOgre->updateFrame();
     }
 }}

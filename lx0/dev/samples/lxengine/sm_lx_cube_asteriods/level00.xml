@@ -1,5 +1,6 @@
 <Root>
     <Header>
+        <Script language="javascript" src="media/scripts/base/ois_constants.js" />
         <Script language="javascript" src="data/sm_lx_cube_rain/lxquery.js" />
     </Header>
     <Library>

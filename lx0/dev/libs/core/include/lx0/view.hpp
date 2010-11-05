@@ -45,6 +45,13 @@ namespace lx0 { namespace core {
         class LxFrameEventListener;
     };
 
+    class ViewImp
+    {
+    public:
+        virtual     ~ViewImp() {}
+    };
+
+
     //===========================================================================//
     //!
     /*!
@@ -58,18 +65,16 @@ namespace lx0 { namespace core {
     {
     public:
         friend class detail::LxFrameEventListener;
+        friend class detail::LxOgre;                // TEMPORARY until refactoring of ViewImp is done
 
-        View();
-        ~View();
+                    View            (Document* pDocument);
+                    ~View           (void);
         
         void        show            (void);
 
         void        updateBegin     (void);
         void        updateFrame     (void);
         void        updateEnd       (void);
-
-        void        attach          (Document* pDocument);
-        void        detach          (Document* pDocument);
 
         slot<void (KeyEvent&)>      slotKeyDown;
 
@@ -78,18 +83,11 @@ namespace lx0 { namespace core {
 
         void        _onElementAdded (ElementPtr spElem);
         void        _onElementRemoved (ElementPtr spElem);
-        void        _processGroup   (ElementPtr spElem);
-        void        _processRef     (ElementPtr spElem);
-        void        _processScene   (ElementPtr spElem);
-        void        _addMesh        (std::string name, MeshPtr spMesh);
+
+        Document*                   mpDocument;         //! Non-owning pointer
+        detail::LxInputManagerPtr   mspLxInputManager;
+        std::unique_ptr<ViewImp>    mspViewImp;
 
         detail::LxOgrePtr           mspLxOgre;
-        detail::LxInputManagerPtr   mspLxInputManager;
-        Ogre::RenderWindow*         mpRenderWindow; //! Non-owning pointer.  OGRE owns this pointer.
-        Ogre::SceneManager*         mpSceneMgr;     //! Non-owning pointer.  OGRE owns this pointer.
-        Document*                   mpDocument;     //! Non-owning pointer.  Document will detach itself.
-
-        std::unique_ptr<detail::LxWindowEventListener> mspWindowEventListener;
-        std::unique_ptr<detail::LxFrameEventListener>  mspFrameEventListener;
     };
 }}

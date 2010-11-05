@@ -87,8 +87,8 @@ namespace lx0 { namespace core {
 
         TransactionPtr          transaction     (void);
 
-        void                    connect         (std::string name, ViewPtr spView);
-        void                    disconnect      (std::string name);
+        ViewPtr                 createView      (std::string type, std::string name);
+        void                    destroyView     (std::string name);
 
         ElementCPtr             root            (void) const        { return m_spRoot; }
         ElementPtr              root            (void)              { return m_spRoot; }
