@@ -74,7 +74,7 @@ namespace lx0 { namespace core {
     ViewPtr
     Document::createView (std::string type, std::string name)
     {
-        ViewPtr spView( new View(this) );
+        ViewPtr spView( new View(type, this) );
 
         m_views.insert(std::make_pair(name, spView));
 

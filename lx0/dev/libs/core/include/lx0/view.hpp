@@ -38,17 +38,23 @@
 namespace lx0 { namespace core {
 
     namespace detail {
-        _LX_FORWARD_DECL_PTRS(LxOgre);
         _LX_FORWARD_DECL_PTRS(LxInputManager);
-
-        class LxWindowEventListener;
-        class LxFrameEventListener;
     };
 
     class ViewImp
     {
     public:
         virtual     ~ViewImp() {}
+
+        virtual void        createWindow    (View* pHostView, size_t& handle, unsigned int& width, unsigned int& height) = 0;
+        virtual void        show            (View* pHostView, Document* pDocument) = 0;
+
+        virtual     void        _onElementAdded             (ElementPtr spElem) = 0;
+        virtual     void        _onElementRemoved           (ElementPtr spElem) = 0;
+
+        virtual     void        updateBegin     (void) = 0;
+        virtual     void        updateFrame     (void) = 0;
+        virtual     void        updateEnd       (void) = 0;
     };
 
 
@@ -64,10 +70,7 @@ namespace lx0 { namespace core {
     class View 
     {
     public:
-        friend class detail::LxFrameEventListener;
-        friend class detail::LxOgre;                // TEMPORARY until refactoring of ViewImp is done
-
-                    View            (Document* pDocument);
+                    View            (std::string impType, Document* pDocument);
                     ~View           (void);
         
         void        show            (void);
@@ -78,16 +81,18 @@ namespace lx0 { namespace core {
 
         slot<void (KeyEvent&)>      slotKeyDown;
 
-    protected:
-        void        _updateFrameRenderingQueued();
+        void        notifyViewImpIdle   (void);
 
-        void        _onElementAdded (ElementPtr spElem);
-        void        _onElementRemoved (ElementPtr spElem);
+    protected:
+
+
+        void        _onElementAdded     (ElementPtr spElem);
+        void        _onElementRemoved   (ElementPtr spElem);
+
+        ViewImp*    _createViewImpOgre  (View* pView);
 
         Document*                   mpDocument;         //! Non-owning pointer
         detail::LxInputManagerPtr   mspLxInputManager;
-        std::unique_ptr<ViewImp>    mspViewImp;
-
-        detail::LxOgrePtr           mspLxOgre;
+        std::unique_ptr<ViewImp>    mspImp;
     };
 }}
