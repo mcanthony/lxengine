@@ -69,6 +69,10 @@ message(STATUS "CMAKE_EXE_LINKER_FLAGS=${CMAKE_EXE_LINKER_FLAGS}")
 
 set( LX_ALL_LIBS ${OGRE_LIBRARIES} lx0 ${V8_LIBS} ${BULLET_LIBS} ${OIS_LIBS} ${OPENAL_LIBS} ${VORBIS_LIBS})
 
+macro(copy_media_direct FILE)
+    configure_file( ${FILE}  ${CMAKE_BINARY_DIR}/${FILE}  COPYONLY)
+endmacro(copy_media_direct)
+
 macro(simple_executable EXENAME)
 
    set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR} )
@@ -99,7 +103,10 @@ endmacro(recurse_subdirectories BASEDIR)
 #
 # Media
 #
-configure_file( media/scripts/base/ois_constants.js      ${CMAKE_BINARY_DIR}/media/scripts/base/ois_constants.js      COPYONLY)
+copy_media_direct( media/scripts/base/ois_constants.js )
+copy_media_direct( media/ogre/materials/solid_glsl.material )
+copy_media_direct( media/shaders/glsl/vertex/transform_only.vert )
+copy_media_direct( media/shaders/glsl/fragment/solid.frag )
 
 #
 # Sub-projects

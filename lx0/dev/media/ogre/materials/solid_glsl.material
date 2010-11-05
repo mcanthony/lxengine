@@ -1,0 +1,29 @@
+vertex_program MinimalVertGLSL glsl
+{
+    source transform_only.vert
+}
+
+fragment_program MinimalFragGLSL glsl
+{
+    source solid.frag
+}
+
+material Material/Minimal_GLSL
+{
+    technique
+    {
+        pass
+        {
+            lighting off
+
+            vertex_program_ref MinimalVertGLSL
+            { 
+            }
+
+            fragment_program_ref MinimalFragGLSL
+            { 
+                param_named inColor float4    0.2 0.6 0.9
+            }
+        }
+    }
+}

@@ -57,6 +57,7 @@
 #include <OGRE/OgreEntity.h>
 #include <OGRE/OgreQuaternion.h>
 #include <OGRE/OgreMeshManager.h>
+#include <OGRE/OgreSubEntity.h>
 
 using namespace lx0::core;
 using namespace lx0::util;
@@ -163,6 +164,7 @@ namespace {
             Ogre::Vector3 specular (0, 0, 0);
             float shininess = 1;
 
+            std::string material = spElem->attr("material").query("standard");
             lxvar elemDiffuse = spElem->attr("color");
             lxvar elemSpecular = spElem->attr("specular");
             lxvar elemShininess = spElem->attr("shininess");
@@ -173,14 +175,28 @@ namespace {
                 specular = (Ogre::Vector3)elemSpecular.convert();
             if (elemShininess.isDefined())
                 shininess = *elemShininess;
-               
-            Ogre::MaterialPtr spMat = Ogre::MaterialManager::getSingleton().create("LxMaterial", Ogre::ResourceGroupManager::INTERNAL_RESOURCE_GROUP_NAME);
-            spMat->setLightingEnabled(true);
-            spMat->setAmbient(.1f, .1f, .1f);
-            spMat->setDiffuse(diffuse.x, diffuse.y, diffuse.z, 1);
-            spMat->setSpecular(specular.x, specular.y, specular.z, 0);
-            spMat->setShininess(shininess);
-            mpEntity->setMaterial(spMat);
+
+            if (material == "solid")
+            {
+                Ogre::MaterialPtr spMat =  Ogre::MaterialManager::getSingleton().getByName("Material/Minimal_GLSL");
+                lx_check_error(!spMat.isNull());
+                spMat = spMat->clone("anything");
+                spMat->getTechnique(0)->getPass(0)->getFragmentProgramParameters()->setNamedConstant("inColor", Ogre::Vector4(diffuse.x, diffuse.y, diffuse.z, 1));
+                
+                mpEntity->setMaterial(spMat);
+            }
+            else 
+            {
+                lx_check_error(material == "standard");
+
+                Ogre::MaterialPtr spMat = Ogre::MaterialManager::getSingleton().create("LxMaterial", Ogre::ResourceGroupManager::INTERNAL_RESOURCE_GROUP_NAME);
+                spMat->setLightingEnabled(true);
+                spMat->setAmbient(.1f, .1f, .1f);
+                spMat->setDiffuse(diffuse.x, diffuse.y, diffuse.z, 1);
+                spMat->setSpecular(specular.x, specular.y, specular.z, 0);
+                spMat->setShininess(shininess);
+                mpEntity->setMaterial(spMat);
+            }
         }
 
         void _setMaxExtent (lxvar value)
@@ -431,6 +447,15 @@ namespace {
         spMat->setAmbient(.1f, .1f, .1f);
         spMat->setDiffuse(1, 1, 1, 1);
         spMat->setSpecular(0, 0, 0, 0);
+
+        {
+            Ogre::ResourceGroupManager::getSingleton().addResourceLocation("data/sm_lx_cube_rain", "FileSystem");
+
+            Ogre::ResourceGroupManager::getSingleton().addResourceLocation("media/shaders/glsl/fragment", "FileSystem");
+            Ogre::ResourceGroupManager::getSingleton().addResourceLocation("media/shaders/glsl/vertex", "FileSystem");
+            Ogre::ResourceGroupManager::getSingleton().addResourceLocation("media/ogre/materials", "FileSystem");
+            Ogre::ResourceGroupManager::getSingleton().initialiseAllResourceGroups();
+        }
     }
 
     void
@@ -647,9 +672,6 @@ namespace {
         , mpTexUnit (nullptr)
     {
         // Credit to: http://www.ogre3d.org/tikiwiki/FadeEffectOverlay&structure=Cookbook
-        
-        Ogre::ResourceGroupManager::getSingleton().addResourceLocation("data/sm_lx_cube_rain", "FileSystem");
-        Ogre::ResourceGroupManager::getSingleton().initialiseAllResourceGroups();
 
         Ogre::ResourcePtr spResource = Ogre::MaterialManager::getSingleton().getByName("Materials/OverlayMaterial");
         Ogre::Material* pMat = dynamic_cast<Ogre::Material*>(spResource.getPointer());
