@@ -72,7 +72,7 @@ namespace lx0 { namespace core {
                 {
                     std::string name = pAttrib->Name();
                     std::string value = pAttrib->Value();
-                    lxvar parsedValue = lxvar::parse(value.c_str());
+                    lxvar parsedValue = Engine::acquire()->parseAttribute(name, value);
                     spElem->attr(name, parsedValue);
                 }
 

@@ -42,11 +42,26 @@
 // Lx headers
 #include <lx0/detail/forward_decls.hpp>
 #include <lx0/detail/dom_base.hpp>
+#include <lx0/lxvar.hpp>
 
 namespace lx0 { namespace core {
 
     namespace detail
     {
+        //===========================================================================//
+        //!
+        /*!
+         */
+        class AttributeParser
+        {
+        public:
+            virtual             ~AttributeParser (void) {}
+            virtual     lxvar   parse               (std::string s) = 0;
+        };
+
+        _LX_FORWARD_DECL_PTRS(AttributeParser);
+
+
         //===========================================================================//
         //!
         /*!
@@ -117,6 +132,8 @@ namespace lx0 { namespace core {
         void                sendMessage     (const char* message);
         int	                run             (void);
 
+        lxvar               parseAttribute      (std::string name, std::string value);
+
         // Stats
         void                incObjectCount (std::string name);
         void                decObjectCount (std::string name);
@@ -132,6 +149,7 @@ namespace lx0 { namespace core {
 
         void        _notifyDocumentCreated  (DocumentPtr spDocument);
  
+        void        _attachAttributeParsers (void);
         void        _attachSound            (void);
         void        _attachPhysics          (DocumentPtr spDocument);
         void        _runJavascript          (DocumentPtr spDocument, std::string source);
@@ -141,6 +159,8 @@ namespace lx0 { namespace core {
         std::deque<std::string>     m_messageQueue;
 
         std::map<std::string, detail::ObjectCount>   m_objectCounts;
+
+        std::map<std::string, std::vector<detail::AttributeParserPtr>>   m_attributeParsers;
     };
 
 }}

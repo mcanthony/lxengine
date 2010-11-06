@@ -37,7 +37,6 @@
 #include <lx0/engine.hpp>
 #include <lx0/document.hpp>
 #include <lx0/element.hpp>
-#include <lx0/mesh.hpp>
 #include <lx0/util.hpp>
 
 using namespace lx0::util;
@@ -122,6 +121,7 @@ namespace lx0 { namespace core {
         }
 
         _attachSound();
+        _attachAttributeParsers();
     }
 
     /*!
