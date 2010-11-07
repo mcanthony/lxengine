@@ -1,0 +1,43 @@
+vertex_program Basic00VertGLSL glsl
+{
+    source basic_00.vert
+}
+
+geometry_program Basic00GeomGLSL glsl
+{
+    source                  basic_00.geom
+    output_operation_type   triangle_strip
+}
+
+fragment_program CheckerFixedGLSL glsl
+{
+    source checker_fixed.frag
+}
+
+material Material/Checker_GLSL
+{
+    technique
+    {
+        pass
+        {
+            lighting off
+
+            vertex_program_ref Basic00VertGLSL
+            { 
+            }
+
+            geometry_program_ref Basic00GeomGLSL
+            {
+                param_named unifFlatNormals int 1
+            }
+
+            fragment_program_ref CheckerFixedGLSL
+            { 
+                param_named         uniCheckerPrimaryColor      float3    0.9 0.1 0.0
+                param_named         uniCheckerSecondaryColor    float3    1.0 1.0 1.0
+
+                //param_named_auto    uniLightCount       light_count
+            }
+        }
+    }
+}

@@ -27,6 +27,8 @@ var ref = $("<Ref/>");
 ref.attr("ref", "unit_cube");
 ref.attr("translation", [.25, -.5, 5.5]);
 ref.attr("mass", 1.0);
+ref.attr("color", [255 / 255.0, 40 / 255.0, 10 / 255.0]);
+ref.attr("material", "checker");
 $("#grid").append(ref);
 
 ref = $("<Ref/>");

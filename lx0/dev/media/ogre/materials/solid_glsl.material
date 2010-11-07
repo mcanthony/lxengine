@@ -1,9 +1,9 @@
-vertex_program MinimalVertGLSL glsl
+vertex_program TransformOnlyGLSL glsl
 {
     source transform_only.vert
 }
 
-fragment_program MinimalFragGLSL glsl
+fragment_program SolidGLSL glsl
 {
     source solid.frag
 }
@@ -16,11 +16,11 @@ material Material/Minimal_GLSL
         {
             lighting off
 
-            vertex_program_ref MinimalVertGLSL
+            vertex_program_ref TransformOnlyGLSL
             { 
             }
 
-            fragment_program_ref MinimalFragGLSL
+            fragment_program_ref SolidGLSL
             { 
                 param_named inColor float4    0.2 0.6 0.9
             }
