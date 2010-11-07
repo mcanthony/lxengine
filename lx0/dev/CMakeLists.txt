@@ -69,9 +69,17 @@ message(STATUS "CMAKE_EXE_LINKER_FLAGS=${CMAKE_EXE_LINKER_FLAGS}")
 
 set( LX_ALL_LIBS ${OGRE_LIBRARIES} lx0 ${V8_LIBS} ${BULLET_LIBS} ${OIS_LIBS} ${OPENAL_LIBS} ${VORBIS_LIBS})
 
-macro(copy_media_direct FILE)
+macro(copy_media_file FILE)
     configure_file( ${FILE}  ${CMAKE_BINARY_DIR}/${FILE}  COPYONLY)
-endmacro(copy_media_direct)
+endmacro(copy_media_file)
+
+macro(copy_media_directory FOLDER)
+    file(GLOB ASSETS ${FOLDER}/*)
+    foreach(FILE ${ASSETS})
+        file(RELATIVE_PATH RELFILE ${CMAKE_SOURCE_DIR} ${FILE})
+        copy_media_file(${RELFILE})
+    endforeach(FILE)
+endmacro(copy_media_directory)
 
 macro(simple_executable EXENAME)
 
@@ -103,10 +111,11 @@ endmacro(recurse_subdirectories BASEDIR)
 #
 # Media
 #
-copy_media_direct( media/scripts/base/ois_constants.js )
-copy_media_direct( media/ogre/materials/solid_glsl.material )
-copy_media_direct( media/shaders/glsl/vertex/transform_only.vert )
-copy_media_direct( media/shaders/glsl/fragment/solid.frag )
+copy_media_directory( media/scripts/base )
+copy_media_directory( media/ogre/materials )
+copy_media_directory( media/shaders/glsl/vertex )
+copy_media_directory( media/shaders/glsl/geometry )
+copy_media_directory( media/shaders/glsl/fragment )
 
 #
 # Sub-projects
