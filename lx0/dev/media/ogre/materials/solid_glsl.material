@@ -22,7 +22,7 @@ material Material/Minimal_GLSL
 
             fragment_program_ref SolidGLSL
             { 
-                param_named inColor float4    0.2 0.6 0.9
+                param_named_auto inColor surface_diffuse_colour
             }
         }
     }

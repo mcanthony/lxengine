@@ -181,8 +181,7 @@ namespace {
                 Ogre::MaterialPtr spMat =  Ogre::MaterialManager::getSingleton().getByName("Material/Minimal_GLSL");
                 lx_check_error(!spMat.isNull());
                 spMat = spMat->clone("anything");
-                spMat->getTechnique(0)->getPass(0)->getFragmentProgramParameters()->setNamedConstant("inColor", Ogre::Vector4(diffuse.x, diffuse.y, diffuse.z, 1));
-                
+                spMat->setDiffuse(diffuse.x, diffuse.y, diffuse.z, 1);
                 mpEntity->setMaterial(spMat);
             }
             else if (material == "checker")
@@ -191,7 +190,6 @@ namespace {
                 lx_check_error(!spMat.isNull());
                 spMat = spMat->clone("");
                 spMat->getTechnique(0)->getPass(0)->getFragmentProgramParameters()->setNamedConstant("uniCheckerPrimaryColor", Ogre::Vector4(diffuse.x, diffuse.y, diffuse.z, 1));
-                
                 mpEntity->setMaterial(spMat);
             }
             else 
