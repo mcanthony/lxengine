@@ -32,9 +32,9 @@ void main()
     // computed in eye coordinates.
     //
     vec3 n = computeNormal(geomVertexEc[0], geomVertexEc[1], geomVertexEc[2]);
-
+    
     for (int i = 0; i < gl_VerticesIn; i++)
-    {       
+    {
         gl_Position = gl_PositionIn[i];
         
         fragVertexOc = geomVertexOc[i];

@@ -192,6 +192,14 @@ namespace {
                 spMat->getTechnique(0)->getPass(0)->getFragmentProgramParameters()->setNamedConstant("uniCheckerPrimaryColor", Ogre::Vector4(diffuse.x, diffuse.y, diffuse.z, 1));
                 mpEntity->setMaterial(spMat);
             }
+            else if (material == "phong")
+            {
+                Ogre::MaterialPtr spMat =  Ogre::MaterialManager::getSingleton().getByName("Material/Phong_GLSL");
+                lx_check_error(!spMat.isNull());
+                spMat = spMat->clone("");
+                spMat->getTechnique(0)->getPass(0)->getFragmentProgramParameters()->setNamedConstant("unifLightCount", 1.0f);
+                mpEntity->setMaterial(spMat);
+            }
             else 
             {
                 lx_check_error(material == "standard");
@@ -461,7 +469,7 @@ namespace {
             Ogre::ResourceGroupManager::getSingleton().addResourceLocation("media/shaders/glsl/fragment", "FileSystem");
             Ogre::ResourceGroupManager::getSingleton().addResourceLocation("media/shaders/glsl/geometry", "FileSystem");
             Ogre::ResourceGroupManager::getSingleton().addResourceLocation("media/shaders/glsl/vertex", "FileSystem");
-            Ogre::ResourceGroupManager::getSingleton().addResourceLocation("media/ogre/materials", "FileSystem");
+            Ogre::ResourceGroupManager::getSingleton().addResourceLocation("media/shaders/ogre", "FileSystem");
             Ogre::ResourceGroupManager::getSingleton().initialiseAllResourceGroups();
         }
     }

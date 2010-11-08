@@ -112,7 +112,7 @@ endmacro(recurse_subdirectories BASEDIR)
 # Media
 #
 copy_media_directory( media/scripts/base )
-copy_media_directory( media/ogre/materials )
+copy_media_directory( media/shaders/ogre )
 copy_media_directory( media/shaders/glsl/vertex )
 copy_media_directory( media/shaders/glsl/geometry )
 copy_media_directory( media/shaders/glsl/fragment )

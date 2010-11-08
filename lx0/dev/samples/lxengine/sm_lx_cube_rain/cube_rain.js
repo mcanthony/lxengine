@@ -42,8 +42,7 @@ ref.attr("ref", "unit_sphere");
 ref.attr("translation", [.29, -.47, 16.5]);
 ref.attr("mass", 2.5);
 ref.attr("bounds_type", "sphere");
-ref.attr("color", [255 / 255.0, 187 / 255.0, 56 / 255.0]);
-ref.attr("material", "solid");
+ref.attr("material", "phong");
 $("#grid").append(ref);
 
 for (var gy = 0; gy < 5; ++gy) {
@@ -146,6 +145,8 @@ window.setTimeout(6000, function () {
     ref.attr("translation", [-.25, .65, 12.5]);
     ref.attr("mass", 5.5);
     ref.attr("bounds_type", "sphere");
+    ref.attr("color", [255 / 255.0, 187 / 255.0, 56 / 255.0]);
+    ref.attr("material", "solid");
     $("#grid").append(ref);
 });
 

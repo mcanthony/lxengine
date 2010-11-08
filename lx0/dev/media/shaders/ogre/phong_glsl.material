@@ -1,0 +1,44 @@
+vertex_program Basic00VertGLSL glsl
+{
+    source basic_00.vert
+}
+
+geometry_program Basic00GeomGLSL glsl
+{
+    source                  basic_00.geom
+    output_operation_type   triangle_strip
+}
+
+fragment_program PhongFragGLSL glsl
+{
+    source phong.frag
+    default_params
+    {
+        param_named unifLightCount  float 1.0
+    }
+}
+
+material Material/Phong_GLSL
+{
+    technique
+    {
+        pass
+        {
+            lighting off
+
+            vertex_program_ref Basic00VertGLSL
+            { 
+            }
+
+            geometry_program_ref Basic00GeomGLSL
+            {
+                param_named unifFlatNormals int 1
+            }
+
+            fragment_program_ref PhongFragGLSL
+            { 
+
+            }
+        }
+    }
+}
