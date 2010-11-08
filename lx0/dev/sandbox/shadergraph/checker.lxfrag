@@ -1,0 +1,19 @@
+{
+    name        : "checker",
+    output      : "vec3",
+    parameters  : 
+    {
+        uv          : [ "vec2", [0,0]       "uvMapper"          ],
+        primary     : [ "vec3", [1,1,1],    "primaryColor"      ],
+        secondary   : [ "vec3", [0,0,0],    "secondaryColor"    ],
+    },
+    source : "
+        vec2 t = abs( fract(uv) );
+        ivec2 s = ivec2(trunc(2 * t));
+      
+        if ((s.x + s.y) % 2 == 0)
+            return primary;
+        else
+            return secondary;
+    ",
+}

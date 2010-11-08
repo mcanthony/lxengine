@@ -46,22 +46,33 @@ namespace lx0 { namespace core { namespace detail {
         bool            _consumeConditional (char c);
         void            _skipWhitespace     (void);
 
-        int             _lineNumber         (void) const { return mLineNumber; }
-        int             _column             (void) const { return mColumn; }
+        void            _pushState          (void);
+        void            _popState           (void);
+
+        int             _lineNumber         (void) const { return state().mLineNumber; }
+        int             _column             (void) const { return state().mColumn; }
         std::string     _currentLine        (void) const;
 
-    public:
-        const char*     mpStartText;
-        const char*     mpStartLine;
-        const char*     mpStream;
-        int             mLineNumber;
-        int             mColumn;
+    private:
+        struct State
+        {
+            const char*     mpStartLine;
+            const char*     mpStream;
+            int             mLineNumber;
+            int             mColumn;
+        };
+
+        const State&    state               (void) const     { return mState.back(); }
+        State&          state               (void)           { return mState.back(); }
+
+        const char*         mpStartText;
+        std::vector<State>  mState;
     };
 
     /*!
         @todo Split into a callback parser and an lxvar builder
         */
-    class JsonParser : public detail::BaseParser
+    class LxsonParser : public detail::BaseParser
     {
     public:
         typedef lx0::core::lxvar        lxvar;
@@ -77,6 +88,9 @@ namespace lx0 { namespace core { namespace detail {
         std::string     _readKey            (void);
         lxvar           _readNumber         (void);
         lxvar           _readValue          (void);
+
+        bool            _peekLxNamedMap     (void);
+        lxvar           _readLxNamedMap     (void);
     };
 
 }}}

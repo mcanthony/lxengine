@@ -1,0 +1,18 @@
+{
+    name        : "tile",
+    output      : "vec3",
+    parameters  : 
+    {
+        uv          : [ "vec2",     [0, 0],             "uvMapper"       ],
+        primary     : [ "vec3",     [1,1,1],            "primaryColor"   ],
+        secondary   : [ "vec3",     [0,0,0],            "secondaryColor" ],
+        width       : [ "float",    .5                                   ],
+    },
+    source : "
+        vec2 t = abs(fract(uv) - vec2(0.5, 0.5));
+        if (t.x >= width || t.y >= width)
+           return secondary;
+        else
+           return primary;
+    ",
+}

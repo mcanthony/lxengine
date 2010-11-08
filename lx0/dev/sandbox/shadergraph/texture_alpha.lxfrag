@@ -1,0 +1,11 @@
+{
+    name        : "texture_alpha",
+    output      : "float",
+    parameters  : 
+    {
+        uv      : [ "vec2", [0,0]       "uvMapper"          ],
+    },
+    source : "
+        return texture2D(unifTexture, uv).w;
+    ",
+}

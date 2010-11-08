@@ -1,0 +1,19 @@
+{
+    name        : "gradient",
+    output      : "vec3",
+    parameters  : 
+    {
+        uv      : [ "vec2", [0,0]       "uvMapper"          ],
+        c00     : [ "vec3", [0,0,0],    "primaryColor"      ],
+        c01     : [ "vec3", [0,1,0],    "primaryColor"      ],
+        c10     : [ "vec3", [1,0,0],    "secondaryColor"    ],
+        c11     : [ "vec3", [1,1,1],    "secondaryColor"    ],
+    },
+    source : "
+        vec2 st = abs(fract(uv));
+        return mix(
+                mix(c00, c01, st.y),
+                mix(c10, c11, st.y),
+                st.x);
+    ",
+}

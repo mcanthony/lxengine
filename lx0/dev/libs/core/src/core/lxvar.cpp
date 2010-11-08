@@ -404,7 +404,7 @@ namespace lx0 { namespace core {
     lxvar    
     lxvar::parse (const char* s)
     {
-        detail::JsonParser parser;
+        detail::LxsonParser parser;
         return parser.parse(s);
     }
 

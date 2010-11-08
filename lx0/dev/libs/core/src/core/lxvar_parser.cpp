@@ -44,31 +44,44 @@ namespace lx0 { namespace core {
         BaseParser::_reset (const char* pStream)
         {
             mpStartText = pStream;
-            mpStartLine = pStream;
-            mpStream = pStream;
-            mLineNumber = 1;
-            mColumn = 0;
+            mState.resize(1);
+            mState.back().mpStartLine = pStream;
+            mState.back().mpStream = pStream;
+            mState.back().mLineNumber = 1;
+            mState.back().mColumn = 0;
+        }
+
+        void
+        BaseParser::_pushState (void)
+        {
+            mState.push_back(mState.back());
+        }
+
+        void
+        BaseParser::_popState (void)
+        {
+            mState.pop_back();
         }
 
         char
         BaseParser::_peek (void)
         {
-            return *mpStream;
+            return *state().mpStream;
         }
 
         char            
         BaseParser::_advance (void)
         {
-            if (*mpStream == '\n')
+            if (*state().mpStream == '\n')
             {
-                mLineNumber++;
-                mpStartLine = mpStream + 1;
-                mColumn = 0;
+                state().mLineNumber++;
+                state().mpStartLine = state().mpStream + 1;
+                state().mColumn = 0;
             }
             else
-                ++mColumn;
+                ++state().mColumn;
 
-            return *mpStream++;
+            return *state().mpStream++;
         }
 
         void
@@ -87,7 +100,7 @@ namespace lx0 { namespace core {
                 lx_error(
                     "JSON Parse Error, line %d.\n%s\n%s\n"
                     "Did not find expected character '%c'.  Found '%c' instead.",
-                         mLineNumber, _currentLine().c_str(), carrot.c_str(), c, *mpStream);
+                         state().mLineNumber, _currentLine().c_str(), carrot.c_str(), c, *state().mpStream);
             }
         }
 
@@ -114,7 +127,7 @@ namespace lx0 { namespace core {
         std::string     
         BaseParser::_currentLine (void) const
         {
-            const char* p = mpStartLine;
+            const char* p = state().mpStartLine;
             std::string line;
             while (*p != '\n' && *p)
                 line += *p++;
@@ -125,14 +138,14 @@ namespace lx0 { namespace core {
     using namespace detail;
 
     lxvar
-    JsonParser::parse (const char* pStream)
+    LxsonParser::parse (const char* pStream)
     {
         _reset(pStream);
         return _readValue();
     }
 
     lxvar 
-    JsonParser::_readNumber ()
+    LxsonParser::_readNumber ()
     {
         _skipWhitespace();
 
@@ -179,7 +192,7 @@ namespace lx0 { namespace core {
         @todo Escape character handling.
      */
     std::string 
-    JsonParser::_readString (void)
+    LxsonParser::_readString (void)
     {
         std::string t;
 
@@ -198,7 +211,7 @@ namespace lx0 { namespace core {
     }
 
     std::string 
-    JsonParser::_readToEnd (void)
+    LxsonParser::_readToEnd (void)
     {
         std::string t;
         while (_peek())
@@ -210,7 +223,7 @@ namespace lx0 { namespace core {
         @todo Escape character handling.
      */
     std::string 
-    JsonParser::_readUnquotedString (void)
+    LxsonParser::_readUnquotedString (void)
     {
         std::string t;
 
@@ -225,7 +238,7 @@ namespace lx0 { namespace core {
     }
 
     lxvar 
-    JsonParser::_readArray (void)
+    LxsonParser::_readArray (void)
     {
         lxvar obj;
         obj.toArray();
@@ -251,7 +264,7 @@ namespace lx0 { namespace core {
     }
 
     std::string
-    JsonParser::_readKey (void)
+    LxsonParser::_readKey (void)
     {
         if (isalpha(_peek()))
             return _readUnquotedString();
@@ -260,7 +273,7 @@ namespace lx0 { namespace core {
     }
 
     lxvar 
-    JsonParser::_readObject (void)
+    LxsonParser::_readObject (void)
     {
         lxvar obj;
         obj.toMap();
@@ -296,8 +309,52 @@ namespace lx0 { namespace core {
         return obj;
     }
 
+    /*!
+        Returns true is the upcoming characters appear to be parse-able as an
+        lxson 'named map'.  See _readLxNamedMap.
+     */
+    bool
+    LxsonParser::_peekLxNamedMap (void)
+    {
+        bool isLxNamedMap = false;
+
+        _pushState();
+        int count = 0;
+        while (isalpha(_peek()))
+        {
+            _advance();
+            count++;
+        }
+        if (count > 0)
+        {
+            _skipWhitespace();
+            if (_peek() == '{')
+                isLxNamedMap = true;
+        }
+        _popState();
+
+        return isLxNamedMap;
+    }
+
+    /*!
+        Extension of the JSON syntax that allows for a short-hand for creating
+        a name-object pair.
+
+        Example:
+        phong { } -> [ "phong", { } ]
+     */
     lxvar
-    JsonParser::_readValue (void)
+    LxsonParser::_readLxNamedMap (void)
+    {
+        lxvar r = lxvar::array();
+        r.push( _readUnquotedString() );
+        _skipWhitespace();
+        r.push( _readObject() );
+        return r;
+    }
+
+    lxvar
+    LxsonParser::_readValue (void)
     {
         lxvar r;
 
@@ -310,15 +367,15 @@ namespace lx0 { namespace core {
         case '{'    : return _readObject();
         case '['    : return _readArray();
         
-        case 't'    : break;
-        case 'f'    : break;
-        case 'n'    : break;
-        
         default:
-            if (strchr("0123456789.-", _peek()))
-                r = _readNumber();
-            else
-                r = _readToEnd();
+            {
+                if (strchr("0123456789.-", _peek()))
+                    r = _readNumber();
+                else if (_peekLxNamedMap())
+                    r = _readLxNamedMap();
+                else
+                    r = _readToEnd();
+            }
         };
 
         return r;

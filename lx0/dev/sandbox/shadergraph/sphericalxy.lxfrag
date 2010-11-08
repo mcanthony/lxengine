@@ -1,0 +1,10 @@
+{
+    name : "sphericalxy",
+    output : "vec2",
+    parameters : { 
+        scale : [ "vec2", [1, 1] ],
+    },
+    source : "
+        return scale * (fragVertexOc.xy / length (fragVertexOc));
+    ",
+}

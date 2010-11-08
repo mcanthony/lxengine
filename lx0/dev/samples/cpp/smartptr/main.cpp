@@ -19,6 +19,7 @@ public:
     std::string mName;
 };
 
+
 int 
 main (int argc, char** argv)
 {

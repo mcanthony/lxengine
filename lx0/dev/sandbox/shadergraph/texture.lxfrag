@@ -1,0 +1,11 @@
+{
+    name        : "texture",
+    output      : "vec3",
+    parameters  : 
+    {
+        uv      : [ "vec2", [0,0]       "uvMapper"          ],
+    },
+    source : "
+        return texture2D(unifTexture, uv).xyz;
+    ",
+}
