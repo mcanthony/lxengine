@@ -43,8 +43,9 @@ namespace lx0 { namespace core {
      */
     Mesh::Mesh (lxvar& v)
     {
-        // if src.type() == Mesh, set *this to a clone
+        mFlags.mVertexNormals = false;
 
+        // if src.type() == Mesh, set *this to a clone
 
         lx_check_error(v.isMap());
         lx_check_error(v.containsKey("type"));
@@ -56,9 +57,31 @@ namespace lx0 { namespace core {
             lxvar lxverts = v.find("vertices");
             const int vertexCount = lxverts.size();
             mVertices.reserve(vertexCount);
+
             for (int i = 0; i < vertexCount; ++i)
             {
-                mVertices.push_back( asPoint3(lxverts.at(i)) );
+                lxvar src = lxverts.at(i);
+
+                Vertex v;
+                v.position.x = src.at(0).asFloat();
+                v.position.y = src.at(1).asFloat();
+                v.position.z = src.at(2).asFloat();
+
+                if (src.size() >= 6)
+                {
+                    mFlags.mVertexNormals  = true;
+                    v.normal.x = src.at(3).asFloat();
+                    v.normal.y = src.at(4).asFloat();
+                    v.normal.z = src.at(5).asFloat();
+                }
+                else
+                {
+                    static int warn_once = 0;
+                    if (!warn_once++)
+                        lx_warn("Meshes are always expected to provide vertex normals");
+                }
+                
+                mVertices.push_back(v);
             }
         }
 
@@ -92,7 +115,7 @@ namespace lx0 { namespace core {
         float rmax = 0.0f;
         for (auto it = mVertices.begin(); it != mVertices.end(); ++it)
         {
-            float r = distance_to_origin_squared(*it);
+            float r = distance_to_origin_squared(it->position);
             if (r > rmax)
                 rmax = r;
         }
@@ -109,7 +132,7 @@ namespace lx0 { namespace core {
         vector3 v(0, 0, 0);
         for (auto it = mVertices.begin(); it != mVertices.end(); ++it)
         {
-            vector3 u = abs_( cast<vector3&>(*it) );
+            vector3 u = abs_( cast<vector3&>(it->position) );
             for (int i = 0; i < 3; ++i)
             {
                 if (u[i] > v[i])

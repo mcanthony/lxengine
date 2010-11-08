@@ -7,6 +7,11 @@ geometry_program Basic00GeomGLSL glsl
 {
     source                  basic_00.geom
     output_operation_type   triangle_strip
+
+    default_params
+    {
+        param_named unifFlatNormals int 0
+    }
 }
 
 fragment_program PhongFragGLSL glsl

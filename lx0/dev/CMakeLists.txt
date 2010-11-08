@@ -69,6 +69,10 @@ message(STATUS "CMAKE_EXE_LINKER_FLAGS=${CMAKE_EXE_LINKER_FLAGS}")
 
 set( LX_ALL_LIBS ${OGRE_LIBRARIES} lx0 ${V8_LIBS} ${BULLET_LIBS} ${OIS_LIBS} ${OPENAL_LIBS} ${VORBIS_LIBS})
 
+macro(copy_media_file2 FILE FOLDER)
+    configure_file( ${FILE}  ${CMAKE_BINARY_DIR}/${FOLDER}  COPYONLY)
+endmacro(copy_media_file2)
+
 macro(copy_media_file FILE)
     configure_file( ${FILE}  ${CMAKE_BINARY_DIR}/${FILE}  COPYONLY)
 endmacro(copy_media_file)
@@ -116,6 +120,7 @@ copy_media_directory( media/shaders/ogre )
 copy_media_directory( media/shaders/glsl/vertex )
 copy_media_directory( media/shaders/glsl/geometry )
 copy_media_directory( media/shaders/glsl/fragment )
+copy_media_file2( media/models/generic-primitives-unit_sphere_s3/unit_sphere_s3.lxson media/models )
 
 #
 # Sub-projects

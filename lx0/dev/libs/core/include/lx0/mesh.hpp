@@ -42,21 +42,32 @@ namespace lx0 { namespace core {
     class Mesh : public Object
     {
     public:
-        Mesh (lxvar& src);
+                            Mesh (lxvar& src);
 
-        virtual lxvalue*    clone       (void) const { return nullptr; }
+        virtual lxvalue*    clone           (void) const { return nullptr; }
 
-        float           boundingRadius  (void);
-        vector3         boundingVector  (void);
+        float               boundingRadius  (void);
+        vector3             boundingVector  (void);
 
 
     //protected:
+        struct Flags
+        {
+            bool    mVertexNormals;
+        };
         struct Quad
         {
             int index[4];
         };
 
-        std::vector<point3> mVertices;
+        struct Vertex
+        {
+            point3  position;
+            vector3 normal;
+        };
+
+        Flags               mFlags;
+        std::vector<Vertex> mVertices;
         std::vector<Quad>   mFaces;
     };
 

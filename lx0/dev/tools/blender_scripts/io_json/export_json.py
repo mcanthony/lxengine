@@ -7,8 +7,7 @@
 #   Contributors: Bruce Merry, Campbell Barton
 
 """
-This script exports LxEngine JSON files from Blender. It supports normals,
-colours, and texture coordinates per face or per vertex.
+This script exports LxEngine JSON files from Blender.
 Only one mesh can be exported at a time.
 """
 
@@ -102,6 +101,9 @@ def save(operator, context, filepath="", use_modifiers=True, use_normals=True, u
 
         f_verts = f.vertices
 
+        #
+        # For each vertex index in the face's vertices...
+        #
         pf = ply_faces[i]
         for j, vidx in enumerate(f_verts):
             v = mesh_verts[vidx]
@@ -139,7 +141,8 @@ def save(operator, context, filepath="", use_modifiers=True, use_normals=True, u
 
     file.write('    "vertices" : [\n')
     for i, v in enumerate(ply_verts):
-        file.write('           [ %.6f, %.6f, %.6f ],\n' % tuple(mesh_verts[v[0]].co)) # co
+        file.write('           [ %.6f, %.6f, %.6f,' % tuple(mesh_verts[v[0]].co)) # vertex position
+        file.write(' %.6f, %.6f, %.6f],\n' % v[1])                                # vertex normal
     file.write('    ],\n')
     
     file.write('    "faces" : [\n')

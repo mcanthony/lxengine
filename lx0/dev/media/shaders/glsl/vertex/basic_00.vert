@@ -1,6 +1,4 @@
 
-varying in  vec3    vertNormal;
-
 varying out vec3    geomVertexOc;
 varying out vec3    geomVertexEc;
 varying out vec3    geomNormalOc;
@@ -30,7 +28,7 @@ void main(void)
     // The Projection matrix
     gl_Position = gl_ProjectionMatrix * vertexEc;
 
-    geomNormalOc = vertNormal;
-    geomNormalEc = gl_NormalMatrix * vertNormal;
+    geomNormalOc = gl_Normal;
+    geomNormalEc = gl_NormalMatrix * gl_Normal;
     geomColor  = vec3(gl_Color.xyz);        
 }

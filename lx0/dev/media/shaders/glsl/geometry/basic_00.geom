@@ -39,7 +39,7 @@ void main()
         
         fragVertexOc = geomVertexOc[i];
         fragVertexEc = geomVertexEc[i];        
-        if (unifFlatNormals == 1)
+        if (unifFlatNormals == 0)
         {
             fragNormalEc = n;
             fragNormalOc = computeNormal(geomVertexOc[0], geomVertexOc[1], geomVertexOc[2]);

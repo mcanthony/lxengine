@@ -636,20 +636,56 @@ namespace {
         pObject->begin("LxMaterial", Ogre::RenderOperation::OT_TRIANGLE_LIST);
         for (auto fi = spMesh->mFaces.begin(); fi != spMesh->mFaces.end(); ++fi)
         {
-            Ogre::Vector3& v0 = reinterpret_cast<Ogre::Vector3&>(spMesh->mVertices[fi->index[0]]);
-            Ogre::Vector3& v1 = reinterpret_cast<Ogre::Vector3&>(spMesh->mVertices[fi->index[1]]);
-            Ogre::Vector3& v2 = reinterpret_cast<Ogre::Vector3&>(spMesh->mVertices[fi->index[2]]);
+            Mesh::Vertex& srcV0 = spMesh->mVertices[fi->index[0]];
+            Mesh::Vertex& srcV1 = spMesh->mVertices[fi->index[1]];
+            Mesh::Vertex& srcV2 = spMesh->mVertices[fi->index[2]];
+
+            Ogre::Vector3& v0 = reinterpret_cast<Ogre::Vector3&>(srcV0.position);
+            Ogre::Vector3& v1 = reinterpret_cast<Ogre::Vector3&>(srcV1.position);
+            Ogre::Vector3& v2 = reinterpret_cast<Ogre::Vector3&>(srcV2.position);
+
+            Ogre::Vector3& n0 = reinterpret_cast<Ogre::Vector3&>(srcV0.normal);
+            Ogre::Vector3& n1 = reinterpret_cast<Ogre::Vector3&>(srcV1.normal);
+            Ogre::Vector3& n2 = reinterpret_cast<Ogre::Vector3&>(srcV2.normal);
             
-            // A final index of -1 is a special value indicating that this is a triangle,
-            // not a quad.
-            if (fi->index[3] >= 0)
+            if (!spMesh->mFlags.mVertexNormals)
             {
-                Ogre::Vector3& v3 = reinterpret_cast<Ogre::Vector3&>(spMesh->mVertices[fi->index[3]]);
-                add_quad(v0, v1, v2, v3);
+                // A final index of -1 is a special value indicating that this is a triangle,
+                // not a quad.
+                if (fi->index[3] >= 0)
+                {
+                    Ogre::Vector3& v3 = reinterpret_cast<Ogre::Vector3&>(spMesh->mVertices[fi->index[3]].position);
+                    add_quad(v0, v1, v2, v3);
+                }
+                else
+                {
+                    add_tri(v0, v1, v2);
+                }
             }
             else
             {
-                add_tri(v0, v1, v2);
+                pObject->position(v0); 
+                pObject->normal(n0);
+                pObject->position(v1);
+                pObject->normal(n1);
+                pObject->position(v2);
+                pObject->normal(n2);
+                pObject->triangle(index, index + 1, index + 2);
+                index += 3;
+
+                if (fi->index[3] >= 0)
+                {
+                    Ogre::Vector3& v3 = reinterpret_cast<Ogre::Vector3&>(spMesh->mVertices[fi->index[3]].position);
+                    Ogre::Vector3& n3 = reinterpret_cast<Ogre::Vector3&>(spMesh->mVertices[fi->index[3]].normal);
+                    pObject->position(v2); 
+                    pObject->normal(n2);
+                    pObject->position(v3);
+                    pObject->normal(n3);
+                    pObject->position(v0);
+                    pObject->normal(n0);
+                    pObject->triangle(index, index + 1, index + 2);
+                    index += 3;
+                }
             }
         }
         pObject->end();

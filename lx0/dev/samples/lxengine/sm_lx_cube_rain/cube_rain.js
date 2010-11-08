@@ -38,11 +38,11 @@ ref.attr("mass", 1.0);
 $("#grid").append(ref);
 
 ref = $("<Ref/>");
-ref.attr("ref", "unit_sphere");
+ref.attr("ref", "unit_sphere2");
 ref.attr("translation", [.29, -.47, 16.5]);
-ref.attr("mass", 2.5);
+ref.attr("mass", 2.1);
 ref.attr("bounds_type", "sphere");
-ref.attr("material", "phong { diffuse : [.8, .3, .0], specular : [1, 1, 0] }");
+ref.attr("material", "phong { ambient : [0, 0, 0], diffuse : [.9, .4, .3], specular : [.4, .4, .9] }");
 $("#grid").append(ref);
 
 for (var gy = 0; gy < 5; ++gy) {

@@ -8,6 +8,7 @@
         <Mesh id="unit_cube" src="data/sm_lx_cube_rain/unit_cube.json" />
         <Mesh id="unit_sphere" src="data/sm_lx_cube_rain/unit_sphere.json" />
         <Mesh id="small_sphere"  src="data/sm_lx_cube_rain/small_sphere.json" />
+        <Mesh id="unit_sphere2" src="media/models/unit_sphere_s3.lxson" />
         <SoundBuffer id="snd_background_music" type="ogg" src="data/sm_lx_cube_rain/germanic_peace_3.ogg" />
         <SoundBuffer id="snd_bounce" src="data/sm_lx_cube_rain/bounce.wav" />
     </Library>
