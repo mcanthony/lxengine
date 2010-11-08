@@ -14,16 +14,21 @@ geometry_program Basic00GeomGLSL glsl
     }
 }
 
+fragment_program CheckerFragFunc glsl
+{
+    source func_checker.frag
+}
+
 fragment_program PhongFragFunc glsl
 {
     source func_phong.frag
 }
 
-fragment_program PhongFragGLSL glsl
+fragment_program PhongCheckerFragGLSL glsl
 {
-    source phong.frag
+    source prog_phong_checker.frag
 
-    attach PhongFragFunc
+    attach PhongFragFunc CheckerFragFunc
 
     default_params
     {
@@ -34,7 +39,7 @@ fragment_program PhongFragGLSL glsl
     }
 }
 
-material Material/Phong_GLSL
+material Material/PhongChecker_GLSL
 {
     technique
     {
@@ -51,9 +56,8 @@ material Material/Phong_GLSL
                 param_named unifFlatNormals int 1
             }
 
-            fragment_program_ref PhongFragGLSL
+            fragment_program_ref PhongCheckerFragGLSL
             { 
-
             }
         }
     }

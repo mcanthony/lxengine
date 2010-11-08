@@ -191,7 +191,7 @@ namespace {
                     if (params.find("opacity").isDefined()) 
                         opacity = params.find("opacity").convert();
 
-                    Ogre::MaterialPtr spMat =  Ogre::MaterialManager::getSingleton().getByName("Material/Phong_GLSL");
+                    Ogre::MaterialPtr spMat =  Ogre::MaterialManager::getSingleton().getByName("Material/PhongChecker_GLSL");
                     lx_check_error(!spMat.isNull());
                     spMat = spMat->clone("");
                     auto spConstants = spMat->getTechnique(0)->getPass(0)->getFragmentProgramParameters();
