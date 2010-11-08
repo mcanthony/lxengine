@@ -586,6 +586,9 @@ namespace lx0 { namespace core { namespace detail {
                 Element* pThis = _nativeThis<Element>(args);
                 std::string name = _marshal(args[0]);
                 lxvar value = _marshal(args[1]);
+                
+                if (value.isString())
+                    value = Engine::acquire()->parseAttribute(name, value.asString());
 
                 pThis->attr(name, value);
 

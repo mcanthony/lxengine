@@ -368,6 +368,14 @@ namespace lx0 { namespace core {
         };
     }
 
+    
+    namespace detail
+    {
+        inline void    _convert    (lxvar& v, int& i)          { i = v.asInt(); }
+        inline void    _convert    (lxvar& v, float& f)        { f = v.asFloat(); }
+        inline void    _convert    (lxvar& v, std::string& s)  { s = v.asString(); }
+    }
+
     class point3;
 
     point3 asPoint3 (const lxvar& lx);

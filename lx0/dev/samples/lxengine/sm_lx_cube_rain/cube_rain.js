@@ -42,7 +42,7 @@ ref.attr("ref", "unit_sphere");
 ref.attr("translation", [.29, -.47, 16.5]);
 ref.attr("mass", 2.5);
 ref.attr("bounds_type", "sphere");
-ref.attr("material", "phong");
+ref.attr("material", "phong { diffuse : [.8, .3, .0], specular : [1, 1, 0] }");
 $("#grid").append(ref);
 
 for (var gy = 0; gy < 5; ++gy) {

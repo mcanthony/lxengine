@@ -15,6 +15,9 @@ fragment_program PhongFragGLSL glsl
     default_params
     {
         param_named unifLightCount  float 1.0
+        param_named unifAmbient     float3 0.1 0.1 0.1
+        param_named unifDiffuse     float3 0.5 0.5 0.5
+        param_named unifSpecular    float3 0.0 0.0 0.0
     }
 }
 

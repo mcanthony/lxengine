@@ -68,6 +68,12 @@ using namespace lx0::util;
 
 namespace lx0 { namespace core { namespace detail {
 
+    void _convert(lxvar& v, Ogre::ColourValue& u)
+    {
+        lx_check_error(v.size() == 3);
+        u = Ogre::ColourValue(v.at(0).asFloat(), v.at(1).asFloat(), v.at(2).asFloat());
+    }
+
     void _convert(lxvar& v, Ogre::Vector3& u)
     {
         lx_check_error(v.size() == 3);
@@ -160,57 +166,90 @@ namespace {
 
         void _setMaterial(ElementPtr spElem)
         {
-            Ogre::Vector3 diffuse (1, 1, 1);
-            Ogre::Vector3 specular (0, 0, 0);
-            float shininess = 1;
-
-            std::string material = spElem->attr("material").query("standard");
-            lxvar elemDiffuse = spElem->attr("color");
-            lxvar elemSpecular = spElem->attr("specular");
-            lxvar elemShininess = spElem->attr("shininess");
-
-            if (elemDiffuse.isDefined())
-                diffuse = (Ogre::Vector3)elemDiffuse.convert();
-            if (elemSpecular.isDefined())
-                specular = (Ogre::Vector3)elemSpecular.convert();
-            if (elemShininess.isDefined())
-                shininess = *elemShininess;
-
-            if (material == "solid")
+            lxvar varMaterial = spElem->attr("material");
+            if (varMaterial.isArray() && varMaterial.size() == 2)
             {
-                Ogre::MaterialPtr spMat =  Ogre::MaterialManager::getSingleton().getByName("Material/Minimal_GLSL");
-                lx_check_error(!spMat.isNull());
-                spMat = spMat->clone("anything");
-                spMat->setDiffuse(diffuse.x, diffuse.y, diffuse.z, 1);
-                mpEntity->setMaterial(spMat);
+                std::string base = varMaterial.at(0).asString();
+                lxvar       params = varMaterial.at(1);
+
+                if (base == "phong")
+                {
+                    Ogre::ColourValue ambient (0.0f, 0.0f, 0.2f);
+                    Ogre::ColourValue diffuse (0.5f, 0.4f, 0.5f);
+                    Ogre::ColourValue specular (0.9f, 0.8f, 0.5f);
+                    float             shininess = 32.0f;
+                    float             opacity = 1.0f;
+
+                    if (params.find("ambient").isDefined()) 
+                        ambient = params.find("ambient").convert();
+                    if (params.find("diffuse").isDefined()) 
+                        diffuse = params.find("diffuse").convert();
+                    if (params.find("specular").isDefined()) 
+                        specular = params.find("specular").convert();
+                    if (params.find("shininess").isDefined()) 
+                        shininess = params.find("shininess").convert();
+                    if (params.find("opacity").isDefined()) 
+                        opacity = params.find("opacity").convert();
+
+                    Ogre::MaterialPtr spMat =  Ogre::MaterialManager::getSingleton().getByName("Material/Phong_GLSL");
+                    lx_check_error(!spMat.isNull());
+                    spMat = spMat->clone("");
+                    auto spConstants = spMat->getTechnique(0)->getPass(0)->getFragmentProgramParameters();
+                    spConstants->setNamedConstant("unifLightCount", 1.0f);
+                    spMat->setAmbient(ambient);
+                    spConstants->setNamedConstant("unifAmbient", Ogre::Vector3(ambient.r, ambient.g, ambient.b));
+                    spConstants->setNamedConstant("unifDiffuse", Ogre::Vector3(diffuse.r, diffuse.g, diffuse.b));
+                    spConstants->setNamedConstant("unifSpecular", Ogre::Vector3(specular.r, specular.g, specular.b));
+                    //spMat->setShininess(shininess);
+                    mpEntity->setMaterial(spMat);
+                }
             }
-            else if (material == "checker")
+            else
             {
-                Ogre::MaterialPtr spMat =  Ogre::MaterialManager::getSingleton().getByName("Material/Checker_GLSL");
-                lx_check_error(!spMat.isNull());
-                spMat = spMat->clone("");
-                spMat->getTechnique(0)->getPass(0)->getFragmentProgramParameters()->setNamedConstant("uniCheckerPrimaryColor", Ogre::Vector4(diffuse.x, diffuse.y, diffuse.z, 1));
-                mpEntity->setMaterial(spMat);
-            }
-            else if (material == "phong")
-            {
-                Ogre::MaterialPtr spMat =  Ogre::MaterialManager::getSingleton().getByName("Material/Phong_GLSL");
-                lx_check_error(!spMat.isNull());
-                spMat = spMat->clone("");
-                spMat->getTechnique(0)->getPass(0)->getFragmentProgramParameters()->setNamedConstant("unifLightCount", 1.0f);
-                mpEntity->setMaterial(spMat);
-            }
-            else 
-            {
-                lx_check_error(material == "standard");
+                Ogre::Vector3 diffuse (1, 1, 1);
+                Ogre::Vector3 specular (0, 0, 0);
+                float shininess = 1;
 
-                Ogre::MaterialPtr spMat = Ogre::MaterialManager::getSingleton().create("LxMaterial", Ogre::ResourceGroupManager::INTERNAL_RESOURCE_GROUP_NAME);
-                spMat->setLightingEnabled(true);
-                spMat->setAmbient(.1f, .1f, .1f);
-                spMat->setDiffuse(diffuse.x, diffuse.y, diffuse.z, 1);
-                spMat->setSpecular(specular.x, specular.y, specular.z, 0);
-                spMat->setShininess(shininess);
-                mpEntity->setMaterial(spMat);
+                std::string material = spElem->attr("material").query("standard");
+                lxvar elemDiffuse = spElem->attr("color");
+                lxvar elemSpecular = spElem->attr("specular");
+                lxvar elemShininess = spElem->attr("shininess");
+
+                if (elemDiffuse.isDefined())
+                    diffuse = (Ogre::Vector3)elemDiffuse.convert();
+                if (elemSpecular.isDefined())
+                    specular = (Ogre::Vector3)elemSpecular.convert();
+                if (elemShininess.isDefined())
+                    shininess = *elemShininess;
+
+                if (material == "solid")
+                {
+                    Ogre::MaterialPtr spMat =  Ogre::MaterialManager::getSingleton().getByName("Material/Minimal_GLSL");
+                    lx_check_error(!spMat.isNull());
+                    spMat = spMat->clone("anything");
+                    spMat->setDiffuse(diffuse.x, diffuse.y, diffuse.z, 1);
+                    mpEntity->setMaterial(spMat);
+                }
+                else if (material == "checker")
+                {
+                    Ogre::MaterialPtr spMat =  Ogre::MaterialManager::getSingleton().getByName("Material/Checker_GLSL");
+                    lx_check_error(!spMat.isNull());
+                    spMat = spMat->clone("");
+                    spMat->getTechnique(0)->getPass(0)->getFragmentProgramParameters()->setNamedConstant("uniCheckerPrimaryColor", Ogre::Vector4(diffuse.x, diffuse.y, diffuse.z, 1));
+                    mpEntity->setMaterial(spMat);
+                }
+                else 
+                {
+                    lx_check_error(material == "standard");
+
+                    Ogre::MaterialPtr spMat = Ogre::MaterialManager::getSingleton().create("LxMaterial", Ogre::ResourceGroupManager::INTERNAL_RESOURCE_GROUP_NAME);
+                    spMat->setLightingEnabled(true);
+                    spMat->setAmbient(.1f, .1f, .1f);
+                    spMat->setDiffuse(diffuse.x, diffuse.y, diffuse.z, 1);
+                    spMat->setSpecular(specular.x, specular.y, specular.z, 0);
+                    spMat->setShininess(shininess);
+                    mpEntity->setMaterial(spMat);
+                }
             }
         }
 
