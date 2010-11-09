@@ -1,12 +1,17 @@
 <Root>
     <Header>
       <Script language="javascript" src="media/scripts/base/ois_constants.js" />
-      <Script language="javascript" src="data/sm_lx_cube_rain/lxquery.js" />
+      <Script language="javascript" src="media/scripts/base/lxquery-0.0.0.js" />
       <Script language="javascript">
       <!--
         window.onKeyDown = function(e)
         {
-          alert(e);
+          if (e.keyCode == OIS.KC_W)
+          {
+              var v = $("Camera").value();
+          }
+          else
+            alert("OnKeyDown: e.keyCode = " + e.keyCode);
         }
       -->
       </Script>

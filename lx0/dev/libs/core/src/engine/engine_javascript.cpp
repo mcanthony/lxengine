@@ -550,6 +550,48 @@ namespace lx0 { namespace core { namespace detail {
                 return _wrapObject(s_pActiveContext->mElementCtor, pThis->parent().get());
             }
 
+            static Handle<Value>
+            get_value (Local<String> property, const AccessorInfo &info) 
+            {
+                Element* pThis = _nativeThis<Element>(info);
+                
+                ///@todo Implement Element.value
+                /*
+                    The task here is to return a wrapper on a reference to lxvar value of the Element.
+                    
+                    The semantics of the returned value must be the same as Javascript values and
+                    lxvar values, in that only strings and numbers get copied - complex data types
+                    are references.  Furthermore, modifiers on even primitive values need to affect
+                    the native values - not simply copies in the JS runtime.
+
+                    For example, the below script should affect the <Camera/> element.
+
+                    var camera = $("Camera").value;
+                    camera.position[0] += 1;
+
+                    This means that camera is a reference to an lxvar, which has a wrapper that can
+                    then translate ".position" into a native .find("position") call.  This in turn
+                    returns a wrapper.  The operator [0] must also return a reference to the lxvar
+                    float since the += must modify the underlying C++ value.
+
+                    Memory management is further complicated here since lxvar relies heavily on 
+                    reference counting, but currently there is no hook in this code to know when V8
+                    disposes of a JS variable.  
+
+                    var position = $("Camera").value.position;
+                    $("Camera").value.position = [ 10, 0, 0 ];
+                    position[0] += 1;
+
+                    Without consideration of reference counting, the above example could crash.  The
+                    native lxvar for position could lose all references when it is overwritten in the
+                    next line (unless the JS wrapper increments a reference).  This would mean the
+                    third line could be pointing to a deleted native lxvar value.
+                 */
+                lx_error("Not yet implemented!");
+
+                return Undefined();
+            }
+
             static v8::Handle<v8::Value> 
             removeChild (const v8::Arguments& args)
             {
@@ -602,6 +644,7 @@ namespace lx0 { namespace core { namespace detail {
         Handle<ObjectTemplate> objInst( templ->InstanceTemplate() );
         objInst->SetInternalFieldCount(1);
         objInst->SetAccessor(String::New("parentNode"),  L::get_parentNode);
+        objInst->SetAccessor(String::New("value"),       L::get_value);
 
         // Access the Javascript prototype for the function - i.e. my_func.prototype - 
         // and add the necessary properties and methods.
