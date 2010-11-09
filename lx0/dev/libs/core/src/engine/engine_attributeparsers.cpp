@@ -45,6 +45,55 @@ using namespace lx0::core;
 
 namespace {
 
+    int    
+    i_hexToInt (char c)
+    {
+        switch (c)
+        {
+        default:
+            lx_error("Illegal hex character");
+
+        case '0': return 0;
+        case '1': return 1;
+        case '2': return 2;
+        case '3': return 3;
+        case '4': return 4;
+        case '5': return 5;
+        case '6': return 6;
+        case '7': return 7;
+        case '8': return 8;
+        case '9': return 9;
+
+        case 'A': return 10;
+        case 'B': return 11;
+        case 'C': return 12;
+        case 'D': return 13;
+        case 'E': return 14;
+        case 'F': return 15;
+
+        case 'a': return 10;
+        case 'b': return 11;
+        case 'c': return 12;
+        case 'd': return 13;
+        case 'e': return 14;
+        case 'f': return 15;
+        }
+    }
+
+    lxvar
+    i_hexToLxVar (const char* hex)
+    {
+        lx_check_error(hex != nullptr);
+        lx_check_error(strlen(hex) == 7, "This function expects a stricly formatted HTML hex color");
+        lx_check_error(hex[0] == '#');
+
+        float r = float(i_hexToInt(hex[1]) * 16 + i_hexToInt(hex[2])) / 255.0f;
+        float g = float(i_hexToInt(hex[3]) * 16 + i_hexToInt(hex[4])) / 255.0f;
+        float b = float(i_hexToInt(hex[5]) * 16 + i_hexToInt(hex[6])) / 255.0f;
+
+        return lxvar(r, g, b);
+    }
+
     class ColorNamed : public lx0::core::detail::AttributeParser
     {
     public:
@@ -202,41 +251,36 @@ namespace {
         }
 
     protected:
-        int    _hexToInt (char c)
-        {
-            switch (c)
-            {
-            default:
-                lx_error("Illegal hex character");
-            case '0': return 0;
-            case '1': return 1;
-            case '2': return 2;
-            case '3': return 3;
-            case '4': return 4;
-            case '5': return 5;
-            case '6': return 6;
-            case '7': return 7;
-            case '8': return 8;
-            case '9': return 9;
-            case 'A': return 10;
-            case 'B': return 11;
-            case 'C': return 12;
-            case 'D': return 13;
-            case 'E': return 14;
-            case 'F': return 15;
-            }
-        }
 
         void _add (const char* name, const char* hex)
         {
-            float r = float(_hexToInt(hex[1]) * 16 + _hexToInt(hex[2])) / 255.0f;
-            float g = float(_hexToInt(hex[3]) * 16 + _hexToInt(hex[4])) / 255.0f;
-            float b = float(_hexToInt(hex[5]) * 16 + _hexToInt(hex[6])) / 255.0f;
-
-            mMap.insert( std::make_pair(name, lxvar(r, g, b)) );
+            lxvar value = i_hexToLxVar(hex);
+            mMap.insert( std::make_pair(name, value) );
         }
 
         std::map<std::string, lxvar> mMap;
+    };
+
+
+    class HexColor : public lx0::core::detail::AttributeParser
+    {
+    public:
+        virtual  lxvar  parse (std::string s)
+        {
+            if (s[0] != '#' && s.length() != 7)
+                return lxvar::undefined();
+            
+            for (int i = 1; i < 7; ++i)
+            {
+                bool bOk = (s[i] >= '0' && s[i] <= '9')
+                    || (s[i] >= 'a' && s[i] <= 'f')
+                    || (s[i] >= 'A' && s[i] <= 'A');
+
+                if (!bOk)
+                    return lxvar::undefined();
+            }
+            return i_hexToLxVar(s.c_str());
+        }
     };
 }
 
@@ -244,6 +288,15 @@ namespace lx0 { namespace core {
 
     using namespace detail;
 
+    /*!
+        By default all attributes in the XML document are parsed as lxson formatted 
+        strings (i.e. a superset of JSON).  The Engine allows for custom parsers to
+        be attached to elements which can attempt to parse the element before the 
+        lxson parser is attempted.
+
+        This method invokes the list of registered parsers and then defaults to the
+        lxson parser - returning an lxvar wrapper on the raw string if all fail.
+     */
     lxvar 
     Engine::parseAttribute (std::string name, std::string value)
     {
@@ -269,6 +322,7 @@ namespace lx0 { namespace core {
     Engine::_attachAttributeParsers (void)
     {
         m_attributeParsers["color"].push_back( AttributeParserPtr(new ColorNamed) );
+        m_attributeParsers["color"].push_back( AttributeParserPtr(new HexColor) );
     }
 
 }}

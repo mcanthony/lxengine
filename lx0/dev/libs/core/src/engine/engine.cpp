@@ -205,7 +205,6 @@ namespace lx0 { namespace core {
         DocumentPtr spDocument(new Document);
 
         _notifyDocumentCreated(spDocument);
- 
         _attachPhysics(spDocument);
 
         ElementPtr spRoot = _loadDocumentRoot(spDocument, filename);
@@ -214,21 +213,21 @@ namespace lx0 { namespace core {
 
         spDocument->root(spRoot);
 
-        // API Design question: does this belong here?  Is a load an implicit connection?
-        // What is an "unconnected" document good for?
-        this->connect(spDocument);
+
+        m_documents.push_back(spDocument);
+
+        // This is properly not the exactly right place for the scripts to be run.
+        // If nothing else, this is likely not consistent with HTML which runs
+        // scripts as the document is being loaded.  Should the HTML behavior be
+        // emulated or is this approach cleaner?
+        _processDocumentHeader(spDocument);
 
         return spDocument;
     }
 
-    void    
-    Engine::connect (DocumentPtr spDocument)
+    void
+    Engine::_processDocumentHeader (DocumentPtr spDocument)
     {
-        m_documents.push_back(spDocument);
-
-        //
-        // Not sure this is exactly the right place for the scripts to be run...
-        //
         std::vector<std::string> scripts;
         ElementPtr spRoot = spDocument->root();
         for (int i = 0; i < spRoot->childCount(); ++i)
@@ -242,15 +241,23 @@ namespace lx0 { namespace core {
                     if (spElem->tagName() == "Script")
                     {
                         std::string language = spElem->attr("language").asString();
-                        std::string src      = spElem->attr("src").asString();
+                        std::string content;
+                        if (spElem->value().isDefined())
+                        {
+                            content = spElem->value().asString();
+                        }
+                        else
+                        {
+                            std::string filename = spElem->attr("src").asString();
+                            content = lx0::util::lx_file_to_string(filename);
+                        }
 
-                        std::string content = lx0::util::lx_file_to_string(src);
+                        lx_check_error(language.empty() || language == "javascript");
                         _runJavascript(spDocument, content);
                     }
                 }
             }
         }
-
     }
 
 	void   

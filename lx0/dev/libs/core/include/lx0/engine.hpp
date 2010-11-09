@@ -117,26 +117,25 @@ namespace lx0 { namespace core {
 
 
         //! Acquire the Singleton for the Engine
-        static EnginePtr    acquire         () { return detail::acquireSingleton<Engine>(s_wpEngine); }
+        static EnginePtr    acquire             (void) { return detail::acquireSingleton<Engine>(s_wpEngine); }
         
-        void                shutdown        (void);
+        void                shutdown            (void);
 
-        int                 versionMajor    (void)                      { return 0; }
-        int                 versionMinor    (void)                      { return 0; }
+        int                 versionMajor        (void)                      { return 0; }
+        int                 versionMinor        (void)                      { return 0; }
 
-        Environment&        environment     (void)                      { return mEnvironment; }
+        Environment&        environment         (void)                      { return mEnvironment; }
 
-        DocumentPtr         loadDocument    (std::string filename);
-        void                connect         (DocumentPtr spDocument);
+        DocumentPtr         loadDocument        (std::string filename);
 
-        void                sendMessage     (const char* message);
-        int	                run             (void);
+        void                sendMessage         (const char* message);
+        int	                run                 (void);
 
         lxvar               parseAttribute      (std::string name, std::string value);
 
         // Stats
-        void                incObjectCount (std::string name);
-        void                decObjectCount (std::string name);
+        void                incObjectCount      (std::string name);
+        void                decObjectCount      (std::string name);
 
     protected:
         template <typename T> friend std::shared_ptr<T> detail::acquireSingleton (std::weak_ptr<T>&);
@@ -154,6 +153,8 @@ namespace lx0 { namespace core {
         void        _attachPhysics          (DocumentPtr spDocument);
         void        _runJavascript          (DocumentPtr spDocument, std::string source);
         
+        void        _processDocumentHeader  (DocumentPtr spDocument);
+
         Environment                 mEnvironment;
         std::vector<DocumentPtr>    m_documents;
         std::deque<std::string>     m_messageQueue;

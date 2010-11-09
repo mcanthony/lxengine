@@ -61,13 +61,14 @@ namespace lx0 { namespace core {
         {
             static ElementPtr build (DocumentPtr spDocument, TiXmlElement* pTiElement, int depth)
             {
-                
                 ElementPtr spElem ( spDocument->createElement() );
          
                 std::string tagName = pTiElement->Value();
                 spElem->tagName(tagName);
 
-
+                //
+                // Parse all attributes and assign them to the Element
+                //
                 for (TiXmlAttribute* pAttrib= pTiElement->FirstAttribute(); pAttrib; pAttrib = pAttrib->Next())
                 {
                     std::string name = pAttrib->Name();
@@ -76,34 +77,53 @@ namespace lx0 { namespace core {
                     spElem->attr(name, parsedValue);
                 }
 
-                size_t childElemCount = 0;
-                size_t childTextCount = 0;
+                //
+                // Collect the children and inlined value
+                //
                 std::string elemText;
+                std::string elemComment;
                 for (TiXmlNode* pChild = pTiElement->FirstChild(); pChild != 0; pChild = pChild->NextSibling())
                 {
                     if (TiXmlElement* pElement = pChild->ToElement())
                     {
-                        childElemCount++;
-
                         ElementPtr spLxElem = build(spDocument, pElement, depth + 1);
                         spElem->append(spLxElem);
                     }
                     else if (TiXmlText* pText = pChild->ToText())
                     {
-                        childTextCount++;
                         elemText.append( pText->Value() );
+                    }
+                    else if (TiXmlComment* pComment = pChild->ToComment())
+                    {
+                        elemComment.append( pComment->Value() );
                     }
                 }
 
-                lx_check_error(childElemCount == 0 || childTextCount == 0, "Unexpected XML element with both text and child nodes!");
+                //
+                // Check so far if this is a well-formed element
+                //
+                {
+                    if (!elemText.empty() && !elemComment.empty())
+                        lx_error("Unexpected Element found with both inner text and comments. "
+                                 "Elements are expected to have their values defined by either "
+                                 "a single block of text or a single block of comment, not both.");
+                }
 
-                // This is a special-case that needs to be removed eventually.
+
+                //
+                // The Element's value is defined by one of three possibilities:
+                // (1) It is loaded 'externally' via a "src" tag
+                // (2) It is inlined as the text within the element in the XML
+                //     document and parsed into an lxvar
+                // (3) It is inlined as the a comment within the element in the XML
+                //     document and is copied directly as an unparsed string 
                 //
                 lxvar elemValue;
                 lxvar srcAttr = spElem->attr("src");
-                if (srcAttr.isDefined() 
-                    && (tagName == "Mesh" || tagName == "Camera"))
+                if (srcAttr.isDefined() && (tagName == "Mesh" || tagName == "Camera"))
                 {
+                    ///@todo should the src tag always be assigned a special proxy lxvar that, on first use
+                    /// invokes the Element-specific loader to get the data?
                     if (!elemText.empty())
                         lx_warn("Element has both a 'src' attribute and an inline value!  "
                                 "The src attribute overrides the value.");
@@ -114,11 +134,18 @@ namespace lx0 { namespace core {
                 {
                     elemValue = lxvar::parse(elemText.c_str());
                 }
-
-
+                else if (!elemComment.empty())
+                {
+                    elemValue = lxvar( elemComment );
+                }
+                
+                //
                 // This should be controlled in a more dynamic, pluggable fashion
+                //
                 if (tagName == "Mesh") 
                     spElem->value(new Mesh(elemValue));
+                else
+                    spElem->value(elemValue);
  
                 return spElem;
             }
@@ -132,8 +159,10 @@ namespace lx0 { namespace core {
             spRoot = L::build(spDocument, doc.RootElement(), 0);
         }
         else
+        {
+            lx_warn("Failed to load XML document '%s'", filename.c_str());
             spRoot.reset();
-
+        }
         return spRoot;
     }
  
