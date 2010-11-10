@@ -91,8 +91,11 @@ macro(simple_executable EXENAME)
    
    file(GLOB_RECURSE SRCFILES *.cpp)
    file(GLOB_RECURSE HDRFILES *.h)
+   file(GLOB_RECURSE HPPFILES *.hpp)
    
-   set(SOURCES ${SRCFILES} ${HDRFILES})
+   set(SOURCES ${SRCFILES} ${HDRFILES} ${HPPFILES})
+   source_group("Sources" FILES ${SOURCES})
+   
    add_executable(${EXENAME} ${SOURCES})
    target_link_libraries(${EXENAME} ${LX_ALL_LIBS}) 
 
@@ -116,6 +119,7 @@ endmacro(recurse_subdirectories BASEDIR)
 # Media
 #
 copy_media_directory( media/scripts/base )
+copy_media_directory( media/scripts/engine/attribute_parsers )
 copy_media_directory( media/shaders/ogre )
 copy_media_directory( media/shaders/glsl/vertex )
 copy_media_directory( media/shaders/glsl/geometry )

@@ -37,6 +37,9 @@
 #include <lx0/core.hpp>
 #include <lx0/lxvar.hpp>
 
+#include "main.hpp"
+#include "ut_attributeparsers.hpp"
+
 using namespace lx0::core;
 
 int mChecksOkay;
@@ -124,8 +127,7 @@ void check_exception (int line, bool bShouldThrow, std::string source, std::func
     }
 }
 
-#define CHECK(b) check(__LINE__, (b), "")
-#define CHECK_EXCEPTION(Code) check_exception(__LINE__, true, #Code, [&]() Code )
+
 
 int 
 main (int argc, char** argv)
@@ -286,6 +288,8 @@ main (int argc, char** argv)
             }
 
         });
+
+        F.add("attribute parsers", []() { test_attributeparsers(); });
 
         F.run();
     }
