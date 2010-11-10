@@ -192,11 +192,110 @@ namespace lx0 { namespace core { namespace detail {
         return _nativeThisImp<NativeType,AccessorInfo>(info);
     }
 
+    //-----------------------------------------------------------------------//
+    //! Wrap a native object without reference counting
+    /*!
+        Stores the pointer to the native object in the "0" internal field of
+        the JS object.
+
+        \param ctor         JS Function for creating a JS object that will
+            wrap the native object
+
+        \param pNative      Pointer to the native object
+        
+        \param nativeBytes  The approximate weight of the native object, which
+            the Javascript garbage collector will use as a hint for when to
+            collect the object.
+     */
     static v8::Handle<v8::Object>
-    _wrapObject (v8::Handle<v8::Function>& ctor, void* pNative)
+    _wrapObject (v8::Handle<v8::Function>& ctor, void* pNative, size_t nativeBytes = 0)
     {
+        // Give V8 a hint about the native object size so that it invokes the garbage
+        // collector at the right time.
+        if (nativeBytes > 0)
+        {
+            #ifdef _DEBUG
+            // Put more pressure on the GC in _DEBUG
+            nativeBytes *= 32;          
+            #endif
+
+            V8::AdjustAmountOfExternalAllocatedMemory(nativeBytes);
+        }
+
+        // Allocate the JS object wrapper and assign the native object to its
+        // internal field.
         v8::Handle<v8::Object> obj = ctor->NewInstance();
         obj->SetInternalField(0, v8::External::New(pNative));
+
+        return obj;
+    }
+
+    //=========================================================================
+    // V8 Ref-Counted Object Wrapper
+    //=========================================================================
+
+    class _SharedObjectWrapper
+    {
+    public:
+        virtual ~_SharedObjectWrapper() {}
+    };
+
+    template <typename T>
+    class _SharedObjectWrapperImp : public _SharedObjectWrapper
+    {
+    public:
+        _SharedObjectWrapperImp(T& t) : mValue(t) {}
+        T mValue;
+    };
+
+    //-----------------------------------------------------------------------//
+    //! Wrap a native object that needs to be reference counted.
+    /*!
+        The purpose of this method is to maintain a native shared pointer to the object as
+        long as there is a JS reference to the object.  This ensures the JS and native 
+        reference counts on the shared object stay in sync.
+
+        The wrapper on shared object works as follows:
+
+        1) Create a PersitentHandle<>.  This has a method MakeWeak(), which takes a callback
+           function which is called when the V8 garbage collector is releasing the JS object.
+           This is where the native object can be freed.
+
+        2) Store a pointer to a new object that holds the shared reference in the parameters
+           field of the PersistentHandle<> callback.
+
+        3) Set up a generic callback function that deletes the wrapper object when called;
+           this implicitly will release the shared reference owned by that object and thus
+           handle reference counting on that object correctly.
+
+        The advantange of this approach is that it's simple.  The disadvantage is it requires
+        an additional heap object for every persistent, shared object.
+     */
+    template <typename T>
+    static v8::Persistent<v8::Object>
+    _wrapSharedObject (v8::Handle<v8::Function>& ctor, T sharedPtr, size_t nativeBytes)
+    {
+        struct L
+        {
+            static void releaseObj (Persistent<Value> persistentObj, void* pData)
+            {
+                // Release the native object by deleteing the object holding the
+                // shared reference.
+                auto pShared = reinterpret_cast<_SharedObjectWrapper*>(pData);
+                delete pShared;
+        
+                // Clear out the object fields.  Technically not necessary, but just in case.
+                Local<Object> obj( Object::Cast(*persistentObj) );
+                obj->SetInternalField(0, Null());
+
+                // Manually dispose of the PersistentHandle
+                persistentObj.Dispose();
+                persistentObj.Clear();
+            }
+        };
+
+        Persistent<Object> obj( Persistent<Object>::New( _wrapObject(ctor, sharedPtr.get(), nativeBytes) ));
+        obj.MakeWeak(new _SharedObjectWrapperImp<T>(sharedPtr), L::releaseObj);
 
         return obj;
     }
@@ -232,8 +331,6 @@ namespace lx0 { namespace core { namespace detail {
 
         Persistent<Function>                              mWindowOnKeyDown;
         std::vector<std::pair<int, Persistent<Function>>> mTimeoutQueue;
-
-        std::vector<ElementPtr>         mElements;
     };
     
     JavascriptComponent* s_pActiveContext;
@@ -450,14 +547,11 @@ namespace lx0 { namespace core { namespace detail {
         
                 ElementPtr spElem   = pThis->createElement(name);
         
-                // The Javascript could continue to reference this open.   Keep a reference around to
-                // the element for the duration of the V8 context.   (The alternative would be to use
-                // V8 Persistent weak pointers that provide a callback on the last reference being
-                // removed.)
+                // Wrap the returned object as a shared pointer: this will keep a native
+                // reference to object open as long as there is a JS reference to the object.
+                // In other words, it keeps the JS and native reference counting in sync.
                 //
-                s_pActiveContext->mElements.push_back(spElem);
-        
-                return _wrapObject(s_pActiveContext->mElementCtor, spElem.get());
+                return _wrapSharedObject(s_pActiveContext->mElementCtor, spElem, sizeof(Element) * 2);
             }
 
             /*
