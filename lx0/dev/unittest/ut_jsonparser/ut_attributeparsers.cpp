@@ -215,6 +215,15 @@ void test_attributeparsers()
                 // Check some malformed hex
                 CHECK( parse("000").isUndefined() );
                 CHECK( parse("#00112").isUndefined() );
+
+
+                // Check rgb notation
+                CHECK( color(255, 255, 255) == parse("rgb(255, 255, 255)").convert() );
+                CHECK( color(  0,   0,   0) == parse("rgb(0,0,0)").convert() );
+                CHECK( color( 12,  34, 5) == parse("rgb(12, 34 , 5  )").convert() );
+
+                // Check rgb percentage notation
+                CHECK( kWhite == parse("rgb(100%, 100%, 100%)").convert() );
             }
 
         }
