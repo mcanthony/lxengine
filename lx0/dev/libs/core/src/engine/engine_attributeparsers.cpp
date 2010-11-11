@@ -53,7 +53,8 @@ namespace lx0 { namespace core {
     lxvar 
     Engine::parseAttribute (std::string name, std::string value)
     {
-        // First attempt any registered parsers
+        //
+        // Attempt any registered parsers
         //
         auto it = m_attributeParsers.find(name);
         if (it != m_attributeParsers.end())
@@ -76,6 +77,12 @@ namespace lx0 { namespace core {
     Engine::addAttributeParser  (std::string attr, std::function<lxvar(std::string)> parser)
     {
         m_attributeParsers[attr].push_back(parser);
+    }
+
+    void
+    Engine::addPsuedoAttribute  (std::string attr, std::function<bool(std::string)> parser)
+    {
+        m_psuedoAttributes[attr].push_back(parser);
     }
 
 }}

@@ -131,8 +131,13 @@ namespace lx0 { namespace core {
         void                sendMessage         (const char* message);
         int	                run                 (void);
 
+        ///@name Attribute Parsing
+        ///@{
         void                addAttributeParser  (std::string attr, std::function<lxvar(std::string)> parser);
+        void                addPsuedoAttribute  (std::string attr, std::function<bool(std::string)> parser);
+
         lxvar               parseAttribute      (std::string name, std::string value);
+        ///@}
 
         // Stats
         void                incObjectCount      (std::string name);
@@ -162,6 +167,7 @@ namespace lx0 { namespace core {
 
         std::map<std::string, detail::ObjectCount>   m_objectCounts;
 
+        std::map<std::string, std::vector<std::function<bool(std::string)>>>    m_psuedoAttributes;
         std::map<std::string, std::vector<std::function<lxvar(std::string)>>>   m_attributeParsers;
     };
 
