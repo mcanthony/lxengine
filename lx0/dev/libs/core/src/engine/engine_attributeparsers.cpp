@@ -305,9 +305,10 @@ namespace lx0 { namespace core {
         auto it = m_attributeParsers.find(name);
         if (it != m_attributeParsers.end())
         {
-            for (auto jt = it->second.begin(); jt != it->second.end(); ++jt)
+            auto group = it->second;
+            for (auto jt = group.begin(); jt != group.end(); ++jt)
             {
-                lxvar parsed = (*jt)->parse(value);
+                lxvar parsed = (*jt)(value);
                 if (parsed.isDefined())
                     return parsed;
             }
@@ -319,10 +320,9 @@ namespace lx0 { namespace core {
     }
 
     void
-    Engine::_attachAttributeParsers (void)
+    Engine::addAttributeParser  (std::string attr, std::function<lxvar(std::string)> parser)
     {
-        m_attributeParsers["color"].push_back( AttributeParserPtr(new ColorNamed) );
-        m_attributeParsers["color"].push_back( AttributeParserPtr(new HexColor) );
+        m_attributeParsers[attr].push_back(parser);
     }
 
 }}

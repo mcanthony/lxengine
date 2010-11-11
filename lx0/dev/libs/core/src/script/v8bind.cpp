@@ -53,6 +53,8 @@ namespace lx0 { namespace core { namespace v8bind
     void
     _V8Context::runFile (const char* filename)
     {
+        lx_debug("Running JS file '%s'", filename);
+
         std::string text = lx0::util::lx_file_to_string(filename);
         
         Context::Scope context_scope(context);

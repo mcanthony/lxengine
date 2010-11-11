@@ -168,14 +168,119 @@ namespace lx0 { namespace core { namespace detail {
     }
     
     //===========================================================================//
+    // Engine Context
+    //===========================================================================//
+
+    class Engine2
+    {
+    public:
+        lxvar parse(std::string attr, std::string value)
+        {
+            auto group = mParsers[attr];
+            for (auto it = group.begin(); it != group.end(); ++it)
+            {
+                lxvar v = (*it)(value);
+                if (v.isDefined())
+                    return v;
+            }
+            return lxvar::undefined();
+        }
+
+        void addAttributeParser (std::string attr, std::function<lxvar (std::string)> func)
+        {
+            mParsers[attr].push_back(func);
+        }
+
+    protected:
+        std::map<std::string, std::vector<std::function<lxvar (std::string s)>>> mParsers;
+    };
+
+    class JsEngineContext 
+        : public lx0::core::v8bind::_V8Context
+        , public Engine::Component
+    {
+    public:
+                    JsEngineContext (Engine* pEngine);
+
+        Engine*     mpEngine;
+    protected:
+        void        _addEngine  ();
+    };
+
+    JsEngineContext::JsEngineContext (Engine* pEngine)
+        : mpEngine (pEngine)
+    {
+        _addEngine();
+    }
+
+    namespace wrappers_engine
+    {
+        static v8::Handle<v8::Value> 
+        addAttributeParser (const v8::Arguments& args)
+        {
+            auto                 pThis = lx0::core::v8bind::_nativeThis<JsEngineContext>(args);
+            std::string          attr  = lx0::core::v8bind::_marshal(args[0]); 
+            Persistent<Function> func  = Persistent<Function>::New( Handle<Function>::Cast(args[1]) ); 
+                
+            auto wrapper = [pThis, func] (std::string value) -> lxvar { 
+                Context::Scope context_scope(pThis->context);
+
+                HandleScope handle_scope;
+                Handle<v8::Object> recv = pThis->context->Global();
+                Handle<Value> callArgs[1];
+                
+                Handle<Value> ret;
+                callArgs[0] = String::New(value.c_str());
+                ret = func->Call(recv, 1, callArgs);
+
+                return lx0::core::v8bind::_marshal(ret);
+            };
+            pThis->mpEngine->addAttributeParser(attr, wrapper);
+            return v8::Undefined();
+        }
+
+        static v8::Handle<v8::Value> 
+        debug (const v8::Arguments& args)
+        {
+            std::string msg = *v8::String::AsciiValue(args[0]);                 
+            std::cout << "JS: " << msg << std::endl;
+            return v8::Undefined();
+        }
+    }
+
+    void 
+    JsEngineContext::_addEngine()
+    {
+        namespace W = wrappers_engine;
+
+        Context::Scope context_scope(context);
+        HandleScope handle_scope;
+
+        Handle<FunctionTemplate> templ( FunctionTemplate::New() );
+        
+        Handle<ObjectTemplate> objInst( templ->InstanceTemplate() );
+        objInst->SetInternalFieldCount(1);
+
+        Handle<Template> proto_t( templ->PrototypeTemplate() );
+        proto_t->Set("debug",               FunctionTemplate::New(W::debug));
+        proto_t->Set("addAttributeParser",  FunctionTemplate::New(W::addAttributeParser));
+
+        Handle<Function> ctor( templ->GetFunction() );
+        Handle<v8::Object> obj( ctor->NewInstance() );
+        obj->SetInternalField(0, External::New(this));
+
+        context->Global()->Set(String::New("engine"), obj);
+    }
+
+    //===========================================================================//
     // Document Component
     //===========================================================================//
 
-    class JavascriptComponent : public Document::Component
+    class JavascriptDoc : public Document::Component
     {
     public:
-                        JavascriptComponent(DocumentPtr spDocument);
-        virtual         ~JavascriptComponent();
+                        JavascriptDoc(DocumentPtr spDocument);
+        virtual         ~JavascriptDoc();
 
         void            run (DocumentPtr spDocument, std::string source);
         
@@ -200,7 +305,7 @@ namespace lx0 { namespace core { namespace detail {
         std::vector<std::pair<int, Persistent<Function>>> mTimeoutQueue;
     };
 
-    JavascriptComponent::JavascriptComponent (DocumentPtr spDocument)
+    JavascriptDoc::JavascriptDoc (DocumentPtr spDocument)
     {
         // Set up the global template before initiating the Context.   The ObjectTemplate lets
         // FunctionTemplates be added for the free functions.  Context::Global() returns an
@@ -245,7 +350,7 @@ namespace lx0 { namespace core { namespace detail {
     }
 
     void
-    JavascriptComponent::_processTimeoutQueue (void)
+    JavascriptDoc::_processTimeoutQueue (void)
     {
         const int now = int( lx_milliseconds() );
 
@@ -272,7 +377,7 @@ namespace lx0 { namespace core { namespace detail {
         }
     }
 
-    JavascriptComponent::~JavascriptComponent()
+    JavascriptDoc::~JavascriptDoc()
     {
         mElementCtor.Dispose();
         mKeyEventCtor.Dispose();
@@ -281,7 +386,7 @@ namespace lx0 { namespace core { namespace detail {
     }
 
     void 
-    JavascriptComponent::run (DocumentPtr spDocument, std::string text)
+    JavascriptDoc::run (DocumentPtr spDocument, std::string text)
     {
         Context::Scope context_scope(mContext);
 
@@ -303,7 +408,7 @@ namespace lx0 { namespace core { namespace detail {
     }
 
     void
-    JavascriptComponent::_addGlobals (v8::Handle<v8::ObjectTemplate>& globalTempl)
+    JavascriptDoc::_addGlobals (v8::Handle<v8::ObjectTemplate>& globalTempl)
     {
         struct L
         {
@@ -331,21 +436,21 @@ namespace lx0 { namespace core { namespace detail {
     }
 
     void
-    JavascriptComponent::_addWindow (void)
+    JavascriptDoc::_addWindow (void)
     {
         struct Window
         {
             static v8::Handle<v8::Value> 
             get_onKeyDown (Local<String> property, const AccessorInfo &info) 
             {
-                auto   pContext = _nativeData<JavascriptComponent>(info);
+                auto   pContext = _nativeData<JavascriptDoc>(info);
                 return pContext->mWindowOnKeyDown;
             }
 
             static void
             set_onKeyDown (Local<String> property, Local<Value> value, const AccessorInfo &info) 
             {
-                auto             pContext = _nativeData<JavascriptComponent>(info);
+                auto             pContext = _nativeData<JavascriptDoc>(info);
                 Handle<Function> func     = _marshal(value);
                 pContext->mWindowOnKeyDown = Persistent<Function>::New(func);
             }
@@ -357,7 +462,7 @@ namespace lx0 { namespace core { namespace detail {
                 lx_check_error(args[0]->IsNumber(), "Expected a number for first argument to window.setTimeout()");
                 lx_check_error(args[1]->IsFunction());
 
-                auto             pContext = _nativeData<JavascriptComponent>(args);
+                auto             pContext = _nativeData<JavascriptDoc>(args);
                 auto             pThis    = _nativeThis<Window>(args); 
                 int              delay    = _marshal(args[0]);
                 Handle<Function> func     = _marshal(args[1]);
@@ -389,7 +494,7 @@ namespace lx0 { namespace core { namespace detail {
     }
 
     void
-    JavascriptComponent::_addDocument (DocumentPtr spDocument)
+    JavascriptDoc::_addDocument (DocumentPtr spDocument)
     {
         // Local functions
         struct L
@@ -400,7 +505,7 @@ namespace lx0 { namespace core { namespace detail {
             static v8::Handle<v8::Value> 
             createElement (const v8::Arguments& args)
             {
-                auto      pContext  = _nativeData<JavascriptComponent>(args);
+                auto      pContext  = _nativeData<JavascriptDoc>(args);
                 Document* pThis     = _nativeThis<Document>(args);
                 std::string name    = _marshal(args[0]);
         
@@ -421,7 +526,7 @@ namespace lx0 { namespace core { namespace detail {
             {
                 lx_check_error(args.Length() == 1);
 
-                auto        pContext  = _nativeData<JavascriptComponent>(args);
+                auto        pContext  = _nativeData<JavascriptDoc>(args);
                 Document*   pDoc      = _nativeThis<Document>(args); 
                 std::string id        = _marshal(args[0]);
         
@@ -438,7 +543,7 @@ namespace lx0 { namespace core { namespace detail {
             {
                 lx_check_error(args.Length() == 1);
 
-                auto        pContext  = _nativeData<JavascriptComponent>(args);
+                auto        pContext  = _nativeData<JavascriptDoc>(args);
                 Document*   pDoc      = _nativeThis<Document>(args); 
                 std::string tag       = _marshal(args[0]);
         
@@ -494,14 +599,14 @@ namespace lx0 { namespace core { namespace detail {
     }
 
     v8::Persistent<v8::Function>
-    JavascriptComponent::_addElement (void)
+    JavascriptDoc::_addElement (void)
     {
         struct L
         {
             static Handle<Value> 
             get_parentNode (Local<String> property, const AccessorInfo &info) 
             {
-                auto      pContext  = _nativeData<JavascriptComponent>(info);
+                auto      pContext  = _nativeData<JavascriptDoc>(info);
                 Element* pThis      = _nativeThis<Element>(info);
 
                 return _wrapObject(pContext->mElementCtor, pThis->parent().get());
@@ -618,7 +723,7 @@ namespace lx0 { namespace core { namespace detail {
     }
 
     v8::Persistent<v8::Function>
-    JavascriptComponent::_addKeyEvent (void)
+    JavascriptDoc::_addKeyEvent (void)
     {
         struct L
         {
@@ -651,7 +756,7 @@ namespace lx0 { namespace core { namespace detail {
     }
 
     void
-    JavascriptComponent::_addMath (void)
+    JavascriptDoc::_addMath (void)
     {
         struct Math
         {
@@ -694,14 +799,23 @@ namespace lx0 { namespace core {
 
     using namespace detail;
 
+     void
+     Engine::_attachJavascript (void)
+     {
+         auto pContext = new JsEngineContext(this);
+         this->attachComponent("engineJs", pContext);
+
+         pContext->runFile("media/scripts/engine/attribute_parsers/color.js");
+     }
+
     /*!
         Run a set of Javascript source files together in the same execution context.
      */
     void
     Engine::_runJavascript (DocumentPtr spDocument, std::string source)
     {
-        auto ctor = [=]() { return new JavascriptComponent(spDocument); };
-        auto spComponent = spDocument->ensureComponent<JavascriptComponent>("javascript", ctor);
+        auto ctor = [=]() { return new JavascriptDoc(spDocument); };
+        auto spComponent = spDocument->ensureComponent<JavascriptDoc>("javascript", ctor);
         spComponent->run(spDocument, source);
     }
 

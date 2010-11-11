@@ -121,7 +121,7 @@ namespace lx0 { namespace core {
         }
 
         _attachSound();
-        _attachAttributeParsers();
+        _attachJavascript();
     }
 
     /*!

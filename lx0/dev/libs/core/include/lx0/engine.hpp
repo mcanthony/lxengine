@@ -131,6 +131,7 @@ namespace lx0 { namespace core {
         void                sendMessage         (const char* message);
         int	                run                 (void);
 
+        void                addAttributeParser  (std::string attr, std::function<lxvar(std::string)> parser);
         lxvar               parseAttribute      (std::string name, std::string value);
 
         // Stats
@@ -148,9 +149,9 @@ namespace lx0 { namespace core {
 
         void        _notifyDocumentCreated  (DocumentPtr spDocument);
  
-        void        _attachAttributeParsers (void);
         void        _attachSound            (void);
         void        _attachPhysics          (DocumentPtr spDocument);
+        void        _attachJavascript       (void);
         void        _runJavascript          (DocumentPtr spDocument, std::string source);
         
         void        _processDocumentHeader  (DocumentPtr spDocument);
@@ -161,7 +162,7 @@ namespace lx0 { namespace core {
 
         std::map<std::string, detail::ObjectCount>   m_objectCounts;
 
-        std::map<std::string, std::vector<detail::AttributeParserPtr>>   m_attributeParsers;
+        std::map<std::string, std::vector<std::function<lxvar(std::string)>>>   m_attributeParsers;
     };
 
 }}
