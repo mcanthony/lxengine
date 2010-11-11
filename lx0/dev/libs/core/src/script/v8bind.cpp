@@ -28,36 +28,40 @@
 
 #include <lx0/core.hpp>
 #include <lx0/v8bind.hpp>
+#include <lx0/util.hpp>
 
 using namespace lx0::core;
+using namespace v8;
+using v8::Object;
 
-namespace lx0 { namespace v8_bind {
-
-    V8Bind gV8Bind;
-
-    /*!
-    @todo This leaks memory.  The native object is allocated here, but there's no
-        notification mechanism to let the engine know that the script no longer
-        is using the native object.
-     */
-    v8::Handle<v8::Object>
-    V8Bind::newObject (std::string name)
+namespace lx0 { namespace core { namespace v8bind
+{
+    
+    _V8Context::_V8Context ()
     {
-        Class& klass = mClasses.find(name)->second;
-        return wrapObject(name, klass.mCtor());
+        HandleScope handle_scope;
+        Handle<ObjectTemplate> global_templ = ObjectTemplate::New(); 
+
+        context = Context::New(0, global_templ);
     }
 
-    v8::Handle<v8::Object>
-    V8Bind::wrapObject (std::string name, void* pObject)
+    _V8Context::~_V8Context ()
     {
-        auto it = mClasses.find(name);
-        lx_check_error(it != mClasses.end());
+        context.Dispose();
+    }
+
+    void
+    _V8Context::runFile (const char* filename)
+    {
+        std::string text = lx0::util::lx_file_to_string(filename);
         
-        Class& klass = it->second;
-        v8::Handle<v8::Function> ctor = klass.mTemplate->GetFunction();
-        v8::Handle<v8::Object> obj = ctor->NewInstance();
-        obj->SetInternalField(0, v8::External::New(pObject));
-
-        return obj;
+        Context::Scope context_scope(context);
+        
+        HandleScope handle_scope;
+        Handle<String> source = String::New(text.c_str());
+        Handle<Script> script = Script::Compile(source);
+ 
+        Handle<Value> result = script->Run();
     }
-}}
+
+}}}

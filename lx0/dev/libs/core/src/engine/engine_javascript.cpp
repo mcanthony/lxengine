@@ -59,41 +59,6 @@ namespace lx0 { namespace core { namespace detail {
     //===========================================================================//
 
 
-
-    template <typename NativeType, typename Source>
-    static NativeType*
-    _nativeThisImp (const Source& args)
-    {
-        //
-        // Assumes the function was invoked with a this object (i.e. Holder is not null) and that
-        // the object was set with exactly one internal field of type T.   It is difficult to
-        // verify these assumptions at runtime, so this is a somewhat dangerous function.
-        //
-        Local<Object> self = args.Holder();
-
-        lx_check_error(self->InternalFieldCount() == 1);
-        Local<External> wrap = Local<External>::Cast(self->GetInternalField(0));
-        
-        NativeType* pThis = reinterpret_cast<NativeType*>( wrap->Value() );
-        lx_check_error(pThis != nullptr);
-
-        return pThis;
-    }
-
-    template <typename NativeType>
-    static NativeType*
-    _nativeThis (const v8::Arguments& args)
-    {
-        return _nativeThisImp<NativeType,Arguments>(args);
-    }
-
-    template <typename NativeType>
-    static NativeType*
-    _nativeThis (const v8::AccessorInfo& info)
-    {
-        return _nativeThisImp<NativeType,AccessorInfo>(info);
-    }
-
     //-----------------------------------------------------------------------//
     //! Wrap a native object without reference counting
     /*!
