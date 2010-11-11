@@ -199,8 +199,6 @@ namespace lx0 { namespace core { namespace detail {
         Persistent<Function>                              mWindowOnKeyDown;
         std::vector<std::pair<int, Persistent<Function>>> mTimeoutQueue;
     };
-    
-    JavascriptComponent* s_pActiveContext;
 
     JavascriptComponent::JavascriptComponent (DocumentPtr spDocument)
     {
@@ -231,16 +229,13 @@ namespace lx0 { namespace core { namespace detail {
                 // Therefore, it's necessary to set up the right context to call the Function
                 // before invoking it.
                 //
-                s_pActiveContext = this;
                 Context::Scope context_scope(mContext);
 
                 HandleScope handle_scope;
                 Handle<Object> recv = mContext->Global();
                 Handle<Value> callArgs[1];
-                callArgs[0] = _wrapObject(s_pActiveContext->mKeyEventCtor, &e);
+                callArgs[0] = _wrapObject(this->mKeyEventCtor, &e);
                 mWindowOnKeyDown->Call(recv, 1, callArgs);
-
-                s_pActiveContext = nullptr;
             }
         };
 
@@ -254,7 +249,6 @@ namespace lx0 { namespace core { namespace detail {
     {
         const int now = int( lx_milliseconds() );
 
-        s_pActiveContext = this;
         Context::Scope context_scope(mContext);
 
         HandleScope handle_scope;
@@ -276,8 +270,6 @@ namespace lx0 { namespace core { namespace detail {
             else
                 ++i;
         }
-
-        s_pActiveContext = nullptr;
     }
 
     JavascriptComponent::~JavascriptComponent()
@@ -291,8 +283,6 @@ namespace lx0 { namespace core { namespace detail {
     void 
     JavascriptComponent::run (DocumentPtr spDocument, std::string text)
     {
-        s_pActiveContext = this;
-
         Context::Scope context_scope(mContext);
 
         HandleScope    handle_scope;
@@ -310,8 +300,6 @@ namespace lx0 { namespace core { namespace detail {
                 lx_warn("Javascript Exception: %s\n", *exception_str);
             }
         }
-
-        s_pActiveContext = nullptr;
     }
 
     void
@@ -350,14 +338,16 @@ namespace lx0 { namespace core { namespace detail {
             static v8::Handle<v8::Value> 
             get_onKeyDown (Local<String> property, const AccessorInfo &info) 
             {
-                return s_pActiveContext->mWindowOnKeyDown;
+                auto   pContext = _nativeData<JavascriptComponent>(info);
+                return pContext->mWindowOnKeyDown;
             }
 
             static void
             set_onKeyDown (Local<String> property, Local<Value> value, const AccessorInfo &info) 
             {
-                Handle<Function> func   = _marshal(value);
-                s_pActiveContext->mWindowOnKeyDown = Persistent<Function>::New(func);
+                auto             pContext = _nativeData<JavascriptComponent>(info);
+                Handle<Function> func     = _marshal(value);
+                pContext->mWindowOnKeyDown = Persistent<Function>::New(func);
             }
             
             static v8::Handle<v8::Value> 
@@ -367,14 +357,15 @@ namespace lx0 { namespace core { namespace detail {
                 lx_check_error(args[0]->IsNumber(), "Expected a number for first argument to window.setTimeout()");
                 lx_check_error(args[1]->IsFunction());
 
-                auto*            pThis  = _nativeThis<Window>(args); 
-                int              delay  = _marshal(args[0]);
-                Handle<Function> func   = _marshal(args[1]);
+                auto             pContext = _nativeData<JavascriptComponent>(args);
+                auto             pThis    = _nativeThis<Window>(args); 
+                int              delay    = _marshal(args[0]);
+                Handle<Function> func     = _marshal(args[1]);
                 
                 delay += int(lx_milliseconds());
 
                 auto pair = std::make_pair(delay, Persistent<Function>::New(func));
-                s_pActiveContext->mTimeoutQueue.push_back(pair);
+                pContext->mTimeoutQueue.push_back(pair);
 
                 return Undefined();
             }
@@ -386,10 +377,10 @@ namespace lx0 { namespace core { namespace detail {
         Handle<ObjectTemplate> objInst( templ->InstanceTemplate() );
         objInst->SetInternalFieldCount(1);
 
-        objInst->SetAccessor(String::New("onKeyDown"), Window::get_onKeyDown, Window::set_onKeyDown);
+        objInst->SetAccessor(String::New("onKeyDown"), Window::get_onKeyDown, Window::set_onKeyDown, External::New(this));
 
         Handle<Template> proto_t( templ->PrototypeTemplate() );
-        proto_t->Set("setTimeout",  FunctionTemplate::New(Window::setTimeout));
+        proto_t->Set("setTimeout",  FunctionTemplate::New(Window::setTimeout, External::New(this)));
 
         // Add the object
         Handle<Object> obj( templ->GetFunction()->NewInstance() );
@@ -409,6 +400,7 @@ namespace lx0 { namespace core { namespace detail {
             static v8::Handle<v8::Value> 
             createElement (const v8::Arguments& args)
             {
+                auto      pContext  = _nativeData<JavascriptComponent>(args);
                 Document* pThis     = _nativeThis<Document>(args);
                 std::string name    = _marshal(args[0]);
         
@@ -418,7 +410,7 @@ namespace lx0 { namespace core { namespace detail {
                 // reference to object open as long as there is a JS reference to the object.
                 // In other words, it keeps the JS and native reference counting in sync.
                 //
-                return _wrapSharedObject(s_pActiveContext->mElementCtor, spElem, sizeof(Element) * 2);
+                return _wrapSharedObject(pContext->mElementCtor, spElem, sizeof(Element) * 2);
             }
 
             /*
@@ -429,15 +421,16 @@ namespace lx0 { namespace core { namespace detail {
             {
                 lx_check_error(args.Length() == 1);
 
-                Document* pDoc = _nativeThis<Document>(args); 
-                std::string id = _marshal(args[0]);
+                auto        pContext  = _nativeData<JavascriptComponent>(args);
+                Document*   pDoc      = _nativeThis<Document>(args); 
+                std::string id        = _marshal(args[0]);
         
                 ElementPtr spElem = pDoc->getElementById(id);
 
                 if (!spElem)
                     return Undefined();
                 else
-                    return _wrapObject(s_pActiveContext->mElementCtor, spElem.get());
+                    return _wrapObject(pContext->mElementCtor, spElem.get());
             }
 
             static v8::Handle<v8::Value> 
@@ -445,13 +438,14 @@ namespace lx0 { namespace core { namespace detail {
             {
                 lx_check_error(args.Length() == 1);
 
-                Document* pDoc = _nativeThis<Document>(args); 
-                std::string tag = _marshal(args[0]);
+                auto        pContext  = _nativeData<JavascriptComponent>(args);
+                Document*   pDoc      = _nativeThis<Document>(args); 
+                std::string tag       = _marshal(args[0]);
         
                 auto elems = pDoc->getElementsByTagName(tag);
                 Local<Array> results = Array::New(elems.size()); 
                 for (int i = 0; i < int(elems.size()); ++i)
-                    results->Set(i, _wrapObject(s_pActiveContext->mElementCtor, elems[i].get()) );
+                    results->Set(i, _wrapObject(pContext->mElementCtor, elems[i].get()) );
                 
                 return results;
             }
@@ -481,9 +475,9 @@ namespace lx0 { namespace core { namespace detail {
         // and add the necessary properties and methods.
         //
         Handle<Template> proto_t( templ->PrototypeTemplate() );
-        proto_t->Set("createElement",  FunctionTemplate::New(L::createElement));
-        proto_t->Set("getElementById", FunctionTemplate::New(L::getElementById));
-        proto_t->Set("getElementsByTagName", FunctionTemplate::New(L::getElementsByTagName));
+        proto_t->Set("createElement",  FunctionTemplate::New(L::createElement, External::New(this)));
+        proto_t->Set("getElementById", FunctionTemplate::New(L::getElementById, External::New(this)));
+        proto_t->Set("getElementsByTagName", FunctionTemplate::New(L::getElementsByTagName, External::New(this)));
 
         // Now grab a handle to the Function.  This apparently (?) will invoke the
         // FunctionTemplate to create actual function.  Then call NewInstance, which is
@@ -507,8 +501,10 @@ namespace lx0 { namespace core { namespace detail {
             static Handle<Value> 
             get_parentNode (Local<String> property, const AccessorInfo &info) 
             {
-                Element* pThis = _nativeThis<Element>(info);
-                return _wrapObject(s_pActiveContext->mElementCtor, pThis->parent().get());
+                auto      pContext  = _nativeData<JavascriptComponent>(info);
+                Element* pThis      = _nativeThis<Element>(info);
+
+                return _wrapObject(pContext->mElementCtor, pThis->parent().get());
             }
 
             static Handle<Value>
@@ -604,17 +600,17 @@ namespace lx0 { namespace core { namespace detail {
         // Create an anonymous type which will be used for the Element wrapper
         Handle<ObjectTemplate> objInst( templ->InstanceTemplate() );
         objInst->SetInternalFieldCount(1);
-        objInst->SetAccessor(String::New("parentNode"),  L::get_parentNode);
-        objInst->SetAccessor(String::New("value"),       L::get_value);
+        objInst->SetAccessor(String::New("parentNode"),  L::get_parentNode, 0, External::New(this));
+        objInst->SetAccessor(String::New("value"),       L::get_value, 0, External::New(this));
 
         // Access the Javascript prototype for the function - i.e. my_func.prototype - 
         // and add the necessary properties and methods.
         //
         Handle<Template> proto_t( templ->PrototypeTemplate() );
-        proto_t->Set("getAttribute",  FunctionTemplate::New(L::getAttribute));
-        proto_t->Set("setAttribute",  FunctionTemplate::New(L::setAttribute));
-        proto_t->Set("appendChild", FunctionTemplate::New(L::appendChild));
-        proto_t->Set("removeChild", FunctionTemplate::New(L::removeChild));
+        proto_t->Set("getAttribute",  FunctionTemplate::New(L::getAttribute, External::New(this)));
+        proto_t->Set("setAttribute",  FunctionTemplate::New(L::setAttribute, External::New(this)));
+        proto_t->Set("appendChild", FunctionTemplate::New(L::appendChild, External::New(this)));
+        proto_t->Set("removeChild", FunctionTemplate::New(L::removeChild, External::New(this)));
 
         // Store a persistent reference to the function which will be used to create
         // new object wrappers

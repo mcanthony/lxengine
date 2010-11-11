@@ -193,6 +193,19 @@ namespace lx0 { namespace core { namespace v8bind
         return _nativeThisImp<NativeType,AccessorInfo>(info);
     }
 
+    template <typename NativeType>
+    static NativeType*
+    _nativeData (const v8::Arguments& args)
+    {
+        return reinterpret_cast<NativeType*>( External::Unwrap(args.Data()) );
+    }
+
+    template <typename NativeType>
+    static NativeType*
+    _nativeData (const v8::AccessorInfo& info)
+    {
+        return reinterpret_cast<NativeType*>( External::Unwrap(info.Data()) );
+    }
 
     //===========================================================================//
     //!
