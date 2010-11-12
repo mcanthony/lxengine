@@ -150,7 +150,7 @@ main (int argc, char** argv)
             CHECK(v.isFloat());
             CHECK_EXCEPTION({ v.size(); });
 
-            v.undefine();
+            v = lxvar::undefined();
             CHECK(v.isUndefined());
             CHECK_EXCEPTION({ v.size(); });
 

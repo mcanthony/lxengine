@@ -170,8 +170,6 @@ namespace lx0 { namespace core {
         void            toArray         (void);
         void            toMap           (void);
 
-        void            undefine        (void);
-
         iterator        begin           (void);
         iterator        end             (void);
 
@@ -182,6 +180,7 @@ namespace lx0 { namespace core {
 
         bool            containsKey     (const char* key) const;
         lxvar           find            (const char* key) const;
+        lxvar           find            (const std::string& s) const;
         void            insert          (const char* key, const lxvar& value);
 
         auto_cast       operator*       (void) { return auto_cast(*this); }
@@ -240,8 +239,10 @@ namespace lx0 { namespace core {
             virtual lxvar       at          (int i)                     { _invalid(); return lxvar(); }
             virtual void        at          (int index, lxvar value)    { _invalid(); }
 
-            virtual lxvar::iterator begin  (void)                      { _invalid(); return lxvar::iterator(); }
-            virtual lxvar::iterator end    (void)                      { _invalid(); return lxvar::iterator(); }
+            virtual lxvar       find        (const char* key) const     { _invalid(); return lxvar::undefined(); }
+
+            virtual lxvar::iterator begin  (void)                       { _invalid(); return lxvar::iterator(); }
+            virtual lxvar::iterator end    (void)                       { _invalid(); return lxvar::iterator(); }
 
         protected:
             void                _invalid    (void) const;
@@ -362,6 +363,8 @@ namespace lx0 { namespace core {
 
             lxvar::iterator     begin           (void) { return lxvar::iterator(new iterator_imp(mValue.begin())); }
             lxvar::iterator     end             (void) { return lxvar::iterator(new iterator_imp(mValue.end())); }
+
+            virtual lxvar       find        (const char* key) const;
 
             typedef std::map<std::string, lxvar> Map;
             Map mValue;

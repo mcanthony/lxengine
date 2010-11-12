@@ -57,14 +57,21 @@ namespace lx0 { namespace core { namespace v8bind
 
         _marshal(v8::Handle<v8::Value>&v)   : mValue(v) {}
         _marshal(v8::Handle<v8::Object>&v)  : mValue(v) {}
+        _marshal(v8::Handle<v8::String>&v)  : mValue(v) {}
 
         _marshal(int i)                     : mValue( v8::Integer::New(i) ) {}
         _marshal(float f)                   : mValue( v8::Number::New(f) ) {}
+        _marshal(const char* s)             : mValue( v8::String::New(s) ) { }
         _marshal(std::string s)             : mValue( v8::String::New(s.c_str()) ) {}
+
 
         operator v8::Handle<v8::Value> ()   { return mValue; }
         operator v8::Handle<v8::Function> (){ return v8::Handle<v8::Function>::Cast(mValue); }
-        operator std::string ()             { return *v8::String::AsciiValue(mValue);  }
+        operator std::string ()             
+        {
+            lx_check_error( mValue->IsString() );
+            return *v8::String::AsciiValue(mValue);  
+        }
         operator int ()                     { return mValue->Int32Value(); }
         
         _marshal (lxvar v)

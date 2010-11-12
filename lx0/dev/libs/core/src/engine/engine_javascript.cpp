@@ -166,34 +166,10 @@ namespace lx0 { namespace core { namespace detail {
 
         return obj;
     }
-    
+
     //===========================================================================//
     // Engine Context
     //===========================================================================//
-
-    class Engine2
-    {
-    public:
-        lxvar parse(std::string attr, std::string value)
-        {
-            auto group = mParsers[attr];
-            for (auto it = group.begin(); it != group.end(); ++it)
-            {
-                lxvar v = (*it)(value);
-                if (v.isDefined())
-                    return v;
-            }
-            return lxvar::undefined();
-        }
-
-        void addAttributeParser (std::string attr, std::function<lxvar (std::string)> func)
-        {
-            mParsers[attr].push_back(func);
-        }
-
-    protected:
-        std::map<std::string, std::vector<std::function<lxvar (std::string s)>>> mParsers;
-    };
 
     class JsEngineContext 
         : public lx0::core::v8bind::_V8Context
@@ -294,11 +270,13 @@ namespace lx0 { namespace core { namespace detail {
         void                            _addDocument    (DocumentPtr spDocument);
         v8::Persistent<v8::Function>    _addElement     (void);
         v8::Persistent<v8::Function>    _addKeyEvent    (void);
+        v8::Persistent<v8::Function>    _addLxVar       (void);
         void                            _addMath        (void);
         //@}
 
         v8::Persistent<v8::Context>     mContext;
         v8::Persistent<v8::Function>    mElementCtor;
+        v8::Persistent<v8::Function>    mLxVarCtor;
         v8::Persistent<v8::Function>    mKeyEventCtor;
 
         Persistent<Function>                              mWindowOnKeyDown;
@@ -322,8 +300,9 @@ namespace lx0 { namespace core { namespace detail {
         Context::Scope context_scope(mContext);
         _addWindow();
         _addDocument(spDocument);
-        mElementCtor = _addElement();
-        mKeyEventCtor = _addKeyEvent();
+        mElementCtor    = _addElement();
+        mKeyEventCtor   = _addKeyEvent();
+        mLxVarCtor      = _addLxVar();
         _addMath();
 
         spDocument->slotKeyDown += [&](KeyEvent& e) {
@@ -421,8 +400,14 @@ namespace lx0 { namespace core { namespace detail {
 
             static v8::Handle<v8::Value> alert (const v8::Arguments& args)
             {
-                std::string text = _marshal(args[0]);
-                lx0::util::lx_message_box("Alert", text);
+                if (args.Length() == 1)
+                {
+                    std::string text = _marshal(args[0]);
+                    lx0::util::lx_message_box("Alert", text);
+                }
+                else
+                    lx_error("alert() called from script with too few arguments.");
+
                 return Undefined();
             }
         };
@@ -597,6 +582,47 @@ namespace lx0 { namespace core { namespace detail {
         //
         mContext->Global()->Set(String::New("document"), obj);
     }
+    
+    namespace wrapper_lxvar
+    {
+        Handle<Value> 
+        getNamedProperty (Local<String> name, const AccessorInfo &info)
+        {
+            auto        pContext = _nativeData<JavascriptDoc>(info);
+            auto        pThis    = _nativeThis<lxvar>(info); 
+            std::string prop     = _marshal(name);
+
+            if (prop == "toString" || prop == "valueOf")
+                return _marshal("[Native lxvar]");
+            
+            lxvar v = pThis->find(prop.c_str());
+
+            std::shared_ptr<lxvar> spWrap(new lxvar(v));
+            return _wrapSharedObject(pContext->mLxVarCtor, spWrap, 0);
+        }
+
+        Handle<Value> 
+        setNamedProperty(Local<String> name, Local<Value> value_obj, const AccessorInfo& info) 
+        {
+            return v8::Undefined();
+        }
+
+    };
+
+    Persistent<Function> 
+    JavascriptDoc::_addLxVar (void)
+    {
+        namespace W = wrapper_lxvar;
+
+        Handle<FunctionTemplate> templ( FunctionTemplate::New() );
+
+        // Create an anonymous type which will be used for the Element wrapper
+        Handle<ObjectTemplate> objInst( templ->InstanceTemplate() );
+        objInst->SetInternalFieldCount(1);
+        objInst->SetNamedPropertyHandler(W::getNamedProperty, W::setNamedProperty, 0, 0, 0, External::New(this));
+
+        return Persistent<Function>::New( templ->GetFunction() );
+    }
 
     v8::Persistent<v8::Function>
     JavascriptDoc::_addElement (void)
@@ -615,7 +641,8 @@ namespace lx0 { namespace core { namespace detail {
             static Handle<Value>
             get_value (Local<String> property, const AccessorInfo &info) 
             {
-                Element* pThis = _nativeThis<Element>(info);
+                auto     pContext = _nativeData<JavascriptDoc>(info);
+                Element* pThis    = _nativeThis<Element>(info);
                 
                 ///@todo Implement Element.value
                 /*
@@ -649,9 +676,10 @@ namespace lx0 { namespace core { namespace detail {
                     next line (unless the JS wrapper increments a reference).  This would mean the
                     third line could be pointing to a deleted native lxvar value.
                  */
-                lx_error("Not yet implemented!");
+                lx_warn("Not yet fully implemented!");
 
-                return Undefined();
+                std::shared_ptr<lxvar> spWrapper(new lxvar(pThis->value()));
+                return _wrapSharedObject(pContext->mLxVarCtor, spWrapper, 0);
             }
 
             static v8::Handle<v8::Value> 

@@ -55,15 +55,23 @@ namespace lx0 { namespace core { namespace v8bind
     {
         lx_debug("Running JS file '%s'", filename);
 
-        std::string text = lx0::util::lx_file_to_string(filename);
+        try
+        {
+            std::string text = lx0::util::lx_file_to_string(filename);
         
-        Context::Scope context_scope(context);
+            Context::Scope context_scope(context);
         
-        HandleScope handle_scope;
-        Handle<String> source = String::New(text.c_str());
-        Handle<Script> script = Script::Compile(source);
+            HandleScope handle_scope;
+            Handle<String> source = String::New(text.c_str());
+            Handle<Script> script = Script::Compile(source);
  
-        Handle<Value> result = script->Run();
+            Handle<Value> result = script->Run();
+        }
+        catch (std::exception& e)
+        {
+            lx_error("Exception attempting run javascript script!");
+            throw e;
+        }
     }
 
 }}}

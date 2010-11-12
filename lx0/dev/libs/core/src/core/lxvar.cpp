@@ -77,6 +77,16 @@ namespace lx0 { namespace core {
             return pClone;
         }
 
+        lxvar
+        lxstringmap::find (const char* key) const
+        {
+            auto it = mValue.find(key);
+            if (it != mValue.end())
+                return it->second;
+            else
+                return lxvar();
+        }
+
         void
         lxvalue::_invalid (void) const
         {
@@ -241,12 +251,6 @@ namespace lx0 { namespace core {
         return v;
     }
 
-    void 
-    lxvar::undefine (void)
-    {
-        mValue = lxundefined::acquire();
-    }
-
     lxvar
     lxvar::clone () const
     {
@@ -370,14 +374,15 @@ namespace lx0 { namespace core {
     }
 
     lxvar
+    lxvar::find (const std::string& s) const
+    {
+        return find(s.c_str());
+    }
+
+    lxvar
     lxvar::find (const char* key) const
     {
-        auto map = _castTo<lxstringmap>()->mValue;
-        auto it = map.find(key);
-        if (it != map.end())
-            return it->second;
-        else
-            return lxvar();
+        return mValue->find(key);
     }
 
     void 
