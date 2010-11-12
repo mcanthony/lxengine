@@ -289,6 +289,21 @@ main (int argc, char** argv)
 
         });
 
+        F.add("references", [] () {
+            lxvar a = 9;
+            lxvar b = a;
+            a = 7;
+
+            CHECK( a.asInt() == 7 );
+            CHECK( b.asInt() == 9 );
+
+            a = lxvar::parse("[ 0 ] ");
+            b = a;
+            b.at(0, 1);
+            CHECK(a.at(0).asInt() == 1);
+            CHECK(b.at(0).asInt() == 1);
+        });
+
         F.add("attribute parsers", []() { test_attributeparsers(); });
 
         F.run();

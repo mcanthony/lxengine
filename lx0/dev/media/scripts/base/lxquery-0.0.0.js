@@ -1,3 +1,14 @@
+/*
+    This is a rough, workaround imitation of a JQuery-like interface
+    for the LxEngine DOM.   Development is currently primarily 
+    focused on the core architecture; therefore, this code is largely
+    "good enough" and no better in terms of quality in order to allow
+    core development to continue.
+
+    A full, production quality re-write of this file will likely be
+    necessary once the core architecture and APIs are more well-defined.
+ */
+
 var $ = function (selector) {
     var q = new LxQuery();
     return q.init(selector);
@@ -54,8 +65,16 @@ LxQuery.prototype = {
         return this;
     },
     value : function () {
-        var elem = this._selection[0];
-        return elem.value;
+        if (arguments.length == 0)
+        {
+            var elem = this._selection[0];
+            return elem.value;
+        }
+        else if (arguments.length == 1)
+        {
+            var elem = this._selection[0];
+            elem.value = arguments[0];
+        }
     },
     remove: function () {
         for (var i = 0; i < this._selection.length; ++i) {

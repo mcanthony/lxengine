@@ -9,7 +9,10 @@
           if (e.keyCode == OIS.KC_W)
           {
               var v = $("Camera").value();
-              alert("" + v.position);
+              v.position[0] += 1;
+              alert(v.position[0]);
+              
+              $("Camera").value(v);
           }
           else
             alert("OnKeyDown: e.keyCode = " + e.keyCode);

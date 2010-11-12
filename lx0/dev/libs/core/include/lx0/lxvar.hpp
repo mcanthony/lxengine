@@ -136,6 +136,9 @@ namespace lx0 { namespace core {
         detail::lxshared_ptr<T>
                         imp             (void)                  { return detail::lxshared_ptr<T>( dynamic_cast<T*>(mValue.get()) ); }
 
+        
+        bool            isShared        (void) const;
+        bool            isSharedType    (void) const;
         lxvar           clone           (void) const;           //!< Create a deep clone of the lxvar
 
         auto_cast2      convert         (void)                  { return auto_cast2(*this); }

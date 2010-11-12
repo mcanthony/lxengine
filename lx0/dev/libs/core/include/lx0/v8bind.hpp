@@ -112,7 +112,17 @@ namespace lx0 { namespace core { namespace v8bind
             }
             else if (mValue->IsObject())
             {
-                lx_error("Not valid");
+                v8::Local<v8::Object> obj = v8::Object::Cast(*mValue);
+                v8::Local<v8::Array> props = obj->GetPropertyNames();
+
+                lxvar v = lxvar::map();
+                for (int i = 0; i < int( props->Length() ); ++i)
+                {
+                    std::string name = _marshal( props->Get(i) );
+                    lxvar       value = _marshal( obj->Get( props->Get(i) ) );
+                    v.insert(name.c_str(), value);
+                }
+                return v;
             }
             else if (mValue->IsInt32())
             {

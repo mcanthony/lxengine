@@ -402,7 +402,7 @@ namespace lx0 { namespace core { namespace detail {
             {
                 if (args.Length() == 1)
                 {
-                    std::string text = _marshal(args[0]);
+                    std::string text = _marshal(args[0]->ToString());
                     lx0::util::lx_message_box("Alert", text);
                 }
                 else
@@ -602,11 +602,60 @@ namespace lx0 { namespace core { namespace detail {
         }
 
         Handle<Value> 
-        setNamedProperty(Local<String> name, Local<Value> value_obj, const AccessorInfo& info) 
+        setNamedProperty(Local<String> name, Local<Value> value, const AccessorInfo& info) 
         {
             return v8::Undefined();
         }
 
+        Handle<Array>
+        enumerateNamedProperties (const AccessorInfo &info)
+        {
+            auto        pThis    = _nativeThis<lxvar>(info); 
+
+            v8::Local<v8::Array> arr;
+
+            if (pThis->isMap())
+            {
+                uint32_t index = 0;
+                arr = v8::Array::New(pThis->size());
+                for (auto it = pThis->begin(); it != pThis->end(); ++it)
+                {
+                    arr->Set( index++, _marshal(it.key()) );
+                }
+            }
+            else
+                arr = v8::Array::New(0);
+
+            return arr;
+        }
+
+
+        Handle<Value> 
+        getIndexedProperty (uint32_t index, const AccessorInfo &info)
+        {
+            auto        pContext = _nativeData<JavascriptDoc>(info);
+            auto        pThis    = _nativeThis<lxvar>(info); 
+            
+            lxvar v = pThis->at(int(index));
+
+            if (v.isSharedType())
+            {
+                std::shared_ptr<lxvar> spWrap(new lxvar(v));
+                return _wrapSharedObject(pContext->mLxVarCtor, spWrap, 0);
+            }
+            else
+                return _marshal(v);
+        }
+
+        Handle<Value> 
+        setIndexedProperty(uint32_t index, Local<Value> value, const AccessorInfo& info) 
+        {
+            auto    pThis    = _nativeThis<lxvar>(info); 
+            lxvar   val      = _marshal(value);
+
+            pThis->at(int(index), val);
+            return v8::Undefined();
+        }
     };
 
     Persistent<Function> 
@@ -619,7 +668,8 @@ namespace lx0 { namespace core { namespace detail {
         // Create an anonymous type which will be used for the Element wrapper
         Handle<ObjectTemplate> objInst( templ->InstanceTemplate() );
         objInst->SetInternalFieldCount(1);
-        objInst->SetNamedPropertyHandler(W::getNamedProperty, W::setNamedProperty, 0, 0, 0, External::New(this));
+        objInst->SetNamedPropertyHandler(W::getNamedProperty, W::setNamedProperty, 0, 0, W::enumerateNamedProperties, External::New(this));
+        objInst->SetIndexedPropertyHandler(W::getIndexedProperty, W::setIndexedProperty, 0, 0, 0, External::New(this));
 
         return Persistent<Function>::New( templ->GetFunction() );
     }
@@ -682,6 +732,15 @@ namespace lx0 { namespace core { namespace detail {
                 return _wrapSharedObject(pContext->mLxVarCtor, spWrapper, 0);
             }
 
+            static void
+            set_value (Local<String> property, Local<Value> value, const AccessorInfo &info) 
+            {
+                Element* pThis    = _nativeThis<Element>(info);
+                lxvar    val      = _marshal(value);
+
+                pThis->value(val); 
+            }
+
             static v8::Handle<v8::Value> 
             removeChild (const v8::Arguments& args)
             {
@@ -734,7 +793,7 @@ namespace lx0 { namespace core { namespace detail {
         Handle<ObjectTemplate> objInst( templ->InstanceTemplate() );
         objInst->SetInternalFieldCount(1);
         objInst->SetAccessor(String::New("parentNode"),  L::get_parentNode, 0, External::New(this));
-        objInst->SetAccessor(String::New("value"),       L::get_value, 0, External::New(this));
+        objInst->SetAccessor(String::New("value"),       L::get_value, L::set_value, External::New(this));
 
         // Access the Javascript prototype for the function - i.e. my_func.prototype - 
         // and add the necessary properties and methods.

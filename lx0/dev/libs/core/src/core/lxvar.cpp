@@ -167,13 +167,10 @@ namespace lx0 { namespace core {
     lxvar::lxvar (const lxvar& that)
         : mValue( lxundefined::acquire() )
     {
-        if (mValue->sharedType())
+        if (that.mValue->sharedType())
             mValue = that.mValue;
         else
-        {
-            mValue = lxundefined::acquire();
-            *this = that.clone();
-        }
+            mValue = that.mValue->clone();
     }
 
     lxvar::lxvar (detail::lxvalue* imp)
@@ -249,6 +246,18 @@ namespace lx0 { namespace core {
         lxvar v;
         v._castTo<lxarray>();
         return v;
+    }
+
+    bool
+    lxvar::isShared () const
+    {
+        return (mValue->_refCount() > 0);
+    }
+
+    bool
+    lxvar::isSharedType () const
+    {
+        return mValue->sharedType();
     }
 
     lxvar
