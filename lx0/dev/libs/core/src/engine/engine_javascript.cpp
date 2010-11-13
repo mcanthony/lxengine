@@ -608,6 +608,26 @@ namespace lx0 { namespace core { namespace detail {
         }
 
         Handle<Array>
+        enumerateIndexedProperties (const AccessorInfo& info)
+        {
+            auto        pThis    = _nativeThis<lxvar>(info); 
+
+            v8::Local<v8::Array> arr;
+            if (pThis->isArray())
+            {
+                arr = v8::Array::New(pThis->size());
+                for (int i = 0; i < pThis->size(); ++i)
+                {
+                    arr->Set(uint32_t(i), v8::Integer::New(i));
+                }
+            }
+            else
+                arr = v8::Array::New(0);
+
+            return arr;
+        }
+
+        Handle<Array>
         enumerateNamedProperties (const AccessorInfo &info)
         {
             auto        pThis    = _nativeThis<lxvar>(info); 
@@ -669,7 +689,7 @@ namespace lx0 { namespace core { namespace detail {
         Handle<ObjectTemplate> objInst( templ->InstanceTemplate() );
         objInst->SetInternalFieldCount(1);
         objInst->SetNamedPropertyHandler(W::getNamedProperty, W::setNamedProperty, 0, 0, W::enumerateNamedProperties, External::New(this));
-        objInst->SetIndexedPropertyHandler(W::getIndexedProperty, W::setIndexedProperty, 0, 0, 0, External::New(this));
+        objInst->SetIndexedPropertyHandler(W::getIndexedProperty, W::setIndexedProperty, 0, 0, W::enumerateIndexedProperties, External::New(this));
 
         return Persistent<Function>::New( templ->GetFunction() );
     }
@@ -694,41 +714,17 @@ namespace lx0 { namespace core { namespace detail {
                 auto     pContext = _nativeData<JavascriptDoc>(info);
                 Element* pThis    = _nativeThis<Element>(info);
                 
-                ///@todo Implement Element.value
                 /*
-                    The task here is to return a wrapper on a reference to lxvar value of the Element.
-                    
-                    The semantics of the returned value must be the same as Javascript values and
-                    lxvar values, in that only strings and numbers get copied - complex data types
-                    are references.  Furthermore, modifiers on even primitive values need to affect
-                    the native values - not simply copies in the JS runtime.
+                    Is it really worth wrapping the lxvar in a custom object rather than 
+                    converting it to a v8::Value?  
 
-                    For example, the below script should affect the <Camera/> element.
-
-                    var camera = $("Camera").value;
-                    camera.position[0] += 1;
-
-                    This means that camera is a reference to an lxvar, which has a wrapper that can
-                    then translate ".position" into a native .find("position") call.  This in turn
-                    returns a wrapper.  The operator [0] must also return a reference to the lxvar
-                    float since the += must modify the underlying C++ value.
-
-                    Memory management is further complicated here since lxvar relies heavily on 
-                    reference counting, but currently there is no hook in this code to know when V8
-                    disposes of a JS variable.  
-
-                    var position = $("Camera").value.position;
-                    $("Camera").value.position = [ 10, 0, 0 ];
-                    position[0] += 1;
-
-                    Without consideration of reference counting, the above example could crash.  The
-                    native lxvar for position could lose all references when it is overwritten in the
-                    next line (unless the JS wrapper increments a reference).  This would mean the
-                    third line could be pointing to a deleted native lxvar value.
+                    Originally, it was *not* converted because the code attempted to allow
+                    the JS code to directly modify the underlying data (i.e. not a clone());
+                    but that had problems (namely, the native code being notified about
+                    property changes it should be aware of).  Since that's no longer being
+                    pursued - is this wrapper actually adding any value or just more code?
                  */
-                lx_warn("Not yet fully implemented!");
-
-                std::shared_ptr<lxvar> spWrapper(new lxvar(pThis->value()));
+                std::shared_ptr<lxvar> spWrapper(new lxvar(pThis->value().clone()));
                 return _wrapSharedObject(pContext->mLxVarCtor, spWrapper, 0);
             }
 

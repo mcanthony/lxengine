@@ -36,7 +36,107 @@ using v8::Object;
 
 namespace lx0 { namespace core { namespace v8bind
 {
-    
+
+    _marshal::_marshal (lxvar v)
+    {
+        if (v.isUndefined())
+            mValue = v8::Undefined();
+        else if (v.isString())
+            *this = _marshal(v.asString());
+        else if (v.isFloat())
+            *this = _marshal(v.asFloat());
+        else if (v.isInt())
+            *this = _marshal(v.asInt());
+        else
+            lx_error("Not implemented");
+    }
+
+    //---------------------------------------------------------------------------//
+    //!
+    /*!
+     */
+    _marshal::operator lxvar ()
+    {
+        if (mValue->IsUndefined())
+        {
+            return lxvar();
+        }
+        else if (mValue->IsExternal())
+        {
+            lx_error("Not valid!  Cannot automatically marshal a native External value.");
+        }
+        else if (mValue->IsString())
+        {
+            return lxvar( std::string( *this ).c_str() );
+        }
+        else if (mValue->IsArray())
+        {
+            v8::Local<v8::Array> arr = v8::Array::Cast(*mValue);
+
+            lxvar v;
+            for (int i = 0; i < int( arr->Length() ); ++i)
+            {
+                v8::Local<v8::Value> e = arr->Get(i);
+                v.push( _marshal(e) );
+            }
+            return v;
+        }
+        else if (mValue->IsObject())
+        {
+            v8::Local<v8::Object> obj = v8::Object::Cast(*mValue);
+            v8::Local<v8::Array> props = obj->GetPropertyNames();
+
+            lxvar v;
+            if (props->Length() > 0)
+            {
+                // Below seems like a very weak test to determine if the value is 
+                // actually an array not a map - but the question is: how is this
+                // supposed to be handled?  mValue->IsArray() is false for a 
+                // JS-wrapped lxvar that is an array.
+                //
+                if (props->Get(0)->IsInt32())
+                {
+                    v = lxvar::array();
+                    for (int i = 0; i < int( props->Length() ); ++i)
+                    {
+                        lxvar value = _marshal( obj->Get( props->Get(i) ) );
+                        v.push(value);
+                    }
+                }
+                else
+                {
+                    v = lxvar::map();
+                    for (int i = 0; i < int( props->Length() ); ++i)
+                    {
+                        std::string name = _marshal( props->Get(i) );
+                        lxvar       value = _marshal( obj->Get( props->Get(i) ) );
+                        v.insert(name.c_str(), value);
+                    }
+                }
+            }
+            return v;
+        }
+        else if (mValue->IsInt32())
+        {
+            return lxvar( int(*this) );
+        }
+        else if (mValue->IsNumber())
+        {
+            return lxvar( float( mValue->NumberValue() ) );
+        }
+        else if (mValue->IsFunction())
+        {
+            lx_error("Not valid");
+        }
+        else
+            lx_error("Cannot convert Javascript value to lxvar.");
+
+        lx_error("Unreachable code.");
+        return lxvar();
+    }
+
+    //===========================================================================//
+
     _V8Context::_V8Context ()
     {
         HandleScope handle_scope;

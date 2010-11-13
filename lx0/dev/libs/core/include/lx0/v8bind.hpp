@@ -63,6 +63,7 @@ namespace lx0 { namespace core { namespace v8bind
         _marshal(float f)                   : mValue( v8::Number::New(f) ) {}
         _marshal(const char* s)             : mValue( v8::String::New(s) ) { }
         _marshal(std::string s)             : mValue( v8::String::New(s.c_str()) ) {}
+        _marshal(lxvar v);
 
 
         operator v8::Handle<v8::Value> ()   { return mValue; }
@@ -73,79 +74,7 @@ namespace lx0 { namespace core { namespace v8bind
             return *v8::String::AsciiValue(mValue);  
         }
         operator int ()                     { return mValue->Int32Value(); }
-        
-        _marshal (lxvar v)
-        {
-            if (v.isUndefined())
-                mValue = v8::Undefined();
-            else if (v.isString())
-                *this = _marshal(v.asString());
-            else if (v.isFloat())
-                *this = _marshal(v.asFloat());
-            else if (v.isInt())
-                *this = _marshal(v.asInt());
-            else
-                lx_error("Not implemented");
-        }
-
-        operator lxvar ()
-        {
-            if (mValue->IsUndefined())
-            {
-                return lxvar();
-            }
-            else if (mValue->IsString())
-            {
-                return lxvar( std::string( *this ).c_str() );
-            }
-            else if (mValue->IsArray())
-            {
-                v8::Local<v8::Array> arr = v8::Array::Cast(*mValue);
-
-                lxvar v;
-                for (int i = 0; i < int( arr->Length() ); ++i)
-                {
-                    v8::Local<v8::Value> e = arr->Get(i);
-                    v.push( _marshal(e) );
-                }
-                return v;
-            }
-            else if (mValue->IsObject())
-            {
-                v8::Local<v8::Object> obj = v8::Object::Cast(*mValue);
-                v8::Local<v8::Array> props = obj->GetPropertyNames();
-
-                lxvar v = lxvar::map();
-                for (int i = 0; i < int( props->Length() ); ++i)
-                {
-                    std::string name = _marshal( props->Get(i) );
-                    lxvar       value = _marshal( obj->Get( props->Get(i) ) );
-                    v.insert(name.c_str(), value);
-                }
-                return v;
-            }
-            else if (mValue->IsInt32())
-            {
-                return lxvar( int(*this) );
-            }
-            else if (mValue->IsNumber())
-            {
-                return lxvar( float( mValue->NumberValue() ) );
-            }
-            else if (mValue->IsExternal())
-            {
-                lx_error("Not valid");
-            }
-            else if (mValue->IsFunction())
-            {
-                lx_error("Not valid");
-            }
-            else
-                lx_error("Cannot convert Javascript value to lxvar.");
-
-            lx_error("Unreachable code.");
-            return lxvar();
-        }
+        operator lxvar ();
 
         template <typename T>
         T* pointer ()

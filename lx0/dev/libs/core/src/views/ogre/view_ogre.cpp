@@ -124,6 +124,23 @@ namespace {
         Ogre::TextureUnitState*     mpTexUnit;
     };
 
+    //-----------------------------------------------------------------------//
+    //! 
+    /*!
+     */
+    class CameraElem : public Element::Component
+    {
+    public:
+        CameraElem   (ElementPtr spElem, Ogre::Camera* pCamera);
+
+        virtual void onValueChange(ElementPtr spElem, lxvar value);
+
+    protected:
+        void    _reset  (ElementPtr spElem);
+
+        Ogre::Camera*   mpCamera;
+    };
+
    
     //-----------------------------------------------------------------------//
     //! 
@@ -135,6 +152,8 @@ namespace {
         RefElem (Ogre::SceneManager* mpSceneMgr, ElementPtr spElem) 
             : mpEntity(nullptr) 
         {
+            lx_check_error(spElem->tagName() == "Ref");
+
             static int uniquePrefix = 0;
 
             std::string name("anonymousRef");
@@ -364,7 +383,6 @@ namespace {
 
         void        _processDocument    (View* pHostView, Document* pDocument);
         void        _processGroup       (ElementPtr spElem);
-        void        _processRef         (ElementPtr spElem);
         void        _processScene       (ElementPtr spElem);
         void        _processMesh        (std::string name, MeshPtr spMesh);
 
@@ -372,6 +390,8 @@ namespace {
         std::auto_ptr<Ogre::Root>   mspRoot;
         Ogre::SceneManager*         mpSceneMgr;     //! Non-owning pointer.  OGRE owns this pointer
         Ogre::RenderWindow*         mpRenderWindow; //! Non-owning pointer.  OGRE owns this pointer.
+        Ogre::Camera*               mpCamera;
+
         std::unique_ptr<LxWindowEventListener> mspWindowEventListener;
         std::unique_ptr<LxFrameEventListener>  mspFrameEventListener;
     };
@@ -399,6 +419,8 @@ namespace {
     OgreImp::OgreImp (View* pHostView)
         : mpHostView        (pHostView)
         , mpSceneMgr        (0)
+        , mpRenderWindow    (0)
+        , mpCamera          (0)
     {
         // Initialize OGRE
         try 
@@ -453,22 +475,22 @@ namespace {
         //
         mpSceneMgr->setShadowTechnique(Ogre::SHADOWTYPE_STENCIL_ADDITIVE);
 
-        Ogre::Camera* mCamera = mpSceneMgr->createCamera("Camera");
+        mpCamera = mpSceneMgr->createCamera("Camera");
 
         // Make Z-up on the OGRE camera
         // See http://www.gamedev.net/community/forums/topic.asp?topic_id=452424
-        mCamera->roll(Ogre::Radian(1.57079633f));
-        mCamera->setFixedYawAxis(true, Ogre::Vector3::UNIT_Z);
+        mpCamera->roll(Ogre::Radian(1.57079633f));
+        mpCamera->setFixedYawAxis(true, Ogre::Vector3::UNIT_Z);
 
-        mCamera->setPosition(Ogre::Vector3(9.0f,8.0f,10.0f));
-        mCamera->lookAt(Ogre::Vector3(0.0f,0.0f,0.0f));
-        mCamera->setNearClipDistance(0.1f);
-        mCamera->setFarClipDistance(100.0f);
+        mpCamera->setPosition(Ogre::Vector3(9.0f,8.0f,10.0f));
+        mpCamera->lookAt(Ogre::Vector3(0.0f,0.0f,0.0f));
+        mpCamera->setNearClipDistance(0.1f);
+        mpCamera->setFarClipDistance(100.0f);
 
-        Ogre::Viewport* mViewport = mpRenderWindow->addViewport(mCamera);
+        Ogre::Viewport* mViewport = mpRenderWindow->addViewport(mpCamera);
         mViewport->setBackgroundColour(Ogre::ColourValue(0.1f, 0.1f, 0.16f));
 
-        mCamera->setAspectRatio(Ogre::Real(mViewport->getActualWidth()) / Ogre::Real(mViewport->getActualHeight()));
+        mpCamera->setAspectRatio(Ogre::Real(mViewport->getActualWidth()) / Ogre::Real(mViewport->getActualHeight()));
 
         _addLighting(mpSceneMgr);
         _addMaterials();
@@ -562,21 +584,17 @@ namespace {
         spElem->attachComponent("OgreSceneElem", new SceneElem(spElem));
     }
 
-    void
-    OgreImp::_processRef (ElementPtr spElem)
-    {
-        spElem->attachComponent("OgreRefElem", new RefElem(mpSceneMgr, spElem));
-    }
-
     void        
-    OgreImp::_processGroup (ElementPtr spElem)
+    OgreImp::_processGroup (ElementPtr spParent)
     {
-        for (int j = 0; j < spElem->childCount(); ++j)
+        for (int j = 0; j < spParent->childCount(); ++j)
         {
-            ElementPtr spChild = spElem->child(j);
+            ElementPtr spChild = spParent->child(j);
 
             if (spChild->tagName() == "Ref")
-                _processRef(spChild);
+                spChild->attachComponent("OgreRefElem", new RefElem(mpSceneMgr, spChild));
+            else if (spChild->tagName() == "Camera")
+                spChild->attachComponent("OgreCameraElem", new CameraElem(spChild, mpCamera));
             else if (spChild->tagName() == "Group")
             {
                 _processGroup(spChild);
@@ -697,7 +715,7 @@ namespace {
     OgreImp::_onElementAdded (ElementPtr spElem)
     {
         if (spElem->tagName() == "Ref")
-            _processRef(spElem);
+            spElem->attachComponent("OgreRefElem", new RefElem(mpSceneMgr, spElem));
         else if (spElem->tagName() == "Scene")
             _processScene(spElem);
     }
@@ -799,6 +817,33 @@ namespace {
         }
     }
 
+
+    //===========================================================================//
+    // IMPLEMENTATION:
+    // SceneElem
+    //===========================================================================//
+
+    CameraElem::CameraElem (ElementPtr spElem, Ogre::Camera* pCamera)
+        : mpCamera (pCamera)
+    {
+        _reset(spElem);
+    }
+
+    void 
+    CameraElem::onValueChange(ElementPtr spElem, lxvar value)
+    {
+        _reset(spElem);
+    }
+
+    void
+    CameraElem::_reset (ElementPtr spElem)
+    {
+        lxvar val = spElem->value();
+
+        Ogre::Vector3 pos = val.find("position").convert();
+
+        mpCamera->setPosition(pos);
+    }
 }
 
 //===========================================================================//

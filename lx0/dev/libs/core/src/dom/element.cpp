@@ -181,9 +181,13 @@ namespace lx0 { namespace core {
     }
 
     void
-    Element::value(lxvar v)
+    Element::value(lxvar value)
     {
-        mValue = v;
+        _foreach([&](ComponentPtr it) {
+            it->onValueChange(shared_from_this(), value);
+        });
+
+        mValue = value;
     }
 
     void
