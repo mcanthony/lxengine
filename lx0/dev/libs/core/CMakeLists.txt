@@ -5,14 +5,18 @@
 # as well (to keep the cpp and header next to each other in the IDE).
 #
 macro(lx_source_group FOLDER)
-    file(GLOB_RECURSE FILELIST1 src/${FOLDER}/*.cpp)
-    file(GLOB_RECURSE FILELIST2 src/${FOLDER}/*.hpp)
+    file(GLOB_RECURSE FILELIST1 RELATIVE ${CMAKE_CURRENT_SOURCE_DIR}/src src/${FOLDER}/*.cpp)
+    file(GLOB_RECURSE FILELIST2 RELATIVE ${CMAKE_CURRENT_SOURCE_DIR}/src src/${FOLDER}/*.hpp)
     set(FILELIST ${FILELIST1} ${FILELIST2})
     foreach(F ${FILELIST})
-        source_group(${FOLDER} FILES ${F})
+        get_filename_component(DIR ${F} PATH)
+        string(REPLACE "/" "\\" DIR ${DIR} )
+        message(STATUS "DIR: ${DIR} ${F}")
+        source_group(${DIR} FILES src/${F})
+        
         get_filename_component(H ${F} NAME_WE)
         set(H "${CMAKE_CURRENT_SOURCE_DIR}/include/lx0/${H}.hpp")
-        source_group(${FOLDER} FILES ${H})
+        source_group(${DIR} FILES ${H})
     endforeach(F)
 endmacro(lx_source_group)
 
@@ -35,6 +39,7 @@ lx_source_group("engine")
 lx_source_group("serial")
 lx_source_group("script")
 lx_source_group("util")
+lx_source_group("views")
 
 source_group("_detail" "include/lx0/detail/forward_decls.hpp")
 source_group("_detail" "include/lx0/detail/dom_base.hpp")

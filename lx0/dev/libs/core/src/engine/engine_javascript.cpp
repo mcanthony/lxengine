@@ -851,7 +851,6 @@ namespace lx0 { namespace core { namespace detail {
             {
                 lx_check_error(args.Length() == 0);
                 auto pThis = _nativeThis<Math>(args); 
-                std::string id = _marshal(args[0]);
         
                 float ret = float(rand()) / float(RAND_MAX);
 
