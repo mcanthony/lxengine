@@ -110,7 +110,7 @@ namespace lx0 { namespace core {
         This assume the mesh is centered about a local origin of 0,0,0.
      */
     float   
-    Mesh::boundingRadius (void)
+    Mesh::boundingRadius (void) const
     {
         float rmax = 0.0f;
         for (auto it = mVertices.begin(); it != mVertices.end(); ++it)
@@ -127,12 +127,12 @@ namespace lx0 { namespace core {
         This assume the mesh is centered about a local origin of 0,0,0.
      */
     vector3   
-    Mesh::boundingVector (void)
+    Mesh::boundingVector (void) const
     {
         vector3 v(0, 0, 0);
         for (auto it = mVertices.begin(); it != mVertices.end(); ++it)
         {
-            vector3 u = abs_( cast<vector3&>(it->position) );
+            const vector3 u = abs_( cast<const vector3&>(it->position) );
             for (int i = 0; i < 3; ++i)
             {
                 if (u[i] > v[i])
@@ -140,6 +140,28 @@ namespace lx0 { namespace core {
             }
         }
         return v;
+    }
+
+    
+    float               
+    Mesh::maxExtentScale (lxvar value) const
+    {
+        if (value.isFloat())
+        {
+            float maxExtent = *value;
+            if (maxExtent > 0.0f)
+            {
+                auto extents = boundingVector();
+                float f = maxExtent / std::max(extents.x, std::max(extents.y, extents.z));
+                return f;
+            }
+            else
+                lx_warn("Invalid max_extent value %f", maxExtent);
+        }
+    
+        // Empty value means use the original scale
+        lx_check_error( value.isUndefined() );
+        return 1.0f;
     }
 
 }}

@@ -73,6 +73,8 @@ namespace lx0 { namespace core { namespace detail {
         p.z = v.at(2).asFloat();
     }
 
+    void _convert(lxvar& v, vector3& u);
+
     //-----------------------------------------------------------------------//
     //! Base class for the Shape cache keys.
     /*!
@@ -295,9 +297,14 @@ namespace lx0 { namespace core { namespace detail {
             const btScalar kfMass   = spElem->attr("mass").query(0.0f);   
             auto posAttr            = spElem->attr("translation");
             point3 pos              = posAttr.isDefined() ? point3(posAttr.convert()) : point3(0, 0, 0);
+            lxvar maxExtent         = spElem->attr("max_extent");
+            auto    velAttr         = spElem->attr("velocity");
+            vector3 vel             = velAttr.isDefined() ? vector3(velAttr.convert()) : vector3(0, 0, 0);
 
             auto spMeshElem         = spDocument->getElementById(ref);
-            MeshPtr spMesh         = spMeshElem->value().imp<Mesh>();
+            MeshPtr spMesh          = spMeshElem->value().imp<Mesh>();
+
+            float scale             = spMesh->maxExtentScale(maxExtent);
 
             // Determine the transformation
             //
@@ -307,9 +314,9 @@ namespace lx0 { namespace core { namespace detail {
             // Determine and acquire the collision shape to use
             //
             if (spElem->attr("bounds_type").query("box") == "box")
-                mspShape = pPhysics->_acquireBoxShape( spMesh->boundingVector() );
+                mspShape = pPhysics->_acquireBoxShape( spMesh->boundingVector() * scale );
             else
-                mspShape =  pPhysics->_acquireSphereShape( spMesh->boundingRadius() );
+                mspShape =  pPhysics->_acquireSphereShape( spMesh->boundingRadius() * scale );
 
             btVector3 fallInertia(0, 0, 0);
             mspShape->calculateLocalInertia(kfMass, fallInertia);
@@ -320,6 +327,7 @@ namespace lx0 { namespace core { namespace detail {
             mspRigidBody.reset( new btRigidBody(rigidBodyCI) );
             mspRigidBody->setRestitution( spElem->attr("restitution").query(0.1f) );
             mspRigidBody->setFriction( spElem->attr("friction").query(0.5f) );
+            mspRigidBody->setLinearVelocity( btVector3(vel.x, vel.y, vel.z) );
             _addToWorld();
         }
 

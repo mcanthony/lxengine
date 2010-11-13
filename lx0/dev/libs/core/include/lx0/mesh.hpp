@@ -46,8 +46,10 @@ namespace lx0 { namespace core {
 
         virtual lxvalue*    clone           (void) const { return nullptr; }
 
-        float               boundingRadius  (void);
-        vector3             boundingVector  (void);
+        float               boundingRadius  (void) const;
+        vector3             boundingVector  (void) const;
+
+        float               maxExtentScale  (lxvar attr) const;
 
 
     //protected:

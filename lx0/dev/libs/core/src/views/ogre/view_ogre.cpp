@@ -170,7 +170,7 @@ namespace {
 
             _setMaterial(spElem);
             _setTranslation( spElem->attr("translation") );
-            _setMaxExtent(spElem->attr("max_extent"));
+            _setMaxExtent(spElem, spElem->attr("max_extent"));
         }
         RefElem::~RefElem()
         {
@@ -272,26 +272,12 @@ namespace {
             }
         }
 
-        void _setMaxExtent (lxvar value)
+        void _setMaxExtent (ElementPtr spElem, lxvar value)
         {
-            if (value.isUndefined())
-            {
-                // Empty value means use the original scale
-                _node()->setScale(1, 1, 1);
-            }
-            else if (value.isFloat())
-            {
-                float maxExtent = *value;
-                if (maxExtent > 0.0f)
-                {
-                    auto extents = _mesh()->getBounds().getSize();
-                    float f = maxExtent / std::max(extents.x, std::max(extents.y, extents.z));
-                    
-                    _node()->setScale(f, f, f);
-                }
-                else
-                    lx_warn("Invalid max_extent value %f", maxExtent);
-            }
+            MeshPtr spMesh = spElem->document()->getElementById( spElem->attr("ref").asString() )->value().imp<Mesh>();
+            const float f = spMesh->maxExtentScale(value);
+
+            _node()->setScale(f, f, f);
         }
 
         virtual void onAttributeChange(ElementPtr spElem, std::string name, lxvar value)
@@ -301,7 +287,7 @@ namespace {
             else if (name == "rotation")
                 _node()->setOrientation(value.convert());
             else if (name == "max_extent")
-                _setMaxExtent(value);
+                _setMaxExtent(spElem, value);
             else if (name == "display")
             {
                 if (value.equal("block"))
