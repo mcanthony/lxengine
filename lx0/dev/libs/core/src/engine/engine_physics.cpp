@@ -252,21 +252,36 @@ namespace lx0 { namespace core { namespace detail {
             : mpDocPhysics (pPhysics)
         {
             lx_check_error( spElem->getComponent<SceneElem>("physics").get() == nullptr );
+            _reset(spElem);
         }
 
         virtual void onAttributeChange(ElementPtr spElem, std::string name, lxvar value)
         {
-            if (name == "wind_velocity")
+            _reset(spElem);
+        }
+
+        void _reset (ElementPtr spElem)
+        {
+            auto windVelocity = spElem->attr("wind_velocity");
+            auto windDirection = spElem->attr("wind_direction");
+            auto gravity = spElem->attr("gravity");
+
+            if (windVelocity.isDefined())
             {
-                float velocity = value.query(0.0f);
+                float velocity = windVelocity.query(0.0f);
                 mpDocPhysics->setWindVelocity(velocity);
             }
-            else if (name == "wind_direction")
+            if (windDirection.isDefined())
             {
-                lx_check_error(value.isArray() || value.isUndefined());
+                lx_check_error(windDirection.isArray());
 
-                vector3 dir(value.at(0).query(0.0f), value.at(1).query(0.0f), value.at(2).query(0.0f) );
+                vector3 dir(windDirection.at(0).query(0.0f), windDirection.at(1).query(0.0f), windDirection.at(2).query(0.0f) );
                 mpDocPhysics->setWindDirection(dir);
+            }
+            if (gravity.isDefined())
+            {
+                vector3 val = gravity.convert();
+                mpDocPhysics->mspDynamicsWorld->setGravity(btVector3(val.x, val.y, val.z));
             }
         }
 
@@ -376,7 +391,7 @@ namespace lx0 { namespace core { namespace detail {
                                                             mspBroadphase.get(), 
                                                             mspSolver.get(), 
                                                             mspCollisionConfiguration.get()) );
-        mspDynamicsWorld->setGravity(btVector3(0, 0, -9.81f));
+        mspDynamicsWorld->setGravity(btVector3(0, 0, 0));
 
 
         // Create a global ground plane

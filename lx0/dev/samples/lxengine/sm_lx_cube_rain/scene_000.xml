@@ -12,7 +12,7 @@
         <SoundBuffer id="snd_background_music" type="ogg" src="data/sm_lx_cube_rain/germanic_peace_3.ogg" />
         <SoundBuffer id="snd_bounce" src="data/sm_lx_cube_rain/bounce.wav" />
     </Library>
-    <Scene wind_velocity="none" fade="1">
+    <Scene wind_velocity="none" fade="1" gravity="on">
       <SoundSource id="bounce" ref="snd_bounce" />
       <SoundSource id="background_music" ref="snd_background_music" volume="0.6" loop="1" sound_state="stopped" />
       <Group id="grid" />

@@ -56,7 +56,7 @@
       <Mesh id="unit_sphere" src="media/models/unit_sphere_s3.lxson" />
       <Mesh id="mesh_ship" src="media/models/ship_00.lxson" />
     </Library>
-    <Scene>
+    <Scene gravity="off">
       <Camera>
         {
           position : [ 0.0,-8.0, 14.0 ],

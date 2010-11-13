@@ -74,14 +74,17 @@ macro(copy_media_file2 FILE FOLDER)
 endmacro(copy_media_file2)
 
 macro(copy_media_file FILE)
+    message(STATUS "Copying media: ${FILE}")
     configure_file( ${FILE}  ${CMAKE_BINARY_DIR}/${FILE}  COPYONLY)
 endmacro(copy_media_file)
 
 macro(copy_media_directory FOLDER)
     file(GLOB ASSETS ${FOLDER}/*)
     foreach(FILE ${ASSETS})
-        file(RELATIVE_PATH RELFILE ${CMAKE_SOURCE_DIR} ${FILE})
-        copy_media_file(${RELFILE})
+        if (NOT IS_DIRECTORY ${FILE})
+            file(RELATIVE_PATH RELFILE ${CMAKE_SOURCE_DIR} ${FILE})
+            copy_media_file(${RELFILE})
+        endif()
     endforeach(FILE)
 endmacro(copy_media_directory)
 
@@ -124,7 +127,7 @@ copy_media_directory( media/shaders/ogre )
 copy_media_directory( media/shaders/glsl/vertex )
 copy_media_directory( media/shaders/glsl/geometry )
 copy_media_directory( media/shaders/glsl/fragment )
-copy_media_file2( media/models/generic-primitives-unit_sphere_s3/unit_sphere_s3.lxson media/models )
+copy_media_directory( media/models )
 
 #
 # Sub-projects

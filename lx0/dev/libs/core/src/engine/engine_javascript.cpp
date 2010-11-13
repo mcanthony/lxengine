@@ -943,6 +943,7 @@ namespace lx0 { namespace core {
          this->attachComponent("engineJs", pContext);
 
          pContext->runFile("media/scripts/engine/attribute_parsers/color.js");
+         pContext->runFile("media/scripts/engine/attribute_parsers/gravity.js");
      }
 
     /*!
