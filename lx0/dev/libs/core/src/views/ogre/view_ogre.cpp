@@ -43,6 +43,7 @@
 #include <lx0/point3.hpp>
 #include <lx0/engine.hpp>
 #include <lx0/util.hpp>
+#include <lx0/lxvar_convert.hpp>
 
 // Internal headers
 #include "../../dom/view_input.hpp"
@@ -62,41 +63,6 @@
 using namespace lx0::core;
 using namespace lx0::util;
 
-//===========================================================================//
-//   Detail
-//===========================================================================//
-
-namespace lx0 { namespace core { namespace detail {
-
-    void _convert(lxvar& v, Ogre::ColourValue& u)
-    {
-        lx_check_error(v.size() == 3);
-        u = Ogre::ColourValue(v.at(0).asFloat(), v.at(1).asFloat(), v.at(2).asFloat());
-    }
-
-    void _convert(lxvar& v, Ogre::Vector3& u)
-    {
-        lx_check_error(v.size() == 3);
-        u = Ogre::Vector3(v.at(0).asFloat(), v.at(1).asFloat(), v.at(2).asFloat());
-    }
-
-    void _convert(lxvar& value, Ogre::Quaternion& q)
-    {
-        lx_check_error(value.size() == 4);
-        q.x = value.at(0).asFloat();
-        q.y = value.at(1).asFloat();
-        q.z = value.at(2).asFloat();
-        q.w = value.at(3).asFloat();
-    }
-
-    void _convert(lxvar& value, vector3& v)
-    {
-        lx_check_error(value.size() == 3);
-        v.x = value.at(0).asFloat();
-        v.y = value.at(1).asFloat();
-        v.z = value.at(2).asFloat();
-    }
-}}}
 
 //===========================================================================//
 //   Components
@@ -168,6 +134,7 @@ namespace {
 
             mpEntity = pEntity;
 
+            _warnOnIncorrectAttributes(spElem);
             _setMaterial(spElem);
             _setTranslation( spElem->attr("translation") );
             _setMaxExtent(spElem, spElem->attr("max_extent"));
@@ -282,6 +249,8 @@ namespace {
 
         virtual void onAttributeChange(ElementPtr spElem, std::string name, lxvar value)
         {
+            _warnOnIncorrectAttributes(spElem);
+
             if (name == "translation")
                 _setTranslation(value);
             else if (name == "rotation")
@@ -299,6 +268,16 @@ namespace {
             }
             else if (name == "color" || name == "specular")
                 _setMaterial(spElem);
+        }
+
+        void _warnOnIncorrectAttributes(ElementPtr spElem)
+        {
+#ifdef _DEBUG
+            if (spElem->attr("translate").isDefined())
+                lx_warn_once("Found 'translate' attribute: was 'translation' intended?");
+            if (spElem->attr("position").isDefined())
+                lx_warn_once("Found 'position' attribute: was 'translation' intended?");
+#endif
         }
 
         Ogre::Mesh*      _mesh()   { return mpEntity->getMesh().get(); }

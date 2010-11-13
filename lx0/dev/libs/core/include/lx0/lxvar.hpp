@@ -382,8 +382,4 @@ namespace lx0 { namespace core {
         inline void    _convert    (lxvar& v, std::string& s)  { s = v.asString(); }
     }
 
-    class point3;
-
-    point3 asPoint3 (const lxvar& lx);
-
 }}

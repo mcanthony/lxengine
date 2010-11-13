@@ -400,21 +400,6 @@ namespace lx0 { namespace core {
         _castTo<lxstringmap>()->mValue.insert(std::make_pair(key, value));
     }
 
-
-    point3 
-    asPoint3 (const lxvar& lx)
-    {
-        lx_check_error(lx.isArray());
-        lx_check_error(lx.size() == 3);
-
-        point3 p;
-        p.x = lx.at(0).asFloat();
-        p.y = lx.at(1).asFloat();
-        p.z = lx.at(2).asFloat();
-        return p;
-    }
-
-
     lxvar    
     lxvar::parse (const char* s)
     {

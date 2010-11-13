@@ -51,11 +51,11 @@
 #include <lx0/mesh.hpp>
 #include <lx0/util.hpp>
 #include <lx0/cast.hpp>
+#include <lx0/lxvar_convert.hpp>
 
 _ENABLE_LX_CAST(btVector3, point3);
 
 using namespace lx0::core;
-
 
 typedef std::shared_ptr<btCollisionShape>   btCollisionShapePtr;
 typedef std::weak_ptr<btCollisionShape>     btCollisionShapeWPtr;
@@ -65,15 +65,6 @@ typedef std::weak_ptr<btCollisionShape>     btCollisionShapeWPtr;
 //===========================================================================//
 
 namespace lx0 { namespace core { namespace detail {
-
-    void _convert(lxvar& v, point3& p)
-    {
-        p.x = v.at(0).asFloat();
-        p.y = v.at(1).asFloat();
-        p.z = v.at(2).asFloat();
-    }
-
-    void _convert(lxvar& v, vector3& u);
 
     //-----------------------------------------------------------------------//
     //! Base class for the Shape cache keys.

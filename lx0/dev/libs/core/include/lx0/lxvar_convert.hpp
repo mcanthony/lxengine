@@ -27,38 +27,26 @@
 */
 //===========================================================================//
 
-
 #pragma once
 
-#include <lx0/slot.hpp>
+#include <lx0/detail/forward_decls.hpp>
+
+namespace Ogre {
+    class ColourValue;
+    class Quaternion;
+    class Vector3;
+}
 
 namespace lx0 { namespace core {
 
-    void lx_assert (bool condition);
-    void lx_assert (bool condition, const char* format, ...);
+    namespace detail
+    {
+        void _convert(lxvar& v, point3& p);
+        void _convert(lxvar& v, vector3& u);
 
-    void lx_fatal  (const char* format, ...);
-    void lx_error  (const char* format, ...);
-    void lx_warn   (const char* format, ...);
-    void lx_log    (const char* format, ...);
-    void lx_debug  (const char* format, ...);
-
-    #define lx_warn_once(FORMAT,...) \
-        do { static bool once = false;  if(!once) { lx_warn(FORMAT,__VA_ARGS__); once = true; } } while (0)
-    
-    void lx_check_fatal (bool condition);
-    void lx_check_error (bool condition);
-    void lx_check_error (bool condition, const char* format, ...);
-
-    extern slot<void (const char*)> slotFatal;
-    extern slot<void (const char*)> slotError;
-    extern slot<void (const char*)> slotWarn;
-    extern slot<void (const char*)> slotLog;
-    extern slot<void (const char*)> slotAssert;
-    extern slot<void (const char*)> slotDebug;
-    
-    class error_exception : public std::exception { };
-    class fatal_exception : public std::exception { };
-
+        void _convert(lxvar& v, Ogre::ColourValue& u);
+        void _convert(lxvar& v, Ogre::Vector3& u);
+        void _convert(lxvar& value, Ogre::Quaternion& q);
+    }
 
 }}

@@ -11,7 +11,6 @@ macro(lx_source_group FOLDER)
     foreach(F ${FILELIST})
         get_filename_component(DIR ${F} PATH)
         string(REPLACE "/" "\\" DIR ${DIR} )
-        message(STATUS "DIR: ${DIR} ${F}")
         source_group(${DIR} FILES src/${F})
         
         get_filename_component(H ${F} NAME_WE)
