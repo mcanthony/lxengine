@@ -95,6 +95,17 @@ namespace lx0 { namespace core {
         else
             lx_error("Could name find view '%s' on document.", name.c_str());
     }
+    
+    ViewPtr
+    Document::view (int index)
+    {
+        auto it = m_views.begin();
+        while (index--)
+            it++;
+
+        return it->second;
+    }
+
 
     void
     Document::root (ElementPtr spRoot) 

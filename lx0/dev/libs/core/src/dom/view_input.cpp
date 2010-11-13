@@ -139,6 +139,12 @@ namespace lx0 { namespace core { namespace detail {
                 Engine::acquire()->sendMessage("quit");
         }
 
+        bool 
+        isKeyDown (int keyCode) const
+        {
+            return mpKeyboard->isKeyDown(OIS::KeyCode(keyCode));
+        }
+
         virtual bool keyPressed( const KeyEvent &arg )
         {
             lx0::core::KeyEvent e;
@@ -185,9 +191,16 @@ namespace lx0 { namespace core { namespace detail {
     {
     }
 
-    void LxInputManager::update() 
+    void 
+    LxInputManager::update() 
     { 
         mspImp->update(); 
+    }
+
+    bool 
+    LxInputManager::isKeyDown (int keyCode) const
+    {
+        return mspImp->isKeyDown(keyCode);
     }
 
 }}}

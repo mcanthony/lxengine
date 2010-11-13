@@ -79,6 +79,9 @@ namespace lx0 { namespace core {
         void        updateFrame     (void);
         void        updateEnd       (void);
 
+        bool        isKeyDown       (int keyCode) const;
+
+
         slot<void (KeyEvent&)>      slotKeyDown;
 
         void        notifyViewImpIdle   (void);

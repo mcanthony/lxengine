@@ -43,9 +43,10 @@ namespace lx0 { namespace core { namespace detail {
     public:
         friend class InputImp;
 
-        LxInputManager (size_t hWindowHandle, unsigned int width, unsigned int height);
+                    LxInputManager (size_t hWindowHandle, unsigned int width, unsigned int height);
 
-        void update();
+        void        update      (void);
+        bool        isKeyDown   (int keyCode) const;
 
         slot<void (KeyEvent&)>    slotKeyDown;
 

@@ -3,23 +3,21 @@
       <Script language="javascript" src="media/scripts/base/ois_constants.js" />
       <Script language="javascript" src="media/scripts/base/lxquery-0.0.0.js" />
       <Script language="javascript">
-      <!--
-        window.onKeyDown = function(e)
+      <!--       
+        document.onUpdate = function()
         {
-          if (e.keyCode == OIS.KC_W)
-          {
-              var v = $("Camera").value();
-              v.position[0] += 1;             
-              $("Camera").value(v);
-          }
-          else if (e.keyCode == OIS.KC_S)
-          {
-              var v = $("Camera").value();
-              v.position[0] -= 1;             
-              $("Camera").value(v);          
-          }
-          else
-            alert("OnKeyDown: e.keyCode = " + e.keyCode);
+            var v = $("Camera").value();
+            
+            if (window.isKeyDown(OIS.KC_W))
+                v.position[1] += .04;             
+            if (window.isKeyDown(OIS.KC_S))
+                v.position[1] -= .04;
+            if (window.isKeyDown(OIS.KC_A))
+                v.position[0] -= .04;             
+            if (window.isKeyDown(OIS.KC_D))
+                v.position[0] += .04;                   
+            
+            $("Camera").value(v);
         }
       -->
       </Script>
@@ -30,14 +28,14 @@
     <Scene>
       <Camera>
         {
-          position : [ 9.0, 8.0, 10.0 ],
-          lookAt   : [ 0.0, 0.0, 0.0 ],
+          position : [ 0.0,-8.0, 14.0 ],
+          lookAt   : [ 0.0, 4.0, 0.0 ],
           near     : 0.1,
           far      : 100,
         }
       </Camera>
       <Ref id="ship" ref="mesh_ship" max_extent="1.0" color="Red"/>
-      <Ref id="ship2" ref="mesh_ship" max_extent="1.0" color="#bd7979" translation="[-2, -1, 0]" />
-      <Ref id="ship2" ref="mesh_ship" max_extent="1.0" color="#308018" translation="[-2,  1, 0]" />
+      <Ref id="ship2" ref="mesh_ship" max_extent="1.0" color="#bd7979" translation="[-1,  2, 0]" />
+      <Ref id="ship2" ref="mesh_ship" max_extent="1.0" color="#308018" translation="[ 1,  2, 0]" />
     </Scene>
 </Root>

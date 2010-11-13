@@ -136,4 +136,11 @@ namespace lx0 { namespace core {
     {
         mspImp->updateFrame();
     }
+
+    bool
+    View::isKeyDown (int keyCode) const
+    {
+        return mspLxInputManager->isKeyDown(keyCode);
+    }
+
 }}

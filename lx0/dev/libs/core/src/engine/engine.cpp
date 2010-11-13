@@ -108,6 +108,7 @@ namespace lx0 { namespace core {
             lx_debug("    version %d.%d", versionMajor(), versionMinor());
             lx_debug("    build date:  %s %s", __DATE__, __TIME__);
             lx_debug("    _MSC_VER = 0x%04x", _MSC_VER);
+            lx_debug("    sizeof(char) = %u bytes", sizeof(char));
             lx_debug("    sizeof(int) = %u bytes", sizeof(int));
             lx_debug("    sizeof(float) = %u bytes", sizeof(float));
             lx_debug("    sizeof(void*) = %u bytes", sizeof(void*));

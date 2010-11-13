@@ -59,6 +59,7 @@ namespace lx0 { namespace core { namespace v8bind
         _marshal(v8::Handle<v8::Object>&v)  : mValue(v) {}
         _marshal(v8::Handle<v8::String>&v)  : mValue(v) {}
 
+        _marshal(bool b)                    : mValue( v8::Boolean::New(b) ) {}
         _marshal(int i)                     : mValue( v8::Integer::New(i) ) {}
         _marshal(float f)                   : mValue( v8::Number::New(f) ) {}
         _marshal(const char* s)             : mValue( v8::String::New(s) ) { }

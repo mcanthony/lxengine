@@ -36,6 +36,7 @@
 #include <lx0/engine.hpp>
 #include <lx0/document.hpp>
 #include <lx0/element.hpp>
+#include <lx0/view.hpp>
 #include <lx0/mesh.hpp>
 #include <lx0/util.hpp>
 #include <lx0/v8bind.hpp>
@@ -255,8 +256,10 @@ namespace lx0 { namespace core { namespace detail {
     class JavascriptDoc : public Document::Component
     {
     public:
-                        JavascriptDoc(DocumentPtr spDocument);
-        virtual         ~JavascriptDoc();
+                        JavascriptDoc   (DocumentPtr spDocument);
+        virtual         ~JavascriptDoc  (void);
+
+        virtual void    onUpdate            (DocumentPtr spDocument);
 
         void            run (DocumentPtr spDocument, std::string source);
         
@@ -274,16 +277,21 @@ namespace lx0 { namespace core { namespace detail {
         void                            _addMath        (void);
         //@}
 
+        Document*                       mpDocument;
+
         v8::Persistent<v8::Context>     mContext;
+        
         v8::Persistent<v8::Function>    mElementCtor;
         v8::Persistent<v8::Function>    mLxVarCtor;
         v8::Persistent<v8::Function>    mKeyEventCtor;
 
-        Persistent<Function>                              mWindowOnKeyDown;
+        Persistent<Function>            mOnUpdate;
+        Persistent<Function>            mWindowOnKeyDown;
         std::vector<std::pair<int, Persistent<Function>>> mTimeoutQueue;
     };
 
     JavascriptDoc::JavascriptDoc (DocumentPtr spDocument)
+        : mpDocument (spDocument.get())
     {
         // Set up the global template before initiating the Context.   The ObjectTemplate lets
         // FunctionTemplates be added for the free functions.  Context::Global() returns an
@@ -364,6 +372,20 @@ namespace lx0 { namespace core { namespace detail {
         mContext.Dispose();
     }
 
+    
+    void
+    JavascriptDoc::onUpdate (DocumentPtr spDocument) 
+    {
+        if (!mOnUpdate.IsEmpty())
+        {
+            Context::Scope context_scope(mContext);
+
+            HandleScope handle_scope;
+            Handle<Object> recv = mContext->Global();
+            mOnUpdate->Call(recv, 0, 0);
+        }
+    }
+
     void 
     JavascriptDoc::run (DocumentPtr spDocument, std::string text)
     {
@@ -439,6 +461,22 @@ namespace lx0 { namespace core { namespace detail {
                 Handle<Function> func     = _marshal(value);
                 pContext->mWindowOnKeyDown = Persistent<Function>::New(func);
             }
+
+            static v8::Handle<v8::Value>
+            isKeyDown (const v8::Arguments& args)
+            {
+                if (args.Length() == 1)
+                {
+                    auto             pContext = _nativeData<JavascriptDoc>(args);
+                    auto             pThis    = _nativeThis<Window>(args); 
+                    int              keyCode  = _marshal(args[0]);
+
+                    ViewPtr spView = pContext->mpDocument->view(0);
+                    return _marshal( spView->isKeyDown(keyCode) );
+                }
+                else
+                    return v8::Undefined();
+            }
             
             static v8::Handle<v8::Value> 
             setTimeout (const v8::Arguments& args)
@@ -471,6 +509,7 @@ namespace lx0 { namespace core { namespace detail {
 
         Handle<Template> proto_t( templ->PrototypeTemplate() );
         proto_t->Set("setTimeout",  FunctionTemplate::New(Window::setTimeout, External::New(this)));
+        proto_t->Set("isKeyDown",  FunctionTemplate::New(Window::isKeyDown, External::New(this)));
 
         // Add the object
         Handle<Object> obj( templ->GetFunction()->NewInstance() );
@@ -484,6 +523,21 @@ namespace lx0 { namespace core { namespace detail {
         // Local functions
         struct L
         {
+            static v8::Handle<v8::Value> 
+            get_onUpdate (Local<String> property, const AccessorInfo &info) 
+            {
+                auto   pContext = _nativeData<JavascriptDoc>(info);
+                return pContext->mOnUpdate;
+            }
+
+            static void
+            set_onUpdate (Local<String> property, Local<Value> value, const AccessorInfo &info) 
+            {
+                auto             pContext = _nativeData<JavascriptDoc>(info);
+                Handle<Function> func     = _marshal(value);
+                pContext->mOnUpdate = Persistent<Function>::New(func);
+            }
+
             /*!
                 Wraps document.createElement()
              */
@@ -560,6 +614,7 @@ namespace lx0 { namespace core { namespace detail {
         //
         Handle<ObjectTemplate> objInst( templ->InstanceTemplate() );
         objInst->SetInternalFieldCount(1);
+        objInst->SetAccessor(String::New("onUpdate"), L::get_onUpdate, L::set_onUpdate, External::New(this));
 
         // Access the Javascript prototype for the function - i.e. my_func.prototype - 
         // and add the necessary properties and methods.

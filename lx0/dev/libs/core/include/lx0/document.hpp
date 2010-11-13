@@ -90,6 +90,8 @@ namespace lx0 { namespace core {
         ViewPtr                 createView      (std::string type, std::string name);
         void                    destroyView     (std::string name);
 
+        ViewPtr                 view            (int index);
+
         ElementCPtr             root            (void) const        { return m_spRoot; }
         ElementPtr              root            (void)              { return m_spRoot; }
         void                    root            (ElementPtr spRoot);

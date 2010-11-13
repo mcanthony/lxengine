@@ -841,8 +841,14 @@ namespace {
         lxvar val = spElem->value();
 
         Ogre::Vector3 pos = val.find("position").convert();
+        Ogre::Vector3 lookAt = val.find("lookAt").convert();
+        float nearDist = val.find("near").query(0.1f);
+        float farDist = val.find("far").query(100.f);
 
         mpCamera->setPosition(pos);
+        mpCamera->lookAt(lookAt);
+        mpCamera->setNearClipDistance(nearDist);
+        mpCamera->setFarClipDistance(farDist);
     }
 }
 
