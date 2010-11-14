@@ -151,7 +151,7 @@ namespace lx0 { namespace core {
             float maxExtent = *value;
             if (maxExtent > 0.0f)
             {
-                auto extents = boundingVector();
+                auto extents = 2 * boundingVector();
                 float f = maxExtent / std::max(extents.x, std::max(extents.y, extents.z));
                 return f;
             }
