@@ -47,6 +47,13 @@ namespace lx0 { namespace core { namespace v8bind
             *this = _marshal(v.asFloat());
         else if (v.isInt())
             *this = _marshal(v.asInt());
+        else if (v.isArray())
+        {
+            Handle<Array> arr = Array::New(v.size());
+            for (int i = 0; i < v.size(); i++)
+                arr->Set(uint32_t(i), _marshal(v.at(i)));
+            mValue = arr;
+        }
         else
             lx_error("Not implemented");
     }

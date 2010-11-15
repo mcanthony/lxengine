@@ -16,6 +16,12 @@
               ship.energy += 1;
             if (ship.burst < 1000)
               ship.burst += 1;
+              
+            var pos = $("#ship").attr("translation");
+            if (pos[2] > 1.1)
+              document.getElementById("ship").addImpulse([0, 0, -0.05]);
+            else if (pos[2] < .9)
+              document.getElementById("ship").addImpulse([0, 0, 0.05]);           
         
             var v = $("Camera").value();
             
