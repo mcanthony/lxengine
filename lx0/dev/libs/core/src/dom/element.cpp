@@ -40,6 +40,8 @@
 
 namespace lx0 { namespace core {
 
+    Element::FunctionSet Element::s_funcSet;
+    
     Element::Element (void)
         : mpDocument (nullptr)
     {
@@ -251,12 +253,59 @@ namespace lx0 { namespace core {
         return mpDocument->shared_from_this(); 
     }
 
-    void 
-    Element::addImpulse (const vector3& v)
+    //! Dynamically add a named function on the Element
+    void
+    Element::addFunction (std::string name)
     {
-        _foreach([&](ComponentPtr it) {
-            it->addImpulse(v);
-        });
+        s_funcSet.insert( name );
+    }
+
+    void
+    Element::getFunctions (std::vector<std::string>& names)
+    {
+        for (auto it = s_funcSet.begin(); it != s_funcSet.end(); ++it)
+            names.push_back(*it);
+    }
+
+    void
+    Element::call (std::string name, lxvar a0)
+    {
+        std::vector<lxvar> args(1);
+        args[0] = a0;
+        call(name, args);
+    }
+
+    void
+    Element::call (std::string name, lxvar a0, lxvar a1)
+    {
+        std::vector<lxvar> args(2);
+        args[0] = a0;
+        args[1] = a1;
+        call(name, args);
+    }
+
+    void
+    Element::call (std::string name, lxvar a0, lxvar a1, lxvar a2)
+    {
+        std::vector<lxvar> args(3);
+        args[0] = a0;
+        args[1] = a1;
+        args[2] = a2;
+        call(name, args);
+    }
+
+    void
+    Element::call (std::string name, std::vector<lxvar>& args)
+    {
+        auto it = s_funcSet.find(name);
+        if (it != s_funcSet.end())
+        {
+            _foreach([&](ComponentPtr it) {
+                it->onFunctionCall(name, shared_from_this(), args);
+            });
+        }
+        else
+            lx_warn("Ignoring call to unrecognized function '%s'", name.c_str());
     }
 
 }}

@@ -741,7 +741,7 @@ namespace lx0 { namespace core { namespace detail {
 
         Handle<FunctionTemplate> templ( FunctionTemplate::New() );
 
-        // Create an anonymous type which will be used for the Element wrapper
+        // Create an anonymous type which will be used for the lxvar wrapper
         Handle<ObjectTemplate> objInst( templ->InstanceTemplate() );
         objInst->SetInternalFieldCount(1);
         objInst->SetNamedPropertyHandler(W::getNamedProperty, W::setNamedProperty, 0, 0, W::enumerateNamedProperties, External::New(this));
@@ -755,6 +755,22 @@ namespace lx0 { namespace core { namespace detail {
     {
         struct L
         {
+            static v8::Handle<v8::Value> 
+            genericCallback (const v8::Arguments& args)
+            {
+                Element*    pThis = _nativeThis<Element>(args);
+                auto     funcName = _nativeData<const char>(args);
+                
+                std::vector<lxvar> lxargs;
+                lxargs.reserve( args.Length() );
+                for (int i = 0; i < args.Length(); ++i)
+                    lxargs.push_back( _marshal(args[i]) );
+                
+                pThis->call(std::string(funcName), lxargs);
+                
+                return Undefined();
+            }
+
             static Handle<Value> 
             get_parentNode (Local<String> property, const AccessorInfo &info) 
             {
@@ -837,18 +853,6 @@ namespace lx0 { namespace core { namespace detail {
 
                 return Undefined();
             }
-
-            static v8::Handle<v8::Value>
-            addImpulse (const v8::Arguments& args)
-            {
-                Element* pThis = _nativeThis<Element>(args);
-                lxvar value = _marshal(args[0]);
-                vector3 v = value.convert();
-
-                pThis->addImpulse(v);
-
-                return Undefined();
-            }
         };
 
         Handle<FunctionTemplate> templ( FunctionTemplate::New() );
@@ -858,7 +862,7 @@ namespace lx0 { namespace core { namespace detail {
         objInst->SetInternalFieldCount(1);
         objInst->SetAccessor(String::New("parentNode"),  L::get_parentNode, 0, External::New(this));
         objInst->SetAccessor(String::New("value"),       L::get_value, L::set_value, External::New(this));
-
+        
         // Access the Javascript prototype for the function - i.e. my_func.prototype - 
         // and add the necessary properties and methods.
         //
@@ -868,7 +872,19 @@ namespace lx0 { namespace core { namespace detail {
         proto_t->Set("appendChild", FunctionTemplate::New(L::appendChild, External::New(this)));
         proto_t->Set("removeChild", FunctionTemplate::New(L::removeChild, External::New(this)));
 
-        proto_t->Set("addImpulse", FunctionTemplate::New(L::addImpulse, External::New(this)) );
+        // Add any generic functions added by other plug-ins
+        // 
+        ///@todo Remove this workaround: this static vector is used to ensure the pData pointers below
+        /// remain valid for the duration of the application run.  Otherwise, the data pointed to by
+        /// the External::New() may go stale.
+        //
+        static std::vector<std::string> funcNames;
+        Element::getFunctions(funcNames);
+        for (auto it = funcNames.begin(); it != funcNames.end(); ++it)
+        {
+            void* pData = (void*)it->c_str();
+            proto_t->Set(it->c_str(), FunctionTemplate::New(L::genericCallback, External::New(pData)) );
+        }
 
         // Store a persistent reference to the function which will be used to create
         // new object wrappers

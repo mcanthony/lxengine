@@ -302,6 +302,8 @@ namespace lx0 { namespace core { namespace detail {
             //
             if (s_attrHandlers.empty())
             {
+                Element::addFunction("addImpulse");
+
                 s_attrHandlers["velocity"] = &PhysicsElem::_setVelocity;
                 s_attrHandlers["friction"] = &PhysicsElem::_setFriction;
                 s_attrHandlers["restitution"] = &PhysicsElem::_setRestitution;
@@ -388,6 +390,15 @@ namespace lx0 { namespace core { namespace detail {
         {
             mspRigidBody->setRestitution( value.query(0.1f) );
         }
+
+        virtual void onFunctionCall (const std::string& name, ElementPtr spElem, std::vector<lxvar>& args) 
+        {
+            if (name == "addImpulse")
+            {
+                if (args.size() == 1)
+                    addImpulse(args[0].convert());
+            }
+        } 
 
         virtual void onAttributeChange(ElementPtr spElem, std::string name, lxvar value)
         {

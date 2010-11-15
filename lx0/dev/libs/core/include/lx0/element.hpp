@@ -38,6 +38,7 @@
 #include <deque>
 #include <memory>
 #include <string>
+#include <set>
 
 // Lx headers
 #include <lx0/detail/forward_decls.hpp>
@@ -57,7 +58,7 @@ namespace lx0 { namespace core {
         virtual void    onAdded             (void) {}
         virtual void    onRemoved           (void) {}
 
-        virtual void    addImpulse          (const vector3& v) {}
+        virtual void    onFunctionCall      (const std::string& name, ElementPtr spElem, std::vector<lxvar>& args) {} 
     };
 
     //===========================================================================//
@@ -114,11 +115,19 @@ namespace lx0 { namespace core {
 
         DocumentPtr     document        (void);
 
-        void            addImpulse      (const vector3& v);
+        static void     addFunction     (std::string name);
+        static void     getFunctions    (std::vector<std::string>& names);
+        void            call            (std::string name, lxvar a0);
+        void            call            (std::string name, lxvar a0, lxvar a1);
+        void            call            (std::string name, lxvar a0, lxvar a1, lxvar a2);
+        void            call            (std::string name, std::vector<lxvar>& args);
 
     protected:
+        typedef std::set<std::string>           FunctionSet;
         typedef std::map<std::string, lxvar>    AttrMap;
         typedef std::deque<ElementPtr>          ElemList;
+
+        static          FunctionSet             s_funcSet;
 
         void            _setHostDocument    (Document* pDocument);
 
