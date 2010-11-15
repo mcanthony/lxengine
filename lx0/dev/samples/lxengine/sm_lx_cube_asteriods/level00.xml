@@ -28,6 +28,15 @@
             if (window.isKeyDown(OIS.KC_D))
                 v.position[0] += .04;
                 
+            if (window.isKeyDown(OIS.KC_LEFT))
+                document.getElementById("ship").addImpulse([-0.8, 0, 0]);
+            if (window.isKeyDown(OIS.KC_RIGHT))
+                document.getElementById("ship").addImpulse([0.8, 0, 0]);
+            if (window.isKeyDown(OIS.KC_UP))
+                document.getElementById("ship").addImpulse([0.0, 0.8, 0]);
+            if (window.isKeyDown(OIS.KC_DOWN))
+                document.getElementById("ship").addImpulse([0.0, -0.6, 0]);                
+                
             if (window.isKeyDown(OIS.KC_SPACE)
               && ship.burst >= 15 && ship.energy > 100)
             {
@@ -65,9 +74,13 @@
           far      : 100,
         }
       </Camera>
-      <Ref id="ship" ref="mesh_ship" max_extent="1.0" color="Red" translation="[0, 0, 1]"/>
+      <Ref id="ship" ref="mesh_ship" max_extent="1.0" color="Red" translation="[0, 0, 1]" 
+           mass="10" 
+           linear_damping="0.9"
+           angular_damping="0.1"
+           />
       <Ref id="ship2" ref="mesh_ship" max_extent="1.0" color="#bd7979" translation="[-1,  1, 1]" />
-      <Ref id="ship2" ref="mesh_ship" max_extent="1.0" color="#308018" translation="[ 1,  1, 1]" />
+      <Ref id="ship3" ref="mesh_ship" max_extent="1.0" color="#308018" translation="[ 1,  1, 1]" />
       <Group id="projectiles" />
 
       <Ref ref="unit_cube" max_extent=".75" color="Yellow" translation="[0, 6, 1]" mass="4"/>

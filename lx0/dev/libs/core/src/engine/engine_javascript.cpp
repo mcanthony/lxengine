@@ -40,6 +40,7 @@
 #include <lx0/mesh.hpp>
 #include <lx0/util.hpp>
 #include <lx0/v8bind.hpp>
+#include <lx0/lxvar_convert.hpp>
 
 using namespace v8;
 using namespace lx0::core::v8bind;
@@ -836,6 +837,18 @@ namespace lx0 { namespace core { namespace detail {
 
                 return Undefined();
             }
+
+            static v8::Handle<v8::Value>
+            addImpulse (const v8::Arguments& args)
+            {
+                Element* pThis = _nativeThis<Element>(args);
+                lxvar value = _marshal(args[0]);
+                vector3 v = value.convert();
+
+                pThis->addImpulse(v);
+
+                return Undefined();
+            }
         };
 
         Handle<FunctionTemplate> templ( FunctionTemplate::New() );
@@ -854,6 +867,8 @@ namespace lx0 { namespace core { namespace detail {
         proto_t->Set("setAttribute",  FunctionTemplate::New(L::setAttribute, External::New(this)));
         proto_t->Set("appendChild", FunctionTemplate::New(L::appendChild, External::New(this)));
         proto_t->Set("removeChild", FunctionTemplate::New(L::removeChild, External::New(this)));
+
+        proto_t->Set("addImpulse", FunctionTemplate::New(L::addImpulse, External::New(this)) );
 
         // Store a persistent reference to the function which will be used to create
         // new object wrappers

@@ -297,6 +297,18 @@ namespace lx0 { namespace core { namespace detail {
         {
             lx_check_error( spElem->getComponent<PhysicsElem>("physics").get() == nullptr );
 
+            //
+            // Register all attribute handlers on the first call
+            //
+            if (s_attrHandlers.empty())
+            {
+                s_attrHandlers["velocity"] = &PhysicsElem::_setVelocity;
+                s_attrHandlers["friction"] = &PhysicsElem::_setFriction;
+                s_attrHandlers["restitution"] = &PhysicsElem::_setRestitution;
+                s_attrHandlers["linear_damping"] = &PhysicsElem::_setLinearDamping;
+                s_attrHandlers["angular_damping"] = &PhysicsElem::_setAngularDamping;
+            }
+
             // Prepare the relevant variables that will be used
             //
             std::string    ref      = spElem->attr("ref").query("");
@@ -304,8 +316,7 @@ namespace lx0 { namespace core { namespace detail {
             auto posAttr            = spElem->attr("translation");
             point3 pos              = posAttr.isDefined() ? point3(posAttr.convert()) : point3(0, 0, 0);
             lxvar maxExtent         = spElem->attr("max_extent");
-            auto    velAttr         = spElem->attr("velocity");
-            vector3 vel             = velAttr.isDefined() ? vector3(velAttr.convert()) : vector3(0, 0, 0);
+
 
             auto spMeshElem         = spDocument->getElementById(ref);
             MeshPtr spMesh          = spMeshElem->value().imp<Mesh>();
@@ -331,15 +342,51 @@ namespace lx0 { namespace core { namespace detail {
             //
             btRigidBody::btRigidBodyConstructionInfo rigidBodyCI (kfMass, mspMotionState.get(), mspShape.get(), fallInertia);
             mspRigidBody.reset( new btRigidBody(rigidBodyCI) );
-            mspRigidBody->setRestitution( spElem->attr("restitution").query(0.1f) );
-            mspRigidBody->setFriction( spElem->attr("friction").query(0.5f) );
-            mspRigidBody->setLinearVelocity( btVector3(vel.x, vel.y, vel.z) );
+
+            // Set all attributes
+            //
+            for (auto it = s_attrHandlers.begin(); it != s_attrHandlers.end(); ++it)
+            {
+                lxvar value = spElem->attr(it->first);
+                auto  method = it->second;
+
+                (this->*method)(value);
+            }
+
             _addToWorld();
         }
 
         ~PhysicsElem()
         {
             _removeFromWorld();
+        }
+
+        void _setVelocity (lxvar value)
+        {
+            vector3 vel = value.isDefined() ? vector3(value.convert()) : vector3(0, 0, 0);
+            mspRigidBody->setLinearVelocity( btVector3(vel.x, vel.y, vel.z) );
+        }
+
+        void _setLinearDamping (lxvar value) 
+        {
+            const btScalar angDamp = mspRigidBody->getAngularDamping();
+            mspRigidBody->setDamping( value.query(0.0f), angDamp );
+        }
+
+        void _setAngularDamping (lxvar value) 
+        {
+            const btScalar linDamp = mspRigidBody->getLinearDamping();
+            mspRigidBody->setDamping( linDamp, value.query(0.0f) );
+        }
+
+        void _setFriction (lxvar value)
+        {
+            mspRigidBody->setFriction( value.query(0.5f) );
+        }
+
+        void _setRestitution (lxvar value)
+        {
+            mspRigidBody->setRestitution( value.query(0.1f) );
         }
 
         virtual void onAttributeChange(ElementPtr spElem, std::string name, lxvar value)
@@ -353,10 +400,23 @@ namespace lx0 { namespace core { namespace detail {
                 else
                     lx_error("Unexpected value for display attribute");
             }
-            else if (name == "restitution")
-                mspRigidBody->setRestitution( value.query(0.1f) );
-            else if (name == "friction")
-                mspRigidBody->setFriction( value.query(0.5f) );
+            else
+            {
+                auto it = s_attrHandlers.find(name);
+                if (it != s_attrHandlers.end())
+                    (this->*(it->second))(value);
+            }
+                
+        }
+
+        virtual void    
+        addImpulse (const vector3& v) 
+        {
+#ifdef _DEBUG
+            if (mspRigidBody->getInvMass() == 0.0f)
+                lx_warn_once("addImpulse() called on a 0 mass object: objects without mass are immovable!");
+#endif
+            mspRigidBody->applyCentralImpulse( btVector3(v.x, v.y, v.z) );
         }
 
         void _addToWorld()
@@ -368,11 +428,18 @@ namespace lx0 { namespace core { namespace detail {
             mpDocPhysics->mspDynamicsWorld->removeRigidBody(mspRigidBody.get());
         }
         
+        typedef void (PhysicsElem::*AttributeHandler)(lxvar);
+
+        typedef std::map<std::string, AttributeHandler> AttributeTable;
+        static  AttributeTable                  s_attrHandlers;
+
         PhysicsDoc*                             mpDocPhysics;
         std::unique_ptr<btDefaultMotionState>   mspMotionState;
         std::unique_ptr<btRigidBody>            mspRigidBody;
         std::shared_ptr<btCollisionShape>       mspShape;
     };
+
+    PhysicsElem::AttributeTable PhysicsElem::s_attrHandlers;
 
     PhysicsDoc::PhysicsDoc()
         : mfWindVelocity    (0.0f)

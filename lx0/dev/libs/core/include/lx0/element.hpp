@@ -56,6 +56,8 @@ namespace lx0 { namespace core {
         virtual void    onValueChange       (ElementPtr spElem, lxvar value) {}
         virtual void    onAdded             (void) {}
         virtual void    onRemoved           (void) {}
+
+        virtual void    addImpulse          (const vector3& v) {}
     };
 
     //===========================================================================//
@@ -111,6 +113,8 @@ namespace lx0 { namespace core {
         void            notifyRemoved   (Document* pDocument);
 
         DocumentPtr     document        (void);
+
+        void            addImpulse      (const vector3& v);
 
     protected:
         typedef std::map<std::string, lxvar>    AttrMap;

@@ -251,4 +251,12 @@ namespace lx0 { namespace core {
         return mpDocument->shared_from_this(); 
     }
 
+    void 
+    Element::addImpulse (const vector3& v)
+    {
+        _foreach([&](ComponentPtr it) {
+            it->addImpulse(v);
+        });
+    }
+
 }}
