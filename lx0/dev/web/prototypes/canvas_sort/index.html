@@ -1,0 +1,43 @@
+﻿<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
+<head>
+    <title>Prototype</title>
+    <meta http-equiv="Content-type" content="text/html;charset=UTF-8" />
+    <link rel="stylesheet" href="style.css" media="screen" />
+    <script type="text/javascript" src="jquery-1.4.4.min.js"></script>
+    <script type="text/javascript" src="script.js"></script>
+    <script type="text/javascript">
+    <!--
+        var ctx = null;
+        $(function () {
+            ctx = document.getElementById('canvas').getContext('2d');
+
+            reset();
+            draw();
+
+            $("#buttonStart").click(function () { reset();  bubbleSort(); return false; });
+        });
+    -->
+    </script>
+</head>
+  <body>
+    <div style="margin: 32px; padding: 16px 16px 96px 16px;">
+        <h1>Prototype</h1>
+        <p style="width: 640px">
+            This is a basic demo of the updating the canvas element in HTML5.  Click on the link at
+            right to store the vertical color bars from dark to light. 
+        </p>
+        <p>
+            The naive implementation uses a bubble sort algorithm to sort the data set.
+        </p>
+        <h2>Canvas</h2>
+        <div style="float: left; width: 544px;">
+            <canvas id="canvas" width="512" height="32" style="border: 1px solid black"></canvas>
+        </div>
+        <div>
+            <a href="#" id="buttonStart">click here to start sort</a>
+        </div>
+        <div style="clear: both"></div>
+    </div>
+  </body>
+</html>
