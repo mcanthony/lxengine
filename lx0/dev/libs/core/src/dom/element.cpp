@@ -40,7 +40,7 @@
 
 namespace lx0 { namespace core {
 
-    Element::FunctionSet Element::s_funcSet;
+    Element::FunctionMap Element::s_funcMap;
     
     Element::Element (void)
         : mpDocument (nullptr)
@@ -128,10 +128,13 @@ namespace lx0 { namespace core {
     void
     Element::removeChild (ElementPtr spElem)
     {
+        lx_check_error(spElem->parent().get() == this);
+
         auto it = std::find(mChildren.begin(), mChildren.end(), spElem);
         if (it != mChildren.end())
         {
             mChildren.erase(it);
+            spElem->mspParent.reset();
 
             if (mpDocument)
                 spElem->notifyRemoved(mpDocument);
@@ -250,21 +253,35 @@ namespace lx0 { namespace core {
     DocumentPtr
     Element::document (void)
     { 
-        return mpDocument->shared_from_this(); 
+        lx_check_error(this != nullptr);
+
+#ifdef _DEBUG
+        // If there's a parent node, it should be in the same document unless somehow the
+        // data structure has been corrupted.
+        if (mspParent)
+        {
+            lx_check_error(mspParent->mpDocument == mpDocument);
+        }
+#endif
+        if (mpDocument)
+            return mpDocument->shared_from_this();
+        else
+            return DocumentPtr();
     }
 
     //! Dynamically add a named function on the Element
-    void
-    Element::addFunction (std::string name)
+    void     
+    Element::addFunction (std::string name, Element::Function func)
     {
-        s_funcSet.insert( name );
+        s_funcMap.insert(std::make_pair(name, func));
     }
 
     void
     Element::getFunctions (std::vector<std::string>& names)
     {
-        for (auto it = s_funcSet.begin(); it != s_funcSet.end(); ++it)
-            names.push_back(*it);
+        names.reserve( s_funcMap.size() );
+        for (auto it = s_funcMap.begin(); it != s_funcMap.end(); ++it)
+            names.push_back(it->first);
     }
 
     void
@@ -304,13 +321,9 @@ namespace lx0 { namespace core {
     void
     Element::call (std::string name, std::vector<lxvar>& args)
     {
-        auto it = s_funcSet.find(name);
-        if (it != s_funcSet.end())
-        {
-            _foreach([&](ComponentPtr it) {
-                it->onFunctionCall(name, shared_from_this(), args);
-            });
-        }
+        auto jt = s_funcMap.find(name);
+        if (jt != s_funcMap.end())
+            jt->second(shared_from_this(), args);
         else
             lx_warn("Ignoring call to unrecognized function '%s'", name.c_str());
     }

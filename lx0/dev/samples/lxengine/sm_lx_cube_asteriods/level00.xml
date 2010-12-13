@@ -61,8 +61,13 @@
               ref.attr("color", [255 / 255.0, 40 / 255.0, 10 / 255.0]);
               ref.attr("bounds_type", "sphere");
               ref.attr("material", "phong { ambient : [.7, .0, 0], diffuse : [.9, .1, .3], specular : [.9, .9, .9] }");
-              ref.attr("onCollision", function() { __lx_print("test"); } );
+              
               $("#projectiles").append(ref);
+              
+              var e = document.getElementById("projectile" + (projectileNumber-1));
+              e.addFunction("onCollision", function() { 
+                e.parentNode.removeChild(e);
+              });          
             }
             
             $("Camera").value(v);

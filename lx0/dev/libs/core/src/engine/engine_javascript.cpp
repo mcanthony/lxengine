@@ -251,6 +251,19 @@ namespace lx0 { namespace core { namespace detail {
     }
 
     //===========================================================================//
+    // Element Component
+    //===========================================================================//
+
+
+    class JavascriptElem : public Element::Component
+    {
+    public:
+                        ~JavascriptElem();
+
+        v8::Persistent<v8::Function> mFunc;
+    };
+
+    //===========================================================================//
     // Document Component
     //===========================================================================//
 
@@ -260,6 +273,7 @@ namespace lx0 { namespace core { namespace detail {
                         JavascriptDoc   (DocumentPtr spDocument);
         virtual         ~JavascriptDoc  (void);
 
+        virtual void    onElementAdded      (DocumentPtr spDocument, ElementPtr spElem);
         virtual void    onUpdate            (DocumentPtr spDocument);
 
         void            run (DocumentPtr spDocument, std::string source);
@@ -291,6 +305,15 @@ namespace lx0 { namespace core { namespace detail {
         std::vector<std::pair<int, Persistent<Function>>> mTimeoutQueue;
     };
 
+    //=======================================================================//
+
+    JavascriptElem::~JavascriptElem()
+    {
+        mFunc.Dispose();
+    }
+
+    //=======================================================================//
+
     JavascriptDoc::JavascriptDoc (DocumentPtr spDocument)
         : mpDocument (spDocument.get())
     {
@@ -313,6 +336,17 @@ namespace lx0 { namespace core { namespace detail {
         mKeyEventCtor   = _addKeyEvent();
         mLxVarCtor      = _addLxVar();
         _addMath();
+
+        struct addRecursive
+        {
+            static void recurse (JavascriptDoc* pThis, DocumentPtr spDocument, ElementPtr spElem)
+            {
+                pThis->onElementAdded(spDocument, spElem);
+                for (int i = 0; i < spElem->childCount(); ++i)
+                    recurse(pThis, spDocument, spElem->child(i));
+            }
+        };
+        addRecursive::recurse( this, spDocument, spDocument->root() );
 
         spDocument->slotKeyDown += [&](KeyEvent& e) {
 
@@ -373,7 +407,12 @@ namespace lx0 { namespace core { namespace detail {
         mContext.Dispose();
     }
 
-    
+    void
+    JavascriptDoc::onElementAdded (DocumentPtr spDocument, ElementPtr spElem)
+    {
+        spElem->attachComponent("javascript", new JavascriptElem);
+    }
+
     void
     JavascriptDoc::onUpdate (DocumentPtr spDocument) 
     {
@@ -814,7 +853,22 @@ namespace lx0 { namespace core { namespace detail {
             {
                 Element* pThis = _nativeThis<Element>(args);
                 Element* pChild = _marshal(args[0]).pointer<Element>();
+                
+                if (!pChild->parent().get())
+                {
+                    lx_debug("Ignoring call to remove orphaned Element.");
+                    return Undefined();
+                }
+
+                if (pChild->parent().get() != pThis)
+                {
+                    lx_warn("Ignoring call to remove Element from incorrect parent.");
+                    return Undefined();
+                }
+
+                
                 pThis->removeChild(pChild->shared_from_this());
+                
                 return Undefined();
             }
 
@@ -853,6 +907,38 @@ namespace lx0 { namespace core { namespace detail {
 
                 return Undefined();
             }
+
+            static v8::Handle<v8::Value>
+            addFunction (const v8::Arguments& args)
+            {
+                Element* pThis      = _nativeThis<Element>(args);
+                std::string name    = _marshal(args[0]);
+                Handle<Function> func = _marshal(args[1]);
+
+                auto spJElem = pThis->getComponent<JavascriptElem>("javascript");
+                spJElem->mFunc = Persistent<Function>::New(func);
+
+                Element::Function wrapper = [] (ElementPtr spElem, std::vector<lxvar>& args) {
+                    DocumentPtr spDoc = spElem->document();
+                    if (spDoc.get())
+                    {
+                        auto spJDoc = spDoc->getComponent<JavascriptDoc>("javascript");
+                        auto spJElem = spElem->getComponent<JavascriptElem>("javascript");
+
+                        if (!spJElem->mFunc.IsEmpty())
+                        {
+                            Context::Scope context_scope(spJDoc->mContext);
+                            HandleScope handle_scope;
+                            Handle<Object> recv = spJDoc->mContext->Global();
+                            Handle<Value> callArgs[1];
+                            spJElem->mFunc->Call(recv, 0, callArgs);
+                        }
+                    }
+                };
+                Element::addFunction(name, wrapper);
+                
+                return Undefined();
+            }
         };
 
         Handle<FunctionTemplate> templ( FunctionTemplate::New() );
@@ -872,8 +958,10 @@ namespace lx0 { namespace core { namespace detail {
         proto_t->Set("appendChild", FunctionTemplate::New(L::appendChild, External::New(this)));
         proto_t->Set("removeChild", FunctionTemplate::New(L::removeChild, External::New(this)));
 
+        proto_t->Set("addFunction", FunctionTemplate::New(L::addFunction, External::New(this)));
+
         // Add any generic functions added by other plug-ins
-        // 
+        //
         ///@todo Remove this workaround: this static vector is used to ensure the pData pointers below
         /// remain valid for the duration of the application run.  Otherwise, the data pointed to by
         /// the External::New() may go stale.

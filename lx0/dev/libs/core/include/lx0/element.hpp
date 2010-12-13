@@ -57,8 +57,6 @@ namespace lx0 { namespace core {
         virtual void    onValueChange       (ElementPtr spElem, lxvar value) {}
         virtual void    onAdded             (void) {}
         virtual void    onRemoved           (void) {}
-
-        virtual void    onFunctionCall      (const std::string& name, ElementPtr spElem, std::vector<lxvar>& args) {} 
     };
 
     //===========================================================================//
@@ -84,6 +82,8 @@ namespace lx0 { namespace core {
         , public detail::_EnableComponentList<Element, ElementComponent>
     {
     public:
+        typedef std::function<void (ElementPtr, std::vector<lxvar>&)> Function;
+
                         Element         (void);
                         ~Element        (void);
 
@@ -115,20 +115,21 @@ namespace lx0 { namespace core {
 
         DocumentPtr     document        (void);
 
-        static void     addFunction     (std::string name);
-        static void     getFunctions    (std::vector<std::string>& names);
         void            call            (std::string name);
         void            call            (std::string name, lxvar a0);
         void            call            (std::string name, lxvar a0, lxvar a1);
         void            call            (std::string name, lxvar a0, lxvar a1, lxvar a2);
         void            call            (std::string name, std::vector<lxvar>& args);
 
+        static void     addFunction     (std::string name, std::function<void(ElementPtr, std::vector<lxvar>&)> func);
+        static void     getFunctions    (std::vector<std::string>& names);
+
     protected:
-        typedef std::set<std::string>           FunctionSet;
+        typedef std::map<std::string,Function>  FunctionMap;
         typedef std::map<std::string, lxvar>    AttrMap;
         typedef std::deque<ElementPtr>          ElemList;
 
-        static          FunctionSet             s_funcSet;
+        static          FunctionMap             s_funcMap;
 
         void            _setHostDocument    (Document* pDocument);
 
