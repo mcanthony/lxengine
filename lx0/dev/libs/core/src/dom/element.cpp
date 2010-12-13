@@ -268,6 +268,13 @@ namespace lx0 { namespace core {
     }
 
     void
+    Element::call (std::string name)
+    {
+        std::vector<lxvar> args(0);
+        call(name, args);
+    }
+
+    void
     Element::call (std::string name, lxvar a0)
     {
         std::vector<lxvar> args(1);

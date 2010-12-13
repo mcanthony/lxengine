@@ -9,6 +9,8 @@
           burst   : 100,
           energy  : 500,
         };
+        
+        var projectileNumber = 0;
       
         document.onUpdate = function()
         {
@@ -50,6 +52,7 @@
               ship.energy -= 60;
               
               var ref = $("<Ref/>");
+              ref.attr("id", "projectile" + (projectileNumber++) );
               ref.attr("ref", "unit_sphere");
               ref.attr("translation", [0, 1, 1]);
               ref.attr("max_extent", 0.08);
@@ -58,6 +61,7 @@
               ref.attr("color", [255 / 255.0, 40 / 255.0, 10 / 255.0]);
               ref.attr("bounds_type", "sphere");
               ref.attr("material", "phong { ambient : [.7, .0, 0], diffuse : [.9, .1, .3], specular : [.9, .9, .9] }");
+              ref.attr("onCollision", function() { __lx_print("test"); } );
               $("#projectiles").append(ref);
             }
             

@@ -224,7 +224,9 @@ namespace lx0 { namespace core { namespace detail {
         std::shared_ptr<btDiscreteDynamicsWorld>                mspDynamicsWorld;
 
     protected:
-        void            _applyWind      (const float timeStep);
+        void            _applyWind              (const float timeStep);
+        void            _applyCollisonActions   (DocumentPtr spDocument);
+        void            _updateElements         (DocumentPtr spDocument);
 
         float           mfWindVelocity;
         vector3         mWindDirection;
@@ -303,6 +305,7 @@ namespace lx0 { namespace core { namespace detail {
             if (s_attrHandlers.empty())
             {
                 Element::addFunction("addImpulse");
+                Element::addFunction("onCollision");
 
                 s_attrHandlers["velocity"] = &PhysicsElem::_setVelocity;
                 s_attrHandlers["friction"] = &PhysicsElem::_setFriction;
@@ -344,6 +347,7 @@ namespace lx0 { namespace core { namespace detail {
             //
             btRigidBody::btRigidBodyConstructionInfo rigidBodyCI (kfMass, mspMotionState.get(), mspShape.get(), fallInertia);
             mspRigidBody.reset( new btRigidBody(rigidBodyCI) );
+            mspRigidBody->setUserPointer( spElem.get() );
 
             // Set all attributes
             //
@@ -569,6 +573,80 @@ namespace lx0 { namespace core { namespace detail {
         }
     }
 
+    /*
+        The physics simulation has iterated a time-step.  The results need to be
+        written back to the DOM.
+     */
+    void
+    PhysicsDoc::_updateElements (DocumentPtr spDocument)
+    {
+        auto allRefs = spDocument->getElementsByTagName("Ref");
+        for (auto it = allRefs.begin(); it != allRefs.end(); ++it)
+        {
+            ElementPtr spElem = *it;
+            auto spPhysics = spElem->getComponent<PhysicsElem>("physics");
+            lx_check_error(spPhysics.get() != nullptr, "All elements should have an associated physics component!");
+
+            btTransform trans;
+            spPhysics->mspRigidBody->getMotionState()->getWorldTransform(trans);
+            point3 p = lx_cast( trans.getOrigin() );
+            btQuaternion q = trans.getRotation();
+
+            spElem->attr("translation", lxvar(p.x, p.y, p.z) );
+            spElem->attr("rotation", lxvar(q.x(), q.y(), q.z(), q.w()) );
+        }
+    }
+
+    ElementPtr 
+    getElementPtrFor (btCollisionObject* pBtObject)
+    {
+        lx_check_error(pBtObject,  "Trying to get ElementPtr for a null object!");
+
+        void* pUserPtr = pBtObject->getUserPointer();
+        if (pUserPtr)
+        {
+            Element* pElem = reinterpret_cast<Element*>(pUserPtr);
+            return pElem->shared_from_this();
+        }
+        else
+        {
+            return ElementPtr();
+        }
+    }
+
+    void            
+    PhysicsDoc::_applyCollisonActions (DocumentPtr spDocument)
+    {
+        int numManifolds = mspDispatcher->getNumManifolds();
+	    for (int i = 0; i < numManifolds; i++)
+	    {
+		    btPersistentManifold* contactManifold =  mspDynamicsWorld->getDispatcher()->getManifoldByIndexInternal(i);
+		    btCollisionObject* obA = static_cast<btCollisionObject*>(contactManifold->getBody0());
+		    btCollisionObject* obB = static_cast<btCollisionObject*>(contactManifold->getBody1());
+	
+		    int numContacts = contactManifold->getNumContacts();
+		    for (int j = 0; j < numContacts; j++)
+		    {
+			    btManifoldPoint& pt = contactManifold->getContactPoint(j);
+			    if (pt.getDistance() < 00.f)
+			    {
+				    const btVector3& ptA = pt.getPositionWorldOnA();
+				    const btVector3& ptB = pt.getPositionWorldOnB();
+				    
+                    ElementPtr spElemA = getElementPtrFor(obA);
+                    ElementPtr spElemB = getElementPtrFor(obB);
+
+                    // Objects like the ground plane are not in the Document.
+                    if (spElemA.get() && spElemB.get())
+                    {
+                        spElemA->call("onCollision");
+                        spElemB->call("onCollision");
+                    }
+                }
+		    }
+	    }
+    }
+
     void 
     PhysicsDoc::onUpdate (DocumentPtr spDocument)
     {
@@ -585,22 +663,8 @@ namespace lx0 { namespace core { namespace detail {
             mspDynamicsWorld->stepSimulation(kStep, kMaxSubSteps);
 
             _applyWind(kStep);
- 
-            auto allRefs = spDocument->getElementsByTagName("Ref");
-            for (auto it = allRefs.begin(); it != allRefs.end(); ++it)
-            {
-                ElementPtr spElem = *it;
-                auto spPhysics = spElem->getComponent<PhysicsElem>("physics");
-                lx_check_error(spPhysics.get() != nullptr, "All elements should have an associated physics component!");
-
-                btTransform trans;
-                spPhysics->mspRigidBody->getMotionState()->getWorldTransform(trans);
-                point3 p = lx_cast( trans.getOrigin() );
-                btQuaternion q = trans.getRotation();
-
-                spElem->attr("translation", lxvar(p.x, p.y, p.z) );
-                spElem->attr("rotation", lxvar(q.x(), q.y(), q.z(), q.w()) );
-            }
+            _updateElements(spDocument);
+            _applyCollisonActions(spDocument);
 
             mLastUpdate = timeNow;
         }

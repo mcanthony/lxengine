@@ -117,6 +117,7 @@ namespace lx0 { namespace core {
 
         static void     addFunction     (std::string name);
         static void     getFunctions    (std::vector<std::string>& names);
+        void            call            (std::string name);
         void            call            (std::string name, lxvar a0);
         void            call            (std::string name, lxvar a0, lxvar a1);
         void            call            (std::string name, lxvar a0, lxvar a1, lxvar a2);
