@@ -639,8 +639,10 @@ namespace lx0 { namespace core { namespace detail {
                     {
                         struct Wrapper : public lx0::core::detail::lxvalue
                         {
-                            virtual detail::lxvalue* clone() const { auto p = new Wrapper; p->mspValue = mspValue; return p; } 
-                            virtual void* unwrap() { return mspValue.get(); }
+                            virtual detail::lxvalue* clone  (void) const    { auto p = new Wrapper; p->mspValue = mspValue; return p; } 
+                            virtual bool        isHandle    (void) const    { return true; }
+                            virtual std::string handleType  (void) const    { return "Element"; }
+                            virtual void*       unwrap      (void)          { return mspValue.get(); }
                             ElementPtr mspValue;
                         };
 

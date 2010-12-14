@@ -937,8 +937,24 @@ namespace lx0 { namespace core { namespace detail {
                         Context::Scope context_scope(spJDoc->mContext);
                         HandleScope handle_scope;
                         Handle<Object> recv = _wrapObject(spJDoc->mElementCtor, spElem.get());
-                        Handle<Value> callArgs[1];
-                        mFunc->Call(recv, 0, callArgs);
+                        Handle<Value> callArgs[8];
+                        size_t i;
+                        for (i = 0; i < args.size(); ++i)
+                        {
+                            if (args[i].isHandle())
+                            {
+                                if (args[i].handleType() == "Element")
+                                    callArgs[i] = _wrapObject(spJDoc->mElementCtor, args[i].unwrap());
+                                else
+                                {
+                                    lx_warn("Dispatching function call to Javascript with unknown native handle.");
+                                    callArgs[i] = Undefined();
+                                }
+                            }
+                            else
+                                callArgs[i] = _marshal(args[i]);
+                        }
+                        mFunc->Call(recv, i, callArgs);
                     }
                     else
                         lx_error("Callback wrapper set with an empty JS function!");

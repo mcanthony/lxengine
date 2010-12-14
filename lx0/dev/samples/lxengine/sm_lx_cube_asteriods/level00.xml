@@ -51,10 +51,12 @@
               ship.burst = 0;
               ship.energy -= 60;
               
+              var shipPos = $("#ship").attr("translation");
+              
               var ref = $("<Ref/>");
               ref.attr("id", "projectile" + (projectileNumber++) );
               ref.attr("ref", "unit_sphere");
-              ref.attr("translation", [0, 1, 1]);
+              ref.attr("translation", [shipPos[0], shipPos[1] + 1, shipPos[2] ]);
               ref.attr("max_extent", 0.08);
               ref.attr("mass", 1.0);
               ref.attr("velocity", [ 0, 26, 0.02 ]);
@@ -65,22 +67,28 @@
               $("#projectiles").append(ref);
               
               var e = document.getElementById("projectile" + (projectileNumber-1));
-              e.addFunction("onCollision", function() { 
+              e.addFunction("onCollision", function(hit) { 
                 e.parentNode.removeChild(e);
                 
                 var pos = $(this).attr("translation");
-                for (var i = 0; i <= 6.28318531; i += 6.28318531/8)
+                for (var i = 0; i < 8; ++i)
                 {
-                  var oy = Math.sin(i);
-                  var ox = Math.cos(i);
+                  var ang = Math.random() * 6.28318531;
+                  var rad = Math.random() * .15 + .4;
+                  var oy = Math.sin(ang) * rad;
+                  var ox = Math.cos(ang) * rad;
+                  var oz = Math.random() * .2 + .9;
                   
                   var ref = $("<Ref/>");
                   ref.attr("ref", "unit_cube");
-                  ref.attr("max_extent", ".25");
+                  ref.attr("max_extent", ".19");
                   ref.attr("color", "Blue");
-                  ref.attr("translation", [ pos[0] + ox, pos[1] + oy, pos[2] ]);
+                  ref.attr("velocity", [ ox, oy, oz/10.0 ]);
+                  ref.attr("translation", [ pos[0] + ox, pos[1] + oy, pos[2] + oz ]);
                   ref.attr("mass", 4);
                   $("#field").append(ref);
+                  
+                  hit.parentNode.removeChild(hit);
                 }
               });          
             }

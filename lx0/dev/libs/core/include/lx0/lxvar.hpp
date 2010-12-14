@@ -161,6 +161,10 @@ namespace lx0 { namespace core {
         bool            isString        (void) const            { return _isType<detail::lxstring>(); }
         bool            isArray         (void) const            { return _isType<detail::lxarray>(); }
         bool            isMap           (void) const;
+        
+        bool            isHandle        (void) const;
+        std::string     handleType      (void) const;
+        void*           unwrap          (void);
 
         bool            __isBoolean     (void) const;
         bool            __isBinary      (void) const;           //!< Reserved for future binary blob support (specialization of an array)
@@ -237,6 +241,9 @@ namespace lx0 { namespace core {
 
             virtual bool        sharedType  (void) const    { return true; }    //!< On a set operation, is the r-value referenced or copied?
             virtual lxvalue*    clone       (void) const = 0;                   //!< Deep clone of the value
+            
+            virtual bool        isHandle    (void) const    { return false; }
+            virtual std::string handleType  (void) const    { _invalid(); return ""; }
             virtual void*       unwrap      (void)          { return nullptr; }
 
             virtual int         size        (void) const                { _invalid(); return 0; }
