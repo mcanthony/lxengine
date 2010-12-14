@@ -284,6 +284,13 @@ namespace lx0 { namespace core {
             names.push_back(it->first);
     }
 
+    //! Dynamically add a named function on the Element
+    void     
+    Element::addCallback(std::string name, Element::Function func)
+    {
+        mCallbackMap[name] += func;
+    }
+
     void
     Element::call (std::string name)
     {
@@ -321,11 +328,15 @@ namespace lx0 { namespace core {
     void
     Element::call (std::string name, std::vector<lxvar>& args)
     {
+        ElementPtr spElem = shared_from_this();
+
         auto jt = s_funcMap.find(name);
         if (jt != s_funcMap.end())
-            jt->second(shared_from_this(), args);
-        else
-            lx_warn("Ignoring call to unrecognized function '%s'", name.c_str());
+            jt->second(spElem, args);
+
+        auto it = mCallbackMap.find(name);
+        if (it != mCallbackMap.end())
+            it->second(spElem, args);
     }
 
 }}

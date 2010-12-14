@@ -260,7 +260,7 @@ namespace lx0 { namespace core { namespace detail {
     public:
                         ~JavascriptElem();
 
-        v8::Persistent<v8::Function> mFunc;
+        std::map<std::string, v8::Persistent<v8::Function>> mCallbacks;
     };
 
     //===========================================================================//
@@ -309,7 +309,8 @@ namespace lx0 { namespace core { namespace detail {
 
     JavascriptElem::~JavascriptElem()
     {
-        mFunc.Dispose();
+        for (auto it = mCallbacks.begin(); it != mCallbacks.end(); ++it)
+            it->second.Dispose();
     }
 
     //=======================================================================//
@@ -789,176 +790,189 @@ namespace lx0 { namespace core { namespace detail {
         return Persistent<Function>::New( templ->GetFunction() );
     }
 
+    namespace ElementWrapper
+    {
+
+        static v8::Handle<v8::Value> 
+        genericCallback (const v8::Arguments& args)
+        {
+            Element*    pThis = _nativeThis<Element>(args);
+            auto     funcName = _nativeData<const char>(args);
+                
+            std::vector<lxvar> lxargs;
+            lxargs.reserve( args.Length() );
+            for (int i = 0; i < args.Length(); ++i)
+                lxargs.push_back( _marshal(args[i]) );
+                
+            pThis->call(std::string(funcName), lxargs);
+                
+            return Undefined();
+        }
+
+        static Handle<Value> 
+        get_parentNode (Local<String> property, const AccessorInfo &info) 
+        {
+            auto      pContext  = _nativeData<JavascriptDoc>(info);
+            Element* pThis      = _nativeThis<Element>(info);
+
+            return _wrapObject(pContext->mElementCtor, pThis->parent().get());
+        }
+
+        static Handle<Value>
+        get_value (Local<String> property, const AccessorInfo &info) 
+        {
+            auto     pContext = _nativeData<JavascriptDoc>(info);
+            Element* pThis    = _nativeThis<Element>(info);
+                
+            /*
+                Is it really worth wrapping the lxvar in a custom object rather than 
+                converting it to a v8::Value?  
+
+                Originally, it was *not* converted because the code attempted to allow
+                the JS code to directly modify the underlying data (i.e. not a clone());
+                but that had problems (namely, the native code being notified about
+                property changes it should be aware of).  Since that's no longer being
+                pursued - is this wrapper actually adding any value or just more code?
+                */
+            std::shared_ptr<lxvar> spWrapper(new lxvar(pThis->value().clone()));
+            return _wrapSharedObject(pContext->mLxVarCtor, spWrapper, 0);
+        }
+
+        static void
+        set_value (Local<String> property, Local<Value> value, const AccessorInfo &info) 
+        {
+            Element* pThis    = _nativeThis<Element>(info);
+            lxvar    val      = _marshal(value);
+
+            pThis->value(val); 
+        }
+
+        static v8::Handle<v8::Value> 
+        removeChild (const v8::Arguments& args)
+        {
+            Element* pThis = _nativeThis<Element>(args);
+            Element* pChild = _marshal(args[0]).pointer<Element>();
+                          
+            if (!pChild->parent().get())
+            {
+                lx_debug("Ignoring call to remove orphaned Element.");
+                return Undefined();
+            }
+
+            if (pChild->parent().get() != pThis)
+            {
+                lx_warn("Ignoring call to remove Element from incorrect parent.");
+                return Undefined();
+            }
+
+            lx_check_error(pThis != nullptr);   // Should not be possible given the above conditions
+                
+            pThis->removeChild(pChild->shared_from_this());
+                
+            return Undefined();
+        }
+
+        static v8::Handle<v8::Value> 
+        appendChild (const v8::Arguments& args)
+        {
+            Element* pThis = _nativeThis<Element>(args);
+            Element* pChild = _marshal(args[0]).pointer<Element>();
+        
+            pThis->append(pChild->shared_from_this());
+
+            return Undefined();
+        }
+
+        static v8::Handle<v8::Value> 
+        getAttribute (const v8::Arguments& args)
+        {
+            Element* pThis = _nativeThis<Element>(args);
+            std::string name = _marshal(args[0]);
+            lxvar value = pThis->attr(name);
+
+            return _marshal(value);
+        }
+
+        static v8::Handle<v8::Value> 
+        setAttribute (const v8::Arguments& args)
+        {
+            Element* pThis = _nativeThis<Element>(args);
+            std::string name = _marshal(args[0]);
+            lxvar value = _marshal(args[1]);
+                
+            if (value.isString())
+                value = Engine::acquire()->parseAttribute(name, value.asString());
+
+            pThis->attr(name, value);
+
+            return Undefined();
+        }
+
+        /*!
+            @todo There's a design problem here: the C++ side of addFunction is adding a member
+            function to the class.  However, on the DOM side, it likely makes sense to have
+            functions that apply to individual elements (callbacks).
+            */
+        static v8::Handle<v8::Value>
+        addFunction (const v8::Arguments& args)
+        {
+            Element* pThis      = _nativeThis<Element>(args);
+            std::string name    = _marshal(args[0]);
+            Handle<Function> func = _marshal(args[1]);
+                
+            Persistent<Function> mFunc = Persistent<Function>::New(func);
+
+            auto spJElem = pThis->getComponent<JavascriptElem>("javascript");
+            spJElem->mCallbacks.insert(std::make_pair(name, mFunc));
+
+            Element::Function wrapper = [=] (ElementPtr spElem, std::vector<lxvar>& args) {
+                DocumentPtr spDoc = spElem->document();
+                if (spDoc.get())
+                {
+                    auto spJDoc = spDoc->getComponent<JavascriptDoc>("javascript");
+                    auto spJElem = spElem->getComponent<JavascriptElem>("javascript");
+
+                    if (!mFunc.IsEmpty())
+                    {
+                        Context::Scope context_scope(spJDoc->mContext);
+                        HandleScope handle_scope;
+                        Handle<Object> recv = spJDoc->mContext->Global();
+                        Handle<Value> callArgs[1];
+                        mFunc->Call(recv, 0, callArgs);
+                    }
+                    else
+                        lx_error("Callback wrapper set with an empty JS function!");
+                }
+            };
+            pThis->addCallback(name, wrapper);
+                
+            return Undefined();
+        }
+    }
+
     v8::Persistent<v8::Function>
     JavascriptDoc::_addElement (void)
     {
-        struct L
-        {
-            static v8::Handle<v8::Value> 
-            genericCallback (const v8::Arguments& args)
-            {
-                Element*    pThis = _nativeThis<Element>(args);
-                auto     funcName = _nativeData<const char>(args);
-                
-                std::vector<lxvar> lxargs;
-                lxargs.reserve( args.Length() );
-                for (int i = 0; i < args.Length(); ++i)
-                    lxargs.push_back( _marshal(args[i]) );
-                
-                pThis->call(std::string(funcName), lxargs);
-                
-                return Undefined();
-            }
-
-            static Handle<Value> 
-            get_parentNode (Local<String> property, const AccessorInfo &info) 
-            {
-                auto      pContext  = _nativeData<JavascriptDoc>(info);
-                Element* pThis      = _nativeThis<Element>(info);
-
-                return _wrapObject(pContext->mElementCtor, pThis->parent().get());
-            }
-
-            static Handle<Value>
-            get_value (Local<String> property, const AccessorInfo &info) 
-            {
-                auto     pContext = _nativeData<JavascriptDoc>(info);
-                Element* pThis    = _nativeThis<Element>(info);
-                
-                /*
-                    Is it really worth wrapping the lxvar in a custom object rather than 
-                    converting it to a v8::Value?  
-
-                    Originally, it was *not* converted because the code attempted to allow
-                    the JS code to directly modify the underlying data (i.e. not a clone());
-                    but that had problems (namely, the native code being notified about
-                    property changes it should be aware of).  Since that's no longer being
-                    pursued - is this wrapper actually adding any value or just more code?
-                 */
-                std::shared_ptr<lxvar> spWrapper(new lxvar(pThis->value().clone()));
-                return _wrapSharedObject(pContext->mLxVarCtor, spWrapper, 0);
-            }
-
-            static void
-            set_value (Local<String> property, Local<Value> value, const AccessorInfo &info) 
-            {
-                Element* pThis    = _nativeThis<Element>(info);
-                lxvar    val      = _marshal(value);
-
-                pThis->value(val); 
-            }
-
-            static v8::Handle<v8::Value> 
-            removeChild (const v8::Arguments& args)
-            {
-                Element* pThis = _nativeThis<Element>(args);
-                Element* pChild = _marshal(args[0]).pointer<Element>();
-                
-                if (!pChild->parent().get())
-                {
-                    lx_debug("Ignoring call to remove orphaned Element.");
-                    return Undefined();
-                }
-
-                if (pChild->parent().get() != pThis)
-                {
-                    lx_warn("Ignoring call to remove Element from incorrect parent.");
-                    return Undefined();
-                }
-
-                
-                pThis->removeChild(pChild->shared_from_this());
-                
-                return Undefined();
-            }
-
-            static v8::Handle<v8::Value> 
-            appendChild (const v8::Arguments& args)
-            {
-                Element* pThis = _nativeThis<Element>(args);
-                Element* pChild = _marshal(args[0]).pointer<Element>();
-        
-                pThis->append(pChild->shared_from_this());
-
-                return Undefined();
-            }
-
-            static v8::Handle<v8::Value> 
-            getAttribute (const v8::Arguments& args)
-            {
-                Element* pThis = _nativeThis<Element>(args);
-                std::string name = _marshal(args[0]);
-                lxvar value = pThis->attr(name);
-
-                return _marshal(value);
-            }
-
-            static v8::Handle<v8::Value> 
-            setAttribute (const v8::Arguments& args)
-            {
-                Element* pThis = _nativeThis<Element>(args);
-                std::string name = _marshal(args[0]);
-                lxvar value = _marshal(args[1]);
-                
-                if (value.isString())
-                    value = Engine::acquire()->parseAttribute(name, value.asString());
-
-                pThis->attr(name, value);
-
-                return Undefined();
-            }
-
-            static v8::Handle<v8::Value>
-            addFunction (const v8::Arguments& args)
-            {
-                Element* pThis      = _nativeThis<Element>(args);
-                std::string name    = _marshal(args[0]);
-                Handle<Function> func = _marshal(args[1]);
-
-                auto spJElem = pThis->getComponent<JavascriptElem>("javascript");
-                spJElem->mFunc = Persistent<Function>::New(func);
-
-                Element::Function wrapper = [] (ElementPtr spElem, std::vector<lxvar>& args) {
-                    DocumentPtr spDoc = spElem->document();
-                    if (spDoc.get())
-                    {
-                        auto spJDoc = spDoc->getComponent<JavascriptDoc>("javascript");
-                        auto spJElem = spElem->getComponent<JavascriptElem>("javascript");
-
-                        if (!spJElem->mFunc.IsEmpty())
-                        {
-                            Context::Scope context_scope(spJDoc->mContext);
-                            HandleScope handle_scope;
-                            Handle<Object> recv = spJDoc->mContext->Global();
-                            Handle<Value> callArgs[1];
-                            spJElem->mFunc->Call(recv, 0, callArgs);
-                        }
-                    }
-                };
-                Element::addFunction(name, wrapper);
-                
-                return Undefined();
-            }
-        };
+        namespace W = ElementWrapper;
 
         Handle<FunctionTemplate> templ( FunctionTemplate::New() );
 
         // Create an anonymous type which will be used for the Element wrapper
         Handle<ObjectTemplate> objInst( templ->InstanceTemplate() );
         objInst->SetInternalFieldCount(1);
-        objInst->SetAccessor(String::New("parentNode"),  L::get_parentNode, 0, External::New(this));
-        objInst->SetAccessor(String::New("value"),       L::get_value, L::set_value, External::New(this));
+        objInst->SetAccessor(String::New("parentNode"),  W::get_parentNode, 0, External::New(this));
+        objInst->SetAccessor(String::New("value"),       W::get_value, W::set_value, External::New(this));
         
         // Access the Javascript prototype for the function - i.e. my_func.prototype - 
         // and add the necessary properties and methods.
         //
         Handle<Template> proto_t( templ->PrototypeTemplate() );
-        proto_t->Set("getAttribute",  FunctionTemplate::New(L::getAttribute, External::New(this)));
-        proto_t->Set("setAttribute",  FunctionTemplate::New(L::setAttribute, External::New(this)));
-        proto_t->Set("appendChild", FunctionTemplate::New(L::appendChild, External::New(this)));
-        proto_t->Set("removeChild", FunctionTemplate::New(L::removeChild, External::New(this)));
+        proto_t->Set("getAttribute",  FunctionTemplate::New(W::getAttribute, External::New(this)));
+        proto_t->Set("setAttribute",  FunctionTemplate::New(W::setAttribute, External::New(this)));
+        proto_t->Set("appendChild", FunctionTemplate::New(W::appendChild, External::New(this)));
+        proto_t->Set("removeChild", FunctionTemplate::New(W::removeChild, External::New(this)));
 
-        proto_t->Set("addFunction", FunctionTemplate::New(L::addFunction, External::New(this)));
+        proto_t->Set("addFunction", FunctionTemplate::New(W::addFunction, External::New(this)));
 
         // Add any generic functions added by other plug-ins
         //
@@ -971,7 +985,7 @@ namespace lx0 { namespace core { namespace detail {
         for (auto it = funcNames.begin(); it != funcNames.end(); ++it)
         {
             void* pData = (void*)it->c_str();
-            proto_t->Set(it->c_str(), FunctionTemplate::New(L::genericCallback, External::New(pData)) );
+            proto_t->Set(it->c_str(), FunctionTemplate::New(W::genericCallback, External::New(pData)) );
         }
 
         // Store a persistent reference to the function which will be used to create

@@ -111,10 +111,10 @@ namespace lx0 { namespace core { namespace v8bind
 
         lx_check_error(self->InternalFieldCount() == 1);
         Local<External> wrap = Local<External>::Cast(self->GetInternalField(0));
+        lx_check_error(!wrap.IsEmpty(), 
+            "Internal field of Javascript object is null.  Is this a valid wrapped object?");
         
         NativeType* pThis = reinterpret_cast<NativeType*>( wrap->Value() );
-        lx_check_error(pThis != nullptr);
-
         return pThis;
     }
 

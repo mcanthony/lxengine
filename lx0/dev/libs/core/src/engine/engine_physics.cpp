@@ -598,7 +598,7 @@ namespace lx0 { namespace core { namespace detail {
     ElementPtr 
     getElementPtrFor (btCollisionObject* pBtObject)
     {
-        lx_check_error(pBtObject,  "Trying to get ElementPtr for a null object!");
+        lx_check_error(pBtObject != nullptr,  "Trying to get ElementPtr for a null object!");
 
         void* pUserPtr = pBtObject->getUserPointer();
         if (pUserPtr)

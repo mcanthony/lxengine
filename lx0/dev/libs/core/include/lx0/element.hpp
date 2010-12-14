@@ -44,6 +44,7 @@
 #include <lx0/detail/forward_decls.hpp>
 #include <lx0/detail/dom_base.hpp>
 #include <lx0/lxvar.hpp>
+#include <lx0/slot.hpp>
 
 
 namespace lx0 { namespace core {  
@@ -124,8 +125,11 @@ namespace lx0 { namespace core {
         static void     addFunction     (std::string name, std::function<void(ElementPtr, std::vector<lxvar>&)> func);
         static void     getFunctions    (std::vector<std::string>& names);
 
+        void            addCallback     (std::string name, Function func);
+
     protected:
         typedef std::map<std::string,Function>  FunctionMap;
+        typedef std::map<std::string,lx0::core::slot<void (ElementPtr, std::vector<lxvar>&)>> CallbackMap;
         typedef std::map<std::string, lxvar>    AttrMap;
         typedef std::deque<ElementPtr>          ElemList;
 
@@ -140,6 +144,7 @@ namespace lx0 { namespace core {
         ElementPtr      mspParent;
         ElemList        mChildren;
         mutable lxvar   mValue; 
+        CallbackMap     mCallbackMap;
     };
 
 }}

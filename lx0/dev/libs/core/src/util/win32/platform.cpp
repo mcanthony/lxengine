@@ -41,7 +41,8 @@ namespace lx0 { namespace util {
     void
     lx_message_box (std::string caption, std::string message)
     {
-        ::MessageBoxA(NULL, message.c_str(), caption.c_str(), MB_OK);
+        HWND hWnd = ::GetForegroundWindow();
+        ::MessageBoxA(hWnd, message.c_str(), caption.c_str(), MB_OK);
     }
 
     void
