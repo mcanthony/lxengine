@@ -936,7 +936,7 @@ namespace lx0 { namespace core { namespace detail {
                     {
                         Context::Scope context_scope(spJDoc->mContext);
                         HandleScope handle_scope;
-                        Handle<Object> recv = spJDoc->mContext->Global();
+                        Handle<Object> recv = _wrapObject(spJDoc->mElementCtor, spElem.get());
                         Handle<Value> callArgs[1];
                         mFunc->Call(recv, 0, callArgs);
                     }
@@ -1026,9 +1026,26 @@ namespace lx0 { namespace core { namespace detail {
         return Persistent<Function>::New( templ->GetFunction() );
     }
 
+    namespace MathWrappers
+    {
+        Handle<Value> sin (const v8::Arguments& args)
+        {
+            float a = _marshal(args[0]);
+            return _marshal( ::sin(a) );
+        }
+
+        Handle<Value> cos (const v8::Arguments& args)
+        {
+            float a = _marshal(args[0]);
+            return _marshal( ::cos(a) );
+        }
+    }
+
     void
     JavascriptDoc::_addMath (void)
     {
+        namespace W = MathWrappers;
+
         struct Math
         {
             static v8::Handle<v8::Value> random (const v8::Arguments& args)
@@ -1049,7 +1066,12 @@ namespace lx0 { namespace core { namespace detail {
         objInst->SetInternalFieldCount(1);
 
         Handle<Template> proto_t( templ->PrototypeTemplate() );
+        auto method = [&proto_t] (const char* name, InvocationCallback cb) {
+            proto_t->Set(name, FunctionTemplate::New(cb));
+        };
         proto_t->Set("random",  FunctionTemplate::New(Math::random));
+        method("sin",   W::sin);
+        method("cos",   W::cos);
 
         // Create the function and add it to the global object 
         //

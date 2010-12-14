@@ -67,6 +67,21 @@
               var e = document.getElementById("projectile" + (projectileNumber-1));
               e.addFunction("onCollision", function() { 
                 e.parentNode.removeChild(e);
+                
+                var pos = $(this).attr("translation");
+                for (var i = 0; i <= 6.28318531; i += 6.28318531/8)
+                {
+                  var oy = Math.sin(i);
+                  var ox = Math.cos(i);
+                  
+                  var ref = $("<Ref/>");
+                  ref.attr("ref", "unit_cube");
+                  ref.attr("max_extent", ".25");
+                  ref.attr("color", "Blue");
+                  ref.attr("translation", [ pos[0] + ox, pos[1] + oy, pos[2] ]);
+                  ref.attr("mass", 4);
+                  $("#field").append(ref);
+                }
               });          
             }
             
@@ -98,13 +113,15 @@
       <Ref id="ship3" ref="mesh_ship" max_extent="1.0" color="#308018" translation="[ 1,  1, 1]" />
       <Group id="projectiles" />
 
-      <Ref ref="unit_cube" max_extent=".75" color="Yellow" translation="[0, 6, 1]" mass="4"/>
-      <Ref ref="unit_cube" max_extent=".75" color="Yellow" translation="[.6, 7, 1]" mass="4"/>
-      <Ref ref="unit_cube" max_extent=".75" color="Yellow" translation="[-.6, 7, 1]" mass="4"/>
+      <Group id="field">
+        <Ref ref="unit_cube" max_extent=".75" color="Yellow" translation="[0, 6, 1]" mass="4"/>
+        <Ref ref="unit_cube" max_extent=".75" color="Yellow" translation="[.6, 7, 1]" mass="4"/>
+        <Ref ref="unit_cube" max_extent=".75" color="Yellow" translation="[-.6, 7, 1]" mass="4"/>
 
-      <Ref ref="unit_cube" max_extent=".75" color="Green" translation="[-.7, 8.5, 1]" mass="12"/>
-      <Ref ref="unit_cube" max_extent=".75" color="Green" translation="[.7, 8.5, 1]" mass="12"/>
-      <Ref ref="unit_cube" max_extent=".75" color="Green" translation="[1.5, 9, 1]" mass="12"/>
-      <Ref ref="unit_cube" max_extent=".75" color="Green" translation="[-1.5, 9, 1]" mass="12"/>
+        <Ref ref="unit_cube" max_extent=".75" color="Green" translation="[-.7, 8.5, 1]" mass="12"/>
+        <Ref ref="unit_cube" max_extent=".75" color="Green" translation="[.7, 8.5, 1]" mass="12"/>
+        <Ref ref="unit_cube" max_extent=".75" color="Green" translation="[1.5, 9, 1]" mass="12"/>
+        <Ref ref="unit_cube" max_extent=".75" color="Green" translation="[-1.5, 9, 1]" mass="12"/>
+      </Group>
     </Scene>
 </Root>

@@ -237,6 +237,7 @@ namespace lx0 { namespace core {
 
             virtual bool        sharedType  (void) const    { return true; }    //!< On a set operation, is the r-value referenced or copied?
             virtual lxvalue*    clone       (void) const = 0;                   //!< Deep clone of the value
+            virtual void*       unwrap      (void)          { return nullptr; }
 
             virtual int         size        (void) const                { _invalid(); return 0; }
             virtual lxvar       at          (int i)                     { _invalid(); return lxvar(); }

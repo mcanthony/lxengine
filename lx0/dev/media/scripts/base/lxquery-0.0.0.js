@@ -21,6 +21,10 @@ LxQuery.prototype = {
         var re_id = /^#(\w+)$/;
         var re_tag = /^(\w+)$/;
 
+        if (typeof(selector) == "object") {
+            return this._select([selector]);
+        }
+
         var result = re_singleTag.exec(selector);
         if (result) {
             var elem = document.createElement(result[1]);

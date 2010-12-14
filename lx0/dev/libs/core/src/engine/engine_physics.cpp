@@ -637,8 +637,21 @@ namespace lx0 { namespace core { namespace detail {
                     // Objects like the ground plane are not in the Document.
                     if (spElemA.get() && spElemB.get())
                     {
-                        spElemA->call("onCollision");
-                        spElemB->call("onCollision");
+                        struct Wrapper : public lx0::core::detail::lxvalue
+                        {
+                            virtual detail::lxvalue* clone() const { auto p = new Wrapper; p->mspValue = mspValue; return p; } 
+                            virtual void* unwrap() { return mspValue.get(); }
+                            ElementPtr mspValue;
+                        };
+
+                        Wrapper* wrapper = new Wrapper;
+                        wrapper->mspValue = spElemB;
+                        std::vector<lxvar> args;
+                        args.push_back( lxvar(wrapper) );
+
+                        spElemA->call("onCollision", args);
+                        wrapper->mspValue = spElemA;
+                        spElemB->call("onCollision", args);
                     }
                 }
 		    }
