@@ -39,6 +39,28 @@ using namespace lx0::core;
 
 namespace lx0 { namespace util {
 
+
+    /*!
+        \todo The current implementation actually returns true _if the file can
+        be opened_.  This is actually a subset of the files that exist.  This
+        needs be clarified via a renaming of this method.
+     */
+    bool
+    lx_file_exists (std::string filename)
+    {
+        std::string s;
+        FILE* fp;
+        fopen_s(&fp, filename.c_str(), "r");
+
+        if (fp == nullptr)
+            return false;
+        else 
+        {
+            fclose(fp);
+            return true;
+        }
+    }
+
     /*!
         Inefficient, but simple and convenient.
      */

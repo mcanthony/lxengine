@@ -34,6 +34,8 @@
 
 namespace lx0 { namespace core {
 
+    void lx_init();
+
     void lx_assert (bool condition);
     void lx_assert (bool condition, const char* format, ...);
 

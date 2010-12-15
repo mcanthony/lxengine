@@ -33,7 +33,16 @@
 #include <windows.h>
 #include <windowsx.h>
 
+#include <gl/glew.h>
+#include <gl/wglew.h>
+#include <gl/GL.h>
+
+
 using namespace lx0::core;
+
+#define m_hWnd reinterpret_cast<HWND&>(m_opaque_hWnd)
+#define m_hDC  reinterpret_cast<HDC&>(m_opaque_hDC)
+#define m_hRC  reinterpret_cast<HGLRC&>(m_opaque_hRC)
 
 namespace lx0 { namespace canvas { namespace platform {
 
@@ -103,7 +112,7 @@ namespace lx0 { namespace canvas { namespace platform {
     Win32WindowClass Win32WindowBase::s_windowClass((WNDPROC)Win32WindowBase::windowProc);
 
     Win32WindowBase::Win32WindowBase()
-        : m_hWnd (NULL)
+        : m_opaque_hWnd (NULL)
     {
         s_windowClass.registerClass();
     }
@@ -162,7 +171,7 @@ namespace lx0 { namespace canvas { namespace platform {
                 {
                     LPCREATESTRUCT pCreateStruct = reinterpret_cast<LPCREATESTRUCT>(lParam);
                     Win32WindowBase* pWin = reinterpret_cast<Win32WindowBase*>(pCreateStruct->lpCreateParams);
-                    pWin->m_hWnd = (void*)hWnd;
+                    pWin->m_opaque_hWnd = (void*)hWnd;
                     SetWindowLongPtr(hWnd, GWL_USERDATA, (LONG)(LONG_PTR)pWin);
 
                     pWin->impCreate();
@@ -280,6 +289,272 @@ namespace lx0 { namespace canvas { namespace platform {
         return 0;
     }
 
+
+    //===========================================================================//
+
+    OpenGL32Window::OpenGL32Window (const char* pszTitle, int w, int h, bool bResizeable)
+        : m_opaque_hDC     (0)
+        , m_opaque_hRC   (0)
+    {
+        DWORD dwStyle   = WS_OVERLAPPEDWINDOW | WS_CLIPSIBLINGS | WS_CLIPCHILDREN;
+        DWORD dwExStyle = WS_EX_APPWINDOW | WS_EX_WINDOWEDGE;
+
+        // Check various options
+        //
+        if (bResizeable) 
+            dwStyle |= WS_SIZEBOX;
+        else
+            dwStyle &= ~WS_SIZEBOX;
+
+        // The input width and height refer to the client area.   Adjust the
+        // total window size accordingly based on the window frame style.
+        //
+        RECT rect = { 0, 0, w, h };
+        ::AdjustWindowRectEx(&rect, dwStyle, FALSE, dwExStyle);
+
+        HINSTANCE hInstance = GetModuleHandle(NULL);
+        HWND hWnd = CreateWindowEx(dwExStyle, 
+                         s_windowClass.className(), 
+                         pszTitle,
+                         dwStyle,
+                         CW_USEDEFAULT,
+                         CW_USEDEFAULT,
+                         rect.right - rect.left,
+                         rect.bottom - rect.top,
+                         NULL, NULL, 
+                         hInstance, 
+                         this);	
+        if (!hWnd)    
+            lx_error("Could not create window");
+    }
+
+    OpenGL32Window::~OpenGL32Window (void)
+    {
+        lx_check_error(m_hRC == 0, "Rendering context should be destroyed before the object is deleted.");
+        lx_check_error(m_hDC == 0, "Device context should be released before the object is deleted.");
+    }
+
+    // This is a lower-level hook than the imp/slot mechanism.  Providing a custom WNDPROC allows the 
+    // derived class to implement message-specific behavior for any arbitrary message without 
+    // imposing that the base class provide wrapper signals for every signal event.
+    //
+    int __stdcall OpenGL32Window::windowProc(void* hWnd, unsigned int uMsg, unsigned int* wParam, long* lParam )
+    {
+        switch (uMsg)
+        {
+        case WM_ERASEBKGND:
+            {
+                // See NeHe Productions Lesson 42, should reduce flicker
+                return 0;
+            }
+            break;
+
+        case WM_GETMINMAXINFO:
+            {
+                // Since this is a window intended for rendering, set a minimum size
+                //
+                MINMAXINFO* pInfo = reinterpret_cast<LPMINMAXINFO>(lParam);
+                pInfo->ptMinTrackSize.x = 200;
+                pInfo->ptMinTrackSize.y = 200;
+            }
+            break;
+        }
+
+        return Win32WindowBase::windowProc(hWnd, uMsg, wParam, lParam);
+    }  
+
+    void OpenGL32Window::impCreate() 
+    {
+        // The OpenGL does have some custom window handlers that aren't general enough
+        // to warrant having wrappers in the parent class.
+        overrideParentWndProc(windowProc);
+
+        // Create the rendering context
+        createGlContext();
+    }
+
+    void OpenGL32Window::impDestroy()
+    {
+        destroyGlContext();
+    }
+
+    bool OpenGL32Window::impRedraw()
+    {
+        // The default behavior of the imp/signal is to call the imp method, then the signals.
+        // However, in this case the imp methods wants to swap the buffer *after* the slots
+        // have been called.  
+        // 
+        slotRedraw();
+
+        ::SwapBuffers(::GetDC(m_hWnd));
+
+        return false;
+    }
+
+    bool OpenGL32Window::impResize(int width, int height) 
+    {
+        // This might not be helpful if the client code is rendering to multiple sub-windows,
+        // but it most cases it will be helpful and not cause problems for the multiple
+        // sub-window client.
+        //
+        glViewport(0, 0, width, height);
+
+        return true;
+    }
+
+
+    /*!
+        Creating the context is composed of several steps:
+
+        1) Create the "pixel format" - i.e. choose a rendering context type from among those
+           available on the hardware.  Not all graphics cards support the same set of formats.
+    
+        2) Initialize GLEW.  GLEW is being used as the interface to OpenGL to avoid having
+           to manually pull in all the extensions.  No need to unnecessarily duplicate 
+           boilerplate code.
+
+        3) Create the OpenGL 3.2 context using the pixel format found in (1) and the methods
+           made available via GLEW in (2).
+     */
+    void 
+    OpenGL32Window::createGlContext()
+    {
+        lx_check_error(m_hDC == 0, "Context is non-zero.  Already initialized?");
+        lx_check_error(m_hRC == 0, "Context is non-zero.  Already initialized?");
+
+        m_hDC = GetDC(m_hWnd);
+        m_hRC = 0;
+
+        PIXELFORMATDESCRIPTOR pfd;
+        ::memset(&pfd, 0, sizeof(PIXELFORMATDESCRIPTOR));
+
+        pfd.dwFlags |= PFD_SUPPORT_OPENGL | PFD_DRAW_TO_WINDOW | PFD_DOUBLEBUFFER;
+        pfd.iPixelType = PFD_TYPE_RGBA;
+        pfd.iLayerType = PFD_MAIN_PLANE;
+        pfd.cColorBits = 32;
+
+
+        GLuint uPixelFormat = ::ChoosePixelFormat(m_hDC, &pfd);
+        if (!uPixelFormat)
+            lx_error("Cannot find suitable pixel format");
+
+        if (::SetPixelFormat(m_hDC, uPixelFormat, &pfd) == FALSE)
+            lx_error("Cannot set pixel format");
+
+        // Create a temporary context so that GLEW will initialize properly
+        //
+        HGLRC tempRC = wglCreateContext(m_hDC);
+
+        if (!tempRC)
+            lx_error("Cannot create OpenGL context");
+
+        if (!wglMakeCurrent(m_hDC, tempRC))
+            lx_error("Cannot set rendering context");
+
+        // Initialize GLEW (pulls in all the OpenGL extension functions)
+        //
+        glewInit();
+
+        // Create the OpenGL 3.2 context using wglCreateContextAttribsARB.
+        //
+        int attribs[] =
+        {
+            WGL_CONTEXT_MAJOR_VERSION_ARB, 3,
+            WGL_CONTEXT_MINOR_VERSION_ARB, 2,
+            WGL_CONTEXT_FLAGS_ARB, 
+            WGL_CONTEXT_FORWARD_COMPATIBLE_BIT_ARB,
+            WGL_CONTEXT_PROFILE_MASK_ARB, 
+            WGL_CONTEXT_COMPATIBILITY_PROFILE_BIT_ARB,
+            0
+        };
+    
+        PFNWGLCREATECONTEXTATTRIBSARBPROC wglCreateContextAttribsARB = 0;
+        wglCreateContextAttribsARB = (PFNWGLCREATECONTEXTATTRIBSARBPROC) wglGetProcAddress("wglCreateContextAttribsARB");
+
+        if (wglCreateContextAttribsARB)
+        {
+            // Create the new context and delete the previous created temporary context
+            m_hRC = wglCreateContextAttribsARB(m_hDC,0, attribs);
+            wglMakeCurrent(0,0);
+            wglDeleteContext(tempRC);		   
+            wglMakeCurrent(m_hDC, m_hRC);
+        }
+        else
+        {
+            lx_warn("Using a pre-OpenGL 3.2 context");
+            m_hRC = tempRC;
+        }
+    
+        // Check post-conditions
+        //
+        lx_check_error(m_hRC != 0, "Valid rendering context not created!");
+        lx_check_error(m_hDC != 0, "Valid device context not created!");
+    }
+
+    void
+    OpenGL32Window::destroyGlContext()
+    {
+        // Release the rendering context
+        if (m_hRC) 
+        {
+            if (!wglMakeCurrent(0, 0))					
+                lx_error("Release Of DC And RC Failed.");
+
+            if (!wglDeleteContext(m_hRC))
+                lx_error("Release Rendering Context Failed.");
+
+            m_hRC = 0;
+        }
+
+        if (m_hDC) 
+        {
+            if (!ReleaseDC(m_hWnd, m_hDC))
+                lx_error("Cannot Release Window Context");
+            m_hDC = 0;
+        }
+    }
+
+    //--------------------------------------------------------------------------//
+
+    void 
+    WindowsEventHost::create (Win32WindowBase* pWin, const char* id, bool bVisible)
+    {
+        m_windows.insert(std::make_pair(id, pWin));
+        if (bVisible)
+            pWin->show();
+    }
+
+    bool 
+    WindowsEventHost::processEvents()
+    {
+        bool bQuit = false;
+
+        MSG uMsg;
+        while (::PeekMessage(&uMsg, 0, 0, 0, PM_REMOVE))
+        {
+            ::TranslateMessage(&uMsg);
+            ::DispatchMessage(&uMsg);
+
+            if (uMsg.message == WM_QUIT)
+                bQuit = true;
+        }
+
+        return bQuit;
+    }
+
+    void 
+    WindowsEventHost::destroyWindows()
+    {
+        for (WindowMap::iterator it = m_windows.begin(); it != m_windows.end(); ++it)
+            it->second->destroy();
+    }
+
+    void                
+    WindowsEventHost::shutdown (void)
+    {
+        destroyWindows();
+        ::PostQuitMessage(0);
+    }
 
 }}}
 

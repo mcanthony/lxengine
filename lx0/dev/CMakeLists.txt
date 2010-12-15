@@ -76,7 +76,10 @@ set( LX_ALL_LIBS
     ${BULLET_LIBS} 
     ${OIS_LIBS} 
     ${OPENAL_LIBS} 
-    ${VORBIS_LIBS})
+    ${VORBIS_LIBS}
+    opengl32.lib
+    glu32.lib
+    )
 
 macro(copy_media_file2 FILE FOLDER)
     configure_file( ${FILE}  ${CMAKE_BINARY_DIR}/${FOLDER}  COPYONLY)

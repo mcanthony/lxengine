@@ -90,17 +90,7 @@ namespace lx0 { namespace core {
 
     Engine::Engine()
     {
-        // Define a helper lambda function that returns a function (this effectively 
-        // acts as runtime template function).
-        auto prefix_print = [](std::string prefix) -> std::function<void(const char*)> {
-            return [prefix](const char* s) { std::cout << prefix << s << std::endl; };
-        };
-        slotDebug   = prefix_print("DBG: ");
-        slotLog     = prefix_print("LOG: ");
-        slotWarn    = prefix_print("WARN: ");
-        slotError   = prefix_print("ERROR: ");
-        slotFatal   = prefix_print("FATAL: ");
-
+        lx_init();
         lx_log("lx::core::Engine ctor");
 
         {
@@ -110,6 +100,7 @@ namespace lx0 { namespace core {
             lx_debug("    _MSC_VER = 0x%04x", _MSC_VER);
             lx_debug("    sizeof(char) = %u bytes", sizeof(char));
             lx_debug("    sizeof(int) = %u bytes", sizeof(int));
+            lx_debug("    sizeof(long) = %u bytes", sizeof(long));
             lx_debug("    sizeof(float) = %u bytes", sizeof(float));
             lx_debug("    sizeof(void*) = %u bytes", sizeof(void*));
             lx_debug("    sizeof(std::unique_ptr<int>) = %u bytes", sizeof(std::unique_ptr<int>));

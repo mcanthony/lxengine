@@ -42,6 +42,8 @@
 #pragma once
 
 #include <lx0/slot.hpp>
+#include <map>
+#include <string>
 
 namespace lx0 { namespace canvas {
 
@@ -214,8 +216,7 @@ namespace lx0 { namespace canvas {
             static int __stdcall windowProc(void* hWnd, unsigned int uMsg, unsigned int* wParam, long* lParam );
             static Win32WindowClass s_windowClass;
 
-            //HWND        m_hWnd;
-            void*         m_hWnd;
+            void*         m_opaque_hWnd;
 
             MouseState  m_mouse;
             ButtonState m_lButton;
@@ -223,7 +224,69 @@ namespace lx0 { namespace canvas {
             ButtonState m_rButton;
         };
 
+
+
+        //===========================================================================//
+        //! Canvas window that create an OpenGL context
+        /*!
+            Further documentation TBD.
+         */
+        class OpenGL32Window : public Win32WindowBase
+        {
+        public:
+    
+            //@name Constructor / Destructor
+            //@{
+            OpenGL32Window  (const char* pszTitle, int w, int h, bool bResizeable);
+            ~OpenGL32Window (void);
+            //@}
+
+            //@name Window Functions
+            //@{
+            //@}
+
+        protected:
+
+            //! Custom WNDPROC
+            static int __stdcall windowProc(void* hWnd, unsigned int uMsg, unsigned int* wParam, long* lParam );
+   
+            //@name Event Handlers
+            //@{
+            virtual void impCreate();
+            virtual void impDestroy();   
+            virtual bool impRedraw();
+            virtual bool impResize(int width, int height);
+            //@}
+
+
+        private:
+            void    createGlContext     (void);
+            void    destroyGlContext    (void);
+    
+            void*   m_opaque_hDC;   //!< Handle to Device Context
+            void*   m_opaque_hRC;   //!< Handle to OpenGL Rendering Context
+        };
+
+
+        //===========================================================================//
+        //!
+        /*!
+         */
+        class WindowsEventHost
+        {
+        public:
+            void                create          (Win32WindowBase* pWin, const char* id, bool bVisible);
+            bool                processEvents   (void);
+            void                shutdown        (void);
+
+        protected:
+            void                destroyWindows  (void);
+
+            typedef std::map<std::string, Win32WindowBase*> WindowMap;
+            WindowMap   m_windows;
+        };
+
     } // namespace platform
 
 
-}}
+}} // namespace lx0::canvas
