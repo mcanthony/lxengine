@@ -55,6 +55,9 @@ namespace lx0 { namespace core {
 
     inline point3   add             (const point3& p, const vector3& v) { return cast<point3&>(p.ogreVec + v.ogreVec); }
     inline point3   sub             (const point3& p, const vector3& v) { return cast<point3&>(p.ogreVec - v.ogreVec); }
+    inline vector3  sub             (const point3& p, const point3& q)  { return cast<vector3&>(p.ogreVec - q.ogreVec); }
+    inline bool     equal           (const point3& p, const point3& q)  { return p.x == q.x && p.y == q.y && p.z == q.z; }
+    inline bool     equiv           (const point3& p, const point3& q, float e) { return (abs(p.x - q.x) < e) && (abs(p.y - q.y) < e) && (abs(p.z - q.z) < e); }  
 
     inline float    distance                    (const point3& a, const point3& b)  { return a.ogreVec.distance(b.ogreVec); }
     inline float    distance_squared            (const point3& a, const point3& b)  { return a.ogreVec.squaredDistance(b.ogreVec); }

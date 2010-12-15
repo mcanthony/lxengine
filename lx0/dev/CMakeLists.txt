@@ -43,6 +43,7 @@ set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY "${PROJECT_BINARY_DIR}")
 # LxEngine
 
 include_directories( libs/core/include )
+include_directories( libs/lxcanvas/include )
 
 # Boost
 include_directories(${Boost_INCLUDE_DIR})
@@ -67,7 +68,15 @@ message(STATUS "CMAKE_EXE_LINKER_FLAGS=${CMAKE_EXE_LINKER_FLAGS}")
 # Helper macros
 #
 
-set( LX_ALL_LIBS ${OGRE_LIBRARIES} lx0 ${V8_LIBS} ${BULLET_LIBS} ${OIS_LIBS} ${OPENAL_LIBS} ${VORBIS_LIBS})
+set( LX_ALL_LIBS 
+    lx0 
+    lxcanvas 
+    ${OGRE_LIBRARIES} 
+    ${V8_LIBS} 
+    ${BULLET_LIBS} 
+    ${OIS_LIBS} 
+    ${OPENAL_LIBS} 
+    ${VORBIS_LIBS})
 
 macro(copy_media_file2 FILE FOLDER)
     configure_file( ${FILE}  ${CMAKE_BINARY_DIR}/${FOLDER}  COPYONLY)
