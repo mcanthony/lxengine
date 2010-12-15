@@ -164,10 +164,10 @@ main (int argc, char** argv)
 
     lx_init();
 
-    WindowsEventHost host;
+    CanvasHost host;
     Renderer renderer;
 
-    auto pWin = new OpenGL32Window("OpenGL 3.2", 800, 400, false);
+    auto pWin = new CanvasGL("OpenGL 3.2", 800, 400, false);
     host.create(pWin, "canvas", false);
     renderer.initialize();
     renderer.resize(800, 400);

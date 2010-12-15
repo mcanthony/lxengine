@@ -121,7 +121,7 @@ namespace lx0 { namespace canvas {
             slot/signal event mechanism for external code to hook into.   The general pattern is
             this:
     
-            - Win32WindowBase's WNDPROC translates the Win32 data into more convenient form
+            - CanvasBase's WNDPROC translates the Win32 data into more convenient form
             - The "imp" method for the message is called.  If it return false, processing
               stops here.
             - The signal is emitted to any connected slots
@@ -146,13 +146,13 @@ namespace lx0 { namespace canvas {
               a new imp() and slot for the new message.  The new WNDPROC should call the base
               WNDPROC to handle all the usual messages.
          */
-        class Win32WindowBase
+        class CanvasBase
         {
         public:
             ///@name Constructor / Destructor
             ///@{
-                        Win32WindowBase     (void);
-                        ~Win32WindowBase    (void);
+                        CanvasBase     (void);
+                        ~CanvasBase    (void);
             ///@}
                 
             ///@name Window Functions
@@ -231,14 +231,14 @@ namespace lx0 { namespace canvas {
         /*!
             Further documentation TBD.
          */
-        class OpenGL32Window : public Win32WindowBase
+        class CanvasGL : public CanvasBase
         {
         public:
     
             //@name Constructor / Destructor
             //@{
-            OpenGL32Window  (const char* pszTitle, int w, int h, bool bResizeable);
-            ~OpenGL32Window (void);
+            CanvasGL  (const char* pszTitle, int w, int h, bool bResizeable);
+            ~CanvasGL (void);
             //@}
 
             //@name Window Functions
@@ -272,17 +272,17 @@ namespace lx0 { namespace canvas {
         //!
         /*!
          */
-        class WindowsEventHost
+        class CanvasHost
         {
         public:
-            void                create          (Win32WindowBase* pWin, const char* id, bool bVisible);
+            void                create          (CanvasBase* pWin, const char* id, bool bVisible);
             bool                processEvents   (void);
             void                shutdown        (void);
 
         protected:
             void                destroyWindows  (void);
 
-            typedef std::map<std::string, Win32WindowBase*> WindowMap;
+            typedef std::map<std::string, CanvasBase*> WindowMap;
             WindowMap   m_windows;
         };
 

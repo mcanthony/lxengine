@@ -109,29 +109,29 @@ namespace lx0 { namespace canvas { namespace platform {
 
     //===========================================================================//
 
-    Win32WindowClass Win32WindowBase::s_windowClass((WNDPROC)Win32WindowBase::windowProc);
+    Win32WindowClass CanvasBase::s_windowClass((WNDPROC)CanvasBase::windowProc);
 
-    Win32WindowBase::Win32WindowBase()
+    CanvasBase::CanvasBase()
         : m_opaque_hWnd (NULL)
     {
         s_windowClass.registerClass();
     }
 
-    Win32WindowBase::~Win32WindowBase()
+    CanvasBase::~CanvasBase()
     {
         lx_check_error(m_hWnd == NULL, "Call destroy() on the window before deleting it! "
             "This allows for proper clean-up of other objects which may depend on the window.");
     }
 
     void
-    Win32WindowBase::show (void) 
+    CanvasBase::show (void) 
     { 
         ::ShowWindow((HWND)m_hWnd, SW_SHOWDEFAULT);  
         ::UpdateWindow((HWND)m_hWnd); 
     }
 
     void
-    Win32WindowBase::invalidate (void)
+    CanvasBase::invalidate (void)
     {
         // Notify to Windows that the full window must be redrawn.  
         // This signals a WM_PAINT message.
@@ -139,7 +139,7 @@ namespace lx0 { namespace canvas { namespace platform {
     }
 
     void        
-    Win32WindowBase::destroy (void) 
+    CanvasBase::destroy (void) 
     { 
         ::DestroyWindow((HWND)m_hWnd);
         m_hWnd = 0; 
@@ -148,14 +148,14 @@ namespace lx0 { namespace canvas { namespace platform {
     }
 
     void 
-    Win32WindowBase::overrideParentWndProc (void* wndProc)
+    CanvasBase::overrideParentWndProc (void* wndProc)
     {
         ::SetWindowLongPtr((HWND)m_hWnd, GWLP_WNDPROC, (LONG)(LONG_PTR)wndProc);
     }
 
 
     int CALLBACK 
-    Win32WindowBase::windowProc (void* hWnd_, unsigned int uMsg_, unsigned int* wParam_, long* lParam_)
+    CanvasBase::windowProc (void* hWnd_, unsigned int uMsg_, unsigned int* wParam_, long* lParam_)
     {
         HWND hWnd = (HWND)hWnd_;
         UINT uMsg = (UINT)uMsg_;
@@ -163,14 +163,14 @@ namespace lx0 { namespace canvas { namespace platform {
         LPARAM lParam = (LPARAM)lParam_;
 
         // The "this" pointer has been stored in the GWL_USERDATA slot of the window.  See WM_CREATE.
-        Win32WindowBase* pWin = reinterpret_cast<Win32WindowBase*>((LONG_PTR)GetWindowLongPtr(hWnd, GWL_USERDATA));
+        CanvasBase* pWin = reinterpret_cast<CanvasBase*>((LONG_PTR)GetWindowLongPtr(hWnd, GWL_USERDATA));
 
         switch (uMsg)
         {
             case WM_CREATE:
                 {
                     LPCREATESTRUCT pCreateStruct = reinterpret_cast<LPCREATESTRUCT>(lParam);
-                    Win32WindowBase* pWin = reinterpret_cast<Win32WindowBase*>(pCreateStruct->lpCreateParams);
+                    CanvasBase* pWin = reinterpret_cast<CanvasBase*>(pCreateStruct->lpCreateParams);
                     pWin->m_opaque_hWnd = (void*)hWnd;
                     SetWindowLongPtr(hWnd, GWL_USERDATA, (LONG)(LONG_PTR)pWin);
 
@@ -292,7 +292,7 @@ namespace lx0 { namespace canvas { namespace platform {
 
     //===========================================================================//
 
-    OpenGL32Window::OpenGL32Window (const char* pszTitle, int w, int h, bool bResizeable)
+    CanvasGL::CanvasGL (const char* pszTitle, int w, int h, bool bResizeable)
         : m_opaque_hDC     (0)
         , m_opaque_hRC   (0)
     {
@@ -328,7 +328,7 @@ namespace lx0 { namespace canvas { namespace platform {
             lx_error("Could not create window");
     }
 
-    OpenGL32Window::~OpenGL32Window (void)
+    CanvasGL::~CanvasGL (void)
     {
         lx_check_error(m_hRC == 0, "Rendering context should be destroyed before the object is deleted.");
         lx_check_error(m_hDC == 0, "Device context should be released before the object is deleted.");
@@ -338,7 +338,7 @@ namespace lx0 { namespace canvas { namespace platform {
     // derived class to implement message-specific behavior for any arbitrary message without 
     // imposing that the base class provide wrapper signals for every signal event.
     //
-    int __stdcall OpenGL32Window::windowProc(void* hWnd, unsigned int uMsg, unsigned int* wParam, long* lParam )
+    int __stdcall CanvasGL::windowProc(void* hWnd, unsigned int uMsg, unsigned int* wParam, long* lParam )
     {
         switch (uMsg)
         {
@@ -360,10 +360,10 @@ namespace lx0 { namespace canvas { namespace platform {
             break;
         }
 
-        return Win32WindowBase::windowProc(hWnd, uMsg, wParam, lParam);
+        return CanvasBase::windowProc(hWnd, uMsg, wParam, lParam);
     }  
 
-    void OpenGL32Window::impCreate() 
+    void CanvasGL::impCreate() 
     {
         // The OpenGL does have some custom window handlers that aren't general enough
         // to warrant having wrappers in the parent class.
@@ -373,12 +373,12 @@ namespace lx0 { namespace canvas { namespace platform {
         createGlContext();
     }
 
-    void OpenGL32Window::impDestroy()
+    void CanvasGL::impDestroy()
     {
         destroyGlContext();
     }
 
-    bool OpenGL32Window::impRedraw()
+    bool CanvasGL::impRedraw()
     {
         // The default behavior of the imp/signal is to call the imp method, then the signals.
         // However, in this case the imp methods wants to swap the buffer *after* the slots
@@ -391,7 +391,7 @@ namespace lx0 { namespace canvas { namespace platform {
         return false;
     }
 
-    bool OpenGL32Window::impResize(int width, int height) 
+    bool CanvasGL::impResize(int width, int height) 
     {
         // This might not be helpful if the client code is rendering to multiple sub-windows,
         // but it most cases it will be helpful and not cause problems for the multiple
@@ -417,7 +417,7 @@ namespace lx0 { namespace canvas { namespace platform {
            made available via GLEW in (2).
      */
     void 
-    OpenGL32Window::createGlContext()
+    CanvasGL::createGlContext()
     {
         lx_check_error(m_hDC == 0, "Context is non-zero.  Already initialized?");
         lx_check_error(m_hRC == 0, "Context is non-zero.  Already initialized?");
@@ -492,7 +492,7 @@ namespace lx0 { namespace canvas { namespace platform {
     }
 
     void
-    OpenGL32Window::destroyGlContext()
+    CanvasGL::destroyGlContext()
     {
         // Release the rendering context
         if (m_hRC) 
@@ -517,7 +517,7 @@ namespace lx0 { namespace canvas { namespace platform {
     //--------------------------------------------------------------------------//
 
     void 
-    WindowsEventHost::create (Win32WindowBase* pWin, const char* id, bool bVisible)
+    CanvasHost::create (CanvasBase* pWin, const char* id, bool bVisible)
     {
         m_windows.insert(std::make_pair(id, pWin));
         if (bVisible)
@@ -525,7 +525,7 @@ namespace lx0 { namespace canvas { namespace platform {
     }
 
     bool 
-    WindowsEventHost::processEvents()
+    CanvasHost::processEvents()
     {
         bool bQuit = false;
 
@@ -543,14 +543,14 @@ namespace lx0 { namespace canvas { namespace platform {
     }
 
     void 
-    WindowsEventHost::destroyWindows()
+    CanvasHost::destroyWindows()
     {
         for (WindowMap::iterator it = m_windows.begin(); it != m_windows.end(); ++it)
             it->second->destroy();
     }
 
     void                
-    WindowsEventHost::shutdown (void)
+    CanvasHost::shutdown (void)
     {
         destroyWindows();
         ::PostQuitMessage(0);
