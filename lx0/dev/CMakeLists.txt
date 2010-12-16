@@ -100,6 +100,36 @@ macro(copy_media_directory FOLDER)
     endforeach(FILE)
 endmacro(copy_media_directory)
 
+#
+# Recursively searches the BASE directory for *.c, *.cpp, *.h, *.hpp and
+# appends matching files to the SOURCES variable.
+#
+# Automatically puts any found files in a Visual Studio source group
+# under "Source/<path relative to BASE>".
+#
+macro(lx_glob_sources BASE)
+    
+    # Glob the files relative to the base, so the sub-path is easier to
+    # extract
+    file(GLOB_RECURSE SRC_C RELATIVE ${CMAKE_CURRENT_SOURCE_DIR}/${BASE} ${BASE}/*.c)
+    file(GLOB_RECURSE SRC_H RELATIVE ${CMAKE_CURRENT_SOURCE_DIR}/${BASE} ${BASE}/*.h)
+    file(GLOB_RECURSE SRC_CPP RELATIVE ${CMAKE_CURRENT_SOURCE_DIR}/${BASE} ${BASE}/*.cpp)
+    file(GLOB_RECURSE SRC_HPP RELATIVE ${CMAKE_CURRENT_SOURCE_DIR}/${BASE} ${BASE}/*.hpp)
+    set(SRC_ALL ${SRC_C} ${SRC_CPP} ${SRC_H} ${SRC_HPP})
+     
+    foreach (F ${SRC_ALL})
+        
+        # Put the file in the appropriate source group
+        get_filename_component(DIR ${F} PATH)
+        string(REPLACE "/" "\\" DIR "${DIR}" )
+        source_group("Source\\${DIR}" FILES ${BASE}/${F})
+    
+        # Add the file to the SOURCES variable
+        set(SOURCES ${SOURCES} "${BASE}/${F}")
+    endforeach (F)
+
+endmacro(lx_glob_sources BASE)
+
 macro(simple_executable EXENAME)
 
    set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR} )
