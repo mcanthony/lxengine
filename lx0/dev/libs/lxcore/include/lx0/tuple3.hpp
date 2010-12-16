@@ -67,11 +67,31 @@ namespace lx0 { namespace core {
                 };
             };    
         };
+
+        class base_tuple4
+        {
+        public:
+            inline float&   operator[] (int i)          { return elem[i]; }
+            inline float    operator[] (int i) const    { return elem[i]; }
+
+            union 
+            {
+                struct
+                {
+                    float x, y, z, w;
+                };
+                float elem[4];
+            };
+        };
     }
 
-    inline void     set             (detail::base_tuple3& t, float x, float y, float z)  { t.x = x; t.y = y; t.z = z; }
+    inline void     set         (detail::base_tuple3& t, float x, float y, float z)             { t.x = x; t.y = y; t.z = z; }
+    inline void     set         (detail::base_tuple4& t, float x, float y, float z, float w)    { t.x = x; t.y = y; t.z = z; t.w = w; }
     
-
+    //=======================================================================//
+    //!
+    /*!
+     */
     class tuple3 
         : public detail::base_tuple3
     {
@@ -88,6 +108,19 @@ namespace lx0 { namespace core {
     inline tuple3   add             (const tuple3& a, const tuple3& b)      { return cast<tuple3&>(a.ogreVec + b.ogreVec); }
     inline tuple3   sub             (const tuple3& a, const tuple3& b)      { return cast<tuple3&>(a.ogreVec - b.ogreVec); }
     
+    //=======================================================================//
+    //!
+    /*!
+     */
+    class tuple4
+        : public detail::base_tuple4
+    {
+    public: 
+    };
+
+    
+
+
     class point3;
     class vector3;
 

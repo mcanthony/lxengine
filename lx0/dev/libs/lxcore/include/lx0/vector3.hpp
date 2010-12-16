@@ -28,7 +28,10 @@
 
 #pragma once
 
+#include <limits>
+
 #include <lx0/cast.hpp>
+#include <lx0/tuple3.hpp>
 #include <Ogre/OgreVector3.h>
 
 namespace lx0 { namespace core {
@@ -42,6 +45,8 @@ namespace lx0 { namespace core {
     public:
         vector3() {}
         vector3 (float x_, float y_, float z_) : base_tuple3(x_, y_, z_) {}
+    
+        vector3     operator-   (void) const    { return vector3(-x, -y, -z); }
     };
 
     namespace detail
@@ -58,6 +63,9 @@ namespace lx0 { namespace core {
     inline vector3  cross           (const vector3& a, const vector3& b) { return cast<vector3&>(a.ogreVec.crossProduct(b.ogreVec)); }
     inline vector3  normalize       (const vector3& a)                   { vector3 t = a; t.ogreVec.normalise(); return t; }
     inline float    length          (const vector3& a)                   { return a.ogreVec.length(); }
+    inline float    length_squared  (const vector3& v)                   { return v.x * v.x + v.y * v.y + v.z * v.z; }
+    inline bool     is_unit_length  (const vector3& v)                   { return abs( length_squared(v)  - 1 ) < std::numeric_limits<float>::epsilon(); }
+    inline bool     is_orthogonal   (const vector3& u, const vector3& v) { return abs( dot(u, v) - 1 ) < std::numeric_limits<float>::epsilon(); }
 
     inline float    angle_between   (const vector3& a, const vector3& b) 
     {

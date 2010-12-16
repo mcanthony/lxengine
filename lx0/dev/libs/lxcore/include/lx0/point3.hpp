@@ -44,6 +44,8 @@ namespace lx0 { namespace core {
     public:
         point3() {}
         point3 (float x_, float y_, float z_) : base_tuple3(x_, y_, z_) {}
+    
+        point3      operator-   (void) const    { return point3(-x, -y, -z); }
     };
 
     namespace detail
@@ -62,8 +64,10 @@ namespace lx0 { namespace core {
     inline float    distance                    (const point3& a, const point3& b)  { return a.ogreVec.distance(b.ogreVec); }
     inline float    distance_squared            (const point3& a, const point3& b)  { return a.ogreVec.squaredDistance(b.ogreVec); }
     inline float    distance_to_origin_squared  (const point3& p)                   { return p.x * p.x + p.y * p.y + p.z * p.z; }
-    inline float    distance_to_origin          (const point3& p)                   { return sqrt( distance_to_origin_squared(p) ); }
+    inline float    distance_to_origin          (const point3& p)                   { return sqrtf( distance_to_origin_squared(p) ); }
 
-    inline point3   mid_point       (const point3& a, const point3& b)  { return cast<point3&>(a.ogreVec.midPoint(b.ogreVec)); } 
+    inline point3   mid_point       (const point3& a, const point3& b)  { return cast<point3&>(a.ogreVec.midPoint(b.ogreVec)); }
+
+    inline vector3  operator-       (const point3& p, const point3& q)  { return sub(p, q); }
     
 }};
