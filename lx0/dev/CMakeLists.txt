@@ -69,7 +69,7 @@ message(STATUS "CMAKE_EXE_LINKER_FLAGS=${CMAKE_EXE_LINKER_FLAGS}")
 #
 
 set( LX_ALL_LIBS 
-    lx0 
+    lxcore
     lxcanvas 
     ${OGRE_LIBRARIES} 
     ${V8_LIBS} 
