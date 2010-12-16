@@ -107,6 +107,7 @@ def write_sln(solution_file, folders):
 write_sln("lx0.sln", [
     "1. Libs", [
         "lxcore",
+        "lxengine",
         "lxcanvas"
     ],
     "2. Samples", [
