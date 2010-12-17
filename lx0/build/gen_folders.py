@@ -119,6 +119,7 @@ write_sln("lx0.sln", [
         "cpp_smartptr"
     ],
     "3. Sandbox", [
+        "blendload",
         "sb_fixedpoint",
         "elm_function",
         "elm_reference",

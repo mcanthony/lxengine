@@ -34,9 +34,22 @@
 
 namespace lx0 { namespace core {    
 
+    /*!
+        The matrix class itself is a generic 4x4 matrix.
+
+        Elements are indexed via (Row, Column) 0-based indexing.  This adopts
+        the traditional mathematical notion of row then column, but the programming
+        convention of 0-based indices.  
+
+        The support operations for multiplying and transforming vectors
+        assume a row-vector based model where vectors are pre-multiplied by 
+        the matrix.
+     */
     class matrix4
     {
-    public: 
+    public:
+        inline float operator()     (int row, int column) const;
+
         union
         {
             struct
@@ -49,8 +62,17 @@ namespace lx0 { namespace core {
         };
     };
 
+    void    set_identity        (matrix4& m);
+    void    copy                (matrix4& a, const matrix4& b);
+    void    mul                 (matrix4& c, const matrix4& a, const matrix4& b);
+    void    transpose           (matrix4& a, const matrix4& b);
+
+
+    void    mul                 (vector3& u, const vector3& v, const matrix4& m);
+
     void    setOrthonormalBasis (matrix4& mat, const vector3& x, const vector3& y, const vector3& z, const point3& origin);
     void    lookAt              (matrix4& mat, const point3& position, const point3& target, const vector3& referenceUpAxis);
 
+    inline vector3 operator*    (const vector3& v, const matrix4& m);
 
 }};
