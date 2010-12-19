@@ -53,14 +53,14 @@ using namespace lx0::core;
 //   E N T R Y - P O I N T
 //===========================================================================//
 
-__int64 read_ptr32 (std::ifstream& file)
+unsigned __int64 read_ptr32 (std::ifstream& file)
 {
     __int32 i;
     file.read((char*)&i, 4);
     return __int64(i);
 }
 
-__int64 read_ptr64 (std::ifstream& file)
+unsigned __int64 read_ptr64 (std::ifstream& file)
 {
     __int64 i;
     file.read((char*)&i, 8);
@@ -111,6 +111,14 @@ void file_align (std::ifstream& file, int align)
     file.seekg(pos + offset);
 }
 
+struct Header
+{
+    std::string identifier; 
+    size_t      pointerSize;
+    bool        littleEndian;
+    int         version;
+};
+
 struct Block
 {
     std::string      id;
@@ -149,17 +157,6 @@ std::map<unsigned __int64, std::shared_ptr<Block>> blockAddr;
 std::vector<std::shared_ptr<Structure>> structIndex;
 std::map<std::string, std::shared_ptr<Structure>> structMap;
 
-
-template <typename T>
-T getField(std::string structName, std::string fieldName, char* pData, size_t index = 0)
-{
-    auto spStruct = structMap[structName];
-    auto spField = spStruct->fieldMap[fieldName];
-    char* pBase = &pData[ spField->offset ];
-    pBase += (spField->size / spField->dim) * index;
-    return *reinterpret_cast<T*>(pBase);
-}
-
 void displayStructure (std::string name)
 {
     auto spStruct = structMap[name];
@@ -177,7 +174,10 @@ class BlendReader
 {
 public:
     void    open    (std::string filename);
-    void    close   ();
+    bool    is_open (void)
+    {
+        return file.is_open();
+    }
 
    
     struct Object 
@@ -207,8 +207,11 @@ public:
     };
 
     std::shared_ptr<Object> 
-    readObject (std::ifstream& file, unsigned __int64 address)
+    readObject (unsigned __int64 address)
     {
+        lx_check_error(address != 0);
+        lx_check_error(file.is_open());
+
         std::shared_ptr<Object> spObj (new Object);
         
         spObj->spBlock = blockAddr[address];
@@ -222,61 +225,172 @@ public:
 
         return spObj;
     }
+
+//protected:
+
+    Header        mHeader;
+    std::ifstream file;
 };
+
+static void 
+readHeader (std::ifstream& file, Header& header)
+{
+    // The header is always 12-bytes long.  Read it all
+    // as a single chunk, then process that data
+    //
+    char buffer[12];
+    file.read(buffer, 12);
+    
+    // First 7 characters are the BLENDER id
+    //
+    header.identifier.resize(7);
+    for (int i = 0; i < 7; ++i)
+        header.identifier[i] = buffer[i];
+    lx_check_error(header.identifier == "BLENDER");
+
+    // Next character indicates the pointer size on the
+    // system that saved the file (will affect the size
+    // of all stored pointers in the file).
+    //
+    if (buffer[7] == '_')
+        header.pointerSize = 4;
+    else if (buffer[7] == '-')
+        header.pointerSize = 8;
+    else
+        lx_error("Unrecognized pointer size!");
+
+    // Next character indicates the endianness with which
+    // the numbers were saved.
+    //
+    if (buffer[8] == 'v')
+        header.littleEndian = true;
+    else if (buffer[8] == 'V')
+        header.littleEndian = false;
+    else
+        lx_error("Unrecognized little endian");
+
+    // The final three characters are the version number, written as 
+    // 3 ascii characters
+    header.version = (buffer[9] - '0') * 100 + (buffer[10] - '0') * 10 + (buffer[11] - '0');
+}
+
+static void
+readBlockDNA1 (std::ifstream& file, const Header& header)
+{
+    std::string sdna = read_str(file, 4);
+                    
+    std::vector<std::string> names;
+    std::string name = read_str(file, 4);
+    read_string_array(file, names);
+
+    file_align(file, 4);
+
+    std::vector<std::string> types;            
+    std::string type = read_str(file, 4);
+    read_string_array(file, types);
+
+    file_align(file, 4);
+
+    std::string tlen = read_str(file, 4);
+    std::vector<unsigned short> typeSizes(types.size());
+    for (size_t i = 0; i < types.size(); ++i)
+    {
+        file.read((char*)&typeSizes[i], 2);
+    }
+
+    file_align(file, 4);
+
+    std::string strc = read_str(file, 4);
+    unsigned int count = read_int(file);
+    for (unsigned int i = 0; i < count; ++i)
+    {
+        std::shared_ptr<Structure> spStruct(new Structure);
+
+        unsigned short type;
+        file.read((char*)&type, 2);
+
+        spStruct->name = types[type];
+        spStruct->size = typeSizes[type];
+
+        unsigned short fields;
+        file.read((char*)&fields, 2);
+
+        size_t currentOffset = 0;
+        spStruct->fields.reserve(fields);
+        for (unsigned short j = 0; j < fields; j++)
+        {
+            auto typeIndex = read_u16(file);
+            auto nameIndex = read_u16(file);
+                            
+            Structure::Field f;
+            f.ref = "";
+            f.type = types[typeIndex];
+            f.name = names[nameIndex];
+            f.offset = currentOffset;
+            f.size = 0;
+
+            const char* p = f.name.c_str();
+            while (*p == '*') p++;
+            while (*p != '[' && *p != '\0') f.ref += *p++;
+
+            f.dim = 1;
+            if (*p == '[')
+            {
+                p++;
+                do
+                {
+                    f.dim += int(*p - '0');
+                    p++;
+                } while (*p != ']');
+            }
+
+            if (f.name[0] == '*')
+                f.size = header.pointerSize;
+            else
+                f.size = typeSizes[typeIndex];
+            f.size *= f.dim;
+
+            currentOffset += f.size;
+            spStruct->fields.push_back(f);
+            spStruct->fieldMap[f.ref] = &spStruct->fields.back();
+        }
+
+        structIndex.push_back(spStruct);
+        structMap.insert(std::make_pair(spStruct->name, spStruct));
+    }
+}
+
+void    
+BlendReader::open (std::string filename)
+{
+    file.open (filename, std::ios::in | std::ios::binary);
+    if (file.is_open())
+    {
+        readHeader(file, mHeader);
+    }
+}
 
 int 
 main (int argc, char** argv)
 {
     lx_init();
 
-    std::ifstream file;
-    file.open ("media/models/unit_cube.blend", std::ios::in | std::ios::binary);
-    if (file.is_open())
+    BlendReader reader;
+    reader.open("media/models/unit_cube.blend");
+    std::ifstream& file = reader.file;
+    if (reader.is_open())
     {
-        struct Header
-        {
-            char    identifier[8]; 
-            size_t  pointerSize;
-            bool    littleEndian;
-            int     version;
-        };
+        unsigned __int64 (*read_ptr)   (std::ifstream& file) = nullptr;
 
-        __int64 (*read_ptr)   (std::ifstream& file) = nullptr;
+        Header& header = reader.mHeader;
+        if (header.pointerSize == 8)
+            read_ptr = read_ptr64;
+        else
+            read_ptr = read_ptr32;
 
-        Header header;
-        {
-            char buffer[12];
-            file.read(buffer, 12);
-            for (int i = 0; i < 8; ++i)
-                header.identifier[i] = buffer[i];
-            header.identifier[7] = 0;
 
-            if (buffer[7] == '_')
-                header.pointerSize = 4;
-            else if (buffer[7] == '-')
-                header.pointerSize = 8;
-            else
-                lx_error("Unrecognized pointer size!");
-
-            if (buffer[8] == 'v')
-                header.littleEndian = true;
-            else if (buffer[8] == 'V')
-                header.littleEndian = false;
-            else
-                lx_error("Unrecognized little endian");
-
-            header.version = (buffer[9] - '0') * 100 + (buffer[10] - '0') * 10 + (buffer[11] - '0');
-
-            std::cout << header.identifier << " " << header.version << std::endl;
-            std::cout << "Pointer size: " << header.pointerSize << std::endl;
-            std::cout << "Litte endian: " << (header.littleEndian ? "true" : "false") << std::endl;
-
-            if (header.pointerSize == 8)
-                read_ptr = read_ptr64;
-            else
-                read_ptr = read_ptr32;
-        }
-
+        // Loop over the blocks in the file
+        //
         bool bDone = false;
         while (!bDone)
         {
@@ -295,97 +409,10 @@ main (int argc, char** argv)
 
             if (spBlock->id == "ENDB")
                 bDone = true;
-            else
-            {
-                if (spBlock->id == "DNA1")
-                {
-                    std::string sdna = read_str(file, 4);
-                    
-                    std::vector<std::string> names;
-                    std::string name = read_str(file, 4);
-                    read_string_array(file, names);
+            else if (spBlock->id == "DNA1")
+                readBlockDNA1(file, header);
 
-                    file_align(file, 4);
-
-                    std::vector<std::string> types;            
-                    std::string type = read_str(file, 4);
-                    read_string_array(file, types);
-
-                    file_align(file, 4);
-
-                    std::string tlen = read_str(file, 4);
-                    std::vector<unsigned short> typeSizes(types.size());
-                    for (size_t i = 0; i < types.size(); ++i)
-                    {
-                        file.read((char*)&typeSizes[i], 2);
-                    }
-
-                    file_align(file, 4);
-
-                    std::string strc = read_str(file, 4);
-                    unsigned int count = read_int(file);
-                    for (unsigned int i = 0; i < count; ++i)
-                    {
-                        std::shared_ptr<Structure> spStruct(new Structure);
-
-                        unsigned short type;
-                        file.read((char*)&type, 2);
-
-                        std::cout << types[type] << std::endl;
-
-                        spStruct->name = types[type];
-                        spStruct->size = typeSizes[type];
-
-                        unsigned short fields;
-                        file.read((char*)&fields, 2);
-
-                        size_t currentOffset = 0;
-                        spStruct->fields.reserve(fields);
-                        for (unsigned short j = 0; j < fields; j++)
-                        {
-                            auto typeIndex = read_u16(file);
-                            auto nameIndex = read_u16(file);
-                            
-                            Structure::Field f;
-                            f.ref = "";
-                            f.type = types[typeIndex];
-                            f.name = names[nameIndex];
-                            f.offset = currentOffset;
-                            f.size = 0;
-
-                            const char* p = f.name.c_str();
-                            while (*p == '*') p++;
-                            while (*p != '[' && *p != '\0') f.ref += *p++;
-
-                            f.dim = 1;
-                            if (*p == '[')
-                            {
-                                p++;
-                                do
-                                {
-                                    f.dim += int(*p - '0');
-                                    p++;
-                                } while (*p != ']');
-                            }
-
-                            if (f.name[0] == '*')
-                                f.size = header.pointerSize;
-                            else
-                                f.size = typeSizes[typeIndex];
-                            f.size *= f.dim;
-
-                            currentOffset += f.size;
-                            spStruct->fields.push_back(f);
-                            spStruct->fieldMap[f.ref] = &spStruct->fields.back();
-                        }
-
-                        structIndex.push_back(spStruct);
-                        structMap.insert(std::make_pair(spStruct->name, spStruct));
-                    }
-                }
-
-                file.seekg(nextBlock);
-            }
+            file.seekg(nextBlock);
         }
         
         int i = 0;
@@ -397,6 +424,10 @@ main (int argc, char** argv)
             ++i;
         }
 
+        std::cout << header.identifier << " " << header.version << std::endl;
+        std::cout << "Pointer size: " << header.pointerSize << std::endl;
+        std::cout << "Litte endian: " << (header.littleEndian ? "true" : "false") << std::endl;
+
         displayStructure("Mesh");
         displayStructure("MVert");
         displayStructure("MFace");
@@ -404,17 +435,22 @@ main (int argc, char** argv)
 
         std::cout << "Meshs = " << blockMap["Mesh"].size() << std::endl;
         
-        BlendReader reader;
         for (auto it = blockMap["Mesh"].begin(); it != blockMap["Mesh"].end(); ++it)
         {
             auto spBlock = *it;
-            auto spMesh3 = reader.readObject(file, spBlock->address );
+            std::cout << "Mesh address: 0x" << spBlock->address << std::endl;
+            auto spMesh = reader.readObject( spBlock->address );
 
-            auto totalVertices = spMesh3->field<int>("totvert");
-            auto totalFaces = spMesh3->field<int>("totface");
+            printf("%c%c%c%c\n", spMesh->pCurrent[0],
+                spMesh->pCurrent[1],
+                spMesh->pCurrent[2],
+                spMesh->pCurrent[3]);
+
+            auto totalVertices = spMesh->field<int>("totvert");
+            auto totalFaces = spMesh->field<int>("totface");
             std::cout << "Total vertices: " << totalVertices << std::endl;
 
-            auto spVerts = reader.readObject(file, spMesh3->field<unsigned __int64>("mvert") );
+            auto spVerts = reader.readObject( spMesh->field<unsigned __int64>("mvert") );
             for (int i = 0; i < totalVertices; ++i)
             {
                 float x = spVerts->field<float>("co", 0);
@@ -426,7 +462,7 @@ main (int argc, char** argv)
                 spVerts->next();
             }
 
-            auto spFaces = reader.readObject(file, spMesh3->field<__int64>("mface") );
+            auto spFaces = reader.readObject( spMesh->field<unsigned __int64>("mface") );
             for (int i = 0; i < totalFaces; ++i)
             {
                 int vi[4];
