@@ -111,6 +111,68 @@ void file_align (std::ifstream& file, int align)
     file.seekg(pos + offset);
 }
 
+struct Block
+{
+    std::string      id;
+    unsigned __int32 size;
+    unsigned __int64 address;
+    unsigned __int32 sdnaIndex;
+    unsigned __int32 count;
+    
+    int              filePos;
+
+    std::string      type;
+};
+
+
+struct Structure
+{
+    struct Field
+    {
+        std::string ref;
+        std::string type;
+        std::string name;
+        size_t      dim;
+        size_t      offset;
+        size_t      size;
+    };
+
+    std::string         name;
+    size_t              size;
+    std::vector<Field>  fields;
+    std::map<std::string, Field*> fieldMap;
+};
+
+std::vector<std::shared_ptr<Block>> blockIndex;
+std::map<std::string, std::vector<std::shared_ptr<Block>>> blockMap;
+std::map<unsigned __int64, std::shared_ptr<Block>> blockAddr;
+std::vector<std::shared_ptr<Structure>> structIndex;
+std::map<std::string, std::shared_ptr<Structure>> structMap;
+
+
+template <typename T>
+T getField(std::string structName, std::string fieldName, char* pData, size_t index = 0)
+{
+    auto spStruct = structMap[structName];
+    auto spField = spStruct->fieldMap[fieldName];
+    char* pBase = &pData[ spField->offset ];
+    pBase += (spField->size / spField->dim) * index;
+    return *reinterpret_cast<T*>(pBase);
+}
+
+void displayStructure (std::string name)
+{
+    auto spStruct = structMap[name];
+    std::cout << name << std::endl;
+    for (auto it = spStruct->fields.begin(); it != spStruct->fields.end(); ++it)
+    {
+        std::cout << "\t" << std::setw(16) << it->type << "\t" << it->name 
+            << " (" << it->ref << ")"
+            << " (" << it->offset << " : " << it->size << " bytes)" <<std::endl;
+    }
+    std::cout << std::endl;
+}
+
 int 
 main (int argc, char** argv)
 {
@@ -129,19 +191,6 @@ main (int argc, char** argv)
         };
 
         __int64 (*read_ptr)   (std::ifstream& file) = nullptr;
-
-        struct Block
-        {
-            std::string      id;
-            unsigned __int32 size;
-            unsigned __int64 address;
-            unsigned __int32 sdnaIndex;
-            unsigned __int32 count;
-            
-            int              filePos;
-
-            std::string      type;
-        };
 
         Header header;
         {
@@ -176,27 +225,6 @@ main (int argc, char** argv)
             else
                 read_ptr = read_ptr32;
         }
-
-        struct Structure
-        {
-            struct Field
-            {
-                std::string ref;
-                std::string type;
-                std::string name;
-                size_t      offset;
-                size_t      size;
-            };
-
-            std::string         name;
-            size_t              size;
-            std::vector<Field>  fields;
-        };
-
-        std::vector<std::shared_ptr<Block>> blockIndex;
-        std::map<std::string, std::vector<std::shared_ptr<Block>>> blockMap;
-        std::vector<std::shared_ptr<Structure>> structIndex;
-        std::map<std::string, std::shared_ptr<Structure>> structMap;
 
         bool bDone = false;
         while (!bDone)
@@ -260,6 +288,7 @@ main (int argc, char** argv)
                         unsigned short fields;
                         file.read((char*)&fields, 2);
 
+                        size_t currentOffset = 0;
                         spStruct->fields.reserve(fields);
                         for (unsigned short j = 0; j < fields; j++)
                         {
@@ -270,10 +299,33 @@ main (int argc, char** argv)
                             f.ref = "";
                             f.type = types[typeIndex];
                             f.name = names[nameIndex];
-                            f.offset = 0;
+                            f.offset = currentOffset;
                             f.size = 0;
 
+                            const char* p = f.name.c_str();
+                            while (*p == '*') p++;
+                            while (*p != '[' && *p != '\0') f.ref += *p++;
+
+                            f.dim = 1;
+                            if (*p == '[')
+                            {
+                                p++;
+                                do
+                                {
+                                    f.dim += int(*p - '0');
+                                    p++;
+                                } while (*p != ']');
+                            }
+
+                            if (f.name[0] == '*')
+                                f.size = header.pointerSize;
+                            else
+                                f.size = typeSizes[typeIndex];
+                            f.size *= f.dim;
+
+                            currentOffset += f.size;
                             spStruct->fields.push_back(f);
+                            spStruct->fieldMap[f.ref] = &spStruct->fields.back();
                         }
 
                         structIndex.push_back(spStruct);
@@ -290,15 +342,14 @@ main (int argc, char** argv)
         {
             (*it)->type = structIndex[(*it)->sdnaIndex]->name;
             blockMap[(*it)->type].push_back(*it);
+            blockAddr[(*it)->address] = *it;
             ++i;
         }
 
-        auto spStruct = structMap["Mesh"];
-        std::cout << "Mesh" << std::endl;
-        for (auto it = spStruct->fields.begin(); it != spStruct->fields.end(); ++it)
-        {
-            std::cout << "\t" << std::setw(16) << it->type << "\t" << it->name << std::endl;
-        }
+        displayStructure("Mesh");
+        displayStructure("MVert");
+        displayStructure("MFace");
+        displayStructure("MTFace");
 
         std::cout << "Meshs = " << blockMap["Mesh"].size() << std::endl;
         
@@ -310,6 +361,51 @@ main (int argc, char** argv)
             file.read(&chunk[0], chunk.size());
 
             std::cout << "Sizes = " << chunk.size() << " vs " << structMap["Mesh"]->size << std::endl;
+
+            auto totalVertices = getField<int>("Mesh", "totvert", &chunk[0]);
+            auto totalFaces = getField<int>("Mesh", "totface", &chunk[0]);
+            std::cout << "Total vertices: " << totalVertices << std::endl;
+            __int64 pVerts = getField<__int64>("Mesh", "mvert", &chunk[0]);
+            std::cout << "Vertex address: 0x" << pVerts << std::endl;
+
+            auto spBlock2 = blockAddr[pVerts];
+            std::vector<char> chunk2( spBlock2->size );
+            file.seekg( spBlock2->filePos );
+            file.read(&chunk2[0], chunk2.size());
+            
+            char* pCurrent = &chunk2[0];
+            for (int i = 0; i < totalVertices; ++i)
+            {
+                float x = getField<float>("MVert", "co", pCurrent, 0);
+                float y = getField<float>("MVert", "co", pCurrent, 1);
+                float z = getField<float>("MVert", "co", pCurrent, 2);
+
+                std::cout << "V" << i << ": " << x << ", " << y << ", " << z << std::endl;
+
+                pCurrent += structMap["MVert"]->size;
+            }
+
+            auto spBlock3 = blockAddr[ getField<__int64>("Mesh", "mface", &chunk[0]) ];
+            std::vector<char> chunk3(spBlock3->size);
+            file.seekg( spBlock3->filePos );
+            file.read(&chunk3[0], chunk3.size());
+
+            char* pCurrent3 = &chunk3[0];
+            for (int i = 0; i < totalFaces; ++i)
+            {
+                int v0 = getField<int>("MFace", "v1", pCurrent3, 0);
+                int v1 = getField<int>("MFace", "v2", pCurrent3, 0);
+                int v2 = getField<int>("MFace", "v3", pCurrent3, 0);
+                int v3 = getField<int>("MFace", "v4", pCurrent3, 0);
+
+                std::cout << "F" << i << ": " 
+                    << v0 << ", " 
+                    << v1 << ", "
+                    << v2 << ", "
+                    << v3 << std::endl;
+
+                pCurrent3 += structMap["MFace"]->size;
+            }
         }
     }
     else
