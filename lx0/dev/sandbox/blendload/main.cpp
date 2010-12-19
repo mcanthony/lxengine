@@ -173,6 +173,57 @@ void displayStructure (std::string name)
     std::cout << std::endl;
 }
 
+class BlendReader
+{
+public:
+    void    open    (std::string filename);
+    void    close   ();
+
+   
+    struct Object 
+    {
+        template <typename T>
+        T field (std::string ref, int index = 0)
+        {
+            auto spField = spStruct->fieldMap[ref];
+            char* pBase = &pCurrent[ spField->offset ];
+            if (index != 0)
+                pBase += (spField->size / spField->dim) * index;
+            
+            lx_check_error(size_t(pBase - &chunk[0]) < chunk.size());
+
+            return *reinterpret_cast<T*>(pBase);
+        }
+
+        void next()
+        {
+            pCurrent += spStruct->size;
+        }
+
+        std::shared_ptr<Structure> spStruct;
+        std::shared_ptr<Block>     spBlock;
+        std::vector<char>          chunk;
+        char*                      pCurrent;
+    };
+
+    std::shared_ptr<Object> 
+    readObject (std::ifstream& file, unsigned __int64 address)
+    {
+        std::shared_ptr<Object> spObj (new Object);
+        
+        spObj->spBlock = blockAddr[address];
+        spObj->spStruct = structMap[spObj->spBlock->type];
+
+        spObj->chunk.resize( spObj->spBlock->size );
+        file.seekg( spObj->spBlock->filePos );
+        file.read(&spObj->chunk[0], spObj->chunk.size());
+
+        spObj->pCurrent = &spObj->chunk[0];
+
+        return spObj;
+    }
+};
+
 int 
 main (int argc, char** argv)
 {
@@ -353,58 +404,44 @@ main (int argc, char** argv)
 
         std::cout << "Meshs = " << blockMap["Mesh"].size() << std::endl;
         
+        BlendReader reader;
         for (auto it = blockMap["Mesh"].begin(); it != blockMap["Mesh"].end(); ++it)
         {
             auto spBlock = *it;
-            std::vector<char> chunk( spBlock->size );
-            file.seekg( spBlock->filePos );
-            file.read(&chunk[0], chunk.size());
+            auto spMesh3 = reader.readObject(file, spBlock->address );
 
-            std::cout << "Sizes = " << chunk.size() << " vs " << structMap["Mesh"]->size << std::endl;
-
-            auto totalVertices = getField<int>("Mesh", "totvert", &chunk[0]);
-            auto totalFaces = getField<int>("Mesh", "totface", &chunk[0]);
+            auto totalVertices = spMesh3->field<int>("totvert");
+            auto totalFaces = spMesh3->field<int>("totface");
             std::cout << "Total vertices: " << totalVertices << std::endl;
-            __int64 pVerts = getField<__int64>("Mesh", "mvert", &chunk[0]);
-            std::cout << "Vertex address: 0x" << pVerts << std::endl;
 
-            auto spBlock2 = blockAddr[pVerts];
-            std::vector<char> chunk2( spBlock2->size );
-            file.seekg( spBlock2->filePos );
-            file.read(&chunk2[0], chunk2.size());
-            
-            char* pCurrent = &chunk2[0];
+            auto spVerts = reader.readObject(file, spMesh3->field<unsigned __int64>("mvert") );
             for (int i = 0; i < totalVertices; ++i)
             {
-                float x = getField<float>("MVert", "co", pCurrent, 0);
-                float y = getField<float>("MVert", "co", pCurrent, 1);
-                float z = getField<float>("MVert", "co", pCurrent, 2);
+                float x = spVerts->field<float>("co", 0);
+                float y = spVerts->field<float>("co", 1);
+                float z = spVerts->field<float>("co", 2);
 
                 std::cout << "V" << i << ": " << x << ", " << y << ", " << z << std::endl;
 
-                pCurrent += structMap["MVert"]->size;
+                spVerts->next();
             }
 
-            auto spBlock3 = blockAddr[ getField<__int64>("Mesh", "mface", &chunk[0]) ];
-            std::vector<char> chunk3(spBlock3->size);
-            file.seekg( spBlock3->filePos );
-            file.read(&chunk3[0], chunk3.size());
-
-            char* pCurrent3 = &chunk3[0];
+            auto spFaces = reader.readObject(file, spMesh3->field<__int64>("mface") );
             for (int i = 0; i < totalFaces; ++i)
             {
-                int v0 = getField<int>("MFace", "v1", pCurrent3, 0);
-                int v1 = getField<int>("MFace", "v2", pCurrent3, 0);
-                int v2 = getField<int>("MFace", "v3", pCurrent3, 0);
-                int v3 = getField<int>("MFace", "v4", pCurrent3, 0);
+                int vi[4];
+                vi[0] = spFaces->field<int>("v1");
+                vi[1] = spFaces->field<int>("v2");
+                vi[2] = spFaces->field<int>("v3");
+                vi[3] = spFaces->field<int>("v4");
 
                 std::cout << "F" << i << ": " 
-                    << v0 << ", " 
-                    << v1 << ", "
-                    << v2 << ", "
-                    << v3 << std::endl;
+                    << vi[0] << ", " 
+                    << vi[1] << ", "
+                    << vi[2] << ", "
+                    << vi[3] << std::endl;
 
-                pCurrent3 += structMap["MFace"]->size;
+                spFaces->next();
             }
         }
     }
