@@ -51,7 +51,7 @@
 using namespace lx0::core;
 
 //===========================================================================//
-//   E N T R Y - P O I N T
+//   BlendReader
 //===========================================================================//
 
 namespace io_util
@@ -181,29 +181,9 @@ struct DNA
     std::map<std::string, StructurePtr>             structMap;
 };
 
-void displayStructure (DNA& dna, std::string name)
-{
-    auto spStruct = dna.structMap[name];
-    std::cout << name << std::endl;
-    for (auto it = spStruct->fields.begin(); it != spStruct->fields.end(); ++it)
-    {
-        std::cout << "\t" << std::setw(16) << it->type << "\t" << it->name 
-            << " (" << it->ref << ")"
-            << " (" << it->offset << " : " << it->size << " bytes)" <<std::endl;
-    }
-    std::cout << std::endl;
-}
-
 class BlendReader
 {
 public:
-    void    open    (std::string filename);
-    bool    is_open (void)
-    {
-        return file.is_open();
-    }
-
-   
     struct Object 
     {
         template <typename T>
@@ -230,30 +210,23 @@ public:
         char*                      pCurrent;
     };
 
-    std::shared_ptr<Object> 
-    readObject (unsigned __int64 address)
+
+    bool                        open        (std::string filename);
+    std::shared_ptr<Object>     readObject (unsigned __int64 address);
+
+    StructurePtr                getStructureByName (std::string name);
+    std::vector<BlockPtr>       getBlocksByType    (std::string type);
+
+protected:
+    struct IO
     {
-        lx_check_error(address != 0);
-        lx_check_error(file.is_open());
+        unsigned __int64 (*read_address) (std::ifstream& file);
+    };
 
-        std::shared_ptr<Object> spObj (new Object);
-        
-        spObj->spBlock = mDNA.blockAddr[address];
-        spObj->spStruct = spObj->spBlock->spStruct;
+    void          _readBlocks    (void);
+    void          _indexBlocks   (void);
 
-        spObj->chunk.resize( spObj->spBlock->size );
-        file.seekg( spObj->spBlock->filePos );
-        file.read(&spObj->chunk[0], spObj->chunk.size());
-
-        spObj->pCurrent = &spObj->chunk[0];
-
-        return spObj;
-    }
-
-//protected:
-
-    void          indexBlocks (void);
-
+    IO            io;
     std::ifstream file;
     Header        mHeader;
     DNA           mDNA;
@@ -394,18 +367,71 @@ readBlockDNA1 (std::ifstream& file, const Header& header, DNA& dna)
     }
 }
 
-void    
+bool    
 BlendReader::open (std::string filename)
 {
     file.open (filename, std::ios::in | std::ios::binary);
     if (file.is_open())
     {
         readHeader(file, mHeader);
+
+        switch (mHeader.pointerSize)
+        {
+        case 8: io.read_address = read_addr_64L; break;
+        case 4: io.read_address = read_addr_32L; break;
+        default: 
+            lx_error("Unexpected pointer size read from .blend file");
+        }
+
+        _readBlocks();
+        _indexBlocks();
+    }
+
+    return file.is_open();
+}
+
+
+/*!
+    Stage 1 read in the block data.
+    Stage 2 is to index them via indexBlocks().
+ */
+void
+BlendReader::_readBlocks (void)
+{
+    // Loop over the blocks in the file
+    //
+    bool bDone = false;
+    while (!bDone)
+    {
+        std::shared_ptr<Block> spBlock(new Block);         
+        spBlock->id = read_str(file, 4);
+        spBlock->size = read_int(file);
+        spBlock->address = io.read_address(file);
+        spBlock->sdnaIndex = read_int(file);
+        spBlock->count = read_int(file);
+
+        spBlock->filePos = (int)file.tellg();
+        int nextBlock = (int)file.tellg();
+        nextBlock += int(spBlock->size);
+
+        mDNA.blockIndex.push_back(spBlock);
+
+        if (spBlock->id == "ENDB")
+            bDone = true;
+        else if (spBlock->id == "DNA1")
+            readBlockDNA1(file, mHeader, mDNA);
+
+        file.seekg(nextBlock);
     }
 }
 
+/*!
+    After the initial read of the blocks (including the .blend DNA structure),
+    build some cross-referencing index structures so that data can quickly
+    be found by type name, address, etc.
+ */
 void          
-BlendReader::indexBlocks (void)
+BlendReader::_indexBlocks (void)
 {
     for (auto it = mDNA.blockIndex.begin(); it != mDNA.blockIndex.end(); ++it)
     {
@@ -415,66 +441,72 @@ BlendReader::indexBlocks (void)
     }
 }
 
+std::shared_ptr<BlendReader::Object> 
+BlendReader::readObject (unsigned __int64 address)
+{
+    lx_check_error(address != 0);
+    lx_check_error(file.is_open());
+
+    std::shared_ptr<Object> spObj (new Object);
+        
+    spObj->spBlock = mDNA.blockAddr[address];
+    spObj->spStruct = spObj->spBlock->spStruct;
+
+    spObj->chunk.resize( spObj->spBlock->size );
+    file.seekg( spObj->spBlock->filePos );
+    file.read(&spObj->chunk[0], spObj->chunk.size());
+
+    spObj->pCurrent = &spObj->chunk[0];
+
+    return spObj;
+}
+
+StructurePtr
+BlendReader::getStructureByName (std::string name)
+{
+    return mDNA.structMap[name];
+}
+
+std::vector<BlockPtr>
+BlendReader::getBlocksByType (std::string type)
+{
+    return mDNA.blockMap[type];
+}
+
+//===========================================================================//
+//   E N T R Y - P O I N T
+//===========================================================================//
+
+void displayStructure (BlendReader& reader, std::string name)
+{
+    auto spStruct = reader.getStructureByName(name);
+    std::cout << name << std::endl;
+    for (auto it = spStruct->fields.begin(); it != spStruct->fields.end(); ++it)
+    {
+        std::cout << "\t" << std::setw(16) << it->type << "\t" << it->name 
+            << " (" << it->ref << ")"
+            << " (" << it->offset << " : " << it->size << " bytes)" <<std::endl;
+    }
+    std::cout << std::endl;
+}
+
 int 
 main (int argc, char** argv)
 {
     lx_init();
 
     BlendReader reader;
-    reader.open("media/models/unit_cube.blend");
-    std::ifstream& file = reader.file;
-    if (reader.is_open())
+    if ( reader.open("media/models/unit_cube.blend") )
     {
-        unsigned __int64 (*read_address)   (std::ifstream& file) = nullptr;
+        displayStructure(reader, "Mesh");
+        displayStructure(reader, "MVert");
+        displayStructure(reader, "MFace");
+        displayStructure(reader, "MTFace");
 
-        Header& header = reader.mHeader;
-        if (header.pointerSize == 8)
-            read_address = read_addr_64L;
-        else
-            read_address = read_addr_32L;
+        auto meshBlocks = reader.getBlocksByType("Mesh");
+        std::cout << "Meshs = " << meshBlocks.size() << std::endl;
 
-
-        // Loop over the blocks in the file
-        //
-        bool bDone = false;
-        while (!bDone)
-        {
-            std::shared_ptr<Block> spBlock(new Block);         
-            spBlock->id = read_str(file, 4);
-            spBlock->size = read_int(file);
-            spBlock->address = read_address(file);
-            spBlock->sdnaIndex = read_int(file);
-            spBlock->count = read_int(file);
-
-            spBlock->filePos = (int)file.tellg();
-            int nextBlock = (int)file.tellg();
-            nextBlock += int(spBlock->size);
-
-            reader.mDNA.blockIndex.push_back(spBlock);
-
-            if (spBlock->id == "ENDB")
-                bDone = true;
-            else if (spBlock->id == "DNA1")
-                readBlockDNA1(file, header, reader.mDNA);
-
-            file.seekg(nextBlock);
-        }
-        
-
-        reader.indexBlocks();
-
-        std::cout << header.identifier << " " << header.version << std::endl;
-        std::cout << "Pointer size: " << header.pointerSize << std::endl;
-        std::cout << "Litte endian: " << (header.littleEndian ? "true" : "false") << std::endl;
-
-        displayStructure(reader.mDNA, "Mesh");
-        displayStructure(reader.mDNA, "MVert");
-        displayStructure(reader.mDNA, "MFace");
-        displayStructure(reader.mDNA, "MTFace");
-
-        std::cout << "Meshs = " << reader.mDNA.blockMap["Mesh"].size() << std::endl;
-        
-        for (auto it = reader.mDNA.blockMap["Mesh"].begin(); it != reader.mDNA.blockMap["Mesh"].end(); ++it)
+        for (auto it = meshBlocks.begin(); it != meshBlocks.end(); ++it)
         {
             auto spBlock = *it;
             std::cout << "Mesh address: 0x" << spBlock->address << std::endl;
