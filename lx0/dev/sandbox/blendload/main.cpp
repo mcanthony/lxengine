@@ -45,6 +45,7 @@
 // Lx0 headers
 #include <lx0/core.hpp>
 #include <lx0/lxvar.hpp>
+#include <lx0/vector3.hpp>
 #include <lx0/util.hpp>
 
 using namespace lx0::core;
@@ -53,63 +54,77 @@ using namespace lx0::core;
 //   E N T R Y - P O I N T
 //===========================================================================//
 
-unsigned __int64 read_ptr32 (std::ifstream& file)
+namespace io_util
 {
-    __int32 i;
-    file.read((char*)&i, 4);
-    return __int64(i);
-}
-
-unsigned __int64 read_ptr64 (std::ifstream& file)
-{
-    __int64 i;
-    file.read((char*)&i, 8);
-    return i;
-}
-
-__int32 read_int (std::ifstream& file)
-{
-    __int32 i;
-    file.read((char*)&i, 4);
-    return i;
-}
-
-std::string read_str (std::ifstream& file, size_t len)
-{
-    std::vector<char> buffer(len + 1);
-    file.read(&buffer[0], len);
-    buffer[len] = 0;
-    return std::string(&buffer[0]);
-}
-
-unsigned short read_u16 (std::ifstream& file)
-{
-    unsigned short i;
-    file.read((char*)&i, 2);
-    return i;
-}
-
-void read_string_array(std::ifstream& file, std::vector<std::string>& names)
-{
-    unsigned int nameCount = read_int(file);
-    for (unsigned int i = 0; i < nameCount; ++i)
+    /*!
+        Aligns the file pointer to the next position that is evenly divisble
+        by "align".
+     */
+    void file_align (std::ifstream& file, int align)
     {
-        std::string t;
-
-        char c;
-        while ((c = (char)file.get()))
-            t += c;
-
-        names.push_back(t);
+        int pos = (int)file.tellg();
+        int offset = (align - (pos % align)) % align;
+        file.seekg(pos + offset);
     }
+
+    /*!
+        Read a 32-bit little endian pointer and return it as a
+        native unsigned 64 bit address.
+     */
+    unsigned __int64 read_addr_32L (std::ifstream& file)
+    {
+        __int32 i;
+        file.read((char*)&i, 4);
+        return __int64(i);
+    }
+
+    unsigned __int64 read_addr_64L (std::ifstream& file)
+    {
+        __int64 i;
+        file.read((char*)&i, 8);
+        return i;
+    }
+
+    unsigned short read_u16 (std::ifstream& file)
+    {
+        unsigned short i;
+        file.read((char*)&i, 2);
+        return i;
+    }
+
+    __int32 read_int (std::ifstream& file)
+    {
+        __int32 i;
+        file.read((char*)&i, 4);
+        return i;
+    }
+
+    std::string read_str (std::ifstream& file, size_t len)
+    {
+        std::vector<char> buffer(len + 1);
+        file.read(&buffer[0], len);
+        buffer[len] = 0;
+        return std::string(&buffer[0]);
+    }
+
+    void read_string_array(std::ifstream& file, std::vector<std::string>& names)
+    {
+        unsigned int nameCount = read_int(file);
+        for (unsigned int i = 0; i < nameCount; ++i)
+        {
+            std::string t;
+
+            char c;
+            while ((c = (char)file.get()))
+                t += c;
+
+            names.push_back(t);
+        }
+    }
+
 }
 
-void file_align (std::ifstream& file, int align)
-{
-    int pos = (int)file.tellg();
-    int offset = (align - (pos % align)) % align;
-    file.seekg(pos + offset);
-}
+using namespace io_util;
 
 struct Header
 {
@@ -118,6 +133,8 @@ struct Header
     bool        littleEndian;
     int         version;
 };
+
+struct Structure;
 
 struct Block
 {
@@ -129,9 +146,11 @@ struct Block
     
     int              filePos;
 
-    std::string      type;
+    //std::string      type;
+    std::shared_ptr<Structure> spStruct;
 };
 
+typedef std::shared_ptr<Block> BlockPtr;
 
 struct Structure
 {
@@ -151,15 +170,20 @@ struct Structure
     std::map<std::string, Field*> fieldMap;
 };
 
-std::vector<std::shared_ptr<Block>> blockIndex;
-std::map<std::string, std::vector<std::shared_ptr<Block>>> blockMap;
-std::map<unsigned __int64, std::shared_ptr<Block>> blockAddr;
-std::vector<std::shared_ptr<Structure>> structIndex;
-std::map<std::string, std::shared_ptr<Structure>> structMap;
+typedef std::shared_ptr<Structure> StructurePtr;
 
-void displayStructure (std::string name)
+struct DNA
 {
-    auto spStruct = structMap[name];
+    std::vector<BlockPtr>                           blockIndex;
+    std::map<std::string, std::vector<BlockPtr>>    blockMap;
+    std::map<unsigned __int64, BlockPtr>            blockAddr;
+    std::vector<StructurePtr>                       structIndex;
+    std::map<std::string, StructurePtr>             structMap;
+};
+
+void displayStructure (DNA& dna, std::string name)
+{
+    auto spStruct = dna.structMap[name];
     std::cout << name << std::endl;
     for (auto it = spStruct->fields.begin(); it != spStruct->fields.end(); ++it)
     {
@@ -214,8 +238,8 @@ public:
 
         std::shared_ptr<Object> spObj (new Object);
         
-        spObj->spBlock = blockAddr[address];
-        spObj->spStruct = structMap[spObj->spBlock->type];
+        spObj->spBlock = mDNA.blockAddr[address];
+        spObj->spStruct = spObj->spBlock->spStruct;
 
         spObj->chunk.resize( spObj->spBlock->size );
         file.seekg( spObj->spBlock->filePos );
@@ -228,8 +252,11 @@ public:
 
 //protected:
 
-    Header        mHeader;
+    void          indexBlocks (void);
+
     std::ifstream file;
+    Header        mHeader;
+    DNA           mDNA;
 };
 
 static void 
@@ -275,7 +302,7 @@ readHeader (std::ifstream& file, Header& header)
 }
 
 static void
-readBlockDNA1 (std::ifstream& file, const Header& header)
+readBlockDNA1 (std::ifstream& file, const Header& header, DNA& dna)
 {
     std::string sdna = read_str(file, 4);
                     
@@ -333,16 +360,23 @@ readBlockDNA1 (std::ifstream& file, const Header& header)
             while (*p == '*') p++;
             while (*p != '[' && *p != '\0') f.ref += *p++;
 
-            f.dim = 1;
             if (*p == '[')
             {
+                f.dim = 0;
+
                 p++;
                 do
                 {
                     f.dim += int(*p - '0');
                     p++;
+                    if (*p == ']')
+                        break;
+                    else
+                        f.dim *= 10;
                 } while (*p != ']');
             }
+            else
+                f.dim = 1;
 
             if (f.name[0] == '*')
                 f.size = header.pointerSize;
@@ -355,8 +389,8 @@ readBlockDNA1 (std::ifstream& file, const Header& header)
             spStruct->fieldMap[f.ref] = &spStruct->fields.back();
         }
 
-        structIndex.push_back(spStruct);
-        structMap.insert(std::make_pair(spStruct->name, spStruct));
+        dna.structIndex.push_back(spStruct);
+        dna.structMap.insert(std::make_pair(spStruct->name, spStruct));
     }
 }
 
@@ -370,6 +404,17 @@ BlendReader::open (std::string filename)
     }
 }
 
+void          
+BlendReader::indexBlocks (void)
+{
+    for (auto it = mDNA.blockIndex.begin(); it != mDNA.blockIndex.end(); ++it)
+    {
+        (*it)->spStruct = mDNA.structIndex[(*it)->sdnaIndex];
+        mDNA.blockMap[(*it)->spStruct->name].push_back(*it);
+        mDNA.blockAddr[(*it)->address] = *it;
+    }
+}
+
 int 
 main (int argc, char** argv)
 {
@@ -380,13 +425,13 @@ main (int argc, char** argv)
     std::ifstream& file = reader.file;
     if (reader.is_open())
     {
-        unsigned __int64 (*read_ptr)   (std::ifstream& file) = nullptr;
+        unsigned __int64 (*read_address)   (std::ifstream& file) = nullptr;
 
         Header& header = reader.mHeader;
         if (header.pointerSize == 8)
-            read_ptr = read_ptr64;
+            read_address = read_addr_64L;
         else
-            read_ptr = read_ptr32;
+            read_address = read_addr_32L;
 
 
         // Loop over the blocks in the file
@@ -397,7 +442,7 @@ main (int argc, char** argv)
             std::shared_ptr<Block> spBlock(new Block);         
             spBlock->id = read_str(file, 4);
             spBlock->size = read_int(file);
-            spBlock->address = read_ptr(file);
+            spBlock->address = read_address(file);
             spBlock->sdnaIndex = read_int(file);
             spBlock->count = read_int(file);
 
@@ -405,46 +450,35 @@ main (int argc, char** argv)
             int nextBlock = (int)file.tellg();
             nextBlock += int(spBlock->size);
 
-            blockIndex.push_back(spBlock);
+            reader.mDNA.blockIndex.push_back(spBlock);
 
             if (spBlock->id == "ENDB")
                 bDone = true;
             else if (spBlock->id == "DNA1")
-                readBlockDNA1(file, header);
+                readBlockDNA1(file, header, reader.mDNA);
 
             file.seekg(nextBlock);
         }
         
-        int i = 0;
-        for (auto it = blockIndex.begin(); it != blockIndex.end(); ++it)
-        {
-            (*it)->type = structIndex[(*it)->sdnaIndex]->name;
-            blockMap[(*it)->type].push_back(*it);
-            blockAddr[(*it)->address] = *it;
-            ++i;
-        }
+
+        reader.indexBlocks();
 
         std::cout << header.identifier << " " << header.version << std::endl;
         std::cout << "Pointer size: " << header.pointerSize << std::endl;
         std::cout << "Litte endian: " << (header.littleEndian ? "true" : "false") << std::endl;
 
-        displayStructure("Mesh");
-        displayStructure("MVert");
-        displayStructure("MFace");
-        displayStructure("MTFace");
+        displayStructure(reader.mDNA, "Mesh");
+        displayStructure(reader.mDNA, "MVert");
+        displayStructure(reader.mDNA, "MFace");
+        displayStructure(reader.mDNA, "MTFace");
 
-        std::cout << "Meshs = " << blockMap["Mesh"].size() << std::endl;
+        std::cout << "Meshs = " << reader.mDNA.blockMap["Mesh"].size() << std::endl;
         
-        for (auto it = blockMap["Mesh"].begin(); it != blockMap["Mesh"].end(); ++it)
+        for (auto it = reader.mDNA.blockMap["Mesh"].begin(); it != reader.mDNA.blockMap["Mesh"].end(); ++it)
         {
             auto spBlock = *it;
             std::cout << "Mesh address: 0x" << spBlock->address << std::endl;
             auto spMesh = reader.readObject( spBlock->address );
-
-            printf("%c%c%c%c\n", spMesh->pCurrent[0],
-                spMesh->pCurrent[1],
-                spMesh->pCurrent[2],
-                spMesh->pCurrent[3]);
 
             auto totalVertices = spMesh->field<int>("totvert");
             auto totalFaces = spMesh->field<int>("totface");
@@ -457,7 +491,13 @@ main (int argc, char** argv)
                 float y = spVerts->field<float>("co", 1);
                 float z = spVerts->field<float>("co", 2);
 
-                std::cout << "V" << i << ": " << x << ", " << y << ", " << z << std::endl;
+                vector3 n;
+                n.x = spVerts->field<short>("no", 0) / float(std::numeric_limits<short>::max());
+                n.y = spVerts->field<short>("no", 1) / float(std::numeric_limits<short>::max());
+                n.z = spVerts->field<short>("no", 2) / float(std::numeric_limits<short>::max());
+
+                std::cout << "V" << i << ":" << x << ", " << y << ", " << z << std::endl;
+                std::cout << "N" << i << ":" << n.x << "," << n.y << ", " << n.z << std::endl;
 
                 spVerts->next();
             }
