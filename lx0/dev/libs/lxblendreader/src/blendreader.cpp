@@ -48,7 +48,7 @@
 #include <lx0/vector3.hpp>
 #include <lx0/util.hpp>
 
-#include "blendreader.hpp"
+#include "lxblendreader/blendreader.hpp"
 
 using namespace lx0::core;
 
@@ -265,6 +265,30 @@ namespace lx0 { namespace blendreader {
     //===========================================================================//
     //   BlendReader
     //===========================================================================//
+
+    char*
+    BlendReader::Object::fieldImp (std::string ref, int index)
+    {
+        auto it = spStruct->fieldMap.find(ref);
+        if (it != spStruct->fieldMap.end())
+        {
+            auto spField = it->second;
+            char* pBase = &pCurrent[ spField->offset ];
+            if (index != 0)
+                pBase += (spField->size / spField->dim) * index;
+            
+            lx_check_error(size_t(pBase - &chunk[0]) < chunk.size());
+        
+            return pBase;
+        }
+        else
+        {
+            lx_error("Field '%s' does not exist in object of type '%s'",
+                ref.c_str(),
+                spStruct->name.c_str());
+            return nullptr;
+        }
+    }
 
     void    
     BlendReader::Object::next (void)

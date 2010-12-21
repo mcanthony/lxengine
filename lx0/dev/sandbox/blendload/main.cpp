@@ -48,7 +48,7 @@
 #include <lx0/vector3.hpp>
 #include <lx0/util.hpp>
 
-#include "blendreader.hpp"
+#include "lxblendreader/blendreader.hpp"
 
 using namespace lx0::core;
 using namespace lx0::blendreader;

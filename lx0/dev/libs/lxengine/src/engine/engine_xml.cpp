@@ -44,6 +44,18 @@
 
 using namespace lx0::util;
 
+namespace {
+
+    std::string get_extension (std::string filename)
+    {
+        size_t p = filename.find_last_of('.');
+        if (p != std::string::npos)
+            return filename.substr(p + 1);
+        else
+            return std::string();
+    }
+}
+
 //===========================================================================//
 //   I M P L E M E N T A T I O N 
 //===========================================================================//
@@ -118,6 +130,7 @@ namespace lx0 { namespace core {
                 // (3) It is inlined as the a comment within the element in the XML
                 //     document and is copied directly as an unparsed string 
                 //
+                bool bSet = false;
                 lxvar elemValue;
                 lxvar srcAttr = spElem->attr("src");
                 if (srcAttr.isDefined() && (tagName == "Mesh" || tagName == "Camera"))
@@ -128,7 +141,15 @@ namespace lx0 { namespace core {
                         lx_warn("Element has both a 'src' attribute and an inline value!  "
                                 "The src attribute overrides the value.");
 
-                    elemValue = lx0::util::lx_file_to_json(srcAttr.asString().c_str());
+                    std::string ext = get_extension(srcAttr.asString());
+
+                    if (ext == "blend" && tagName == "Mesh")
+                    {
+                        spElem->value( lx0::dom::load_blend( srcAttr.asString() ) );
+                        bSet = true;
+                    }
+                    else
+                        elemValue = lx0::util::lx_file_to_json(srcAttr.asString().c_str());
                 }
                 else if (!elemText.empty())
                 {
@@ -142,11 +163,14 @@ namespace lx0 { namespace core {
                 //
                 // This should be controlled in a more dynamic, pluggable fashion
                 //
-                if (tagName == "Mesh") 
-                    spElem->value(new Mesh(elemValue));
-                else
-                    spElem->value(elemValue);
- 
+                if (!bSet)
+                {
+                    if (tagName == "Mesh") 
+                        spElem->value(lx0::dom::load_lxson(elemValue));
+                    else
+                        spElem->value(elemValue);
+                }
+
                 return spElem;
             }
         };

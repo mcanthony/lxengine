@@ -44,6 +44,7 @@ set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY "${PROJECT_BINARY_DIR}")
 include_directories( libs/lxcore/include )
 include_directories( libs/lxengine/include )
 include_directories( libs/lxcanvas/include )
+include_directories( libs/lxblendreader/include )
 
 # Boost
 include_directories(${Boost_INCLUDE_DIR})
@@ -71,7 +72,8 @@ message(STATUS "CMAKE_EXE_LINKER_FLAGS=${CMAKE_EXE_LINKER_FLAGS}")
 set( LX_ALL_LIBS 
     lxcore
     lxengine
-    lxcanvas 
+    lxcanvas
+    lxblendreader 
     ${OGRE_LIBRARIES} 
     ${V8_LIBS} 
     ${BULLET_LIBS} 

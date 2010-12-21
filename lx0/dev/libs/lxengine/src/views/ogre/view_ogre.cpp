@@ -572,6 +572,7 @@ namespace {
     {
         // The mesh pointer should not be null
         lx_check_error(spMesh.get() != nullptr);
+        lx_check_error(spMesh->mVertices.empty() == false);
 
         // See http://www.ogre3d.org/tikiwiki/ManualObject
         // See http://www.ogre3d.org/tikiwiki/tutorial+manual+object+to+mesh

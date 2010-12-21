@@ -33,6 +33,13 @@
 #include <lx0/object.hpp>
 #include <lx0/point3.hpp>
 
+namespace lx0 { namespace dom {
+    
+    lx0::core::Mesh*     load_blend (std::string name);
+    lx0::core::Mesh*     load_lxson (lx0::core::lxvar& v);
+
+}}
+
 namespace lx0 { namespace core {
 
     //===========================================================================//
@@ -42,7 +49,7 @@ namespace lx0 { namespace core {
     class Mesh : public Object
     {
     public:
-                            Mesh (lxvar& src);
+                            Mesh (void);
 
         virtual lxvalue*    clone           (void) const { return nullptr; }
 

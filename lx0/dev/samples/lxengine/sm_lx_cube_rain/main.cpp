@@ -119,10 +119,11 @@ main (int argc, char** argv)
 
     try
     {
+        EnginePtr spEngine( Engine::acquire() );
+
         lxvar options;
         if ( parseOptions(argc, argv, options) )
-        {
-            EnginePtr spEngine( Engine::acquire() );
+        {    
             spEngine->environment().setTimeScale(1.1f);
 
             DocumentPtr spDocument = spEngine->loadDocument(*options.find("file"));

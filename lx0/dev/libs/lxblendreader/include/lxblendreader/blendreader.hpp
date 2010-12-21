@@ -117,10 +117,13 @@ namespace lx0 { namespace blendreader {
             friend class BlendReader;
 
             template <typename T>
-            T       field   (std::string ref, int index = 0);
-            void    next    (void);
+            T                   field        (std::string ref, int index = 0);
+            
+            void                next         (void);
 
         protected:
+            char*               fieldImp     (std::string ref, int index);
+
             StructurePtr        spStruct;
             BlockPtr            spBlock;
             std::vector<char>   chunk;
@@ -153,13 +156,6 @@ namespace lx0 { namespace blendreader {
     template <typename T>
     T BlendReader::Object::field (std::string ref, int index)
     {
-        auto spField = spStruct->fieldMap[ref];
-        char* pBase = &pCurrent[ spField->offset ];
-        if (index != 0)
-            pBase += (spField->size / spField->dim) * index;
-            
-        lx_check_error(size_t(pBase - &chunk[0]) < chunk.size());
-
-        return *reinterpret_cast<T*>(pBase);
+        return *reinterpret_cast<T*>( fieldImp(ref, index) );
     }
 }}

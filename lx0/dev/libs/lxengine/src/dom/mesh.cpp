@@ -38,72 +38,8 @@
 
 namespace lx0 { namespace core {
 
-    /*!
-        Deserialize the input src var into a Mesh object
-     */
-    Mesh::Mesh (lxvar& v)
+    Mesh::Mesh (void)
     {
-        mFlags.mVertexNormals = false;
-
-        // if src.type() == Mesh, set *this to a clone
-
-        lx_check_error(v.isMap());
-        lx_check_error(v.containsKey("type"));
-        lx_check_error(v.containsKey("vertices"));
-        lx_check_error(v.containsKey("faces"));
-
-        // Deserialize the vertices list
-        {
-            lxvar lxverts = v.find("vertices");
-            const int vertexCount = lxverts.size();
-            mVertices.reserve(vertexCount);
-
-            for (int i = 0; i < vertexCount; ++i)
-            {
-                lxvar src = lxverts.at(i);
-
-                Vertex v;
-                v.position.x = src.at(0).asFloat();
-                v.position.y = src.at(1).asFloat();
-                v.position.z = src.at(2).asFloat();
-
-                if (src.size() >= 6)
-                {
-                    mFlags.mVertexNormals  = true;
-                    v.normal.x = src.at(3).asFloat();
-                    v.normal.y = src.at(4).asFloat();
-                    v.normal.z = src.at(5).asFloat();
-                }
-                else
-                {
-                    static int warn_once = 0;
-                    if (!warn_once++)
-                        lx_warn("Meshes are always expected to provide vertex normals");
-                }
-                
-                mVertices.push_back(v);
-            }
-        }
-
-        // Deserialize the face list
-        {
-            lxvar lxfaces = v.find("faces");
-            const int faceCount = lxfaces.size();
-            mFaces.reserve(faceCount);
-            for (int i = 0; i < faceCount; ++i)
-            {
-                Mesh::Quad q;
-           
-                q.index[0] = lxfaces.at(i).at(0).asInt();
-                q.index[1] = lxfaces.at(i).at(1).asInt();
-                q.index[2] = lxfaces.at(i).at(2).asInt();
-                q.index[3] = (lxfaces.at(i).size() == 4)
-                    ? lxfaces.at(i).at(3).asInt()
-                    : -1;
-
-                mFaces.push_back(q);
-            }
-        }
     }
 
         /*!
@@ -146,7 +82,7 @@ namespace lx0 { namespace core {
     float               
     Mesh::maxExtentScale (lxvar value) const
     {
-        if (value.isFloat())
+        if (value.isFloat() || value.isInt())
         {
             float maxExtent = *value;
             if (maxExtent > 0.0f)

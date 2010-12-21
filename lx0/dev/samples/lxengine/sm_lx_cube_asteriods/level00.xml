@@ -102,6 +102,7 @@
       <Mesh id="unit_cube" src="data/sm_lx_cube_rain/unit_cube.json" />
       <Mesh id="unit_sphere" src="media/models/unit_sphere_s3.lxson" />
       <Mesh id="mesh_ship" src="media/models/ship_00.lxson" />
+      <Mesh id="unit_cube2" src="media/models/unit_cube.blend" />
     </Library>
     <Scene gravity="off">
       <Camera>
@@ -130,6 +131,8 @@
         <Ref ref="unit_cube" max_extent=".75" color="Green" translation="[.7, 8.5, 1]" mass="12"/>
         <Ref ref="unit_cube" max_extent=".75" color="Green" translation="[1.5, 9, 1]" mass="12"/>
         <Ref ref="unit_cube" max_extent=".75" color="Green" translation="[-1.5, 9, 1]" mass="12"/>
+
+        <Ref ref="unit_cube" max_extent="1" color="Gray" translation="[ 0, 12, 1.25]" mass="100"/>
       </Group>
     </Scene>
 </Root>
