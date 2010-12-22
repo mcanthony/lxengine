@@ -57,6 +57,39 @@ using namespace lx0::core;
 using namespace lx0::prototype;
 using namespace lx0::canvas::platform;
 
+
+class HeightMap
+{
+public:
+    HeightMap() : mSizeX(0), mSizeY(0) {}
+    void resize(int x, int y) { mSizeX = x; mSizeY = y; mHeight.resize(mSizeX * mSizeY); }
+
+    int sizeX() { return mSizeX; }
+    int sizeY() { return mSizeY; }
+
+    float& operator() (int x, int y) { return mHeight[y * mSizeX + x]; }
+
+    int                mSizeX;
+    int                mSizeY;
+    std::vector<float> mHeight;
+};
+
+HeightMap          gHMap;
+
+void 
+generateHeightMap()
+{
+    gHMap.resize(64, 64);
+    for (int y = 0; y < gHMap.sizeY(); y ++)
+    {
+        for (int x = 0; x < gHMap.sizeX(); x++)
+        {
+            float h = float( 25 * (sin(x * 6.28318531 / 32) + cos(y * 6.28318531 / 16)) );
+            gHMap(x, y) = h;
+        }
+    }
+}
+
 //===========================================================================//
 
 class Renderer
@@ -107,17 +140,35 @@ public:
         lx_check_error( glGetError() == GL_NO_ERROR, "OpenGL error detected." );
         
         // Create a vertex buffer to store the data for the vertex array
-        GLfloat positionData[] = 
+        generateHeightMap();
+        std::vector<point3> positionData;
+        positionData.reserve(gHMap.sizeX() * gHMap.sizeY() * 4);
+        for (int y = 0; y < gHMap.sizeY(); ++y)
         {
-             500.0f,  -500.0f,  0.0f,
-             500.0f,   500.0f,  0.0f,
-            -500.0f,   500.0f,  0.0f,
-            -500.0f,  -500.0f,  0.0f,
-        };
+            for (int x = 0; x < gHMap.sizeX() ; ++x)
+            {
+                float wy0 = -500.0f + 1000.0f * float(y + 0) / float(gHMap.sizeY());
+                float wy1 = -500.0f + 1000.0f * float(y + 1) / float(gHMap.sizeY());
+                float wx0 = -500.0f + 1000.0f * float(x + 0) / float(gHMap.sizeX());
+                float wx1 = -500.0f + 1000.0f * float(x + 1) / float(gHMap.sizeX());
+                float z = gHMap(x,y);
+
+                float z0 = (x > 0 && y > 0) ? gHMap(x-1, y-1) : z;
+                float z1 = (y > 0) ? gHMap(x, y-1) : z;
+                float z2 = z;
+                float z3 = (x > 0) ? gHMap(x-1,y) : z;
+
+                positionData.push_back( point3(wx0, wy0, z0) );
+                positionData.push_back( point3(wx1, wy0, z1) );
+                positionData.push_back( point3(wx1, wy1, z2) );
+                positionData.push_back( point3(wx0, wy1, z3) );
+            }
+        }
+
         GLuint vbo[1];
         glGenBuffers(1, &vbo[0]);
         glBindBuffer(GL_ARRAY_BUFFER, vbo[0]);
-        glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) * 12, &positionData[0], GL_STATIC_DRAW);
+        glBufferData(GL_ARRAY_BUFFER, sizeof(point3) * positionData.size(), &positionData[0], GL_STATIC_DRAW);
         
         // TODO: The position input to the vertex shader is apparently always 0.  Find out where
         // this is documented.
@@ -138,7 +189,7 @@ public:
 
         int vp[4];  // x, y, width, height
         glGetIntegerv(GL_VIEWPORT, vp);
-        gluPerspective(60.0f, (GLfloat)vp[2]/(GLfloat)vp[3], 0.01f, 9000.0f);
+        gluPerspective(60.0f, (GLfloat)vp[2]/(GLfloat)vp[3], 0.01f, 2000.0f);
 
         //
         // Setup view matrix
@@ -147,7 +198,7 @@ public:
         glLoadIdentity();
 
         Camera camera;
-        set(camera.mPosition, 500, 500, 500);
+        set(camera.mPosition, 750, 750, 900);
         set(camera.mTarget, 0, 0, 0);
         set(camera.mWorldUp, 0, 0, 1);
 
@@ -167,7 +218,7 @@ public:
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
        
         glBindVertexArray(vao[0]);
-        glDrawArrays(GL_QUADS, 0, 4);        
+        glDrawArrays(GL_QUADS, 0, 4 * gHMap.sizeX() * gHMap.sizeY());        
     }
 
 protected:
