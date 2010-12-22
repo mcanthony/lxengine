@@ -65,6 +65,11 @@ namespace lx0 { namespace core {
         mat.column[2][2] = z.z;
         mat.column[2][3] = 0;
 
+        mat.column[3][0] = 0;
+        mat.column[3][1] = 0;
+        mat.column[3][2] = 0;
+        mat.column[3][3] = 1;
+
         // A 4x4 Matrix effectively acts as 3x3 rotation matrix followed by an offset.
         // In other words, the translation term is added in after the rotation occurs.
         // Therefore, the offset in the matrix itself must be in terms of the new 
@@ -76,10 +81,9 @@ namespace lx0 { namespace core {
         t.y = dot(y, v);
         t.z = dot(z, v);
 
-        mat.column[3][0] = t.x;
-        mat.column[3][1] = t.y;
-        mat.column[3][2] = t.z;
-        mat.column[3][3] = 1;
+        mat.column[0][3] = t.x;
+        mat.column[1][3] = t.y;
+        mat.column[2][3] = t.z;
     }
 
     /*!

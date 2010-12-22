@@ -70,15 +70,32 @@ public:
 
         // Create the shader program
         //
-        GLuint vs = createShader("media/shaders/glsl/vertex/transform_only.vert", GL_VERTEX_SHADER);
-        GLuint fs = createShader("media/shaders/glsl/fragment/minimal.frag", GL_FRAGMENT_SHADER);
+        GLuint vs = createShader("media/shaders/glsl/vertex/basic_00.vert", GL_VERTEX_SHADER);
+        GLuint gs = createShader("media/shaders/glsl/geometry/basic_00.geom", GL_GEOMETRY_SHADER);
+        GLuint fs = createShader("media2/shaders/glsl/fragment/checker_world_xy10.frag", GL_FRAGMENT_SHADER);
 
         GLuint prog = glCreateProgram();
         {
             glAttachShader(prog, vs);
+            glAttachShader(prog, gs);
             glAttachShader(prog, fs);
+        
+            // OpenGL 3.2 spec states that geometry shaders must output strips for
+            // lines and triangles.
+            if (gs)
+            {
+                GLenum geometryInput = GL_TRIANGLES;
+                GLenum geometryOutput = GL_TRIANGLE_STRIP;
+                int maxPrimitives = 3;
+                
+                glProgramParameteriEXT(prog, GL_GEOMETRY_INPUT_TYPE_EXT,    geometryInput);
+                glProgramParameteriEXT(prog, GL_GEOMETRY_OUTPUT_TYPE_EXT,   geometryOutput);
+                glProgramParameteriEXT(prog, GL_GEOMETRY_VERTICES_OUT_EXT,  maxPrimitives);
+            }
+            
             glBindAttribLocation(prog, 0, "inPosition");
         }
+
         glLinkProgram(prog);
         glUseProgram(prog);
 
@@ -93,13 +110,14 @@ public:
         GLfloat positionData[] = 
         {
              500.0f,  -500.0f,  0.0f,
-             0.0f,     500.0f,  0.0f,
+             500.0f,   500.0f,  0.0f,
+            -500.0f,   500.0f,  0.0f,
             -500.0f,  -500.0f,  0.0f,
         };
         GLuint vbo[1];
         glGenBuffers(1, &vbo[0]);
         glBindBuffer(GL_ARRAY_BUFFER, vbo[0]);
-        glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) * 9, &positionData[0], GL_STATIC_DRAW);
+        glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) * 12, &positionData[0], GL_STATIC_DRAW);
         
         // TODO: The position input to the vertex shader is apparently always 0.  Find out where
         // this is documented.
@@ -120,7 +138,7 @@ public:
 
         int vp[4];  // x, y, width, height
         glGetIntegerv(GL_VIEWPORT, vp);
-        gluPerspective(60.0f, (GLfloat)vp[2]/(GLfloat)vp[3], 0.01f, 1000.0f);
+        gluPerspective(60.0f, (GLfloat)vp[2]/(GLfloat)vp[3], 0.01f, 9000.0f);
 
         //
         // Setup view matrix
@@ -129,7 +147,7 @@ public:
         glLoadIdentity();
 
         Camera camera;
-        set(camera.mPosition, 500, -500, 100);
+        set(camera.mPosition, 500, 500, 500);
         set(camera.mTarget, 0, 0, 0);
         set(camera.mWorldUp, 0, 0, 1);
 
@@ -140,8 +158,7 @@ public:
         // the 16 element array is the second element in the first row), which is the
         // same as matrix4; therefore the matrix can be loaded directly.  Otherwise,
         // glLoadTransposeMatrix should be used.
-        glLoadMatrixf(viewMatrix.data);
-
+        glLoadTransposeMatrixf(viewMatrix.data);
     }
 
     void 
@@ -150,7 +167,7 @@ public:
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
        
         glBindVertexArray(vao[0]);
-        glDrawArrays(GL_TRIANGLES, 0, 3);        
+        glDrawArrays(GL_QUADS, 0, 4);        
     }
 
 protected:

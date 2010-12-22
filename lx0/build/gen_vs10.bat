@@ -1,6 +1,7 @@
 @echo off
 
 call env_vs10.bat
+mklink /D media2 ..\dev\media
 
 echo.
 erase CMakeCache.txt
