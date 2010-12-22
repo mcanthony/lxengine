@@ -33,15 +33,19 @@
 
 namespace lx0 { namespace prototype {
 
-    struct camera
+    struct Camera
     {
         lx0::core::point3  mPosition;
         lx0::core::point3  mTarget;
+        lx0::core::vector3 mWorldUp;        //! Reference vector for the "up" direction in the world
     };
 
-    void    move_forward        (camera& camera, const lx0::core::vector3& up, float step);
-    void    move_up             (camera& camera, const lx0::core::vector3& up, float step);
-    void    move_side           (camera& camera, const lx0::core::vector3& up, float step);
-    void    rotate_horizontal   (camera& camera, const lx0::core::vector3& up, float angle);
-    void    rotate_vertical     (camera& camera, const lx0::core::vector3& up, float angle);
+    void    move_forward        (Camera& camera, float step);
+    void    move_up             (Camera& camera, float step);
+    void    move_side           (Camera& camera, float step);
+    void    rotate_horizontal   (Camera& camera, float angle);
+    void    rotate_vertical     (Camera& camera, float angle);
+
+
+
 }}

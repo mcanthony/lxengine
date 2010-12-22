@@ -25,3 +25,21 @@
     IN THE SOFTWARE.
 */
 //===========================================================================//
+
+#include <lx0/vector3.hpp>
+
+namespace lx0 { namespace core {
+
+    
+    /*!
+        Returns true if the vectors point in the same direction or opposite directions (180 degrees apart).
+     */
+    bool is_codirectional (const vector3& u, const vector3& v) 
+    {
+        vector3 un = normalize(u);
+        vector3 vn = normalize(v);
+        float cosA = dot(u, v);
+        return fabs(cosA - 1.0f) <= 10.0f * std::numeric_limits<float>::epsilon(); 
+    }
+
+}}

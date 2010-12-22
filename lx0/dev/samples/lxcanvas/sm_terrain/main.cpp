@@ -44,14 +44,17 @@
 
 // Lx0 headers
 #include <lx0/core.hpp>
+#include <lx0/matrix.hpp>
 #include <lx0/util.hpp>
 #include <lx0/canvas/canvas.hpp>
+#include <lx0/prototype/prototype.hpp>
 
 #include <gl/glew.h>
 #include <windows.h>        // Unfortunately must be included on Windows for GL.h to work
 #include <gl/GL.h>
 
 using namespace lx0::core;
+using namespace lx0::prototype;
 using namespace lx0::canvas::platform;
 
 //===========================================================================//
@@ -89,9 +92,9 @@ public:
         // Create a vertex buffer to store the data for the vertex array
         GLfloat positionData[] = 
         {
-            -2.0f,  -1.0f, -10.0f,
-             0.0f,   2.0f, -10.0f,
-             2.0f,  -1.0f, -10.0f,
+             500.0f,  -500.0f,  0.0f,
+             0.0f,     500.0f,  0.0f,
+            -500.0f,  -500.0f,  0.0f,
         };
         GLuint vbo[1];
         glGenBuffers(1, &vbo[0]);
@@ -109,20 +112,43 @@ public:
     void 
     resize (int width, int height)
     {
+        //
+        // Setup projection matrix
+        //
         glMatrixMode(GL_PROJECTION);
         glLoadIdentity();
 
-        gluPerspective(45.0f, (GLfloat)width/(GLfloat)height, 0.1f, 100.0f);
+        int vp[4];  // x, y, width, height
+        glGetIntegerv(GL_VIEWPORT, vp);
+        gluPerspective(60.0f, (GLfloat)vp[2]/(GLfloat)vp[3], 0.01f, 1000.0f);
 
+        //
+        // Setup view matrix
+        //
         glMatrixMode(GL_MODELVIEW);
         glLoadIdentity();
+
+        Camera camera;
+        set(camera.mPosition, 500, -500, 100);
+        set(camera.mTarget, 0, 0, 0);
+        set(camera.mWorldUp, 0, 0, 1);
+
+        matrix4 viewMatrix;
+        lookAt(viewMatrix, camera.mPosition, camera.mTarget, camera.mWorldUp);
+
+        // OpenGL matrices are laid out with rows contiguous in memory (i.e. data[1] in 
+        // the 16 element array is the second element in the first row), which is the
+        // same as matrix4; therefore the matrix can be loaded directly.  Otherwise,
+        // glLoadTransposeMatrix should be used.
+        glLoadMatrixf(viewMatrix.data);
+
     }
 
     void 
     render (void)	
     {
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-        
+       
         glBindVertexArray(vao[0]);
         glDrawArrays(GL_TRIANGLES, 0, 3);        
     }

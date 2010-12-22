@@ -107,6 +107,11 @@ main (int argc, char** argv)
         test.check(c.x == 0.0f);
         test.check(c.y == 0.0f);
         test.check(c.z == 0.0f);
+
+
+        test.check( is_orthogonal(vector3(1, 0, 0), vector3(0, 1, 0)) == true );
+        test.check( is_orthogonal(vector3(0, 1, 0), vector3(0, 1, 0)) == false );
+        test.check( is_orthogonal(vector3(0, 0, 1), vector3(0, 1, 0)) == true );
     });
     
     

@@ -41,9 +41,9 @@ namespace lx0 { namespace core {
     setOrthonormalBasis (matrix4& mat, const vector3& x, const vector3& y, const vector3& z, const point3& origin)
     {
         // Check that the axes are normalized (i.e. the "normal" part of orthonormal)
-        lx_check_error( is_unit_length(x) );
-        lx_check_error( is_unit_length(y) );
-        lx_check_error( is_unit_length(z) );
+        lx_check_error( is_unit_length(x), "X axis is not unit length" );
+        lx_check_error( is_unit_length(y), "Y axis is not unit length" );
+        lx_check_error( is_unit_length(z), "Z axis is not unit length" );
 
         // Check that the axes are orthogonal (i.e. the "ortho" part of orthonormal)
         lx_check_error( is_orthogonal(x, y) );
@@ -51,19 +51,19 @@ namespace lx0 { namespace core {
         lx_check_error( is_orthogonal(x, z) );
 
         mat.column[0][0] = x.x;
-        mat.column[0][0] = x.y;
-        mat.column[0][0] = x.z;
-        mat.column[0][0] = 0;
+        mat.column[0][1] = x.y;
+        mat.column[0][2] = x.z;
+        mat.column[0][3] = 0;
 
         mat.column[1][0] = y.x;
-        mat.column[1][0] = y.y;
-        mat.column[1][0] = y.z;
-        mat.column[1][0] = 0;
+        mat.column[1][1] = y.y;
+        mat.column[1][2] = y.z;
+        mat.column[1][3] = 0;
 
         mat.column[2][0] = z.x;
-        mat.column[2][0] = z.y;
-        mat.column[2][0] = z.z;
-        mat.column[2][0] = 0;
+        mat.column[2][1] = z.y;
+        mat.column[2][2] = z.z;
+        mat.column[2][3] = 0;
 
         // A 4x4 Matrix effectively acts as 3x3 rotation matrix followed by an offset.
         // In other words, the translation term is added in after the rotation occurs.
@@ -77,9 +77,9 @@ namespace lx0 { namespace core {
         t.z = dot(z, v);
 
         mat.column[3][0] = t.x;
-        mat.column[3][0] = t.y;
-        mat.column[3][0] = t.z;
-        mat.column[3][0] = 1;
+        mat.column[3][1] = t.y;
+        mat.column[3][2] = t.z;
+        mat.column[3][3] = 1;
     }
 
     /*!
@@ -96,6 +96,8 @@ namespace lx0 { namespace core {
     void 
     lookAt (matrix4& mat, const point3& position, const point3& target, const vector3& eyeUp)
     {
+        lx_check_error( !is_zero_length( target - position ),  "Position and target are the same");
+
         //
         // Compute the eye coordinate system.
         //
@@ -105,6 +107,11 @@ namespace lx0 { namespace core {
         const vector3 forward = normalize(target - position);
         const vector3 right   = normalize( cross(forward, eyeUp) );
         const vector3 up      = normalize( cross(right, forward) );
+
+        lx_check_error( !is_codirectional(forward, eyeUp), "Forward vector looking straight up.  Cannot compute matrix correctly.");
+        lx_check_error( is_unit_length(forward), "Forward vector incorrect: are position and target the same?" );
+        lx_check_error( is_unit_length(right),   "Error.  Is the viewer looking straight up (eyeUp == forward)?" );
+        lx_check_error( is_unit_length(up), "Expected vector to be unit length.  Length squared = %f", length_squared(up));
 
         //
         // Now map the eye vectors to the X/Y/Z basis.   The mapping here is essentially

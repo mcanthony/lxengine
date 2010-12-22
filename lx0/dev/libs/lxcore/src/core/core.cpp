@@ -142,6 +142,12 @@ namespace lx0 { namespace core {
             lx_fatal("Error condition encountered!");
     }
 
+    void 
+    lx_fatal  (void)
+    {
+        lx_fatal("Unknown fatal error!");
+    }
+
     void
     lx_fatal (const char* format, ...)
     {
@@ -170,8 +176,7 @@ namespace lx0 { namespace core {
 
         slotError(buffer);
 
-#if !defined(NDEBUG) && defined(_MSC_VER)
-        
+#if !defined(NDEBUG) && defined(_MSC_VER)      
         lx0::util::lx_message_box("LxEngine Error", buffer);
         *(int*)0 = 0;
 #endif

@@ -56,16 +56,18 @@ namespace lx0 { namespace core {
         template <> struct cast_is_safe<const vector3&, const Ogre::Vector3>   { enum { value = 1 }; }; 
     }
 
-    inline vector3  abs_            (const vector3& v)                   { return vector3(fabs(v.x), fabs(v.y), fabs(v.z)); }
+    inline vector3  abs_                (const vector3& v)                   { return vector3(fabs(v.x), fabs(v.y), fabs(v.z)); }
 
-    inline float    dot             (const vector3& a, const vector3& b) { return a.ogreVec.dotProduct(b.ogreVec); }
-    inline float    abs_dot         (const vector3& a, const vector3& b) { return abs(dot(a, b)); }
-    inline vector3  cross           (const vector3& a, const vector3& b) { return cast<vector3&>(a.ogreVec.crossProduct(b.ogreVec)); }
-    inline vector3  normalize       (const vector3& a)                   { vector3 t = a; t.ogreVec.normalise(); return t; }
-    inline float    length          (const vector3& a)                   { return a.ogreVec.length(); }
-    inline float    length_squared  (const vector3& v)                   { return v.x * v.x + v.y * v.y + v.z * v.z; }
-    inline bool     is_unit_length  (const vector3& v)                   { return abs( length_squared(v)  - 1 ) < std::numeric_limits<float>::epsilon(); }
-    inline bool     is_orthogonal   (const vector3& u, const vector3& v) { return abs( dot(u, v) - 1 ) < std::numeric_limits<float>::epsilon(); }
+    inline float    dot                 (const vector3& a, const vector3& b) { return a.ogreVec.dotProduct(b.ogreVec); }
+    inline float    abs_dot             (const vector3& a, const vector3& b) { return abs(dot(a, b)); }
+    inline vector3  cross               (const vector3& a, const vector3& b) { return cast<vector3&>(a.ogreVec.crossProduct(b.ogreVec)); }
+    inline vector3  normalize           (const vector3& a)                   { vector3 t = a; t.ogreVec.normalise(); return t; }
+    inline float    length              (const vector3& a)                   { return a.ogreVec.length(); }
+    inline float    length_squared      (const vector3& v)                   { return v.x * v.x + v.y * v.y + v.z * v.z; }
+    inline bool     is_zero_length      (const vector3& v)                   { return fabs( length_squared(v) ) <= 10.0f * std::numeric_limits<float>::epsilon(); }
+    inline bool     is_unit_length      (const vector3& v)                   { return fabs( length_squared(v)  - 1.0f ) <= 10.0f * std::numeric_limits<float>::epsilon(); }
+    inline bool     is_orthogonal       (const vector3& u, const vector3& v) { return fabs( dot(u, v) ) <= 10.0f * std::numeric_limits<float>::epsilon(); }
+           bool     is_codirectional    (const vector3& u, const vector3& v); 
 
     inline float    angle_between   (const vector3& a, const vector3& b) 
     {
@@ -76,5 +78,8 @@ namespace lx0 { namespace core {
 
     inline vector3  operator*       (float s, const vector3& v)         { return vector3(s*v.x, s*v.y, s*v.z); }
     inline vector3  operator*       (const vector3& v, float s)         { return s * v; }
+
+
+    
 
 }};

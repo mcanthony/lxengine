@@ -56,32 +56,37 @@ namespace lx0 { namespace prototype {
 
     //!
     void    
-    move_forward (camera& camera, const vector3& up, float step)
+    move_forward (Camera& camera, const vector3& up, float step)
     {
+        lx_fatal();
     }
 
     //!
     void    
-    move_up (camera& camera, const vector3& up, float step)
+    move_up (Camera& camera, const vector3& up, float step)
     {
+        lx_fatal();
     }
 
     //!
     void    
-    move_side (camera& camera, const vector3& up, float step)
+    move_side (Camera& camera, const vector3& up, float step)
     {
+        lx_fatal();
     }
 
     //!
     void    
-    rotate_horizontal (camera& camera, const vector3& up, float angle)
+    rotate_horizontal (Camera& camera, const vector3& up, float angle)
     {
+        lx_fatal();
     }
 
     //!
     void    
-    rotate_vertical (camera& camera, const vector3& up, float angle)
+    rotate_vertical (Camera& camera, const vector3& up, float angle)
     {
+        lx_fatal();
     }
 
 }}

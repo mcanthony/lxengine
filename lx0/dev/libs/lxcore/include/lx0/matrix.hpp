@@ -58,7 +58,7 @@ namespace lx0 { namespace core {
             };
 
             tuple4 column[4];
-
+            float  data[16];
         };
     };
 
