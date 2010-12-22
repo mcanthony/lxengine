@@ -1,6 +1,6 @@
 
 lx_glob_sources("src")
-lx_glob_sources("include/lxcanvas")
+lx_glob_sources("include")
 
 add_definitions(-DGLEW_STATIC)
 include_directories( src/extern/glew )

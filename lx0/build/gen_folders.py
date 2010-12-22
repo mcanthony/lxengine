@@ -110,11 +110,13 @@ write_sln("lx0.sln", [
         "lxengine",
         "lxcanvas",
         "lxblendreader",
+        "lxprototype",
     ],
     "2. Samples", [
         "sm_lx_cube_rain",
         "sm_lx_cube_asteriods",
         "sm_lxcanvas",
+        "sm_terrain",
         "sm_ogre_minimal",
         "sm_v8_basic",
         "cpp_smartptr"

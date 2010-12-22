@@ -45,6 +45,7 @@ include_directories( libs/lxcore/include )
 include_directories( libs/lxengine/include )
 include_directories( libs/lxcanvas/include )
 include_directories( libs/lxblendreader/include )
+include_directories( libs/lxprototype/include )
 
 # Boost
 include_directories(${Boost_INCLUDE_DIR})
@@ -74,6 +75,7 @@ set( LX_ALL_LIBS
     lxengine
     lxcanvas
     lxblendreader 
+    lxprototype
     ${OGRE_LIBRARIES} 
     ${V8_LIBS} 
     ${BULLET_LIBS} 

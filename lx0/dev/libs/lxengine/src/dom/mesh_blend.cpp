@@ -35,11 +35,17 @@
 
 #include <lx0/core.hpp>
 #include <lx0/mesh.hpp>
-
-#include <lxblendreader/blendreader.hpp>
+#include <lx0/blendreader/blendreader.hpp>
 
 using namespace lx0::core;
 using namespace lx0::blendreader;
+
+namespace {
+    float normalizeShort (short s)
+    {
+        return float (s) / float(std::numeric_limits<short>::max());
+    }
+}
 
 namespace lx0 { namespace dom {
 
@@ -75,9 +81,9 @@ namespace lx0 { namespace dom {
                 v.position = spVerts->field<point3>("co", 0);
 
                 // Normals are encoded as shorts
-                v.normal.x = spVerts->field<short>("no", 0) / float(std::numeric_limits<short>::max());
-                v.normal.y = spVerts->field<short>("no", 1) / float(std::numeric_limits<short>::max());
-                v.normal.z = spVerts->field<short>("no", 2) / float(std::numeric_limits<short>::max());
+                v.normal.x = normalizeShort( spVerts->field<short>("no", 0) );
+                v.normal.y = normalizeShort( spVerts->field<short>("no", 1) );
+                v.normal.z = normalizeShort( spVerts->field<short>("no", 2) );
 
                 pMesh->mVertices.push_back(v);
                 spVerts->next();
