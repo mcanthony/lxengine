@@ -28,6 +28,8 @@
 
 #include <lx0/vector3.hpp>
 
+#include <OGRE/OgreQuaternion.h>
+
 namespace lx0 { namespace core {
 
     
@@ -40,6 +42,14 @@ namespace lx0 { namespace core {
         vector3 vn = normalize(v);
         float cosA = dot(u, v);
         return fabs(cosA - 1.0f) <= 10.0f * std::numeric_limits<float>::epsilon(); 
+    }
+
+    vector3  
+    rotate (const vector3& v, const vector3& axis, float r)
+    {
+        Ogre::Quaternion q(Ogre::Radian(r), *reinterpret_cast<const Ogre::Vector3*>(&axis));
+        Ogre::Vector3 u = q * (*reinterpret_cast<const Ogre::Vector3*>(&v));
+        return *reinterpret_cast<vector3*>(&u);
     }
 
 }}

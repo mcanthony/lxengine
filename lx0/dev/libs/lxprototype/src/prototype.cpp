@@ -53,6 +53,18 @@ using namespace lx0::core;
 
 namespace lx0 { namespace prototype { 
 
+    //! Computes the view matrix for the given camera
+    /*!
+        Note that matrix4 is has column-major order.  This the same as 
+        DirectX and the transpose of the layout used by OpenGL.  
+        Use glLoadTransposeMatrixf() if directly loading this matrix into
+        OpenGL.
+     */
+    void    
+    view_matrix (const Camera& camera, lx0::core::matrix4& viewMatrix)
+    {
+        lookAt(viewMatrix, camera.mPosition, camera.mTarget, camera.mWorldUp);
+    }
 
     //!
     void    
@@ -70,23 +82,28 @@ namespace lx0 { namespace prototype {
 
     //!
     void    
-    move_side (Camera& camera, const vector3& up, float step)
+    move_side (Camera& camera, float step)
     {
         lx_fatal();
     }
 
-    //!
+    //! Rotate the camera horizontally about the world "up" axis
     void    
-    rotate_horizontal (Camera& camera, const vector3& up, float angle)
+    rotate_horizontal (Camera& camera, float angle)
     {
-        lx_fatal();
+        const vector3 view = camera.mTarget - camera.mPosition;
+        const vector3 rotated = rotate(view, camera.mWorldUp, angle);
+        camera.mTarget = camera.mPosition + rotated;
     }
 
-    //!
+    //! Rotate the camera vertically (about the rightward facing axis of the camera)
     void    
-    rotate_vertical (Camera& camera, const vector3& up, float angle)
+    rotate_vertical (Camera& camera, float angle)
     {
-        lx_fatal();
+        const vector3 view  = camera.mTarget - camera.mPosition;
+        const vector3 right = normalize( cross(view, camera.mWorldUp) );
+        const vector3 rotated = rotate(view, right, angle);
+        camera.mTarget = camera.mPosition + rotated;
     }
 
 }}

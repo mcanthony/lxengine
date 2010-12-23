@@ -74,6 +74,7 @@ public:
     std::vector<float> mHeight;
 };
 
+Camera             gCamera;
 HeightMap          gHMap;
 
 void 
@@ -97,6 +98,10 @@ class Renderer
 public:
     void initialize()
     {
+        set(gCamera.mPosition, 750, 750, 900);
+        set(gCamera.mTarget, 0, 0, 0);
+        set(gCamera.mWorldUp, 0, 0, 1);
+
         // Initialization
         //
         lx_log("Using OpenGL v%s", (const char*)glGetString(GL_VERSION));
@@ -181,6 +186,12 @@ public:
     void 
     resize (int width, int height)
     {
+
+    }
+
+    void 
+    render (void)	
+    {
         //
         // Setup projection matrix
         //
@@ -194,27 +205,13 @@ public:
         //
         // Setup view matrix
         //
-        glMatrixMode(GL_MODELVIEW);
-        glLoadIdentity();
-
-        Camera camera;
-        set(camera.mPosition, 750, 750, 900);
-        set(camera.mTarget, 0, 0, 0);
-        set(camera.mWorldUp, 0, 0, 1);
-
-        matrix4 viewMatrix;
-        lookAt(viewMatrix, camera.mPosition, camera.mTarget, camera.mWorldUp);
-
         // OpenGL matrices are laid out with rows contiguous in memory (i.e. data[1] in 
-        // the 16 element array is the second element in the first row), which is the
-        // same as matrix4; therefore the matrix can be loaded directly.  Otherwise,
-        // glLoadTransposeMatrix should be used.
-        glLoadTransposeMatrixf(viewMatrix.data);
-    }
+        // the 16 element array is the second element in the first row); matrix4 uses
+        // column-major ordering.  Therefore load it as a tranpose to swap the order.
+        //
+        glMatrixMode(GL_MODELVIEW);
+        glLoadTransposeMatrixf(view_matrix(gCamera).data);
 
-    void 
-    render (void)	
-    {
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
        
         glBindVertexArray(vao[0]);
@@ -266,6 +263,12 @@ main (int argc, char** argv)
     renderer.initialize();
     renderer.resize(800, 400);
     pWin->slotRedraw += [&]() { renderer.render(); };
+    pWin->slotLMouseDrag += [&](const MouseState& ms, const ButtonState& bs, KeyModifiers km) {
+
+        rotate_horizontal(gCamera, ms.deltaX() * 3.14f / 1000.0f );
+        rotate_vertical(gCamera, ms.deltaY() * 3.14f / 1000.0f );
+        pWin->invalidate(); 
+    };
     pWin->show();
 
     bool bDone = false;

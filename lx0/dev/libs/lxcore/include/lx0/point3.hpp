@@ -69,5 +69,6 @@ namespace lx0 { namespace core {
     inline point3   mid_point       (const point3& a, const point3& b)  { return cast<point3&>(a.ogreVec.midPoint(b.ogreVec)); }
 
     inline vector3  operator-       (const point3& p, const point3& q)  { return sub(p, q); }
+    inline point3   operator+       (const point3& p, const vector3& v) { return add(p, v); }
     
 }};

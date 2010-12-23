@@ -76,6 +76,8 @@ namespace lx0 { namespace core {
         return const_cast<Ogre::Vector3&>(a.ogreVec).angleBetween(b.ogreVec).valueRadians() ; 
     }
 
+           vector3  rotate          (const vector3& v, const vector3& axis, float r);
+
     inline vector3  operator*       (float s, const vector3& v)         { return vector3(s*v.x, s*v.y, s*v.z); }
     inline vector3  operator*       (const vector3& v, float s)         { return s * v; }
 
