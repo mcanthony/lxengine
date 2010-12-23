@@ -45,7 +45,8 @@ namespace lx0 { namespace core {
         point3() {}
         point3 (float x_, float y_, float z_) : base_tuple3(x_, y_, z_) {}
     
-        point3      operator-   (void) const    { return point3(-x, -y, -z); }
+        point3      operator-   (void) const            { return point3(-x, -y, -z); }
+        void        operator+=  (const vector3& v)      { x += v.x; y += v.y; z += v.z; }
     };
 
     namespace detail

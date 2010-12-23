@@ -47,6 +47,41 @@ using namespace lx0::core;
 namespace lx0 { namespace canvas { namespace platform {
 
     //===========================================================================//
+
+    namespace {
+    
+        int
+        s_winToLxKey (int winKey)
+        {
+            if (winKey >= 'A' && winKey <= 'Z')
+                return KC_A + (winKey - 'A');
+            else
+                return 0;
+        }
+        
+        void 
+        s_getKeyState (KeyboardState& lxState, int eventVKey)
+        {
+            BYTE winState[256];
+            if(::GetKeyboardState(winState) != FALSE)
+            {
+                for (int i = 0; i < 256; ++i)
+                    lxState.bDown[s_winToLxKey(i)] = !!winState[i];
+
+                // GetKeyboardState() returns the keyboard state after the events
+                // have been processed - i.e. not the current key if this functio
+                // is called in the key event handler itself.  Therefore, manually
+                // check the key associated with the event.
+                // 
+                // http://msdn.microsoft.com/en-us/library/ms646299(v=vs.85).aspx.  See Remarks
+                // section.
+                //
+                lxState.bDown[s_winToLxKey(eventVKey)] = !(::GetAsyncKeyState(eventVKey) && 0xFF00);
+            }
+        }
+    }
+
+    //===========================================================================//
     //!
     /*!
      */
@@ -147,6 +182,12 @@ namespace lx0 { namespace canvas { namespace platform {
         s_windowClass.unregisterClass();
     }
 
+    const KeyboardState&    
+    CanvasBase::keyboard (void) const
+    {
+        return m_keyboard;
+    }
+
     void 
     CanvasBase::overrideParentWndProc (void* wndProc)
     {
@@ -174,6 +215,8 @@ namespace lx0 { namespace canvas { namespace platform {
                     pWin->m_opaque_hWnd = (void*)hWnd;
                     SetWindowLongPtr(hWnd, GWL_USERDATA, (LONG)(LONG_PTR)pWin);
 
+                    s_getKeyState(pWin->m_keyboard, 0);
+
                     pWin->impCreate();
                     pWin->slotCreate();               
             
@@ -185,6 +228,8 @@ namespace lx0 { namespace canvas { namespace platform {
                     ///@todo Add the ctrl-shift extended key state
                     unsigned int keyCode = (UINT)(wParam);
 
+                    pWin->m_keyboard.bDown[s_winToLxKey(keyCode)] = true;
+
                     if (pWin->impKeyDown(keyCode))
                         pWin->slotKeyDown(keyCode);
                 }
@@ -194,6 +239,8 @@ namespace lx0 { namespace canvas { namespace platform {
                 {
                     ///@todo Add the ctrl-shift extended key state
                     unsigned int keyCode = (UINT)(wParam);
+                    
+                    pWin->m_keyboard.bDown[s_winToLxKey(keyCode)] = false;
 
                     if (pWin->impKeyUp(keyCode))
                         pWin->slotKeyUp(keyCode);

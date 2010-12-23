@@ -67,7 +67,11 @@ public:
     int sizeX() { return mSizeX; }
     int sizeY() { return mSizeY; }
 
-    float& operator() (int x, int y) { return mHeight[y * mSizeX + x]; }
+    float& operator() (int x, int y) { 
+        lx_check_error(x >= 0 && y >= 0);
+        lx_check_error(x < mSizeX && y < mSizeY);
+        return mHeight[y * mSizeX + x]; 
+    }
 
     int                mSizeX;
     int                mSizeY;
@@ -76,20 +80,6 @@ public:
 
 Camera             gCamera;
 HeightMap          gHMap;
-
-void 
-generateHeightMap()
-{
-    gHMap.resize(64, 64);
-    for (int y = 0; y < gHMap.sizeY(); y ++)
-    {
-        for (int x = 0; x < gHMap.sizeX(); x++)
-        {
-            float h = float( 25 * (sin(x * 6.28318531 / 32) + cos(y * 6.28318531 / 16)) );
-            gHMap(x, y) = h;
-        }
-    }
-}
 
 //===========================================================================//
 
@@ -352,6 +342,20 @@ RasterizerGL::Item::rasterize()
 
 //===========================================================================//
 
+void 
+generateHeightMap()
+{
+    gHMap.resize(64, 64);
+    for (int y = 0; y < gHMap.sizeY(); y ++)
+    {
+        for (int x = 0; x < gHMap.sizeX(); x++)
+        {
+            float h = float( 25 * (sin(x * 6.28318531 / 32) + cos(y * 6.28318531 / 16)) );
+            gHMap(x, y) = h;
+        }
+    }
+}
+
 class Renderer
 {
 public:
@@ -377,10 +381,19 @@ public:
                 float wx1 = -500.0f + 1000.0f * float(x + 1) / float(gHMap.sizeX());
                 float z = gHMap(x,y);
 
-                float z0 = (x > 0 && y > 0) ? gHMap(x-1, y-1) : z;
                 float z1 = (y > 0) ? gHMap(x, y-1) : z;
                 float z2 = z;
                 float z3 = (x > 0) ? gHMap(x-1,y) : z;
+
+                float z0;
+                if (x > 0 && y > 0) 
+                    z0 = gHMap(x-1, y-1);
+                else if (x > 0)
+                    z0 = z3;
+                else if (y > 0)
+                    z0 = z1;
+                else
+                    z0 = z;
 
                 positionData.push_back( point3(wx0, wy0, z0) );
                 positionData.push_back( point3(wx1, wy0, z1) );
@@ -443,8 +456,8 @@ main (int argc, char** argv)
     renderer.resize(800, 400);
     pWin->slotRedraw += [&]() { renderer.render(); };
     pWin->slotLMouseDrag += [&](const MouseState& ms, const ButtonState& bs, KeyModifiers km) {
-        rotate_horizontal(gCamera, ms.deltaX() * 3.14f / 1000.0f );
-        rotate_vertical(gCamera, ms.deltaY() * 3.14f / 1000.0f );
+        rotate_horizontal(gCamera, ms.deltaX() * -3.14f / 1000.0f );
+        rotate_vertical(gCamera, ms.deltaY() * -3.14f / 1000.0f );
         pWin->invalidate(); 
     };
     pWin->show();
@@ -452,6 +465,22 @@ main (int argc, char** argv)
     bool bDone = false;
     do {
         bDone = host.processEvents();
+
+        if (pWin->keyboard().bDown[KC_W])
+            move_forward(gCamera, 10.0f);
+        if (pWin->keyboard().bDown[KC_S])
+            move_backward(gCamera, 10.0f);
+        if (pWin->keyboard().bDown[KC_A])
+            move_left(gCamera, 10.0f);
+        if (pWin->keyboard().bDown[KC_D])
+            move_right(gCamera, 10.0f);
+        if (pWin->keyboard().bDown[KC_R])
+            move_up(gCamera, 10.0f);
+        if (pWin->keyboard().bDown[KC_F])
+            move_down(gCamera, 10.0f);
+
+        pWin->invalidate(); 
+
     } while (!bDone);
 
     return exitCode;

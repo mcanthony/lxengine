@@ -53,6 +53,16 @@ using namespace lx0::core;
 
 namespace lx0 { namespace prototype { 
 
+    /*!
+        Returns the unnormalized vector between the camera position and target.
+     */
+    vector3
+    view_vector (const Camera& camera)
+    {
+        lx_check_error( !is_zero_length(camera.mTarget - camera.mPosition) );
+        return camera.mTarget - camera.mPosition;
+    }
+
     //! Computes the view matrix for the given camera
     /*!
         Note that matrix4 is has column-major order.  This the same as 
@@ -68,23 +78,31 @@ namespace lx0 { namespace prototype {
 
     //!
     void    
-    move_forward (Camera& camera, const vector3& up, float step)
+    move_forward (Camera& camera, float step)
     {
-        lx_fatal();
+        const vector3 view = normalize( view_vector(camera) ) * step;
+        camera.mTarget += view;
+        camera.mPosition += view;
     }
 
     //!
     void    
-    move_up (Camera& camera, const vector3& up, float step)
+    move_up (Camera& camera, float step)
     {
-        lx_fatal();
+        lx_check_error( is_unit_length( camera.mWorldUp ) );
+
+        camera.mTarget += camera.mWorldUp * step;
+        camera.mPosition += camera.mWorldUp * step;
     }
 
     //!
     void    
-    move_side (Camera& camera, float step)
+    move_right (Camera& camera, float step)
     {
-        lx_fatal();
+        const vector3 view  = normalize( view_vector(camera) );
+        const vector3 right = normalize( cross(view, camera.mWorldUp) );
+        camera.mTarget += right * step;
+        camera.mPosition += right * step;
     }
 
     //! Rotate the camera horizontally about the world "up" axis

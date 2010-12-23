@@ -41,12 +41,17 @@ namespace lx0 { namespace prototype {
         lx0::core::vector3 mWorldUp;        //! Reference vector for the "up" direction in the world
     };
 
+            lx0::core::vector3  view_vector         (const Camera& camera);
             void                view_matrix         (const Camera& camera, lx0::core::matrix4& viewMatrix);
     inline  lx0::core::matrix4  view_matrix         (const Camera& camera) { lx0::core::matrix4 m; view_matrix(camera, m); return m; } 
 
             void                move_forward        (Camera& camera, float step);
+    inline  void                move_backward       (Camera& camera, float step) { move_forward(camera, -step); }
             void                move_up             (Camera& camera, float step);
-            void                move_side           (Camera& camera, float step);
+    inline  void                move_down           (Camera& camera, float step) { move_up(camera, -step); }
+            void                move_right          (Camera& camera, float step);
+    inline  void                move_left           (Camera& camera, float step) { move_right(camera, -step); }
+            
             void                rotate_horizontal   (Camera& camera, float angle);
             void                rotate_vertical     (Camera& camera, float angle);
 
