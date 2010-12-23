@@ -164,6 +164,8 @@ void RasterizerGL::initialize()
     // Initialization
     //
     lx_log("Using OpenGL v%s", (const char*)glGetString(GL_VERSION));
+
+    glEnable(GL_DEPTH_TEST);
 }
 
 void RasterizerGL::shutdown()

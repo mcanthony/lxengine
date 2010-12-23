@@ -270,13 +270,13 @@ namespace lx0 { namespace canvas {
             static int __stdcall windowProc(void* hWnd, unsigned int uMsg, unsigned int* wParam, long* lParam );
             static Win32WindowClass s_windowClass;
 
-            void*         m_opaque_hWnd;
+            void*           mOpaqueHwnd;;
 
-            KeyboardState   m_keyboard;
-            MouseState      m_mouse;
-            ButtonState     m_lButton;
-            ButtonState     m_mButton;
-            ButtonState     m_rButton;
+            KeyboardState   mKeyboard;
+            MouseState      mMouse;
+            ButtonState     mLButton;
+            ButtonState     mMButton;
+            ButtonState     mRButton;
         };
 
 

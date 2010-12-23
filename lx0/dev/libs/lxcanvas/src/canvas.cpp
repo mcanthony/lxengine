@@ -40,7 +40,7 @@
 
 using namespace lx0::core;
 
-#define m_hWnd reinterpret_cast<HWND&>(m_opaque_hWnd)
+#define m_hWnd reinterpret_cast<HWND&>(mOpaqueHwnd)
 #define m_hDC  reinterpret_cast<HDC&>(m_opaque_hDC)
 #define m_hRC  reinterpret_cast<HGLRC&>(m_opaque_hRC)
 
@@ -147,7 +147,7 @@ namespace lx0 { namespace canvas { namespace platform {
     Win32WindowClass CanvasBase::s_windowClass((WNDPROC)CanvasBase::windowProc);
 
     CanvasBase::CanvasBase()
-        : m_opaque_hWnd (NULL)
+        : mOpaqueHwnd (NULL)
     {
         s_windowClass.registerClass();
     }
@@ -185,7 +185,7 @@ namespace lx0 { namespace canvas { namespace platform {
     const KeyboardState&    
     CanvasBase::keyboard (void) const
     {
-        return m_keyboard;
+        return mKeyboard;
     }
 
     void 
@@ -212,10 +212,10 @@ namespace lx0 { namespace canvas { namespace platform {
                 {
                     LPCREATESTRUCT pCreateStruct = reinterpret_cast<LPCREATESTRUCT>(lParam);
                     CanvasBase* pWin = reinterpret_cast<CanvasBase*>(pCreateStruct->lpCreateParams);
-                    pWin->m_opaque_hWnd = (void*)hWnd;
+                    pWin->mOpaqueHwnd = (void*)hWnd;
                     SetWindowLongPtr(hWnd, GWL_USERDATA, (LONG)(LONG_PTR)pWin);
 
-                    s_getKeyState(pWin->m_keyboard, 0);
+                    s_getKeyState(pWin->mKeyboard, 0);
 
                     pWin->impCreate();
                     pWin->slotCreate();               
@@ -228,7 +228,7 @@ namespace lx0 { namespace canvas { namespace platform {
                     ///@todo Add the ctrl-shift extended key state
                     unsigned int keyCode = (UINT)(wParam);
 
-                    pWin->m_keyboard.bDown[s_winToLxKey(keyCode)] = true;
+                    pWin->mKeyboard.bDown[s_winToLxKey(keyCode)] = true;
 
                     if (pWin->impKeyDown(keyCode))
                         pWin->slotKeyDown(keyCode);
@@ -240,7 +240,7 @@ namespace lx0 { namespace canvas { namespace platform {
                     ///@todo Add the ctrl-shift extended key state
                     unsigned int keyCode = (UINT)(wParam);
                     
-                    pWin->m_keyboard.bDown[s_winToLxKey(keyCode)] = false;
+                    pWin->mKeyboard.bDown[s_winToLxKey(keyCode)] = false;
 
                     if (pWin->impKeyUp(keyCode))
                         pWin->slotKeyUp(keyCode);
@@ -287,9 +287,9 @@ namespace lx0 { namespace canvas { namespace platform {
                     const int clientX = GET_X_LPARAM(lParam);
                     const int clientY = GET_Y_LPARAM(lParam);
                 
-                    pWin->m_lButton.bDown = true;  
-                    pWin->m_lButton.startX = clientX;
-                    pWin->m_lButton.startY = clientY;
+                    pWin->mLButton.bDown = true;  
+                    pWin->mLButton.startX = clientX;
+                    pWin->mLButton.startY = clientY;
                 } 
                 return 0;
 
@@ -298,7 +298,7 @@ namespace lx0 { namespace canvas { namespace platform {
                     const int clientX = GET_X_LPARAM(lParam);
                     const int clientY = GET_Y_LPARAM(lParam);
 
-                    pWin->m_lButton.bDown = false;
+                    pWin->mLButton.bDown = false;
                 } 
                 return 0;
 
@@ -307,15 +307,15 @@ namespace lx0 { namespace canvas { namespace platform {
                     int clientX = GET_X_LPARAM(lParam); 
                     int clientY = GET_Y_LPARAM(lParam); 
 
-                    pWin->m_mouse.previousX = pWin->m_mouse.x;
-                    pWin->m_mouse.previousY = pWin->m_mouse.y;
-                    pWin->m_mouse.x = clientX;
-                    pWin->m_mouse.y = clientY;
+                    pWin->mMouse.previousX = pWin->mMouse.x;
+                    pWin->mMouse.previousY = pWin->mMouse.y;
+                    pWin->mMouse.x = clientX;
+                    pWin->mMouse.y = clientY;
 
-                    if (pWin->m_lButton.bDown)
+                    if (pWin->mLButton.bDown)
                     {
-                        if (pWin->impLMouseDrag(pWin->m_mouse, pWin->m_lButton, KeyModifiers()))
-                            pWin->slotLMouseDrag(pWin->m_mouse, pWin->m_lButton, KeyModifiers());
+                        if (pWin->impLMouseDrag(pWin->mMouse, pWin->mLButton, KeyModifiers()))
+                            pWin->slotLMouseDrag(pWin->mMouse, pWin->mLButton, KeyModifiers());
                     }
                 }
                 break;
@@ -323,8 +323,8 @@ namespace lx0 { namespace canvas { namespace platform {
             case WM_MOUSEWHEEL:
                 {
                     const int wheelDelta = GET_WHEEL_DELTA_WPARAM(wParam) / WHEEL_DELTA;
-                    if (pWin->impMouseWheel(pWin->m_mouse, wheelDelta))
-                        pWin->slotMouseWheel(pWin->m_mouse, wheelDelta);
+                    if (pWin->impMouseWheel(pWin->mMouse, wheelDelta))
+                        pWin->slotMouseWheel(pWin->mMouse, wheelDelta);
                 
                 }
                 return 0;
