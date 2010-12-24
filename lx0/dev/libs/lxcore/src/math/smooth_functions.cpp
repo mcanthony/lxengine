@@ -27,47 +27,24 @@
 */
 //===========================================================================//
 
-
-#pragma once
-
-#include <lx0/slot.hpp>
+#include <cmath>
+#include <lx0/math/smooth_functions.hpp>
 
 namespace lx0 { namespace core {
 
-    void lx_init();
+    float smooth_cos (float t)
+    {
+        return 0.5f * (1.0f - cosf(t * 3.14159265f));
+    }
 
-    void lx_assert (bool condition);
-    void lx_assert (bool condition, const char* format, ...);
-
-    void lx_fatal  (void);
-    void lx_fatal  (const char* format, ...);
-    void lx_error  (const char* format, ...);
-    void lx_warn   (const char* format, ...);
-    void lx_log    (const char* format, ...);
-    void lx_debug  (const char* format, ...);
-
-    #define lx_warn_once(FORMAT,...) \
-        do { static bool once = false;  if(!once) { lx_warn(FORMAT,__VA_ARGS__); once = true; } } while (0)
-    
-    void lx_check_fatal (bool condition);
-    void lx_check_error (bool condition);
-    void lx_check_error (bool condition, const char* format, ...);
-
-    extern slot<void (const char*)> slotFatal;
-    extern slot<void (const char*)> slotError;
-    extern slot<void (const char*)> slotWarn;
-    extern slot<void (const char*)> slotLog;
-    extern slot<void (const char*)> slotAssert;
-    extern slot<void (const char*)> slotDebug;
-    
-    class error_exception : public std::exception { };
-    class fatal_exception : public std::exception { };
-
+    //
+    // Use the smoothing function from Perlin's 2002 algorithm:
+    //    6t^5 - 15t^4 + 10t^3
+    //  = t^3 * (6t^2 - 15t + 10)
+    //
+    float smooth_perlin2002 (float t)
+    {
+        return t * t * t * (6 * t * t - 15 * t + 10);
+    }
 
 }}
-
-
-///@todo This file should be split into a core.hpp that includes all core header
-/// files and a "base.hpp" which defines all the basic functionality.
-#include <lx0/math/noise.hpp>
-#include <lx0/math/smooth_functions.hpp>
