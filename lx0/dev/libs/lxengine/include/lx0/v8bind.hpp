@@ -37,9 +37,9 @@
 
 #include <v8/v8.h>
 
-#include <lx0/detail/forward_decls.hpp>
-#include <lx0/core.hpp>
-#include <lx0/lxvar.hpp>
+#include <lx0/core/detail/forward_decls.hpp>
+#include <lx0/core/core.hpp>
+#include <lx0/core/data/lxvar.hpp>
 
 namespace lx0 { namespace core { namespace v8bind
 {

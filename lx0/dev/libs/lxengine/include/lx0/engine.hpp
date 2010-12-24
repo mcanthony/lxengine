@@ -40,9 +40,9 @@
 #include <map>
 
 // Lx headers
-#include <lx0/detail/forward_decls.hpp>
-#include <lx0/detail/dom_base.hpp>
-#include <lx0/lxvar.hpp>
+#include <lx0/core/detail/forward_decls.hpp>
+#include <lx0/core/detail/dom_base.hpp>
+#include <lx0/core/data/lxvar.hpp>
 
 namespace lx0 { namespace core {
 

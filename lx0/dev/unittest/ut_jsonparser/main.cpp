@@ -34,8 +34,8 @@
 #include <map>
 #include <deque>
 
-#include <lx0/core.hpp>
-#include <lx0/lxvar.hpp>
+#include <lx0/core/core.hpp>
+#include <lx0/core/data/lxvar.hpp>
 
 #include "main.hpp"
 #include "ut_attributeparsers.hpp"

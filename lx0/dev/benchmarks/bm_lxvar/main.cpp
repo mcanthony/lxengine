@@ -35,8 +35,8 @@
 #include <iostream>
 
 // Lx0 headers
-#include <lx0/lxvar.hpp>
-#include <lx0/util.hpp>
+#include <lx0/core/data/lxvar.hpp>
+#include <lx0/core/util/util.hpp>
 
 using namespace lx0::core;
 using namespace lx0::util;

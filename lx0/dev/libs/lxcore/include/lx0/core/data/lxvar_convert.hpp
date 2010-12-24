@@ -27,12 +27,26 @@
 */
 //===========================================================================//
 
-#include <lx0/base.hpp>
+#pragma once
 
-#include <lx0/core/math/tuple3.hpp>
-#include <lx0/core/math/point3.hpp>
-#include <lx0/core/math/vector3.hpp>
-#include <lx0/core/math/matrix4.hpp>
+#include <lx0/core/detail/forward_decls.hpp>
 
-#include <lx0/core/math/noise.hpp>
-#include <lx0/core/math/smooth_functions.hpp>
+namespace Ogre {
+    class ColourValue;
+    class Quaternion;
+    class Vector3;
+}
+
+namespace lx0 { namespace core {
+
+    namespace detail
+    {
+        void _convert(lxvar& v, point3& p);
+        void _convert(lxvar& v, vector3& u);
+
+        void _convert(lxvar& v, Ogre::ColourValue& u);
+        void _convert(lxvar& v, Ogre::Vector3& u);
+        void _convert(lxvar& value, Ogre::Quaternion& q);
+    }
+
+}}

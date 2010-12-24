@@ -43,15 +43,15 @@
 #include <boost/program_options.hpp>
 
 // Lx0 headers
-#include <lx0/core.hpp>
+#include <lx0/core/core.hpp>
 #include <lx0/engine.hpp>
 #include <lx0/document.hpp>
 #include <lx0/element.hpp>
 #include <lx0/view.hpp>
 #include <lx0/controller.hpp>
 #include <lx0/core/math/point3.hpp>
-#include <lx0/util.hpp>
-#include <lx0/cast.hpp>
+#include <lx0/core/util/util.hpp>
+#include <lx0/core/base/cast.hpp>
 
 using namespace lx0::core;
 

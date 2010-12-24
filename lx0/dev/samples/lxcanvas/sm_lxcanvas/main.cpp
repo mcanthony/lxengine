@@ -43,8 +43,8 @@
 #include <boost/program_options.hpp>
 
 // Lx0 headers
-#include <lx0/core.hpp>
-#include <lx0/util.hpp>
+#include <lx0/core/core.hpp>
+#include <lx0/core/util/util.hpp>
 #include <lx0/canvas/canvas.hpp>
 
 #include <gl/glew.h>

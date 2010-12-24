@@ -38,10 +38,10 @@
 #include <lx0/transaction.hpp>
 #include <lx0/element.hpp>
 #include <lx0/view.hpp>
-#include <lx0/core.hpp>
+#include <lx0/core/core.hpp>
 #include <lx0/engine.hpp>
-#include <lx0/lxvar.hpp>
-#include <lx0/util.hpp>
+#include <lx0/core/data/lxvar.hpp>
+#include <lx0/core/util/util.hpp>
 
 namespace lx0 { namespace core {
 

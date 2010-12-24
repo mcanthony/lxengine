@@ -28,7 +28,7 @@
 //===========================================================================//
 
 #include "lx0/canvas/canvas.hpp"
-#include "lx0/core.hpp"
+#include "lx0/core/core.hpp"
 
 #include <windows.h>
 #include <windowsx.h>

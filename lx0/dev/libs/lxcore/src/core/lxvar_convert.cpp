@@ -30,9 +30,9 @@
 //   H E A D E R S
 //===========================================================================//
 
-#include <lx0/core.hpp>
-#include <lx0/lxvar.hpp>
-#include <lx0/lxvar_convert.hpp>
+#include <lx0/core/core.hpp>
+#include <lx0/core/data/lxvar.hpp>
+#include <lx0/core/data/lxvar_convert.hpp>
 #include <lx0/core/math/point3.hpp>
 
 #include <OGRE/OgreQuaternion.h>

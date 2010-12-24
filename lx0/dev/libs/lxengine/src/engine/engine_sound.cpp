@@ -49,13 +49,13 @@
 #include <vorbis/vorbisfile.h>
 
 // Lx
-#include <lx0/core.hpp>
+#include <lx0/core/core.hpp>
 #include <lx0/engine.hpp>
 #include <lx0/document.hpp>
 #include <lx0/element.hpp>
 #include <lx0/mesh.hpp>
-#include <lx0/util.hpp>
-#include <lx0/cast.hpp>
+#include <lx0/core/util/util.hpp>
+#include <lx0/core/base/cast.hpp>
 
 using namespace lx0::core;
 

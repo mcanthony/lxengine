@@ -43,10 +43,10 @@
 #include <iomanip>
 
 // Lx0 headers
-#include <lx0/core.hpp>
-#include <lx0/lxvar.hpp>
+#include <lx0/core/core.hpp>
+#include <lx0/core/data/lxvar.hpp>
 #include <lx0/core/math/vector3.hpp>
-#include <lx0/util.hpp>
+#include <lx0/core/util/util.hpp>
 #include <lx0/blendreader/blendreader.hpp>
 
 using namespace lx0::core;

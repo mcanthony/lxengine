@@ -33,8 +33,8 @@
 #include <iostream>
 #include <string>
 
-#include <lx0/core.hpp>
-#include <lx0/util.hpp>
+#include <lx0/core/core.hpp>
+#include <lx0/core/util/util.hpp>
 #include <lx0/engine.hpp>
 #include <lx0/document.hpp>
 #include "view_input.hpp"

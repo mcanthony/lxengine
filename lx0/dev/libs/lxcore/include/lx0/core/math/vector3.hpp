@@ -30,7 +30,7 @@
 
 #include <limits>
 
-#include <lx0/cast.hpp>
+#include <lx0/core/base/cast.hpp>
 #include <lx0/core/math/tuple3.hpp>
 #include <Ogre/OgreVector3.h>
 

@@ -30,7 +30,7 @@
 #pragma once
 
 #include <memory>
-#include <lx0/lxvar.hpp>
+#include <lx0/core/data/lxvar.hpp>
 
 namespace lx0 { namespace core {
 

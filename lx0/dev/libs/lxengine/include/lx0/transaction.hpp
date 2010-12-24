@@ -34,7 +34,7 @@
 #include <vector>
 #include <functional>
 
-#include <lx0/detail/forward_decls.hpp>
+#include <lx0/core/detail/forward_decls.hpp>
 
 namespace lx0 { namespace core {
 

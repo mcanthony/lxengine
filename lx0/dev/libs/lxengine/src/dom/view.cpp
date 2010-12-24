@@ -36,7 +36,7 @@
 
 // Public headers
 #include <lx0/view.hpp>
-#include <lx0/core.hpp>
+#include <lx0/core/core.hpp>
 #include <lx0/document.hpp>
 #include <lx0/element.hpp>
 #include <lx0/engine.hpp>

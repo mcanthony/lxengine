@@ -29,7 +29,7 @@
 
 #pragma once
 
-#include <lx0/detail/forward_decls.hpp>
+#include <lx0/core/detail/forward_decls.hpp>
 #include <vector>
 #include <memory>
 #include <map>

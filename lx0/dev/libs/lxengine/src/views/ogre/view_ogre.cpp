@@ -36,14 +36,14 @@
 
 // Public headers
 #include <lx0/view.hpp>
-#include <lx0/core.hpp>
+#include <lx0/core/core.hpp>
 #include <lx0/document.hpp>
 #include <lx0/element.hpp>
 #include <lx0/mesh.hpp>
 #include <lx0/core/math/point3.hpp>
 #include <lx0/engine.hpp>
-#include <lx0/util.hpp>
-#include <lx0/lxvar_convert.hpp>
+#include <lx0/core/util/util.hpp>
+#include <lx0/core/data/lxvar_convert.hpp>
 
 // Internal headers
 #include "../../dom/view_input.hpp"

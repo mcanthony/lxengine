@@ -28,7 +28,7 @@
 
 #pragma once
 
-#include <lx0/cast.hpp>
+#include <lx0/core/base/cast.hpp>
 #include <lx0/core/math/vector3.hpp>
 #include <lx0/core/math/point3.hpp>
 

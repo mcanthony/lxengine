@@ -26,7 +26,7 @@
 */
 //===========================================================================//
 
-#include <lx0/core.hpp>
+#include <lx0/core/core.hpp>
 #include "lxvar_parser.hpp"
 
 using namespace lx0::core;

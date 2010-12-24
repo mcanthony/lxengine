@@ -27,23 +27,19 @@
 */
 //===========================================================================//
 
-#pragma once
+#include <lx0/core/base/base.hpp>
+#include <lx0/core/base/cast.hpp>
 
-#include <string>
-#include <lx0/lxvar.hpp>
+#include <lx0/core/math/tuple3.hpp>
+#include <lx0/core/math/point3.hpp>
+#include <lx0/core/math/vector3.hpp>
+#include <lx0/core/math/matrix4.hpp>
 
-namespace lx0 { namespace util {
+#include <lx0/core/math/noise.hpp>
+#include <lx0/core/math/smooth_functions.hpp>
 
-    void                lx_break_if_debugging   (void);
+#include <lx0/core/data/lxvar.hpp>
+#include <lx0/core/data/lxvar_convert.hpp>
 
-    bool                lx_file_exists          (std::string filename);
-    std::string         lx_file_to_string       (std::string filename);
-    lx0::core::lxvar    lx_file_to_json         (const char* pszFilename);
+#include <lx0/core/util/util.hpp>
 
-    std::string         lx_itoa                 (size_t i);
-    std::string         lx_ctime                (void);
-
-    unsigned int        lx_milliseconds         (void);
-    void                lx_message_box          (std::string caption, std::string message);
-
-}}

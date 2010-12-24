@@ -33,7 +33,7 @@
 
 #include <cassert>
 
-#include <lx0/core.hpp>
+#include <lx0/core/core.hpp>
 #include <lx0/mesh.hpp>
 #include <lx0/blendreader/blendreader.hpp>
 

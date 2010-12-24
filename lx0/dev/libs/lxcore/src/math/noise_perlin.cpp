@@ -35,7 +35,7 @@
 
  */
 
-#include <lx0/core.hpp>
+#include <lx0/core/core.hpp>
 #include <lx0/core/math/vector3.hpp>
 #include <lx0/core/math/noise.hpp>
 

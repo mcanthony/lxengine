@@ -7,7 +7,7 @@
 #include "ut_attributeparsers.hpp"
 
 #include <lx0/v8bind.hpp>
-#include <lx0/util.hpp>
+#include <lx0/core/util/util.hpp>
 #include <v8/v8.h>
 
 using namespace v8;

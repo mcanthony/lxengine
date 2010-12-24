@@ -27,42 +27,23 @@
 */
 //===========================================================================//
 
-
 #pragma once
 
-#include <lx0/slot.hpp>
+#include <string>
+#include <lx0/core/data/lxvar.hpp>
 
-namespace lx0 { namespace core {
+namespace lx0 { namespace util {
 
-    void lx_init();
+    void                lx_break_if_debugging   (void);
 
-    void lx_assert (bool condition);
-    void lx_assert (bool condition, const char* format, ...);
+    bool                lx_file_exists          (std::string filename);
+    std::string         lx_file_to_string       (std::string filename);
+    lx0::core::lxvar    lx_file_to_json         (const char* pszFilename);
 
-    void lx_fatal  (void);
-    void lx_fatal  (const char* format, ...);
-    void lx_error  (const char* format, ...);
-    void lx_warn   (const char* format, ...);
-    void lx_log    (const char* format, ...);
-    void lx_debug  (const char* format, ...);
+    std::string         lx_itoa                 (size_t i);
+    std::string         lx_ctime                (void);
 
-    #define lx_warn_once(FORMAT,...) \
-        do { static bool once = false;  if(!once) { lx_warn(FORMAT,__VA_ARGS__); once = true; } } while (0)
-    
-    void lx_check_fatal (bool condition);
-    void lx_check_error (bool condition);
-    void lx_check_error (bool condition, const char* format, ...);
-
-    extern slot<void (const char*)> slotFatal;
-    extern slot<void (const char*)> slotError;
-    extern slot<void (const char*)> slotWarn;
-    extern slot<void (const char*)> slotLog;
-    extern slot<void (const char*)> slotAssert;
-    extern slot<void (const char*)> slotDebug;
-    
-    class error_exception : public std::exception { };
-    class fatal_exception : public std::exception { };
-
+    unsigned int        lx_milliseconds         (void);
+    void                lx_message_box          (std::string caption, std::string message);
 
 }}
-

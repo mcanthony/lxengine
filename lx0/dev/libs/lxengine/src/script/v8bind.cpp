@@ -26,9 +26,9 @@
 */
 //===========================================================================//
 
-#include <lx0/core.hpp>
+#include <lx0/core/core.hpp>
 #include <lx0/v8bind.hpp>
-#include <lx0/util.hpp>
+#include <lx0/core/util/util.hpp>
 
 using namespace lx0::core;
 using namespace v8;

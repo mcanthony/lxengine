@@ -26,7 +26,7 @@
 */
 //===========================================================================//
 
-#include "lx0/core.hpp"
+#include "lx0/core/core.hpp"
 #include "lx0/core/math/matrix4.hpp"
 
 namespace lx0 { namespace core {

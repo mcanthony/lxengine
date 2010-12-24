@@ -38,9 +38,9 @@
 #include <map>
 
 // Lx headers
-#include <lx0/detail/forward_decls.hpp>
-#include <lx0/detail/dom_base.hpp>
-#include <lx0/slot.hpp>
+#include <lx0/core/detail/forward_decls.hpp>
+#include <lx0/core/detail/dom_base.hpp>
+#include <lx0/core/base/slot.hpp>
 
 namespace lx0 { namespace core {
 

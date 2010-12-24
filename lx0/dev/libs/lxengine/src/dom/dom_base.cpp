@@ -33,7 +33,7 @@
 
 #include <algorithm>
 
-#include <lx0/core.hpp>
+#include <lx0/core/core.hpp>
 #include <lx0/element.hpp>
 #include <lx0/object.hpp>
 #include <lx0/document.hpp>
