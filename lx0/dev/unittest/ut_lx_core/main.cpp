@@ -29,9 +29,9 @@
 #include <iostream>
 #include <functional>
 #include <string>
-#include <lx0/tuple3.hpp>
-#include <lx0/point3.hpp>
-#include <lx0/vector3.hpp>
+#include <lx0/core/math/tuple3.hpp>
+#include <lx0/core/math/point3.hpp>
+#include <lx0/core/math/vector3.hpp>
 
 class UnitTest
 {

@@ -31,7 +31,7 @@
 
 #include <lx0/detail/forward_decls.hpp>
 #include <lx0/object.hpp>
-#include <lx0/point3.hpp>
+#include <lx0/core/math/point3.hpp>
 
 namespace lx0 { namespace dom {
     

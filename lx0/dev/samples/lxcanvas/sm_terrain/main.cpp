@@ -44,7 +44,7 @@
 
 // Lx0 headers
 #include <lx0/core.hpp>
-#include <lx0/matrix.hpp>
+#include <lx0/core/math/matrix4.hpp>
 #include <lx0/util.hpp>
 #include <lx0/canvas/canvas.hpp>
 #include <lx0/prototype/prototype.hpp>

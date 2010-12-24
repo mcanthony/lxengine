@@ -40,7 +40,7 @@
 #include <lx0/document.hpp>
 #include <lx0/element.hpp>
 #include <lx0/mesh.hpp>
-#include <lx0/point3.hpp>
+#include <lx0/core/math/point3.hpp>
 #include <lx0/engine.hpp>
 #include <lx0/util.hpp>
 #include <lx0/lxvar_convert.hpp>

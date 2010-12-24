@@ -26,7 +26,7 @@
 */
 //===========================================================================//
 
-#include <lx0/vector3.hpp>
+#include <lx0/core/math/vector3.hpp>
 
 #include <OGRE/OgreQuaternion.h>
 

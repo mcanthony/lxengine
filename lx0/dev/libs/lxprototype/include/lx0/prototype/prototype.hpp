@@ -28,9 +28,9 @@
 
 #pragma once
 
-#include <lx0/point3.hpp>
-#include <lx0/vector3.hpp>
-#include <lx0/matrix.hpp>
+#include <lx0/core/math/point3.hpp>
+#include <lx0/core/math/vector3.hpp>
+#include <lx0/core/math/matrix4.hpp>
 
 namespace lx0 { namespace prototype {
 

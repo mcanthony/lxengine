@@ -36,8 +36,8 @@
  */
 
 #include <lx0/core.hpp>
-#include <lx0/vector3.hpp>
-#include <lx0/math/noise.hpp>
+#include <lx0/core/math/vector3.hpp>
+#include <lx0/core/math/noise.hpp>
 
 using namespace lx0::core;
 

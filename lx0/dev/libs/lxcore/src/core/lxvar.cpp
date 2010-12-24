@@ -32,7 +32,7 @@
 
 #include <lx0/core.hpp>
 #include <lx0/lxvar.hpp>
-#include <lx0/point3.hpp>
+#include <lx0/core/math/point3.hpp>
 
 #include "lxvar_parser.hpp"
 
