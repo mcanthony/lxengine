@@ -38,7 +38,12 @@ namespace lx0 { namespace prototype {
     {
         lx0::core::point3  mPosition;
         lx0::core::point3  mTarget;
+        
         lx0::core::vector3 mWorldUp;        //! Reference vector for the "up" direction in the world
+
+        float              mFov;
+        float              mNear;
+        float              mFar;
     };
 
             lx0::core::vector3  view_vector         (const Camera& camera);
