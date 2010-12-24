@@ -29,21 +29,25 @@
 
 #pragma once
 
-#include <lx0/core/base/base.hpp>
-#include <lx0/core/base/cast.hpp>
-
-#include <lx0/core/math/tuple3.hpp>
 #include <lx0/core/math/point3.hpp>
 #include <lx0/core/math/vector3.hpp>
-#include <lx0/core/math/matrix4.hpp>
 
-#include <lx0/core/math/ray.hpp>
+namespace lx0 { namespace core {
 
-#include <lx0/core/math/noise.hpp>
-#include <lx0/core/math/smooth_functions.hpp>
+    struct quaternion
+    {
+        union {
+            struct 
+            {
+                float w;
+                union 
+                {
+                    struct { vector3 v; };
+                    float   x, y, z;
+                };
+            };
+            float elem[4];
+        };
+    };
 
-#include <lx0/core/data/lxvar.hpp>
-#include <lx0/core/data/lxvar_convert.hpp>
-
-#include <lx0/core/util/util.hpp>
-
+}}
