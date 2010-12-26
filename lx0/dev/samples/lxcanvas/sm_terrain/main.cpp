@@ -109,20 +109,21 @@ float calc3(float s, float t)
 
 float calc4(float s, float t)
 {
-    return 0.25f * noise3d_perlin(32 * s, 32 * t, .4f) + 4 * noise3d_perlin(4 * s, 4 * t, .1f);
+    return 8 * noise3d_perlin(s, t, .1f) 
+        + (3.2 * noise3d_perlin(8 * s, 8 * t, .4f) * noise3d_perlin(4 * s, 4 * t, .38f));
 }
 
 
 void 
-generateHeightMap()
+generateHeightMap(int regionX, int regionY)
 {
-    gHMap.resize(256, 256);
+    gHMap.resize(64, 64);
     for (int y = 0; y < gHMap.sizeY(); y ++)
     {
         for (int x = 0; x < gHMap.sizeX(); x++)
         {
-            float s = float(x) / gHMap.sizeX();
-            float t = float(y) / gHMap.sizeY();
+            float s = float(x) / gHMap.sizeX() + regionX;
+            float t = float(y) / gHMap.sizeY() + regionY;
             gHMap(x, y) = 50 * calc4(s, t);
         }
     }
@@ -138,54 +139,62 @@ public:
         set(gCamera.mWorldUp, 0, 0, 1);
         gCamera.mFov = 60.0f;
         gCamera.mNear = 0.01f;  // 1 cm
-        gCamera.mFar = 2000.0f; // 2 km
+        gCamera.mFar = 4000.0f; // 4 km
 
         rasterizer.initialize();
-
-        // Create a vertex buffer to store the data for the vertex array
-        generateHeightMap();
-        std::vector<point3> positionData;
-        positionData.reserve(gHMap.sizeX() * gHMap.sizeY() * 4);
-        for (int y = 0; y < gHMap.sizeY(); ++y)
-        {
-            for (int x = 0; x < gHMap.sizeX() ; ++x)
-            {
-                float wy0 = -500.0f + 1000.0f * float(y + 0) / float(gHMap.sizeY());
-                float wy1 = -500.0f + 1000.0f * float(y + 1) / float(gHMap.sizeY());
-                float wx0 = -500.0f + 1000.0f * float(x + 0) / float(gHMap.sizeX());
-                float wx1 = -500.0f + 1000.0f * float(x + 1) / float(gHMap.sizeX());
-                float z = gHMap(x,y);
-
-                float z1 = (y > 0) ? gHMap(x, y-1) : z;
-                float z2 = z;
-                float z3 = (x > 0) ? gHMap(x-1,y) : z;
-
-                float z0;
-                if (x > 0 && y > 0) 
-                    z0 = gHMap(x-1, y-1);
-                else if (x > 0)
-                    z0 = z3;
-                else if (y > 0)
-                    z0 = z1;
-                else
-                    z0 = z;
-
-                positionData.push_back( point3(wx0, wy0, z0) );
-                positionData.push_back( point3(wx1, wy0, z1) );
-                positionData.push_back( point3(wx1, wy1, z2) );
-                positionData.push_back( point3(wx0, wy1, z3) );
-            }
-        }
 
         spCamera = rasterizer.createCamera(gCamera.mFov, gCamera.mNear, gCamera.mFar, view_matrix(gCamera));
         spLightSet = rasterizer.createLightSet();
 
-        spItem.reset(new RasterizerGL::Item);
-        spItem->spCamera   = spCamera;
-        spItem->spLightSet = spLightSet;
-        spItem->spMaterial = rasterizer.createMaterial();
-        spItem->spTransform = rasterizer.createTransform(matrix4());
-        spItem->spGeometry = rasterizer.createQuadList(positionData);
+        for (int regionY = -2; regionY <= 2; regionY++)
+        {
+            for (int regionX = -2; regionX <= 2; regionX++)
+            {
+                // Create a vertex buffer to store the data for the vertex array
+                generateHeightMap(-regionX, -regionY);
+                std::vector<point3> positionData;
+                positionData.reserve(gHMap.sizeX() * gHMap.sizeY() * 4);
+                for (int y = 0; y < gHMap.sizeY(); ++y)
+                {
+                    for (int x = 0; x < gHMap.sizeX() ; ++x)
+                    {
+                        float wy0 = 2 * regionY * -500.0f + 1000.0f * float(y + 0) / float(gHMap.sizeY());
+                        float wy1 = 2 * regionY * -500.0f + 1000.0f * float(y + 1) / float(gHMap.sizeY());
+                        float wx0 = 2 * regionX * -500.0f + 1000.0f * float(x + 0) / float(gHMap.sizeX());
+                        float wx1 = 2 * regionX * -500.0f + 1000.0f * float(x + 1) / float(gHMap.sizeX());
+                        float z = gHMap(x,y);
+
+                        float z1 = (y > 0) ? gHMap(x, y-1) : z;
+                        float z2 = z;
+                        float z3 = (x > 0) ? gHMap(x-1,y) : z;
+
+                        float z0;
+                        if (x > 0 && y > 0) 
+                            z0 = gHMap(x-1, y-1);
+                        else if (x > 0)
+                            z0 = z3;
+                        else if (y > 0)
+                            z0 = z1;
+                        else
+                            z0 = z;
+
+                        positionData.push_back( point3(wx0, wy0, z0) );
+                        positionData.push_back( point3(wx1, wy0, z1) );
+                        positionData.push_back( point3(wx1, wy1, z2) );
+                        positionData.push_back( point3(wx0, wy1, z3) );
+                    }
+                }
+
+                auto pItem = new RasterizerGL::Item;
+                pItem->spCamera   = spCamera;
+                pItem->spLightSet = spLightSet;
+                pItem->spMaterial = rasterizer.createMaterial();
+                pItem->spTransform = rasterizer.createTransform(matrix4());
+                pItem->spGeometry = rasterizer.createQuadList(positionData);
+
+                itemList.push_back(RasterizerGL::ItemPtr(pItem));
+            }
+        }
     }  
 
     void 
@@ -200,14 +209,14 @@ public:
         spCamera->viewMatrix = view_matrix(gCamera);
 
         rasterizer.beginScene();
-        rasterizer.rasterize(spItem);
+        rasterizer.rasterizeList(itemList);
         rasterizer.endScene();
     }
 
 protected:
     RasterizerGL::CameraPtr     spCamera;       // Camera shared by all items
     RasterizerGL::LightSetPtr   spLightSet;
-    RasterizerGL::ItemPtr       spItem;
+    std::vector<RasterizerGL::ItemPtr> itemList;
     RasterizerGL                rasterizer;
 };
 

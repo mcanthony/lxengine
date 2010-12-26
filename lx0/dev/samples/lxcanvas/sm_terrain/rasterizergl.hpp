@@ -66,6 +66,7 @@ public:
         virtual void activate();
 
         size_t size;
+        GLuint vbo[1];
         GLuint vao[1];
     };
 

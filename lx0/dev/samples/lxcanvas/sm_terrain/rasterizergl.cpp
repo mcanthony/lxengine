@@ -165,14 +165,10 @@ RasterizerGL::createQuadList (std::vector<point3>& positionData)
     glBindBuffer(GL_ARRAY_BUFFER, vbo[0]);
     glBufferData(GL_ARRAY_BUFFER, sizeof(point3) * positionData.size(), &positionData[0], GL_STATIC_DRAW);
         
-    // TODO: The position input to the vertex shader is apparently always 0.  Find out where
-    // this is documented.
-    const int positionIndex = 0;   // glGetAttribLocation(prog, "gl_Vertex");
-    glVertexAttribPointer(positionIndex, 3, GL_FLOAT, GL_FALSE, 0, 0);
-    glEnableVertexAttribArray(positionIndex);
     lx_check_error( glGetError() == GL_NO_ERROR, "OpenGL error detected." );
 
     auto pQuadList = new RasterizerGL::QuadList;
+    pQuadList->vbo[0] = vbo[0];
     pQuadList->vao[0] = vao[0];
     pQuadList->size = positionData.size();
     return GeometryPtr(pQuadList);
@@ -181,6 +177,13 @@ RasterizerGL::createQuadList (std::vector<point3>& positionData)
 void RasterizerGL::QuadList::activate()
 {
     glBindVertexArray(vao[0]);
+    glBindBuffer(GL_ARRAY_BUFFER, vbo[0]);
+
+    // TODO: The position input to the vertex shader is apparently always 0.  Find out where
+    // this is documented.
+    const int positionIndex = 0;   // glGetAttribLocation(prog, "gl_Vertex");
+    glVertexAttribPointer(positionIndex, 3, GL_FLOAT, GL_FALSE, 0, 0);
+    glEnableVertexAttribArray(positionIndex);
 
     glDrawArrays(GL_QUADS, 0, size); 
 }
@@ -204,6 +207,12 @@ void RasterizerGL::beginScene()
 
 void RasterizerGL::endScene()
 {
+}
+
+void RasterizerGL::rasterizeList (std::vector<std::shared_ptr<Item>>& list)
+{
+    for (auto it = list.begin(); it != list.end(); ++it)
+        rasterize(*it);
 }
 
 void RasterizerGL::rasterize(std::shared_ptr<Item> spItem)
