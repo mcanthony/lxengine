@@ -200,6 +200,21 @@ RasterizerGL::createTransform (matrix4& mat)
     return TransformPtr(new Transform);
 }
 
+RasterizerGL::TransformPtr 
+RasterizerGL::createTransform (float tx, float ty, float tz)
+{
+    TransformPtr spTransform(new Transform);
+    set_translation(spTransform->mat, tx, ty, tz);
+    return spTransform;
+}
+
+void
+RasterizerGL::Transform::activate (void)
+{
+    glMatrixMode(GL_MODELVIEW);
+    glMultTransposeMatrixf(mat.data);
+}
+
 void RasterizerGL::beginScene()
 {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);

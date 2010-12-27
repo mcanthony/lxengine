@@ -54,6 +54,7 @@ namespace lx0 { namespace prototype {
     inline  void                move_backward       (Camera& camera, float step) { move_forward(camera, -step); }
             void                move_up             (Camera& camera, float step);
     inline  void                move_down           (Camera& camera, float step) { move_up(camera, -step); }
+            void                move_vertical       (Camera& camera, float step);
             void                move_right          (Camera& camera, float step);
     inline  void                move_left           (Camera& camera, float step) { move_right(camera, -step); }
             

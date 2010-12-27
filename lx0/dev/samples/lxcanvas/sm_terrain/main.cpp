@@ -55,29 +55,7 @@ using namespace lx0::core;
 using namespace lx0::prototype;
 using namespace lx0::canvas::platform;
 
-
-class HeightMap
-{
-public:
-    HeightMap() : mSizeX(0), mSizeY(0) {}
-    void resize(int x, int y) { mSizeX = x; mSizeY = y; mHeight.resize(mSizeX * mSizeY); }
-
-    int sizeX() { return mSizeX; }
-    int sizeY() { return mSizeY; }
-
-    float& operator() (int x, int y) { 
-        lx_check_error(x >= 0 && y >= 0);
-        lx_check_error(x < mSizeX && y < mSizeY);
-        return mHeight[y * mSizeX + x]; 
-    }
-
-    int                mSizeX;
-    int                mSizeY;
-    std::vector<float> mHeight;
-};
-
 Camera             gCamera;
-HeightMap          gHMap;
 
 //===========================================================================//
 
@@ -91,43 +69,111 @@ HeightMap          gHMap;
 
 //===========================================================================//
 
-
-float calc1(float s, float t)
+float calcHeight(float s, float t)
 {
-    return (sinf(2 * t * 6.28318531f) + cosf(4 * s * 6.28318531f)) / 2.0f;
+    float base = 90 * noise3d_perlin(s / 200.0f, t / 200.0f, .5f);
+    float mid = 3 * noise3d_perlin(s / 40.0f, t / 30.0f, .1f)
+              + 3 * noise3d_perlin(s / 45.0f, t / 60.0f, .6f);
+    mid *= mid;
+     
+    return base + mid;
 }
 
-float calc2(float s, float t)
+class Terrain
 {
-    return float(rand() % 256) / 255.0f;
-}
-
-float calc3(float s, float t)
-{
-    return noise3d_perlin(8 * s, 8 * t, .4f);
-}
-
-float calc4(float s, float t)
-{
-    return 8 * noise3d_perlin(s, t, .1f) 
-        + (3.2 * noise3d_perlin(8 * s, 8 * t, .4f) * noise3d_perlin(4 * s, 4 * t, .38f));
-}
-
-
-void 
-generateHeightMap(int regionX, int regionY)
-{
-    gHMap.resize(64, 64);
-    for (int y = 0; y < gHMap.sizeY(); y ++)
+public:
+    RasterizerGL::ItemPtr init(RasterizerGL& rasterizer, RasterizerGL::CameraPtr spCamera, RasterizerGL::LightSetPtr spLightSet, int regionX, int regionY)
     {
-        for (int x = 0; x < gHMap.sizeX(); x++)
+        const float kRegionSize = 100.0f;
+
+        float tx = regionX * kRegionSize;
+        float ty = regionY * kRegionSize;
+
+        // Create a vertex buffer to store the data for the vertex array
+        std::vector<point3> positionData;
+        positionData.reserve(100 * 100 * 4);
+        for (int y = 0; y < 100; ++y)
         {
-            float s = float(x) / gHMap.sizeX() + regionX;
-            float t = float(y) / gHMap.sizeY() + regionY;
-            gHMap(x, y) = 50 * calc4(s, t);
+            for (int x = 0; x < 100; ++x)
+            {
+                point3 w00;
+                w00.x = x + 0;
+                w00.y = y + 0;
+                w00.z = calcHeight(tx + w00.x, ty + w00.y);
+                        
+                point3 w11;
+                w11.x = x + 1;
+                w11.y = y + 1;
+                w11.z = calcHeight(tx + w11.x, ty + w11.y);
+
+                point3 w10;
+                w10.x = w11.x;
+                w10.y = w00.y;
+                w10.z = calcHeight(tx + w10.x, ty + w10.y);
+
+                point3 w01;
+                w01.x = w00.x;
+                w01.y = w11.y;
+                w01.z = calcHeight(tx + w01.x, ty + w01.y);
+
+                positionData.push_back( w00 );
+                positionData.push_back( w10 );
+                positionData.push_back( w11 );
+                positionData.push_back( w01 );
+            }
+        }
+
+        auto pItem = new RasterizerGL::Item;
+        pItem->spCamera   = spCamera;
+        pItem->spLightSet = spLightSet;
+        pItem->spMaterial = rasterizer.createMaterial();
+        pItem->spTransform = rasterizer.createTransform(tx, ty, 0.0f);
+        pItem->spGeometry = rasterizer.createQuadList(positionData);
+
+        return RasterizerGL::ItemPtr(pItem);
+    }
+
+    void generate(RasterizerGL& rasterizer,
+                  Camera& cam1,
+                  RasterizerGL::CameraPtr spCamera, 
+                  RasterizerGL::LightSetPtr spLightSet, 
+                  std::vector<RasterizerGL::ItemPtr>& list)
+    {
+        const int bx = int(cam1.mPosition.x / 100.0f);
+        const int by = int(cam1.mPosition.y / 100.0f);
+
+        const int dist = 10;
+        for (int gy = -dist; gy <= dist; gy++)
+        {
+            for (int gx = -dist; gx <= dist; gx++)
+            {
+                std::pair<short, short> grid;
+                grid.first = bx + gx;
+                grid.second = by + gy;
+
+                RasterizerGL::ItemPtr spTile;
+                auto it = mMap.find(grid);
+                if (it == mMap.end())
+                {
+                    if (abs(gx) < 4 && abs(gy) < 4) 
+                    {
+                        spTile = init(rasterizer, spCamera, spLightSet, grid.first, grid.second);
+                        mMap.insert(std::make_pair(grid, spTile));
+                    }
+                }
+                else
+                    spTile = it->second;
+
+                if (spTile.get() != nullptr)
+                    list.push_back(spTile);
+            }
         }
     }
-}
+
+    std::map<std::pair<short, short>, RasterizerGL::ItemPtr> mMap;
+};
+
+Terrain gTerrain;
 
 class Renderer
 {
@@ -145,56 +191,6 @@ public:
 
         spCamera = rasterizer.createCamera(gCamera.mFov, gCamera.mNear, gCamera.mFar, view_matrix(gCamera));
         spLightSet = rasterizer.createLightSet();
-
-        for (int regionY = -2; regionY <= 2; regionY++)
-        {
-            for (int regionX = -2; regionX <= 2; regionX++)
-            {
-                // Create a vertex buffer to store the data for the vertex array
-                generateHeightMap(-regionX, -regionY);
-                std::vector<point3> positionData;
-                positionData.reserve(gHMap.sizeX() * gHMap.sizeY() * 4);
-                for (int y = 0; y < gHMap.sizeY(); ++y)
-                {
-                    for (int x = 0; x < gHMap.sizeX() ; ++x)
-                    {
-                        float wy0 = 2 * regionY * -500.0f + 1000.0f * float(y + 0) / float(gHMap.sizeY());
-                        float wy1 = 2 * regionY * -500.0f + 1000.0f * float(y + 1) / float(gHMap.sizeY());
-                        float wx0 = 2 * regionX * -500.0f + 1000.0f * float(x + 0) / float(gHMap.sizeX());
-                        float wx1 = 2 * regionX * -500.0f + 1000.0f * float(x + 1) / float(gHMap.sizeX());
-                        float z = gHMap(x,y);
-
-                        float z1 = (y > 0) ? gHMap(x, y-1) : z;
-                        float z2 = z;
-                        float z3 = (x > 0) ? gHMap(x-1,y) : z;
-
-                        float z0;
-                        if (x > 0 && y > 0) 
-                            z0 = gHMap(x-1, y-1);
-                        else if (x > 0)
-                            z0 = z3;
-                        else if (y > 0)
-                            z0 = z1;
-                        else
-                            z0 = z;
-
-                        positionData.push_back( point3(wx0, wy0, z0) );
-                        positionData.push_back( point3(wx1, wy0, z1) );
-                        positionData.push_back( point3(wx1, wy1, z2) );
-                        positionData.push_back( point3(wx0, wy1, z3) );
-                    }
-                }
-
-                auto pItem = new RasterizerGL::Item;
-                pItem->spCamera   = spCamera;
-                pItem->spLightSet = spLightSet;
-                pItem->spMaterial = rasterizer.createMaterial();
-                pItem->spTransform = rasterizer.createTransform(matrix4());
-                pItem->spGeometry = rasterizer.createQuadList(positionData);
-
-                itemList.push_back(RasterizerGL::ItemPtr(pItem));
-            }
-        }
     }  
 
     void 
@@ -209,7 +205,9 @@ public:
         spCamera->viewMatrix = view_matrix(gCamera);
 
         rasterizer.beginScene();
-        rasterizer.rasterizeList(itemList);
+        std::vector<RasterizerGL::ItemPtr> items;
+        gTerrain.generate(rasterizer, gCamera, spCamera, spLightSet, items);
+        rasterizer.rasterizeList(items);
         rasterizer.endScene();
     }
 

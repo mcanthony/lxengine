@@ -78,7 +78,7 @@ public:
 
     struct Transform
     {
-        virtual void activate() {}
+        virtual void activate();
         matrix4 mat;
     };
     typedef std::shared_ptr<Transform> TransformPtr;
@@ -104,6 +104,7 @@ public:
     LightSetPtr     createLightSet  (void);
     MaterialPtr     createMaterial  (void);
     TransformPtr    createTransform (matrix4& mat);
+    TransformPtr    createTransform (float tx, float ty, float tz);
     GeometryPtr     createQuadList  (std::vector<point3>& quads);
 
     void            beginScene      (void);

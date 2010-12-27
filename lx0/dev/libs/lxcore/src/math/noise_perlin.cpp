@@ -100,10 +100,11 @@ namespace {
     }
 
     /*!
-        Return the gradient vector associated with for the given hash.
+        Return the dot product gradient vector associated with for the given hash
+        and the incoming vector.
      */
-    vector3 
-    gradient (int hash) 
+    float 
+    dot_gradient (int hash, const vector3& v) 
     {
         //
         // Perlin's 2002 improvement to algorithm reduces the gradient
@@ -115,24 +116,52 @@ namespace {
         // consistent hash value.   Since the hash values should be
         // uniform, the modulo should maintain a uniform distribution.
         //
+
+        // The unoptimized code for the gradient look-up:
+        /*
+            switch (hash % 12)
+            {
+            default:    lx_error("Unreachable code");
+
+            case 0:  return vector3( 1,  1, 0);
+            case 1:  return vector3(-1,  1, 0);
+            case 2:  return vector3( 1, -1, 0);
+            case 3:  return vector3(-1, -1, 0);
+    
+            case 4:  return vector3( 1,  0, 1);
+            case 5:  return vector3(-1,  0, 1);
+            case 6:  return vector3( 1,  0,-1);
+            case 7:  return vector3(-1,  0,-1);
+    
+            case 8:  return vector3( 0,  1, 1);
+            case 9:  return vector3( 0, -1, 1);
+            case 10: return vector3( 0,  1, -1);
+            case 11: return vector3( 0, -1, -1);
+            }
+        */
+
+        //
+        // Since the gradients are fixed, inline the dot product
+        // directly into a simple additions:
+        //
         switch (hash % 12)
         {
         default:    lx_error("Unreachable code");
 
-        case 0:  return vector3( 1,  1, 0);
-        case 1:  return vector3(-1,  1, 0);
-        case 2:  return vector3( 1, -1, 0);
-        case 3:  return vector3( 1, -1, 0);
+        case 0:  return  v.x + v.y;
+        case 1:  return -v.x + v.y;
+        case 2:  return  v.x - v.y;
+        case 3:  return -v.x - v.y;
     
-        case 4:  return vector3( 1,  0, 1);
-        case 5:  return vector3(-1,  0, 1);
-        case 6:  return vector3( 1,  0,-1);
-        case 7:  return vector3( 1,  0,-1);
+        case 4:  return  v.x + v.z;
+        case 5:  return -v.x + v.z;
+        case 6:  return  v.x - v.z;
+        case 7:  return -v.x - v.z;
     
-        case 8:  return vector3( 0,  1, 1);
-        case 9:  return vector3( 0, -1, 1);
-        case 10: return vector3( 0,  1, -1);
-        case 11: return vector3( 0,  1, -1);
+        case 8:  return  v.y + v.z;
+        case 9:  return -v.y + v.z;
+        case 10: return  v.y - v.z;
+        case 11: return -v.y - v.z;
         }
     }
 
@@ -224,12 +253,10 @@ namespace {
             const int cy = (i & 2) ? 1: 0;
             const int cz = (i & 1);
 
-            const int     h    = hash(cellX + cx, cellY + cy, cellZ + cz);
-            const vector3 grad = gradient(h);
+            const int h = hash(cellX + cx, cellY + cy, cellZ + cz);
+            vector3 value (uvw.x - cx, uvw.y - cy, uvw.z - cz);           
 
-            vector3 value (uvw.x - cx, uvw.y - cy, uvw.z - cz);
-
-            g[i] = dot(value, grad);
+            g[i] = dot_gradient(h, value);
         }
 
         //

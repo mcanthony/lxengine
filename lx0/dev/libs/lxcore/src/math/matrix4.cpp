@@ -31,6 +31,40 @@
 
 namespace lx0 { namespace core {
 
+    void    
+    set_identity (matrix4& mat)
+    {
+        mat.column[0][0] = 1;
+        mat.column[0][1] = 0;
+        mat.column[0][2] = 0;
+        mat.column[0][3] = 0;
+
+        mat.column[1][0] = 0;
+        mat.column[1][1] = 1;
+        mat.column[1][2] = 0;
+        mat.column[1][3] = 0;
+
+        mat.column[2][0] = 0;
+        mat.column[2][1] = 0;
+        mat.column[2][2] = 1;
+        mat.column[2][3] = 0;
+
+        mat.column[3][0] = 0;
+        mat.column[3][1] = 0;
+        mat.column[3][2] = 0;
+        mat.column[3][3] = 1;
+    }
+
+    void    
+    set_translation (matrix4& mat, float tx, float ty, float tz)
+    {
+        set_identity(mat);
+
+        mat.column[0][3] = tx;
+        mat.column[1][3] = ty;
+        mat.column[2][3] = tz;
+    }
+
     /*!
         This function creates a matrix that can transform from one coordinate
         system to another.  The input x, y, and z vectors are the new axes in

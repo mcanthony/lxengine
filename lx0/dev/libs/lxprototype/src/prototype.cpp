@@ -91,6 +91,20 @@ namespace lx0 { namespace prototype {
     {
         lx_check_error( is_unit_length( camera.mWorldUp ) );
 
+        const vector3 view  = normalize( view_vector(camera) );
+        const vector3 right = normalize( cross(view, camera.mWorldUp) );
+        const vector3 viewUp = normalize( cross(right, view) );
+
+        camera.mTarget += viewUp * step;
+        camera.mPosition += viewUp * step;
+    }
+
+    //!
+    void    
+    move_vertical (Camera& camera, float step)
+    {
+        lx_check_error( is_unit_length( camera.mWorldUp ) );
+
         camera.mTarget += camera.mWorldUp * step;
         camera.mPosition += camera.mWorldUp * step;
     }

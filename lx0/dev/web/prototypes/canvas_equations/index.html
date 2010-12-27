@@ -1,0 +1,65 @@
+﻿<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
+<head>
+    <title>Prototype</title>
+    <meta http-equiv="Content-type" content="text/html;charset=UTF-8" />
+    <link rel="stylesheet" href="style.css" media="screen" />
+    <script type="text/javascript" src="jquery-1.4.4.min.js"></script>
+    <script type="text/javascript" src="script.js"></script>
+    <script type="text/javascript">
+    <!--
+        var ctx = null;
+        $(function () {
+            var elem = document.getElementById('canvas');
+            ctx = elem.getContext('2d');
+
+            ctx.scale(256 / 2.0, -256 / 2.0); //2.0 / 256, 2.0 / 256);
+            ctx.translate(1, -1);
+
+            ctx.lineWidth = 2 / 255.0;
+            ctx.moveTo(0, -.75);
+            ctx.lineTo(0, .75);
+            ctx.stroke();
+            ctx.moveTo(-.75, 0);
+            ctx.lineTo(.75, 0);
+            ctx.stroke();
+
+            function plot(f) {
+                var f0 = f(0);
+                ctx.moveTo(0, f0);
+                for (var i = 0; i <= 1; i += 1 / 255.0) {
+                    ctx.lineTo(i, f(i));
+
+                }
+                var f0 = f(1);
+                ctx.moveTo(1, f0);
+                ctx.stroke();
+            }
+
+            plot(function (x) { return x; });
+            plot(function (x) { return x * x; });
+            plot(function (x) { return .5 * ( 1- Math.cos(x * Math.PI) ); });
+
+        });
+    -->
+    </script>
+</head>
+  <body>
+    <div style="margin: 32px; padding: 16px 16px 96px 16px;">
+        <h1>Prototype</h1>
+        <p style="width: 640px">
+            This is a basic demo of the updating the canvas element in HTML5.
+        </p>
+        <p>
+        </p>
+        <h2>Canvas</h2>
+        <div style="float: left; width: 544px;">
+            <canvas id="canvas" width="256" height="256" style="border: 1px solid black"></canvas>
+        </div>
+        <div>
+            
+        </div>
+        <div style="clear: both"></div>
+    </div>
+  </body>
+</html>

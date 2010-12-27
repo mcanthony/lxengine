@@ -63,6 +63,7 @@ namespace lx0 { namespace core {
     };
 
     void    set_identity        (matrix4& m);
+    void    set_translation     (matrix4& m, float tx, float ty, float tz);
     void    copy                (matrix4& a, const matrix4& b);
     void    mul                 (matrix4& c, const matrix4& a, const matrix4& b);
     void    transpose           (matrix4& a, const matrix4& b);
