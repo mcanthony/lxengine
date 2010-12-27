@@ -1,7 +1,10 @@
 #version 150
 
-varying in vec3    fragVertexOc;
-varying in vec3    fragNormalEc;
+in vec3    fragLightDirEc;
+
+in vec3    fragVertexOc;
+in vec3    fragNormalEc;
+in vec3    fragNormalOc;
 
 out vec4 outColor;
 
@@ -18,8 +21,11 @@ vec3 checker(vec2 uv, vec3 primary, vec3 secondary)
 
 void main()
 {	
-    vec3 color = checker(fragVertexOc.xy / 10, vec3(1, 0, 0), vec3(1, 1, .8));
-    color *= (fragNormalEc.z * fragNormalEc.z * .75 + .25);
+    const vec3 primary = vec3(1, 0, 0);
+    const vec3 secondary = vec3(1, 1, .8);
+    vec3 color = checker(fragVertexOc.xy / 10, primary, secondary);
+    float diffuse = clamp( -dot(fragNormalOc, fragLightDirEc), 0.0, 1.0 );
+    color *= (diffuse * .75 + .25);
 
     float fogFactor = 1.0 - (gl_FragCoord.z / gl_FragCoord.w) / 400.0f;
     fogFactor = clamp(fogFactor, 0.0, 1.0);

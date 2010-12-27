@@ -34,6 +34,7 @@
 
 #include "rasterizergl.hpp"
 
+using namespace Rasterizer;
 
 void RasterizerGL::initialize()
 {
@@ -93,9 +94,9 @@ RasterizerGL::createMaterial (void)
 {
     // Create the shader program
     //
-    GLuint vs = createShader("media/shaders/glsl/vertex/basic_00.vert", GL_VERTEX_SHADER);
-    GLuint gs = createShader("media/shaders/glsl/geometry/basic_00.geom", GL_GEOMETRY_SHADER);
-    GLuint fs = createShader("media2/shaders/glsl/fragment/checker_world_xy10.frag", GL_FRAGMENT_SHADER);
+    GLuint vs = _createShader("media2/shaders/glsl/vertex/basic_01.vert", GL_VERTEX_SHADER);
+    GLuint gs = _createShader("media2/shaders/glsl/geometry/basic_01.geom", GL_GEOMETRY_SHADER);
+    GLuint fs = _createShader("media2/shaders/glsl/fragment/checker_world_xy10.frag", GL_FRAGMENT_SHADER);
 
     GLuint prog = glCreateProgram();
     {
@@ -119,14 +120,40 @@ RasterizerGL::createMaterial (void)
         glBindAttribLocation(prog, 0, "inPosition");
     }
 
-    glLinkProgram(prog);
+    _linkProgram(prog);
     glUseProgram(prog);
 
     return MaterialPtr(new Material);
 }
 
+void 
+RasterizerGL::_linkProgram (GLuint prog)
+{
+    lx_check_error(glGetError() == GL_NO_ERROR, "GL error status detected!");
+
+    glLinkProgram(prog);
+
+    GLint success;
+    glGetProgramiv(prog, GL_LINK_STATUS, &success);    
+    if (success != GL_TRUE)
+    {
+        std::vector<char> log;
+        GLint maxSize;
+        GLint size;
+
+        glGetProgramiv(prog, GL_INFO_LOG_LENGTH, &maxSize);
+        log.resize(maxSize);
+
+        glGetProgramInfoLog(prog, maxSize, &size, &log[0]);
+        log[size] = '\0';
+
+        const char* text = &log[0];
+        lx_error("Shader compilation error: '%s'", text);            
+    }
+}
+
 GLuint 
-RasterizerGL::createShader( char* filename, GLuint type)
+RasterizerGL::_createShader( char* filename, GLuint type)
 {
     GLuint shaderHandle = 0; 
 
@@ -174,6 +201,8 @@ RasterizerGL::createQuadList (std::vector<point3>& positionData)
     return GeometryPtr(pQuadList);
 }
 
+
+
 void RasterizerGL::QuadList::activate()
 {
     glBindVertexArray(vao[0]);
@@ -186,6 +215,79 @@ void RasterizerGL::QuadList::activate()
     glEnableVertexAttribArray(positionIndex);
 
     glDrawArrays(GL_QUADS, 0, size); 
+}
+
+RasterizerGL::GeometryPtr
+RasterizerGL::createQuadList (std::vector<unsigned short>& indices,
+                              std::vector<point3>& positions, 
+                              std::vector<vector3>& normals)
+{
+    // Create a vertex array to store the vertex data
+    //
+    GLuint vao;
+    glGenVertexArrays(1, &vao);
+    glBindVertexArray(vao);
+
+    GLuint vio;
+    glGenBuffers(1, &vio);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, vio);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(indices[0]), &indices[0], GL_STATIC_DRAW);
+
+    GLuint vboPositions;
+    glGenBuffers(1, &vboPositions);
+    glBindBuffer(GL_ARRAY_BUFFER, vboPositions);
+    glBufferData(GL_ARRAY_BUFFER, positions.size() * sizeof(positions[0]), &positions[0], GL_STATIC_DRAW);
+    
+    GLuint vboNormals;
+    glGenBuffers(1, &vboNormals);
+    glBindBuffer(GL_ARRAY_BUFFER, vboNormals);
+    glBufferData(GL_ARRAY_BUFFER, normals.size() * sizeof(normals[0]), &normals[0], GL_STATIC_DRAW);
+
+    // Create the cache to encapsulate the created OGL resources
+    //
+    auto pGeom = new GeomImp;
+    pGeom->mType        = GL_QUADS;
+    pGeom->mVao         = vao;
+    pGeom->mVboIndices  = vio;
+    pGeom->mCount       = indices.size();
+    pGeom->mVboPosition = vboPositions;
+    pGeom->mVboNormal   = vboNormals;
+    return GeometryPtr(pGeom);
+}
+
+void 
+Rasterizer::GeomImp::activate()
+{
+    GLint shaderProgram;
+    glGetIntegerv(GL_CURRENT_PROGRAM, &shaderProgram);
+
+    glBindVertexArray(mVao);
+
+    // Bind the position data
+    glBindBuffer(GL_ARRAY_BUFFER, mVboPosition);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
+    glEnableVertexAttribArray(0);
+            
+    GLint normalIndex = glGetAttribLocation(shaderProgram, "vertNormal");
+    if (normalIndex != -1)
+    {
+        if (mVboNormal)
+        {
+            glBindBuffer(GL_ARRAY_BUFFER, mVboNormal);
+            glVertexAttribPointer(normalIndex, 3, GL_FLOAT, GL_FALSE, 0, 0);
+            glEnableVertexAttribArray(normalIndex);
+        }
+        else
+            glDisableVertexAttribArray(normalIndex);
+    }
+
+    // Options
+    {
+        GLint loc = glGetUniformLocation(shaderProgram, "unifFlatNormals");
+        glUniform1i(loc,  1);
+    }
+
+    glDrawElements(mType, mCount, GL_UNSIGNED_SHORT, 0);
 }
 
 RasterizerGL::LightSetPtr     

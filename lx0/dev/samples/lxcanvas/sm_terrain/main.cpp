@@ -110,10 +110,28 @@ public:
     }
 
 protected:
-    RasterizerGL::ItemPtr _buildTile (RasterizerGL& rasterizer, 
-                                     RasterizerGL::CameraPtr spCamera, 
-                                     RasterizerGL::LightSetPtr spLightSet, 
-                                     int regionX, int regionY)
+    template <typename T>
+    struct BorderArray2d
+    {
+        BorderArray2d (int w, int h, int b)
+        {
+            mOffset = b;
+            mRowSpan = w + 2 * b;
+            mData.reset(new T[mRowSpan * (h + 2 * b)]);
+        }
+
+        T&  operator() (int x, int y)
+        {
+            return mData[ (y + mOffset) * mRowSpan + (x + mOffset) ];
+        }
+
+        int            mOffset;
+        int            mRowSpan;
+        std::unique_ptr<T[]> mData;
+    };
+
+    RasterizerGL::GeometryPtr 
+    _buildTileGeom2 (RasterizerGL& rasterizer,  int regionX, int regionY)
     {
         const float kRegionSize = 100.0f;
 
@@ -125,33 +143,44 @@ protected:
         // 4 times, therefore it's quicker to compute them once and store
         // the value than recompute each time.
         //
-        std::unique_ptr<float[]> heights(new float[102 * 102]);
-        for (int y = 0; y < 102; ++y)
+        BorderArray2d<float> heights (100, 100, 2);
+        for (int y = -1; y <= 101; ++y)
         {
-            for (int x = 0; x < 102; ++x)
+            for (int x = -1; x <= 101; ++x)
             {
-                heights[y * 102 + x] = calcHeight(tx + x, ty + y);
+                heights(x, y) = calcHeight(tx + x, ty + y);
             }
         }
 
-        std::unique_ptr<vector3[]> normals(new vector3[101 * 101]);
-        for (int y = 1; y < 101; ++y)
+        std::vector<point3> positions (101 * 101);
+        for (int y = 0; y <= 100; ++y)
         {
-            for (int x = 1; x < 101; ++x)
+            for (int x = 0; x <= 100; ++x)
+            {
+                point3 p;
+                p.x = float(x);
+                p.y = float(y);
+                p.z = heights(x, y);
+                positions[y * 101 + x] = p;
+            }
+        }
+
+        std::vector<vector3> normals (101 * 101);
+        for (int y = 0; y <= 100; ++y)
+        {
+            for (int x = 0; x <= 100; ++x)
             {
                 vector3 dx;
                 dx.x = 2;
                 dx.y = 0;
-                dx.z = heights[y * 102 + x - 1] - heights[y * 102 + x + 1];
+                dx.z = heights(x - 1, y) - heights(x + 1, y);
                 
                 vector3 dy;
                 dy.x = 0;
                 dy.y = 2;
-                dy.z = heights[(y - 1) * 102 + x] - heights[(y + 1) * 102 + x];
-                
-                
-                vector3 normal = normalize( cross( normalize(dx), normalize(dy) ) );
-                normals[(y - 1) * 101 + (x - 1)] = normal;
+                dy.z = heights(x, y - 1) - heights(x, y + 1);
+ 
+                normals[y * 101 + x] = normalize( cross( normalize(dx), normalize(dy) ) );
             }
         }
 
@@ -159,47 +188,33 @@ protected:
         //
         //@todo Switch to index buffer
         //@todo Add normals
-        //@todo Add offset-able 2d array for above calculations
-        std::vector<point3> positionData;
-        positionData.reserve(100 * 100 * 4);
+        std::vector<unsigned short> indices;
+        indices.reserve(100 * 100 * 4);
         for (int y = 0; y < 100; ++y)
         {
             for (int x = 0; x < 100; ++x)
             {
-                point3 w00;
-                w00.x = x + 0;
-                w00.y = y + 0;
-                w00.z = heights[(y + 1) * 102 + (x + 1)];
-                        
-                point3 w11;
-                w11.x = x + 1;
-                w11.y = y + 1;
-                w11.z = heights[(y + 2) * 102 + (x + 2)];
-
-                point3 w10;
-                w10.x = w11.x;
-                w10.y = w00.y;
-                w10.z = heights[(y + 1) * 102 + (x + 2)];
-
-                point3 w01;
-                w01.x = w00.x;
-                w01.y = w11.y;
-                w01.z = heights[(y + 2) * 102 + (x + 1)];
-
-                positionData.push_back( w00 );
-                positionData.push_back( w10 );
-                positionData.push_back( w11 );
-                positionData.push_back( w01 );
+                indices.push_back( (y + 0) * 101 + (x + 0) );
+                indices.push_back( (y + 0) * 101 + (x + 1) );
+                indices.push_back( (y + 1) * 101 + (x + 1) );
+                indices.push_back( (y + 1) * 101 + (x + 0) );
             }
         }
 
+        return rasterizer.createQuadList(indices, positions, normals);
+    }
+
+    RasterizerGL::ItemPtr _buildTile (RasterizerGL& rasterizer, 
+                                     RasterizerGL::CameraPtr spCamera, 
+                                     RasterizerGL::LightSetPtr spLightSet, 
+                                     int regionX, int regionY)
+    {
         auto pItem = new RasterizerGL::Item;
         pItem->spCamera   = spCamera;
         pItem->spLightSet = spLightSet;
         pItem->spMaterial = rasterizer.createMaterial();
-        pItem->spTransform = rasterizer.createTransform(tx, ty, 0.0f);
-        pItem->spGeometry = rasterizer.createQuadList(positionData);
-
+        pItem->spTransform = rasterizer.createTransform(regionX * 100.0f, regionY * 100.0f, 0.0f);
+        pItem->spGeometry = _buildTileGeom2(rasterizer, regionX, regionY);
         return RasterizerGL::ItemPtr(pItem);
     }
 

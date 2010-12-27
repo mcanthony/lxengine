@@ -36,9 +36,36 @@
 
 using namespace lx0::core;
 
+namespace Rasterizer
+{
+    struct Geometry
+    {
+        virtual void activate() = 0;
+    };
+    typedef std::shared_ptr<Geometry> GeometryPtr;
+
+    class GeomImp : public Geometry
+    {
+    public:
+        GeomImp() : mType(0), mVboIndices (0),  mVao(0), mVboPosition(0), mVboNormal(0), mCount(0) {}
+
+        virtual void activate();
+
+        GLenum  mType;
+        GLuint  mVao;
+        GLsizei mCount;
+        GLuint  mVboPosition;
+        GLuint  mVboNormal;
+        GLuint  mVboIndices;
+    };
+}
+
 class RasterizerGL
 {
 public:
+    typedef Rasterizer::Geometry    Geometry;
+    typedef Rasterizer::GeometryPtr GeometryPtr;
+
     struct Camera
     {
         virtual void activate();
@@ -54,12 +81,6 @@ public:
         virtual void activate() {}
     };
     typedef std::shared_ptr<Material> MaterialPtr;
-
-    struct Geometry
-    {
-        virtual void activate() = 0;
-    };
-    typedef std::shared_ptr<Geometry> GeometryPtr;
 
     struct QuadList : public Geometry
     {
@@ -105,7 +126,9 @@ public:
     MaterialPtr     createMaterial  (void);
     TransformPtr    createTransform (matrix4& mat);
     TransformPtr    createTransform (float tx, float ty, float tz);
+
     GeometryPtr     createQuadList  (std::vector<point3>& quads);
+    GeometryPtr     createQuadList  (std::vector<unsigned short>& indices, std::vector<point3>& positions, std::vector<vector3>& normals);
 
     void            beginScene      (void);
     void            endScene        (void);
@@ -114,5 +137,6 @@ public:
     void            rasterize       (std::shared_ptr<Item> spItem);
 
 protected:
-    GLuint  createShader    (char* filename, GLuint type);
+    GLuint  _createShader    (char* filename, GLuint type);
+    void    _linkProgram     (GLuint prog);
 };
