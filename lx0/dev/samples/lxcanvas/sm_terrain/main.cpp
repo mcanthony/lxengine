@@ -59,16 +59,6 @@ Camera             gCamera;
 
 //===========================================================================//
 
-
-
-
-        
-//===========================================================================//
-
-
-
-//===========================================================================//
-
 float calcHeight(float s, float t)
 {
     float base = 90 * noise3d_perlin(s / 200.0f, t / 200.0f, .5f);
@@ -82,7 +72,48 @@ float calcHeight(float s, float t)
 class Terrain
 {
 public:
-    RasterizerGL::ItemPtr init(RasterizerGL& rasterizer, RasterizerGL::CameraPtr spCamera, RasterizerGL::LightSetPtr spLightSet, int regionX, int regionY)
+    void generate(RasterizerGL& rasterizer,
+                  Camera& cam1,
+                  RasterizerGL::CameraPtr spCamera, 
+                  RasterizerGL::LightSetPtr spLightSet, 
+                  std::vector<RasterizerGL::ItemPtr>& list)
+    {
+        const int bx = int(cam1.mPosition.x / 100.0f);
+        const int by = int(cam1.mPosition.y / 100.0f);
+
+        const int dist = 10;
+        for (int gy = -dist; gy <= dist; gy++)
+        {
+            for (int gx = -dist; gx <= dist; gx++)
+            {
+                std::pair<short, short> grid;
+                grid.first = bx + gx;
+                grid.second = by + gy;
+
+                RasterizerGL::ItemPtr spTile;
+                auto it = mMap.find(grid);
+                if (it == mMap.end())
+                {
+                    if (abs(gx) < 5 && abs(gy) < 5) 
+                    {
+                        spTile = _buildTile(rasterizer, spCamera, spLightSet, grid.first, grid.second);
+                        mMap.insert(std::make_pair(grid, spTile));
+                    }
+                }
+                else
+                    spTile = it->second;
+
+                if (spTile.get() != nullptr)
+                    list.push_back(spTile);
+            }
+        }
+    }
+
+protected:
+    RasterizerGL::ItemPtr _buildTile (RasterizerGL& rasterizer, 
+                                     RasterizerGL::CameraPtr spCamera, 
+                                     RasterizerGL::LightSetPtr spLightSet, 
+                                     int regionX, int regionY)
     {
         const float kRegionSize = 100.0f;
 
@@ -133,43 +164,6 @@ public:
         return RasterizerGL::ItemPtr(pItem);
     }
 
-    void generate(RasterizerGL& rasterizer,
-                  Camera& cam1,
-                  RasterizerGL::CameraPtr spCamera, 
-                  RasterizerGL::LightSetPtr spLightSet, 
-                  std::vector<RasterizerGL::ItemPtr>& list)
-    {
-        const int bx = int(cam1.mPosition.x / 100.0f);
-        const int by = int(cam1.mPosition.y / 100.0f);
-
-        const int dist = 10;
-        for (int gy = -dist; gy <= dist; gy++)
-        {
-            for (int gx = -dist; gx <= dist; gx++)
-            {
-                std::pair<short, short> grid;
-                grid.first = bx + gx;
-                grid.second = by + gy;
-
-                RasterizerGL::ItemPtr spTile;
-                auto it = mMap.find(grid);
-                if (it == mMap.end())
-                {
-                    if (abs(gx) < 4 && abs(gy) < 4) 
-                    {
-                        spTile = init(rasterizer, spCamera, spLightSet, grid.first, grid.second);
-                        mMap.insert(std::make_pair(grid, spTile));
-                    }
-                }
-                else
-                    spTile = it->second;
-
-                if (spTile.get() != nullptr)
-                    list.push_back(spTile);
-            }
-        }
-    }
-
     std::map<std::pair<short, short>, RasterizerGL::ItemPtr> mMap;
 };
 
@@ -180,12 +174,15 @@ class Renderer
 public:
     void initialize()
     {
-        set(gCamera.mPosition, 500, 500, 250);
+        set(gCamera.mPosition, 10, 10, 15);
         set(gCamera.mTarget, 0, 0, 0);
         set(gCamera.mWorldUp, 0, 0, 1);
         gCamera.mFov = 60.0f;
         gCamera.mNear = 0.01f;  // 1 cm
-        gCamera.mFar = 4000.0f; // 4 km
+        gCamera.mFar = 2000.0f; // 2 km
+
+        gCamera.mPosition.z = calcHeight(gCamera.mPosition.x, gCamera.mPosition.y) + 10.0f;
+        gCamera.mTarget.z = gCamera.mPosition.z;
 
         rasterizer.initialize();
 
@@ -246,20 +243,21 @@ main (int argc, char** argv)
 
     bool bDone = false;
     do {
+        const float kStep = 5.0f;
         bDone = host.processEvents();
 
         if (pWin->keyboard().bDown[KC_W])
-            move_forward(gCamera, 10.0f);
+            move_forward(gCamera, kStep);
         if (pWin->keyboard().bDown[KC_S])
-            move_backward(gCamera, 10.0f);
+            move_backward(gCamera, kStep);
         if (pWin->keyboard().bDown[KC_A])
-            move_left(gCamera, 10.0f);
+            move_left(gCamera, kStep);
         if (pWin->keyboard().bDown[KC_D])
-            move_right(gCamera, 10.0f);
+            move_right(gCamera, kStep);
         if (pWin->keyboard().bDown[KC_R])
-            move_up(gCamera, 10.0f);
+            move_up(gCamera, kStep);
         if (pWin->keyboard().bDown[KC_F])
-            move_down(gCamera, 10.0f);
+            move_down(gCamera, kStep);
 
         pWin->invalidate(); 
 
