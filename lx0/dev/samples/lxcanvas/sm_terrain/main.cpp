@@ -120,7 +120,46 @@ protected:
         float tx = regionX * kRegionSize;
         float ty = regionY * kRegionSize;
 
+        //
+        // Compute all the heights first.   All interior heights are used
+        // 4 times, therefore it's quicker to compute them once and store
+        // the value than recompute each time.
+        //
+        std::unique_ptr<float[]> heights(new float[102 * 102]);
+        for (int y = 0; y < 102; ++y)
+        {
+            for (int x = 0; x < 102; ++x)
+            {
+                heights[y * 102 + x] = calcHeight(tx + x, ty + y);
+            }
+        }
+
+        std::unique_ptr<vector3[]> normals(new vector3[101 * 101]);
+        for (int y = 1; y < 101; ++y)
+        {
+            for (int x = 1; x < 101; ++x)
+            {
+                vector3 dx;
+                dx.x = 2;
+                dx.y = 0;
+                dx.z = heights[y * 102 + x - 1] - heights[y * 102 + x + 1];
+                
+                vector3 dy;
+                dy.x = 0;
+                dy.y = 2;
+                dy.z = heights[(y - 1) * 102 + x] - heights[(y + 1) * 102 + x];
+                
+                
+                vector3 normal = normalize( cross( normalize(dx), normalize(dy) ) );
+                normals[(y - 1) * 101 + (x - 1)] = normal;
+            }
+        }
+
         // Create a vertex buffer to store the data for the vertex array
+        //
+        //@todo Switch to index buffer
+        //@todo Add normals
+        //@todo Add offset-able 2d array for above calculations
         std::vector<point3> positionData;
         positionData.reserve(100 * 100 * 4);
         for (int y = 0; y < 100; ++y)
@@ -130,22 +169,22 @@ protected:
                 point3 w00;
                 w00.x = x + 0;
                 w00.y = y + 0;
-                w00.z = calcHeight(tx + w00.x, ty + w00.y);
+                w00.z = heights[(y + 1) * 102 + (x + 1)];
                         
                 point3 w11;
                 w11.x = x + 1;
                 w11.y = y + 1;
-                w11.z = calcHeight(tx + w11.x, ty + w11.y);
+                w11.z = heights[(y + 2) * 102 + (x + 2)];
 
                 point3 w10;
                 w10.x = w11.x;
                 w10.y = w00.y;
-                w10.z = calcHeight(tx + w10.x, ty + w10.y);
+                w10.z = heights[(y + 1) * 102 + (x + 2)];
 
                 point3 w01;
                 w01.x = w00.x;
                 w01.y = w11.y;
-                w01.z = calcHeight(tx + w01.x, ty + w01.y);
+                w01.z = heights[(y + 2) * 102 + (x + 1)];
 
                 positionData.push_back( w00 );
                 positionData.push_back( w10 );
@@ -181,7 +220,7 @@ public:
         gCamera.mNear = 0.01f;  // 1 cm
         gCamera.mFar = 2000.0f; // 2 km
 
-        gCamera.mPosition.z = calcHeight(gCamera.mPosition.x, gCamera.mPosition.y) + 10.0f;
+        gCamera.mPosition.z = calcHeight(gCamera.mPosition.x, gCamera.mPosition.y) + 2.0f;
         gCamera.mTarget.z = gCamera.mPosition.z;
 
         rasterizer.initialize();
@@ -243,7 +282,7 @@ main (int argc, char** argv)
 
     bool bDone = false;
     do {
-        const float kStep = 5.0f;
+        const float kStep = 2.0f;
         bDone = host.processEvents();
 
         if (pWin->keyboard().bDown[KC_W])
@@ -258,6 +297,10 @@ main (int argc, char** argv)
             move_up(gCamera, kStep);
         if (pWin->keyboard().bDown[KC_F])
             move_down(gCamera, kStep);
+
+        float deltaZ = (calcHeight(gCamera.mPosition.x, gCamera.mPosition.y) + 2.0f) - gCamera.mPosition.z;
+        gCamera.mPosition.z += deltaZ;
+        gCamera.mTarget.z += deltaZ;
 
         pWin->invalidate(); 
 
