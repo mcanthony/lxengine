@@ -34,6 +34,24 @@
 
 namespace lx0 { namespace prototype {
 
+    struct Image4b
+    {
+        struct Pixel
+        {
+            unsigned char r;
+            unsigned char g;
+            unsigned char b;
+            unsigned char a;
+        };
+
+        int                      mWidth;
+        int                      mHeight;
+        std::unique_ptr<Pixel[]> mData;
+    };
+
+    void    load_png (Image4b& image, const char* filename);
+
+
     struct Camera
     {
         lx0::core::point3  mPosition;

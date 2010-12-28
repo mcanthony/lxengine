@@ -49,9 +49,44 @@
 #include <lx0/core/util/util.hpp>
 #include <lx0/prototype/prototype.hpp>
 
+#include "extern/lodepng/lodepng.h"
+
 using namespace lx0::core;
 
 namespace lx0 { namespace prototype { 
+
+    void 
+    load_png (Image4b& image, const char* filename)
+    {
+        // Let the LodePNG library do the hard work...
+        //
+        //
+        
+        std::vector<unsigned char> buffer;
+        LodePNG::loadFile(buffer, filename);
+
+        std::vector<unsigned char> pixels;
+        LodePNG::Decoder decoder;
+        decoder.decode(pixels, buffer.empty() ? 0 : &buffer[0], (unsigned int)buffer.size());
+
+        if (decoder.hasError())
+            lx_error("Could not load png file '%s'", filename);
+
+        image.mWidth = decoder.getWidth();
+        image.mHeight = decoder.getHeight();
+        image.mData.reset( new Image4b::Pixel[image.mWidth * image.mHeight] );
+
+        unsigned char* p = &pixels[0];
+        for (auto i = 0; i < image.mWidth * image.mHeight; ++i)
+        {
+            image.mData[i].r = p[0];
+            image.mData[i].g = p[1];
+            image.mData[i].b = p[2];
+            image.mData[i].a = p[3];
+            p += 4;
+        }
+    }
+
 
     /*!
         Returns the unnormalized vector between the camera position and target.

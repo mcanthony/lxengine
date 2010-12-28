@@ -1,5 +1,7 @@
 #version 150
 
+uniform sampler2D unifTexture0;
+
 in vec3    fragLightDirEc;
 
 in vec3    fragVertexOc;
@@ -23,8 +25,12 @@ vec3 checker(vec2 uv, vec3 primary, vec3 secondary)
 
 void main()
 {	
-    vec3 primary = fragColor; //vec3(1, 0, 0);
-    const vec3 secondary = vec3(1, 1, .8);
+    vec3 primary = fragColor; 
+    
+    vec2 uv = fract(fragVertexOc.xy / 10);
+    vec3 secondary = texture2D(unifTexture0, uv).xyz;
+    secondary = mix(secondary, vec3(1, 1, .8), .2 + fragColor.r);
+
     vec3 color = checker(fragVertexOc.xy / 10, primary, secondary);
     float diffuse = clamp( -dot(fragNormalOc, fragLightDirEc), 0.0, 1.0 );
     color *= (diffuse * .75 + .25);

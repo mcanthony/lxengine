@@ -32,6 +32,7 @@
 #include <vector>
 #include <map>
 
+#include <lx0/prototype/prototype.hpp>
 #include "rasterizergl.hpp"
 
 using namespace Rasterizer;
@@ -89,6 +90,30 @@ RasterizerGL::Camera::activate()
     glLoadTransposeMatrixf(viewMatrix.data);
 }
 
+RasterizerGL::TexturePtr
+RasterizerGL::createTexture (const char* filename)
+{
+    using namespace lx0::prototype;
+    using namespace Rasterizer;
+
+    Image4b img;
+    load_png(img, filename);
+
+    GLuint id;
+    glGenTextures(1, &id);
+    glBindTexture(GL_TEXTURE_2D, id);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, img.mWidth, img.mHeight, 0, GL_RGBA, GL_UNSIGNED_BYTE, img.mData.get());
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+    auto pTex = new Texture;
+    pTex->mId = id;
+    
+    TexturePtr spPtr(pTex);
+    mTextures.push_back(spPtr);
+    return spPtr;
+}
+
 RasterizerGL::MaterialPtr 
 RasterizerGL::createMaterial (void)
 {
@@ -124,6 +149,25 @@ RasterizerGL::createMaterial (void)
     glUseProgram(prog);
 
     return MaterialPtr(new Material);
+}
+
+void
+RasterizerGL::Material::activate(RasterizerGL* pRasterizer)
+{
+    glEnable(GL_TEXTURE_2D);
+
+
+    GLint shaderProgram;
+    glGetIntegerv(GL_CURRENT_PROGRAM, &shaderProgram);
+
+    // Set unifTexture0 to texture unit 0
+    GLint tex0Index = glGetUniformLocation(shaderProgram, "unifTexture0");
+    if (tex0Index != -1)
+    {
+        glUniform1i(tex0Index, 0);
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, pRasterizer->mTextures[0]->mId);
+    }
 }
 
 void 
@@ -354,15 +398,15 @@ void RasterizerGL::rasterizeList (std::vector<std::shared_ptr<Item>>& list)
 
 void RasterizerGL::rasterize(std::shared_ptr<Item> spItem)
 {
-    spItem->rasterize();
+    spItem->rasterize(this);
 }
 
 void 
-RasterizerGL::Item::rasterize()
+RasterizerGL::Item::rasterize(RasterizerGL* pRasterizer)
 {
     spCamera->activate();
     spLightSet->activate();
-    spMaterial->activate();
+    spMaterial->activate(pRasterizer);
     spTransform->activate();
     spGeometry->activate();     
 }
