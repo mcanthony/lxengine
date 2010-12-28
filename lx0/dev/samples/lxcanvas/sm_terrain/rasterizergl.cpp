@@ -168,6 +168,14 @@ RasterizerGL::Material::activate(RasterizerGL* pRasterizer)
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, pRasterizer->mTextures[0]->mId);
     }
+
+    GLint tex1Index = glGetUniformLocation(shaderProgram, "unifTexture1");
+    if (tex1Index != -1)
+    {
+        glUniform1i(tex1Index, 1);
+        glActiveTexture(GL_TEXTURE1);
+        glBindTexture(GL_TEXTURE_2D, pRasterizer->mTextures[1]->mId);
+    }
 }
 
 void 

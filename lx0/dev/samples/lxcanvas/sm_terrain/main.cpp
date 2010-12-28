@@ -261,7 +261,8 @@ public:
         spCamera = rasterizer.createCamera(gCamera.mFov, gCamera.mNear, gCamera.mFar, view_matrix(gCamera));
         spLightSet = rasterizer.createLightSet();
 
-        auto spTexture = rasterizer.createTexture("media2/textures/seamless/grass/grass_yofrankie01/grass_0.png");
+        auto spTextureGrass = rasterizer.createTexture("media2/textures/seamless/grass/grass_yofrankie01/grass_0.png");
+        auto spTextureDirt = rasterizer.createTexture("media2/textures/seamless/dirt/dirt000/dirt000.png");
     }  
 
     void 

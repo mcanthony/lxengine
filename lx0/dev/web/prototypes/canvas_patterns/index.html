@@ -1,0 +1,77 @@
+﻿<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
+<head>
+    <title>Prototype</title>
+    <meta http-equiv="Content-type" content="text/html;charset=UTF-8" />
+    <link rel="stylesheet" href="style.css" media="screen" />
+    <script type="text/javascript" src="jquery-1.4.4.min.js"></script>
+    <script type="text/javascript" src="script.js"></script>
+    <script type="text/javascript">
+    <!--
+        var ctx = null;
+        $(function () {
+
+
+
+            function plot(id, f) {
+
+                var elem = document.getElementById(id + 1);
+                ctx = elem.getContext('2d');
+                for (var y = 0; y < elem.height; y++) {
+                    for (var x = 0; x < elem.width; x++) {
+                        var v = f(x / elem.width, y / elem.height);
+                        ctx.fillStyle = "rgb(" + v + "," + v + "," + v + ")";
+                        ctx.fillRect(x, y, 1, 1);
+                    }
+                }
+
+                var elem = document.getElementById(id + 2);
+                ctx = elem.getContext('2d');
+                for (var y = 0; y < elem.height; y++) {
+                    for (var x = 0; x < elem.width; x++) {
+                        var v = f(4 * x / elem.width - 2, 4 * y / elem.height - 2);
+                        ctx.fillStyle = "rgb(" + v + "," + v + "," + v + ")";
+                        ctx.fillRect(x, y, 1, 1);
+                    }
+                }
+            }
+
+function checker(s, t) {
+    s -= Math.floor(s);
+    t -= Math.floor(t);
+
+    s = Math.abs(.5 - s);
+    t = Math.abs(.5 - t);
+
+    if (Math.sin(s * t * Math.PI) < .4)
+        return parseInt((.8 - Math.pow(2 * s*s+t*t, .5)) * 255);
+    else
+        return 0;
+}
+
+            plot('canvas', checker);
+
+        });
+    -->
+    </script>
+</head>
+  <body>
+    <div style="margin: 32px; padding: 16px 16px 96px 16px;">
+        <h1>Prototype</h1>
+        <p style="width: 640px">
+            This is a basic demo of the updating the canvas element in HTML5.
+        </p>
+        <p>
+        </p>
+        <h2>Canvas</h2>
+        <div style="float: left; width: 400px;">
+            <canvas id="canvas1" width="128" height="128" style="border: 1px solid black; margin: 4px"></canvas>
+            <canvas id="canvas2" width="128" height="128" style="border: 1px solid black; margin: 4px"></canvas>
+        </div>
+        <div>
+            
+        </div>
+        <div style="clear: both"></div>
+    </div>
+  </body>
+</html>
