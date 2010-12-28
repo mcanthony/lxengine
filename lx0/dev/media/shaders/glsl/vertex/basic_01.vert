@@ -1,5 +1,6 @@
 
 in vec3 vertNormal;
+in vec3 vertColor;
 
 varying out vec3    geomLightDirEc;
 
@@ -34,7 +35,7 @@ void main(void)
 
     geomNormalOc = vertNormal;
     geomNormalEc = gl_NormalMatrix * vertNormal;
-    geomColor  = vec3(gl_Color.xyz);
+    geomColor  = vertColor;
     
     geomLightDirEc = normalize(vec3(-1, 1, -1));
 }

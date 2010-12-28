@@ -59,6 +59,15 @@ Camera             gCamera;
 
 //===========================================================================//
 
+vector3 calcColor(float s, float t)
+{
+    vector3 c;
+    c.x = 1.0f - noise3d_perlin(s, t, .212f);
+    c.y = 0.0f;
+    c.z = 0.0f;
+    return c;
+}
+
 float calcHeight(float s, float t)
 {
     float base = 90 * noise3d_perlin(s / 200.0f, t / 200.0f, .5f);
@@ -184,6 +193,15 @@ protected:
             }
         }
 
+        std::vector<vector3> colors (101 * 101);
+        for (int y = 0; y <= 100; ++y)
+        {
+            for (int x = 0; x <= 100; ++x)
+            {
+                colors[y * 101 + x] = calcColor(tx + x, ty + y);
+            }
+        }
+
         // Create a vertex buffer to store the data for the vertex array
         //
         //@todo Switch to index buffer
@@ -201,7 +219,7 @@ protected:
             }
         }
 
-        return rasterizer.createQuadList(indices, positions, normals);
+        return rasterizer.createQuadList(indices, positions, normals, colors);
     }
 
     RasterizerGL::ItemPtr _buildTile (RasterizerGL& rasterizer, 

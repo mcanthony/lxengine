@@ -47,7 +47,7 @@ namespace Rasterizer
     class GeomImp : public Geometry
     {
     public:
-        GeomImp() : mType(0), mVboIndices (0),  mVao(0), mVboPosition(0), mVboNormal(0), mCount(0) {}
+        GeomImp() : mType(0), mVboIndices (0),  mVao(0), mVboPosition(0), mVboNormal(0), mCount(0), mVboColors(0) {}
 
         virtual void activate();
 
@@ -56,6 +56,7 @@ namespace Rasterizer
         GLsizei mCount;
         GLuint  mVboPosition;
         GLuint  mVboNormal;
+        GLuint  mVboColors;
         GLuint  mVboIndices;
     };
 }
@@ -128,7 +129,10 @@ public:
     TransformPtr    createTransform (float tx, float ty, float tz);
 
     GeometryPtr     createQuadList  (std::vector<point3>& quads);
-    GeometryPtr     createQuadList  (std::vector<unsigned short>& indices, std::vector<point3>& positions, std::vector<vector3>& normals);
+    GeometryPtr     createQuadList  (std::vector<unsigned short>& indices, 
+                                     std::vector<point3>& positions, 
+                                     std::vector<vector3>& normals,
+                                     std::vector<vector3>& colors);
 
     void            beginScene      (void);
     void            endScene        (void);

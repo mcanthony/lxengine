@@ -6,6 +6,8 @@ in vec3    fragVertexOc;
 in vec3    fragNormalEc;
 in vec3    fragNormalOc;
 
+in vec3    fragColor;
+
 out vec4 outColor;
 
 vec3 checker(vec2 uv, vec3 primary, vec3 secondary)
@@ -21,7 +23,7 @@ vec3 checker(vec2 uv, vec3 primary, vec3 secondary)
 
 void main()
 {	
-    const vec3 primary = vec3(1, 0, 0);
+    vec3 primary = fragColor; //vec3(1, 0, 0);
     const vec3 secondary = vec3(1, 1, .8);
     vec3 color = checker(fragVertexOc.xy / 10, primary, secondary);
     float diffuse = clamp( -dot(fragNormalOc, fragLightDirEc), 0.0, 1.0 );

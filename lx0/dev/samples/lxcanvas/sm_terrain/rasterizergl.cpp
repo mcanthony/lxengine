@@ -218,9 +218,10 @@ void RasterizerGL::QuadList::activate()
 }
 
 RasterizerGL::GeometryPtr
-RasterizerGL::createQuadList (std::vector<unsigned short>& indices,
+RasterizerGL::createQuadList (std::vector<unsigned short>& indices, 
                               std::vector<point3>& positions, 
-                              std::vector<vector3>& normals)
+                              std::vector<vector3>& normals,
+                              std::vector<vector3>& colors)
 {
     // Create a vertex array to store the vertex data
     //
@@ -243,6 +244,11 @@ RasterizerGL::createQuadList (std::vector<unsigned short>& indices,
     glBindBuffer(GL_ARRAY_BUFFER, vboNormals);
     glBufferData(GL_ARRAY_BUFFER, normals.size() * sizeof(normals[0]), &normals[0], GL_STATIC_DRAW);
 
+    GLuint vboColors;
+    glGenBuffers(1, &vboColors);
+    glBindBuffer(GL_ARRAY_BUFFER, vboColors);
+    glBufferData(GL_ARRAY_BUFFER, colors.size() * sizeof(colors[0]), &colors[0], GL_STATIC_DRAW);
+
     // Create the cache to encapsulate the created OGL resources
     //
     auto pGeom = new GeomImp;
@@ -252,6 +258,7 @@ RasterizerGL::createQuadList (std::vector<unsigned short>& indices,
     pGeom->mCount       = indices.size();
     pGeom->mVboPosition = vboPositions;
     pGeom->mVboNormal   = vboNormals;
+    pGeom->mVboColors   = vboColors;
     return GeometryPtr(pGeom);
 }
 
@@ -279,6 +286,19 @@ Rasterizer::GeomImp::activate()
         }
         else
             glDisableVertexAttribArray(normalIndex);
+    }
+
+    GLint colorIndex = glGetAttribLocation(shaderProgram, "vertColor");
+    if (colorIndex != -1)
+    {
+        if (mVboColors)
+        {
+            glBindBuffer(GL_ARRAY_BUFFER, mVboColors);
+            glVertexAttribPointer(colorIndex, 3, GL_FLOAT, GL_FALSE, 0, 0);
+            glEnableVertexAttribArray(colorIndex);
+        }
+        else
+            glDisableVertexAttribArray(colorIndex);
     }
 
     // Options
