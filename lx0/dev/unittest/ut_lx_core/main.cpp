@@ -28,10 +28,13 @@
 
 #include <iostream>
 #include <functional>
+#include <limits>
+#include <algorithm>
 #include <string>
 #include <lx0/core/math/tuple3.hpp>
 #include <lx0/core/math/point3.hpp>
 #include <lx0/core/math/vector3.hpp>
+#include <lx0/core/core.hpp>
 
 class UnitTest
 {
@@ -112,6 +115,33 @@ main (int argc, char** argv)
         test.check( is_orthogonal(vector3(1, 0, 0), vector3(0, 1, 0)) == true );
         test.check( is_orthogonal(vector3(0, 1, 0), vector3(0, 1, 0)) == false );
         test.check( is_orthogonal(vector3(0, 0, 1), vector3(0, 1, 0)) == true );
+    });
+
+    test.add_group("noise", [&test]() {
+
+        double noiseMin = std::numeric_limits<double>::max();
+        double noiseMax = std::numeric_limits<double>::min();
+        double noiseAvg = 0.0;
+
+        double avg = 0.0;
+        srand(512);
+        for (int i = 0; i < 1000 * 1000; ++i) 
+        {
+            point3 p;
+            for (int j = 0; j < 3; ++j)
+                p[j] = ((rand() % 20000) - 10000) / 1000.0f;
+            float v = noise3d_perlin(p.x, p.y, p.z);
+            
+            double d = double(v);
+            noiseMin = std::min(noiseMin, d);
+            noiseMax = std::max(noiseMax, d);
+            noiseAvg += d;
+        }
+        noiseAvg /= 1000 * 1000;
+
+        test.check(noiseMin >= -1.0 && noiseMin <= -.6);
+        test.check(noiseMax <= 1.0 && noiseMax >= .6);
+        test.check( abs(noiseAvg) < 0.1 );
     });
     
     

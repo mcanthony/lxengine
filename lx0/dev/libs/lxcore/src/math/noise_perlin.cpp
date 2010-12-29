@@ -294,6 +294,9 @@ namespace {
 
 namespace lx0 { namespace core {
 
+    /*!
+        Returns a number in the -1 to 1 range.
+     */
     float 
     noise3d_perlin (float x, float y, float z)
     {
