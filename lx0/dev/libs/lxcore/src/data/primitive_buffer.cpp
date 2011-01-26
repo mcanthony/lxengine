@@ -3,7 +3,6 @@
                                    LxEngine
 
     LICENSE
-    * MIT License (http://www.opensource.org/licenses/mit-license.php)
 
     Copyright (c) 2010 athile@athile.net (http://www.athile.net)
 
@@ -27,24 +26,30 @@
 */
 //===========================================================================//
 
-#pragma once
+#include "lx0/core/data/primitive_buffer.hpp"
 
-#include <lx0/core/base/base.hpp>
-#include <lx0/core/base/cast.hpp>
+using namespace lx0::core;
+using namespace lx0::core::detail;
 
-#include <lx0/core/math/tuple3.hpp>
-#include <lx0/core/math/point3.hpp>
-#include <lx0/core/math/vector3.hpp>
-#include <lx0/core/math/matrix4.hpp>
+namespace lx0 { namespace core { namespace detail {
 
-#include <lx0/core/math/ray.hpp>
+    void 
+    primitive_buffer_sw::add_stream (const char* name, std::vector<float>& data)
+    {
+    }
 
-#include <lx0/core/math/noise.hpp>
-#include <lx0/core/math/smooth_functions.hpp>
+    void
+    primitive_buffer_sw::add_stream (const char* name, std::vector<vector3>& data)
+    {
+    }
 
-#include <lx0/core/data/lxvar.hpp>
-#include <lx0/core/data/lxvar_convert.hpp>
-#include <lx0/core/data/primitive_buffer.hpp>
+}}}
 
-#include <lx0/core/util/util.hpp>
+namespace lx0 { namespace core {
 
+    primitive_buffer::primitive_buffer()
+        : mpImp (new primitive_buffer_sw)
+    {
+    }
+
+}}

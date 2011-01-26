@@ -62,7 +62,7 @@ Camera             gCamera;
 vector3 calcColor(float s, float t)
 {
     vector3 c;
-    c.x = 1.0f - noise3d_perlin(s, t, .212f);
+    c.x = 1.0f - noise3d_perlin(s / 2.0f, t / 2.0f, .212f);
     c.y = 0.0f;
     c.z = 0.0f;
     return c;
@@ -70,7 +70,7 @@ vector3 calcColor(float s, float t)
 
 float calcHeight(float s, float t)
 {
-    float base = 90 * noise3d_perlin(s / 200.0f, t / 200.0f, .5f);
+    float base = 120 * noise3d_perlin(s / 200.0f, t / 200.0f, .5f);
     float mid = 3 * noise3d_perlin(s / 40.0f, t / 30.0f, .1f)
               + 3 * noise3d_perlin(s / 45.0f, t / 60.0f, .6f);
     mid *= mid;

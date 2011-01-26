@@ -31,8 +31,14 @@ void main()
     vec2 uv = fract(fragVertexOc.xy / 10);
     vec3 s1 = texture2D(unifTexture1, uv).xyz;
     vec3 s2 = texture2D(unifTexture0, uv).xyz;
-    float m = clamp(6.7 * (fragColor.r - .75), 0.0, 1.0);
-    vec3 secondary = mix(s1, s2, m);
+
+    float m;
+    if (fragColor.r > .3)
+        m = fragColor.r;
+    else
+        m = 0.0;
+        
+    vec3 secondary = mix(s1, s2, m); 
 
     vec3 color = secondary; //checker(fragVertexOc.xy / 10, primary, secondary);
     float diffuse = clamp( -dot(fragNormalOc, fragLightDirEc), 0.0, 1.0 );

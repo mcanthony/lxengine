@@ -295,11 +295,13 @@ namespace {
 namespace lx0 { namespace core {
 
     /*!
-        Returns a number in the -1 to 1 range.
+        
      */
     float 
     noise3d_perlin (float x, float y, float z)
     {
-        return perlin_noise_imp(x, y, z);
+        // Returns a number in the -1 to 1 range.  Normalize to
+        // 0 to 1.
+        return (perlin_noise_imp(x, y, z) + 1.0f) / 2.0f;
     }
 }}
