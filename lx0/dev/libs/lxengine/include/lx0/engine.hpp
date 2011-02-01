@@ -4,7 +4,7 @@
 
     LICENSE
 
-    Copyright (c) 2010 athile@athile.net (http://www.athile.net)
+    Copyright (c) 2010-2011 athile@athile.net (http://www.athile.net)
 
     Permission is hereby granted, free of charge, to any person obtaining a 
     copy of this software and associated documentation files (the "Software"), 
@@ -92,7 +92,7 @@ namespace lx0 { namespace core {
             virtual void        onDocumentCreated   (EnginePtr spEngine, DocumentPtr spDocument) {}
         };
 
-}   ;
+    }
 
     //===========================================================================//
     //!
@@ -139,6 +139,12 @@ namespace lx0 { namespace core {
         lxvar               parseAttribute      (std::string name, std::string value);
         ///@}
 
+        ///@name Engine plug-ins
+        ///@{
+        void                addViewPlugin       (std::string name, std::function<ViewImp*(View*)> ctor);
+        ViewImp*            _createViewImp      (std::string name, View* pView);
+        ///@}
+
         // Stats
         void                incObjectCount      (std::string name);
         void                decObjectCount      (std::string name);
@@ -161,11 +167,15 @@ namespace lx0 { namespace core {
         
         void        _processDocumentHeader  (DocumentPtr spDocument);
 
+        bool        _handlePlatformMessages (void);
+
         Environment                 mEnvironment;
         std::vector<DocumentPtr>    m_documents;
         std::deque<std::string>     m_messageQueue;
 
         std::map<std::string, detail::ObjectCount>   m_objectCounts;
+
+        std::map<std::string, std::function<ViewImp*(View*)>>                    mViewImps;
 
         std::map<std::string, std::vector<std::function<bool(std::string)>>>    m_psuedoAttributes;
         std::map<std::string, std::vector<std::function<lxvar(std::string)>>>   m_attributeParsers;

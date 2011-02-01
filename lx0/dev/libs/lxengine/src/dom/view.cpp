@@ -56,10 +56,15 @@ namespace lx0 { namespace core {
 
         // Create the view implementation object
         //
-        if (impType == "OGRE")
-            mspImp.reset( _createViewImpOgre(this) );
-        else
-            lx_error("Unrecognized View implementation: '%s'", impType.c_str());
+        EnginePtr spEngine = Engine::acquire();
+        static bool once = false;
+        if (!once) 
+        {
+            once = true;
+            spEngine->addViewPlugin("OGRE", [&](View* pView) { return _createViewImpOgre(pView); } );
+        }
+        ViewImp* pImp = spEngine->_createViewImp(impType, this);
+        mspImp.reset( pImp );
 
         //
         // Hook into Document events
@@ -76,6 +81,7 @@ namespace lx0 { namespace core {
 
     View::~View()
     {
+        mspImp->destroyWindow();
         Engine::acquire()->decObjectCount("View");
     }
 

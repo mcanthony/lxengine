@@ -109,6 +109,7 @@ namespace lx0 { namespace core {
     _LX_FORWARD_DECL_PTRS(Space);
     _LX_FORWARD_DECL_PTRS(Engine);
     _LX_FORWARD_DECL_PTRS(View);
+    class ViewImp;
     _LX_FORWARD_DECL_PTRS(Controller);
 
     _LX_FORWARD_DECL_PTRS(Object);

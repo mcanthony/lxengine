@@ -5,7 +5,7 @@
     LICENSE
     * MIT License (http://www.opensource.org/licenses/mit-license.php)
 
-    Copyright (c) 2010 athile@athile.net (http://www.athile.net)
+    Copyright (c) 2010-2011 athile@athile.net (http://www.athile.net)
 
     Permission is hereby granted, free of charge, to any person obtaining a 
     copy of this software and associated documentation files (the "Software"), 
@@ -55,8 +55,12 @@ namespace lx0 { namespace canvas { namespace platform {
         {
             if (winKey >= 'A' && winKey <= 'Z')
                 return KC_A + (winKey - 'A');
-            else
-                return 0;
+
+            switch (winKey)
+            {
+            case VK_ESCAPE: return KC_ESCAPE;
+            default:        return 0;
+            }
         }
         
         void 
@@ -69,7 +73,7 @@ namespace lx0 { namespace canvas { namespace platform {
                     lxState.bDown[s_winToLxKey(i)] = !!winState[i];
 
                 // GetKeyboardState() returns the keyboard state after the events
-                // have been processed - i.e. not the current key if this functio
+                // have been processed - i.e. not the current key if this function
                 // is called in the key event handler itself.  Therefore, manually
                 // check the key associated with the event.
                 // 
@@ -79,6 +83,14 @@ namespace lx0 { namespace canvas { namespace platform {
                 lxState.bDown[s_winToLxKey(eventVKey)] = !(::GetAsyncKeyState(eventVKey) && 0xFF00);
             }
         }
+    }
+
+    //===========================================================================//
+
+    KeyboardState::KeyboardState()
+    {
+        for (int i = 0; i < KC_COUNT; ++i)
+            bDown[i] = false;
     }
 
     //===========================================================================//
@@ -156,6 +168,12 @@ namespace lx0 { namespace canvas { namespace platform {
     {
         lx_check_error(m_hWnd == NULL, "Call destroy() on the window before deleting it! "
             "This allows for proper clean-up of other objects which may depend on the window.");
+    }
+
+    size_t
+    CanvasBase::handle (void)
+    {
+        return reinterpret_cast<size_t>(m_hWnd);
     }
 
     void

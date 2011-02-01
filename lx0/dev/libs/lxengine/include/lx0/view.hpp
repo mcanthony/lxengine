@@ -47,6 +47,7 @@ namespace lx0 { namespace core {
         virtual     ~ViewImp() {}
 
         virtual void        createWindow    (View* pHostView, size_t& handle, unsigned int& width, unsigned int& height) = 0;
+        virtual void        destroyWindow   (void) {}
         virtual void        show            (View* pHostView, Document* pDocument) = 0;
 
         virtual     void        _onElementAdded             (ElementPtr spElem) = 0;

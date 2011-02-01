@@ -4,7 +4,7 @@
 
     LICENSE
 
-    Copyright (c) 2010 athile@athile.net (http://www.athile.net)
+    Copyright (c) 2010-2011 athile@athile.net (http://www.athile.net)
 
     Permission is hereby granted, free of charge, to any person obtaining a 
     copy of this software and associated documentation files (the "Software"), 
@@ -276,6 +276,10 @@ namespace lx0 { namespace core {
                     bDone = true;
             }
 
+
+            if (!bDone)
+                bDone = _handlePlatformMessages();
+
             ///@todo Devise a better way to hand time-slices from the main loop to the individual documents
             /// for updates.  Also consider multi-threading.
             for(auto it = m_documents.begin(); it != m_documents.end(); ++it)
@@ -288,5 +292,34 @@ namespace lx0 { namespace core {
 
 		return 0;
 	}
+
+
+    void
+    Engine::addViewPlugin (std::string name, std::function<ViewImp*(View*)> ctor)
+    {
+        auto it = mViewImps.find(name);
+        if (it == mViewImps.end())
+        {
+            mViewImps.insert(std::make_pair(name, ctor));
+        }
+        else
+        {
+            lx_error("Registering View plugin '%s': there is already a plugin with that name.", name.c_str()); 
+        }
+    }
+
+    ViewImp*
+    Engine::_createViewImp (std::string name, View* pView)
+    {
+        auto it = mViewImps.find(name);
+        if (it != mViewImps.end())
+        {
+            return (it->second)(pView);
+        }
+        else
+        {
+            lx_error("No View plug-in with name '%s' found.", name.c_str()); 
+        }
+    }
 
 }}

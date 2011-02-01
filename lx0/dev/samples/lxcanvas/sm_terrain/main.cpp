@@ -4,7 +4,7 @@
 
     LICENSE
 
-    Copyright (c) 2010 athile@athile.net (http://www.athile.net)
+    Copyright (c) 2010-2011 athile@athile.net (http://www.athile.net)
 
     Permission is hereby granted, free of charge, to any person obtaining a 
     copy of this software and associated documentation files (the "Software"), 
@@ -48,6 +48,9 @@
 #include <lx0/core/util/util.hpp>
 #include <lx0/canvas/canvas.hpp>
 #include <lx0/prototype/prototype.hpp>
+#include <lx0/view.hpp>
+#include <lx0/engine.hpp>
+#include <lx0/document.hpp>
 
 #include "rasterizergl.hpp"
 
@@ -291,56 +294,111 @@ protected:
 };
 
 //===========================================================================//
+
+class LxCanvasImp : public ViewImp
+{
+public:
+    virtual void        createWindow    (View* pHostView, size_t& handle, unsigned int& width, unsigned int& height);
+    virtual void        destroyWindow   (void);
+    virtual void        show            (View* pHostView, Document* pDocument);
+
+    virtual     void        _onElementAdded             (ElementPtr spElem) {}
+    virtual     void        _onElementRemoved           (ElementPtr spElem) {}
+
+    virtual     void        updateBegin     (void) {}
+    virtual     void        updateFrame     (void);
+    virtual     void        updateEnd       (void) {}
+
+protected:
+    std::auto_ptr<CanvasGL> mspWin;
+    CanvasHost              mHost;
+    Renderer                mRenderer;
+};
+
+void 
+LxCanvasImp::createWindow (View* pHostView, size_t& handle, unsigned int& width, unsigned int& height)
+{
+    width = 800;
+    height = 400;
+
+    mspWin.reset( new CanvasGL("Terrain Sample (OpenGL 3.2)", width, height, false) );
+    handle = mspWin->handle();
+
+    mRenderer.initialize();
+    mRenderer.resize(width, height);
+
+    mspWin->slotRedraw += [&]() { mRenderer.render(); };
+    mspWin->slotLMouseDrag += [&](const MouseState& ms, const ButtonState& bs, KeyModifiers km) {
+        rotate_horizontal(gCamera, ms.deltaX() * -3.14f / 1000.0f );
+        rotate_vertical(gCamera, ms.deltaY() * -3.14f / 1000.0f );
+        mspWin->invalidate(); 
+    };
+}
+
+void
+LxCanvasImp::destroyWindow (void)
+{
+    mspWin->destroy();
+}
+
+void 
+LxCanvasImp::show (View* pHostView, Document* pDocument)
+{
+    mspWin->show();
+}
+
+void 
+LxCanvasImp::updateFrame (void) 
+{
+    const float kStep = 2.0f;
+
+    if (mspWin->keyboard().bDown[KC_ESCAPE])
+        Engine::acquire()->sendMessage("quit");
+
+    if (mspWin->keyboard().bDown[KC_W])
+        move_forward(gCamera, kStep);
+    if (mspWin->keyboard().bDown[KC_S])
+        move_backward(gCamera, kStep);
+    if (mspWin->keyboard().bDown[KC_A])
+        move_left(gCamera, kStep);
+    if (mspWin->keyboard().bDown[KC_D])
+        move_right(gCamera, kStep);
+    if (mspWin->keyboard().bDown[KC_R])
+        move_up(gCamera, kStep);
+    if (mspWin->keyboard().bDown[KC_F])
+        move_down(gCamera, kStep);
+
+    float deltaZ = (calcHeight(gCamera.mPosition.x, gCamera.mPosition.y) + 2.0f) - gCamera.mPosition.z;
+    gCamera.mPosition.z += deltaZ;
+    gCamera.mTarget.z += deltaZ;
+
+    mspWin->invalidate(); 
+}
+
+//===========================================================================//
 //   E N T R Y - P O I N T
 //===========================================================================//
 
 int 
 main (int argc, char** argv)
 {
-    int exitCode = 0;
+    int exitCode = -1;
+    try
+    {
+        EnginePtr   spEngine   = Engine::acquire();
+        spEngine->addViewPlugin("LxCanvas", [] (View* pView) { return new LxCanvasImp; });
+        
+        DocumentPtr spDocument = spEngine->loadDocument("media2/appdata/sm_terrain/scene.xml");
+        ViewPtr     spView     = spDocument->createView("LxCanvas", "view");
+        spView->show();
 
-    lx_init();
-
-    CanvasHost host;
-    Renderer renderer;
-
-    auto pWin = new CanvasGL("Terrain Sample (OpenGL 3.2)", 800, 400, false);
-    host.create(pWin, "canvas", false);
-    renderer.initialize();
-    renderer.resize(800, 400);
-    pWin->slotRedraw += [&]() { renderer.render(); };
-    pWin->slotLMouseDrag += [&](const MouseState& ms, const ButtonState& bs, KeyModifiers km) {
-        rotate_horizontal(gCamera, ms.deltaX() * -3.14f / 1000.0f );
-        rotate_vertical(gCamera, ms.deltaY() * -3.14f / 1000.0f );
-        pWin->invalidate(); 
-    };
-    pWin->show();
-
-    bool bDone = false;
-    do {
-        const float kStep = 2.0f;
-        bDone = host.processEvents();
-
-        if (pWin->keyboard().bDown[KC_W])
-            move_forward(gCamera, kStep);
-        if (pWin->keyboard().bDown[KC_S])
-            move_backward(gCamera, kStep);
-        if (pWin->keyboard().bDown[KC_A])
-            move_left(gCamera, kStep);
-        if (pWin->keyboard().bDown[KC_D])
-            move_right(gCamera, kStep);
-        if (pWin->keyboard().bDown[KC_R])
-            move_up(gCamera, kStep);
-        if (pWin->keyboard().bDown[KC_F])
-            move_down(gCamera, kStep);
-
-        float deltaZ = (calcHeight(gCamera.mPosition.x, gCamera.mPosition.y) + 2.0f) - gCamera.mPosition.z;
-        gCamera.mPosition.z += deltaZ;
-        gCamera.mTarget.z += deltaZ;
-
-        pWin->invalidate(); 
-
-    } while (!bDone);
+        exitCode = spEngine->run();
+        spEngine->shutdown();
+    }
+    catch (std::exception& e)
+    {
+        lx_fatal("Fatal: unhandled exception.\nException: %s\n", e.what());
+    }
 
     return exitCode;
 }
