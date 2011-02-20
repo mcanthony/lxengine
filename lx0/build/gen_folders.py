@@ -14,7 +14,7 @@ changing the parameters in the call to write_sln().
 LICENSE
 * MIT License (http://www.opensource.org/licenses/mit-license.php)
 
-Copyright (c) 2010 athile@athile.net (http://www.athile.net)
+Copyright (c) 2010-2011 athile@athile.net (http://www.athile.net)
 
 Permission is hereby granted, free of charge, to any person obtaining a 
 copy of this software and associated documentation files (the "Software"), 
@@ -119,7 +119,8 @@ write_sln("lx0.sln", [
         "sm_terrain",
         "sm_ogre_minimal",
         "sm_v8_basic",
-        "cpp_smartptr"
+        "cpp_smartptr",
+        "sm_raytracer",
     ],
     "3. Sandbox", [
         "blendload",
