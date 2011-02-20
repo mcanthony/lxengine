@@ -225,6 +225,25 @@ protected:
         return rasterizer.createQuadList(indices, positions, normals, colors);
     }
 
+    RasterizerGL::MaterialPtr 
+    _acquireMaterial (RasterizerGL& rasterizer)
+    {
+        if (mwpMaterial.expired())
+        {
+            auto spTextureGrass = rasterizer.createTexture("media2/textures/seamless/grass/grass_yofrankie01/grass_0.png");
+            auto spTextureDirt = rasterizer.createTexture("media2/textures/seamless/dirt/dirt000/dirt000.png");
+
+            auto spMat = rasterizer.createMaterial();
+            spMat->mTextures[0] = spTextureGrass;
+            spMat->mTextures[1] = spTextureDirt;
+
+            mwpMaterial = spMat;
+            return spMat;           // Be sure to return *before* spMat goes out of scope
+        }
+        else
+            return mwpMaterial.lock();
+    }
+
     RasterizerGL::ItemPtr _buildTile (RasterizerGL& rasterizer, 
                                      RasterizerGL::CameraPtr spCamera, 
                                      RasterizerGL::LightSetPtr spLightSet, 
@@ -233,12 +252,13 @@ protected:
         auto pItem = new RasterizerGL::Item;
         pItem->spCamera   = spCamera;
         pItem->spLightSet = spLightSet;
-        pItem->spMaterial = rasterizer.createMaterial();
+        pItem->spMaterial = _acquireMaterial(rasterizer);
         pItem->spTransform = rasterizer.createTransform(regionX * 100.0f, regionY * 100.0f, 0.0f);
         pItem->spGeometry = _buildTileGeom2(rasterizer, regionX, regionY);
         return RasterizerGL::ItemPtr(pItem);
     }
 
+    RasterizerGL::MaterialWPtr                               mwpMaterial;
     std::map<std::pair<short, short>, RasterizerGL::ItemPtr> mMap;
 };
 
@@ -263,9 +283,6 @@ public:
 
         spCamera = rasterizer.createCamera(gCamera.mFov, gCamera.mNear, gCamera.mFar, view_matrix(gCamera));
         spLightSet = rasterizer.createLightSet();
-
-        auto spTextureGrass = rasterizer.createTexture("media2/textures/seamless/grass/grass_yofrankie01/grass_0.png");
-        auto spTextureDirt = rasterizer.createTexture("media2/textures/seamless/dirt/dirt000/dirt000.png");
     }  
 
     void 

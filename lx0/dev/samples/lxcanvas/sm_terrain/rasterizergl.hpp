@@ -60,9 +60,24 @@ namespace Rasterizer
         GLuint  mVboIndices;
     };
 
-    struct Texture
+    class Resource
     {
+    public:
+        virtual ~Resource() {}
+
+        virtual void load () = 0;
+        virtual void unload () = 0;
+    };
+    typedef std::shared_ptr<Resource> ResourcePtr;
+
+    class Texture : public Resource
+    {
+    public:
+        std::string mFilename;
         GLuint mId;
+
+        virtual void load ();
+        virtual void unload ();
     };
     typedef std::shared_ptr<Texture> TexturePtr;
 }
@@ -72,6 +87,7 @@ class RasterizerGL
 public:
     typedef Rasterizer::Geometry    Geometry;
     typedef Rasterizer::GeometryPtr GeometryPtr;
+    typedef Rasterizer::ResourcePtr ResourcePtr;
     typedef Rasterizer::TexturePtr  TexturePtr;
 
     struct Camera
@@ -86,9 +102,13 @@ public:
 
     struct Material
     {
+        Material();
         virtual void activate(RasterizerGL*);
+
+        TexturePtr  mTextures[8];
     };
     typedef std::shared_ptr<Material> MaterialPtr;
+    typedef std::weak_ptr<Material> MaterialWPtr;
 
     struct QuadList : public Geometry
     {
@@ -153,5 +173,6 @@ protected:
     GLuint  _createShader    (char* filename, GLuint type);
     void    _linkProgram     (GLuint prog);
 
+    std::list<ResourcePtr>      mResources;
     std::vector<TexturePtr>     mTextures;
 };

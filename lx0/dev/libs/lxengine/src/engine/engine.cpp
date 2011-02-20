@@ -255,6 +255,9 @@ namespace lx0 { namespace core {
 	void   
 	Engine::sendMessage (const char* message)
     {
+        if (strcmp("quit", message) == 0)
+            lx_debug("Message 'quit' sent to Engine");
+
         m_messageQueue.push_back(message);
     }
 

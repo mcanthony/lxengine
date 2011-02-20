@@ -90,14 +90,18 @@ RasterizerGL::Camera::activate()
     glLoadTransposeMatrixf(viewMatrix.data);
 }
 
-RasterizerGL::TexturePtr
-RasterizerGL::createTexture (const char* filename)
+void Rasterizer::Texture::unload()
+{
+    glDeleteTextures(1, &mId);
+    mId = 0;
+}
+
+void Rasterizer::Texture::load()
 {
     using namespace lx0::prototype;
-    using namespace Rasterizer;
 
     Image4b img;
-    load_png(img, filename);
+    load_png(img, mFilename.c_str());
 
     GLuint id;
     glGenTextures(1, &id);
@@ -106,12 +110,28 @@ RasterizerGL::createTexture (const char* filename)
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
-    auto pTex = new Texture;
-    pTex->mId = id;
+    mId = id;
+}
+
+RasterizerGL::TexturePtr
+RasterizerGL::createTexture (const char* filename)
+{
+    using namespace Rasterizer;
     
-    TexturePtr spPtr(pTex);
-    mTextures.push_back(spPtr);
-    return spPtr;
+    lx_check_error(filename != nullptr);
+
+    TexturePtr spTex(new Texture);
+    spTex->mFilename = filename;
+    spTex->mId = 0;
+
+    spTex->load();
+
+    if (spTex->mId == 0)
+        lx_error("Failed to load texture from file '%s'", filename);
+    
+    mResources.push_back(spTex);
+    mTextures.push_back(spTex);
+    return spTex;
 }
 
 RasterizerGL::MaterialPtr 
@@ -151,30 +171,42 @@ RasterizerGL::createMaterial (void)
     return MaterialPtr(new Material);
 }
 
+RasterizerGL::Material::Material()
+{
+}
+
 void
 RasterizerGL::Material::activate(RasterizerGL* pRasterizer)
 {
     glEnable(GL_TEXTURE_2D);
 
-
     GLint shaderProgram;
     glGetIntegerv(GL_CURRENT_PROGRAM, &shaderProgram);
 
-    // Set unifTexture0 to texture unit 0
-    GLint tex0Index = glGetUniformLocation(shaderProgram, "unifTexture0");
-    if (tex0Index != -1)
-    {
-        glUniform1i(tex0Index, 0);
-        glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, pRasterizer->mTextures[0]->mId);
-    }
+    const char* unifTextureName[8] = {
+        "unifTexture0",
+        "unifTexture1",
+        "unifTexture2",
+        "unifTexture3",
+        "unifTexture4",
+        "unifTexture5",
+        "unifTexture6",
+        "unifTexture7",
+    };
 
-    GLint tex1Index = glGetUniformLocation(shaderProgram, "unifTexture1");
-    if (tex1Index != -1)
+    for (int i = 0; i < 8; ++i)
     {
-        glUniform1i(tex1Index, 1);
-        glActiveTexture(GL_TEXTURE1);
-        glBindTexture(GL_TEXTURE_2D, pRasterizer->mTextures[1]->mId);
+        // Set unifTexture0 to texture unit 0
+        GLint unifIndex = glGetUniformLocation(shaderProgram, unifTextureName[i]);
+        if (unifIndex != -1)
+        {
+            // Set the shader uniform to the *texture unit* containing the texture
+            glUniform1i(unifIndex, i);
+
+            // Activate the corresponding texture unit and set *that* to the GL id
+            glActiveTexture(GL_TEXTURE0 + i);
+            glBindTexture(GL_TEXTURE_2D, mTextures[i]->mId);
+        }
     }
 }
 

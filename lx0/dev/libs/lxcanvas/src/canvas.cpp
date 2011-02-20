@@ -179,6 +179,11 @@ namespace lx0 { namespace canvas { namespace platform {
     void
     CanvasBase::show (void) 
     { 
+        // Due to strange behavior when calling this during the WM_CREATE message, move the keyboard
+        // initialization to the show call.  This is *not* ideal, but the prior code certainly
+        // was not working.
+        s_getKeyState(mKeyboard, 0);
+
         ::ShowWindow((HWND)m_hWnd, SW_SHOWDEFAULT);  
         ::UpdateWindow((HWND)m_hWnd); 
     }
@@ -232,8 +237,6 @@ namespace lx0 { namespace canvas { namespace platform {
                     CanvasBase* pWin = reinterpret_cast<CanvasBase*>(pCreateStruct->lpCreateParams);
                     pWin->mOpaqueHwnd = (void*)hWnd;
                     SetWindowLongPtr(hWnd, GWL_USERDATA, (LONG)(LONG_PTR)pWin);
-
-                    s_getKeyState(pWin->mKeyboard, 0);
 
                     pWin->impCreate();
                     pWin->slotCreate();               

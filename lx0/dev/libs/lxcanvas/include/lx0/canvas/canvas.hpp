@@ -53,7 +53,7 @@ namespace lx0 { namespace canvas {
 
         enum KeyCodes
         {
-            KC_UNASSIGNED,
+            KC_UNASSIGNED = 0,
 
             KC_1,
             KC_2,
