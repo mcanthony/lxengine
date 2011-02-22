@@ -56,4 +56,18 @@ namespace lx0 { namespace util {
 #endif
     }
 
+    bool
+    lx_file_is_open (std::string filename)
+    {
+        OFSTRUCT fileStruct;
+        HFILE hFile = ::OpenFile(filename.c_str(), &fileStruct, OF_SHARE_EXCLUSIVE);
+        if (hFile != HFILE_ERROR)
+        {
+            ::CloseHandle((HANDLE)hFile);
+            return false;
+        }
+        else
+            return true;
+    }
+
 }}

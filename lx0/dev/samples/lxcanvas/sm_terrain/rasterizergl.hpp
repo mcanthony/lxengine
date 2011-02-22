@@ -73,8 +73,15 @@ namespace Rasterizer
     class Texture : public Resource
     {
     public:
+
         std::string mFilename;
-        GLuint mId;
+
+        std::time_t mFileTimestamp;
+
+        
+        GLuint      mId;
+
+        Texture();
 
         virtual void load ();
         virtual void unload ();
@@ -162,6 +169,8 @@ public:
                                      std::vector<point3>& positions, 
                                      std::vector<vector3>& normals,
                                      std::vector<vector3>& colors);
+
+    void            refreshTextures (void);
 
     void            beginScene      (void);
     void            endScene        (void);

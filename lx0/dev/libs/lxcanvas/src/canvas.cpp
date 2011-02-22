@@ -69,8 +69,9 @@ namespace lx0 { namespace canvas { namespace platform {
             BYTE winState[256];
             if(::GetKeyboardState(winState) != FALSE)
             {
+                // The most significant bit indicates if the key is down
                 for (int i = 0; i < 256; ++i)
-                    lxState.bDown[s_winToLxKey(i)] = !!winState[i];
+                    lxState.bDown[s_winToLxKey(i)] = !!(winState[i] & 0x80);
 
                 // GetKeyboardState() returns the keyboard state after the events
                 // have been processed - i.e. not the current key if this function
@@ -80,7 +81,14 @@ namespace lx0 { namespace canvas { namespace platform {
                 // http://msdn.microsoft.com/en-us/library/ms646299(v=vs.85).aspx.  See Remarks
                 // section.
                 //
-                lxState.bDown[s_winToLxKey(eventVKey)] = !(::GetAsyncKeyState(eventVKey) && 0xFF00);
+                lxState.bDown[s_winToLxKey(eventVKey)] = !(::GetAsyncKeyState(eventVKey) && 0x8000);
+            }
+            else
+            {
+                lx_error("Call to Win32 GetKeyboardState() failed!");
+                
+                for (int i = 0; i < KC_COUNT; ++i)
+                    lxState.bDown[i] = false;
             }
         }
     }

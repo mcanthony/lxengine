@@ -37,6 +37,7 @@ namespace lx0 { namespace util {
     void                lx_break_if_debugging   (void);
 
     bool                lx_file_exists          (std::string filename);
+    bool                lx_file_is_open         (std::string filename);
     std::string         lx_file_to_string       (std::string filename);
     lx0::core::lxvar    lx_file_to_json         (const char* pszFilename);
 

@@ -32,7 +32,10 @@
 #include <vector>
 #include <map>
 
+#include <boost/filesystem.hpp>
+
 #include <lx0/prototype/prototype.hpp>
+#include <lx0/core/util/util.hpp>
 #include "rasterizergl.hpp"
 
 using namespace Rasterizer;
@@ -90,6 +93,12 @@ RasterizerGL::Camera::activate()
     glLoadTransposeMatrixf(viewMatrix.data);
 }
 
+Rasterizer::Texture::Texture()
+    : mFileTimestamp    (0)
+    , mId               (0)
+{
+}
+
 void Rasterizer::Texture::unload()
 {
     glDeleteTextures(1, &mId);
@@ -99,18 +108,32 @@ void Rasterizer::Texture::unload()
 void Rasterizer::Texture::load()
 {
     using namespace lx0::prototype;
+    namespace fs = boost::filesystem;
 
-    Image4b img;
-    load_png(img, mFilename.c_str());
+    fs::path path(mFilename);
+    if (!fs::exists(path))
+    {
+        lx_warn("Texture file '%s' does not exist.  Cannot load.", mFilename.c_str());
+        mId = 0;
+    }
+    else
+    {
+        // Track when the file was last written to so that the file can 
+        // (optionally) be automatically reloaded from disk, if changed.
+        mFileTimestamp = fs::last_write_time(path);
 
-    GLuint id;
-    glGenTextures(1, &id);
-    glBindTexture(GL_TEXTURE_2D, id);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, img.mWidth, img.mHeight, 0, GL_RGBA, GL_UNSIGNED_BYTE, img.mData.get());
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        Image4b img;
+        load_png(img, mFilename.c_str());
 
-    mId = id;
+        GLuint id;
+        glGenTextures(1, &id);
+        glBindTexture(GL_TEXTURE_2D, id);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, img.mWidth, img.mHeight, 0, GL_RGBA, GL_UNSIGNED_BYTE, img.mData.get());
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+        mId = id;
+    }
 }
 
 RasterizerGL::TexturePtr
@@ -421,7 +444,34 @@ RasterizerGL::Transform::activate (void)
     glMultTransposeMatrixf(mat.data);
 }
 
-void RasterizerGL::beginScene()
+void 
+RasterizerGL::refreshTextures (void)
+{
+    namespace fs = boost::filesystem;
+
+    for (auto it = mTextures.begin(); it != mTextures.end(); ++it)
+    {
+        auto spTex = *it;
+
+        fs::path path(spTex->mFilename);
+        std::time_t timestamp = fs::last_write_time(path);
+
+        if (timestamp > spTex->mFileTimestamp)
+        {
+            // Check that the file is not stll open; if the file was just saved and
+            // not yet closed, this could fail while the file is still being written
+            // to.
+            if (!lx0::util::lx_file_is_open(spTex->mFilename))
+            {
+                spTex->unload();
+                spTex->load();
+            }
+        }
+    }
+}
+
+void 
+RasterizerGL::beginScene()
 {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 }

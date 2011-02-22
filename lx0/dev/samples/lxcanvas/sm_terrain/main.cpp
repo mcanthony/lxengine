@@ -301,6 +301,8 @@ public:
         gTerrain.generate(rasterizer, gCamera, spCamera, spLightSet, items);
         rasterizer.rasterizeList(items);
         rasterizer.endScene();
+
+        rasterizer.refreshTextures();
     }
 
 protected:

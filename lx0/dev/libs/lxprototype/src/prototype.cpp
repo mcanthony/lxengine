@@ -70,7 +70,13 @@ namespace lx0 { namespace prototype {
         decoder.decode(pixels, buffer.empty() ? 0 : &buffer[0], (unsigned int)buffer.size());
 
         if (decoder.hasError())
-            lx_error("Could not load png file '%s'", filename);
+        {
+            lx_error("Could not load png file '%s'.\nError code from LodePNG: %u\nError message:\n%s", 
+                filename, 
+                decoder.getError(),
+                LodePNG_error_text(decoder.getError())
+                );
+        }
 
         image.mWidth = decoder.getWidth();
         image.mHeight = decoder.getHeight();
