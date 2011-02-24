@@ -54,7 +54,7 @@ namespace lx0 { namespace core {
         virtual     void        _onElementRemoved           (ElementPtr spElem) = 0;
 
         virtual     void        updateBegin     (void) = 0;
-        virtual     void        updateFrame     (void) = 0;
+        virtual     void        updateFrame     (DocumentPtr spDocument) = 0;
         virtual     void        updateEnd       (void) = 0;
     };
 
@@ -98,5 +98,8 @@ namespace lx0 { namespace core {
         Document*                   mpDocument;         //! Non-owning pointer
         detail::LxInputManagerPtr   mspLxInputManager;
         std::unique_ptr<ViewImp>    mspImp;
+
+        int mOnElementRemovedId;
+        int mOnElementAddedId;
     };
 }}

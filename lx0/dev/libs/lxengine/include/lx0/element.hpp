@@ -52,8 +52,6 @@ namespace lx0 { namespace core {
     class ElementComponent : public detail::_ComponentBase
     {
     public:
-        virtual         ~ElementComponent() {}
-
         virtual void    onAttributeChange   (ElementPtr spElem, std::string name, lxvar value) {}
         virtual void    onValueChange       (ElementPtr spElem, lxvar value) {}
         virtual void    onAdded             (void) {}

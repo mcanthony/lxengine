@@ -45,7 +45,9 @@ namespace lx0 { namespace core {
     {
     public:
         typedef std::function<Signature> Function;
-        typedef std::deque<Function> FunctionList;
+        typedef std::deque<std::pair<int,Function>> FunctionList;
+
+        slot() : mIdCounter (0) {}
 
         void operator() () { invoke(std::make_tuple()); }
         template <typename T0>              
@@ -61,11 +63,19 @@ namespace lx0 { namespace core {
         template <typename T0, typename T1, typename T2, typename T3, typename T4, typename T5> 
         void operator()  (T0 t0, T1 t1, T2 t2, T3 t3, T4 t4, T5 t5) { invoke(std::make_tuple(t0, t1, t2, t3, t4, t5) ); }
 
-        void operator=  (Function f) { mBody.resize(1); mBody[0] = f; }
-        void operator+= (Function f) { mBody.push_back(f); }
+        void operator=  (Function f) { mBody.resize(1); mBody[0] = std::make_pair(++mIdCounter, f); }
+        int  operator+= (Function f) { mBody.push_back(std::make_pair(++mIdCounter, f)); return mIdCounter; }
+        void operator-= (int id) { 
+            for (auto it = mBody.begin(); it != mBody.end(); ++it) { 
+                if (it->first == id) { 
+                    mBody.erase(it); 
+                    return; 
+                } 
+            } 
+        }
 
     protected:
-
+        int                  mIdCounter;
         FunctionList         mPrologue;
         FunctionList         mBody;
         FunctionList         mEpilogue;
@@ -98,8 +108,8 @@ namespace lx0 { namespace core {
         template <typename Tuple>
         void invokeList (FunctionList& list, Tuple& args)
         {
-            for (auto f = list.begin(); f != list.end(); f++ )
-                invokeFunc(*f, args);
+            for (auto it = list.begin(); it != list.end(); it++ )
+                invokeFunc(it->second, args);
         }
 
         template <typename Tuple>

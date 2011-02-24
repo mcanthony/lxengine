@@ -38,6 +38,7 @@
 #include <vector>
 #include <map>
 #include <deque>
+#include <limits>
 
 // Library headers
 #include <boost/program_options.hpp>
@@ -51,6 +52,7 @@
 #include <lx0/view.hpp>
 #include <lx0/engine.hpp>
 #include <lx0/document.hpp>
+#include <lx0/element.hpp>
 
 #include "rasterizergl.hpp"
 
@@ -62,29 +64,36 @@ Camera             gCamera;
 
 //===========================================================================//
 
-vector3 calcColor(float s, float t)
+class TerrainRuntime : public Element::Component
 {
-    vector3 c;
-    c.x = 1.0f - noise3d_perlin(s / 2.0f, t / 2.0f, .212f);
-    c.y = 0.0f;
-    c.z = 0.0f;
-    return c;
-}
+public:
+    vector3 
+    calcColor(float s, float t)
+    {
+        vector3 c;
+        c.x = 1.0f - noise3d_perlin(s / 2.0f, t / 2.0f, .212f);
+        c.y = 0.0f;
+        c.z = 0.0f;
+        return c;
+    }
 
-float calcHeight(float s, float t)
-{
-    float base = 120 * noise3d_perlin(s / 200.0f, t / 200.0f, .5f);
-    float mid = 3 * noise3d_perlin(s / 40.0f, t / 30.0f, .1f)
-              + 3 * noise3d_perlin(s / 45.0f, t / 60.0f, .6f);
-    mid *= mid;
+    float 
+    calcHeight(float s, float t)
+    {
+        float base = 120 * noise3d_perlin(s / 200.0f, t / 200.0f, .5f);
+        float mid = 3 * noise3d_perlin(s / 40.0f, t / 30.0f, .1f)
+                  + 3 * noise3d_perlin(s / 45.0f, t / 60.0f, .6f);
+        mid *= mid;
      
-    return base + mid;
-}
+        return base + mid;
+    }
+};
 
 class Terrain
 {
 public:
-    void generate(RasterizerGL& rasterizer,
+    void generate(DocumentPtr spDocument,
+                  RasterizerGL& rasterizer,
                   Camera& cam1,
                   RasterizerGL::CameraPtr spCamera, 
                   RasterizerGL::LightSetPtr spLightSet, 
@@ -108,7 +117,7 @@ public:
                 {
                     if (abs(gx) < 5 && abs(gy) < 5) 
                     {
-                        spTile = _buildTile(rasterizer, spCamera, spLightSet, grid.first, grid.second);
+                        spTile = _buildTile(spDocument, rasterizer, spCamera, spLightSet, grid.first, grid.second);
                         mMap.insert(std::make_pair(grid, spTile));
                     }
                 }
@@ -143,8 +152,18 @@ protected:
     };
 
     RasterizerGL::GeometryPtr 
-    _buildTileGeom2 (RasterizerGL& rasterizer,  int regionX, int regionY)
+    _buildTileGeom2 (DocumentPtr spDocument, RasterizerGL& rasterizer,  int regionX, int regionY)
     {
+        // Eventually the renderable should be a component of the Element.
+        // The component has direct access to the Element, removing the need for any
+        // getElementsByTagName() call.
+        //
+        if (!mspTerrain)
+        {
+            auto spElem = spDocument->getElementsByTagName("Terrain")[0];
+            mspTerrain = spElem->getComponent<TerrainRuntime>("runtime");
+        }
+
         const float kRegionSize = 100.0f;
 
         float tx = regionX * kRegionSize;
@@ -160,7 +179,7 @@ protected:
         {
             for (int x = -1; x <= 101; ++x)
             {
-                heights(x, y) = calcHeight(tx + x, ty + y);
+                heights(x, y) = mspTerrain->calcHeight(tx + x, ty + y);
             }
         }
 
@@ -201,7 +220,7 @@ protected:
         {
             for (int x = 0; x <= 100; ++x)
             {
-                colors[y * 101 + x] = calcColor(tx + x, ty + y);
+                colors[y * 101 + x] = mspTerrain->calcColor(tx + x, ty + y);
             }
         }
 
@@ -244,7 +263,8 @@ protected:
             return mwpMaterial.lock();
     }
 
-    RasterizerGL::ItemPtr _buildTile (RasterizerGL& rasterizer, 
+    RasterizerGL::ItemPtr _buildTile (DocumentPtr spDocument, 
+                                     RasterizerGL& rasterizer, 
                                      RasterizerGL::CameraPtr spCamera, 
                                      RasterizerGL::LightSetPtr spLightSet, 
                                      int regionX, int regionY)
@@ -254,19 +274,53 @@ protected:
         pItem->spLightSet = spLightSet;
         pItem->spMaterial = _acquireMaterial(rasterizer);
         pItem->spTransform = rasterizer.createTransform(regionX * 100.0f, regionY * 100.0f, 0.0f);
-        pItem->spGeometry = _buildTileGeom2(rasterizer, regionX, regionY);
+        pItem->spGeometry = _buildTileGeom2(spDocument, rasterizer, regionX, regionY);
         return RasterizerGL::ItemPtr(pItem);
     }
 
+    std::shared_ptr<TerrainRuntime>                          mspTerrain;
     RasterizerGL::MaterialWPtr                               mwpMaterial;
     std::map<std::pair<short, short>, RasterizerGL::ItemPtr> mMap;
 };
 
 Terrain gTerrain;
 
+class PhysicsSubsystem : public DocumentComponent
+{
+public: 
+    virtual void    onElementAdded      (DocumentPtr spDocument, ElementPtr spElem) 
+    {
+        if (spElem->tagName() == "Terrain")
+        {
+            mElems.insert(std::make_pair(spElem.get(), spElem));
+        }
+    }
+    virtual void    onElementRemoved    (Document*   pDocument, ElementPtr spElem) 
+    {
+        auto it = mElems.find(spElem.get());
+        if (it != mElems.end())
+            mElems.erase(it);
+    }
+    
+    float drop (float x, float y)
+    {
+        float maxZ = std::numeric_limits<float>::min();
+        for (auto it = mElems.begin(); it != mElems.end(); ++it)
+        {
+            auto spTerrain = it->second->getComponent<TerrainRuntime>("runtime");
+            maxZ = std::max(maxZ, spTerrain->calcHeight(x, y));
+        }
+        return maxZ; 
+    }
+
+    std::map<Element*, ElementPtr> mElems;
+};
+
+
 class Renderer
 {
 public:
+
     void initialize()
     {
         set(gCamera.mPosition, 10, 10, 15);
@@ -276,7 +330,7 @@ public:
         gCamera.mNear = 0.01f;  // 1 cm
         gCamera.mFar = 2000.0f; // 2 km
 
-        gCamera.mPosition.z = calcHeight(gCamera.mPosition.x, gCamera.mPosition.y) + 2.0f;
+        gCamera.mPosition.z = 0.0f;
         gCamera.mTarget.z = gCamera.mPosition.z;
 
         rasterizer.initialize();
@@ -298,12 +352,14 @@ public:
 
         rasterizer.beginScene();
         std::vector<RasterizerGL::ItemPtr> items;
-        gTerrain.generate(rasterizer, gCamera, spCamera, spLightSet, items);
+        gTerrain.generate(mspDocument, rasterizer, gCamera, spCamera, spLightSet, items);
         rasterizer.rasterizeList(items);
         rasterizer.endScene();
 
         rasterizer.refreshTextures();
     }
+
+    DocumentPtr                 mspDocument;
 
 protected:
     RasterizerGL::CameraPtr     spCamera;       // Camera shared by all items
@@ -317,6 +373,9 @@ protected:
 class LxCanvasImp : public ViewImp
 {
 public:
+                        LxCanvasImp();
+                        ~LxCanvasImp();
+
     virtual void        createWindow    (View* pHostView, size_t& handle, unsigned int& width, unsigned int& height);
     virtual void        destroyWindow   (void);
     virtual void        show            (View* pHostView, Document* pDocument);
@@ -325,14 +384,25 @@ public:
     virtual     void        _onElementRemoved           (ElementPtr spElem) {}
 
     virtual     void        updateBegin     (void) {}
-    virtual     void        updateFrame     (void);
+    virtual     void        updateFrame     (DocumentPtr spDocument);
     virtual     void        updateEnd       (void) {}
 
 protected:
-    std::auto_ptr<CanvasGL> mspWin;
+    DocumentPtr             mspDocument;
     CanvasHost              mHost;
+    std::auto_ptr<CanvasGL> mspWin;
     Renderer                mRenderer;
 };
+
+LxCanvasImp::LxCanvasImp()
+{
+    lx_debug("LxCanvasImp ctor");
+}
+
+LxCanvasImp::~LxCanvasImp()
+{
+    lx_debug("LxCanvasImp dtor");
+}
 
 void 
 LxCanvasImp::createWindow (View* pHostView, size_t& handle, unsigned int& width, unsigned int& height)
@@ -363,11 +433,13 @@ LxCanvasImp::destroyWindow (void)
 void 
 LxCanvasImp::show (View* pHostView, Document* pDocument)
 {
+    mspDocument = pDocument->shared_from_this();
+    mRenderer.mspDocument = mspDocument;
     mspWin->show();
 }
 
 void 
-LxCanvasImp::updateFrame (void) 
+LxCanvasImp::updateFrame (DocumentPtr spDocument) 
 {
     const float kStep = 2.0f;
 
@@ -387,7 +459,8 @@ LxCanvasImp::updateFrame (void)
     if (mspWin->keyboard().bDown[KC_F])
         move_down(gCamera, kStep);
 
-    float deltaZ = (calcHeight(gCamera.mPosition.x, gCamera.mPosition.y) + 2.0f) - gCamera.mPosition.z;
+    const float terrainHeight = mspDocument->getComponent<PhysicsSubsystem>("physics2")->drop(gCamera.mPosition.x, gCamera.mPosition.y);
+    const float deltaZ = (terrainHeight + 2.0f) - gCamera.mPosition.z;
     gCamera.mPosition.z += deltaZ;
     gCamera.mTarget.z += deltaZ;
 
@@ -405,13 +478,19 @@ main (int argc, char** argv)
     try
     {
         EnginePtr   spEngine   = Engine::acquire();
+        spEngine->addDocumentComponent("physics2", [] () { return new PhysicsSubsystem; } );
         spEngine->addViewPlugin("LxCanvas", [] (View* pView) { return new LxCanvasImp; });
+        spEngine->addElementComponent("Terrain", "runtime", []() { return new TerrainRuntime; }); 
         
         DocumentPtr spDocument = spEngine->loadDocument("media2/appdata/sm_terrain/scene.xml");
         ViewPtr     spView     = spDocument->createView("LxCanvas", "view");
         spView->show();
 
+        auto spPhysics = spDocument->getComponent<PhysicsSubsystem>("physics2");
+        float r = spPhysics->drop(gCamera.mPosition.x, gCamera.mPosition.y) + 2.0f;
+
         exitCode = spEngine->run();
+        spDocument->destroyView("view");
         spEngine->shutdown();
     }
     catch (std::exception& e)

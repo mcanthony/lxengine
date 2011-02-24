@@ -69,18 +69,15 @@ namespace lx0 { namespace core {
         //
         // Hook into Document events
         //
-        mpDocument->slotElementRemoved += [&](ElementPtr spElem) { 
-            _onElementRemoved(spElem);
-        };
-        mpDocument->slotElementAdded += [&](ElementPtr spElem) { 
-            _onElementAdded(spElem);
-        };
-
-        
+        mOnElementRemovedId = (mpDocument->slotElementRemoved += [&](ElementPtr spElem) { _onElementRemoved(spElem); }); 
+        mOnElementAddedId = (mpDocument->slotElementAdded += [&](ElementPtr spElem) { _onElementAdded(spElem); });
     }
 
     View::~View()
     {
+        mpDocument->slotElementAdded -= mOnElementAddedId;
+        mpDocument->slotElementRemoved -= mOnElementRemovedId; 
+
         mspImp->destroyWindow();
         Engine::acquire()->decObjectCount("View");
     }
@@ -140,7 +137,7 @@ namespace lx0 { namespace core {
     void
     View::updateFrame()
     {
-        mspImp->updateFrame();
+        mspImp->updateFrame(mpDocument->shared_from_this());
     }
 
     bool

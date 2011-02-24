@@ -106,6 +106,8 @@ namespace lx0 { namespace core {
     _LX_FORWARD_DECL_PTRS(Element);
     _LX_FORWARD_DECL_PTRS(Transaction);
     _LX_FORWARD_DECL_PTRS(Document);
+    class DocumentComponent;
+    class ElementComponent;
     _LX_FORWARD_DECL_PTRS(Space);
     _LX_FORWARD_DECL_PTRS(Engine);
     _LX_FORWARD_DECL_PTRS(View);

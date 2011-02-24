@@ -337,9 +337,9 @@ namespace {
         void        _onElementAdded             (ElementPtr spElem);
         void        _onElementRemoved           (ElementPtr spElem);
 
-        void        updateBegin     (void);
-        void        updateFrame     (void);
-        void        updateEnd       (void);
+        virtual void    updateBegin     (void);
+        virtual void    updateFrame     (DocumentPtr spDocument);
+        virtual void    updateEnd       (void);
 
     protected:
         void        _addLighting        (Ogre::SceneManager* pSceneMgr);
@@ -369,7 +369,8 @@ namespace {
     bool 
     LxFrameEventListener::frameRenderingQueued(const Ogre::FrameEvent& evt) 
     { 
-        mpView->_updateFrameRenderingQueued(); return true; 
+        mpView->_updateFrameRenderingQueued(); 
+        return true; 
     }
         
     //===========================================================================//
@@ -729,7 +730,7 @@ namespace {
     }
 
     void
-    OgreImp::updateFrame()
+    OgreImp::updateFrame(DocumentPtr spDocument)
     {
 		// Pump messages in all registered RenderWindow windows
 		Ogre::WindowEventUtilities::messagePump();

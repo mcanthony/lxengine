@@ -56,6 +56,7 @@ namespace lx0 { namespace core {
     Document::~Document()
     {
         m_spRoot->notifyRemoved(this);
+        m_views.clear();
 
         Engine::acquire()->decObjectCount("Document");
     }
@@ -229,6 +230,24 @@ namespace lx0 { namespace core {
 
     void Document::notifyElementAdded (ElementPtr spElem)
     {
+        // Automatically attach all registered Element componet for the given tag
+        //
+        auto comps = Engine::acquire()->elementComponents();
+        for (auto it = comps.begin(); it != comps.end(); ++it)
+        {
+            if (spElem->tagName() == it->first)
+            {
+                // Don't add it twice.  This theoretically could happen if the element is added
+                // to the document, then removed, and re-added.  
+                if (spElem->getComponent<Element::Component>(it->second.first).get() == nullptr)
+                {
+                    spElem->attachComponent(it->second.first, (it->second.second)());
+                }
+            }
+        }
+
+        // Pass on notification to attached components and slots
+        //
         _foreach ([&](ComponentPtr it) {
             it->onElementAdded(shared_from_this(), spElem);
         });   

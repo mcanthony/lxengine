@@ -100,7 +100,7 @@ public:
     virtual     void        _onElementRemoved           (ElementPtr spElem) {}
 
     virtual     void        updateBegin     (void) {}
-    virtual     void        updateFrame     (void);
+    virtual     void        updateFrame     (DocumentPtr spDocument);
     virtual     void        updateEnd       (void) {}
 
 protected:
@@ -137,7 +137,7 @@ LxCanvasImp::show (View* pHostView, Document* pDocument)
 }
 
 void 
-LxCanvasImp::updateFrame (void) 
+LxCanvasImp::updateFrame (DocumentPtr spDocument) 
 {
     if (mspWin->keyboard().bDown[KC_ESCAPE])
         Engine::acquire()->sendMessage("quit");

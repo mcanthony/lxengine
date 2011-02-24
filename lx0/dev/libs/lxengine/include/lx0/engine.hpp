@@ -143,6 +143,12 @@ namespace lx0 { namespace core {
         ///@{
         void                addViewPlugin       (std::string name, std::function<ViewImp*(View*)> ctor);
         ViewImp*            _createViewImp      (std::string name, View* pView);
+        
+        void                addDocumentComponent (std::string name, std::function<DocumentComponent* ()> ctor);
+        
+        typedef std::map<std::string, std::pair<std::string,std::function<ElementComponent*()>> > ElemCompList;
+        void                addElementComponent  (std::string tag, std::string name, std::function<ElementComponent*()> ctor);
+        const ElemCompList& elementComponents     (void) const  { return mElementComponents; }
         ///@}
 
         // Stats
@@ -175,7 +181,9 @@ namespace lx0 { namespace core {
 
         std::map<std::string, detail::ObjectCount>   m_objectCounts;
 
-        std::map<std::string, std::function<ViewImp*(View*)>>                    mViewImps;
+        std::map<std::string, std::function<ViewImp*(View*)>>                   mViewImps;
+        std::map<std::string, std::function<DocumentComponent* ()>>             mDocumentComponents;
+        ElemCompList                                                            mElementComponents;
 
         std::map<std::string, std::vector<std::function<bool(std::string)>>>    m_psuedoAttributes;
         std::map<std::string, std::vector<std::function<lxvar(std::string)>>>   m_attributeParsers;

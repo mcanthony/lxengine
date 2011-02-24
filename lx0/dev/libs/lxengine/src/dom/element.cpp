@@ -220,11 +220,11 @@ namespace lx0 { namespace core {
 
         _setHostDocument(pDocument);
 
+        pDocument->notifyElementAdded(shared_from_this());
+
         _foreach([](ComponentPtr it) {
             it->onAdded();
         });
-
-        pDocument->notifyElementAdded(shared_from_this());
 
         for (auto it = mChildren.begin(); it != mChildren.end(); ++it)
             (*it)->notifyAdded(pDocument);
@@ -238,11 +238,11 @@ namespace lx0 { namespace core {
 
         _setHostDocument(nullptr);
 
+        pDocument->notifyElementRemoved(shared_from_this());
+
         _foreach([](ComponentPtr it) {
             it->onRemoved();
         });
-
-        pDocument->notifyElementRemoved(shared_from_this());
 
         for (auto it = mChildren.begin(); it != mChildren.end(); ++it)
             (*it)->notifyRemoved(pDocument);

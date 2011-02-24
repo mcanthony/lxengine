@@ -196,19 +196,29 @@ namespace lx0 { namespace core {
     {
         DocumentPtr spDocument(new Document);
 
+        // Attach all registered per-document Components
+        //
+        for (auto it = mDocumentComponents.begin(); it != mDocumentComponents.end(); ++it)
+        {
+            auto pComponent = (it->second)();
+            spDocument->attachComponent(it->first, pComponent);
+        }
+
         _notifyDocumentCreated(spDocument);
         _attachPhysics(spDocument);
 
         ElementPtr spRoot = _loadDocumentRoot(spDocument, filename);
         if (!spRoot)
+        {
             lx_error("Could not load document.  Does file '%s' exist?", filename.c_str());
+        }
 
         spDocument->root(spRoot);
 
 
         m_documents.push_back(spDocument);
 
-        // This is properly not the exactly right place for the scripts to be run.
+        // This is probably not the exactly right place for the scripts to be run.
         // If nothing else, this is likely not consistent with HTML which runs
         // scripts as the document is being loaded.  Should the HTML behavior be
         // emulated or is this approach cleaner?
@@ -322,7 +332,20 @@ namespace lx0 { namespace core {
         else
         {
             lx_error("No View plug-in with name '%s' found.", name.c_str()); 
+            return nullptr;
         }
+    }
+
+    void
+    Engine::addDocumentComponent (std::string name, std::function<Document::Component* ()> ctor)
+    {
+        mDocumentComponents.insert(std::make_pair(name, ctor));
+    }
+
+    void
+    Engine::addElementComponent (std::string tag, std::string name, std::function<ElementComponent*()> ctor)
+    {
+        mElementComponents.insert(std::make_pair(tag, std::make_pair(name, ctor)) );
     }
 
 }}
