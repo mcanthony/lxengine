@@ -233,15 +233,19 @@ namespace lx0 { namespace core {
         // Automatically attach all registered Element componet for the given tag
         //
         auto comps = Engine::acquire()->elementComponents();
-        for (auto it = comps.begin(); it != comps.end(); ++it)
+
+        auto jt = comps.find( spElem->tagName() );
+        if (jt != comps.end())
         {
-            if (spElem->tagName() == it->first)
+            for (auto it = jt->second.begin(); it != jt->second.end(); ++it)
             {
                 // Don't add it twice.  This theoretically could happen if the element is added
                 // to the document, then removed, and re-added.  
-                if (spElem->getComponent<Element::Component>(it->second.first).get() == nullptr)
+                const auto& name = it->first;
+                auto& ctor = it->second;
+                if (spElem->getComponent<Element::Component>(name).get() == nullptr)
                 {
-                    spElem->attachComponent(it->second.first, (it->second.second)());
+                    spElem->attachComponent(name, (ctor)());
                 }
             }
         }
