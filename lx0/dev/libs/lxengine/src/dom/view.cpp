@@ -123,6 +123,12 @@ namespace lx0 { namespace core {
         mspImp->updateEnd();
     }
 
+    void        
+    View::sendEvent (std::string evt, lxvar params)
+    {
+        mspImp->handleEvent(evt, params);
+    }
+
     /*
         Called by OGRE between queuing up call the render calls and the GPU actually
         blitting the frame: i.e. time when the CPU might potentially be idle waiting

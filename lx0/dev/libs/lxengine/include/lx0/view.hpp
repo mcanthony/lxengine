@@ -34,6 +34,7 @@
 #include <lx0/core/detail/forward_decls.hpp>
 #include <lx0/core/detail/dom_base.hpp>
 #include <lx0/core/base/slot.hpp>
+#include <lx0/core/data/lxvar.hpp>
 
 namespace lx0 { namespace core {
 
@@ -56,6 +57,8 @@ namespace lx0 { namespace core {
         virtual     void        updateBegin     (void) = 0;
         virtual     void        updateFrame     (DocumentPtr spDocument) = 0;
         virtual     void        updateEnd       (void) = 0;
+
+        virtual     void        handleEvent     (std::string evt, lx0::core::lxvar params) {}
     };
 
 
@@ -68,7 +71,7 @@ namespace lx0 { namespace core {
         the code progresses a bit further to make the class' responsibilities
         more clear.
      */
-    class View 
+    class View : public std::enable_shared_from_this<View>
     {
     public:
                     View            (std::string impType, Document* pDocument);
@@ -79,6 +82,8 @@ namespace lx0 { namespace core {
         void        updateBegin     (void);
         void        updateFrame     (void);
         void        updateEnd       (void);
+
+        void        sendEvent       (std::string evt, lx0::core::lxvar params);
 
         bool        isKeyDown       (int keyCode) const;
 

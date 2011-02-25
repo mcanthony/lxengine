@@ -27,6 +27,15 @@
 //===========================================================================//
 
 //===========================================================================//
+//  T O D O   L I S T
+//===========================================================================//
+/*!
+    - Clean-up code
+    - Reduce dependencies
+    - Add Controller object that maps UI to Engine events
+ */
+
+//===========================================================================//
 //   H E A D E R S   &   D E C L A R A T I O N S 
 //===========================================================================//
 
@@ -54,7 +63,9 @@
 #include <lx0/document.hpp>
 #include <lx0/element.hpp>
 
+#include "main.hpp"
 #include "rasterizergl.hpp"
+#include "terrain.hpp"
 
 using namespace lx0::core;
 using namespace lx0::prototype;
@@ -63,245 +74,6 @@ using namespace lx0::canvas::platform;
 Camera             gCamera;
 
 //===========================================================================//
-
-class Renderable : public Element::Component
-{
-public:
-    virtual void generate(ElementPtr spElement,
-                  RasterizerGL& rasterizer,
-                  Camera& cam1,
-                  RasterizerGL::CameraPtr spCamera, 
-                  RasterizerGL::LightSetPtr spLightSet, 
-                  std::vector<RasterizerGL::ItemPtr>& list) = 0;
-};
-
-namespace Terrain
-{
-    class Runtime : public Element::Component
-    {
-    public:
-        vector3 
-        calcColor(float s, float t)
-        {
-            vector3 c;
-            c.x = 1.0f - noise3d_perlin(s / 2.0f, t / 2.0f, .212f);
-            c.y = 0.0f;
-            c.z = 0.0f;
-            return c;
-        }
-
-        float 
-        calcHeight(float s, float t)
-        {
-            float base = 120 * noise3d_perlin(s / 200.0f, t / 200.0f, .5f);
-            float mid = 3 * noise3d_perlin(s / 40.0f, t / 30.0f, .1f)
-                      + 3 * noise3d_perlin(s / 45.0f, t / 60.0f, .6f);
-            mid *= mid;
-     
-            return base + mid;
-        }
-    };
-
-    class Render : public Renderable
-    {
-    public:
-        Render()
-        {
-            lx_debug("Terrain::Render ctor");
-        }
-
-        void generate(ElementPtr spElement,
-                      RasterizerGL& rasterizer,
-                      Camera& cam1,
-                      RasterizerGL::CameraPtr spCamera, 
-                      RasterizerGL::LightSetPtr spLightSet, 
-                      std::vector<RasterizerGL::ItemPtr>& list)
-        {
-            const int bx = int(cam1.mPosition.x / 100.0f);
-            const int by = int(cam1.mPosition.y / 100.0f);
-
-            const int dist = 10;
-            for (int gy = -dist; gy <= dist; gy++)
-            {
-                for (int gx = -dist; gx <= dist; gx++)
-                {
-                    std::pair<short, short> grid;
-                    grid.first = bx + gx;
-                    grid.second = by + gy;
-
-                    RasterizerGL::ItemPtr spTile;
-                    auto it = mMap.find(grid);
-                    if (it == mMap.end())
-                    {
-                        if (abs(gx) < 5 && abs(gy) < 5) 
-                        {
-                            spTile = _buildTile(spElement, rasterizer, spCamera, spLightSet, grid.first, grid.second);
-                            mMap.insert(std::make_pair(grid, spTile));
-                        }
-                    }
-                    else
-                        spTile = it->second;
-
-                    if (spTile.get() != nullptr)
-                        list.push_back(spTile);
-                }
-            }
-        }
-
-    protected:
-        template <typename T>
-        struct BorderArray2d
-        {
-            BorderArray2d (int w, int h, int b)
-            {
-                mOffset = b;
-                mRowSpan = w + 2 * b;
-                mData.reset(new T[mRowSpan * (h + 2 * b)]);
-            }
-
-            T&  operator() (int x, int y)
-            {
-                return mData[ (y + mOffset) * mRowSpan + (x + mOffset) ];
-            }
-
-            int            mOffset;
-            int            mRowSpan;
-            std::unique_ptr<T[]> mData;
-        };
-
-        RasterizerGL::GeometryPtr 
-        _buildTileGeom2 (ElementPtr spElement, RasterizerGL& rasterizer,  int regionX, int regionY)
-        {
-            // Eventually the renderable should be a component of the Element.
-            // The component has direct access to the Element, removing the need for any
-            // getElementsByTagName() call.
-            //
-            if (!mspTerrain)
-                mspTerrain = spElement->getComponent<Terrain::Runtime>("runtime");
-
-            const float kRegionSize = 100.0f;
-
-            float tx = regionX * kRegionSize;
-            float ty = regionY * kRegionSize;
-
-            //
-            // Compute all the heights first.   All interior heights are used
-            // 4 times, therefore it's quicker to compute them once and store
-            // the value than recompute each time.
-            //
-            BorderArray2d<float> heights (100, 100, 2);
-            for (int y = -1; y <= 101; ++y)
-            {
-                for (int x = -1; x <= 101; ++x)
-                {
-                    heights(x, y) = mspTerrain->calcHeight(tx + x, ty + y);
-                }
-            }
-
-            std::vector<point3> positions (101 * 101);
-            for (int y = 0; y <= 100; ++y)
-            {
-                for (int x = 0; x <= 100; ++x)
-                {
-                    point3 p;
-                    p.x = float(x);
-                    p.y = float(y);
-                    p.z = heights(x, y);
-                    positions[y * 101 + x] = p;
-                }
-            }
-
-            std::vector<vector3> normals (101 * 101);
-            for (int y = 0; y <= 100; ++y)
-            {
-                for (int x = 0; x <= 100; ++x)
-                {
-                    vector3 dx;
-                    dx.x = 2;
-                    dx.y = 0;
-                    dx.z = heights(x - 1, y) - heights(x + 1, y);
-                
-                    vector3 dy;
-                    dy.x = 0;
-                    dy.y = 2;
-                    dy.z = heights(x, y - 1) - heights(x, y + 1);
- 
-                    normals[y * 101 + x] = normalize( cross( normalize(dx), normalize(dy) ) );
-                }
-            }
-
-            std::vector<vector3> colors (101 * 101);
-            for (int y = 0; y <= 100; ++y)
-            {
-                for (int x = 0; x <= 100; ++x)
-                {
-                    colors[y * 101 + x] = mspTerrain->calcColor(tx + x, ty + y);
-                }
-            }
-
-            // Create a vertex buffer to store the data for the vertex array
-            //
-            //@todo Switch to index buffer
-            //@todo Add normals
-            std::vector<unsigned short> indices;
-            indices.reserve(100 * 100 * 4);
-            for (int y = 0; y < 100; ++y)
-            {
-                for (int x = 0; x < 100; ++x)
-                {
-                    indices.push_back( (y + 0) * 101 + (x + 0) );
-                    indices.push_back( (y + 0) * 101 + (x + 1) );
-                    indices.push_back( (y + 1) * 101 + (x + 1) );
-                    indices.push_back( (y + 1) * 101 + (x + 0) );
-                }
-            }
-
-            return rasterizer.createQuadList(indices, positions, normals, colors);
-        }
-
-        RasterizerGL::MaterialPtr 
-        _acquireMaterial (RasterizerGL& rasterizer)
-        {
-            if (mwpMaterial.expired())
-            {
-                auto spTextureGrass = rasterizer.createTexture("media2/textures/seamless/grass/grass_yofrankie01/grass_0.png");
-                auto spTextureDirt = rasterizer.createTexture("media2/textures/seamless/dirt/dirt000/dirt000.png");
-
-                auto spMat = rasterizer.createMaterial();
-                spMat->mTextures[0] = spTextureGrass;
-                spMat->mTextures[1] = spTextureDirt;
-
-                mwpMaterial = spMat;
-                return spMat;           // Be sure to return *before* spMat goes out of scope
-            }
-            else
-                return mwpMaterial.lock();
-        }
-
-        RasterizerGL::ItemPtr _buildTile (ElementPtr spElement, 
-                                         RasterizerGL& rasterizer, 
-                                         RasterizerGL::CameraPtr spCamera, 
-                                         RasterizerGL::LightSetPtr spLightSet, 
-                                         int regionX, int regionY)
-        {
-            auto pItem = new RasterizerGL::Item;
-            pItem->spCamera   = spCamera;
-            pItem->spLightSet = spLightSet;
-            pItem->spMaterial = _acquireMaterial(rasterizer);
-            pItem->spTransform = rasterizer.createTransform(regionX * 100.0f, regionY * 100.0f, 0.0f);
-            pItem->spGeometry = _buildTileGeom2(spElement, rasterizer, regionX, regionY);
-            return RasterizerGL::ItemPtr(pItem);
-        }
-
-        std::shared_ptr<Terrain::Runtime>                        mspTerrain;
-        RasterizerGL::MaterialWPtr                               mwpMaterial;
-        std::map<std::pair<short, short>, RasterizerGL::ItemPtr> mMap;
-    };
-}
-
-
-
-
 
 class PhysicsSubsystem : public DocumentComponent
 {
@@ -329,6 +101,17 @@ public:
             maxZ = std::max(maxZ, spTerrain->calcHeight(x, y));
         }
         return maxZ; 
+    }
+
+    virtual void onUpdate (DocumentPtr spDocument)
+    {
+        const float terrainHeight = drop(gCamera.mPosition.x, gCamera.mPosition.y);
+        const float deltaZ = (terrainHeight + 2.0f) - gCamera.mPosition.z;
+        gCamera.mPosition.z += deltaZ;
+        gCamera.mTarget.z += deltaZ;
+
+        if (deltaZ > 0.001)
+            spDocument->view(0)->sendEvent("redraw", lxvar::undefined());
     }
 
     std::map<Element*, ElementPtr> mElems;
@@ -383,7 +166,6 @@ public:
         }
 
         rasterizer.rasterizeList(items);
-
         rasterizer.endScene();
 
         rasterizer.refreshTextures();
@@ -399,6 +181,44 @@ protected:
 };
 
 //===========================================================================//
+
+class Controller2
+{
+public:
+    virtual                 ~Controller2() {}
+
+    virtual     void        updateFrame     (ViewPtr spView,
+                                             const KeyboardState& keyboard) = 0;
+};
+
+class CameraController : public Controller2
+{
+public:
+    virtual     void        updateFrame     (ViewPtr spView,
+                                             const KeyboardState& keyboard);
+};
+
+void
+CameraController::updateFrame (ViewPtr spView, const KeyboardState& keyboard)
+{
+    const float kStep = 2.0f;
+
+    if (keyboard.bDown[KC_ESCAPE])
+        Engine::acquire()->sendMessage("quit");
+
+    if (keyboard.bDown[KC_W])
+        spView->sendEvent("move_forward", kStep);
+    if (keyboard.bDown[KC_S])
+        spView->sendEvent("move_backward", kStep);
+    if (keyboard.bDown[KC_A])
+        spView->sendEvent("move_left", kStep);
+    if (keyboard.bDown[KC_D])
+        spView->sendEvent("move_right", kStep);
+    if (keyboard.bDown[KC_R])
+        spView->sendEvent("move_up", kStep);
+    if (keyboard.bDown[KC_F])
+        spView->sendEvent("move_down", kStep);
+}
 
 class LxCanvasImp : public ViewImp
 {
@@ -417,11 +237,15 @@ public:
     virtual     void        updateFrame     (DocumentPtr spDocument);
     virtual     void        updateEnd       (void) {}
 
+    virtual     void        handleEvent     (std::string evt, lx0::core::lxvar params);
+
 protected:
+    View*                   mpHostView;
     DocumentPtr             mspDocument;
     CanvasHost              mHost;
     std::auto_ptr<CanvasGL> mspWin;
     Renderer                mRenderer;
+    CameraController        mController;
 };
 
 LxCanvasImp::LxCanvasImp()
@@ -463,6 +287,7 @@ LxCanvasImp::destroyWindow (void)
 void 
 LxCanvasImp::show (View* pHostView, Document* pDocument)
 {
+    mpHostView = pHostView;
     mspDocument = pDocument->shared_from_this();
     mRenderer.mspDocument = mspDocument;
     mspWin->show();
@@ -471,30 +296,36 @@ LxCanvasImp::show (View* pHostView, Document* pDocument)
 void 
 LxCanvasImp::updateFrame (DocumentPtr spDocument) 
 {
-    const float kStep = 2.0f;
+    mController.updateFrame(mpHostView->shared_from_this(), mspWin->keyboard());
+}
 
-    if (mspWin->keyboard().bDown[KC_ESCAPE])
-        Engine::acquire()->sendMessage("quit");
+void 
+LxCanvasImp::handleEvent (std::string evt, lx0::core::lxvar params)
+{
+    bool bInvalidate = true;
 
-    if (mspWin->keyboard().bDown[KC_W])
-        move_forward(gCamera, kStep);
-    if (mspWin->keyboard().bDown[KC_S])
-        move_backward(gCamera, kStep);
-    if (mspWin->keyboard().bDown[KC_A])
-        move_left(gCamera, kStep);
-    if (mspWin->keyboard().bDown[KC_D])
-        move_right(gCamera, kStep);
-    if (mspWin->keyboard().bDown[KC_R])
-        move_up(gCamera, kStep);
-    if (mspWin->keyboard().bDown[KC_F])
-        move_down(gCamera, kStep);
+    if (evt == "redraw")
+        bInvalidate = true;
+    else if (evt == "move_forward")
+        move_forward(gCamera, params.asFloat());
+    else if (evt == "move_backward")
+        move_backward(gCamera, params.asFloat());
+    else if (evt == "move_left")
+        move_left(gCamera, params.asFloat());
+    else if (evt == "move_right")
+        move_right(gCamera, params.asFloat());
+    else if (evt == "move_up")
+        move_up(gCamera, params.asFloat());
+    else if (evt == "move_down")
+        move_down(gCamera, params.asFloat());
+    else
+    {
+        lx_warn("Unhandled event '%s'", evt.c_str());
+        bInvalidate = false;
+    }
 
-    const float terrainHeight = mspDocument->getComponent<PhysicsSubsystem>("physics2")->drop(gCamera.mPosition.x, gCamera.mPosition.y);
-    const float deltaZ = (terrainHeight + 2.0f) - gCamera.mPosition.z;
-    gCamera.mPosition.z += deltaZ;
-    gCamera.mTarget.z += deltaZ;
-
-    mspWin->invalidate(); 
+    if (bInvalidate)
+        mspWin->invalidate();
 }
 
 //===========================================================================//
