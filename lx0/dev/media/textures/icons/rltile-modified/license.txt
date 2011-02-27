@@ -1,0 +1,9 @@
+All the graphic tiles included in this directory are the public 
+domain roguelike tileset "RLTiles".
+
+Some of the tiles have been modified by athile@athile.net.
+
+You can find the original tileset at:
+http://rltiles.sf.net
+
+
