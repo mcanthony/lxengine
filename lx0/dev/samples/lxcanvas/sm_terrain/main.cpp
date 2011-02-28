@@ -374,7 +374,7 @@ public:
 
             auto spGeom = rasterizer.createQuadList(indicies, positions, normals, colors);
 
-            auto spMat = rasterizer.createMaterial("media2/shaders/glsl/fragment/solid_texture1.frag");
+            auto spMat = rasterizer.createMaterial("media2/shaders/glsl/fragment/texture1_fog.frag");
             spMat->mBlend = true;
             spMat->mFilter = GL_NEAREST;
             spMat->mTextures[0] = rasterizer.createTexture("media2/textures/icons/rltile-modified/tree_01.png");
