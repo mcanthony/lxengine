@@ -5,7 +5,7 @@
       <!--
       function addTree(x, y)
       {
-        var ref = $("<Quad/>");
+        var ref = $("<Sprite/>");
         ref.attr("ref", "unit_cube");
         ref.attr("position", [x, y]);
         $("#trees").append(ref);

@@ -330,7 +330,7 @@ LxCanvasImp::handleEvent (std::string evt, lx0::core::lxvar params)
 
 //===========================================================================//
 
-class Quad : public Renderable
+class Sprite : public Renderable
 {
 public:
     virtual void generate(ElementPtr spElement,
@@ -411,7 +411,7 @@ main (int argc, char** argv)
         spEngine->addViewPlugin("LxCanvas", [] (View* pView) { return new LxCanvasImp; });
         spEngine->addElementComponent("Terrain", "runtime", [](ElementPtr spElem) { return new Terrain::Runtime(spElem); }); 
         spEngine->addElementComponent("Terrain", "renderable", [](ElementPtr spElem) { return new Terrain::Render; });
-        spEngine->addElementComponent("Quad", "renderable", [](ElementPtr spElem) { return new Quad; });
+        spEngine->addElementComponent("Sprite", "renderable", [](ElementPtr spElem) { return new Sprite; });
         
         DocumentPtr spDocument = spEngine->loadDocument("media2/appdata/sm_terrain/scene.xml");
         ViewPtr     spView     = spDocument->createView("LxCanvas", "view");
