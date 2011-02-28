@@ -1,18 +1,34 @@
 <Root>
   <Header>
     <Script language="javascript" src="media2/scripts/base/lxquery-0.0.0.js" />
+    <Script language="javascript">
+      <!--
+      function addTree(x, y)
+      {
+        var ref = $("<Quad/>");
+        ref.attr("ref", "unit_cube");
+        ref.attr("position", [x, y]);
+        $("#trees").append(ref);
+      }
+      
+      __lx_print("Adding trees...");
+      for (var y = -10; y <= 10; y++)
+      {
+        for (var x = -10; x <= 10; x++)
+        {
+          var wx = x * 32 + Math.random(-8, 8);
+          var wy = y * 32 + Math.random(-8, 8);
+          addTree(wx, wy);
+        }
+      }
+      __lx_print("Done adding trees.");
+      //-->
+    </Script>
   </Header>
   <Library>
   </Library>
   <Scene>
     <Terrain/>
-    <Quad position="[ 0, 0 ]"/>
-    <Quad position="[ 48, 12 ]"/>
-    <Quad position="[ 0, 0 ]"/>
-    <Quad position="[ 148, -72 ]"/>
-    <Quad position="[ 56, 240 ]"/>
-    <Quad position="[ 348, -182 ]"/>
-    <Quad position="[ 300, 300 ]"/>
-    <Quad position="[ 480, 52 ]"/>
+    <Group id="trees" />
   </Scene>
 </Root>

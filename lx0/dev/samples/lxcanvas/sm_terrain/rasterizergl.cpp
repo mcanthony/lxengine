@@ -162,6 +162,32 @@ RasterizerGL::createTexture (const char* filename)
 RasterizerGL::MaterialPtr 
 RasterizerGL::createMaterial (std::string fragShader)
 {
+
+    GLuint prog = _createProgram(fragShader);
+    return MaterialPtr(new Material(prog));
+}
+
+GLuint 
+RasterizerGL::_createProgram   (std::string fragShader)
+{
+    auto it = mCachePrograms.find(fragShader);
+    if (it != mCachePrograms.end())
+    {
+        return it->second;
+    }
+    else
+    {
+        GLuint id = _createProgram2(fragShader);
+        mCachePrograms.insert(std::make_pair(fragShader, id));
+        return id;
+    }
+}
+
+GLuint 
+RasterizerGL::_createProgram2  (std::string fragShader)
+{
+    lx_debug("Creating program for shader '%s'", fragShader.c_str());
+
     // Create the shader program
     //
     GLuint vs = _createShader("media2/shaders/glsl/vertex/basic_01.vert", GL_VERTEX_SHADER);
@@ -193,7 +219,7 @@ RasterizerGL::createMaterial (std::string fragShader)
     _linkProgram(prog);
     glUseProgram(prog);
 
-    return MaterialPtr(new Material(prog));
+    return prog;
 }
 
 RasterizerGL::Material::Material(GLuint id)

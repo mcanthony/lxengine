@@ -187,9 +187,14 @@ public:
     void            rasterize       (std::shared_ptr<Item> spItem);
 
 protected:
-    GLuint  _createShader    (const char* filename, GLuint type);
-    void    _linkProgram     (GLuint prog);
+    GLuint      _createProgram   (std::string fragShader);
+    GLuint      _createProgram2  (std::string fragShader);
+    GLuint      _createShader    (const char* filename, GLuint type);
+    void        _linkProgram     (GLuint prog);
+
+    std::map<std::string, GLuint> mCachePrograms;
 
     std::list<ResourcePtr>      mResources;
     std::vector<TexturePtr>     mTextures;
+    
 };

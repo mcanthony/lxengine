@@ -1066,10 +1066,21 @@ namespace lx0 { namespace core { namespace detail {
         {
             static v8::Handle<v8::Value> random (const v8::Arguments& args)
             {
-                lx_check_error(args.Length() == 0);
                 auto pThis = _nativeThis<Math>(args); 
-        
-                float ret = float(rand()) / float(RAND_MAX);
+
+                float ret = 0.0f;
+                if (args.Length() == 0)
+                {
+                    ret = float(rand()) / float(RAND_MAX);
+                }
+                else if (args.Length() == 2)
+                {
+                    float mn = _marshal(args[0]);
+                    float mx = _marshal(args[1]);
+                    ret = (mx - mn) * (float(rand()) / float(RAND_MAX)) + mn;
+                }
+                else
+                    lx_warn("Wrong number of arguments passed to Math.random().  Expects either 0 or 2 arguments.");
 
                 return _marshal(ret);
             }
