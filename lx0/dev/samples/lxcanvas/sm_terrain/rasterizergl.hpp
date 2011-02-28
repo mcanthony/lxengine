@@ -109,10 +109,18 @@ public:
 
     struct Material
     {
-        Material();
-        virtual void activate(RasterizerGL*);
+                     Material   (GLuint id);
 
+        virtual void activate   (RasterizerGL*);
+
+        bool        mBlend;
+        int         mFilter;
         TexturePtr  mTextures[8];
+    
+    protected:
+        // Note: the program should be separate from the parameters passed to
+        // it.
+        GLuint      mId;
     };
     typedef std::shared_ptr<Material> MaterialPtr;
     typedef std::weak_ptr<Material> MaterialWPtr;
@@ -158,7 +166,7 @@ public:
 
     CameraPtr       createCamera    (float fov, float nearDist, float farDist, matrix4& viewMatrix);
     LightSetPtr     createLightSet  (void);
-    MaterialPtr     createMaterial  (void);
+    MaterialPtr     createMaterial  (std::string fragShader);
     TexturePtr      createTexture   (const char* filename);
 
     TransformPtr    createTransform (matrix4& mat);
@@ -179,7 +187,7 @@ public:
     void            rasterize       (std::shared_ptr<Item> spItem);
 
 protected:
-    GLuint  _createShader    (char* filename, GLuint type);
+    GLuint  _createShader    (const char* filename, GLuint type);
     void    _linkProgram     (GLuint prog);
 
     std::list<ResourcePtr>      mResources;

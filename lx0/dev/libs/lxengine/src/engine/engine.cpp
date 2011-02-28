@@ -343,7 +343,7 @@ namespace lx0 { namespace core {
     }
 
     void
-    Engine::addElementComponent (std::string tag, std::string name, std::function<ElementComponent*()> ctor)
+    Engine::addElementComponent (std::string tag, std::string name, std::function<ElementComponent*(ElementPtr)> ctor)
     {
         mElementComponents[tag].push_back(std::make_pair(name, ctor));
     }

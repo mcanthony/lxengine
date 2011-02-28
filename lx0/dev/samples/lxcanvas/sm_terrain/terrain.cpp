@@ -87,6 +87,12 @@ struct BorderArray2d
 
 namespace Terrain
 {
+
+    Runtime::Runtime (ElementPtr spElem)
+    {
+    }
+
+
     vector3 
     Runtime::calcColor(float s, float t)
     {
@@ -107,175 +113,173 @@ namespace Terrain
      
         return base + mid;
     }
+    
+    Render::Render()
+    {
+        lx_debug("Terrain::Render ctor");
+    }
 
+    void Render::generate(ElementPtr spElement,
+                    RasterizerGL& rasterizer,
+                    Camera& cam1,
+                    RasterizerGL::CameraPtr spCamera, 
+                    RasterizerGL::LightSetPtr spLightSet, 
+                    std::vector<RasterizerGL::ItemPtr>& list)
+    {
+        const int bx = int(cam1.mPosition.x / 100.0f);
+        const int by = int(cam1.mPosition.y / 100.0f);
 
-
-        Render::Render()
+        const int dist = 10;
+        for (int gy = -dist; gy <= dist; gy++)
         {
-            lx_debug("Terrain::Render ctor");
-        }
-
-        void Render::generate(ElementPtr spElement,
-                      RasterizerGL& rasterizer,
-                      Camera& cam1,
-                      RasterizerGL::CameraPtr spCamera, 
-                      RasterizerGL::LightSetPtr spLightSet, 
-                      std::vector<RasterizerGL::ItemPtr>& list)
-        {
-            const int bx = int(cam1.mPosition.x / 100.0f);
-            const int by = int(cam1.mPosition.y / 100.0f);
-
-            const int dist = 10;
-            for (int gy = -dist; gy <= dist; gy++)
+            for (int gx = -dist; gx <= dist; gx++)
             {
-                for (int gx = -dist; gx <= dist; gx++)
-                {
-                    std::pair<short, short> grid;
-                    grid.first = bx + gx;
-                    grid.second = by + gy;
+                std::pair<short, short> grid;
+                grid.first = bx + gx;
+                grid.second = by + gy;
 
-                    RasterizerGL::ItemPtr spTile;
-                    auto it = mMap.find(grid);
-                    if (it == mMap.end())
+                RasterizerGL::ItemPtr spTile;
+                auto it = mMap.find(grid);
+                if (it == mMap.end())
+                {
+                    if (abs(gx) < 5 && abs(gy) < 5) 
                     {
-                        if (abs(gx) < 5 && abs(gy) < 5) 
-                        {
-                            spTile = _buildTile(spElement, rasterizer, spCamera, spLightSet, grid.first, grid.second);
-                            mMap.insert(std::make_pair(grid, spTile));
-                        }
+                        spTile = _buildTile(spElement, rasterizer, spCamera, spLightSet, grid.first, grid.second);
+                        mMap.insert(std::make_pair(grid, spTile));
                     }
-                    else
-                        spTile = it->second;
-
-                    if (spTile.get() != nullptr)
-                        list.push_back(spTile);
                 }
+                else
+                    spTile = it->second;
+
+                if (spTile.get() != nullptr)
+                    list.push_back(spTile);
+            }
+        }
+    }
+
+
+    RasterizerGL::GeometryPtr 
+    Render::_buildTileGeom2 (ElementPtr spElement, RasterizerGL& rasterizer,  int regionX, int regionY)
+    {
+        // Eventually the renderable should be a component of the Element.
+        // The component has direct access to the Element, removing the need for any
+        // getElementsByTagName() call.
+        //
+        if (!mspTerrain)
+            mspTerrain = spElement->getComponent<Terrain::Runtime>("runtime");
+
+        const float kRegionSize = 100.0f;
+
+        float tx = regionX * kRegionSize;
+        float ty = regionY * kRegionSize;
+
+        //
+        // Compute all the heights first.   All interior heights are used
+        // 4 times, therefore it's quicker to compute them once and store
+        // the value than recompute each time.
+        //
+        BorderArray2d<float> heights (100, 100, 2);
+        for (int y = -1; y <= 101; ++y)
+        {
+            for (int x = -1; x <= 101; ++x)
+            {
+                heights(x, y) = mspTerrain->calcHeight(tx + x, ty + y);
             }
         }
 
-
-        RasterizerGL::GeometryPtr 
-        Render::_buildTileGeom2 (ElementPtr spElement, RasterizerGL& rasterizer,  int regionX, int regionY)
+        std::vector<point3> positions (101 * 101);
+        for (int y = 0; y <= 100; ++y)
         {
-            // Eventually the renderable should be a component of the Element.
-            // The component has direct access to the Element, removing the need for any
-            // getElementsByTagName() call.
-            //
-            if (!mspTerrain)
-                mspTerrain = spElement->getComponent<Terrain::Runtime>("runtime");
-
-            const float kRegionSize = 100.0f;
-
-            float tx = regionX * kRegionSize;
-            float ty = regionY * kRegionSize;
-
-            //
-            // Compute all the heights first.   All interior heights are used
-            // 4 times, therefore it's quicker to compute them once and store
-            // the value than recompute each time.
-            //
-            BorderArray2d<float> heights (100, 100, 2);
-            for (int y = -1; y <= 101; ++y)
+            for (int x = 0; x <= 100; ++x)
             {
-                for (int x = -1; x <= 101; ++x)
-                {
-                    heights(x, y) = mspTerrain->calcHeight(tx + x, ty + y);
-                }
+                point3 p;
+                p.x = float(x);
+                p.y = float(y);
+                p.z = heights(x, y);
+                positions[y * 101 + x] = p;
             }
+        }
 
-            std::vector<point3> positions (101 * 101);
-            for (int y = 0; y <= 100; ++y)
+        std::vector<vector3> normals (101 * 101);
+        for (int y = 0; y <= 100; ++y)
+        {
+            for (int x = 0; x <= 100; ++x)
             {
-                for (int x = 0; x <= 100; ++x)
-                {
-                    point3 p;
-                    p.x = float(x);
-                    p.y = float(y);
-                    p.z = heights(x, y);
-                    positions[y * 101 + x] = p;
-                }
-            }
-
-            std::vector<vector3> normals (101 * 101);
-            for (int y = 0; y <= 100; ++y)
-            {
-                for (int x = 0; x <= 100; ++x)
-                {
-                    vector3 dx;
-                    dx.x = 2;
-                    dx.y = 0;
-                    dx.z = heights(x - 1, y) - heights(x + 1, y);
+                vector3 dx;
+                dx.x = 2;
+                dx.y = 0;
+                dx.z = heights(x - 1, y) - heights(x + 1, y);
                 
-                    vector3 dy;
-                    dy.x = 0;
-                    dy.y = 2;
-                    dy.z = heights(x, y - 1) - heights(x, y + 1);
+                vector3 dy;
+                dy.x = 0;
+                dy.y = 2;
+                dy.z = heights(x, y - 1) - heights(x, y + 1);
  
-                    normals[y * 101 + x] = normalize( cross( normalize(dx), normalize(dy) ) );
-                }
+                normals[y * 101 + x] = normalize( cross( normalize(dx), normalize(dy) ) );
             }
-
-            std::vector<vector3> colors (101 * 101);
-            for (int y = 0; y <= 100; ++y)
-            {
-                for (int x = 0; x <= 100; ++x)
-                {
-                    colors[y * 101 + x] = mspTerrain->calcColor(tx + x, ty + y);
-                }
-            }
-
-            // Create a vertex buffer to store the data for the vertex array
-            //
-            //@todo Switch to index buffer
-            //@todo Add normals
-            std::vector<unsigned short> indices;
-            indices.reserve(100 * 100 * 4);
-            for (int y = 0; y < 100; ++y)
-            {
-                for (int x = 0; x < 100; ++x)
-                {
-                    indices.push_back( (y + 0) * 101 + (x + 0) );
-                    indices.push_back( (y + 0) * 101 + (x + 1) );
-                    indices.push_back( (y + 1) * 101 + (x + 1) );
-                    indices.push_back( (y + 1) * 101 + (x + 0) );
-                }
-            }
-
-            return rasterizer.createQuadList(indices, positions, normals, colors);
         }
 
-        RasterizerGL::MaterialPtr 
-        Render::_ensureMaterial (RasterizerGL& rasterizer)
+        std::vector<vector3> colors (101 * 101);
+        for (int y = 0; y <= 100; ++y)
         {
-            if (mwpMaterial.expired())
+            for (int x = 0; x <= 100; ++x)
             {
-                auto spTextureGrass = rasterizer.createTexture("media2/textures/seamless/grass/grass_yofrankie01/grass_0.png");
-                auto spTextureDirt = rasterizer.createTexture("media2/textures/seamless/dirt/dirt000/dirt000.png");
-
-                auto spMat = rasterizer.createMaterial();
-                spMat->mTextures[0] = spTextureGrass;
-                spMat->mTextures[1] = spTextureDirt;
-
-                mwpMaterial = spMat;
-                return spMat;           // Be sure to return *before* spMat goes out of scope
+                colors[y * 101 + x] = mspTerrain->calcColor(tx + x, ty + y);
             }
-            else
-                return mwpMaterial.lock();
         }
 
-        RasterizerGL::ItemPtr Render::_buildTile (ElementPtr spElement, 
-                                         RasterizerGL& rasterizer, 
-                                         RasterizerGL::CameraPtr spCamera, 
-                                         RasterizerGL::LightSetPtr spLightSet, 
-                                         int regionX, int regionY)
+        // Create a vertex buffer to store the data for the vertex array
+        //
+        //@todo Switch to index buffer
+        //@todo Add normals
+        std::vector<unsigned short> indices;
+        indices.reserve(100 * 100 * 4);
+        for (int y = 0; y < 100; ++y)
         {
-            auto pItem = new RasterizerGL::Item;
-            pItem->spCamera   = spCamera;
-            pItem->spLightSet = spLightSet;
-            pItem->spMaterial = _ensureMaterial(rasterizer);
-            pItem->spTransform = rasterizer.createTransform(regionX * 100.0f, regionY * 100.0f, 0.0f);
-            pItem->spGeometry = _buildTileGeom2(spElement, rasterizer, regionX, regionY);
-            return RasterizerGL::ItemPtr(pItem);
+            for (int x = 0; x < 100; ++x)
+            {
+                indices.push_back( (y + 0) * 101 + (x + 0) );
+                indices.push_back( (y + 0) * 101 + (x + 1) );
+                indices.push_back( (y + 1) * 101 + (x + 1) );
+                indices.push_back( (y + 1) * 101 + (x + 0) );
+            }
         }
+
+        return rasterizer.createQuadList(indices, positions, normals, colors);
+    }
+
+    RasterizerGL::MaterialPtr 
+    Render::_ensureMaterial (RasterizerGL& rasterizer)
+    {
+        if (mwpMaterial.expired())
+        {
+            auto spTextureGrass = rasterizer.createTexture("media2/textures/seamless/grass/grass_yofrankie01/grass_0.png");
+            auto spTextureDirt = rasterizer.createTexture("media2/textures/seamless/dirt/dirt000/dirt000.png");
+
+            auto spMat = rasterizer.createMaterial("media2/shaders/glsl/fragment/checker_world_xy10.frag");
+            spMat->mTextures[0] = spTextureGrass;
+            spMat->mTextures[1] = spTextureDirt;
+
+            mwpMaterial = spMat;
+            return spMat;           // Be sure to return *before* spMat goes out of scope
+        }
+        else
+            return mwpMaterial.lock();
+    }
+
+    RasterizerGL::ItemPtr Render::_buildTile (ElementPtr spElement, 
+                                        RasterizerGL& rasterizer, 
+                                        RasterizerGL::CameraPtr spCamera, 
+                                        RasterizerGL::LightSetPtr spLightSet, 
+                                        int regionX, int regionY)
+    {
+        auto pItem = new RasterizerGL::Item;
+        pItem->spCamera   = spCamera;
+        pItem->spLightSet = spLightSet;
+        pItem->spMaterial = _ensureMaterial(rasterizer);
+        pItem->spTransform = rasterizer.createTransform(regionX * 100.0f, regionY * 100.0f, 0.0f);
+        pItem->spGeometry = _buildTileGeom2(spElement, rasterizer, regionX, regionY);
+        return RasterizerGL::ItemPtr(pItem);
+    }
 }
 

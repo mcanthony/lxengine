@@ -6,5 +6,13 @@
   </Library>
   <Scene>
     <Terrain/>
+    <Quad position="[ 0, 0 ]"/>
+    <Quad position="[ 48, 12 ]"/>
+    <Quad position="[ 0, 0 ]"/>
+    <Quad position="[ 148, -72 ]"/>
+    <Quad position="[ 56, 240 ]"/>
+    <Quad position="[ 348, -182 ]"/>
+    <Quad position="[ 300, 300 ]"/>
+    <Quad position="[ 480, 52 ]"/>
   </Scene>
 </Root>

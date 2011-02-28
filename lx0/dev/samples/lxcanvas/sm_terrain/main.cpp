@@ -155,8 +155,9 @@ public:
 
         std::vector<RasterizerGL::ItemPtr> items;
 
-        std::vector<ElementPtr> mElems = mspDocument->getElementsByTagName("Terrain");
-        for (auto it = mElems.begin(); it != mElems.end(); ++it)
+        std::vector<ElementPtr> elems;
+        elems.swap( mspDocument->getElements() );
+        for (auto it = elems.begin(); it != elems.end(); ++it)
         {
             auto spRenderable = (*it)->getComponent<Renderable>("renderable");
             if (spRenderable)
@@ -176,7 +177,6 @@ public:
 protected:
     RasterizerGL::CameraPtr     spCamera;       // Camera shared by all items
     RasterizerGL::LightSetPtr   spLightSet;
-    std::vector<RasterizerGL::ItemPtr> itemList;
     RasterizerGL                rasterizer;
 };
 
@@ -315,9 +315,9 @@ LxCanvasImp::handleEvent (std::string evt, lx0::core::lxvar params)
     else if (evt == "move_right")
         move_right(gCamera, params.asFloat());
     else if (evt == "move_up")
-        move_up(gCamera, params.asFloat());
+        move_vertical(gCamera, params.asFloat());
     else if (evt == "move_down")
-        move_down(gCamera, params.asFloat());
+        move_vertical(gCamera, -params.asFloat());
     else
     {
         lx_warn("Unhandled event '%s'", evt.c_str());
@@ -327,6 +327,74 @@ LxCanvasImp::handleEvent (std::string evt, lx0::core::lxvar params)
     if (bInvalidate)
         mspWin->invalidate();
 }
+
+//===========================================================================//
+
+class Quad : public Renderable
+{
+public:
+    virtual void generate(ElementPtr spElement,
+                      RasterizerGL& rasterizer,
+                      Camera& cam1,
+                      RasterizerGL::CameraPtr spCamera, 
+                      RasterizerGL::LightSetPtr spLightSet, 
+                      std::vector<RasterizerGL::ItemPtr>& list)
+    {
+        if (!mspItem)
+        {
+            lxvar attrPos = spElement->attr("position");
+            point3 pos( attrPos.at(0).asFloat(), attrPos.at(1).asFloat(), 0.0f);
+            pos.z = spElement->document()->getComponent<PhysicsSubsystem>("physics2")->drop(pos.x, pos.y);
+
+            const float kSize = 16.0f;
+
+            std::vector<point3> positions;
+            positions.push_back( point3(0, 0, 0) );
+            positions.push_back( point3(kSize, 0, 0) );
+            positions.push_back( point3(kSize, 0, kSize) );
+            positions.push_back( point3(0, 0, kSize) );
+
+            std::vector<vector3> normals;
+            normals.push_back( vector3(0, 1, 0) );
+            normals.push_back( vector3(0, 1, 0) );
+            normals.push_back( vector3(0, 1, 0) );
+            normals.push_back( vector3(0, 1, 0) );
+
+            std::vector<vector3> colors;
+            colors.push_back( vector3(0, 1, 0) );
+            colors.push_back( vector3(1, 1, 0) );
+            colors.push_back( vector3(1, 0, 0) );
+            colors.push_back( vector3(0, 0, 0) );
+
+            std::vector<unsigned short> indicies;
+            indicies.push_back(0);
+            indicies.push_back(1);
+            indicies.push_back(2);
+            indicies.push_back(3);
+
+            auto spGeom = rasterizer.createQuadList(indicies, positions, normals, colors);
+
+            auto spMat = rasterizer.createMaterial("media2/shaders/glsl/fragment/solid_texture1.frag");
+            spMat->mBlend = true;
+            spMat->mFilter = GL_NEAREST;
+            spMat->mTextures[0] = rasterizer.createTexture("media2/textures/icons/rltile-modified/tree_01.png");
+
+            auto pItem = new RasterizerGL::Item;
+            pItem->spCamera   = spCamera;
+            pItem->spLightSet = spLightSet;
+            pItem->spMaterial = spMat;
+            pItem->spTransform = rasterizer.createTransform(pos.x, pos.y, pos.z);
+            pItem->spGeometry = spGeom;
+            
+            mspItem.reset(pItem);
+        }
+
+        list.push_back(mspItem);
+    }
+
+protected:
+    RasterizerGL::ItemPtr           mspItem;
+};
 
 //===========================================================================//
 //   E N T R Y - P O I N T
@@ -341,8 +409,9 @@ main (int argc, char** argv)
         EnginePtr   spEngine   = Engine::acquire();
         spEngine->addDocumentComponent("physics2", [] () { return new PhysicsSubsystem; } );
         spEngine->addViewPlugin("LxCanvas", [] (View* pView) { return new LxCanvasImp; });
-        spEngine->addElementComponent("Terrain", "runtime", []() { return new Terrain::Runtime; }); 
-        spEngine->addElementComponent("Terrain", "renderable", []() { return new Terrain::Render; });
+        spEngine->addElementComponent("Terrain", "runtime", [](ElementPtr spElem) { return new Terrain::Runtime(spElem); }); 
+        spEngine->addElementComponent("Terrain", "renderable", [](ElementPtr spElem) { return new Terrain::Render; });
+        spEngine->addElementComponent("Quad", "renderable", [](ElementPtr spElem) { return new Quad; });
         
         DocumentPtr spDocument = spEngine->loadDocument("media2/appdata/sm_terrain/scene.xml");
         ViewPtr     spView     = spDocument->createView("LxCanvas", "view");

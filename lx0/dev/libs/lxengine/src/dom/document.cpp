@@ -202,6 +202,22 @@ namespace lx0 { namespace core {
         return matches;
     }
 
+    /*!
+        The current implementation is not efficient.  Depending on how often
+        this API gets used, it should either cache the list of Elements or the
+        API should be deprecated.
+     */
+    std::vector<ElementPtr> 
+    Document::getElements (void)
+    {
+        std::vector<ElementPtr> matches;
+        _walkElements([&](ElementPtr spElem) -> bool {
+            matches.push_back(spElem);
+            return false;
+        });
+        return matches;
+    }
+
     void            
     Document::beginRun ()
     {
@@ -245,7 +261,7 @@ namespace lx0 { namespace core {
                 auto& ctor = it->second;
                 if (spElem->getComponent<Element::Component>(name).get() == nullptr)
                 {
-                    spElem->attachComponent(name, (ctor)());
+                    spElem->attachComponent(name, (ctor)(spElem));
                 }
             }
         }

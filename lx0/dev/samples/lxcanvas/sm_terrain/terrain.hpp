@@ -42,6 +42,8 @@ namespace Terrain
     class Runtime : public Element::Component
     {
     public:
+                    Runtime (ElementPtr spElem);
+
         vector3     calcColor(float s, float t);
         float       calcHeight(float s, float t);
     };

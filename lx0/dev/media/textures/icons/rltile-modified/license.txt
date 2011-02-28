@@ -1,5 +1,5 @@
 All the graphic tiles included in this directory are the public 
-domain roguelike tileset "RLTiles".
+domain roguelike tileset "RLTiles" or derived works thereof.
 
 Some of the tiles have been modified by athile@athile.net.
 

@@ -47,12 +47,14 @@ void RasterizerGL::initialize()
     lx_log("Using OpenGL v%s", (const char*)glGetString(GL_VERSION));
 
     glEnable(GL_DEPTH_TEST);
+
+    glEnable(GL_ALPHA_TEST);
+    glAlphaFunc(GL_GREATER, 0.01f);
 }
 
 void RasterizerGL::shutdown()
 {
 }
-
 
 RasterizerGL::CameraPtr       
 RasterizerGL::createCamera (float fov, float nearDist, float farDist, matrix4& viewMatrix)
@@ -158,13 +160,13 @@ RasterizerGL::createTexture (const char* filename)
 }
 
 RasterizerGL::MaterialPtr 
-RasterizerGL::createMaterial (void)
+RasterizerGL::createMaterial (std::string fragShader)
 {
     // Create the shader program
     //
     GLuint vs = _createShader("media2/shaders/glsl/vertex/basic_01.vert", GL_VERTEX_SHADER);
     GLuint gs = _createShader("media2/shaders/glsl/geometry/basic_01.geom", GL_GEOMETRY_SHADER);
-    GLuint fs = _createShader("media2/shaders/glsl/fragment/checker_world_xy10.frag", GL_FRAGMENT_SHADER);
+    GLuint fs = _createShader(fragShader.c_str(), GL_FRAGMENT_SHADER);
 
     GLuint prog = glCreateProgram();
     {
@@ -191,20 +193,21 @@ RasterizerGL::createMaterial (void)
     _linkProgram(prog);
     glUseProgram(prog);
 
-    return MaterialPtr(new Material);
+    return MaterialPtr(new Material(prog));
 }
 
-RasterizerGL::Material::Material()
+RasterizerGL::Material::Material(GLuint id)
+    : mId       (id)
+    , mBlend    (false)
+    , mFilter   (GL_LINEAR)
 {
 }
 
 void
 RasterizerGL::Material::activate(RasterizerGL* pRasterizer)
 {
-    glEnable(GL_TEXTURE_2D);
-
-    GLint shaderProgram;
-    glGetIntegerv(GL_CURRENT_PROGRAM, &shaderProgram);
+    // Activate the shader
+    glUseProgram(mId);
 
     const char* unifTextureName[8] = {
         "unifTexture0",
@@ -217,20 +220,54 @@ RasterizerGL::Material::activate(RasterizerGL* pRasterizer)
         "unifTexture7",
     };
 
+    //
+    // Set up textures
+    //
+    int texturesUseCount = 0;
     for (int i = 0; i < 8; ++i)
     {
         // Set unifTexture0 to texture unit 0
-        GLint unifIndex = glGetUniformLocation(shaderProgram, unifTextureName[i]);
+        GLint unifIndex = glGetUniformLocation(mId, unifTextureName[i]);
         if (unifIndex != -1)
         {
-            // Set the shader uniform to the *texture unit* containing the texture
-            glUniform1i(unifIndex, i);
+            texturesUseCount++;
 
-            // Activate the corresponding texture unit and set *that* to the GL id
-            glActiveTexture(GL_TEXTURE0 + i);
-            glBindTexture(GL_TEXTURE_2D, mTextures[i]->mId);
+            if (mTextures[i])
+            {
+                // Set the shader uniform to the *texture unit* containing the texture
+                glUniform1i(unifIndex, i);
+
+                // Activate the corresponding texture unit and set *that* to the GL id
+                glActiveTexture(GL_TEXTURE0 + i);
+                glBindTexture(GL_TEXTURE_2D, mTextures[i]->mId);
+
+                // Set the parameters on the texture unit
+                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, mFilter);
+                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, mFilter);
+            }
+            else
+            {
+                lx_warn("Active shader requires a texture for slot %d, but no texture is set.", i);
+            }
         }
     }
+
+    if (texturesUseCount > 0)
+        glEnable(GL_TEXTURE_2D);
+    else
+        glDisable(GL_TEXTURE_2D);
+
+    //
+    // Set up blending
+    // 
+    if (mBlend)
+    {
+        glEnable(GL_BLEND);
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    }
+    else
+        glDisable(GL_BLEND);
+
 }
 
 void 
@@ -260,7 +297,7 @@ RasterizerGL::_linkProgram (GLuint prog)
 }
 
 GLuint 
-RasterizerGL::_createShader( char* filename, GLuint type)
+RasterizerGL::_createShader(const char* filename, GLuint type)
 {
     GLuint shaderHandle = 0; 
 
@@ -480,14 +517,28 @@ void RasterizerGL::endScene()
 {
 }
 
-void RasterizerGL::rasterizeList (std::vector<std::shared_ptr<Item>>& list)
+void 
+RasterizerGL::rasterizeList (std::vector<std::shared_ptr<Item>>& list)
 {
     for (auto it = list.begin(); it != list.end(); ++it)
-        rasterize(*it);
+    {
+        auto spItem = *it;
+        if (spItem)
+        {
+            rasterize(*it);
+        }
+        else
+        {
+            lx_error("Null Item in rasterization list");
+        }
+    }
 }
 
-void RasterizerGL::rasterize(std::shared_ptr<Item> spItem)
+void 
+RasterizerGL::rasterize(std::shared_ptr<Item> spItem)
 {
+    lx_check_error(spItem.get() != nullptr);
+
     spItem->rasterize(this);
 }
 

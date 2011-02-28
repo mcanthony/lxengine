@@ -127,6 +127,7 @@ namespace lx0 { namespace core {
         Environment&        environment         (void)                      { return mEnvironment; }
 
         DocumentPtr         loadDocument        (std::string filename);
+        const std::vector<DocumentPtr>& documents (void) { return m_documents; }
 
         void                sendMessage         (const char* message);
         int	                run                 (void);
@@ -146,10 +147,12 @@ namespace lx0 { namespace core {
         
         void                addDocumentComponent (std::string name, std::function<DocumentComponent* ()> ctor);
         
-        typedef std::pair<std::string,std::function<ElementComponent*()>> ElementComponentPair;
+        typedef std::function<ElementComponent*(ElementPtr spElem)>      ElementComponentCtor;
+        typedef std::pair<std::string,ElementComponentCtor>              ElementComponentPair;
         typedef std::map<std::string, std::vector<ElementComponentPair>> ElementComponentMap;
-        void                addElementComponent  (std::string tag, std::string name, std::function<ElementComponent*()> ctor);
-        const ElementComponentMap& elementComponents     (void) const  { return mElementComponents; }
+
+        void                        addElementComponent     (std::string tag, std::string name, ElementComponentCtor ctor);
+        const ElementComponentMap&  elementComponents       (void) const  { return mElementComponents; }
         ///@}
 
         // Stats

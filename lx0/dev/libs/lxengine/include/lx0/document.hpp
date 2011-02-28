@@ -4,7 +4,7 @@
 
     LICENSE
 
-    Copyright (c) 2010 athile@athile.net (http://www.athile.net)
+    Copyright (c) 2010-2011 athile@athile.net (http://www.athile.net)
 
     Permission is hereby granted, free of charge, to any person obtaining a 
     copy of this software and associated documentation files (the "Software"), 
@@ -100,6 +100,7 @@ namespace lx0 { namespace core {
         ElementPtr              createElement           (std::string type);
         ElementPtr              getElementById          (std::string id);
         std::vector<ElementPtr> getElementsByTagName    (std::string name);
+        std::vector<ElementPtr> getElements             (void);
 
         void                    beginRun        (void);
         void                    updateRun       (void);
