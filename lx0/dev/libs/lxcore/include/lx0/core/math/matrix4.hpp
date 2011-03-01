@@ -42,13 +42,18 @@ namespace lx0 { namespace core {
         convention of 0-based indices.  
 
         The support operations for multiplying and transforming vectors
-        assume a row-vector based model where vectors are pre-multiplied by 
+        assume a row-vector based model where vectors are pre-multiplied with 
         the matrix.
+                     [ a  b  c  d ]   [ xa + ye + zi + txw ]
+        [ x y z w ]  [ e  f  g  h ] = [ xb + yf + zj + tyw ]
+                     [ i  j  k  l ]   [ xc + yg + zk + tzw ]
+                     [ tx ty tz 1 ]   [ xd + yh + zl +   w ]
      */
     class matrix4
     {
     public:
-        inline float operator()     (int row, int column) const;
+        inline float  operator()     (int row, int col) const { return column[col][row]; }
+        inline float& operator()     (int row, int col)       { return column[col][row]; }
 
         union
         {

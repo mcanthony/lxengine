@@ -500,11 +500,37 @@ RasterizerGL::createTransform (float tx, float ty, float tz)
     return spTransform;
 }
 
+RasterizerGL::TransformPtr
+RasterizerGL::createTransformBillboard (float tx, float ty, float tz)
+{
+    TransformPtr spTransform(new BillboardTransform);
+    set_translation(spTransform->mat, tx, ty, tz);
+    return spTransform;
+}
+
 void
-RasterizerGL::Transform::activate (void)
+RasterizerGL::Transform::activate (CameraPtr)
 {
     glMatrixMode(GL_MODELVIEW);
     glMultTransposeMatrixf(mat.data);
+}
+
+void
+RasterizerGL::BillboardTransform::activate(CameraPtr spCamera)
+{
+    // The first column of the view matrix contains the "right" vector
+    // of the camera: that is to say, the x-axis (1, 0, 0) of the camera
+    // in terms of world space.  Therefore, check the angle between that
+    // vector and world x to know how much to rotate the model to ensure
+    // the model x is always aligned to the camera x.  I.e. rotate the
+    // model by the same amount as the camera about the z-axis.
+    //
+    const auto& cameraX = spCamera->viewMatrix.column[0];   
+    const float radians = atan2(cameraX.y, cameraX.x);
+
+    glMatrixMode(GL_MODELVIEW);   
+    glMultTransposeMatrixf(mat.data);
+    glRotatef(radians * 180.0f / 3.1415926f, 0.0f, 0.0f, 1.0f);
 }
 
 void 
@@ -574,6 +600,6 @@ RasterizerGL::Item::rasterize(RasterizerGL* pRasterizer)
     spCamera->activate();
     spLightSet->activate();
     spMaterial->activate(pRasterizer);
-    spTransform->activate();
+    spTransform->activate(spCamera);
     spGeometry->activate();     
 }

@@ -383,7 +383,7 @@ public:
             pItem->spCamera   = spCamera;
             pItem->spLightSet = spLightSet;
             pItem->spMaterial = spMat;
-            pItem->spTransform = rasterizer.createTransform(pos.x, pos.y, pos.z);
+            pItem->spTransform = rasterizer.createTransformBillboard(pos.x, pos.y, pos.z);
             pItem->spGeometry = spGeom;
             
             mspItem.reset(pItem);

@@ -34,6 +34,7 @@
 #include <lx0/core/math/tuple3.hpp>
 #include <lx0/core/math/point3.hpp>
 #include <lx0/core/math/vector3.hpp>
+#include <lx0/core/math/matrix4.hpp>
 #include <lx0/core/core.hpp>
 
 class UnitTest
@@ -46,14 +47,29 @@ public:
         std::cout << "Done." << std::endl;
     }
     
-    void check (bool b)
+
+    void check (bool b, std::function<void()> fail)
     {
         std::cout << "\t";
         if (b)
             std::cout << "PASS";
         else
-            std::cout << "FAIL";
+        {
+            std::cout << "FAIL ";
+            fail();
+        }
         std::cout << std::endl;
+    }
+
+    void check (bool b)
+    {
+        check(b, [](){});
+    }
+
+    void compare(float value, float expected)
+    {
+        float d = abs(value - expected);
+        check(d < 0.00001f, [&]() { std::cout << value << " != " << expected; });
     }
 };
 
@@ -117,6 +133,27 @@ main (int argc, char** argv)
         test.check( is_orthogonal(vector3(0, 0, 1), vector3(0, 1, 0)) == true );
     });
 
+    test.add_group("matrices", [&test]() {
+
+        matrix4 m;
+        set_identity(m);
+
+        for (int r = 0; r < 4; r++)
+            for (int c = 0; c < 4; c++)
+                test.check(m(r,c) == ((r == c) ? 1.0f : 0.0f));
+
+        // matrix4 is set up for row-vector multiplications: therefore,
+        // translation should end up in row 4.
+        set_translation(m, 2.0f, 4.0f, 6.0f);
+        test.check(m(0,0) == 1.0f);
+        test.check(m(1,0) == 0.0f);
+        test.check(m(3,0) == 2.0f);
+        test.check(m(3,1) == 4.0f);
+        test.check(m(3,2) == 6.0f, [&]() { std::cout << m(3,2); });
+        test.compare(m(3,3), 1.0f);
+
+    });
+
     test.add_group("noise", [&test]() {
 
         double noiseMin = std::numeric_limits<double>::max();
@@ -139,9 +176,9 @@ main (int argc, char** argv)
         }
         noiseAvg /= 1000 * 1000;
 
-        test.check(noiseMin >= -1.0 && noiseMin <= -.6);
-        test.check(noiseMax <= 1.0 && noiseMax >= .6);
-        test.check( abs(noiseAvg) < 0.1 );
+        test.check(noiseMin >= 0.0 && noiseMin <= .2, [&]() { std::cout << "noiseMin = " << noiseMin; } );
+        test.check(noiseMax <= 1.0 && noiseMax >= .8, [&]() { std::cout << "noiseMax = " << noiseMax; } );
+        test.check( abs(noiseAvg - .5) < 0.05, [&]() { std::cout << "noiseAvg = " << noiseAvg; } );
     });
     
     
