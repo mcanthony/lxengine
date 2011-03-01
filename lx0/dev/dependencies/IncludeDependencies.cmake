@@ -74,3 +74,8 @@ set(VORBIS_LIBS libvorbis.lib libvorbisfile.lib libogg.lib)
 install_debrel("libvorbis/bin" "libvorbis.dll")
 install_debrel("libvorbis/bin" "libvorbisfile.dll")
 
+#
+# GLM (OpenGL Mathematics)
+#
+include_directories("${DEPS_SDK}/glm/include")
+

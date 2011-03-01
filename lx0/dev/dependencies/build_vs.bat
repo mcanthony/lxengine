@@ -170,12 +170,18 @@ REM ===========================================================================
 REM Check the dependency source is installed properly
 REM ===========================================================================
 
-call:ensure_directory boost_1_44_0
-call:ensure_directory ogre_1_7_1
-call:ensure_directory bullet_2_76
-call:ensure_directory openal_1_1
 call:ensure_directory audiere_1_9_4
+call:ensure_directory boost_1_44_0
+call:ensure_directory bullet_2_76
 call:ensure_directory freetype_2_4_2
+call:ensure_directory glm-0.9.1
+call:ensure_directory libogg-1.2.1
+call:ensure_directory libvorbis-1.3.2
+call:ensure_directory ogre_1_7_1
+call:ensure_directory ois_1_2_0
+call:ensure_directory openal_1_1
+call:ensure_directory v8
+
 if %FAILURE%==1 ( 
     echo.
     echo ERROR: It appears the dependencies did not extract correctly.
@@ -463,6 +469,23 @@ call:build_project %PROJECT% %ROOTDIR% %TESTFILE%
 IF %FAILURE%==1 (goto:EOF)
 
 REM ===========================================================================
+REM Copy GLM
+REM ===========================================================================
+
+set PROJECT=GLM
+set ROOTDIR=glm-0.9.1
+set TESTFILE=glm\glm.hpp
+
+echo pushd .>_t.bat
+echo popd >>_t.bat
+
+call:build_project %PROJECT% %ROOTDIR% %TESTFILE%
+IF %FAILURE%==1 (goto:EOF)
+
+call:copy_directory %ROOTDIR%\glm %PSDK%\glm\include\glm
+
+
+REM ===========================================================================
 REM Build process complete
 REM ===========================================================================
 
@@ -570,7 +593,7 @@ REM
     cd %ROOTDIR%
     
     REM The TESTFILE is the sentinel used to determine if a build succeeded
-    REM or not.  This is not foolproof - for example, a particularly 
+    REM or not.  This is not foolproof - for example, a partially 
     REM successful build could generate false positives.
     REM
     IF NOT EXIST %TESTFILE% (
