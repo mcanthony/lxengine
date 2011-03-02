@@ -56,14 +56,13 @@ namespace lx0 { namespace core {
         inline float& operator()     (int row, int col)       { return column[col][row]; }
 
         union
-        {
+        {  
             struct
             {
-                float elem[4][4];
+                tuple4 column[4];
             };
-
-            tuple4 column[4];
-            float  data[16];
+            float   elem[4][4];
+            float   data[16];
         };
     };
 

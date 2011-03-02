@@ -40,6 +40,15 @@
 class UnitTest
 {
 public:
+    UnitTest()
+        : mFailed (0)
+        , mTotal (0)
+    {
+    }
+
+    int mFailed;
+    int mTotal;
+
     void add_group (std::string s, std::function<void()> f)
     {
         std::cout << "Running group '" << s << "'..." << std::endl;
@@ -50,11 +59,16 @@ public:
 
     void check (bool b, std::function<void()> fail)
     {
+        mTotal++;
+
         std::cout << "\t";
         if (b)
+        {
             std::cout << "PASS";
+        }
         else
         {
+            mFailed++;
             std::cout << "FAIL ";
             fail();
         }
@@ -112,6 +126,26 @@ main (int argc, char** argv)
     });
     
     test.add_group("constructors", [&test]() {
+
+        {
+            tuple2 t;
+            test.compare(t.x, 0.0f);
+            test.compare(t.y, 0.0f);
+        }
+        {
+            tuple3 t;
+            test.compare(t.x, 0.0f);
+            test.compare(t.y, 0.0f);
+            test.compare(t.z, 0.0f);
+        }
+        {
+            tuple4 t;
+            test.compare(t.x, 0.0f);
+            test.compare(t.y, 0.0f);
+            test.compare(t.z, 0.0f);
+            test.compare(t.w, 0.0f);
+        }
+
         tuple3 a;
         test.check(a.x == 0.0f);
         test.check(a.y == 0.0f);
@@ -127,10 +161,32 @@ main (int argc, char** argv)
         test.check(c.y == 0.0f);
         test.check(c.z == 0.0f);
 
+        {
+            point3 c(1, 2, 3);
+            test.compare(c.x, 1.0f);
+            test.compare(c.y, 2.0f);
+            test.compare(c.z, 3.0f);
+        }
+
+        {
+            vector3 c(1, 2, 3);
+            test.compare(c.x, 1.0f);
+            test.compare(c.y, 2.0f);
+            test.compare(c.z, 3.0f);
+        }
 
         test.check( is_orthogonal(vector3(1, 0, 0), vector3(0, 1, 0)) == true );
         test.check( is_orthogonal(vector3(0, 1, 0), vector3(0, 1, 0)) == false );
         test.check( is_orthogonal(vector3(0, 0, 1), vector3(0, 1, 0)) == true );
+    });
+
+    test.add_group("radians", [&test]() {
+        lx0::radians r;
+
+        test.compare(lx0::degrees(r), 0.0f);
+        test.compare(lx0::degrees(lx0::halfPi()), 90.0f);
+        test.compare(lx0::degrees(lx0::pi()), 180.0f);
+        test.compare(lx0::degrees(lx0::twoPi()), 360.0f);
     });
 
     test.add_group("matrices", [&test]() {
@@ -180,7 +236,47 @@ main (int argc, char** argv)
         test.check(noiseMax <= 1.0 && noiseMax >= .8, [&]() { std::cout << "noiseMax = " << noiseMax; } );
         test.check( abs(noiseAvg - .5) < 0.05, [&]() { std::cout << "noiseAvg = " << noiseAvg; } );
     });
+
+    test.add_group("bugcheck", [&test]() {
+
+        // BUG: The anonymous union in vector3 calls *all* constructors defined in the union.
+        // Placement of the GLM vec3 in the union after the x,y,z floats in the union caused
+        // the default GLM vec3 constructor to zero out the fields after x, y, and z had been
+        // set.  This is a complicated way of checking that the ctor initialization is correct.
+        //
+        {
+            float x = 8.321321f;
+            float y = -7.532123f;
+            float z = -6.432111f;
+
+            const int cellX = (int)floor(x);
+            const int cellY = (int)floor(y);
+            const int cellZ = (int)floor(z);
+
+            vector3 uvw = vector3(x, y, z);
+            uvw.x = x - cellX;
+            uvw.y -= cellY;
+            uvw.z -= cellZ;
+
+            test.compare(uvw.x, .321321f);
+            test.compare(uvw.y, 1.0f - .532123f);
+            test.compare(uvw.z, 1.0f - .432111f);
+        }
+    });
     
-    
+    std::cout << std::endl;
+    std::cout << "=========================================================================" << std::endl;
+    std::cout << std::endl;
+
+    if (test.mFailed > 0)
+    {
+        std::cout << "FAILURE!" << std::endl;
+        std::cout << "Failed " << test.mFailed << " of " << test.mTotal << " tests." << std::endl;
+    }
+    else
+        std::cout << "SUCCESS" << std::endl;
+    std::cout << std::endl;
+    std::cout << std::endl;
+
 	return 0;
 }

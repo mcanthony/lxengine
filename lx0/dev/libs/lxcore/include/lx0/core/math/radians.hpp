@@ -3,9 +3,8 @@
                                    LxEngine
 
     LICENSE
-    * MIT License (http://www.opensource.org/licenses/mit-license.php)
 
-    Copyright (c) 2010-2011 athile@athile.net (http://www.athile.net)
+    Copyright (c) 2010 athile@athile.net (http://www.athile.net)
 
     Permission is hereby granted, free of charge, to any person obtaining a 
     copy of this software and associated documentation files (the "Software"), 
@@ -29,45 +28,36 @@
 
 #pragma once
 
-namespace lx0
-{
-    //! Core API
-    namespace core 
-    {
-        namespace detail {}
-    }
+#include <glm/glm.hpp>
 
-    //! Stable and supported extensions to the core API
-    namespace extensions 
-    {
-    }
+namespace lx0 { namespace core { namespace math { namespace radians {
 
-    //! Unstable, experimental code subject to unannounced changes & deprecation
+    //=======================================================================//
+    //!
     /*!
-        
+        The strongly typed radian class is intended to allow the compiler to enforce 
+        correct usage of degrees or radians depending on the context.
      */
-    namespace prototype 
+    class radians
     {
-    }
-}
+    public:
+                 radians (void)    : value (0.0f) {}
+        explicit radians (float r) : value (r) {}
 
-#include <lx0/core/base/base.hpp>
-#include <lx0/core/base/cast.hpp>
+        float value;
+    };
 
-#include <lx0/core/math/radians.hpp>
-#include <lx0/core/math/tuple3.hpp>
-#include <lx0/core/math/point3.hpp>
-#include <lx0/core/math/vector3.hpp>
-#include <lx0/core/math/matrix4.hpp>
+    inline radians     pi      (void)      { return radians(3.1415926535897932384626433832795f); }
+    inline radians     twoPi   (void)      { return radians(6.283185307179586476925286766559f); }
+    inline radians     halfPi  (void)      { return radians(1.5707963267948966192313216916398f); }
 
-#include <lx0/core/math/ray.hpp>
+    inline float       degrees (radians r) { return glm::degrees(r.value); }
 
-#include <lx0/core/math/noise.hpp>
-#include <lx0/core/math/smooth_functions.hpp>
 
-#include <lx0/core/data/lxvar.hpp>
-#include <lx0/core/data/lxvar_convert.hpp>
-#include <lx0/core/data/primitive_buffer.hpp>
 
-#include <lx0/core/util/util.hpp>
+}}}}
+
+namespace lx0 {
+    using namespace core::math::radians;
+};
 

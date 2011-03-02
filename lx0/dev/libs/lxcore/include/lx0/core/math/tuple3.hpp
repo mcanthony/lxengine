@@ -28,23 +28,22 @@
 
 #pragma once
 
+#include <cstddef>
+
 #include <lx0/core/base/cast.hpp>
 #include <Ogre/OgreVector3.h>
+#include <glm/glm.hpp>
 
 namespace lx0 { namespace core {
 
 
     namespace detail
     {
-        /*!
-            Base class used to consolidate common code in
-            3-tuple classes.
-         */
-        class base_tuple3
+        class base_tuple2
         {
         public:
-            base_tuple3() : x(0.0f), y(0.0f), z(0.0f) {}
-            base_tuple3(float x0, float y0, float z0) : x(x0), y(y0), z(z0) {}
+            base_tuple2() : vec2(0.0f, 0.0f) {}
+            base_tuple2(float x0, float y0) : vec2(x0, y0) {}
 
             inline float&   operator[] (int i)          { return elem[i]; }
             inline float    operator[] (int i) const    { return elem[i]; }
@@ -53,11 +52,39 @@ namespace lx0 { namespace core {
             {
                 struct 
                 {
-                    float x, y, z;
+                    float x, y;
                 };
                 
-                float elem[3];
+                float elem[2];
                 
+                struct
+                {
+                    glm::vec2 vec2;
+                };
+            };  
+
+        protected:
+            static void _static_test()
+            {
+                static_assert(sizeof(base_tuple2) == sizeof(float) * 2, "Structure size incorrect");
+            }
+        };
+
+        /*!
+            Base class used to consolidate common code in
+            3-tuple classes.
+         */
+        class base_tuple3
+        {
+        public:
+            base_tuple3() : vec3(0.0f, 0.0f, 0.0f) {}
+            base_tuple3(float x0, float y0, float z0) : vec3(x0, y0, z0) {}
+
+            inline float&   operator[] (int i)          { return elem[i]; }
+            inline float    operator[] (int i) const    { return elem[i]; }
+        
+            union
+            {               
                 // The anonymous struct allows a class with a non-trivial ctor
                 // to be used inside the union.  A compiler with full C++x0 
                 // support should not require this.
@@ -65,12 +92,33 @@ namespace lx0 { namespace core {
                 { 
                     Ogre::Vector3 ogreVec; 
                 };
-            };    
+                struct
+                {
+                    glm::vec3 vec3;
+                };
+
+                struct 
+                {
+                    float x, y, z;
+                };
+                
+                float elem[3];
+            };
+
+        protected:
+            static void _static_test()
+            {
+                static_assert(sizeof(base_tuple3) == sizeof(float) * 3, "Structure size incorrect");
+            }
         };
+
 
         class base_tuple4
         {
         public:
+            base_tuple4() : vec4(0.0f, 0.0f, 0.0f, 0.0f) {}
+            base_tuple4(float x0, float y0, float z0, float w0) : vec4(x0, y0, z0, w0) {}
+
             inline float&   operator[] (int i)          { return elem[i]; }
             inline float    operator[] (int i) const    { return elem[i]; }
 
@@ -81,13 +129,34 @@ namespace lx0 { namespace core {
                     float x, y, z, w;
                 };
                 float elem[4];
+                struct
+                {
+                    glm::vec4 vec4;
+                };
             };
+
+        protected:
+            static void _static_test()
+            {
+                static_assert(sizeof(base_tuple4) == sizeof(float) * 4, "Structure size incorrect");
+            }
         };
     }
+    // end namespace detail
 
     inline void     set         (detail::base_tuple3& t, float x, float y, float z)             { t.x = x; t.y = y; t.z = z; }
     inline void     set         (detail::base_tuple4& t, float x, float y, float z, float w)    { t.x = x; t.y = y; t.z = z; t.w = w; }
     
+    //=======================================================================//
+    //!
+    /*!
+     */
+    class tuple2
+        : public detail::base_tuple2
+    {
+    public: 
+    };
+
     //=======================================================================//
     //!
     /*!

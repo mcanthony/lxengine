@@ -81,7 +81,6 @@ namespace lx0 { namespace core {
     inline vector3  operator*       (float s, const vector3& v)         { return vector3(s*v.x, s*v.y, s*v.z); }
     inline vector3  operator*       (const vector3& v, float s)         { return s * v; }
 
+}}
 
-    
 
-}};
