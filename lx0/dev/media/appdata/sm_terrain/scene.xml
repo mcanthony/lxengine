@@ -29,6 +29,7 @@
   </Library>
   <Scene>
     <Terrain/>
+    <SkyMap/>
     <Group id="trees" />
   </Scene>
 </Root>

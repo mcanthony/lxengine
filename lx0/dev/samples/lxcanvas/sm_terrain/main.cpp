@@ -62,6 +62,8 @@
 #include <lx0/engine.hpp>
 #include <lx0/document.hpp>
 #include <lx0/element.hpp>
+#include <lx0/blendreader/blendreader.hpp>
+#include <lx0/core/math/radians.hpp>
 
 #include "main.hpp"
 #include "rasterizergl.hpp"
@@ -78,14 +80,14 @@ Camera             gCamera;
 class PhysicsSubsystem : public DocumentComponent
 {
 public: 
-    virtual void    onElementAdded      (DocumentPtr spDocument, ElementPtr spElem) 
+    virtual void onElementAdded (DocumentPtr spDocument, ElementPtr spElem) 
     {
         if (spElem->tagName() == "Terrain")
         {
             mElems.insert(std::make_pair(spElem.get(), spElem));
         }
     }
-    virtual void    onElementRemoved    (Document*   pDocument, ElementPtr spElem) 
+    virtual void onElementRemoved (Document*   pDocument, ElementPtr spElem) 
     {
         auto it = mElems.find(spElem.get());
         if (it != mElems.end())
@@ -162,7 +164,14 @@ public:
             auto spRenderable = (*it)->getComponent<Renderable>("renderable");
             if (spRenderable)
             {
-                spRenderable->generate(*it, rasterizer, gCamera, spCamera, spLightSet, items);
+                std::vector<RasterizerGL::ItemPtr> local;
+                spRenderable->generate(*it, rasterizer, gCamera, spCamera, spLightSet, local);
+
+                for (auto jt = local.begin(); jt != local.end(); ++jt)
+                {
+                    lx_check_error((*jt).get() != nullptr);
+                    items.push_back(*jt);
+                }
             }
         }
 
@@ -272,8 +281,15 @@ LxCanvasImp::createWindow (View* pHostView, size_t& handle, unsigned int& width,
 
     mspWin->slotRedraw += [&]() { mRenderer.render(); };
     mspWin->slotLMouseDrag += [&](const MouseState& ms, const ButtonState& bs, KeyModifiers km) {
+        
+        // Rotate horizontal
         rotate_horizontal(gCamera, ms.deltaX() * -3.14f / 1000.0f );
-        rotate_vertical(gCamera, ms.deltaY() * -3.14f / 1000.0f );
+
+        // Rotate vertical..
+        //@todo:  only if not going to cause the camera to be staring straight up or straight down
+        float vertAngle = ms.deltaY() * -3.1415f / 1000.0f;
+        rotate_vertical(gCamera, vertAngle);
+        
         mspWin->invalidate(); 
     };
 }
@@ -330,6 +346,110 @@ LxCanvasImp::handleEvent (std::string evt, lx0::core::lxvar params)
 
 //===========================================================================//
 
+class SkyMap : public Renderable
+{
+public:
+    virtual void generate(ElementPtr spElement,
+                      RasterizerGL& rasterizer,
+                      Camera& cam1,
+                      RasterizerGL::CameraPtr spCamera, 
+                      RasterizerGL::LightSetPtr spLightSet, 
+                      std::vector<RasterizerGL::ItemPtr>& list)
+    {
+        if (!mspItem)
+        {
+            lx0::blendreader::BlendReader reader;
+            reader.open("media2/models/unit_hemisphere-000.blend");
+            
+            auto meshBlocks = reader.getBlocksByType("Mesh");
+            for (auto it = meshBlocks.begin(); it != meshBlocks.end(); ++it)
+            {
+                auto spBlock = *it;
+                auto spMesh = reader.readObject( spBlock->address );
+                const auto totalVertices = spMesh->field<int>("totvert");
+                const auto totalFaces = spMesh->field<int>("totface");
+
+                std::vector<point3>  positions;
+                std::vector<vector3> normals;
+                std::vector<tuple3>  colors;
+                std::vector<unsigned short> indicies;
+
+                positions.reserve(totalVertices);
+                normals.reserve(totalVertices);
+                colors.reserve(totalVertices);
+                indicies.reserve(totalFaces * 4);
+
+                auto spVerts = reader.readObject( spMesh->field<unsigned __int64>("mvert") );
+                for (int i = 0; i < totalVertices; ++i)
+                {
+                    point3 p;
+                    p.x = spVerts->field<float>("co", 0);
+                    p.y = spVerts->field<float>("co", 1);
+                    p.z = spVerts->field<float>("co", 2);
+                    p.vec3 *= 2000;
+                    positions.push_back(p);
+
+                    vector3 n;
+                    n.x = spVerts->field<short>("no", 0) / float(std::numeric_limits<short>::max());
+                    n.y = spVerts->field<short>("no", 1) / float(std::numeric_limits<short>::max());
+                    n.z = spVerts->field<short>("no", 2) / float(std::numeric_limits<short>::max());
+                    normals.push_back(n);
+
+                    colors.push_back( tuple3(1, 1, 1) );
+
+                    spVerts->next();
+                }
+
+                auto spFaces = reader.readObject( spMesh->field<unsigned __int64>("mface") );
+                for (int i = 0; i < totalFaces; ++i)
+                {
+                    int vi[4];
+                    vi[0] = spFaces->field<int>("v1");
+                    vi[1] = spFaces->field<int>("v2");
+                    vi[2] = spFaces->field<int>("v3");
+                    vi[3] = spFaces->field<int>("v4");
+
+                    // Convert tris into degenerate quads
+                    if (vi[3] == 0)
+                        vi[3] = vi[2];
+
+                    for (int j = 0; j < 4; ++j)
+                        indicies.push_back(vi[j]);
+
+                    spFaces->next();
+                }
+                 
+                point3 pos( 0.0f, 0.0f, 0.0f);
+                pos.z = spElement->document()->getComponent<PhysicsSubsystem>("physics2")->drop(pos.x, pos.y);
+                pos.z -= 20.0f;
+
+                auto spGeom = rasterizer.createQuadList(indicies, positions, normals, colors);
+
+                auto spMat = rasterizer.createMaterial("media2/shaders/glsl/fragment/skymap.frag");
+                spMat->mBlend = false;
+                spMat->mWireframe = false;
+                spMat->mTextures[0] = rasterizer.createTexture("media2/textures/skymaps/polar/bluesky_grayclouds.png");
+
+                auto pItem = new RasterizerGL::Item;
+                pItem->spCamera   = spCamera;
+                pItem->spLightSet = spLightSet;
+                pItem->spMaterial = spMat;
+                pItem->spTransform = rasterizer.createTransform(pos.x, pos.y, pos.z);
+                pItem->spGeometry = spGeom;
+            
+                mspItem.reset(pItem);
+            }
+        }
+
+        list.push_back(mspItem);
+    }
+
+protected:
+    RasterizerGL::ItemPtr           mspItem;
+};
+
+//===========================================================================//
+
 class Sprite : public Renderable
 {
 public:
@@ -360,11 +480,11 @@ public:
             normals.push_back( vector3(0, 1, 0) );
             normals.push_back( vector3(0, 1, 0) );
 
-            std::vector<vector3> colors;
-            colors.push_back( vector3(0, 1, 0) );
-            colors.push_back( vector3(1, 1, 0) );
-            colors.push_back( vector3(1, 0, 0) );
-            colors.push_back( vector3(0, 0, 0) );
+            std::vector<tuple3> colors;
+            colors.push_back( tuple3(0, 1, 0) );
+            colors.push_back( tuple3(1, 1, 0) );
+            colors.push_back( tuple3(1, 0, 0) );
+            colors.push_back( tuple3(0, 0, 0) );
 
             std::vector<unsigned short> indicies;
             indicies.push_back(0);
@@ -412,6 +532,7 @@ main (int argc, char** argv)
         spEngine->addElementComponent("Terrain", "runtime", [](ElementPtr spElem) { return new Terrain::Runtime(spElem); }); 
         spEngine->addElementComponent("Terrain", "renderable", [](ElementPtr spElem) { return new Terrain::Render; });
         spEngine->addElementComponent("Sprite", "renderable", [](ElementPtr spElem) { return new Sprite; });
+        spEngine->addElementComponent("SkyMap", "renderable", [](ElementPtr spElem) { return new SkyMap; });
         
         DocumentPtr spDocument = spEngine->loadDocument("media2/appdata/sm_terrain/scene.xml");
         ViewPtr     spView     = spDocument->createView("LxCanvas", "view");

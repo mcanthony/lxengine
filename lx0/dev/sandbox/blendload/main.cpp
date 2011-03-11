@@ -74,8 +74,12 @@ main (int argc, char** argv)
 {
     lx_init();
 
+    std::string filename = "media/models/unit_cube.blend";
+    if (argc == 2)
+        filename = argv[1];
+
     BlendReader reader;
-    if ( reader.open("media/models/unit_cube.blend") )
+    if ( reader.open(filename) )
     {
         displayStructure(reader, "Mesh");
         displayStructure(reader, "MVert");

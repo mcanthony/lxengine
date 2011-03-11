@@ -93,10 +93,10 @@ namespace Terrain
     }
 
 
-    vector3 
+    tuple3 
     Runtime::calcColor(float s, float t)
     {
-        vector3 c;
+        tuple3 c;
         c.x = 1.0f - noise3d_perlin(s / 2.0f, t / 2.0f, .212f);
         c.y = 0.0f;
         c.z = 0.0f;
@@ -219,7 +219,7 @@ namespace Terrain
             }
         }
 
-        std::vector<vector3> colors (101 * 101);
+        std::vector<tuple3> colors (101 * 101);
         for (int y = 0; y <= 100; ++y)
         {
             for (int x = 0; x <= 100; ++x)

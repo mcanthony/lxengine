@@ -223,9 +223,10 @@ RasterizerGL::_createProgram2  (std::string fragShader)
 }
 
 RasterizerGL::Material::Material(GLuint id)
-    : mId       (id)
-    , mBlend    (false)
-    , mFilter   (GL_LINEAR)
+    : mId           (id)
+    , mBlend        (false)
+    , mWireframe    (false)
+    , mFilter       (GL_LINEAR)
 {
 }
 
@@ -294,6 +295,13 @@ RasterizerGL::Material::activate(RasterizerGL* pRasterizer)
     else
         glDisable(GL_BLEND);
 
+    //
+    // Wireframe?
+    //
+    if (mWireframe)
+        glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+    else
+        glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 }
 
 void 
@@ -391,7 +399,7 @@ RasterizerGL::GeometryPtr
 RasterizerGL::createQuadList (std::vector<unsigned short>& indices, 
                               std::vector<point3>& positions, 
                               std::vector<vector3>& normals,
-                              std::vector<vector3>& colors)
+                              std::vector<tuple3>& colors)
 {
     // Create a vertex array to store the vertex data
     //

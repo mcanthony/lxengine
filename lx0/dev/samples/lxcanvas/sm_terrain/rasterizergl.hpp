@@ -114,6 +114,7 @@ public:
         virtual void activate   (RasterizerGL*);
 
         bool        mBlend;
+        bool        mWireframe;
         int         mFilter;
         TexturePtr  mTextures[8];
     
@@ -182,7 +183,7 @@ public:
     GeometryPtr     createQuadList  (std::vector<unsigned short>& indices, 
                                      std::vector<point3>& positions, 
                                      std::vector<vector3>& normals,
-                                     std::vector<vector3>& colors);
+                                     std::vector<tuple3>& colors);
 
     void            refreshTextures (void);
 

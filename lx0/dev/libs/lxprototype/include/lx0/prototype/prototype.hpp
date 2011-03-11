@@ -54,6 +54,8 @@ namespace lx0 { namespace prototype {
 
     struct Camera
     {
+        lx0::core::vector3 forward () const { return mTarget - mPosition; }
+
         lx0::core::point3  mPosition;
         lx0::core::point3  mTarget;
         
