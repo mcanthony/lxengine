@@ -114,6 +114,8 @@ public:
         virtual void activate   (RasterizerGL*);
 
         bool        mBlend;
+        bool        mZTest;
+        bool        mZWrite;
         bool        mWireframe;
         int         mFilter;
         TexturePtr  mTextures[8];
@@ -178,6 +180,7 @@ public:
     TransformPtr    createTransform (matrix4& mat);
     TransformPtr    createTransform (float tx, float ty, float tz);
     TransformPtr    createTransformBillboard(float tx, float ty, float tz);
+    TransformPtr    createTransformEye      (float tx, float ty, float tz);
 
     GeometryPtr     createQuadList  (std::vector<point3>& quads);
     GeometryPtr     createQuadList  (std::vector<unsigned short>& indices, 

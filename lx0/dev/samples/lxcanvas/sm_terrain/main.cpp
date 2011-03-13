@@ -155,7 +155,7 @@ public:
 
         rasterizer.beginScene();
 
-        std::vector<RasterizerGL::ItemPtr> items;
+        RenderList items;
 
         std::vector<ElementPtr> elems;
         elems.swap( mspDocument->getElements() );
@@ -164,18 +164,13 @@ public:
             auto spRenderable = (*it)->getComponent<Renderable>("renderable");
             if (spRenderable)
             {
-                std::vector<RasterizerGL::ItemPtr> local;
-                spRenderable->generate(*it, rasterizer, gCamera, spCamera, spLightSet, local);
-
-                for (auto jt = local.begin(); jt != local.end(); ++jt)
-                {
-                    lx_check_error((*jt).get() != nullptr);
-                    items.push_back(*jt);
-                }
+                spRenderable->generate(*it, rasterizer, gCamera, spCamera, spLightSet, items);
             }
         }
 
-        rasterizer.rasterizeList(items);
+        rasterizer.rasterizeList(items.layer0);
+        rasterizer.rasterizeList(items.layer1);
+
         rasterizer.endScene();
 
         rasterizer.refreshTextures();
@@ -354,7 +349,7 @@ public:
                       Camera& cam1,
                       RasterizerGL::CameraPtr spCamera, 
                       RasterizerGL::LightSetPtr spLightSet, 
-                      std::vector<RasterizerGL::ItemPtr>& list)
+                      RenderList& list)
     {
         if (!mspItem)
         {
@@ -386,7 +381,7 @@ public:
                     p.x = spVerts->field<float>("co", 0);
                     p.y = spVerts->field<float>("co", 1);
                     p.z = spVerts->field<float>("co", 2);
-                    p.vec3 *= 2000;
+                    p.vec3 *= 200;
                     positions.push_back(p);
 
                     vector3 n;
@@ -428,20 +423,22 @@ public:
                 auto spMat = rasterizer.createMaterial("media2/shaders/glsl/fragment/skymap.frag");
                 spMat->mBlend = false;
                 spMat->mWireframe = false;
+                spMat->mZTest = false;
+                spMat->mZWrite = false;
                 spMat->mTextures[0] = rasterizer.createTexture("media2/textures/skymaps/polar/bluesky_grayclouds.png");
 
                 auto pItem = new RasterizerGL::Item;
                 pItem->spCamera   = spCamera;
                 pItem->spLightSet = spLightSet;
                 pItem->spMaterial = spMat;
-                pItem->spTransform = rasterizer.createTransform(pos.x, pos.y, pos.z);
+                pItem->spTransform = rasterizer.createTransformEye(pos.x, pos.y, pos.z);
                 pItem->spGeometry = spGeom;
             
                 mspItem.reset(pItem);
             }
         }
 
-        list.push_back(mspItem);
+        list.layer0.push_back(mspItem);
     }
 
 protected:
@@ -458,7 +455,7 @@ public:
                       Camera& cam1,
                       RasterizerGL::CameraPtr spCamera, 
                       RasterizerGL::LightSetPtr spLightSet, 
-                      std::vector<RasterizerGL::ItemPtr>& list)
+                      RenderList& list)
     {
         if (!mspItem)
         {
@@ -509,7 +506,7 @@ public:
             mspItem.reset(pItem);
         }
 
-        list.push_back(mspItem);
+        list.layer1.push_back(mspItem);
     }
 
 protected:

@@ -32,6 +32,12 @@
 #include <lx0/prototype/prototype.hpp>
 #include "rasterizergl.hpp"
 
+struct RenderList
+{
+    std::vector<RasterizerGL::ItemPtr> layer0;
+    std::vector<RasterizerGL::ItemPtr> layer1;
+};
+
 class Renderable : public lx0::core::Element::Component
 {
 public:
@@ -40,5 +46,5 @@ public:
                   lx0::prototype::Camera& cam1,
                   RasterizerGL::CameraPtr spCamera, 
                   RasterizerGL::LightSetPtr spLightSet, 
-                  std::vector<RasterizerGL::ItemPtr>& list) = 0;
+                  RenderList& list) = 0;
 };

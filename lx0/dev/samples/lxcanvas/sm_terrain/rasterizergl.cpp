@@ -225,6 +225,8 @@ RasterizerGL::_createProgram2  (std::string fragShader)
 RasterizerGL::Material::Material(GLuint id)
     : mId           (id)
     , mBlend        (false)
+    , mZWrite       (true)
+    , mZTest        (true)
     , mWireframe    (false)
     , mFilter       (GL_LINEAR)
 {
@@ -283,6 +285,17 @@ RasterizerGL::Material::activate(RasterizerGL* pRasterizer)
         glEnable(GL_TEXTURE_2D);
     else
         glDisable(GL_TEXTURE_2D);
+
+    //
+    // Z Test/Write
+    //
+    if (mZTest)
+        glEnable(GL_DEPTH_TEST);
+    else
+        glDisable(GL_DEPTH_TEST);
+
+    glDepthMask(mZWrite ? GL_TRUE : GL_FALSE);
+    
 
     //
     // Set up blending
@@ -506,6 +519,53 @@ RasterizerGL::createTransform (float tx, float ty, float tz)
     TransformPtr spTransform(new Transform);
     set_translation(spTransform->mat, tx, ty, tz);
     return spTransform;
+}
+
+struct EyeTransform : public RasterizerGL::Transform
+{
+    EyeTransform (float tx, float ty, float tz)
+        : pos (tx, ty, tz)
+    {
+    }
+
+    virtual void activate(RasterizerGL::CameraPtr spCamera)
+    {
+        // The transformation intends to keep the object coordinates relative to the camera,
+        // rather than relative to the world origin.   The intent is to therefore offset
+        // the object coordinate system by the opposite of the camera offset - i.e. moving
+        // the object coordinate system to be at the camera origin.
+        //
+        // The camera translation is stored in the 3rd row of the view matrix.  The translation
+        // is in eye coordinates, therefore to come up with the world coordinate equivalent,
+        // those translation values are multipled by the basis vectors (i.e. the first 3 columns
+        // of the view matrix).
+        //
+        auto& view = spCamera->viewMatrix;
+
+        const vector3 t(view(3,0), view(3,1), view(3,2));
+        const auto& camX = spCamera->viewMatrix.column[0];
+        const auto& camY = spCamera->viewMatrix.column[1];
+        const auto& camZ = spCamera->viewMatrix.column[2];
+
+        vector3 translation;
+        translation.x = t.x * camX.x + t.y * camY.x + t.z * camZ.x; 
+        translation.y = t.x * camX.y + t.y * camY.y + t.z * camZ.y; 
+        translation.z = t.x * camX.z + t.y * camY.z + t.z * camZ.z; 
+
+        set_identity(mat);
+        set_translation(mat, -translation.x, -translation.y, -translation.z);
+        
+        glMatrixMode(GL_MODELVIEW);
+        glMultTransposeMatrixf(mat.data);
+    }
+
+    point3 pos;
+};
+
+RasterizerGL::TransformPtr
+RasterizerGL::createTransformEye (float tx, float ty, float tz)
+{
+    return TransformPtr(new EyeTransform(tx, ty, tz));
 }
 
 RasterizerGL::TransformPtr

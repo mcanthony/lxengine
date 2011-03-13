@@ -124,7 +124,7 @@ namespace Terrain
                     Camera& cam1,
                     RasterizerGL::CameraPtr spCamera, 
                     RasterizerGL::LightSetPtr spLightSet, 
-                    std::vector<RasterizerGL::ItemPtr>& list)
+                    RenderList& list)
     {
         const int bx = int(cam1.mPosition.x / 100.0f);
         const int by = int(cam1.mPosition.y / 100.0f);
@@ -152,7 +152,7 @@ namespace Terrain
                     spTile = it->second;
 
                 if (spTile.get() != nullptr)
-                    list.push_back(spTile);
+                    list.layer1.push_back(spTile);
             }
         }
     }

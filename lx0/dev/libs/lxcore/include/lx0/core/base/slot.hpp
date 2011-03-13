@@ -5,7 +5,7 @@
     LICENSE
     * MIT License (http://www.opensource.org/licenses/mit-license.php)
 
-    Copyright (c) 2010 athile@athile.net (http://www.athile.net)
+    Copyright (c) 2010-2011 athile@athile.net (http://www.athile.net)
 
     Permission is hereby granted, free of charge, to any person obtaining a 
     copy of this software and associated documentation files (the "Software"), 
@@ -35,10 +35,12 @@
 
 namespace lx0 { namespace core {
 
+    //! A Qt-like slot
     /*
         TODO:
         - Use PIMPL pattern to reduce overhead of common cases (empty slot, 1 call slot, etc.)
         - When variadic templates are supported by VS2010, simplify invokation
+        - Make mIdCounter into a global (no need for it to be a member)
      */
     template <typename Signature>
     class slot
@@ -49,6 +51,8 @@ namespace lx0 { namespace core {
 
         slot() : mIdCounter (0) {}
 
+        //@name Invokation
+        //@{
         void operator() () { invoke(std::make_tuple()); }
         template <typename T0>              
         void operator()  (T0 t0) { invoke(std::make_tuple(t0) ); }
@@ -62,8 +66,9 @@ namespace lx0 { namespace core {
         void operator()  (T0 t0, T1 t1, T2 t2, T3 t3, T4 t4) { invoke(std::make_tuple(t0, t1, t2, t3, t4) ); }
         template <typename T0, typename T1, typename T2, typename T3, typename T4, typename T5> 
         void operator()  (T0 t0, T1 t1, T2 t2, T3 t3, T4 t4, T5 t5) { invoke(std::make_tuple(t0, t1, t2, t3, t4, t5) ); }
+        //@}
 
-        void operator=  (Function f) { mBody.resize(1); mBody[0] = std::make_pair(++mIdCounter, f); }
+        int  operator=  (Function f) { mBody.resize(1); mBody[0] = std::make_pair(++mIdCounter, f); return mIdCounter; }
         int  operator+= (Function f) { mBody.push_back(std::make_pair(++mIdCounter, f)); return mIdCounter; }
         void operator-= (int id) { 
             for (auto it = mBody.begin(); it != mBody.end(); ++it) { 

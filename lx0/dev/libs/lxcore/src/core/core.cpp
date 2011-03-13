@@ -48,9 +48,35 @@ namespace lx0 { namespace core {
     slot<void (const char*)> slotAssert;
     slot<void (const char*)> slotDebug;
 
-
     static bool s_lx_init_called = false;
 
+    // Internal function to ensure initialization has occured.
+    /*
+        The intended behavior is:
+
+        (a) do nothing in production code - the developer is intended to properly
+        initialize the system.
+
+        (b) in debug code, cause an ignorable error.  This is done by initilizing
+        for the developer (so they can continue to debug the application), but 
+        causing an error so that the initilization problem will be fixed.
+     */
+    static inline void
+    _lx_check_init()
+    {
+#ifdef _DEBUG
+        if (!s_lx_init_called)
+        {
+            lx_init();
+            lx_error("lx_init() has not been called!");
+        }
+#endif
+    }
+
+    /*!
+        Initializes the LxEngine code.  This is a small, low-cost function.  It can be
+        safely called multiple times.
+     */
     void 
     lx_init()
     {
@@ -71,18 +97,9 @@ namespace lx0 { namespace core {
         }
     }
 
-    static inline void
-    _lx_check_init()
-    {
-#ifdef _DEBUG
-        if (!s_lx_init_called)
-        {
-            lx_init();
-            lx_error("lx_init() has not been called!");
-        }
-#endif
-    }
-
+    /*!
+        Check that a condition is true.   If it is not, cause an error.
+     */
     void 
     lx_assert (bool condition)
     {
@@ -92,6 +109,10 @@ namespace lx0 { namespace core {
             *(char*)(void*)(0x0) = 'a';
     }
 
+    /*!
+        Check that a condition is true.   If it is not, cause an error.
+        Provides an string message with additional information as well.
+     */
     void 
     lx_assert (bool condition, const char* format, ...)
     {
@@ -108,6 +129,10 @@ namespace lx0 { namespace core {
         }
     }
 
+    /*!
+        Similar to lx_assert() but will cause lx_error() to be called if the
+        condition fails in *either* production or debug code.
+     */
     void 
     lx_check_error (bool condition)
     {
@@ -117,6 +142,10 @@ namespace lx0 { namespace core {
             lx_error("Error condition encountered!");
     }
 
+    /*!
+        Overload of lx_check_error that provides an additional string of
+        information.
+     */
     void 
     lx_check_error (bool condition, const char* format, ...)
     {
@@ -133,6 +162,10 @@ namespace lx0 { namespace core {
         }
     }
 
+    /*!
+        Similar to lx_check_error() but will cause lx_fatal() to be called if the
+        condition fails in *either* production or debug code.
+     */
     void 
     lx_check_fatal (bool condition)
     {
@@ -148,6 +181,13 @@ namespace lx0 { namespace core {
         lx_fatal("Unknown fatal error!");
     }
 
+    /*!
+        Reserved for unrecoverable errors.  Throws a lx0::fatal_exception.
+        Subsystems that catch the exception should do minimal work to 
+        attempt to save critical user data and then re-throw the exception.
+        The application should shutdown immediately in response to a 
+        fatal exception.
+     */
     void
     lx_fatal (const char* format, ...)
     {

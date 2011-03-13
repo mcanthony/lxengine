@@ -33,7 +33,7 @@
 namespace lx0 { namespace core { namespace math { namespace radians {
 
     //=======================================================================//
-    //!
+    //! Strongly typed radian class
     /*!
         The strongly typed radian class is intended to allow the compiler to enforce 
         correct usage of degrees or radians depending on the context.

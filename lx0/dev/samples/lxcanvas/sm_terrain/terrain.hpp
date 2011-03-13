@@ -59,7 +59,7 @@ namespace Terrain
                       Camera& cam1,
                       RasterizerGL::CameraPtr spCamera, 
                       RasterizerGL::LightSetPtr spLightSet, 
-                      std::vector<RasterizerGL::ItemPtr>& list);
+                      RenderList& list);
 
     protected:
         RasterizerGL::MaterialPtr       _ensureMaterial (RasterizerGL& rasterizer);
