@@ -168,8 +168,8 @@ public:
             }
         }
 
-        rasterizer.rasterizeList(items.layer0);
-        rasterizer.rasterizeList(items.layer1);
+        for (auto it = items.begin(); it != items.end(); ++it)
+            rasterizer.rasterizeList(it->second);
 
         rasterizer.endScene();
 
@@ -438,7 +438,7 @@ public:
             }
         }
 
-        list.layer0.push_back(mspItem);
+        list[0].push_back(mspItem);
     }
 
 protected:
@@ -447,22 +447,26 @@ protected:
 
 //===========================================================================//
 
-class Sprite : public Renderable
+class SpriteShared
 {
 public:
-    virtual void generate(ElementPtr spElement,
-                      RasterizerGL& rasterizer,
-                      Camera& cam1,
-                      RasterizerGL::CameraPtr spCamera, 
-                      RasterizerGL::LightSetPtr spLightSet, 
-                      RenderList& list)
+    RasterizerGL::MaterialPtr _ensureMaterial (RasterizerGL& rasterizer, std::string image)
     {
-        if (!mspItem)
+        if (!mspMaterial)
         {
-            lxvar attrPos = spElement->attr("position");
-            point3 pos( attrPos.at(0).asFloat(), attrPos.at(1).asFloat(), 0.0f);
-            pos.z = spElement->document()->getComponent<PhysicsSubsystem>("physics2")->drop(pos.x, pos.y);
+            auto spMat = rasterizer.createMaterial("media2/shaders/glsl/fragment/texture1_fog.frag");
+            spMat->mBlend = true;
+            spMat->mFilter = GL_NEAREST;
+            spMat->mTextures[0] = rasterizer.createTexture(image.c_str());
+            mspMaterial = spMat;
+        }
+        return mspMaterial;
+    }
 
+    RasterizerGL::GeometryPtr  _ensureGeom (RasterizerGL& rasterizer)
+    {
+        if (!mspGeom)
+        {
             const float kSize = 16.0f;
 
             std::vector<point3> positions;
@@ -489,24 +493,57 @@ public:
             indicies.push_back(2);
             indicies.push_back(3);
 
-            auto spGeom = rasterizer.createQuadList(indicies, positions, normals, colors);
+            mspGeom = rasterizer.createQuadList(indicies, positions, normals, colors);
+        }
+        return mspGeom;
+    }
 
-            auto spMat = rasterizer.createMaterial("media2/shaders/glsl/fragment/texture1_fog.frag");
-            spMat->mBlend = true;
-            spMat->mFilter = GL_NEAREST;
-            spMat->mTextures[0] = rasterizer.createTexture("media2/textures/icons/rltile-modified/tree_01.png");
+    static std::shared_ptr<SpriteShared> acquire()
+    {
+        static std::weak_ptr<SpriteShared> s_wpSingleton;
+        auto spSingleton = s_wpSingleton.lock();
+        if (!spSingleton)
+        {
+            spSingleton.reset(new SpriteShared);
+            s_wpSingleton = spSingleton;
+        }
+        return spSingleton;
+    }
+
+protected:
+    RasterizerGL::MaterialPtr       mspMaterial;
+    RasterizerGL::GeometryPtr       mspGeom;
+};
+
+class Sprite : public Renderable
+{
+public:
+    virtual void generate(ElementPtr spElement,
+                      RasterizerGL& rasterizer,
+                      Camera& cam1,
+                      RasterizerGL::CameraPtr spCamera, 
+                      RasterizerGL::LightSetPtr spLightSet, 
+                      RenderList& list)
+    {
+        if (!mspItem)
+        {
+            lxvar attrPos = spElement->attr("position");
+            point3 pos( attrPos.at(0).asFloat(), attrPos.at(1).asFloat(), 0.0f);
+            pos.z = spElement->document()->getComponent<PhysicsSubsystem>("physics2")->drop(pos.x, pos.y);
+
+            std::string image = spElement->attr("image").asString();
 
             auto pItem = new RasterizerGL::Item;
             pItem->spCamera   = spCamera;
             pItem->spLightSet = spLightSet;
-            pItem->spMaterial = spMat;
-            pItem->spTransform = rasterizer.createTransformBillboard(pos.x, pos.y, pos.z);
-            pItem->spGeometry = spGeom;
+            pItem->spMaterial = SpriteShared::acquire()->_ensureMaterial(rasterizer, image);
+            pItem->spTransform = rasterizer.createTransformBillboardXY(pos.x, pos.y, pos.z);
+            pItem->spGeometry = SpriteShared::acquire()->_ensureGeom(rasterizer);
             
             mspItem.reset(pItem);
         }
 
-        list.layer1.push_back(mspItem);
+        list[1].push_back(mspItem);
     }
 
 protected:

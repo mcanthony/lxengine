@@ -32,11 +32,7 @@
 #include <lx0/prototype/prototype.hpp>
 #include "rasterizergl.hpp"
 
-struct RenderList
-{
-    std::vector<RasterizerGL::ItemPtr> layer0;
-    std::vector<RasterizerGL::ItemPtr> layer1;
-};
+typedef std::map<int, std::vector<RasterizerGL::ItemPtr> > RenderList;
 
 class Renderable : public lx0::core::Element::Component
 {

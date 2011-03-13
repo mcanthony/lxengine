@@ -150,11 +150,6 @@ public:
     };
     typedef std::shared_ptr<Transform> TransformPtr;
 
-    struct BillboardTransform : public Transform
-    {
-        virtual void activate(CameraPtr);
-    };
-
     class Item
     {
     public:
@@ -179,7 +174,7 @@ public:
 
     TransformPtr    createTransform (matrix4& mat);
     TransformPtr    createTransform (float tx, float ty, float tz);
-    TransformPtr    createTransformBillboard(float tx, float ty, float tz);
+    TransformPtr    createTransformBillboardXY(float tx, float ty, float tz);
     TransformPtr    createTransformEye      (float tx, float ty, float tz);
 
     GeometryPtr     createQuadList  (std::vector<point3>& quads);

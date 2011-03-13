@@ -1,4 +1,4 @@
 pushd .
-cd libs\core
+cd libs\lxcore
 doxygen Doxyfile
 popd

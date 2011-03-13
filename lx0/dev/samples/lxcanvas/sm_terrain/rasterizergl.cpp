@@ -4,7 +4,7 @@
 
     LICENSE
 
-    Copyright (c) 2010 athile@athile.net (http://www.athile.net)
+    Copyright (c) 2010-2011 athile@athile.net (http://www.athile.net)
 
     Permission is hereby granted, free of charge, to any person obtaining a 
     copy of this software and associated documentation files (the "Software"), 
@@ -45,6 +45,8 @@ void RasterizerGL::initialize()
     // Initialization
     //
     lx_log("Using OpenGL v%s", (const char*)glGetString(GL_VERSION));
+
+    glClearColor(0.09f, 0.09f, 0.11f, 1.0f);
 
     glEnable(GL_DEPTH_TEST);
 
@@ -568,8 +570,28 @@ RasterizerGL::createTransformEye (float tx, float ty, float tz)
     return TransformPtr(new EyeTransform(tx, ty, tz));
 }
 
+struct BillboardTransform : public RasterizerGL::Transform
+{
+    virtual void activate(RasterizerGL::CameraPtr spCamera)
+    {
+        // The first column of the view matrix contains the "right" vector
+        // of the camera: that is to say, the x-axis (1, 0, 0) of the camera
+        // in terms of world space.  Therefore, check the angle between that
+        // vector and world x to know how much to rotate the model to ensure
+        // the model x is always aligned to the camera x.  I.e. rotate the
+        // model by the same amount as the camera about the z-axis.
+        //
+        const auto& cameraX = spCamera->viewMatrix.column[0];   
+        const float radians = atan2(cameraX.y, cameraX.x);
+
+        glMatrixMode(GL_MODELVIEW);   
+        glMultTransposeMatrixf(mat.data);
+        glRotatef(radians * 180.0f / 3.1415926f, 0.0f, 0.0f, 1.0f);
+    }
+};
+
 RasterizerGL::TransformPtr
-RasterizerGL::createTransformBillboard (float tx, float ty, float tz)
+RasterizerGL::createTransformBillboardXY (float tx, float ty, float tz)
 {
     TransformPtr spTransform(new BillboardTransform);
     set_translation(spTransform->mat, tx, ty, tz);
@@ -583,23 +605,7 @@ RasterizerGL::Transform::activate (CameraPtr)
     glMultTransposeMatrixf(mat.data);
 }
 
-void
-RasterizerGL::BillboardTransform::activate(CameraPtr spCamera)
-{
-    // The first column of the view matrix contains the "right" vector
-    // of the camera: that is to say, the x-axis (1, 0, 0) of the camera
-    // in terms of world space.  Therefore, check the angle between that
-    // vector and world x to know how much to rotate the model to ensure
-    // the model x is always aligned to the camera x.  I.e. rotate the
-    // model by the same amount as the camera about the z-axis.
-    //
-    const auto& cameraX = spCamera->viewMatrix.column[0];   
-    const float radians = atan2(cameraX.y, cameraX.x);
 
-    glMatrixMode(GL_MODELVIEW);   
-    glMultTransposeMatrixf(mat.data);
-    glRotatef(radians * 180.0f / 3.1415926f, 0.0f, 0.0f, 1.0f);
-}
 
 void 
 RasterizerGL::refreshTextures (void)

@@ -129,30 +129,39 @@ namespace Terrain
         const int bx = int(cam1.mPosition.x / 100.0f);
         const int by = int(cam1.mPosition.y / 100.0f);
 
-        const int dist = 10;
-        for (int gy = -dist; gy <= dist; gy++)
+        std::vector<std::pair<short,short>> buildList;
+        const int kRenderDist = 10;
+        const int kBuildDist = 6;
+        for (int gy = -kRenderDist; gy <= kRenderDist; gy++)
         {
-            for (int gx = -dist; gx <= dist; gx++)
+            for (int gx = -kRenderDist; gx <= kRenderDist; gx++)
             {
                 std::pair<short, short> grid;
                 grid.first = bx + gx;
                 grid.second = by + gy;
 
-                RasterizerGL::ItemPtr spTile;
                 auto it = mMap.find(grid);
                 if (it == mMap.end())
                 {
-                    if (abs(gx) < 5 && abs(gy) < 5) 
-                    {
-                        spTile = _buildTile(spElement, rasterizer, spCamera, spLightSet, grid.first, grid.second);
-                        mMap.insert(std::make_pair(grid, spTile));
-                    }
+                    if (abs(gx) < kBuildDist && abs(gy) < kBuildDist) 
+                        buildList.push_back(grid);
                 }
                 else
-                    spTile = it->second;
+                    list[1].push_back(it->second);
+            }
+        }
 
-                if (spTile.get() != nullptr)
-                    list.layer1.push_back(spTile);
+        if (!buildList.empty())
+        {
+            lx_debug("Building %u tiles (%u existing)...", buildList.size(), mMap.size());
+
+            for (auto it = buildList.begin(); it != buildList.end(); ++it)
+            {
+                RasterizerGL::ItemPtr spTile;
+                spTile = _buildTile(spElement, rasterizer, spCamera, spLightSet, it->first, it->second);
+                mMap.insert(std::make_pair(*it, spTile));
+
+                list[1].push_back(spTile);
             }
         }
     }
