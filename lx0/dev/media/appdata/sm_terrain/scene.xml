@@ -8,6 +8,7 @@
         var ref = $("<Sprite/>");
         ref.attr("ref", "unit_cube");
         ref.attr("position", [x, y]);
+        ref.attr("scale", 16);
         ref.attr("image", "media2/textures/icons/rltile-modified/tree_01.png");
         $("#trees").append(ref);
       }
@@ -17,6 +18,7 @@
         var ref = $("<Sprite/>");
         ref.attr("ref", "unit_cube");
         ref.attr("position", [x, y]);
+        ref.attr("scale", 2);
         ref.attr("image", "media2/textures/icons/creatures/sheep-000.png");
         $("#trees").append(ref);
         
@@ -28,9 +30,18 @@
         var e = ref._selection[0];
         e.onUpdate = function () { 
           var pos = e.getAttribute("position");
-          e.setAttribute("position", [ pos[0] + 1, pos[1] + .1 ]);
-          __lx_print("Position (" + pos[0] + ", " + pos[1] + ")");
+          var dx = e.data.target[0] - pos[0];
+          var dy = e.data.target[1] - pos[1];
+          
+          if (Math.abs(dx) > .2 && Math.abs(dy) > .2) {
+            var npos = [ pos[0] + Math.sign(dx) * .1, pos[1] + Math.sign(dy) * .1 ];
+            e.setAttribute("position", npos);
+          }
+          else
+            e.data.target = [ Math.random(-400, 400), Math.random(-400, 400) ];
         };
+        e.data = {};
+        e.data.target = [ Math.random(-400, 400), Math.random(-400, 400) ];
       }
       
       __lx_print("Adding trees...");
@@ -45,7 +56,9 @@
       }
       __lx_print("Done adding trees.");
       
-      addSheep(Math.random(-400, 400), Math.random(-400, 400));
+      for (var i = 0; i < 128; ++i)
+        addSheep(Math.random(-400, 400), Math.random(-400, 400));
+        
       __lx_print("Done adding the sheep.");
 
       //-->

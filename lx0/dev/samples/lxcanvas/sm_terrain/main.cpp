@@ -494,7 +494,7 @@ public:
     {
         if (!mspGeom)
         {
-            const float kSize = 16.0f;
+            const float kSize = 1.0f;
 
             std::vector<point3> positions;
             positions.push_back( point3(0, 0, 0) );
@@ -568,7 +568,9 @@ public:
         lxvar attrPos = spElement->attr("position");
         point3 pos( attrPos.at(0).asFloat(), attrPos.at(1).asFloat(), 0.0f);
         pos.z = spElement->document()->getComponent<PhysicsSubsystem>("physics2")->drop(pos.x, pos.y);
-        mspItem->spTransform = rasterizer.createTransformBillboardXY(pos.x, pos.y, pos.z);
+
+        float scale = spElement->attr("scale").query(1.0f);
+        mspItem->spTransform = rasterizer.createTransformBillboardXYS(pos.x, pos.y, pos.z, scale, scale, scale);
 
         list[1].push_back(mspItem);
     }

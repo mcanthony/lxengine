@@ -65,6 +65,16 @@ namespace lx0 { namespace core {
         mat.column[2][3] = tz;
     }
 
+    void    
+    set_scale (matrix4& mat, float sx, float sy, float sz)
+    {
+        set_identity(mat);
+
+        mat.column[0][0] = sx;
+        mat.column[1][1] = sy;
+        mat.column[2][2] = sz;
+    }
+
     /*!
         This function creates a matrix that can transform from one coordinate
         system to another.  The input x, y, and z vectors are the new axes in
@@ -165,5 +175,16 @@ namespace lx0 { namespace core {
         setOrthonormalBasis(mat, right, up, -forward, -position);
     }
 
+
+    void
+    mul (matrix4& c, const matrix4& a, const matrix4& b)
+    {
+        lx_check_error(&c != &a);
+        lx_check_error(&c != &b);
+
+        for (int i = 0; i < 4; i++)
+            for (int j = 0; j < 4; ++j)
+                c(i,j) = a(i,0) * b(0,j) + a(i,1) * b(1,j) + a(i,2) * b(2,j) + a(i,3) * b(3,j);
+    }
 
 }}

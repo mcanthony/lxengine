@@ -175,6 +175,7 @@ public:
     TransformPtr    createTransform             (matrix4& mat);
     TransformPtr    createTransform             (float tx, float ty, float tz);
     TransformPtr    createTransformBillboardXY  (float tx, float ty, float tz);
+    TransformPtr    createTransformBillboardXYS (float tx, float ty, float tz, float sx, float sy, float sz);
     TransformPtr    createTransformEye          (float tx, float ty, float tz, lx0::radians z_angle);
 
     GeometryPtr     createQuadList  (std::vector<point3>& quads);

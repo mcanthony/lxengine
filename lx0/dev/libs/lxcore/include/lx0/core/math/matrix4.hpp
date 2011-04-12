@@ -68,6 +68,7 @@ namespace lx0 { namespace core {
 
     void    set_identity        (matrix4& m);
     void    set_translation     (matrix4& m, float tx, float ty, float tz);
+    void    set_scale           (matrix4& m, float sx, float sy, float sz);
     void    copy                (matrix4& a, const matrix4& b);
     void    mul                 (matrix4& c, const matrix4& a, const matrix4& b);
     void    transpose           (matrix4& a, const matrix4& b);
@@ -79,5 +80,6 @@ namespace lx0 { namespace core {
     void    lookAt              (matrix4& mat, const point3& position, const point3& target, const vector3& referenceUpAxis);
 
     inline vector3 operator*    (const vector3& v, const matrix4& m);
+    inline matrix4 operator*    (const matrix4& a, const matrix4& b) { matrix4 c; mul(c, a, b); return c; }
 
 }};

@@ -602,6 +602,19 @@ RasterizerGL::createTransformBillboardXY (float tx, float ty, float tz)
     return spTransform;
 }
 
+RasterizerGL::TransformPtr
+RasterizerGL::createTransformBillboardXYS (float tx, float ty, float tz, float sx, float sy, float sz)
+{
+    TransformPtr spTransform(new BillboardTransform);
+    set_translation(spTransform->mat, tx, ty, tz);
+
+    matrix4 s;
+    set_scale(s, sx, sy, sz);
+
+    spTransform->mat = s * spTransform->mat;
+    return spTransform;
+}
+
 void
 RasterizerGL::Transform::activate (CameraPtr)
 {

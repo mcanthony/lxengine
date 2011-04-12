@@ -1114,6 +1114,25 @@ namespace lx0 { namespace core { namespace detail {
             float a = _marshal(args[0]);
             return _marshal( ::cos(a) );
         }
+
+        Handle<Value> abs (const v8::Arguments& args)
+        {
+            float a = _marshal(args[0]);
+            return _marshal( fabs(a) );
+        }
+
+        Handle<Value> sign (const v8::Arguments& args)
+        {
+            float a = _marshal(args[0]);
+            int s;
+            if (a < 0.0f) 
+                s = -1;
+            else if (a > 0.0f)
+                s = 1;
+            else
+                s = 0;
+            return _marshal(s);
+        }
     }
 
     void
@@ -1158,6 +1177,8 @@ namespace lx0 { namespace core { namespace detail {
         proto_t->Set("random",  FunctionTemplate::New(Math::random));
         method("sin",   W::sin);
         method("cos",   W::cos);
+        method("abs",   W::abs);
+        method("sign",  W::sign);
 
         // Create the function and add it to the global object 
         //
