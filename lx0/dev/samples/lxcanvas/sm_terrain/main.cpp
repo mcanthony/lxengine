@@ -148,6 +148,21 @@ public:
 
     }
 
+    void
+    update (void)
+    {
+        std::vector<ElementPtr> elems;
+        elems.swap( mspDocument->getElements() );
+        for (auto it = elems.begin(); it != elems.end(); ++it)
+        {
+            auto spRenderable = (*it)->getComponent<Renderable>("renderable");
+            if (spRenderable)
+            {
+                spRenderable->update(*it);
+            }
+        }
+    }
+
     void 
     render (void)	
     {
@@ -308,6 +323,9 @@ void
 LxCanvasImp::updateFrame (DocumentPtr spDocument) 
 {
     mController.updateFrame(mpHostView->shared_from_this(), mspWin->keyboard());
+    mRenderer.update();
+
+    mspWin->invalidate(); 
 }
 
 void 
@@ -344,6 +362,11 @@ LxCanvasImp::handleEvent (std::string evt, lx0::core::lxvar params)
 class SkyMap : public Renderable
 {
 public:
+    virtual void update(ElementPtr spElement)
+    {
+        mRotation += lx0::twoPi() / 30.0f;
+    }
+
     virtual void generate(ElementPtr spElement,
                       RasterizerGL& rasterizer,
                       Camera& cam1,
@@ -417,6 +440,7 @@ public:
                 point3 pos( 0.0f, 0.0f, 0.0f);
                 pos.z = spElement->document()->getComponent<PhysicsSubsystem>("physics2")->drop(pos.x, pos.y);
                 pos.z -= 20.0f;
+                mPosition = pos;
 
                 auto spGeom = rasterizer.createQuadList(indicies, positions, normals, colors);
 
@@ -431,17 +455,20 @@ public:
                 pItem->spCamera   = spCamera;
                 pItem->spLightSet = spLightSet;
                 pItem->spMaterial = spMat;
-                pItem->spTransform = rasterizer.createTransformEye(pos.x, pos.y, pos.z);
+                pItem->spTransform = rasterizer.createTransformEye(pos.x, pos.y, pos.z, lx0::radians(0.0f));
                 pItem->spGeometry = spGeom;
             
                 mspItem.reset(pItem);
             }
         }
 
+        mspItem->spTransform = rasterizer.createTransformEye(mPosition.x, mPosition.y, mPosition.z, mRotation);
         list[0].push_back(mspItem);
     }
 
 protected:
+    point3                          mPosition;
+    lx0::radians                    mRotation;
     RasterizerGL::ItemPtr           mspItem;
 };
 
@@ -527,21 +554,21 @@ public:
     {
         if (!mspItem)
         {
-            lxvar attrPos = spElement->attr("position");
-            point3 pos( attrPos.at(0).asFloat(), attrPos.at(1).asFloat(), 0.0f);
-            pos.z = spElement->document()->getComponent<PhysicsSubsystem>("physics2")->drop(pos.x, pos.y);
-
             std::string image = spElement->attr("image").asString();
 
             auto pItem = new RasterizerGL::Item;
             pItem->spCamera   = spCamera;
             pItem->spLightSet = spLightSet;
             pItem->spMaterial = SpriteShared::acquire()->_ensureMaterial(rasterizer, image);
-            pItem->spTransform = rasterizer.createTransformBillboardXY(pos.x, pos.y, pos.z);
             pItem->spGeometry = SpriteShared::acquire()->_ensureGeom(rasterizer);
             
             mspItem.reset(pItem);
         }
+
+        lxvar attrPos = spElement->attr("position");
+        point3 pos( attrPos.at(0).asFloat(), attrPos.at(1).asFloat(), 0.0f);
+        pos.z = spElement->document()->getComponent<PhysicsSubsystem>("physics2")->drop(pos.x, pos.y);
+        mspItem->spTransform = rasterizer.createTransformBillboardXY(pos.x, pos.y, pos.z);
 
         list[1].push_back(mspItem);
     }

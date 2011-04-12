@@ -49,6 +49,16 @@
 
 namespace lx0 { namespace core {  
 
+
+    //===========================================================================//
+    //! Interface for attaching objects to the Element to respond to events.
+    /*!
+        A ElementComponent is similar to a "Listener" in Java terminology.
+        It is an interface for objects that respond to events on a base object.
+        In the case of a Component, the lifetime of the Component is usually tied
+        to the lifetime of the Element itself via a shared pointer.
+
+     */
     class ElementComponent : public detail::_ComponentBase
     {
     public:
@@ -56,6 +66,7 @@ namespace lx0 { namespace core {
         virtual void    onValueChange       (ElementPtr spElem, lxvar value) {}
         virtual void    onAdded             (void) {}
         virtual void    onRemoved           (void) {}
+        virtual void    onUpdate            (ElementPtr spElem) {}
     };
 
     //===========================================================================//
@@ -111,6 +122,7 @@ namespace lx0 { namespace core {
 
         void            notifyAdded     (Document* pDocument);
         void            notifyRemoved   (Document* pDocument);
+        void            notifyUpdate    (Document* pDocument);
 
         DocumentPtr     document        (void);
 

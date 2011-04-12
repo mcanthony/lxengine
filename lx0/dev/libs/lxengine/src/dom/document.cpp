@@ -132,6 +132,11 @@ namespace lx0 { namespace core {
         return spElem;
     }
 
+    /*!
+        Helper method that traverses the Elements in the Document from root down
+        (depth-first) and calls the function f on each Element.  The traversal
+        will stop if f() returns true or all elements have been visited.
+     */
     bool
     Document::_walkElements (std::function<bool (ElementPtr)> f)
     {
@@ -240,13 +245,18 @@ namespace lx0 { namespace core {
         });          
         slotUpdateRun();
 
+        _walkElements([&](ElementPtr spElem) -> bool {
+            spElem->notifyUpdate(this);
+            return false;
+        });
+
         for (auto it = m_views.begin(); it != m_views.end(); ++it)
             it->second->updateFrame();
     }
 
     void Document::notifyElementAdded (ElementPtr spElem)
     {
-        // Automatically attach all registered Element componet for the given tag
+        // Automatically attach all registered Element components for the given tag
         //
         auto comps = Engine::acquire()->elementComponents();
 

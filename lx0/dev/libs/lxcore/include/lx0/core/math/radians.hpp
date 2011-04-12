@@ -42,7 +42,14 @@ namespace lx0 { namespace core { namespace math { namespace radians {
     {
     public:
                  radians (void)    : value (0.0f) {}
+                 radians (const radians& t) : value (t.value) {}
         explicit radians (float r) : value (r) {}
+
+
+        radians     operator*   (float s) const { return radians(value * s); }
+        radians     operator/   (float s) const { return radians(value / s); }
+
+        void        operator+=  (radians r)     { value += r.value; }
 
         float value;
     };

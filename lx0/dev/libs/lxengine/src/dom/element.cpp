@@ -230,6 +230,12 @@ namespace lx0 { namespace core {
             (*it)->notifyAdded(pDocument);
     }
 
+    /*!
+        Dev Notes:
+        Is this correctly named?  This seems to both remove the Element from the host
+        Document as well as send out the notification of the removal to the Components
+        and children.
+     */
     void
     Element::notifyRemoved (Document* pDocument)
     {
@@ -248,6 +254,14 @@ namespace lx0 { namespace core {
             (*it)->notifyRemoved(pDocument);
 
         lx_check_error(mpDocument == nullptr);
+    }
+
+    void
+    Element::notifyUpdate (Document* pDocument)
+    {
+        _foreach([&](ComponentPtr it) {
+            it->onUpdate(this->shared_from_this());
+        });
     }
 
     DocumentPtr

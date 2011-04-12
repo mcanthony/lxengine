@@ -254,11 +254,24 @@ namespace lx0 { namespace core { namespace detail {
     // Element Component
     //===========================================================================//
 
+    /*!
+        This Component is attached to every Element in every Document.
 
+        Dev Notes:
+
+        Eventually this likely should be a smart implementation that is a minimal
+        object if no callbacks are registered on the particular Element; once
+        JS callbacks and other extended information is added to the Component, it
+        should internally switch a heavier-weight implementation.
+     */
     class JavascriptElem : public Element::Component
     {
     public:
                         ~JavascriptElem();
+
+        virtual void    onUpdate            (ElementPtr spElem);
+
+        Persistent<Function>            mOnUpdate;
 
         std::map<std::string, v8::Persistent<v8::Function>> mCallbacks;
     };
@@ -313,6 +326,22 @@ namespace lx0 { namespace core { namespace detail {
             it->second.Dispose();
     }
 
+    void
+    JavascriptElem::onUpdate (ElementPtr spElem) 
+    {
+        // Call the onUpdate() JS function if one has been attached to that event
+        if (!mOnUpdate.IsEmpty())
+        {
+            auto spJsDoc = spElem->document()->getComponent<JavascriptDoc>("javascript");
+            Context::Scope context_scope(spJsDoc->mContext);
+
+            //\todo Need to set the "this" ponter to the JS Element wrapper
+            HandleScope handle_scope;
+            Handle<Object> recv = spJsDoc->mContext->Global();
+            mOnUpdate->Call(recv, 0, 0);
+        }
+    }
+
     //=======================================================================//
 
     JavascriptDoc::JavascriptDoc (DocumentPtr spDocument)
@@ -338,6 +367,9 @@ namespace lx0 { namespace core { namespace detail {
         mLxVarCtor      = _addLxVar();
         _addMath();
 
+        //
+        // Local helper function to recursively call onElementAdded on each Element
+        //
         struct addRecursive
         {
             static void recurse (JavascriptDoc* pThis, DocumentPtr spDocument, ElementPtr spElem)
@@ -372,6 +404,11 @@ namespace lx0 { namespace core { namespace detail {
         };
     }
 
+    /*!
+        The JS interface has a setTimeout() function for registering functions to be called
+        after a certain amount of elapsed time: this processes the queue of waiting functions
+        to see if any have "expired" and need to be called.
+     */
     void
     JavascriptDoc::_processTimeoutQueue (void)
     {
@@ -411,12 +448,15 @@ namespace lx0 { namespace core { namespace detail {
     void
     JavascriptDoc::onElementAdded (DocumentPtr spDocument, ElementPtr spElem)
     {
+        // Whenever a new Element is added to the Document, ensure the JS Element
+        // Component is added to that Element.
         spElem->attachComponent("javascript", new JavascriptElem);
     }
 
     void
     JavascriptDoc::onUpdate (DocumentPtr spDocument) 
     {
+        // Call the onUpdate() JS function if one has been attached to that event
         if (!mOnUpdate.IsEmpty())
         {
             Context::Scope context_scope(mContext);
@@ -792,6 +832,24 @@ namespace lx0 { namespace core { namespace detail {
 
     namespace ElementWrapper
     {
+        static v8::Handle<v8::Value> 
+        get_onUpdate (Local<String> property, const AccessorInfo &info) 
+        {
+            auto     pContext = _nativeData<JavascriptDoc>(info);
+            Element* pThis    = _nativeThis<Element>(info);
+
+            return pThis->getComponent<JavascriptElem>("javascript")->mOnUpdate;
+        }
+
+        static void
+        set_onUpdate (Local<String> property, Local<Value> value, const AccessorInfo &info) 
+        {
+            auto     pContext = _nativeData<JavascriptDoc>(info);
+            Element* pThis    = _nativeThis<Element>(info);
+
+            Handle<Function> func     = _marshal(value);
+            pThis->getComponent<JavascriptElem>("javascript")->mOnUpdate = Persistent<Function>::New(func);
+        }
 
         static v8::Handle<v8::Value> 
         genericCallback (const v8::Arguments& args)
@@ -978,6 +1036,7 @@ namespace lx0 { namespace core { namespace detail {
         objInst->SetInternalFieldCount(1);
         objInst->SetAccessor(String::New("parentNode"),  W::get_parentNode, 0, External::New(this));
         objInst->SetAccessor(String::New("value"),       W::get_value, W::set_value, External::New(this));
+        objInst->SetAccessor(String::New("onUpdate"),    W::get_onUpdate, W::set_onUpdate, External::New(this));
         
         // Access the Javascript prototype for the function - i.e. my_func.prototype - 
         // and add the necessary properties and methods.

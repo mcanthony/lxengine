@@ -36,6 +36,7 @@
 
 #include <lx0/prototype/prototype.hpp>
 #include <lx0/core/util/util.hpp>
+#include <lx0/core/math/radians.hpp>
 #include "rasterizergl.hpp"
 
 using namespace Rasterizer;
@@ -525,8 +526,9 @@ RasterizerGL::createTransform (float tx, float ty, float tz)
 
 struct EyeTransform : public RasterizerGL::Transform
 {
-    EyeTransform (float tx, float ty, float tz)
+    EyeTransform (float tx, float ty, float tz, lx0::radians zangle)
         : pos (tx, ty, tz)
+        , z_angle(zangle)
     {
     }
 
@@ -559,15 +561,17 @@ struct EyeTransform : public RasterizerGL::Transform
         
         glMatrixMode(GL_MODELVIEW);
         glMultTransposeMatrixf(mat.data);
+        glRotatef(z_angle.value, 0.0f, 0.0f, 1.0f);
     }
 
-    point3 pos;
+    point3  pos;
+    lx0::radians z_angle;
 };
 
 RasterizerGL::TransformPtr
-RasterizerGL::createTransformEye (float tx, float ty, float tz)
+RasterizerGL::createTransformEye (float tx, float ty, float tz, lx0::radians z_angle)
 {
-    return TransformPtr(new EyeTransform(tx, ty, tz));
+    return TransformPtr(new EyeTransform(tx, ty, tz, z_angle));
 }
 
 struct BillboardTransform : public RasterizerGL::Transform

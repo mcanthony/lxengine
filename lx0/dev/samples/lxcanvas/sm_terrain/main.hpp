@@ -37,6 +37,8 @@ typedef std::map<int, std::vector<RasterizerGL::ItemPtr> > RenderList;
 class Renderable : public lx0::core::Element::Component
 {
 public:
+    virtual void update(lx0::core::ElementPtr spElement) {}
+
     virtual void generate(lx0::core::ElementPtr spElement,
                   RasterizerGL& rasterizer,
                   lx0::prototype::Camera& cam1,

@@ -172,10 +172,10 @@ public:
     MaterialPtr     createMaterial  (std::string fragShader);
     TexturePtr      createTexture   (const char* filename);
 
-    TransformPtr    createTransform (matrix4& mat);
-    TransformPtr    createTransform (float tx, float ty, float tz);
-    TransformPtr    createTransformBillboardXY(float tx, float ty, float tz);
-    TransformPtr    createTransformEye      (float tx, float ty, float tz);
+    TransformPtr    createTransform             (matrix4& mat);
+    TransformPtr    createTransform             (float tx, float ty, float tz);
+    TransformPtr    createTransformBillboardXY  (float tx, float ty, float tz);
+    TransformPtr    createTransformEye          (float tx, float ty, float tz, lx0::radians z_angle);
 
     GeometryPtr     createQuadList  (std::vector<point3>& quads);
     GeometryPtr     createQuadList  (std::vector<unsigned short>& indices, 

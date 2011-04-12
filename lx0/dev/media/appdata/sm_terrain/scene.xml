@@ -12,6 +12,27 @@
         $("#trees").append(ref);
       }
       
+      function addSheep(x, y)
+      {
+        var ref = $("<Sprite/>");
+        ref.attr("ref", "unit_cube");
+        ref.attr("position", [x, y]);
+        ref.attr("image", "media2/textures/icons/creatures/sheep-000.png");
+        $("#trees").append(ref);
+        
+        // Currently LxEngine does not attach the Components until the Element
+        // is added to the Document; this means that the onUpdate handler needs
+        // to be added after the Element is added to the Document for the JS
+        // handler to properly record it.  This should be fixed, as it is very
+        // non-intuitive.
+        var e = ref._selection[0];
+        e.onUpdate = function () { 
+          var pos = e.getAttribute("position");
+          e.setAttribute("position", [ pos[0] + 1, pos[1] + .1 ]);
+          __lx_print("Position (" + pos[0] + ", " + pos[1] + ")");
+        };
+      }
+      
       __lx_print("Adding trees...");
       for (var y = -10; y <= 10; y++)
       {
@@ -23,6 +44,10 @@
         }
       }
       __lx_print("Done adding trees.");
+      
+      addSheep(Math.random(-400, 400), Math.random(-400, 400));
+      __lx_print("Done adding the sheep.");
+
       //-->
     </Script>
   </Header>
