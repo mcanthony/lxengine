@@ -226,6 +226,39 @@ namespace lx0 { namespace canvas { namespace platform {
     }
 
 
+    static int
+    _handleMouseDown (ButtonState& button, LPARAM lParam)
+    {
+        const int clientX = GET_X_LPARAM(lParam);
+        const int clientY = GET_Y_LPARAM(lParam);
+                
+        button.bDown = true;
+        button.bDragging = false;
+        button.startX = clientX;
+        button.startY = clientY;
+
+        return 0;
+    }
+
+    static bool
+    _handleMouseUp (ButtonState& button, LPARAM lParam)
+    {
+        const int clientX = GET_X_LPARAM(lParam);
+        const int clientY = GET_Y_LPARAM(lParam);
+
+        button.bDown = false;
+
+        if (!button.bDragging)
+        {
+            return true;
+        }
+        else
+        {
+            button.bDragging = false;
+            return false;
+        }
+    }
+
     int CALLBACK 
     CanvasBase::windowProc (void* hWnd_, unsigned int uMsg_, unsigned int* wParam_, long* lParam_)
     {
@@ -311,23 +344,37 @@ namespace lx0 { namespace canvas { namespace platform {
                 }
                 break;
 
-            case WM_LBUTTONDOWN:    
-                {   
-                    const int clientX = GET_X_LPARAM(lParam);
-                    const int clientY = GET_Y_LPARAM(lParam);
-                
-                    pWin->mLButton.bDown = true;  
-                    pWin->mLButton.startX = clientX;
-                    pWin->mLButton.startY = clientY;
-                } 
-                return 0;
+            case WM_LBUTTONDOWN: return _handleMouseDown(pWin->mLButton, lParam);
+            case WM_MBUTTONDOWN: return _handleMouseDown(pWin->mMButton, lParam);
+            case WM_RBUTTONDOWN: return _handleMouseDown(pWin->mRButton, lParam);
 
             case WM_LBUTTONUP:      
                 {   
-                    const int clientX = GET_X_LPARAM(lParam);
-                    const int clientY = GET_Y_LPARAM(lParam);
+                    if (_handleMouseUp(pWin->mLButton, lParam))
+                    {
+                        if (pWin->impLMouseClick(pWin->mMouse, pWin->mLButton, KeyModifiers()))
+                            pWin->slotLMouseClick(pWin->mMouse, pWin->mLButton, KeyModifiers());
+                    }
+                } 
+                return 0;
 
-                    pWin->mLButton.bDown = false;
+            case WM_MBUTTONUP:      
+                {   
+                    if (_handleMouseUp(pWin->mMButton, lParam))
+                    {
+                        if (pWin->impMMouseClick(pWin->mMouse, pWin->mMButton, KeyModifiers()))
+                            pWin->slotMMouseClick(pWin->mMouse, pWin->mMButton, KeyModifiers());
+                    }
+                } 
+                return 0;
+
+            case WM_RBUTTONUP:      
+                {   
+                    if (_handleMouseUp(pWin->mRButton, lParam))
+                    {
+                        if (pWin->impRMouseClick(pWin->mMouse, pWin->mRButton, KeyModifiers()))
+                            pWin->slotRMouseClick(pWin->mMouse, pWin->mRButton, KeyModifiers());
+                    }
                 } 
                 return 0;
 
@@ -343,8 +390,24 @@ namespace lx0 { namespace canvas { namespace platform {
 
                     if (pWin->mLButton.bDown)
                     {
+                        pWin->mLButton.bDragging = true;
+
                         if (pWin->impLMouseDrag(pWin->mMouse, pWin->mLButton, KeyModifiers()))
                             pWin->slotLMouseDrag(pWin->mMouse, pWin->mLButton, KeyModifiers());
+                    }
+                    if (pWin->mMButton.bDown)
+                    {
+                        pWin->mMButton.bDragging = true;
+
+                        if (pWin->impMMouseDrag(pWin->mMouse, pWin->mMButton, KeyModifiers()))
+                            pWin->slotMMouseDrag(pWin->mMouse, pWin->mMButton, KeyModifiers());
+                    }
+                    if (pWin->mRButton.bDown)
+                    {
+                        pWin->mRButton.bDragging = true;
+
+                        if (pWin->impRMouseDrag(pWin->mMouse, pWin->mRButton, KeyModifiers()))
+                            pWin->slotRMouseDrag(pWin->mMouse, pWin->mRButton, KeyModifiers());
                     }
                 }
                 break;

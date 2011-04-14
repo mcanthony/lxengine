@@ -77,6 +77,14 @@ Camera             gCamera;
 
 //===========================================================================//
 
+void
+RenderList::push_back (int layer, RasterizerGL::ItemPtr spItem)
+{
+    mLayers[layer].list.push_back(spItem);
+}
+
+//===========================================================================//
+
 class PhysicsSubsystem : public DocumentComponent
 {
 public: 
@@ -108,9 +116,9 @@ public:
     virtual void onUpdate (DocumentPtr spDocument)
     {
         const float terrainHeight = drop(gCamera.mPosition.x, gCamera.mPosition.y);
-        const float deltaZ = (terrainHeight + 2.0f) - gCamera.mPosition.z;
+        const float deltaZ = (terrainHeight + 32.0f) - gCamera.mPosition.z;
         gCamera.mPosition.z += deltaZ;
-        gCamera.mTarget.z += deltaZ;
+        gCamera.mTarget.z = terrainHeight;
 
         if (deltaZ > 0.001)
             spDocument->view(0)->sendEvent("redraw", lxvar::undefined());
@@ -126,7 +134,7 @@ public:
 
     void initialize()
     {
-        set(gCamera.mPosition, 10, 10, 15);
+        set(gCamera.mPosition, 20, 20, 32);
         set(gCamera.mTarget, 0, 0, 0);
         set(gCamera.mWorldUp, 0, 0, 1);
         gCamera.mFov = 60.0f;
@@ -134,7 +142,7 @@ public:
         gCamera.mFar = 2000.0f; // 2 km
 
         gCamera.mPosition.z = 0.0f;
-        gCamera.mTarget.z = gCamera.mPosition.z;
+        //gCamera.mTarget.z = gCamera.mPosition.z;
 
         rasterizer.initialize();
 
@@ -184,8 +192,9 @@ public:
         }
 
         for (auto it = items.begin(); it != items.end(); ++it)
-            rasterizer.rasterizeList(it->second);
-
+        {
+            rasterizer.rasterizeList(it->second.list);
+        }
         rasterizer.endScene();
 
         rasterizer.refreshTextures();
@@ -206,6 +215,7 @@ class Controller2
 public:
     virtual                 ~Controller2() {}
 
+    virtual     void        onLClick        (ViewPtr spView, const MouseState&, const ButtonState&, KeyModifiers) {}
     virtual     void        updateFrame     (ViewPtr spView,
                                              const KeyboardState& keyboard) = 0;
 };
@@ -213,9 +223,16 @@ public:
 class CameraController : public Controller2
 {
 public:
+    virtual     void        onLClick        (ViewPtr spView, const MouseState&, const ButtonState&, KeyModifiers);
     virtual     void        updateFrame     (ViewPtr spView,
                                              const KeyboardState& keyboard);
 };
+
+void
+CameraController::onLClick (ViewPtr spView, const MouseState& mouse, const ButtonState&, KeyModifiers)
+{
+    spView->sendEvent("select_object", lxvar(mouse.x, mouse.y));
+}
 
 void
 CameraController::updateFrame (ViewPtr spView, const KeyboardState& keyboard)
@@ -290,6 +307,9 @@ LxCanvasImp::createWindow (View* pHostView, size_t& handle, unsigned int& width,
     mRenderer.resize(width, height);
 
     mspWin->slotRedraw += [&]() { mRenderer.render(); };
+    mspWin->slotLMouseClick += [&](const MouseState& ms, const ButtonState& bs, KeyModifiers km) { 
+        mController.onLClick(mpHostView->shared_from_this(), ms, bs, km);
+    };
     mspWin->slotLMouseDrag += [&](const MouseState& ms, const ButtonState& bs, KeyModifiers km) {
         
         // Rotate horizontal
@@ -347,6 +367,8 @@ LxCanvasImp::handleEvent (std::string evt, lx0::core::lxvar params)
         move_vertical(gCamera, params.asFloat());
     else if (evt == "move_down")
         move_vertical(gCamera, -params.asFloat());
+    else if (evt == "select_object")
+        lx_debug("Object selection at (%d, %d)", params.at(0).asInt(), params.at(1).asInt());
     else
     {
         lx_warn("Unhandled event '%s'", evt.c_str());
@@ -463,7 +485,7 @@ public:
         }
 
         mspItem->spTransform = rasterizer.createTransformEye(mPosition.x, mPosition.y, mPosition.z, mRotation);
-        list[0].push_back(mspItem);
+        list.push_back(0, mspItem);
     }
 
 protected:
@@ -572,7 +594,7 @@ public:
         float scale = spElement->attr("scale").query(1.0f);
         mspItem->spTransform = rasterizer.createTransformBillboardXYS(pos.x, pos.y, pos.z, scale, scale, scale);
 
-        list[1].push_back(mspItem);
+        list.push_back(1, mspItem);
     }
 
 protected:

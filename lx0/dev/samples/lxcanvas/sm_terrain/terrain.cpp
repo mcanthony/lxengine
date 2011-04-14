@@ -147,7 +147,7 @@ namespace Terrain
                         buildList.push_back(grid);
                 }
                 else
-                    list[1].push_back(it->second);
+                    list.push_back(1, it->second);
             }
         }
 
@@ -161,7 +161,7 @@ namespace Terrain
                 spTile = _buildTile(spElement, rasterizer, spCamera, spLightSet, it->first, it->second);
                 mMap.insert(std::make_pair(*it, spTile));
 
-                list[1].push_back(spTile);
+                list.push_back(1, spTile);
             }
         }
     }

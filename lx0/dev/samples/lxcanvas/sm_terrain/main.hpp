@@ -32,7 +32,35 @@
 #include <lx0/prototype/prototype.hpp>
 #include "rasterizergl.hpp"
 
-typedef std::map<int, std::vector<RasterizerGL::ItemPtr> > RenderList;
+/*!
+    Represents all the items to render for a particular frame.  The items are organized
+    into a set of layers, each with an ordered list of items.  Each layer has its own
+    set of settings which may control the optimization, re-ordering, etc. of the list
+    for that layer.
+ */
+class RenderList
+{
+public:
+    typedef std::vector<RasterizerGL::ItemPtr> ItemList;
+
+    struct Layer
+    {
+        void*       pSettings;
+        ItemList    list;
+    };
+
+    typedef std::map<int,Layer> LayerMap;
+
+
+
+    void                push_back   (int layer, RasterizerGL::ItemPtr spItem);
+
+    LayerMap::iterator  begin       (void)  { return mLayers.begin(); }
+    LayerMap::iterator  end         (void)    { return mLayers.end(); }
+
+protected:
+    LayerMap    mLayers;
+};
 
 class Renderable : public lx0::core::Element::Component
 {

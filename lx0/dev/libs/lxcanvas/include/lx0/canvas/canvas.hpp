@@ -155,12 +155,14 @@ namespace lx0 { namespace canvas {
         public:
             ButtonState()
                 : bDown     (false)
+                , bDragging (false)
                 , startX    (0)
                 , startY    (0)
             {
             }
 
-            bool            bDown;         
+            bool            bDown;   
+            bool            bDragging;              // Indicates the mouse has moved since the button was initially depressed
             int             startX, startY;         // drag starting point
         };
 
@@ -241,6 +243,9 @@ namespace lx0 { namespace canvas {
 
 
             lx0::core::slot<void(int, int)>                                            slotMouseMove;
+            lx0::core::slot<void(const MouseState&, const ButtonState&, KeyModifiers)> slotLMouseClick;
+            lx0::core::slot<void(const MouseState&, const ButtonState&, KeyModifiers)> slotMMouseClick;
+            lx0::core::slot<void(const MouseState&, const ButtonState&, KeyModifiers)> slotRMouseClick;
             lx0::core::slot<void(const MouseState&, int)>                              slotMouseWheel;
             lx0::core::slot<void(const MouseState&, const ButtonState&, KeyModifiers)> slotLMouseDrag;
             lx0::core::slot<void(const MouseState&, const ButtonState&, KeyModifiers)> slotMMouseDrag;
@@ -264,7 +269,12 @@ namespace lx0 { namespace canvas {
             virtual bool    impKeyUp    (unsigned int keyCode)      { return true; }
     
             virtual bool    impMouseWheel   (const MouseState&, int delta)                            { return true; }
+            virtual bool    impLMouseClick  (const MouseState&, const ButtonState&, KeyModifiers)     { return true; }
+            virtual bool    impMMouseClick  (const MouseState&, const ButtonState&, KeyModifiers)     { return true; }
+            virtual bool    impRMouseClick  (const MouseState&, const ButtonState&, KeyModifiers)     { return true; }
             virtual bool    impLMouseDrag   (const MouseState&, const ButtonState&, KeyModifiers)     { return true; }
+            virtual bool    impMMouseDrag   (const MouseState&, const ButtonState&, KeyModifiers)     { return true; }
+            virtual bool    impRMouseDrag   (const MouseState&, const ButtonState&, KeyModifiers)     { return true; }
             ///@}
 
             //@name Low-level override of the WNDPROC

@@ -8,7 +8,7 @@
         var ref = $("<Sprite/>");
         ref.attr("ref", "unit_cube");
         ref.attr("position", [x, y]);
-        ref.attr("scale", 16);
+        ref.attr("scale", 10);
         ref.attr("image", "media2/textures/icons/rltile-modified/tree_01.png");
         $("#trees").append(ref);
       }

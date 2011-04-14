@@ -119,6 +119,8 @@ namespace lx0 { namespace core {
                         lxvar           (detail::lxvalue* imp);
 
                         lxvar           (int i);
+                        lxvar           (int a, int b);
+                        lxvar           (int a, int b, int c);
                         lxvar           (int a, int b, int c, int d);
                         lxvar           (float a);
                         lxvar           (float a, float b, float c);

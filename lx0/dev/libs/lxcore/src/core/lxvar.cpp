@@ -185,6 +185,21 @@ namespace lx0 { namespace core {
     {
     }
 
+    lxvar::lxvar(int a, int b)
+        : mValue( lxundefined::acquire() )
+    {
+        push(a);
+        push(b);
+    }
+
+    lxvar::lxvar(int a, int b, int c)
+        : mValue( lxundefined::acquire() )
+    {
+        push(a);
+        push(b);
+        push(c);
+    }
+
     lxvar::lxvar(int a, int b, int c, int d)
         : mValue( lxundefined::acquire() )
     {
