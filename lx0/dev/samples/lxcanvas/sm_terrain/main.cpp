@@ -131,6 +131,10 @@ public:
 class Renderer
 {
 public:
+    Renderer()
+        : mViewMode (0)
+    {
+    }
 
     void initialize()
     {
@@ -171,6 +175,12 @@ public:
         }
     }
 
+    void
+    cycleViewMode (void)
+    {
+        mViewMode = (mViewMode + 1) % 3;
+    }
+
     void 
     render (void)	
     {
@@ -191,9 +201,31 @@ public:
             }
         }
 
+        Rasterizer::RenderAlgorithm algorithm;
+        Rasterizer::GlobalPass pass[4];
+        switch (mViewMode)
+        {
+        default:
+            lx_error("Invalid view mode %d", mViewMode);
+        case 0:
+            // Use a single pass with all the default settings
+            algorithm.mPasses.push_back(pass[0]);
+            break;
+        case 1:
+            pass[0].bOverrideWireframe = true;
+            pass[0].bWireframe = true;
+            algorithm.mPasses.push_back(pass[0]);
+            break;
+        case 2:
+            pass[0].bOverrideMaterial = true;
+            pass[0].spMaterial = rasterizer.createMaterial("media2/shaders/glsl/fragment/solid.frag");
+            algorithm.mPasses.push_back(pass[0]);
+            break;
+        }      
+        
         for (auto it = items.begin(); it != items.end(); ++it)
         {
-            rasterizer.rasterizeList(it->second.list);
+            rasterizer.rasterizeList(algorithm, it->second.list);
         }
         rasterizer.endScene();
 
@@ -206,6 +238,7 @@ protected:
     RasterizerGL::CameraPtr     spCamera;       // Camera shared by all items
     RasterizerGL::LightSetPtr   spLightSet;
     RasterizerGL                rasterizer;
+    int                         mViewMode;
 };
 
 //===========================================================================//
@@ -254,6 +287,9 @@ CameraController::updateFrame (ViewPtr spView, const KeyboardState& keyboard)
         spView->sendEvent("move_up", kStep);
     if (keyboard.bDown[KC_F])
         spView->sendEvent("move_down", kStep);
+
+    if (keyboard.bDown[KC_M])
+        spView->sendEvent("cycle_viewmode", lxvar());
 }
 
 class LxCanvasImp : public ViewImp
@@ -369,6 +405,8 @@ LxCanvasImp::handleEvent (std::string evt, lx0::core::lxvar params)
         move_vertical(gCamera, -params.asFloat());
     else if (evt == "select_object")
         lx_debug("Object selection at (%d, %d)", params.at(0).asInt(), params.at(1).asInt());
+    else if (evt == "cycle_viewmode")
+        mRenderer.cycleViewMode();
     else
     {
         lx_warn("Unhandled event '%s'", evt.c_str());

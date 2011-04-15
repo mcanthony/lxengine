@@ -36,8 +36,12 @@
 
 using namespace lx0::core;
 
+class RasterizerGL;
+
 namespace Rasterizer
 {
+    class GlobalPass;
+
     struct Geometry
     {
         virtual void activate() = 0;
@@ -87,31 +91,13 @@ namespace Rasterizer
         virtual void unload ();
     };
     typedef std::shared_ptr<Texture> TexturePtr;
-}
 
-class RasterizerGL
-{
-public:
-    typedef Rasterizer::Geometry    Geometry;
-    typedef Rasterizer::GeometryPtr GeometryPtr;
-    typedef Rasterizer::ResourcePtr ResourcePtr;
-    typedef Rasterizer::TexturePtr  TexturePtr;
-
-    struct Camera
+    class Material
     {
-        virtual void activate();
-        float   fov;
-        float   nearDist;
-        float   farDist;
-        matrix4 viewMatrix;
-    };
-    typedef std::shared_ptr<Camera> CameraPtr;
-
-    struct Material
-    {
+    public:
                      Material   (GLuint id);
 
-        virtual void activate   (RasterizerGL*);
+        virtual void activate   (RasterizerGL*, GlobalPass& pass);
 
         bool        mBlend;
         bool        mZTest;
@@ -127,6 +113,51 @@ public:
     };
     typedef std::shared_ptr<Material> MaterialPtr;
     typedef std::weak_ptr<Material> MaterialWPtr;
+
+    class GlobalPass
+    {
+    public:
+             GlobalPass()
+                 : bOverrideWireframe (false)
+                 , bOverrideMaterial  (false)
+                 , bWireframe         (false)
+             { }
+
+        bool bOverrideWireframe;
+        bool bWireframe;
+
+        bool bOverrideMaterial;
+        MaterialPtr spMaterial;
+    };
+
+    class RenderAlgorithm
+    {
+    public:
+        std::vector<GlobalPass> mPasses;
+    };
+}
+
+class RasterizerGL
+{
+public:
+    typedef Rasterizer::Geometry    Geometry;
+    typedef Rasterizer::GeometryPtr GeometryPtr;
+    typedef Rasterizer::ResourcePtr ResourcePtr;
+    typedef Rasterizer::TexturePtr  TexturePtr;
+    typedef Rasterizer::RenderAlgorithm RenderAlgorithm;
+    typedef Rasterizer::Material    Material;
+    typedef Rasterizer::MaterialPtr    MaterialPtr;
+    typedef Rasterizer::MaterialWPtr    MaterialWPtr;
+
+    struct Camera
+    {
+        virtual void activate();
+        float   fov;
+        float   nearDist;
+        float   farDist;
+        matrix4 viewMatrix;
+    };
+    typedef std::shared_ptr<Camera> CameraPtr;
 
     struct QuadList : public Geometry
     {
@@ -153,7 +184,7 @@ public:
     class Item
     {
     public:
-        virtual void rasterize(RasterizerGL*);
+        //virtual void rasterize(RasterizerGL*);
 
         //weak_ptr<Target> wpTarget;
         CameraPtr    spCamera;
@@ -189,8 +220,13 @@ public:
     void            beginScene      (void);
     void            endScene        (void);
 
-    void            rasterizeList   (std::vector<std::shared_ptr<Item>>& list);
-    void            rasterize       (std::shared_ptr<Item> spItem);
+    void            rasterizeList   (RenderAlgorithm& algorithm, std::vector<std::shared_ptr<Item>>& list);
+    void            rasterize       (Rasterizer::GlobalPass& pass, std::shared_ptr<Item> spItem);
+
+    struct 
+    {
+        unsigned int    itemId;
+    } mContext;
 
 protected:
     GLuint      _createProgram   (std::string fragShader);

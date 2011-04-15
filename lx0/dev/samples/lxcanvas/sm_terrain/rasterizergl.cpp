@@ -225,7 +225,7 @@ RasterizerGL::_createProgram2  (std::string fragShader)
     return prog;
 }
 
-RasterizerGL::Material::Material(GLuint id)
+Rasterizer::Material::Material(GLuint id)
     : mId           (id)
     , mBlend        (false)
     , mZWrite       (true)
@@ -236,10 +236,25 @@ RasterizerGL::Material::Material(GLuint id)
 }
 
 void
-RasterizerGL::Material::activate(RasterizerGL* pRasterizer)
+Rasterizer::Material::activate (RasterizerGL* pRasterizer, Rasterizer::GlobalPass& pass)
 {
     // Activate the shader
     glUseProgram(mId);
+
+    //
+    // Set up color
+    //
+    {
+        GLint unifIndex = glGetUniformLocation(mId, "inColor");
+        if (unifIndex != -1)
+        {
+            float r = ((pRasterizer->mContext.itemId /  1) % 4 + 1) / 4.0f;
+            float g = ((pRasterizer->mContext.itemId /  4) % 4 + 1) / 4.0f;
+            float b = ((pRasterizer->mContext.itemId / 16) % 4 + 1) / 4.0f;
+            
+            glUniform4f(unifIndex, r, g, b, 1.0f);
+        }
+    }
 
     const char* unifTextureName[8] = {
         "unifTexture0",
@@ -312,9 +327,13 @@ RasterizerGL::Material::activate(RasterizerGL* pRasterizer)
         glDisable(GL_BLEND);
 
     //
-    // Wireframe?
+    // Wireframe render mode?
     //
-    if (mWireframe)
+    bool bWireframe = pass.bOverrideWireframe 
+        ? pass.bWireframe
+        : mWireframe;
+
+    if (bWireframe)
         glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
     else
         glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
@@ -661,36 +680,41 @@ void RasterizerGL::endScene()
 }
 
 void 
-RasterizerGL::rasterizeList (std::vector<std::shared_ptr<Item>>& list)
+RasterizerGL::rasterizeList (RenderAlgorithm& algorithm, std::vector<std::shared_ptr<Item>>& list)
 {
-    for (auto it = list.begin(); it != list.end(); ++it)
+    for (auto pass = algorithm.mPasses.begin(); pass != algorithm.mPasses.end(); ++pass)
     {
-        auto spItem = *it;
-        if (spItem)
+        mContext.itemId = 0;
+        for (auto it = list.begin(); it != list.end(); ++it)
         {
-            rasterize(*it);
-        }
-        else
-        {
-            lx_error("Null Item in rasterization list");
+            auto spItem = *it;
+            if (spItem)
+            {
+                rasterize(*pass, *it);
+            }
+            else
+            {
+                lx_error("Null Item in rasterization list");
+            }
+            mContext.itemId ++;
         }
     }
 }
 
 void 
-RasterizerGL::rasterize(std::shared_ptr<Item> spItem)
+RasterizerGL::rasterize(Rasterizer::GlobalPass& pass, std::shared_ptr<Item> spItem)
 {
     lx_check_error(spItem.get() != nullptr);
 
-    spItem->rasterize(this);
-}
+    spItem->spCamera->activate();
+    spItem->spLightSet->activate();
 
-void 
-RasterizerGL::Item::rasterize(RasterizerGL* pRasterizer)
-{
-    spCamera->activate();
-    spLightSet->activate();
-    spMaterial->activate(pRasterizer);
-    spTransform->activate(spCamera);
-    spGeometry->activate();     
+    // Activate the material
+    MaterialPtr spMaterial = (pass.bOverrideMaterial) 
+        ? pass.spMaterial
+        : spItem->spMaterial;
+    spMaterial->activate(this, pass);
+
+    spItem->spTransform->activate(spItem->spCamera);
+    spItem->spGeometry->activate();     
 }

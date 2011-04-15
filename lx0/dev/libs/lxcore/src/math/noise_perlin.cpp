@@ -295,7 +295,8 @@ namespace {
 namespace lx0 { namespace core {
 
     /*!
-        
+        Note: consider using GLM's noise functions instead, as they have a faster
+        implementation.
      */
     float 
     noise3d_perlin (float x, float y, float z)
