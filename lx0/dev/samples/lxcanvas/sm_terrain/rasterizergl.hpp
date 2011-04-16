@@ -187,6 +187,7 @@ public:
     class Item
     {
     public:
+        Item() : pData (nullptr) {}
         //virtual void rasterize(RasterizerGL*);
 
         //weak_ptr<Target> wpTarget;
@@ -195,6 +196,8 @@ public:
         MaterialPtr  spMaterial;
         GeometryPtr  spGeometry;
         LightSetPtr  spLightSet;
+
+        void*        pData;
     };
     typedef std::shared_ptr<Item> ItemPtr;
 

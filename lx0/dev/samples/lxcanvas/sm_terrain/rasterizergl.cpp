@@ -766,7 +766,5 @@ RasterizerGL::readPixel (int x, int y)
     glReadPixels(x, y, 1, 1, GL_RGBA, GL_UNSIGNED_BYTE, (void *)pixel);
 
     unsigned int id = (pixel[0] << 16) + (pixel[1] << 8) + pixel[2];
-    lx_debug("Color at pixel (%d, %d) => %d (%d, %d, %d, %d)", x, y, id, pixel[0], pixel[1], pixel[2], pixel[3]);
-
     return id;
 }
