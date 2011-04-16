@@ -198,6 +198,9 @@ public:
         LightSetPtr  spLightSet;
 
         void*        pData;
+
+        template <typename T>
+        T* getData () { return reinterpret_cast<T*>(pData); }
     };
     typedef std::shared_ptr<Item> ItemPtr;
 

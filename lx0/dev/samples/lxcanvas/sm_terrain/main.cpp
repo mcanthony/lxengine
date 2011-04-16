@@ -452,7 +452,11 @@ LxCanvasImp::handleEvent (std::string evt, lx0::core::lxvar params)
     else if (evt == "select_object")
     {
         auto& spItem = mRenderer.select( params.at(0).asInt(), params.at(1).asInt() );
-        lx_debug("Select: %s (%08x)", spItem->spMaterial->mShaderFilename.c_str(), spItem->pData);
+        auto pElement = spItem->getData<Element>();
+        std::string name = pElement
+            ? pElement->attr("image").query("unknown").c_str()
+            : "no associated element";
+        lx_debug("Select: %s (%s)", spItem->spMaterial->mShaderFilename.c_str(), name.c_str());
     }
     else if (evt == "cycle_viewmode")
         mRenderer.cycleViewMode();
@@ -666,7 +670,7 @@ public:
             std::string image = spElement->attr("image").asString();
 
             auto pItem = new RasterizerGL::Item;
-            pItem->pData = (void*)1;
+            pItem->pData = spElement.get();
             pItem->spCamera   = spCamera;
             pItem->spLightSet = spLightSet;
             pItem->spMaterial = SpriteShared::acquire()->_ensureMaterial(rasterizer, image);
