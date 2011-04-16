@@ -53,10 +53,12 @@ public:
 
 
 
-    void                push_back   (int layer, RasterizerGL::ItemPtr spItem);
+    void                    push_back   (int layer, RasterizerGL::ItemPtr spItem);
 
-    LayerMap::iterator  begin       (void)  { return mLayers.begin(); }
-    LayerMap::iterator  end         (void)    { return mLayers.end(); }
+    LayerMap::iterator      begin       (void)  { return mLayers.begin(); }
+    LayerMap::iterator      end         (void)    { return mLayers.end(); }
+
+    RasterizerGL::ItemPtr   getItem     (unsigned int id);
 
 protected:
     LayerMap    mLayers;

@@ -199,7 +199,7 @@ public:
     void 
     _generateRenderAlgorithm (Rasterizer::RenderAlgorithm& algorithm)
     {
-        algorithm.mClearColor = tuple4(0.09f, 0.09f, 0.11f, 1.0f);
+        algorithm.mClearColor = color4(0.09f, 0.09f, 0.11f, 1.0f);
 
         Rasterizer::GlobalPass pass[4];
         switch (mViewMode)
@@ -226,8 +226,11 @@ public:
     void 
     _generateSelectAlgorithm (Rasterizer::RenderAlgorithm& algorithm)
     {
-        algorithm.mClearColor = tuple4(0.0f, 0.0f, 0.0f, 0.0f);
+        algorithm.mClearColor = color4(0.0f, 0.0f, 0.0f, 0.0f);
 
+        // The solid.frag is not sufficient since the alpha mask needs to be read from RGBA textures
+        // to ensure only the right pixels are actually written to the pixel buffer.
+        //
         Rasterizer::GlobalPass pass[4];
         pass[0].bOverrideMaterial = true;
         pass[0].spMaterial = mRasterizer.createMaterial("media2/shaders/glsl/fragment/solid.frag");
@@ -235,13 +238,12 @@ public:
     }
 
     void
-    _renderImp (Rasterizer::RenderAlgorithm& algorithm)
+    _renderImp (Rasterizer::RenderAlgorithm& algorithm, RenderList& items)
     {
         spCamera->viewMatrix = view_matrix(gCamera);
 
         mRasterizer.beginScene(algorithm);
 
-        RenderList items;
         _generateItems(items);
         for (auto it = items.begin(); it != items.end(); ++it)
         {
@@ -255,9 +257,10 @@ public:
     render (void)	
     {
         Rasterizer::RenderAlgorithm algorithm;
-        _generateRenderAlgorithm(algorithm);
+        RenderList items;
 
-        _renderImp(algorithm);
+        _generateRenderAlgorithm(algorithm);
+        _renderImp(algorithm, items);
 
         mRasterizer.refreshTextures();
     }
@@ -269,8 +272,13 @@ public:
         _generateSelectAlgorithm(algorithm);
 
         // Draw to the backbuffer
-        _renderImp(algorithm);
-        mRasterizer.readPixel(x, y);
+        RenderList items;
+        _renderImp(algorithm, items);
+        unsigned int id = mRasterizer.readPixel(x, y);
+
+        auto& spItem = items.getItem(id);
+
+        lx_debug("Select: %s", spItem->spMaterial->mShaderFilename.c_str());
     }
 
     DocumentPtr                 mspDocument;
@@ -377,7 +385,7 @@ LxCanvasImp::createWindow (View* pHostView, size_t& handle, unsigned int& width,
     width = 800;
     height = 400;
 
-    mspWin.reset( new CanvasGL("Terrain Sample (OpenGL 3.2)", width, height, false) );
+    mspWin.reset( new CanvasGL("Terrain Sample (OpenGL 3.2)", 16, 16, width, height, false) );
     handle = mspWin->handle();
 
     mRenderer.initialize();
@@ -680,6 +688,19 @@ protected:
     RasterizerGL::ItemPtr           mspItem;
 };
 
+RasterizerGL::ItemPtr 
+RenderList::getItem (unsigned int id)
+{
+    auto it = mLayers.begin();
+
+    while (it->second.list.size() < id)
+    {
+        id -= it->second.list.size();
+        it++;
+    }
+    return it->second.list[id];
+}
+
 //===========================================================================//
 //   E N T R Y - P O I N T
 //===========================================================================//
@@ -690,6 +711,26 @@ main (int argc, char** argv)
     int exitCode = -1;
     try
     {
+        // Windows specific hack 
+        //
+        // Get the console window in a good default position for debugging
+        ::MoveWindow(::GetConsoleWindow(), 960, 0, 880, 1024, TRUE);
+
+	    CONSOLE_FONT_INFOEX lpConsoleCurrentFontEx;
+	    lpConsoleCurrentFontEx.cbSize = sizeof(CONSOLE_FONT_INFOEX);
+	    lpConsoleCurrentFontEx.dwFontSize.X = 7;
+	    lpConsoleCurrentFontEx.dwFontSize.Y = 12;
+	    lpConsoleCurrentFontEx.FontWeight = 400;
+	    lpConsoleCurrentFontEx.nFont = 1;
+	    lpConsoleCurrentFontEx.FontFamily = FF_DONTCARE;
+	    lstrcpyW(lpConsoleCurrentFontEx.FaceName, L"Ariel");
+	    ::SetCurrentConsoleFontEx ( ::GetStdHandle(STD_OUTPUT_HANDLE), false, &lpConsoleCurrentFontEx );
+        //
+        // End Windows specific hack
+
+
+
+
         EnginePtr   spEngine   = Engine::acquire();
         spEngine->addDocumentComponent("physics2", [] () { return new PhysicsSubsystem; } );
         spEngine->addViewPlugin("LxCanvas", [] (View* pView) { return new LxCanvasImp; });

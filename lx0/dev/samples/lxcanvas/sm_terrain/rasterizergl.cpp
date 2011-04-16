@@ -165,9 +165,10 @@ RasterizerGL::createTexture (const char* filename)
 RasterizerGL::MaterialPtr 
 RasterizerGL::createMaterial (std::string fragShader)
 {
-
     GLuint prog = _createProgram(fragShader);
-    return MaterialPtr(new Material(prog));
+    MaterialPtr spMat(new Material(prog));
+    spMat->mShaderFilename = fragShader;
+    return spMat;
 }
 
 GLuint 
@@ -688,7 +689,7 @@ RasterizerGL::beginScene (RenderAlgorithm& algorithm)
 {
     // Should the clear actually be part of the GlobalPass?  Additionally to this?
     const auto& color = algorithm.mClearColor;
-    glClearColor(color.x, color.y, color.z, color.w);
+    glClearColor(color.r, color.g, color.b, color.a);
 
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 }
@@ -746,9 +747,12 @@ RasterizerGL::rasterize(Rasterizer::GlobalPass& pass, std::shared_ptr<Item> spIt
     SwapBuffers() call).  This should likely take a Target as an argument, so it is
     explicit and obvious where the pixel is being read from.
 
+    Secondly, returning an unsigned int is an obvious problem - as it represents
+    an assumption this is being used by the selection ID system.
+
     * Should window coordinates adopt OpenGL's 0 at the bottom standard?  Probably?
  */
-void
+unsigned int
 RasterizerGL::readPixel (int x, int y)
 {
     // Flip y since window coordinates differ from OpenGL's 0 at the bottom convention 
@@ -763,4 +767,6 @@ RasterizerGL::readPixel (int x, int y)
 
     unsigned int id = (pixel[0] << 16) + (pixel[1] << 8) + pixel[2];
     lx_debug("Color at pixel (%d, %d) => %d (%d, %d, %d, %d)", x, y, id, pixel[0], pixel[1], pixel[2], pixel[3]);
+
+    return id;
 }

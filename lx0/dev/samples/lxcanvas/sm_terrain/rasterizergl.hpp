@@ -99,6 +99,8 @@ namespace Rasterizer
 
         virtual void activate   (RasterizerGL*, GlobalPass& pass);
 
+        std::string mShaderFilename;
+
         bool        mBlend;
         bool        mZTest;
         bool        mZWrite;
@@ -133,7 +135,7 @@ namespace Rasterizer
     class RenderAlgorithm
     {
     public:
-        tuple4                  mClearColor;
+        color4                  mClearColor;
         std::vector<GlobalPass> mPasses;
     };
 }
@@ -223,7 +225,7 @@ public:
 
     void            rasterizeList   (RenderAlgorithm& algorithm, std::vector<std::shared_ptr<Item>>& list);
     void            rasterize       (Rasterizer::GlobalPass& pass, std::shared_ptr<Item> spItem);
-    void            readPixel       (int x, int y);
+    unsigned int    readPixel       (int x, int y);
 
     struct 
     {

@@ -115,7 +115,7 @@ LxCanvasImp::createWindow (View* pHostView, size_t& handle, unsigned int& width,
     width = 800;
     height = 400;
 
-    mspWin.reset( new CanvasGL("Lx Raytracer Sample", width, height, false) );
+    mspWin.reset( new CanvasGL("Lx Raytracer Sample", 16, 16, width, height, false) );
     handle = mspWin->handle();
 
     mRenderer.initialize();

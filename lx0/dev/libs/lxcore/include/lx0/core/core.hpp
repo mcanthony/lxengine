@@ -59,6 +59,7 @@ namespace lx0
 #include <lx0/core/math/point3.hpp>
 #include <lx0/core/math/vector3.hpp>
 #include <lx0/core/math/matrix4.hpp>
+#include <lx0/core/math/color.hpp>
 
 #include <lx0/core/math/ray.hpp>
 

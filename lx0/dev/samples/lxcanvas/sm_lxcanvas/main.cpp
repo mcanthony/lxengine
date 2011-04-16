@@ -167,7 +167,7 @@ main (int argc, char** argv)
     CanvasHost host;
     Renderer renderer;
 
-    auto pWin = new CanvasGL("OpenGL 3.2", 800, 400, false);
+    auto pWin = new CanvasGL("OpenGL 3.2", 16, 16, 800, 400, false);
     host.create(pWin, "canvas", false);
     renderer.initialize();
     renderer.resize(800, 400);

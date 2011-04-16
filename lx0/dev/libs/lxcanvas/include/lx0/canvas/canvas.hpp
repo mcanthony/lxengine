@@ -307,7 +307,7 @@ namespace lx0 { namespace canvas {
     
             //@name Constructor / Destructor
             //@{
-            CanvasGL  (const char* pszTitle, int w, int h, bool bResizeable);
+            CanvasGL  (const char* pszTitle, int x, int y, int w, int h, bool bResizeable);
             ~CanvasGL (void);
             //@}
 

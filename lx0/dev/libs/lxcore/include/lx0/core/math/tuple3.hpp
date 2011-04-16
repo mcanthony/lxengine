@@ -191,59 +191,6 @@ namespace lx0 { namespace core {
         tuple4 (float x_, float y_, float z_, float w_) : base_tuple4(x_, y_, z_, w_) {}
     };
 
-    //=======================================================================//
-    //!
-    /*!
-        Specialization of tuple4 intended for RGB colors.
-     */
-    class color3
-    {
-    public: 
-
-        inline float&   operator[] (int i)          { return elem[i]; }
-        inline float    operator[] (int i) const    { return elem[i]; }
-
-        union 
-        {
-            struct
-            {
-                float r, g, b;
-            };
-            float elem[3];
-            struct
-            {
-                glm::vec3 vec3;
-            };
-        };
-    };
-
-
-    //=======================================================================//
-    //!
-    /*!
-        Specialization of tuple4 intended for RGBA colors.
-     */
-    class color4
-    {
-    public: 
-
-        inline float&   operator[] (int i)          { return elem[i]; }
-        inline float    operator[] (int i) const    { return elem[i]; }
-
-        union 
-        {
-            struct
-            {
-                float r, g, b, a;
-            };
-            float elem[4];
-            struct
-            {
-                glm::vec4 vec4;
-            };
-        };
-    };
-
 
     class point3;
     class vector3;

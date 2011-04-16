@@ -431,7 +431,7 @@ namespace lx0 { namespace canvas { namespace platform {
 
     //===========================================================================//
 
-    CanvasGL::CanvasGL (const char* pszTitle, int w, int h, bool bResizeable)
+    CanvasGL::CanvasGL (const char* pszTitle, int x, int y, int w, int h, bool bResizeable)
         : m_opaque_hDC     (0)
         , m_opaque_hRC   (0)
     {
@@ -456,8 +456,8 @@ namespace lx0 { namespace canvas { namespace platform {
                          s_windowClass.className(), 
                          pszTitle,
                          dwStyle,
-                         CW_USEDEFAULT,
-                         CW_USEDEFAULT,
+                         x,
+                         y,
                          rect.right - rect.left,
                          rect.bottom - rect.top,
                          NULL, NULL, 
