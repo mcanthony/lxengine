@@ -148,10 +148,10 @@ public:
         gCamera.mPosition.z = 0.0f;
         //gCamera.mTarget.z = gCamera.mPosition.z;
 
-        rasterizer.initialize();
+        mRasterizer.initialize();
 
-        spCamera = rasterizer.createCamera(gCamera.mFov, gCamera.mNear, gCamera.mFar, view_matrix(gCamera));
-        spLightSet = rasterizer.createLightSet();
+        spCamera = mRasterizer.createCamera(gCamera.mFov, gCamera.mNear, gCamera.mFar, view_matrix(gCamera));
+        spLightSet = mRasterizer.createLightSet();
     }  
 
     void 
@@ -175,21 +175,9 @@ public:
         }
     }
 
-    void
-    cycleViewMode (void)
-    {
-        mViewMode = (mViewMode + 1) % 3;
-    }
-
     void 
-    render (void)	
+    _generateItems (RenderList& items)
     {
-        spCamera->viewMatrix = view_matrix(gCamera);
-
-        rasterizer.beginScene();
-
-        RenderList items;
-
         std::vector<ElementPtr> elems;
         elems.swap( mspDocument->getElements() );
         for (auto it = elems.begin(); it != elems.end(); ++it)
@@ -197,11 +185,22 @@ public:
             auto spRenderable = (*it)->getComponent<Renderable>("renderable");
             if (spRenderable)
             {
-                spRenderable->generate(*it, rasterizer, gCamera, spCamera, spLightSet, items);
+                spRenderable->generate(*it, mRasterizer, gCamera, spCamera, spLightSet, items);
             }
         }
+    }
 
-        Rasterizer::RenderAlgorithm algorithm;
+    void
+    cycleViewMode (void)
+    {
+        mViewMode = (mViewMode + 1) % 3;
+    }
+
+    void 
+    _generateRenderAlgorithm (Rasterizer::RenderAlgorithm& algorithm)
+    {
+        algorithm.mClearColor = tuple4(0.09f, 0.09f, 0.11f, 1.0f);
+
         Rasterizer::GlobalPass pass[4];
         switch (mViewMode)
         {
@@ -218,18 +217,60 @@ public:
             break;
         case 2:
             pass[0].bOverrideMaterial = true;
-            pass[0].spMaterial = rasterizer.createMaterial("media2/shaders/glsl/fragment/solid.frag");
+            pass[0].spMaterial = mRasterizer.createMaterial("media2/shaders/glsl/fragment/solid.frag");
             algorithm.mPasses.push_back(pass[0]);
             break;
-        }      
-        
+        }  
+    }
+
+    void 
+    _generateSelectAlgorithm (Rasterizer::RenderAlgorithm& algorithm)
+    {
+        algorithm.mClearColor = tuple4(0.0f, 0.0f, 0.0f, 0.0f);
+
+        Rasterizer::GlobalPass pass[4];
+        pass[0].bOverrideMaterial = true;
+        pass[0].spMaterial = mRasterizer.createMaterial("media2/shaders/glsl/fragment/solid.frag");
+        algorithm.mPasses.push_back(pass[0]); 
+    }
+
+    void
+    _renderImp (Rasterizer::RenderAlgorithm& algorithm)
+    {
+        spCamera->viewMatrix = view_matrix(gCamera);
+
+        mRasterizer.beginScene(algorithm);
+
+        RenderList items;
+        _generateItems(items);
         for (auto it = items.begin(); it != items.end(); ++it)
         {
-            rasterizer.rasterizeList(algorithm, it->second.list);
+            mRasterizer.rasterizeList(algorithm, it->second.list);
         }
-        rasterizer.endScene();
 
-        rasterizer.refreshTextures();
+        mRasterizer.endScene();
+    }
+
+    void 
+    render (void)	
+    {
+        Rasterizer::RenderAlgorithm algorithm;
+        _generateRenderAlgorithm(algorithm);
+
+        _renderImp(algorithm);
+
+        mRasterizer.refreshTextures();
+    }
+
+    void
+    select (int x, int y)
+    {
+        Rasterizer::RenderAlgorithm algorithm;
+        _generateSelectAlgorithm(algorithm);
+
+        // Draw to the backbuffer
+        _renderImp(algorithm);
+        mRasterizer.readPixel(x, y);
     }
 
     DocumentPtr                 mspDocument;
@@ -237,7 +278,7 @@ public:
 protected:
     RasterizerGL::CameraPtr     spCamera;       // Camera shared by all items
     RasterizerGL::LightSetPtr   spLightSet;
-    RasterizerGL                rasterizer;
+    RasterizerGL                mRasterizer;
     int                         mViewMode;
 };
 
@@ -404,7 +445,7 @@ LxCanvasImp::handleEvent (std::string evt, lx0::core::lxvar params)
     else if (evt == "move_down")
         move_vertical(gCamera, -params.asFloat());
     else if (evt == "select_object")
-        lx_debug("Object selection at (%d, %d)", params.at(0).asInt(), params.at(1).asInt());
+        mRenderer.select( params.at(0).asInt(), params.at(1).asInt() );
     else if (evt == "cycle_viewmode")
         mRenderer.cycleViewMode();
     else

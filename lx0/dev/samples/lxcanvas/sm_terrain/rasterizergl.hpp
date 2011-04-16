@@ -133,6 +133,7 @@ namespace Rasterizer
     class RenderAlgorithm
     {
     public:
+        tuple4                  mClearColor;
         std::vector<GlobalPass> mPasses;
     };
 }
@@ -217,11 +218,12 @@ public:
 
     void            refreshTextures (void);
 
-    void            beginScene      (void);
+    void            beginScene      (RenderAlgorithm& algorithm);
     void            endScene        (void);
 
     void            rasterizeList   (RenderAlgorithm& algorithm, std::vector<std::shared_ptr<Item>>& list);
     void            rasterize       (Rasterizer::GlobalPass& pass, std::shared_ptr<Item> spItem);
+    void            readPixel       (int x, int y);
 
     struct 
     {

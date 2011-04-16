@@ -248,11 +248,22 @@ Rasterizer::Material::activate (RasterizerGL* pRasterizer, Rasterizer::GlobalPas
         GLint unifIndex = glGetUniformLocation(mId, "inColor");
         if (unifIndex != -1)
         {
-            float r = ((pRasterizer->mContext.itemId /  1) % 4 + 1) / 4.0f;
-            float g = ((pRasterizer->mContext.itemId /  4) % 4 + 1) / 4.0f;
-            float b = ((pRasterizer->mContext.itemId / 16) % 4 + 1) / 4.0f;
+            unsigned int id = pRasterizer->mContext.itemId;
+            lx_check_error(id < (1 << 24), "ID too high to encode in 24-bit color buffer");
             
-            glUniform4f(unifIndex, r, g, b, 1.0f);
+            // Why not use the alpha as well?
+            // (1) Technically not all cards necessarily support "destination alpha".  This is
+            // rare and limited old cards, though.
+            // (2) For version 1.0, 2^24 ids should be sufficient.  Simpler is better for v1.0.
+            // (3) It's easier to debug when the colors are blitted to the screen rather than
+            //     solely offscreen as an intermediate render.
+            //
+            float r = ((id >> 16) & 0xFF) / 255.0f;
+            float g = ((id >>  8) & 0xFF) / 255.0f;
+            float b = ((id >>  0) & 0xFF) / 255.0f;
+            float a = 255;
+            
+            glUniform4f(unifIndex, r, g, b, a);
         }
     }
 
@@ -641,8 +652,11 @@ RasterizerGL::Transform::activate (CameraPtr)
     glMultTransposeMatrixf(mat.data);
 }
 
-
-
+/*!
+    Compare the timestamp of all loaded textures versus the file on disk (if known)
+    for that texture.  If the file has been modified since the texture was loaded,
+    reload it.
+ */ 
 void 
 RasterizerGL::refreshTextures (void)
 {
@@ -657,7 +671,7 @@ RasterizerGL::refreshTextures (void)
 
         if (timestamp > spTex->mFileTimestamp)
         {
-            // Check that the file is not stll open; if the file was just saved and
+            // Check that the file is not still open; if the file was just saved and
             // not yet closed, this could fail while the file is still being written
             // to.
             if (!lx0::util::lx_file_is_open(spTex->mFilename))
@@ -670,8 +684,12 @@ RasterizerGL::refreshTextures (void)
 }
 
 void 
-RasterizerGL::beginScene()
+RasterizerGL::beginScene (RenderAlgorithm& algorithm)
 {
+    // Should the clear actually be part of the GlobalPass?  Additionally to this?
+    const auto& color = algorithm.mClearColor;
+    glClearColor(color.x, color.y, color.z, color.w);
+
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 }
 
@@ -717,4 +735,32 @@ RasterizerGL::rasterize(Rasterizer::GlobalPass& pass, std::shared_ptr<Item> spIt
 
     spItem->spTransform->activate(spItem->spCamera);
     spItem->spGeometry->activate();     
+}
+
+
+/*!
+    Dev Note: 
+    
+    This is not a very good API, as it implicitly relies on the backbuffer
+    being properly being written to (which is not necessarily the case after a 
+    SwapBuffers() call).  This should likely take a Target as an argument, so it is
+    explicit and obvious where the pixel is being read from.
+
+    * Should window coordinates adopt OpenGL's 0 at the bottom standard?  Probably?
+ */
+void
+RasterizerGL::readPixel (int x, int y)
+{
+    // Flip y since window coordinates differ from OpenGL's 0 at the bottom convention 
+    GLint viewport[4];
+	glGetIntegerv(GL_VIEWPORT,viewport);
+    y = viewport[3] - y;
+	
+    // Read the pixel
+    glReadBuffer(GL_BACK);
+    GLubyte pixel[4];
+    glReadPixels(x, y, 1, 1, GL_RGBA, GL_UNSIGNED_BYTE, (void *)pixel);
+
+    unsigned int id = (pixel[0] << 16) + (pixel[1] << 8) + pixel[2];
+    lx_debug("Color at pixel (%d, %d) => %d (%d, %d, %d, %d)", x, y, id, pixel[0], pixel[1], pixel[2], pixel[3]);
 }

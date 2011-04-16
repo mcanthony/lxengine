@@ -176,8 +176,8 @@ namespace lx0 { namespace core {
         template <> struct cast_is_safe<const tuple3&,  const Ogre::Vector3>   { enum { value = 1 }; }; 
     }
     
-    inline tuple3   add             (const tuple3& a, const tuple3& b)      { return cast<tuple3&>(a.ogreVec + b.ogreVec); }
-    inline tuple3   sub             (const tuple3& a, const tuple3& b)      { return cast<tuple3&>(a.ogreVec - b.ogreVec); }
+    inline tuple3   add             (const tuple3& a, const tuple3& b)      { return reinterpret_cast<tuple3&>(a.vec3 + b.vec3); }
+    inline tuple3   sub             (const tuple3& a, const tuple3& b)      { return reinterpret_cast<tuple3&>(a.vec3 - b.vec3); }
     
     //=======================================================================//
     //!
@@ -187,9 +187,62 @@ namespace lx0 { namespace core {
         : public detail::base_tuple4
     {
     public: 
+        tuple4 () {}
+        tuple4 (float x_, float y_, float z_, float w_) : base_tuple4(x_, y_, z_, w_) {}
     };
 
-    
+    //=======================================================================//
+    //!
+    /*!
+        Specialization of tuple4 intended for RGB colors.
+     */
+    class color3
+    {
+    public: 
+
+        inline float&   operator[] (int i)          { return elem[i]; }
+        inline float    operator[] (int i) const    { return elem[i]; }
+
+        union 
+        {
+            struct
+            {
+                float r, g, b;
+            };
+            float elem[3];
+            struct
+            {
+                glm::vec3 vec3;
+            };
+        };
+    };
+
+
+    //=======================================================================//
+    //!
+    /*!
+        Specialization of tuple4 intended for RGBA colors.
+     */
+    class color4
+    {
+    public: 
+
+        inline float&   operator[] (int i)          { return elem[i]; }
+        inline float    operator[] (int i) const    { return elem[i]; }
+
+        union 
+        {
+            struct
+            {
+                float r, g, b, a;
+            };
+            float elem[4];
+            struct
+            {
+                glm::vec4 vec4;
+            };
+        };
+    };
 
 
     class point3;
