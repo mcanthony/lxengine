@@ -138,6 +138,80 @@ namespace Rasterizer
         color4                  mClearColor;
         std::vector<GlobalPass> mPasses;
     };
+
+
+    struct Camera
+    {
+        virtual void activate();
+        float   fov;
+        float   nearDist;
+        float   farDist;
+        matrix4 viewMatrix;
+    };
+    typedef std::shared_ptr<Camera> CameraPtr;
+
+    struct Transform
+    {
+        virtual void activate(CameraPtr);
+        matrix4 mat;
+    };
+    typedef std::shared_ptr<Transform> TransformPtr;
+
+    struct LightSet
+    {
+        virtual void activate() {}
+    };
+    typedef std::shared_ptr<LightSet> LightSetPtr;
+
+    class Item
+    {
+    public:
+        class Data
+        {
+        public:
+            virtual ~Data() {}
+        };
+
+        template <typename T>
+        class DataT : public Data
+        {
+        public:
+            DataT(const T& t) : data(t) {}
+            T data;
+        };
+
+
+        Item() {}
+        
+        //virtual void rasterize(RasterizerGL*);
+
+        //weak_ptr<Target> wpTarget;  - probably should be a member of the RenderList layer or RenderAlgorithm?
+        CameraPtr    spCamera;
+        TransformPtr spTransform;
+        MaterialPtr  spMaterial;
+        GeometryPtr  spGeometry;
+        LightSetPtr  spLightSet;
+
+        template <typename T>
+        void setData (const T& data)
+        {
+            mpData.reset( new DataT<T>(data) );
+        }
+
+        template <typename T>
+        T& getData () 
+        {  
+            DataT<T>* pData = dynamic_cast<DataT<T>*>(mpData.get());
+            if (pData)
+                return pData->data;
+            else
+                return T();
+        }
+
+    protected:
+        std::auto_ptr<Data> mpData;
+    };
+    typedef std::shared_ptr<Item> ItemPtr;
 }
 
 class RasterizerGL
@@ -151,16 +225,12 @@ public:
     typedef Rasterizer::Material    Material;
     typedef Rasterizer::MaterialPtr    MaterialPtr;
     typedef Rasterizer::MaterialWPtr    MaterialWPtr;
+    typedef Rasterizer::Item        Item;
+    typedef Rasterizer::ItemPtr     ItemPtr;
+    typedef Rasterizer::CameraPtr   CameraPtr;
+    typedef Rasterizer::LightSetPtr LightSetPtr;
+    typedef Rasterizer::TransformPtr TransformPtr;
 
-    struct Camera
-    {
-        virtual void activate();
-        float   fov;
-        float   nearDist;
-        float   farDist;
-        matrix4 viewMatrix;
-    };
-    typedef std::shared_ptr<Camera> CameraPtr;
 
     struct QuadList : public Geometry
     {
@@ -171,38 +241,7 @@ public:
         GLuint vao[1];
     };
 
-    struct LightSet
-    {
-        virtual void activate() {}
-    };
-    typedef std::shared_ptr<LightSet> LightSetPtr;
 
-    struct Transform
-    {
-        virtual void activate(CameraPtr);
-        matrix4 mat;
-    };
-    typedef std::shared_ptr<Transform> TransformPtr;
-
-    class Item
-    {
-    public:
-        Item() : pData (nullptr) {}
-        //virtual void rasterize(RasterizerGL*);
-
-        //weak_ptr<Target> wpTarget;
-        CameraPtr    spCamera;
-        TransformPtr spTransform;
-        MaterialPtr  spMaterial;
-        GeometryPtr  spGeometry;
-        LightSetPtr  spLightSet;
-
-        void*        pData;
-
-        template <typename T>
-        T* getData () { return reinterpret_cast<T*>(pData); }
-    };
-    typedef std::shared_ptr<Item> ItemPtr;
 
     void            initialize      (void);
     void            shutdown        (void);

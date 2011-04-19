@@ -44,15 +44,56 @@
 namespace lx0 { namespace core { namespace v8bind
 {
     // --------------------------------------------------------------------- //
-    //! Utility class for converting JS <=> native values
+    //! Utility class for converting JS objects to and from native C++ types
     /*
         This class is used to convert from V8 values to primitive types,
-        including lxvar. 
+        including lxvar (for nested data structures).
 
         See http://en.wikipedia.org/wiki/Marshalling_(computer_science)
+
+        The basic design premise of the class is quite simple:
+        
+        # Overload the constructor for each supported JS object type and
+          native C++ type.
+        # Store the internal value as a V8 Handle<Value>
+        # Overload the implicit cast operator to convert the Handle<Value>
+          to other types
+
+        Since this is an internal helper class designed for convenience, it makes 
+        the assumption that the caller is careful to use the implicit cast 
+        operator correctly: in other words, it does not do type conversion
+        checks for the caller - it assumes the caller has already done that
+        (to do otherwise would seriously hamper the convenience factor of
+        this class).
+
+        The conversions for basic types are generally quite simple and merely
+        involve looking up the correct constructor and method calls in the V8
+        documentation for conversions.
+
+        The conversions for lxvar and native object types are the only 
+        non-trivial operations.
+
+        The native object conversion is not complex, but makes unchecked
+        assumptions about the native object type (i.e. relying on the caller
+        to enforce proper type-checking prior to the call) as well as the 
+        assumption that the object is stored in the first "InternalField" of 
+        the V8 object (which is always true in LxEngine, but not necessarily
+        true for all possible uses of V8).  Therefore, the native object 
+        conversion is not a robust, generalized mechanism, but rather a 
+        tailored one for LxEngine's use.
+       
+        The lxvar object conversion is also not complex, but uses LxEngine's
+        lxvar class - which, of course, is therefore intrinsically bound to
+        LxEngine's lxvar API.   The lxvar is a class designed to hold multiple
+        data types based largely off JSON and Javascript variables.  It can
+        hold ints, floats, strings, arrays, and maps.  Therefore there is 
+        largely a 1:1 mapping between a V8 object and an lxvar, *but* this 
+        relies on the lxvar data type so it is not by any means generalizable
+        outside of LxEngine (without losing the functionality it represents).
      */
-    struct _marshal
+    class _marshal
     {
+    public:
         _marshal()                          : mValue( v8::Undefined() ) {}
 
         _marshal(v8::Handle<v8::Value>&v)   : mValue(v) {}
@@ -84,10 +125,15 @@ namespace lx0 { namespace core { namespace v8bind
             using namespace v8;
             using v8::Object;
 
+            // Assume the native object is stored in "internal field" index 0 of
+            // the V8 object.  This is the convention in LxEngine, but is not 
+            // necessarily true in all uses of V8.
             Handle<Object> obj( Handle<Object>::Cast(mValue) );
             lx_check_error(obj->InternalFieldCount() == 1);
             Local<External> wrap = Local<External>::Cast(obj->GetInternalField(0));
         
+            // Assume the caller has done proper type checking and simply cast
+            // the data type to the desired pointer type.
             T* pNative = reinterpret_cast<T*>( wrap->Value() );
             return pNative;
         }

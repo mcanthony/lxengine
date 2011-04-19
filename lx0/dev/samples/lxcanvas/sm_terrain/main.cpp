@@ -452,9 +452,9 @@ LxCanvasImp::handleEvent (std::string evt, lx0::core::lxvar params)
     else if (evt == "select_object")
     {
         auto& spItem = mRenderer.select( params.at(0).asInt(), params.at(1).asInt() );
-        auto pElement = spItem->getData<Element>();
-        std::string name = pElement
-            ? pElement->attr("image").query("unknown").c_str()
+        auto spElement = spItem->getData<ElementPtr>();
+        std::string name = spElement
+            ? spElement->attr("image").query("unknown").c_str()
             : "no associated element";
         lx_debug("Select: %s (%s)", spItem->spMaterial->mShaderFilename.c_str(), name.c_str());
     }
@@ -670,7 +670,7 @@ public:
             std::string image = spElement->attr("image").asString();
 
             auto pItem = new RasterizerGL::Item;
-            pItem->pData = spElement.get();
+            pItem->setData<ElementPtr>(spElement);
             pItem->spCamera   = spCamera;
             pItem->spLightSet = spLightSet;
             pItem->spMaterial = SpriteShared::acquire()->_ensureMaterial(rasterizer, image);

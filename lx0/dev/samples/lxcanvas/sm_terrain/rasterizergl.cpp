@@ -59,7 +59,7 @@ void RasterizerGL::shutdown()
 {
 }
 
-RasterizerGL::CameraPtr       
+Rasterizer::CameraPtr       
 RasterizerGL::createCamera (float fov, float nearDist, float farDist, matrix4& viewMatrix)
 {
     CameraPtr spCamera (new Camera);
@@ -71,7 +71,7 @@ RasterizerGL::createCamera (float fov, float nearDist, float farDist, matrix4& v
 }
 
 void
-RasterizerGL::Camera::activate()
+Rasterizer::Camera::activate()
 {
     //
     // Setup projection matrix
@@ -555,7 +555,7 @@ RasterizerGL::createTransform (float tx, float ty, float tz)
     return spTransform;
 }
 
-struct EyeTransform : public RasterizerGL::Transform
+struct EyeTransform : public Rasterizer::Transform
 {
     EyeTransform (float tx, float ty, float tz, lx0::radians zangle)
         : pos (tx, ty, tz)
@@ -605,7 +605,7 @@ RasterizerGL::createTransformEye (float tx, float ty, float tz, lx0::radians z_a
     return TransformPtr(new EyeTransform(tx, ty, tz, z_angle));
 }
 
-struct BillboardTransform : public RasterizerGL::Transform
+struct BillboardTransform : public Rasterizer::Transform
 {
     virtual void activate(RasterizerGL::CameraPtr spCamera)
     {
@@ -647,7 +647,7 @@ RasterizerGL::createTransformBillboardXYS (float tx, float ty, float tz, float s
 }
 
 void
-RasterizerGL::Transform::activate (CameraPtr)
+Rasterizer::Transform::activate (CameraPtr)
 {
     glMatrixMode(GL_MODELVIEW);
     glMultTransposeMatrixf(mat.data);
