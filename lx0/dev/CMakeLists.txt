@@ -46,6 +46,7 @@ include_directories( libs/lxengine/include )
 include_directories( libs/lxcanvas/include )
 include_directories( libs/lxblendreader/include )
 include_directories( libs/lxprototype/include )
+include_directories( libs/glgeom/include )
 
 # Boost
 include_directories(${Boost_INCLUDE_DIR})
