@@ -36,8 +36,12 @@ namespace glgeom
 {
     namespace detail
     {
-        template <class Precision>
-        class tvector2
+        //===========================================================================//
+        //!
+        /*!
+         */
+        template <class P>
+        class vector2t
         {
         public:
             union
@@ -48,21 +52,25 @@ namespace glgeom
                 };
                 struct
                 {
-                    glm::detail::tvec2<Precision> vec;
+                    glm::detail::tvec2<P> vec;
                 };
             };
 
         protected:
         };
 
-        template <class Precision>
-        class tvector3
+        //===========================================================================//
+        //!
+        /*!
+         */
+        template <class P>
+        class vector3t
         {
         public:
-            typedef Precision   type;
+            typedef P       type;
 
-            tvector3 (void) { /* use glm default ctor */ }
-            tvector3 (type _x, type _y, type _z) : vec(_x, _y, _z) {}
+            vector3t (void) { /* use glm default ctor */ }
+            vector3t (type _x, type _y, type _z) : vec(_x, _y, _z) {}
 
             union
             {
@@ -72,15 +80,32 @@ namespace glgeom
                 };
                 struct
                 {
-                    glm::detail::tvec3<Precision> vec;
+                    glm::detail::tvec3<P> vec;
                 };
             };
 
         protected:
         };
 
-        template <class Precision>
-        class tvector4
+
+        template <typename T>
+        vector3t<T> operator+ (const vector3t<T>& a, const vector3t<T>& b)
+        {
+            return reinterpret_cast< vector3t<T>& >( a.vec + b.vec );
+        }
+
+        template <typename T>
+        T dot (const vector3t<T>& a, const vector3t<T>& b)
+        {
+            return glm::dot(a.vec, b.vec);
+        }
+
+        //===========================================================================//
+        //!
+        /*!
+         */
+        template <class P>
+        class vector4t
         {
         public:
             union
@@ -91,45 +116,33 @@ namespace glgeom
                 };
                 struct
                 {
-                    glm::detail::tvec4<Precision> vec;
+                    glm::detail::tvec4<P> vec;
                 };
             };
 
         protected:
         };
-
-        template <typename T>
-        tvector3<T> operator+ (const tvector3<T>& a, const tvector3<T>& b)
-        {
-            return reinterpret_cast< tvector3<T>& >( a.vec + b.vec );
-        }
-
-        template <typename T>
-        T dot (const tvector3<T>& a, const tvector3<T>& b)
-        {
-            return glm::dot(a.vec, b.vec);
-        }
     }
 
-    typedef detail::tvector2<float>     vector2f;
-    typedef detail::tvector2<double>    vector2d;
+    typedef detail::vector2t<float>     vector2f;
+    typedef detail::vector2t<double>    vector2d;
 
-    typedef detail::tvector3<float>     vector3f;
-    typedef detail::tvector3<double>    vector3d;
+    typedef detail::vector3t<float>     vector3f;
+    typedef detail::vector3t<double>    vector3d;
 
-    typedef detail::tvector4<float>     vector4f;
-    typedef detail::tvector4<double>    vector4d;
+    typedef detail::vector4t<float>     vector4f;
+    typedef detail::vector4t<double>    vector4d;
 
     namespace detail
     {
-        static_assert(sizeof(vector2f) == sizeof(float) * 2, "vector2f has unexpected size");
-        static_assert(sizeof(vector2d) == sizeof(double) * 2, "vector2d has unexpected size");
+        static_assert(sizeof(vector2f) == sizeof(float) * 2, "vector2f has unexpected structure size");
+        static_assert(sizeof(vector2d) == sizeof(double) * 2, "vector2d has unexpected structure size");
 
-        static_assert(sizeof(vector3f) == sizeof(float) * 3, "vector3f has unexpected size");
-        static_assert(sizeof(vector3d) == sizeof(double) * 3, "vector3d has unexpected size");
+        static_assert(sizeof(vector3f) == sizeof(float) * 3, "vector3f has unexpected structure size");
+        static_assert(sizeof(vector3d) == sizeof(double) * 3, "vector3d has unexpected structure size");
 
-        static_assert(sizeof(vector4f) == sizeof(float) * 4, "vector4f has unexpected size");
-        static_assert(sizeof(vector4d) == sizeof(double) * 4, "vector4d has unexpected size");
+        static_assert(sizeof(vector4f) == sizeof(float) * 4, "vector4f has unexpected structure size");
+        static_assert(sizeof(vector4d) == sizeof(double) * 4, "vector4d has unexpected structure size");
     }
 }
 

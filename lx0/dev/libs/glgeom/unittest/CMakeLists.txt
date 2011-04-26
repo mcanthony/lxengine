@@ -5,5 +5,9 @@ file(GLOB_RECURSE HDRFILES *.hpp)
 set(SOURCES ${SRCFILES} ${HDRFILES})
 source_group("Source" FILES ${SOURCES})
 
-add_executable(glgeom_unittest ${SOURCES})
+# For convenience, add the glgeom headers to this project
+file(GLOB_RECURSE GLGEOM_HDRFILES ../include/glgeom/*.hpp)
+source_group("glgeom" FILES ${GLGEOM_HDRFILES})
+
+add_executable(glgeom_unittest ${SOURCES} ${GLGEOM_HDRFILES})
 

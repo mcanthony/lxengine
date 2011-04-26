@@ -32,6 +32,13 @@
 
 #include <glgeom/core/tuple.hpp>        // generic multi-scalar
 #include <glgeom/core/vector.hpp>       // directed distance primitive
+#include <glgeom/core/point.hpp>
+
+#include <glgeom/core/ray.hpp>
+#include <glgeom/core/plane.hpp>
+#include <glgeom/core/sphere.hpp>
+
+#include <glgeom/core/intersection.hpp>
 
 #endif
 

@@ -90,13 +90,21 @@ class TestRun
 public:
     void run (TestModule& module);
 
-    void check (bool b) 
+    void check (bool b, int line, std::string expression) 
     {
         if (!b)
+        {
             mContext.checkFail++;
+            mFailures.push_back(std::make_pair(line, expression));
+        }
         else
             mContext.checkPass++;
         mContext.check ++;
+    }
+
+    void check (bool b)
+    {
+        check(b, -1, "<unknown>");
     }
 
 protected:
@@ -110,6 +118,8 @@ protected:
         int         checkPass;
         int         checkFail;
     } mContext;
+
+    std::vector<std::pair<int, std::string>> mFailures;
 };
 
 
@@ -157,7 +167,23 @@ TestRun::run (TestModule& module)
             }
         }
     }
+    std::cout << std::endl;
+
+
+    if (!mFailures.empty())
+    {
+        std::cout << "Failure Report:" << std::endl;
+        for (auto it = mFailures.begin(); it != mFailures.end(); ++it)
+        {
+            std::cout 
+                << "  " << it->first
+                << ": " << it->second
+                << std::endl;
+        }
+    }
 }
+
+#define CHECK(R,EXP) R.check(EXP, __LINE__, #EXP);
 
 int 
 main (int argc, char** argv)
@@ -177,46 +203,46 @@ main (int argc, char** argv)
 
             set.push("vector2f constructor", [] (TestRun& r) {
                 vector2f v;
-                r.check(sizeof(v) == sizeof(float) * 2);
-                r.check(v.x == 0.0f);
-                r.check(v.y == 0.0f);
+                CHECK(r, sizeof(v) == sizeof(float) * 2);
+                CHECK(r, v.x == 0.0f);
+                CHECK(r, v.y == 0.0f);
             });
             set.push("vector3f constructor", [] (TestRun& r) {
                 vector3f v;
-                r.check(sizeof(v) == sizeof(float) * 3);
-                r.check(v.x == 0.0f);
-                r.check(v.y == 0.0f);
-                r.check(v.z == 0.0f);
+                CHECK(r, sizeof(v) == sizeof(float) * 3);
+                CHECK(r, v.x == 0.0f);
+                CHECK(r, v.y == 0.0f);
+                CHECK(r, v.z == 0.0f);
             });
             set.push("vector4f constructor", [] (TestRun& r) {
                 vector4f v;
-                r.check(sizeof(v) == sizeof(float) * 4);
-                r.check(v.x == 0.0f);
-                r.check(v.y == 0.0f);
-                r.check(v.z == 0.0f);
-                r.check(v.w == 0.0f);
+                CHECK(r, sizeof(v) == sizeof(float) * 4);
+                CHECK(r, v.x == 0.0f);
+                CHECK(r, v.y == 0.0f);
+                CHECK(r, v.z == 0.0f);
+                CHECK(r, v.w == 0.0f);
             });
 
             set.push("vector2d constructor", [] (TestRun& r) {
                 vector2d v;
-                r.check(sizeof(v) == sizeof(double) * 2);
-                r.check(v.x == 0.0);
-                r.check(v.y == 0.0);
+                CHECK(r, sizeof(v) == sizeof(double) * 2);
+                CHECK(r, v.x == 0.0);
+                CHECK(r, v.y == 0.0);
             });
             set.push("vector3d constructor", [] (TestRun& r) {
                 vector3d v;
-                r.check(sizeof(v) == sizeof(double) * 3);
-                r.check(v.x == 0.0);
-                r.check(v.y == 0.0);
-                r.check(v.z == 0.0);
+                CHECK(r, sizeof(v) == sizeof(double) * 3);
+                CHECK(r, v.x == 0.0);
+                CHECK(r, v.y == 0.0);
+                CHECK(r, v.z == 0.0);
             });
             set.push("vector4d constructor", [] (TestRun& r) {
                 vector4d v;
-                r.check(sizeof(v) == sizeof(double) * 4);
-                r.check(v.x == 0.0);
-                r.check(v.y == 0.0);
-                r.check(v.z == 0.0);
-                r.check(v.w == 0.0);
+                CHECK(r, sizeof(v) == sizeof(double) * 4);
+                CHECK(r, v.x == 0.0);
+                CHECK(r, v.y == 0.0);
+                CHECK(r, v.z == 0.0);
+                CHECK(r, v.w == 0.0);
             });
 
 
@@ -228,17 +254,17 @@ main (int argc, char** argv)
                 u = tuple3f(3, 6, 9);
                 w = v + u;
                 
-                r.check(w.x == 3.0f);
-                r.check(w.y == 7.0f);
-                r.check(w.z == 11.0f);
+                CHECK(r, w.x == 3.0f);
+                CHECK(r, w.y == 7.0f);
+                CHECK(r, w.z == 11.0f);
 
-                r.check(v.x == 0.0f);
-                r.check(v.y == 1.0f);
-                r.check(v.z == 2.0f);
+                CHECK(r, v.x == 0.0f);
+                CHECK(r, v.y == 1.0f);
+                CHECK(r, v.z == 2.0f);
 
-                r.check(u.x == 3.0f);
-                r.check(u.y == 6.0f);
-                r.check(u.z == 9.0f);
+                CHECK(r, u.x == 3.0f);
+                CHECK(r, u.y == 6.0f);
+                CHECK(r, u.z == 9.0f);
             });
             set.push("vector3f dot product", [] (TestRun& r) {
                 vector3f v (0, 1, 2);
@@ -247,16 +273,16 @@ main (int argc, char** argv)
                 float w = dot(v, u);
                 float h = dot(u, v);
                 
-                r.check( w == h );
-                r.check( w == 24.0f);
+                CHECK(r,  w == h );
+                CHECK(r,  w == 24.0f);
 
-                r.check(v.x == 0.0f);
-                r.check(v.y == 1.0f);
-                r.check(v.z == 2.0f);
+                CHECK(r, v.x == 0.0f);
+                CHECK(r, v.y == 1.0f);
+                CHECK(r, v.z == 2.0f);
 
-                r.check(u.x == 3.0f);
-                r.check(u.y == 6.0f);
-                r.check(u.z == 9.0f);
+                CHECK(r, u.x == 3.0f);
+                CHECK(r, u.y == 6.0f);
+                CHECK(r, u.z == 9.0f);
             });
 
             group.mSets.push_back(set);

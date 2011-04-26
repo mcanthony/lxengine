@@ -27,8 +27,8 @@
 */
 //===========================================================================//
 
-#ifndef GLGEOM_RAY_HPP
-#define GLGEOM_RAY_HPP
+#ifndef GLGEOM_SPHERE_HPP
+#define GLGEOM_SPHERE_HPP
 
 #include <glm/glm.hpp>
 
@@ -39,32 +39,50 @@ namespace glgeom
 {
     namespace detail
     {
+
+        //===========================================================================//
+        //!
+        /*!
+            Represents a unit sphere (radius = 1) centered at the origin.  
+
+            This class is largely designed as a helper class and for special cases
+            where a generalized sphere can be put in terms of a unit sphere at the
+            origin to keep the calculations simple.
+         */
+        template <class P>
+        class unit_sphere3t
+        {
+        public:
+            typedef P           type;
+            typedef point3t<P>  point;
+            typedef vector3t<P> vector;
+        };
+
         //===========================================================================//
         //!
         /*!
             Dev Notes:
-            - Should direction be normalized?  Should that be a condition of validity
-              of the class?  Or does unnormalized allow more flexibility?
+            - Should a sphere always be centered at 0,0,0?
+
+            A sphere class could be defined as always unit and centered at 0,0,0
+            and have a scale and translation handled as Decoration patterns on the 
+            class.
          */
         template <class P>
-        class ray3t
+        class sphere3t
         {
         public:
             typedef P           type;
             typedef point3t<P>  point;
             typedef vector3t<P> vector;
 
-            ray3t () {}
-            ray3t (const point& origin_, const vector& direction_) : origin(origin_), direction(direction_) {}
-        
-            point   origin;
-            vector  direction;
+            point3t             center;
+            type                radius;
         };
-
     }
 
-    typedef detail::ray3t<float>    ray3f;
-    typedef detail::ray3t<double>   ray3d;
+    typedef detail::plane3t<float>    plane3f;
+    typedef detail::plane3t<double>   plane3d;
 }
 
 #endif
