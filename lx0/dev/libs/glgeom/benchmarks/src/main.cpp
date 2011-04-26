@@ -1,9 +1,8 @@
 //===========================================================================//
 /*
-                                   GLGeom
+                                   LxEngine
 
     LICENSE
-    * MIT License (http://www.opensource.org/licenses/mit-license.php)
 
     Copyright (c) 2011 athile@athile.net (http://www.athile.net)
 
@@ -27,19 +26,40 @@
 */
 //===========================================================================//
 
-#ifndef GLGEOM_HPP
-#define GLGEOM_HPP
 
-#include <glgeom/core/tuple.hpp>        // generic multi-scalar
-#include <glgeom/core/vector.hpp>       // directed distance primitive
-#include <glgeom/core/point.hpp>
+#include <cstdio>
+#include <iostream>
+#include <sstream>
+#include <functional>
+#include <vector>
+#include <map>
+#include <string>
 
-#include <glgeom/core/ray.hpp>
-#include <glgeom/core/plane.hpp>
-#include <glgeom/core/sphere.hpp>
-#include <glgeom/core/cone.hpp>
+#include "glgeom/glgeom.hpp"
+using namespace glgeom;
 
-#include <glgeom/core/intersection.hpp>
+class Report
+{
+public:
+    void benchmark  (std::string name) {}
+    void value (std::string name, size_t value) {}
+};
 
-#endif
+int 
+main (int argc, char** argv)
+{
+    Report r;
 
+    r.benchmark("Type sizes");
+    r.value( "sizeof char",     sizeof(char) );
+    r.value( "sizeof int",      sizeof(int) );
+    r.value( "sizeof float",    sizeof(float) );
+    r.value( "sizeof double",   sizeof(double) );
+    r.value( "sizeof void*",    sizeof(void*) );
+    r.value( "sizeof vector3f", sizeof(vector3f) );
+    r.value( "sizeof point3f",  sizeof(point3f) );
+
+    r.benchmark("Basic operations");
+
+    return 0;
+}

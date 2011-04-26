@@ -27,19 +27,57 @@
 */
 //===========================================================================//
 
-#ifndef GLGEOM_HPP
-#define GLGEOM_HPP
+#ifndef GLGEOM_CONE_HPP
+#define GLGEOM_CONE_HPP
 
-#include <glgeom/core/tuple.hpp>        // generic multi-scalar
-#include <glgeom/core/vector.hpp>       // directed distance primitive
+#include <glm/glm.hpp>
+
 #include <glgeom/core/point.hpp>
+#include <glgeom/core/vector.hpp>
 
-#include <glgeom/core/ray.hpp>
-#include <glgeom/core/plane.hpp>
-#include <glgeom/core/sphere.hpp>
-#include <glgeom/core/cone.hpp>
+namespace glgeom
+{
+    namespace detail
+    {
 
-#include <glgeom/core/intersection.hpp>
+        //===========================================================================//
+        //!
+        /*!
+            Represents a unit sphere (radius = 1) centered at the origin.  
+
+            This class is largely designed as a helper class and for special cases
+            where a generalized cone can be put in terms of a unit cone at the
+            origin to keep the calculations simple.
+         */
+        template <class P>
+        class unit_cone3t
+        {
+        public:
+            typedef P           type;
+            typedef point3t<P>  point;
+            typedef vector3t<P> vector;
+        };
+
+        //===========================================================================//
+        //!
+        /*!
+         */
+        template <class P>
+        class cone3t
+        {
+        public:
+            typedef P           type;
+            typedef point3t<P>  point;
+            typedef vector3t<P> vector;
+
+            point3t             center;
+            vector3t            axis;
+            type                radius;
+        };
+    }
+
+    typedef detail::cone3t<float>    cone3f;
+    typedef detail::cone3t<double>   cone3d;
+}
 
 #endif
-

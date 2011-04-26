@@ -81,8 +81,8 @@ namespace glgeom
         };
     }
 
-    typedef detail::plane3t<float>    plane3f;
-    typedef detail::plane3t<double>   plane3d;
+    typedef detail::sphere3t<float>    sphere3f;
+    typedef detail::sphere3t<double>   sphere3d;
 }
 
 #endif

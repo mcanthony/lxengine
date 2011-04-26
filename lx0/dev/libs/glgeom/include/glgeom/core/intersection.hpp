@@ -60,9 +60,23 @@ namespace glgeom
 
     ///////////////////////////////////////////////////////////////////////////////
     //
-    // S P H E R E   I N T E R S E C T I O N S
+    // R A Y   I N T E R S E C T I O N S
     //
     ///////////////////////////////////////////////////////////////////////////////
+
+    //---------------------------------------------------------------------------//
+    //! Simple binary intersection test: do the primitives intersect or not?
+    /*!
+        Tests if the two primitives intersect as fast as can be computed.  If there
+        is an intersection, the intersection point data is not computed.
+
+        Dev Notes:
+        - This requires some sort of tolerance factor for how near the rays must
+          be to considered to intersect.
+     */
+    template <typename P>
+    bool intersect (const detail::ray3t<P>& rayA, const detail::ray3t<P>& rayB);
+
 
     //---------------------------------------------------------------------------//
     //! Simple binary intersection test: do the primitives intersect or not?
@@ -80,13 +94,6 @@ namespace glgeom
     template <typename P>
     void intersect (const detail::ray3t<P>& ray, const detail::plane3t<P>& plane, detail::intersect3t<P>& intersect);
 
-
-    ///////////////////////////////////////////////////////////////////////////////
-    //
-    // P L A N E   I N T E R S E C T I O N S
-    //
-    ///////////////////////////////////////////////////////////////////////////////
-
     //---------------------------------------------------------------------------//
     //! Simple binary intersection test: do the primitives intersect or not?
     /*!
@@ -102,6 +109,15 @@ namespace glgeom
      */
     template <typename P>
     void intersect (const detail::ray3t<P>& ray, const detail::sphere3t<P>& sphere, detail::intersect3t<P>& intersect);
+
+
+    ///////////////////////////////////////////////////////////////////////////////
+    //
+    // L I N E   I N T E R S E C T I O N S
+    //
+    ///////////////////////////////////////////////////////////////////////////////
+
+
 
 }
 
