@@ -119,9 +119,6 @@ namespace lx0 { namespace core {
 
     _LX_FORWARD_DECL_LXPTRS(Mesh);
 
-    class point3;
-    class vector3;
-
     class KeyEvent;
 
     namespace detail {

@@ -44,7 +44,7 @@ namespace Terrain
     public:
                     Runtime (ElementPtr spElem);
 
-        tuple3      calcColor(float s, float t);
+        glgeom::color3f      calcColor(float s, float t);
         float       calcHeight(float s, float t);
     };
 

@@ -34,6 +34,8 @@
 #include <glgeom/core/vector.hpp>       // directed distance primitive
 #include <glgeom/core/point.hpp>
 
+#include <glgeom/core/color.hpp>
+
 #include <glgeom/core/ray.hpp>
 #include <glgeom/core/plane.hpp>
 #include <glgeom/core/sphere.hpp>

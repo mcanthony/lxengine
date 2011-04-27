@@ -56,12 +56,8 @@ namespace lx0
 
 #include <lx0/core/math/radians.hpp>
 #include <lx0/core/math/tuple3.hpp>
-#include <lx0/core/math/point3.hpp>
 #include <lx0/core/math/vector3.hpp>
 #include <lx0/core/math/matrix4.hpp>
-#include <lx0/core/math/color.hpp>
-
-#include <lx0/core/math/ray.hpp>
 
 #include <lx0/core/math/noise.hpp>
 #include <lx0/core/math/smooth_functions.hpp>

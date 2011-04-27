@@ -33,7 +33,7 @@
 #include <lx0/core/core.hpp>
 #include <lx0/core/data/lxvar.hpp>
 #include <lx0/core/data/lxvar_convert.hpp>
-#include <lx0/core/math/point3.hpp>
+#include <glgeom/glgeom.hpp>
 
 #include <OGRE/OgreQuaternion.h>
 #include <OGRE/OgreColourValue.h>
@@ -43,14 +43,14 @@ namespace lx0 { namespace core {
 
     namespace detail
     {
-        void _convert(lxvar& v, point3& p)
+        void _convert(lxvar& v, glgeom::point3f& p)
         {
             p.x = v.at(0).asFloat();
             p.y = v.at(1).asFloat();
             p.z = v.at(2).asFloat();
         }
         
-        void _convert(lxvar& value, vector3& v)
+        void _convert(lxvar& value, glgeom::vector3f& v)
         {
             lx_check_error(value.size() == 3);
             v.x = value.at(0).asFloat();

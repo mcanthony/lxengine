@@ -28,8 +28,7 @@
 
 #pragma once
 
-#include <lx0/core/math/point3.hpp>
-#include <lx0/core/math/vector3.hpp>
+#include <glgeom/glgeom.hpp>
 #include <lx0/core/math/matrix4.hpp>
 
 namespace lx0 { namespace prototype {
@@ -54,19 +53,19 @@ namespace lx0 { namespace prototype {
 
     struct Camera
     {
-        lx0::core::vector3 forward () const { return mTarget - mPosition; }
+        glgeom::vector3f forward () const { return mTarget - mPosition; }
 
-        lx0::core::point3  mPosition;
-        lx0::core::point3  mTarget;
+        glgeom::point3f    mPosition;
+        glgeom::point3f    mTarget;
         
-        lx0::core::vector3 mWorldUp;        //! Reference vector for the "up" direction in the world
+        glgeom::vector3f   mWorldUp;        //! Reference vector for the "up" direction in the world
 
         float              mFov;
         float              mNear;
         float              mFar;
     };
 
-            lx0::core::vector3  view_vector         (const Camera& camera);
+            glgeom::vector3f    view_vector         (const Camera& camera);
             void                view_matrix         (const Camera& camera, lx0::core::matrix4& viewMatrix);
     inline  lx0::core::matrix4  view_matrix         (const Camera& camera) { lx0::core::matrix4 m; view_matrix(camera, m); return m; } 
 

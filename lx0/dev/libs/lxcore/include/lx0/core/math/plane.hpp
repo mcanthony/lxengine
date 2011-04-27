@@ -29,9 +29,6 @@
 
 #pragma once
 
-#include <lx0/core/math/point3.hpp>
-#include <lx0/core/math/vector3.hpp>
-
 namespace lx0 { namespace core {
 
 

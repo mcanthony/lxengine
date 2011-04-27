@@ -78,7 +78,7 @@ namespace lx0 { namespace dom {
             for (int i = 0; i < numVerts; ++i)
             {
                 Mesh::Vertex v;
-                v.position = spVerts->field<point3>("co", 0);
+                v.position = spVerts->field<glgeom::point3f>("co", 0);
 
                 // Normals are encoded as shorts
                 v.normal.x = normalizeShort( spVerts->field<short>("no", 0) );

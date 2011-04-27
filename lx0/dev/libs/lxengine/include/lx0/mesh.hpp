@@ -31,7 +31,7 @@
 
 #include <lx0/core/detail/forward_decls.hpp>
 #include <lx0/object.hpp>
-#include <lx0/core/math/point3.hpp>
+#include <glgeom/glgeom.hpp>
 
 namespace lx0 { namespace dom {
     
@@ -54,7 +54,7 @@ namespace lx0 { namespace core {
         virtual lxvalue*    clone           (void) const { return nullptr; }
 
         float               boundingRadius  (void) const;
-        vector3             boundingVector  (void) const;
+        glgeom::vector3f    boundingVector  (void) const;
 
         float               maxExtentScale  (lxvar attr) const;
 
@@ -71,8 +71,8 @@ namespace lx0 { namespace core {
 
         struct Vertex
         {
-            point3  position;
-            vector3 normal;
+            glgeom::point3f  position;
+            glgeom::vector3f normal;
         };
 
         Flags               mFlags;

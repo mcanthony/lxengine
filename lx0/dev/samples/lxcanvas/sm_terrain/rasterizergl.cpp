@@ -401,7 +401,7 @@ RasterizerGL::_createShader(const char* filename, GLuint type)
 
 
 RasterizerGL::GeometryPtr 
-RasterizerGL::createQuadList (std::vector<point3>& positionData)
+RasterizerGL::createQuadList (std::vector<glgeom::point3f>& positionData)
 {
     GLuint vao[1];
 
@@ -415,7 +415,7 @@ RasterizerGL::createQuadList (std::vector<point3>& positionData)
     GLuint vbo[1];
     glGenBuffers(1, &vbo[0]);
     glBindBuffer(GL_ARRAY_BUFFER, vbo[0]);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(point3) * positionData.size(), &positionData[0], GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(glgeom::point3f) * positionData.size(), &positionData[0], GL_STATIC_DRAW);
         
     lx_check_error( glGetError() == GL_NO_ERROR, "OpenGL error detected." );
 
@@ -444,9 +444,9 @@ void RasterizerGL::QuadList::activate()
 
 RasterizerGL::GeometryPtr
 RasterizerGL::createQuadList (std::vector<unsigned short>& indices, 
-                              std::vector<point3>& positions, 
-                              std::vector<vector3>& normals,
-                              std::vector<tuple3>& colors)
+                              std::vector<glgeom::point3f>& positions, 
+                              std::vector<glgeom::vector3f>& normals,
+                              std::vector<glgeom::color3f>& colors)
 {
     // Create a vertex array to store the vertex data
     //
@@ -577,12 +577,12 @@ struct EyeTransform : public Rasterizer::Transform
         //
         auto& view = spCamera->viewMatrix;
 
-        const vector3 t(view(3,0), view(3,1), view(3,2));
+        const glgeom::vector3f t(view(3,0), view(3,1), view(3,2));
         const auto& camX = spCamera->viewMatrix.column[0];
         const auto& camY = spCamera->viewMatrix.column[1];
         const auto& camZ = spCamera->viewMatrix.column[2];
 
-        vector3 translation;
+        glgeom::vector3f translation;
         translation.x = t.x * camX.x + t.y * camY.x + t.z * camZ.x; 
         translation.y = t.x * camX.y + t.y * camY.y + t.z * camZ.y; 
         translation.z = t.x * camX.z + t.y * camY.z + t.z * camZ.z; 
@@ -595,7 +595,7 @@ struct EyeTransform : public Rasterizer::Transform
         glRotatef(z_angle.value, 0.0f, 0.0f, 1.0f);
     }
 
-    point3  pos;
+    glgeom::point3f  pos;
     lx0::radians z_angle;
 };
 

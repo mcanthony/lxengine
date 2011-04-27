@@ -29,25 +29,9 @@
 
 #pragma once
 
-#include <lx0/core/math/point3.hpp>
-#include <lx0/core/math/vector3.hpp>
 
 namespace lx0 { namespace core {
 
-    struct quaternion
-    {
-        union {
-            struct 
-            {
-                float w;
-                union 
-                {
-                    struct { vector3 v; };
-                    float   x, y, z;
-                };
-            };
-            float elem[4];
-        };
-    };
+
 
 }}

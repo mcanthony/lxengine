@@ -31,8 +31,7 @@
 
 #include <vector>
 #include <memory>
-
-#include <lx0/core/math/vector3.hpp>
+#include <glgeom/glgeom.hpp>
 
 namespace lx0 { namespace core {
 
@@ -42,14 +41,14 @@ namespace lx0 { namespace core {
         {
         public:
             virtual void add_stream     (const char* name, std::vector<float>& data) = 0;
-            virtual void add_stream     (const char* name, std::vector<vector3>& data) = 0;
+            virtual void add_stream     (const char* name, std::vector<glgeom::vector3f>& data) = 0;
         };
 
         class primitive_buffer_sw : public primitive_buffer_imp
         {
         public:
             virtual void add_stream     (const char* name, std::vector<float>& data);
-            virtual void add_stream     (const char* name, std::vector<vector3>& data);
+            virtual void add_stream     (const char* name, std::vector<glgeom::vector3f>& data);
 
             struct Stream
             {
@@ -58,7 +57,7 @@ namespace lx0 { namespace core {
                 union
                 {
                     float*      pFloat;
-                    vector3*    pVector3;
+                    glgeom::vector3f*    pVector3;
                 };
             };
             std::map<std::string, Stream> mStreams;
@@ -80,7 +79,7 @@ namespace lx0 { namespace core {
         primitive_buffer();
 
         void add_stream     (const char* name, std::vector<float>& data)        { mpImp->add_stream(name, data); }
-        void add_stream     (const char* name, std::vector<vector3>& data)      { mpImp->add_stream(name, data); }
+        void add_stream     (const char* name, std::vector<glgeom::vector3f>& data)      { mpImp->add_stream(name, data); }
 
     protected:
         typedef std::unique_ptr<detail::primitive_buffer_imp> ImpPtr;

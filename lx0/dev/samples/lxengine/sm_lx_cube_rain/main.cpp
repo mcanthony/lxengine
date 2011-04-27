@@ -49,7 +49,6 @@
 #include <lx0/element.hpp>
 #include <lx0/view.hpp>
 #include <lx0/controller.hpp>
-#include <lx0/core/math/point3.hpp>
 #include <lx0/core/util/util.hpp>
 #include <lx0/core/base/cast.hpp>
 

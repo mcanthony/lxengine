@@ -32,7 +32,7 @@
 
 #include <lx0/core/core.hpp>
 #include <lx0/core/data/lxvar.hpp>
-#include <lx0/core/math/point3.hpp>
+#include <glgeom/glgeom.hpp>
 
 #include "lxvar_parser.hpp"
 

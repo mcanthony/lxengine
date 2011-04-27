@@ -93,13 +93,13 @@ namespace Terrain
     }
 
 
-    tuple3 
+    glgeom::color3f 
     Runtime::calcColor(float s, float t)
     {
-        tuple3 c;
-        c.x = 1.0f - noise3d_perlin(s / 2.0f, t / 2.0f, .212f);
-        c.y = 0.0f;
-        c.z = 0.0f;
+        glgeom::color3f c;
+        c.r = 1.0f - noise3d_perlin(s / 2.0f, t / 2.0f, .212f);
+        c.g = 0.0f;
+        c.b = 0.0f;
         return c;
     }
 
@@ -196,12 +196,12 @@ namespace Terrain
             }
         }
 
-        std::vector<point3> positions (101 * 101);
+        std::vector<glgeom::point3f> positions (101 * 101);
         for (int y = 0; y <= 100; ++y)
         {
             for (int x = 0; x <= 100; ++x)
             {
-                point3 p;
+                glgeom::point3f p;
                 p.x = float(x);
                 p.y = float(y);
                 p.z = heights(x, y);
@@ -209,17 +209,17 @@ namespace Terrain
             }
         }
 
-        std::vector<vector3> normals (101 * 101);
+        std::vector<glgeom::vector3f> normals (101 * 101);
         for (int y = 0; y <= 100; ++y)
         {
             for (int x = 0; x <= 100; ++x)
             {
-                vector3 dx;
+                glgeom::vector3f dx;
                 dx.x = 2;
                 dx.y = 0;
                 dx.z = heights(x - 1, y) - heights(x + 1, y);
                 
-                vector3 dy;
+                glgeom::vector3f dy;
                 dy.x = 0;
                 dy.y = 2;
                 dy.z = heights(x, y - 1) - heights(x, y + 1);
@@ -228,7 +228,7 @@ namespace Terrain
             }
         }
 
-        std::vector<tuple3> colors (101 * 101);
+        std::vector<glgeom::color3f> colors (101 * 101);
         for (int y = 0; y <= 100; ++y)
         {
             for (int x = 0; x <= 100; ++x)

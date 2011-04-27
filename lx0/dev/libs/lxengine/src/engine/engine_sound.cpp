@@ -143,8 +143,8 @@ namespace lx0 { namespace core { namespace detail {
         void    _reset          (ElementPtr spElem);
         void    _changeState    (lxvar value);
 
-        ALuint      mSource;
-        point3      mPosition;
+        ALuint          mSource;
+        glgeom::point3f mPosition;
     };
 
 
@@ -433,7 +433,7 @@ namespace lx0 { namespace core { namespace detail {
             alGenSources(1, &mSource);
             lx_check_error(alGetError() == AL_NO_ERROR);
 
-            vector3 velocity(0, 0, 0);
+            glgeom::vector3f velocity(0, 0, 0);
             alSourcei (mSource, AL_BUFFER,   buffer);
             alSourcef (mSource, AL_PITCH,    1.0f );
             alSourcef (mSource, AL_GAIN,     volume);

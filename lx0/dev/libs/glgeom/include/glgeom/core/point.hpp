@@ -32,23 +32,36 @@
 
 #include <glm/glm.hpp>
 
+#include <glgeom/core/vector.hpp>
+
 namespace glgeom
 {
     namespace detail
     {
+
         //===========================================================================//
         //!
         /*!
          */
-        template <class P>
+        template <typename P>
         class point2t
         {
         public:
+            typedef P               type;
+            typedef point2t<P>      point2;
+            typedef vector2t<P>     vector2;
+
+            inline type&   operator[] (int i)          { return vec[i]; }
+            inline type    operator[] (int i) const    { return vec[i]; }
+
+            void operator+=  (const vector2& v) { vec += v.vec; }
+            void operator-=  (const vector2& v) { vec += v.vec; }
+
             union
             {
                 struct
                 {
-                    float x, y;
+                    type x, y;
                 };
                 struct
                 {
@@ -63,20 +76,31 @@ namespace glgeom
         //!
         /*!
          */
-        template <class P>
+        template <typename P>
         class point3t
         {
         public:
-            typedef P       type;
+            typedef P               type;
+            typedef point3t<P>      point3;
+            typedef vector3t<P>     vector3;
 
-            point3t (void) { /* use glm default ctor */ }
-            point3t (type _x, type _y, type _z) : vec(_x, _y, _z) {}
+                        point3t (void) { /* use glm default ctor */ }
+                        point3t (type _x, type _y, type _z) : vec(_x, _y, _z) {}
+            explicit    point3t (const glm::detail::tvec3<P>& that) : vec(that) {}
+
+            inline type&   operator[] (int i)          { return vec[i]; }
+            inline type    operator[] (int i) const    { return vec[i]; }
+
+            void operator+=  (const vector3& v) { vec += v.vec; }
+            void operator-=  (const vector3& v) { vec += v.vec; }
+
+            point3t operator- (void) const { return point3t(-vec); }
 
             union
             {
                 struct
                 {
-                    float x, y, z;
+                    type x, y, z;
                 };
                 struct
                 {
@@ -86,20 +110,65 @@ namespace glgeom
 
         protected:
         };
+        
+        template <typename T>
+        point3t<T> operator+ (const point3t<T>& a, const vector3t<T>& b)
+        {
+            return reinterpret_cast< point3t<T>& >( a.vec - b.vec );
+        }
+
+        template <typename T>
+        vector3t<T> operator- (const point3t<T>& a, const point3t<T>& b)
+        {
+            return reinterpret_cast< vector3t<T>& >( a.vec - b.vec );
+        }
+
+
+        /*inline point3   add             (const point3& p, const vector3& v) { return cast<point3&>(p.ogreVec + v.ogreVec); }
+        inline point3   sub             (const point3& p, const vector3& v) { return cast<point3&>(p.ogreVec - v.ogreVec); }
+        inline vector3  sub             (const point3& p, const point3& q)  { return cast<vector3&>(p.ogreVec - q.ogreVec); }
+        inline bool     equal           (const point3& p, const point3& q)  { return p.x == q.x && p.y == q.y && p.z == q.z; }
+        inline bool     equiv           (const point3& p, const point3& q, float e) { return (abs(p.x - q.x) < e) && (abs(p.y - q.y) < e) && (abs(p.z - q.z) < e); }  */
+
+        template <typename T>
+        inline float    distance                    (const point3t<T>& a, const point3t<T>& b)  { return glm::distance(a.vec, b.vec); }
+        template <typename T>
+        inline float    distance_squared            (const point3t<T>& a, const point3t<T>& b)  { return glm::dot(a.vec, b.vec); }
+        template <typename T>
+        inline float    distance_to_origin_squared  (const point3t<T>& p)                   { return p.x * p.x + p.y * p.y + p.z * p.z; }
+        template <typename T>
+        inline float    distance_to_origin          (const point3t<T>& p)                   { return sqrtf( distance_to_origin_squared(p) ); }
+
+        template <typename T>
+        inline point3t<T>   mid_point       (const point3t<T>& a, const point3t<T>& b)  
+        { 
+            return point3t<T>( (b.vec - a.vec) / 2 );
+        }
+
 
         //===========================================================================//
         //!
         /*!
          */
-        template <class P>
+        template <typename P>
         class point4t
         {
         public:
+            typedef P               type;
+            typedef point4t<P>      point4;
+            typedef vector4t<P>     vector4;
+
+            inline type&   operator[] (int i)          { return vec[i]; }
+            inline type    operator[] (int i) const    { return vec[i]; }
+
+            void operator+=  (const vector4& v) { vec += v.vec; }
+            void operator-=  (const vector4& v) { vec += v.vec; }
+
             union
             {
                 struct
                 {
-                    float x, y, z, w;
+                    type x, y, z, w;
                 };
                 struct
                 {
@@ -119,6 +188,9 @@ namespace glgeom
 
     typedef detail::point4t<float>     point4f;
     typedef detail::point4t<double>    point4d;
+
+    using detail::operator+;
+    using detail::operator-;
 
     namespace detail
     {

@@ -35,6 +35,7 @@
 
 #include <lx0/core/core.hpp>
 #include <lx0/mesh.hpp>
+#include <glgeom/glgeom.hpp>
 
 namespace lx0 { namespace core {
 
@@ -62,13 +63,13 @@ namespace lx0 { namespace core {
     /*!
         This assume the mesh is centered about a local origin of 0,0,0.
      */
-    vector3   
+    glgeom::vector3f  
     Mesh::boundingVector (void) const
     {
-        vector3 v(0, 0, 0);
+        glgeom::vector3f v(0, 0, 0);
         for (auto it = mVertices.begin(); it != mVertices.end(); ++it)
         {
-            const vector3 u = abs_( cast<const vector3&>(it->position) );
+            const auto u = glm::abs(it->position.vec);
             for (int i = 0; i < 3; ++i)
             {
                 if (u[i] > v[i])

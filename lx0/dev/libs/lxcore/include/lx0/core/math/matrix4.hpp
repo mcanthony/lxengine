@@ -30,7 +30,7 @@
 
 #include <lx0/core/base/cast.hpp>
 #include <lx0/core/math/vector3.hpp>
-#include <lx0/core/math/point3.hpp>
+#include <glgeom/glgeom.hpp>
 
 namespace lx0 { namespace core {    
 
@@ -74,12 +74,12 @@ namespace lx0 { namespace core {
     void    transpose           (matrix4& a, const matrix4& b);
 
 
-    void    mul                 (vector3& u, const vector3& v, const matrix4& m);
+    void    mul                 (glgeom::vector3f& u, const glgeom::vector3f& v, const matrix4& m);
 
-    void    setOrthonormalBasis (matrix4& mat, const vector3& x, const vector3& y, const vector3& z, const point3& origin);
-    void    lookAt              (matrix4& mat, const point3& position, const point3& target, const vector3& referenceUpAxis);
+    void    setOrthonormalBasis (matrix4& mat, const glgeom::vector3f& x, const glgeom::vector3f& y, const glgeom::vector3f& z, const glgeom::point3f& origin);
+    void    lookAt              (matrix4& mat, const glgeom::point3f& position, const glgeom::point3f& target, const glgeom::vector3f& referenceUpAxis);
 
-    inline vector3 operator*    (const vector3& v, const matrix4& m);
+    inline glgeom::vector3f operator*    (const glgeom::vector3f& v, const matrix4& m);
     inline matrix4 operator*    (const matrix4& a, const matrix4& b) { matrix4 c; mul(c, a, b); return c; }
 
 }};

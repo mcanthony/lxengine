@@ -97,7 +97,7 @@ namespace lx0 { namespace prototype {
     /*!
         Returns the unnormalized vector between the camera position and target.
      */
-    vector3
+    glgeom::vector3f
     view_vector (const Camera& camera)
     {
         lx_check_error( !is_zero_length(camera.mTarget - camera.mPosition) );
@@ -121,7 +121,7 @@ namespace lx0 { namespace prototype {
     void    
     move_forward (Camera& camera, float step)
     {
-        const vector3 view = normalize( view_vector(camera) ) * step;
+        const glgeom::vector3f view = normalize( view_vector(camera) ) * step;
         camera.mTarget += view;
         camera.mPosition += view;
     }
@@ -132,9 +132,9 @@ namespace lx0 { namespace prototype {
     {
         lx_check_error( is_unit_length( camera.mWorldUp ) );
 
-        const vector3 view  = normalize( view_vector(camera) );
-        const vector3 right = normalize( cross(view, camera.mWorldUp) );
-        const vector3 viewUp = normalize( cross(right, view) );
+        const glgeom::vector3f view  = normalize( view_vector(camera) );
+        const glgeom::vector3f right = normalize( cross(view, camera.mWorldUp) );
+        const glgeom::vector3f viewUp = normalize( cross(right, view) );
 
         camera.mTarget += viewUp * step;
         camera.mPosition += viewUp * step;
@@ -154,8 +154,8 @@ namespace lx0 { namespace prototype {
     void    
     move_right (Camera& camera, float step)
     {
-        const vector3 view  = normalize( view_vector(camera) );
-        const vector3 right = normalize( cross(view, camera.mWorldUp) );
+        const glgeom::vector3f view  = normalize( view_vector(camera) );
+        const glgeom::vector3f right = normalize( glgeom::cross(view, camera.mWorldUp) );
         camera.mTarget += right * step;
         camera.mPosition += right * step;
     }
@@ -164,8 +164,8 @@ namespace lx0 { namespace prototype {
     void    
     rotate_horizontal (Camera& camera, float angle)
     {
-        const vector3 view = camera.mTarget - camera.mPosition;
-        const vector3 rotated = rotate(view, camera.mWorldUp, angle);
+        const glgeom::vector3f view = camera.mTarget - camera.mPosition;
+        const glgeom::vector3f rotated = rotate(view, camera.mWorldUp, angle);
         camera.mTarget = camera.mPosition + rotated;
     }
 
@@ -173,9 +173,9 @@ namespace lx0 { namespace prototype {
     void    
     rotate_vertical (Camera& camera, float angle)
     {
-        const vector3 view  = camera.mTarget - camera.mPosition;
-        const vector3 right = normalize( cross(view, camera.mWorldUp) );
-        const vector3 rotated = rotate(view, right, angle);
+        const glgeom::vector3f view  = camera.mTarget - camera.mPosition;
+        const glgeom::vector3f right = normalize( cross(view, camera.mWorldUp) );
+        const glgeom::vector3f rotated = rotate(view, right, angle);
         camera.mTarget = camera.mPosition + rotated;
     }
 

@@ -30,6 +30,7 @@
 #pragma once
 
 #include <lx0/core/detail/forward_decls.hpp>
+#include <glgeom/glgeom.hpp>
 
 namespace Ogre {
     class ColourValue;
@@ -41,8 +42,8 @@ namespace lx0 { namespace core {
 
     namespace detail
     {
-        void _convert(lxvar& v, point3& p);
-        void _convert(lxvar& v, vector3& u);
+        void _convert(lxvar& v, glgeom::point3f& p);
+        void _convert(lxvar& v, glgeom::vector3f& u);
 
         void _convert(lxvar& v, Ogre::ColourValue& u);
         void _convert(lxvar& v, Ogre::Vector3& u);

@@ -65,9 +65,9 @@ class Renderer
 public:
     void initialize()
     {
-        set(gCamera.mPosition, 10, 10, 15);
-        set(gCamera.mTarget, 0, 0, 0);
-        set(gCamera.mWorldUp, 0, 0, 1);
+        gCamera.mPosition = glgeom::point3f(10, 10, 15);
+        gCamera.mTarget = glgeom::point3f(0, 0, 0);
+        gCamera.mWorldUp = glgeom::vector3f(0, 0, 1);
         gCamera.mFov = 60.0f;
         gCamera.mNear = 0.01f;  // 1 cm
         gCamera.mFar = 2000.0f; // 2 km

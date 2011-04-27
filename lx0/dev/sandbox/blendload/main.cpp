@@ -106,7 +106,7 @@ main (int argc, char** argv)
                 float y = spVerts->field<float>("co", 1);
                 float z = spVerts->field<float>("co", 2);
 
-                vector3 n;
+                glgeom::vector3f n;
                 n.x = spVerts->field<short>("no", 0) / float(std::numeric_limits<short>::max());
                 n.y = spVerts->field<short>("no", 1) / float(std::numeric_limits<short>::max());
                 n.z = spVerts->field<short>("no", 2) / float(std::numeric_limits<short>::max());

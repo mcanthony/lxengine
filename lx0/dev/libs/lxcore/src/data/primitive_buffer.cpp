@@ -39,7 +39,7 @@ namespace lx0 { namespace core { namespace detail {
     }
 
     void
-    primitive_buffer_sw::add_stream (const char* name, std::vector<vector3>& data)
+    primitive_buffer_sw::add_stream (const char* name, std::vector<glgeom::vector3f>& data)
     {
     }
 

@@ -33,6 +33,7 @@
 #include <gl/GL.h>
 
 #include <lx0/core/core.hpp>
+#include <glgeom/glgeom.hpp>
 
 using namespace lx0::core;
 
@@ -135,7 +136,7 @@ namespace Rasterizer
     class RenderAlgorithm
     {
     public:
-        color4                  mClearColor;
+        glgeom::color4f         mClearColor;
         std::vector<GlobalPass> mPasses;
     };
 
@@ -257,11 +258,11 @@ public:
     TransformPtr    createTransformBillboardXYS (float tx, float ty, float tz, float sx, float sy, float sz);
     TransformPtr    createTransformEye          (float tx, float ty, float tz, lx0::radians z_angle);
 
-    GeometryPtr     createQuadList  (std::vector<point3>& quads);
+    GeometryPtr     createQuadList  (std::vector<glgeom::point3f>& quads);
     GeometryPtr     createQuadList  (std::vector<unsigned short>& indices, 
-                                     std::vector<point3>& positions, 
-                                     std::vector<vector3>& normals,
-                                     std::vector<tuple3>& colors);
+                                     std::vector<glgeom::point3f>& positions, 
+                                     std::vector<glgeom::vector3f>& normals,
+                                     std::vector<glgeom::color3f>& colors);
 
     void            refreshTextures (void);
 

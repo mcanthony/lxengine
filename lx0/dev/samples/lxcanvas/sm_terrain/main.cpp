@@ -53,6 +53,8 @@
 #include <boost/program_options.hpp>
 
 // Lx0 headers
+#include <glgeom/glgeom.hpp>
+
 #include <lx0/core/core.hpp>
 #include <lx0/core/math/matrix4.hpp>
 #include <lx0/core/util/util.hpp>
@@ -138,9 +140,9 @@ public:
 
     void initialize()
     {
-        set(gCamera.mPosition, 20, 20, 32);
-        set(gCamera.mTarget, 0, 0, 0);
-        set(gCamera.mWorldUp, 0, 0, 1);
+        gCamera.mPosition = glgeom::point3f(20, 20, 32);
+        gCamera.mTarget = glgeom::point3f(0, 0, 0);
+        gCamera.mWorldUp = glgeom::vector3f(0, 0, 1);
         gCamera.mFov = 60.0f;
         gCamera.mNear = 0.01f;  // 1 cm
         gCamera.mFar = 2000.0f; // 2 km
@@ -199,7 +201,7 @@ public:
     void 
     _generateRenderAlgorithm (Rasterizer::RenderAlgorithm& algorithm)
     {
-        algorithm.mClearColor = color4(0.09f, 0.09f, 0.11f, 1.0f);
+        algorithm.mClearColor = glgeom::color4f(0.09f, 0.09f, 0.11f, 1.0f);
 
         Rasterizer::GlobalPass pass[4];
         switch (mViewMode)
@@ -226,7 +228,7 @@ public:
     void 
     _generateSelectAlgorithm (Rasterizer::RenderAlgorithm& algorithm)
     {
-        algorithm.mClearColor = color4(0.0f, 0.0f, 0.0f, 0.0f);
+        algorithm.mClearColor = glgeom::color4f(0.0f, 0.0f, 0.0f, 0.0f);
 
         // The solid.frag is not sufficient since the alpha mask needs to be read from RGBA textures
         // to ensure only the right pixels are actually written to the pixel buffer.
@@ -500,9 +502,9 @@ public:
                 const auto totalVertices = spMesh->field<int>("totvert");
                 const auto totalFaces = spMesh->field<int>("totface");
 
-                std::vector<point3>  positions;
-                std::vector<vector3> normals;
-                std::vector<tuple3>  colors;
+                std::vector<glgeom::point3f>  positions;
+                std::vector<glgeom::vector3f> normals;
+                std::vector<glgeom::color3f>  colors;
                 std::vector<unsigned short> indicies;
 
                 positions.reserve(totalVertices);
@@ -513,20 +515,20 @@ public:
                 auto spVerts = reader.readObject( spMesh->field<unsigned __int64>("mvert") );
                 for (int i = 0; i < totalVertices; ++i)
                 {
-                    point3 p;
+                    glgeom::point3f p;
                     p.x = spVerts->field<float>("co", 0);
                     p.y = spVerts->field<float>("co", 1);
                     p.z = spVerts->field<float>("co", 2);
-                    p.vec3 *= 200;
+                    p.vec *= 200;
                     positions.push_back(p);
 
-                    vector3 n;
+                    glgeom::vector3f n;
                     n.x = spVerts->field<short>("no", 0) / float(std::numeric_limits<short>::max());
                     n.y = spVerts->field<short>("no", 1) / float(std::numeric_limits<short>::max());
                     n.z = spVerts->field<short>("no", 2) / float(std::numeric_limits<short>::max());
                     normals.push_back(n);
 
-                    colors.push_back( tuple3(1, 1, 1) );
+                    colors.push_back( glgeom::color3f(1, 1, 1) );
 
                     spVerts->next();
                 }
@@ -550,7 +552,7 @@ public:
                     spFaces->next();
                 }
                  
-                point3 pos( 0.0f, 0.0f, 0.0f);
+                glgeom::point3f pos( 0.0f, 0.0f, 0.0f);
                 pos.z = spElement->document()->getComponent<PhysicsSubsystem>("physics2")->drop(pos.x, pos.y);
                 pos.z -= 20.0f;
                 mPosition = pos;
@@ -580,7 +582,7 @@ public:
     }
 
 protected:
-    point3                          mPosition;
+    glgeom::point3f                 mPosition;
     lx0::radians                    mRotation;
     RasterizerGL::ItemPtr           mspItem;
 };
@@ -609,23 +611,23 @@ public:
         {
             const float kSize = 1.0f;
 
-            std::vector<point3> positions;
-            positions.push_back( point3(0, 0, 0) );
-            positions.push_back( point3(kSize, 0, 0) );
-            positions.push_back( point3(kSize, 0, kSize) );
-            positions.push_back( point3(0, 0, kSize) );
+            std::vector<glgeom::point3f> positions;
+            positions.push_back( glgeom::point3f(0, 0, 0) );
+            positions.push_back( glgeom::point3f(kSize, 0, 0) );
+            positions.push_back( glgeom::point3f(kSize, 0, kSize) );
+            positions.push_back( glgeom::point3f(0, 0, kSize) );
 
-            std::vector<vector3> normals;
-            normals.push_back( vector3(0, 1, 0) );
-            normals.push_back( vector3(0, 1, 0) );
-            normals.push_back( vector3(0, 1, 0) );
-            normals.push_back( vector3(0, 1, 0) );
+            std::vector<glgeom::vector3f> normals;
+            normals.push_back( glgeom::vector3f(0, 1, 0) );
+            normals.push_back( glgeom::vector3f(0, 1, 0) );
+            normals.push_back( glgeom::vector3f(0, 1, 0) );
+            normals.push_back( glgeom::vector3f(0, 1, 0) );
 
-            std::vector<tuple3> colors;
-            colors.push_back( tuple3(0, 1, 0) );
-            colors.push_back( tuple3(1, 1, 0) );
-            colors.push_back( tuple3(1, 0, 0) );
-            colors.push_back( tuple3(0, 0, 0) );
+            std::vector<glgeom::color3f> colors;
+            colors.push_back( glgeom::color3f(0, 1, 0) );
+            colors.push_back( glgeom::color3f(1, 1, 0) );
+            colors.push_back( glgeom::color3f(1, 0, 0) );
+            colors.push_back( glgeom::color3f(0, 0, 0) );
 
             std::vector<unsigned short> indicies;
             indicies.push_back(0);
@@ -680,7 +682,7 @@ public:
         }
 
         lxvar attrPos = spElement->attr("position");
-        point3 pos( attrPos.at(0).asFloat(), attrPos.at(1).asFloat(), 0.0f);
+        glgeom::point3f pos( attrPos.at(0).asFloat(), attrPos.at(1).asFloat(), 0.0f);
         pos.z = spElement->document()->getComponent<PhysicsSubsystem>("physics2")->drop(pos.x, pos.y);
 
         float scale = spElement->attr("scale").query(1.0f);

@@ -50,9 +50,6 @@
 #include <lx0/element.hpp>
 #include <lx0/mesh.hpp>
 
-
-_ENABLE_LX_CAST(btVector3, point3);
-
 using namespace lx0::core;
 
 typedef std::shared_ptr<btCollisionShape>   btCollisionShapePtr;
@@ -101,7 +98,7 @@ namespace lx0 { namespace core { namespace detail {
      */
     struct BoxKey : public ShapeKeyBase
     {
-        BoxKey (const vector3& halfBounds)
+        BoxKey (const glgeom::vector3f& halfBounds)
         {
             for (int i = 0; i < 3; ++i)
                 xyz[i] = int( ceil(halfBounds[i] / granularity() ) );
@@ -214,10 +211,10 @@ namespace lx0 { namespace core { namespace detail {
         virtual void    onUpdate            (DocumentPtr spDocument);
 
         btCollisionShapePtr         _acquireSphereShape         (float radius);
-        btCollisionShapePtr         _acquireBoxShape            (const vector3& halfBounds);
+        btCollisionShapePtr         _acquireBoxShape            (const glgeom::vector3f& halfBounds);
 
         void            setWindVelocity     (float v)           { mfWindVelocity = v; }
-        void            setWindDirection    (const vector3& v);
+        void            setWindDirection    (const glgeom::vector3f& v);
 
         std::shared_ptr<btDiscreteDynamicsWorld>                mspDynamicsWorld;
 
@@ -226,8 +223,8 @@ namespace lx0 { namespace core { namespace detail {
         void            _applyCollisonActions   (DocumentPtr spDocument);
         void            _updateElements         (DocumentPtr spDocument);
 
-        float           mfWindVelocity;
-        vector3         mWindDirection;
+        float               mfWindVelocity;
+        glgeom::vector3f    mWindDirection;
 
         std::shared_ptr<btBroadphaseInterface>                  mspBroadphase;
         std::shared_ptr<btDefaultCollisionConfiguration>        mspCollisionConfiguration;
@@ -275,12 +272,12 @@ namespace lx0 { namespace core { namespace detail {
             {
                 lx_check_error(windDirection.isArray());
 
-                vector3 dir(windDirection.at(0).query(0.0f), windDirection.at(1).query(0.0f), windDirection.at(2).query(0.0f) );
+                glgeom::vector3f dir(windDirection.at(0).query(0.0f), windDirection.at(1).query(0.0f), windDirection.at(2).query(0.0f) );
                 mpDocPhysics->setWindDirection(dir);
             }
             if (gravity.isDefined())
             {
-                vector3 val = gravity.convert();
+                glgeom::vector3f val = gravity.convert();
                 mpDocPhysics->mspDynamicsWorld->setGravity(btVector3(val.x, val.y, val.z));
             }
         }
@@ -318,7 +315,7 @@ namespace lx0 { namespace core { namespace detail {
             std::string    ref      = spElem->attr("ref").query("");
             const btScalar kfMass   = spElem->attr("mass").query(0.0f);   
             auto posAttr            = spElem->attr("translation");
-            point3 pos              = posAttr.isDefined() ? point3(posAttr.convert()) : point3(0, 0, 0);
+            glgeom::point3f pos     = posAttr.isDefined() ? glgeom::point3f(posAttr.convert()) : glgeom::point3f(0, 0, 0);
             lxvar maxExtent         = spElem->attr("max_extent");
 
 
@@ -368,7 +365,7 @@ namespace lx0 { namespace core { namespace detail {
 
         void _setVelocity (lxvar value)
         {
-            vector3 vel = value.isDefined() ? vector3(value.convert()) : vector3(0, 0, 0);
+            glgeom::vector3f vel = value.isDefined() ? glgeom::vector3f(value.convert()) : glgeom::vector3f(0, 0, 0);
             mspRigidBody->setLinearVelocity( btVector3(vel.x, vel.y, vel.z) );
         }
 
@@ -421,7 +418,7 @@ namespace lx0 { namespace core { namespace detail {
         }
 
         virtual void    
-        addImpulse (const vector3& v) 
+        addImpulse (const glgeom::vector3f& v) 
         {
 #ifdef _DEBUG
             if (mspRigidBody->getInvMass() == 0.0f)
@@ -498,7 +495,7 @@ namespace lx0 { namespace core { namespace detail {
     }
 
     void 
-    PhysicsDoc::setWindDirection (const vector3& v)  
+    PhysicsDoc::setWindDirection (const glgeom::vector3f& v)  
     { 
         mWindDirection = normalize(v); 
     }
@@ -540,7 +537,7 @@ namespace lx0 { namespace core { namespace detail {
         if (mfWindVelocity < 0.001f)
             return;
 
-        const vector3 airVecTemp = mfWindVelocity * mWindDirection;
+        const glgeom::vector3f airVecTemp = mfWindVelocity * mWindDirection;
         const btVector3 airVelocity( airVecTemp.x, airVecTemp.y, airVecTemp.z);
         const btScalar  airDensity = 1.29f;            // kg / m^3
 
@@ -585,7 +582,7 @@ namespace lx0 { namespace core { namespace detail {
 
             btTransform trans;
             spPhysics->mspRigidBody->getMotionState()->getWorldTransform(trans);
-            point3 p = lx_cast( trans.getOrigin() );
+            glgeom::point3f p = glgeom::point3f( trans.getOrigin().x(), trans.getOrigin().y(), trans.getOrigin().z() );
             btQuaternion q = trans.getRotation();
 
             spElem->attr("translation", lxvar(p.x, p.y, p.z) );
@@ -688,7 +685,7 @@ namespace lx0 { namespace core { namespace detail {
     }
 
     btCollisionShapePtr      
-    PhysicsDoc::_acquireBoxShape (const vector3& halfBounds)
+    PhysicsDoc::_acquireBoxShape (const glgeom::vector3f& halfBounds)
     {
         return mBoxShapeCache.acquire(BoxKey (halfBounds));
     }

@@ -28,6 +28,9 @@
 
 #include "lx0/core/core.hpp"
 #include "lx0/core/math/matrix4.hpp"
+#include <glgeom/glgeom.hpp>
+
+using namespace glgeom;
 
 namespace lx0 { namespace core {
 
@@ -82,7 +85,7 @@ namespace lx0 { namespace core {
         the old coordinate system that will become 0,0,0 in the new system.
      */
     void
-    setOrthonormalBasis (matrix4& mat, const vector3& x, const vector3& y, const vector3& z, const point3& origin)
+    setOrthonormalBasis (matrix4& mat, const vector3f& x, const vector3f& y, const vector3f& z, const point3f& origin)
     {
         // Check that the axes are normalized (i.e. the "normal" part of orthonormal)
         lx_check_error( is_unit_length(x), "X axis is not unit length" );
@@ -119,8 +122,8 @@ namespace lx0 { namespace core {
         // Therefore, the offset in the matrix itself must be in terms of the new 
         // coordinate system.
 
-        const vector3& v = cast<const vector3&>(origin);
-        point3 t;
+        const vector3f& v = reinterpret_cast<const vector3f&>(origin);
+        point3f t;
         t.x = dot(x, v);
         t.y = dot(y, v);
         t.z = dot(z, v);
@@ -142,7 +145,7 @@ namespace lx0 { namespace core {
         Adapted from the Mesa3D gluLookAt source code (project.c).
     */
     void 
-    lookAt (matrix4& mat, const point3& position, const point3& target, const vector3& eyeUp)
+    lookAt (matrix4& mat, const point3f& position, const point3f& target, const vector3f& eyeUp)
     {
         lx_check_error( !is_zero_length( target - position ),  "Position and target are the same");
 
@@ -152,9 +155,9 @@ namespace lx0 { namespace core {
         // Note that these vectors are in terms of how the "eye" perceives the world:
         // i.e. the eye has a notion of "forward" and "right", not merely X, Y, and Z.
         //
-        const vector3 forward = normalize(target - position);
-        const vector3 right   = normalize( cross(forward, eyeUp) );
-        const vector3 up      = normalize( cross(right, forward) );
+        const glgeom::vector3f forward = normalize(target - position);
+        const glgeom::vector3f right   = normalize( cross(forward, eyeUp) );
+        const glgeom::vector3f up      = normalize( cross(right, forward) );
 
         lx_check_error( !is_codirectional(forward, eyeUp), "Forward vector looking straight up.  Cannot compute matrix correctly.");
         lx_check_error( is_unit_length(forward), "Forward vector incorrect: are position and target the same?" );
