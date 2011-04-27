@@ -203,7 +203,7 @@ namespace Rasterizer
         }
 
         template <typename T>
-        T& getData () 
+        T getData () 
         {  
             DataT<T>* pData = dynamic_cast<DataT<T>*>(mpData.get());
             if (pData)
