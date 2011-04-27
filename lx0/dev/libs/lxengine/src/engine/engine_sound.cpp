@@ -39,6 +39,7 @@
 #include <vector>
 #include <map>
 #include <deque>
+#include <algorithm>
 
 // OpenAL
 #include <AL/al.h>

@@ -55,8 +55,6 @@ namespace lx0
 #include <lx0/core/base/cast.hpp>
 
 #include <lx0/core/math/radians.hpp>
-#include <lx0/core/math/tuple3.hpp>
-#include <lx0/core/math/vector3.hpp>
 #include <lx0/core/math/matrix4.hpp>
 
 #include <lx0/core/math/noise.hpp>

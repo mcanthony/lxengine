@@ -31,8 +31,7 @@
 #define GLGEOM_VECTOR_HPP
 
 #include <glm/glm.hpp>
-
-#include <OGRE/OgreQuaternion.h> //!\todo Remove me!
+#include <glm/gtc/quaternion.hpp>
 
 namespace glgeom
 {
@@ -126,10 +125,10 @@ namespace glgeom
 
 
         template <typename T> 
-        vector3t<T>  abs_                (const vector3t<T>& v)                   { return vector3t<T>(fabs(v.x), fabs(v.y), fabs(v.z)); }
+        vector3t<T>  abs_ (const vector3t<T>& v)                   { return vector3t<T>(fabs(v.x), fabs(v.y), fabs(v.z)); }
         
         template <typename T> 
-        typename vector3t<T>::type     abs_dot             (const vector3t<T>& a, const vector3t<T>& b) { return abs(dot(a, b)); }
+        typename vector3t<T>::type     abs_dot (const vector3t<T>& a, const vector3t<T>& b) { return abs(dot(a, b)); }
         
         template <typename T> 
         vector3t<T>  cross (const vector3t<T>& a, const vector3t<T>& b) 
@@ -150,26 +149,28 @@ namespace glgeom
         }
         
         template <typename T> 
-        typename vector3t<T>::type     length_squared      (const vector3t<T>& v)                   { return v.x * v.x + v.y * v.y + v.z * v.z; }
-        
-        template <typename T> 
-        bool     is_zero_length      (const vector3t<T>& v)                   { return fabs( length_squared(v) ) <= 10.0f * std::numeric_limits<float>::epsilon(); }
-        
-        template <typename T> 
-        bool     is_unit_length      (const vector3t<T>& v)                   { return fabs( length_squared(v)  - 1.0f ) <= 10.0f * std::numeric_limits<float>::epsilon(); }
-        
-        template <typename T> 
-        bool     is_orthogonal       (const vector3t<T>& u, const vector3t<T>& v) { return fabs( dot(u, v) ) <= 10.0f * std::numeric_limits<float>::epsilon(); }
-
-
-        template <typename T>
-        typename vector3t<T>::type angle_between   (const vector3t<T>& a, const vector3t<T>& b) 
-        {
-            // Work around a bug in OGRE 1.7.1: angleBetween should be const
-            // See http://ogre3d.org/forums/viewtopic.php?f=3&t=56750&p=402888#p402888
-            return const_cast<Ogre::Vector3&>(a.ogreVec).angleBetween(b.ogreVec).valueRadians() ; 
+        typename vector3t<T>::type     length_squared (const vector3t<T>& v)
+        { 
+            return v.x * v.x + v.y * v.y + v.z * v.z; 
         }
-
+        
+        template <typename T> 
+        bool     is_zero_length (const vector3t<T>& v)
+        { 
+            return fabs( length_squared(v) ) <= 10.0f * std::numeric_limits<float>::epsilon(); 
+        }
+        
+        template <typename T> 
+        bool     is_unit_length (const vector3t<T>& v)
+        { 
+            return fabs( length_squared(v)  - 1.0f ) <= 10.0f * std::numeric_limits<float>::epsilon(); 
+        }
+        
+        template <typename T> 
+        bool     is_orthogonal (const vector3t<T>& u, const vector3t<T>& v) 
+        { 
+            return fabs( dot(u, v) ) <= 10.0f * std::numeric_limits<float>::epsilon(); 
+        }
 
         /*!
             Returns true if the vectors point in the same direction or opposite directions (180 degrees apart).
@@ -187,9 +188,15 @@ namespace glgeom
         vector3t<T>  
         rotate (const vector3t<T>& v, const vector3t<T>& axis, typename vector3t<T>::type r)
         {
-            Ogre::Quaternion q(Ogre::Radian(r), *reinterpret_cast<const Ogre::Vector3*>(&axis));
-            Ogre::Vector3 u = q * (*reinterpret_cast<const Ogre::Vector3*>(&v));
-            return *reinterpret_cast<vector3t<T>*>(&u);
+            vector3t<T>::type shr( sin(r / 2) );
+            glm::fquat q;
+            q.x = axis.x * shr;
+            q.y = axis.y * shr;
+            q.z = axis.z * shr;
+            q.w = cos(r / 2);
+
+            auto w = q * v.vec;
+            return vector3t<T>( w );
         }
 
 

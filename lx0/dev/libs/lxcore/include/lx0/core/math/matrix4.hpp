@@ -29,7 +29,6 @@
 #pragma once
 
 #include <lx0/core/base/cast.hpp>
-#include <lx0/core/math/vector3.hpp>
 #include <glgeom/glgeom.hpp>
 
 namespace lx0 { namespace core {    
@@ -59,7 +58,7 @@ namespace lx0 { namespace core {
         {  
             struct
             {
-                tuple4 column[4];
+                glm::vec4 column[4];
             };
             float   elem[4][4];
             float   data[16];

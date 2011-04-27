@@ -30,6 +30,8 @@
 //   H E A D E R S
 //===========================================================================//
 
+#include <iostream>
+
 #include <v8/v8.h>
 
 #include <lx0/core/core.hpp>

@@ -131,13 +131,28 @@ namespace glgeom
         inline bool     equiv           (const point3& p, const point3& q, float e) { return (abs(p.x - q.x) < e) && (abs(p.y - q.y) < e) && (abs(p.z - q.z) < e); }  */
 
         template <typename T>
-        inline float    distance                    (const point3t<T>& a, const point3t<T>& b)  { return glm::distance(a.vec, b.vec); }
+        inline float    distance                    (const point3t<T>& a, const point3t<T>& b)  
+        { 
+            return glm::distance(a.vec, b.vec); 
+        }
+        
         template <typename T>
-        inline float    distance_squared            (const point3t<T>& a, const point3t<T>& b)  { return glm::dot(a.vec, b.vec); }
+        inline float    distance_squared            (const point3t<T>& a, const point3t<T>& b)  
+        { 
+            return glm::dot(a.vec, b.vec); 
+        }
+        
         template <typename T>
-        inline float    distance_to_origin_squared  (const point3t<T>& p)                   { return p.x * p.x + p.y * p.y + p.z * p.z; }
+        inline float    distance_to_origin_squared  (const point3t<T>& p)
+        { 
+            return p.x * p.x + p.y * p.y + p.z * p.z; 
+        }
+        
         template <typename T>
-        inline float    distance_to_origin          (const point3t<T>& p)                   { return sqrtf( distance_to_origin_squared(p) ); }
+        inline float    distance_to_origin          (const point3t<T>& p)                   
+        { 
+            return sqrtf( distance_to_origin_squared(p) ); 
+        }
 
         template <typename T>
         inline point3t<T>   mid_point       (const point3t<T>& a, const point3t<T>& b)  

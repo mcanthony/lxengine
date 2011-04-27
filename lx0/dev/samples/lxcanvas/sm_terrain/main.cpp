@@ -40,6 +40,7 @@
 //===========================================================================//
 
 // Standard headers
+#define NOMINMAX 
 #include <iostream>
 #include <string>
 #include <memory> 

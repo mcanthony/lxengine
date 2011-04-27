@@ -28,6 +28,9 @@
 
 #pragma once
 
+#include <iostream>
+#include <fstream>
+
 namespace lx0 { namespace blendreader {
 
     struct Structure;

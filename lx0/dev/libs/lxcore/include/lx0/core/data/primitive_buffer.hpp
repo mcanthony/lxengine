@@ -31,6 +31,7 @@
 
 #include <vector>
 #include <memory>
+#include <map>
 #include <glgeom/glgeom.hpp>
 
 namespace lx0 { namespace core {

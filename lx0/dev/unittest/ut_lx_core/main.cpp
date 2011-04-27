@@ -31,7 +31,6 @@
 #include <limits>
 #include <algorithm>
 #include <string>
-#include <lx0/core/math/tuple3.hpp>
 #include <lx0/core/math/matrix4.hpp>
 #include <lx0/core/core.hpp>
 

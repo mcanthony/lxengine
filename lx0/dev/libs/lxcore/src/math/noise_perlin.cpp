@@ -36,7 +36,6 @@
  */
 
 #include <lx0/core/core.hpp>
-#include <lx0/core/math/vector3.hpp>
 #include <lx0/core/math/noise.hpp>
 
 using namespace lx0::core;
@@ -104,7 +103,7 @@ namespace {
         and the incoming vector.
      */
     float 
-    dot_gradient (int hash, const vector3& v) 
+    dot_gradient (int hash, const glgeom::vector3f& v) 
     {
         //
         // Perlin's 2002 improvement to algorithm reduces the gradient
@@ -222,7 +221,7 @@ namespace {
         const int cellY = (int)floor(y);
         const int cellZ = (int)floor(z);
 
-        vector3 uvw = vector3(x, y, z);
+        glgeom::vector3f uvw = glgeom::vector3f(x, y, z);
         uvw.x -= cellX;
         uvw.y -= cellY;
         uvw.z -= cellZ;
@@ -254,7 +253,7 @@ namespace {
             const int cz = (i & 1);
 
             const int h = hash(cellX + cx, cellY + cy, cellZ + cz);
-            vector3 value (uvw.x - cx, uvw.y - cy, uvw.z - cz);           
+            glgeom::vector3f value (uvw.x - cx, uvw.y - cy, uvw.z - cz);           
 
             g[i] = dot_gradient(h, value);
         }
@@ -265,7 +264,7 @@ namespace {
         // Without this, the result is discontinuities (i.e. hard 'edges') between
         // cells which adds a noticable tiling to the pattern.
         // 
-        vector3 t;
+        glgeom::vector3f t;
         t.x = smoothInterpolant(uvw.x);
         t.y = smoothInterpolant(uvw.y);
         t.z = smoothInterpolant(uvw.z);
