@@ -30,7 +30,6 @@
 #ifndef GLGEOM_HPP
 #define GLGEOM_HPP
 
-#include <glgeom/core/tuple.hpp>        // generic multi-scalar
 #include <glgeom/core/vector.hpp>       // directed distance primitive
 #include <glgeom/core/point.hpp>
 

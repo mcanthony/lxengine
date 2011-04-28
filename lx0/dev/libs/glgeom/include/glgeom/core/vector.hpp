@@ -98,24 +98,41 @@ namespace glgeom
         };
 
 
+        /*!
+            Add two vectors together.
+
+            Dev Notes:
+            - Does this operation actually make sense for a vector when treated as a 
+              directed length?  
+         */
         template <typename T>
         vector3t<T> operator+ (const vector3t<T>& a, const vector3t<T>& b)
         {
             return reinterpret_cast< vector3t<T>& >( a.vec + b.vec );
         }
 
+        /*!
+            Scale a vector.
+         */
         template <typename T>
         vector3t<T>  operator*       (typename vector3t<T>::type s, const vector3t<T>& v)         
         { 
             return vector3f(s*v.x, s*v.y, s*v.z); 
         }
         
+        /*!
+            Scale a vector.
+         */
         template <typename T> 
         vector3t<T>  operator*       (const vector3t<T>& v, typename vector3t<T>::type s)         
         { 
             return s * v; 
         }
 
+        //! Return the dot product of two vectors.
+        /*!
+            a dot b = |a||b|cos 0
+         */
         template <typename T>
         T dot (const vector3t<T>& a, const vector3t<T>& b)
         {
@@ -125,35 +142,65 @@ namespace glgeom
 
 
         template <typename T> 
-        vector3t<T>  abs_ (const vector3t<T>& v)                   { return vector3t<T>(fabs(v.x), fabs(v.y), fabs(v.z)); }
+        vector3t<T>  abs_ (const vector3t<T>& v)
+        { 
+            return vector3t<T>(fabs(v.x), fabs(v.y), fabs(v.z)); 
+        }
         
+        //! Returns the absolute value of the dot product
+        /*!
+            Dev Notes:
+            - Is this method actually needed?  Is abs_dot(a, b) really better than abs(dot(a, b))
+         */
         template <typename T> 
-        typename vector3t<T>::type     abs_dot (const vector3t<T>& a, const vector3t<T>& b) { return abs(dot(a, b)); }
+        typename vector3t<T>::type 
+        abs_dot (const vector3t<T>& a, const vector3t<T>& b) 
+        { 
+            return abs(dot(a, b)); 
+        }
         
+        //! Returns the cross product of two vectors
+        /*!
+         */
         template <typename T> 
         vector3t<T>  cross (const vector3t<T>& a, const vector3t<T>& b) 
         { 
             return vector3t<T>( glm::cross(a.vec, b.vec) ); 
         }
         
+        //! Returns a normalized equivalent of the input vector
+        /*!
+         */
         template <typename T> 
         vector3t<T>  normalize (const vector3t<T>& a)
         {
             return vector3t<T>( glm::normalize(a.vec) );
         }
         
+        //! Returns the length of the vector
+        /*!
+         */
         template <typename T> 
         typename vector3t<T>::type length (const vector3t<T>& a)
         { 
             return glm::length(a.vec); 
         }
         
+        //! Returns the length squared of the vector
+        /*!
+            Equivalent to dot(v, v)
+         */
         template <typename T> 
-        typename vector3t<T>::type     length_squared (const vector3t<T>& v)
+        typename vector3t<T>::type length_squared (const vector3t<T>& v)
         { 
             return v.x * v.x + v.y * v.y + v.z * v.z; 
         }
         
+        //! Returns true of the vector is zero length
+        /*!
+            Dev Notes:
+            - Some consideration of exactness versus what epsilon to use is necessary
+         */
         template <typename T> 
         bool     is_zero_length (const vector3t<T>& v)
         { 

@@ -245,27 +245,6 @@ main (int argc, char** argv)
                 CHECK(r, v.w == 0.0);
             });
 
-
-            //! \todo Does adding two vectors make sense?  Adding two tuples, yes...but vectors?
-            set.push("tuple3f addition", [] (TestRun& r) {
-                tuple3f v, u, w;
-
-                v = tuple3f(0, 1, 2);
-                u = tuple3f(3, 6, 9);
-                w = v + u;
-                
-                CHECK(r, w.x == 3.0f);
-                CHECK(r, w.y == 7.0f);
-                CHECK(r, w.z == 11.0f);
-
-                CHECK(r, v.x == 0.0f);
-                CHECK(r, v.y == 1.0f);
-                CHECK(r, v.z == 2.0f);
-
-                CHECK(r, u.x == 3.0f);
-                CHECK(r, u.y == 6.0f);
-                CHECK(r, u.z == 9.0f);
-            });
             set.push("vector3f dot product", [] (TestRun& r) {
                 vector3f v (0, 1, 2);
                 vector3f u (3, 6, 9);
