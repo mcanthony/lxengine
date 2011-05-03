@@ -37,47 +37,57 @@
 
 namespace glgeom
 {
-    namespace detail
+    namespace core
     {
-
-        //===========================================================================//
-        //!
-        /*!
-            Represents a unit sphere (radius = 1) centered at the origin.  
-
-            This class is largely designed as a helper class and for special cases
-            where a generalized cone can be put in terms of a unit cone at the
-            origin to keep the calculations simple.
-         */
-        template <class P>
-        class unit_cone3t
+        namespace cone
         {
-        public:
-            typedef P           type;
-            typedef point3t<P>  point;
-            typedef vector3t<P> vector;
-        };
+            namespace detail
+            {
+                using namespace glgeom::core::point::detail;
+                using namespace glgeom::core::vector::detail;
 
-        //===========================================================================//
-        //!
-        /*!
-         */
-        template <class P>
-        class cone3t
-        {
-        public:
-            typedef P           type;
-            typedef point3t<P>  point;
-            typedef vector3t<P> vector;
+                //===========================================================================//
+                //!
+                /*!
+                    Represents a unit sphere (radius = 1) centered at the origin.  
 
-            point3t             center;
-            vector3t            axis;
-            type                radius;
-        };
+                    This class is largely designed as a helper class and for special cases
+                    where a generalized cone can be put in terms of a unit cone at the
+                    origin to keep the calculations simple.
+                 */
+                template <class P>
+                class unit_cone3t
+                {
+                public:
+                    typedef P           type;
+                    typedef point3t<P>  point;
+                    typedef vector3t<P> vector;
+                };
+
+                //===========================================================================//
+                //!
+                /*!
+                 */
+                template <class P>
+                class cone3t
+                {
+                public:
+                    typedef P           type;
+                    typedef point3t<P>  point;
+                    typedef vector3t<P> vector;
+
+                    point3t             center;
+                    vector3t            axis;
+                    type                radius;
+                };
+            }
+
+            typedef detail::cone3t<float>    cone3f;
+            typedef detail::cone3t<double>   cone3d;
+        }
     }
-
-    typedef detail::cone3t<float>    cone3f;
-    typedef detail::cone3t<double>   cone3d;
+    
+    using namespace glgeom::core::cone;
 }
 
 #endif

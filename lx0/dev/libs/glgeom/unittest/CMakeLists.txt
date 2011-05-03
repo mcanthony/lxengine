@@ -2,7 +2,8 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR} )
 
 file(GLOB_RECURSE SRCFILES *.cpp)
 file(GLOB_RECURSE HDRFILES *.hpp)
-set(SOURCES ${SRCFILES} ${HDRFILES})
+file(GLOB_RECURSE INLFILES *.inl)
+set(SOURCES ${SRCFILES} ${HDRFILES} ${INLFILES})
 source_group("Source" FILES ${SOURCES})
 
 # For convenience, add the glgeom headers to this project

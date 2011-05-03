@@ -30,6 +30,8 @@
 #ifndef GLGEOM_HPP
 #define GLGEOM_HPP
 
+#include <glgeom/core/angles.hpp>
+
 #include <glgeom/core/vector.hpp>       // directed distance primitive
 #include <glgeom/core/point.hpp>
 
@@ -41,6 +43,15 @@
 #include <glgeom/core/cone.hpp>
 
 #include <glgeom/core/intersection.hpp>
+
+
+//
+// Inline functions for glgeom templates.
+// There is not necessarily one .inl for every .hpp; only when one is required
+// due to class interdependencies or long template function definitions.
+//
+#include <glgeom/core/vector.inl>
+
 
 #endif
 

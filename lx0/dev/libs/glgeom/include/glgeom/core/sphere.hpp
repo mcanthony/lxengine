@@ -37,52 +37,63 @@
 
 namespace glgeom
 {
-    namespace detail
+    namespace core
     {
-
-        //===========================================================================//
-        //!
-        /*!
-            Represents a unit sphere (radius = 1) centered at the origin.  
-
-            This class is largely designed as a helper class and for special cases
-            where a generalized sphere can be put in terms of a unit sphere at the
-            origin to keep the calculations simple.
-         */
-        template <class P>
-        class unit_sphere3t
+        namespace sphere
         {
-        public:
-            typedef P           type;
-            typedef point3t<P>  point;
-            typedef vector3t<P> vector;
-        };
+            namespace detail
+            {
+                using namespace glgeom::core::point::detail;
+                using namespace glgeom::core::vector::detail;
 
-        //===========================================================================//
-        //!
-        /*!
-            Dev Notes:
-            - Should a sphere always be centered at 0,0,0?
+                //===========================================================================//
+                //!
+                /*!
+                    Represents a unit sphere (radius = 1) centered at the origin.  
 
-            A sphere class could be defined as always unit and centered at 0,0,0
-            and have a scale and translation handled as Decoration patterns on the 
-            class.
-         */
-        template <class P>
-        class sphere3t
-        {
-        public:
-            typedef P           type;
-            typedef point3t<P>  point;
-            typedef vector3t<P> vector;
+                    This class is largely designed as a helper class and for special cases
+                    where a generalized sphere can be put in terms of a unit sphere at the
+                    origin to keep the calculations simple.
+                 */
+                template <class P>
+                class unit_sphere3t
+                {
+                public:
+                    typedef P           type;
+                    typedef point3t<P>  point;
+                    typedef vector3t<P> vector;
+                };
 
-            point3t             center;
-            type                radius;
-        };
+                //===========================================================================//
+                //!
+                /*!
+                    Dev Notes:
+                    - Should a sphere always be centered at 0,0,0?
+
+                    A sphere class could be defined as always unit and centered at 0,0,0
+                    and have a scale and translation handled as Decoration patterns on the 
+                    class.
+                 */
+                template <class P>
+                class sphere3t
+                {
+                public:
+                    typedef P           type;
+                    typedef point3t<P>  point;
+                    typedef vector3t<P> vector;
+
+                    point3t             center;
+                    type                radius;
+                };
+            }
+
+            using   detail::sphere3t;
+            typedef detail::sphere3t<float>    sphere3f;
+            typedef detail::sphere3t<double>   sphere3d;
+        }
     }
 
-    typedef detail::sphere3t<float>    sphere3f;
-    typedef detail::sphere3t<double>   sphere3d;
+    using namespace glgeom::core::sphere;
 }
 
 #endif

@@ -37,29 +37,53 @@
 
 namespace glgeom
 {
-    namespace detail
+    namespace core
     {
-        //===========================================================================//
-        //!
-        /*!
-         */
-        template <class P>
-        class plane3t
+        namespace plane
         {
-        public:
-            typedef P           type;
-            typedef point3t<P>  point;
-            typedef vector3t<P> vector;
+            using namespace glgeom::core::vector::detail;
+            using namespace glgeom::core::point::detail;
 
-            plane3t () : a(0) b(0), c(0), d(0) {}
-            plane3t (type a_, type b_, type c_, type d_) : a(a_), b(b_), c(c_), d(d_) {}
+            namespace detail
+            {
+                //===========================================================================//
+                //!
+                /*!
+                 */
+                template <class P>
+                class plane3t
+                {
+                public:
+                    typedef P           type;
+                    typedef point3t<P>  point;
+                    typedef vector3t<P> vector;
+
+                    plane3t () : a(0) b(0), c(0), d(0) {}
+                    plane3t (type a_, type b_, type c_, type d_) : a(a_), b(b_), c(c_), d(d_) {}
+                    plane3t (point p, vector n) : normal(n), d( -dot(vector(p), n) ) {}
         
-            type a, b, c, d;
-        };
-    }
+                    union
+                    {
+                        struct
+                        {
+                            type a, b, c;
+                        };
+                        struct
+                        {
+                            vector  normal;
+                        };
+                    };
+                    type d;
+                };
+            }
 
-    typedef detail::plane3t<float>    plane3f;
-    typedef detail::plane3t<double>   plane3d;
+            using detail::plane3t;
+            typedef detail::plane3t<float>    plane3f;
+            typedef detail::plane3t<double>   plane3d;
+        }
+    }
+    
+    using namespace glgeom::core::plane;
 }
 
 #endif

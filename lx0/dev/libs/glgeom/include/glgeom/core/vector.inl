@@ -27,56 +27,28 @@
 */
 //===========================================================================//
 
-#ifndef GLGEOM_RAY_HPP
-#define GLGEOM_RAY_HPP
+#ifndef GLGEOM_VECTOR_INL
+#define GLGEOM_VECTOR_INL
 
-#include <glm/glm.hpp>
-
-#include <glgeom/core/point.hpp>
 #include <glgeom/core/vector.hpp>
 
 namespace glgeom
 {
     namespace core
     {
-        namespace ray
+        namespace vector
         {
             namespace detail
             {
-                using namespace glgeom::core::vector::detail;
-                using namespace glgeom::core::point::detail;
-
-                //===========================================================================//
-                //!
-                /*!
-                    Dev Notes:
-                    - Should direction be normalized?  Should that be a condition of validity
-                      of the class?  Or does unnormalized allow more flexibility?
-                 */
-                template <class P>
-                class ray3t
+                template <typename T>
+                vector3t<T>::vector3t ( const point3t<T>& p) 
+                    : vec(p.vec)
                 {
-                public:
-                    typedef P           type;
-                    typedef point3t<P>  point;
-                    typedef vector3t<P> vector;
-
-                    ray3t () {}
-                    ray3t (const point& origin_, const vector& direction_) : origin(origin_), direction(direction_) {}
-        
-                    point   origin;
-                    vector  direction;
-                };
-
+                }
             }
-
-            using   detail::ray3t;
-            typedef detail::ray3t<float>    ray3f;
-            typedef detail::ray3t<double>   ray3d;
         }
     }
 
-    using namespace glgeom::core::ray;
-}
+}   
 
 #endif

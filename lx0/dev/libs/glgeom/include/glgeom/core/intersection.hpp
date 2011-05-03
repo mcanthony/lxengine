@@ -38,86 +38,120 @@
 
 namespace glgeom
 {
-    namespace detail
+    namespace core
     {
-        //===========================================================================//
-        //!
-        /*!
-         */
-        template <typename P>
-        class intersect3t
+        namespace intersection
         {
-        public:
-            typedef P           type;
-            typedef point3t     point;
-            typedef vector3t    vector;
+            namespace detail
+            {
+                using namespace glgeom::core::ray;
+                using namespace glgeom::core::sphere;
 
-            type        distance;
-            point       position;
-            vector      normal;
-        };
+                //===========================================================================//
+                //!
+                /*!
+                 */
+                template <typename P>
+                class intersect3t
+                {
+                public:
+                    typedef P           type;
+                    typedef point3t<P>  point;
+                    typedef vector3t<P> vector;
+
+                    type        distance;
+                    point       position;
+                    vector      normal;
+                };
+
+                ///////////////////////////////////////////////////////////////////////////////
+                //
+                // R A Y   I N T E R S E C T I O N S
+                //
+                ///////////////////////////////////////////////////////////////////////////////
+
+                //---------------------------------------------------------------------------//
+                //! Simple binary intersection test: do the primitives intersect or not?
+                /*!
+                    Tests if the two primitives intersect as fast as can be computed.  If there
+                    is an intersection, the intersection point data is not computed.
+
+                    Dev Notes:
+                    - This requires some sort of tolerance factor for how near the rays must
+                      be to considered to intersect.
+                 */
+                template <typename P>
+                bool intersect (const detail::ray3t<P>& rayA, const detail::ray3t<P>& rayB);
+
+
+                //---------------------------------------------------------------------------//
+                //!
+                /*!
+                 */
+                template <typename P>
+                bool  intersect (const ray3t<P>& ray, const plane3t<P>& plane, intersect3t<P>& intersect)
+                {
+                    typedef P   type;
+                    const auto& n = plane.normal;
+                    const auto& d = plane.d;
+                    const auto& o = reinterpret_cast<const vector3t<P>&>(ray.origin);
+                    const auto& v = ray.direction;
+
+                    const type cs = dot (n, v);
+                    if (cs == type(0.0))
+                    {
+                        // The ray lies on the plane: the intersection is the entire ray.
+                        return false;
+                    }
+                    else
+                    {
+                        const type t = -(dot(n, o) + d) / cs;
+                        if (t >= type(0.0)) 
+                        {
+                            intersect.distance = t;
+                            intersect.normal = n;
+                            intersect.position = ray.origin + v * t;
+                            return true;
+                        }
+                        else 
+                        {
+                            // The plane is behind the ray
+                            return false;
+                        }
+                    }
+                }
+
+                //---------------------------------------------------------------------------//
+                //! Simple binary intersection test: do the primitives intersect or not?
+                /*!
+                    Tests if the two primitives intersect as fast as can be computed.  If there
+                    is an intersection, the intersection point data is not computed.
+                 */
+                template <typename P>
+                bool intersect (const detail::ray3t<P>& ray, const detail::sphere3t<P>& sphere);
+
+                //---------------------------------------------------------------------------//
+                //!
+                /*!
+                 */
+                template <typename P>
+                void intersect (const detail::ray3t<P>& ray, const detail::sphere3t<P>& sphere, detail::intersect3t<P>& intersect);
+
+
+                ///////////////////////////////////////////////////////////////////////////////
+                //
+                // L I N E   I N T E R S E C T I O N S
+                //
+                ///////////////////////////////////////////////////////////////////////////////
+            }
+
+            using   detail::intersect;
+            typedef detail::intersect3t<float>  intersect3f;
+            typedef detail::intersect3t<double> intersect3d;
+        }
     }
 
-    ///////////////////////////////////////////////////////////////////////////////
-    //
-    // R A Y   I N T E R S E C T I O N S
-    //
-    ///////////////////////////////////////////////////////////////////////////////
-
-    //---------------------------------------------------------------------------//
-    //! Simple binary intersection test: do the primitives intersect or not?
-    /*!
-        Tests if the two primitives intersect as fast as can be computed.  If there
-        is an intersection, the intersection point data is not computed.
-
-        Dev Notes:
-        - This requires some sort of tolerance factor for how near the rays must
-          be to considered to intersect.
-     */
-    template <typename P>
-    bool intersect (const detail::ray3t<P>& rayA, const detail::ray3t<P>& rayB);
-
-
-    //---------------------------------------------------------------------------//
-    //! Simple binary intersection test: do the primitives intersect or not?
-    /*!
-        Tests if the two primitives intersect as fast as can be computed.  If there
-        is an intersection, the intersection point data is not computed.
-     */
-    template <typename P>
-    bool intersect (const detail::ray3t<P>& ray, const detail::plane3t<P>& plane);
-
-    //---------------------------------------------------------------------------//
-    //!
-    /*!
-     */
-    template <typename P>
-    void intersect (const detail::ray3t<P>& ray, const detail::plane3t<P>& plane, detail::intersect3t<P>& intersect);
-
-    //---------------------------------------------------------------------------//
-    //! Simple binary intersection test: do the primitives intersect or not?
-    /*!
-        Tests if the two primitives intersect as fast as can be computed.  If there
-        is an intersection, the intersection point data is not computed.
-     */
-    template <typename P>
-    bool intersect (const detail::ray3t<P>& ray, const detail::sphere3t<P>& sphere);
-
-    //---------------------------------------------------------------------------//
-    //!
-    /*!
-     */
-    template <typename P>
-    void intersect (const detail::ray3t<P>& ray, const detail::sphere3t<P>& sphere, detail::intersect3t<P>& intersect);
-
-
-    ///////////////////////////////////////////////////////////////////////////////
-    //
-    // L I N E   I N T E R S E C T I O N S
-    //
-    ///////////////////////////////////////////////////////////////////////////////
-
-
+    using namespace glgeom::core::intersection;
 
 }
 

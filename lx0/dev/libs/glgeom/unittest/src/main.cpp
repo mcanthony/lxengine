@@ -162,6 +162,7 @@ TestRun::run (TestModule& module)
                         << mContext.pGroup->mName << "/"
                         << mContext.pSet->mName << "/"
                         << mContext.pTest->mName
+                        << " (" << mContext.checkFail << "/" << mContext.check << " failed)"
                         << std::endl;
                 }
             }
@@ -184,6 +185,8 @@ TestRun::run (TestModule& module)
 }
 
 #define CHECK(R,EXP) R.check(EXP, __LINE__, #EXP);
+
+inline bool cmp(float a, float b, float d) { return fabs(b - a) <= d; }
 
 int 
 main (int argc, char** argv)
@@ -262,6 +265,85 @@ main (int argc, char** argv)
                 CHECK(r, u.x == 3.0f);
                 CHECK(r, u.y == 6.0f);
                 CHECK(r, u.z == 9.0f);
+            });
+
+            group.mSets.push_back(set);
+        }
+        {
+            TestSet set;
+            set.mName = "Intersections";
+
+            set.push("ray-plane intersection base planes", [] (TestRun& r) {
+                
+                // XY, XZ, YZ planes - should intersect
+                {
+                    plane3f plane ( point3f(0, 0, 0), vector3f(0, 0,  1) );
+                    ray3f   ray   ( point3f(0, 0, 1), vector3f(0, 0, -1) );
+                    intersect3f isect;
+                    bool b = intersect(ray, plane, isect);
+                    CHECK(r, b == true);
+                    CHECK(r, cmp(isect.distance, 1.0f, 0.00001f));
+                }
+                {
+                    plane3f plane ( point3f(0, 0, 0), vector3f(0, 1,  0) );
+                    ray3f   ray   ( point3f(0, 1, 0), vector3f(0, -1, 0) );
+                    intersect3f isect;
+                    bool b = intersect(ray, plane, isect);
+                    CHECK(r, b == true);
+                    CHECK(r, cmp(isect.distance, 1.0f, 0.00001f));
+                }
+                {
+                    plane3f plane ( point3f(0, 0, 0), vector3f(1, 0,  0) );
+                    ray3f   ray   ( point3f(1, 0, 0), vector3f(-1, 0, 0) );
+                    intersect3f isect;
+                    bool b = intersect(ray, plane, isect);
+                    CHECK(r, b == true);
+                    CHECK(r, cmp(isect.distance, 1.0f, 0.00001f));
+                }
+
+                // XY, XZ, YZ planes - should NOT intersect
+                {
+                    plane3f plane ( point3f(0, 0, 0), vector3f(0, 0,  1) );
+                    ray3f   ray   ( point3f(0, 0, 1), vector3f(0, 0,  1) );
+                    intersect3f isect;
+                    bool b = intersect(ray, plane, isect);
+                    CHECK(r, b == false);
+                }
+                {
+                    plane3f plane ( point3f(0, 0, 0), vector3f(0, 1, 0) );
+                    ray3f   ray   ( point3f(0, 1, 0), vector3f(0, 1, 0) );
+                    intersect3f isect;
+                    bool b = intersect(ray, plane, isect);
+                    CHECK(r, b == false);
+                }
+                {
+                    plane3f plane ( point3f(0, 0, 0), vector3f(1, 0, 0) );
+                    ray3f   ray   ( point3f(1, 0, 0), vector3f(1, 0, 0) );
+                    intersect3f isect;
+                    bool b = intersect(ray, plane, isect);
+                    CHECK(r, b == false);
+                }
+            });
+            set.push("ray-plane intersection xy circle at origin", [] (TestRun& r) {
+
+                plane3f plane ( point3f(0, 0, 0), vector3f(0, 0,  1) );
+
+                for (float h = 1.0f; h <= powf(2, 10); h *= 2.0f)
+                {
+                    for (radians a(0.0f); a < two_pi(); a += pi() / 12.0f)
+                    {
+                        ray3f ray;  
+                        ray.origin.x = cos(a);
+                        ray.origin.y = sin(a);
+                        ray.origin.z = h;
+                        ray.direction = glm::normalize(-ray.origin.vec);
+
+                        intersect3f isect;
+                        bool b = intersect(ray, plane, isect);
+                        CHECK(r, b == true);
+                        CHECK(r, cmp(isect.distance, glm::length(ray.origin.vec), 0.00001f));
+                    }
+                }
             });
 
             group.mSets.push_back(set);
