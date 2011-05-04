@@ -259,7 +259,7 @@ public:
     TransformPtr    createTransform             (float tx, float ty, float tz);
     TransformPtr    createTransformBillboardXY  (float tx, float ty, float tz);
     TransformPtr    createTransformBillboardXYS (float tx, float ty, float tz, float sx, float sy, float sz);
-    TransformPtr    createTransformEye          (float tx, float ty, float tz, lx0::radians z_angle);
+    TransformPtr    createTransformEye          (float tx, float ty, float tz, glgeom::radians z_angle);
 
     GeometryPtr     createQuadList  (std::vector<glgeom::point3f>& quads);
     GeometryPtr     createQuadList  (std::vector<unsigned short>& indices, 

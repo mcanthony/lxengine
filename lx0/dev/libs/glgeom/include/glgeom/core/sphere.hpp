@@ -82,9 +82,31 @@ namespace glgeom
                     typedef point3t<P>  point;
                     typedef vector3t<P> vector;
 
-                    point3t             center;
+                    sphere3t    () : radius(0) {}
+                    sphere3t    (const point& c, type r) : center(c), radius(r) {}
+
+                    point               center;
                     type                radius;
                 };
+
+                template <class T>
+                T distance (const point3t<T>& p, const sphere3t<T>& s)
+                {
+                    auto d = distance(p, s.center) - s.radius;
+                    return (d < 0) ? 0 : d;
+                }
+
+                template <class T>
+                T distance (const sphere3t<T>& s, const point3t<T>& p)
+                {
+                    return distance(p, s);
+                }
+
+                template <class T>
+                bool point_on_surface (const point3t<T>& p, const sphere3t<T>& s, T tolerance)
+                {
+                    return (distance(p, s.center) - s.radius) < tolerance;
+                }
             }
 
             using   detail::sphere3t;

@@ -66,7 +66,6 @@
 #include <lx0/document.hpp>
 #include <lx0/element.hpp>
 #include <lx0/blendreader/blendreader.hpp>
-#include <lx0/core/math/radians.hpp>
 
 #include "main.hpp"
 #include "rasterizergl.hpp"
@@ -480,7 +479,7 @@ class SkyMap : public Renderable
 public:
     virtual void update(ElementPtr spElement)
     {
-        mRotation += lx0::twoPi() / 30.0f;
+        mRotation += glgeom::two_pi() / 30.0f;
     }
 
     virtual void generate(ElementPtr spElement,
@@ -571,7 +570,7 @@ public:
                 pItem->spCamera   = spCamera;
                 pItem->spLightSet = spLightSet;
                 pItem->spMaterial = spMat;
-                pItem->spTransform = rasterizer.createTransformEye(pos.x, pos.y, pos.z, lx0::radians(0.0f));
+                pItem->spTransform = rasterizer.createTransformEye(pos.x, pos.y, pos.z, glgeom::radians(0.0f));
                 pItem->spGeometry = spGeom;
             
                 mspItem.reset(pItem);
@@ -584,7 +583,7 @@ public:
 
 protected:
     glgeom::point3f                 mPosition;
-    lx0::radians                    mRotation;
+    glgeom::radians                 mRotation;
     RasterizerGL::ItemPtr           mspItem;
 };
 

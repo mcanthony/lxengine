@@ -61,11 +61,14 @@ namespace glgeom
                 explicit    radians (float r) : value (r) {}
 
 
-                radians     operator*   (float s) const { return radians(value * s); }
-                radians     operator/   (float s) const { return radians(value / s); }
+                radians     operator*   (float s) const     { return radians(value * s); }
+                radians     operator/   (float s) const     { return radians(value / s); }
 
                 void        operator+=  (radians r)         { value += r.value; }
                 void        operator-=  (radians r)         { value -= r.value; }
+
+                radians     operator+   (radians r) const   { return radians(value + r.value); }
+                radians     operator-   (radians r) const   { return radians(value - r.value); }
 
                 bool        operator!=  (radians r) const   { return value != r.value; }
                 bool        operator==  (radians r) const   { return value == r.value; }
@@ -90,10 +93,20 @@ namespace glgeom
                 explicit degrees (float d) : value (d) {}
 
 
-                degrees     operator*   (float s) const { return degrees(value * s); }
-                degrees     operator/   (float s) const { return degrees(value / s); }
+                degrees     operator*   (float s) const     { return degrees(value * s); }
+                degrees     operator/   (float s) const     { return degrees(value / s); }
 
-                void        operator+=  (degrees d)     { value += d.value; }
+                void        operator+=  (degrees d)         { value += d.value; }
+                void        operator-=  (radians r)         { value -= r.value; }
+
+                degrees     operator+   (degrees r) const   { return degrees(value + r.value); }
+                degrees     operator-   (degrees r) const   { return degrees(value - r.value); }
+
+                bool        operator!=  (degrees r) const   { return value != r.value; }
+                bool        operator==  (degrees r) const   { return value == r.value; }
+                bool        operator<   (degrees r) const   { return value < r.value; }
+                bool        operator>   (degrees r) const   { return value > r.value; }
+
 
                 float value;
             };
@@ -104,6 +117,9 @@ namespace glgeom
 
             using ::cos;
             using ::sin;
+            using ::abs;
+            inline radians      abs     (radians r) { return radians(::abs(r.value)); }
+            inline degrees      abs     (degrees r) { return degrees(::abs(r.value)); }
             inline float        cos     (radians r) { return cosf(r.value); }
             inline float        sin     (radians r) { return sinf(r.value); }
 

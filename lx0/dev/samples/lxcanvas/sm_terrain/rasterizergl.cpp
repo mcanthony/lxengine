@@ -36,7 +36,6 @@
 
 #include <lx0/prototype/prototype.hpp>
 #include <lx0/core/util/util.hpp>
-#include <lx0/core/math/radians.hpp>
 #include "rasterizergl.hpp"
 
 using namespace Rasterizer;
@@ -557,7 +556,7 @@ RasterizerGL::createTransform (float tx, float ty, float tz)
 
 struct EyeTransform : public Rasterizer::Transform
 {
-    EyeTransform (float tx, float ty, float tz, lx0::radians zangle)
+    EyeTransform (float tx, float ty, float tz, glgeom::radians zangle)
         : pos (tx, ty, tz)
         , z_angle(zangle)
     {
@@ -596,11 +595,11 @@ struct EyeTransform : public Rasterizer::Transform
     }
 
     glgeom::point3f  pos;
-    lx0::radians z_angle;
+    glgeom::radians z_angle;
 };
 
 RasterizerGL::TransformPtr
-RasterizerGL::createTransformEye (float tx, float ty, float tz, lx0::radians z_angle)
+RasterizerGL::createTransformEye (float tx, float ty, float tz, glgeom::radians z_angle)
 {
     return TransformPtr(new EyeTransform(tx, ty, tz, z_angle));
 }

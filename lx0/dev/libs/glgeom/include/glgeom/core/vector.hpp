@@ -133,7 +133,7 @@ namespace glgeom
                 template <typename T>
                 vector3t<T>  operator*       (typename vector3t<T>::type s, const vector3t<T>& v)         
                 { 
-                    return vector3f(s*v.x, s*v.y, s*v.z); 
+                    return vector3t<T>(s*v.x, s*v.y, s*v.z); 
                 }
         
                 /*!
@@ -264,6 +264,14 @@ namespace glgeom
 
                     auto w = q * v.vec;
                     return vector3t<T>( w );
+                }
+
+                template <typename T>
+                glgeom::radians
+                angle_between (const vector3t<T>& a, const vector3t<T>& b)
+                {
+                    // a dot b = |a||b|cos(t)
+                    return glgeom::radians( acosf( dot(a, b) / (length(a) * length(b)) ) );
                 }
 
 

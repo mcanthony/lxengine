@@ -68,6 +68,15 @@ namespace glgeom
                     vector  direction;
                 };
 
+
+                template <class T>
+                bool point_on_curve (const point3t<T>& p, const ray3t<T>& r, T tolerance)
+                {
+                    auto v = normalize(p - r.origin);
+                    auto d = dot(v, r.direction);
+                    return abs(d - T(1.0)) < tolerance;
+                }
+
             }
 
             using   detail::ray3t;
