@@ -88,8 +88,9 @@ namespace glgeom
 
                                     vector3t    (void) { /* use glm default ctor */ }
                                     vector3t    (type _x, type _y, type _z) : vec(_x, _y, _z) {}
-                    explicit        vector3t    (const point3t<P>& p);
                     explicit        vector3t    (const glm::detail::tvec3<P>& that) : vec(that) {}
+                    explicit        vector3t    (const point3t<P>& p);
+                    
 
                     void            operator=   (const glm::detail::tvec3<P>& that) { vec = that; }
 
