@@ -39,7 +39,7 @@
 #include <OGRE/OgreColourValue.h>
 #include <OGRE/OgreVector3.h>
 
-namespace lx0 { namespace core {
+namespace lx0 { namespace core { namespace lxvar_ns {
 
     namespace detail
     {
@@ -82,4 +82,4 @@ namespace lx0 { namespace core {
         }
 
     }
-}}
+}}}

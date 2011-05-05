@@ -50,7 +50,7 @@ namespace lx0 { namespace core {
 
         In any case, this class may eventually serve a useful purpose.
      */   
-    class Object : public lx0::core::detail::lxvalue
+    class Object : public lx0::core::lxvar_ns::detail::lxvalue
     {
     public:
     };

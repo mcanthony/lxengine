@@ -81,6 +81,26 @@ unsigned char random_set[] =
 };
 
 template <typename T>
+T precision_test (T start, T end, T delta)
+{
+    T s = start;
+    T t = end;
+
+    while (s != t)
+    {
+        assert(t > s);
+        T c =  s/2 + t/2;
+        T n = c + delta;
+        if (n > c)
+            s = n;
+        else
+            t = n;
+    }
+    return s;
+}
+
+
+template <typename T>
 class SphereRandomTest
 {
 public:
@@ -196,6 +216,29 @@ main (int argc, char** argv)
     r.value( "sizeof vector3f",         sizeof(vector3f) );
     r.value( "sizeof point3f",          sizeof(point3f) );
 
+
+    // Test floating point precision
+    {
+        auto f = [&](float delta) {
+            std::stringstream ss;
+            ss << "float precision delta " << delta;
+            r.value(ss.str(), precision_test(0.0f, std::numeric_limits<float>::max(), delta));
+        };
+
+        for (int i = 1; i <= 8; i++)
+            f(powf(.1, i));
+    }
+    {
+        auto f = [&](double delta) {
+            std::stringstream ss;
+            ss << "double precision delta " << delta;
+            r.value(ss.str(), precision_test(0.0, std::numeric_limits<double>::max(), delta));
+        };
+
+        for (int i = 1; i <= 8; i++)
+            f(pow(.1, i));
+    }
+
     r.benchmark("Basic operations");
 
 
@@ -235,6 +278,8 @@ main (int argc, char** argv)
             r.value(ss.str(), sphere_edge_test(dev));
         }
     }
+
+
 
     r.report();
 

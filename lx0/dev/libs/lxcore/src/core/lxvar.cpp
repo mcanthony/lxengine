@@ -4,7 +4,7 @@
 
     LICENSE
 
-    Copyright (c) 2010 athile@athile.net (http://www.athile.net)
+    Copyright (c) 2010-2011 athile@athile.net (http://www.athile.net)
 
     Permission is hereby granted, free of charge, to any person obtaining a 
     copy of this software and associated documentation files (the "Software"), 
@@ -36,7 +36,7 @@
 
 #include "lxvar_parser.hpp"
 
-namespace lx0 { namespace core {
+namespace lx0 { namespace core { namespace lxvar_ns {
 
     using namespace detail;
 
@@ -450,8 +450,8 @@ namespace lx0 { namespace core {
     lxvar    
     lxvar::parse (const char* s)
     {
-        detail::LxsonParser parser;
+        lx0::core::detail::LxsonParser parser;
         return parser.parse(s);
     }
 
-}};
+}}}

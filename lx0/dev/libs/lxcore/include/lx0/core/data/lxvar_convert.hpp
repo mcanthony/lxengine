@@ -38,7 +38,7 @@ namespace Ogre {
     class Vector3;
 }
 
-namespace lx0 { namespace core {
+namespace lx0 { namespace core { namespace lxvar_ns {
 
     namespace detail
     {
@@ -50,4 +50,4 @@ namespace lx0 { namespace core {
         void _convert(lxvar& value, Ogre::Quaternion& q);
     }
 
-}}
+}}}

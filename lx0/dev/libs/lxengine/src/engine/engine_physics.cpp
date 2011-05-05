@@ -632,9 +632,9 @@ namespace lx0 { namespace core { namespace detail {
                     // Objects like the ground plane are not in the Document.
                     if (spElemA.get() && spElemB.get())
                     {
-                        struct Wrapper : public lx0::core::detail::lxvalue
+                        struct Wrapper : public lx0::core::lxvar_ns::detail::lxvalue
                         {
-                            virtual detail::lxvalue* clone  (void) const    { auto p = new Wrapper; p->mspValue = mspValue; return p; } 
+                            virtual lx0::core::lxvar_ns::detail::lxvalue* clone  (void) const    { auto p = new Wrapper; p->mspValue = mspValue; return p; } 
                             virtual bool        isHandle    (void) const    { return true; }
                             virtual std::string handleType  (void) const    { return "Element"; }
                             virtual void*       unwrap      (void)          { return mspValue.get(); }

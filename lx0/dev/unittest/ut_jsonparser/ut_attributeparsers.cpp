@@ -126,7 +126,7 @@ struct color
     unsigned char r, g, b;
 };
 
-namespace lx0 { namespace core { namespace detail {
+namespace lx0 { namespace core { namespace lxvar_ns { namespace detail {
 
     void _convert (lxvar& v, color& c)
     {
@@ -138,7 +138,7 @@ namespace lx0 { namespace core { namespace detail {
                 int (v.at(2).asFloat() * 255.0f)
             );
     }
-}}}
+}}}}
 
 void test_attributeparsers()
 {
