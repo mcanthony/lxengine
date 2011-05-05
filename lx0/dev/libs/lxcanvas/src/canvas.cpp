@@ -59,6 +59,7 @@ namespace lx0 { namespace canvas { namespace platform {
             switch (winKey)
             {
             case VK_ESCAPE: return KC_ESCAPE;
+            case VK_SPACE:  return KC_SPACE;
             default:        return 0;
             }
         }

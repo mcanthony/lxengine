@@ -51,6 +51,10 @@
 #include <lx0/view.hpp>
 #include <lx0/engine.hpp>
 #include <lx0/document.hpp>
+#include <glgeom/glgeom.hpp>
+
+#include <windows.h>
+#include <gl/gl.h>
 
 using namespace lx0::core;
 using namespace lx0::prototype;
@@ -71,6 +75,14 @@ public:
         gCamera.mFov = 60.0f;
         gCamera.mNear = 0.01f;  // 1 cm
         gCamera.mFar = 2000.0f; // 2 km
+
+        GLuint id;
+        glGenTextures(1, &id);
+        glBindTexture(GL_TEXTURE_2D, id);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, 16, 16, 0, GL_RGB, GL_FLOAT, NULL);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+        mId = id;
     }  
 
     void 
@@ -82,9 +94,47 @@ public:
     void 
     render (void)	
     {
+        glgeom::color3f img[16 * 16];
+        for (int y = 0; y < 16; y++)
+        {
+            for (int x = 0; x < 16; ++x)
+            {
+                glgeom::color3f& c = img[y * 16 + x];
+                switch ( 2*(y%2) + (x%2) )
+                {
+                default:
+                case 0: c = glgeom::color3f(0, 0, 0); break;
+                case 1: c = glgeom::color3f(1, 0, 0); break;
+                case 2: c = glgeom::color3f(0, 1, 0); break;
+                case 3: c = glgeom::color3f(0, 0, 1); break;
+                };
+            }
+        }
+
+        glEnable(GL_TEXTURE_2D);
+        
+        glBindTexture(GL_TEXTURE_2D, mId);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, 16, 16, 0, GL_RGB, GL_FLOAT, &img[0].r);
+        glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
+
+        glColor3f(0, 1, 1);
+        glBegin(GL_QUADS);
+            glTexCoord2f(0, 1);
+            glVertex3f(-1, -1, 0);
+
+            glTexCoord2f(1, 1);
+            glVertex3f(1, -1, 0);
+
+            glTexCoord2f(1, 0);
+            glVertex3f(1, 1, 0);
+
+            glTexCoord2f(0, 0);
+            glVertex3f(-1, 1, 0);
+        glEnd();
     }
 
 protected:
+    GLuint mId;
 };
 
 //===========================================================================//
@@ -112,10 +162,10 @@ protected:
 void 
 LxCanvasImp::createWindow (View* pHostView, size_t& handle, unsigned int& width, unsigned int& height)
 {
-    width = 800;
-    height = 400;
+    width = 512;
+    height = 512;
 
-    mspWin.reset( new CanvasGL("Lx Raytracer Sample", 16, 16, width, height, false) );
+    mspWin.reset( new CanvasGL("LxEngine Raytracer Sample", 16, 16, width, height, false) );
     handle = mspWin->handle();
 
     mRenderer.initialize();
@@ -141,6 +191,8 @@ LxCanvasImp::updateFrame (DocumentPtr spDocument)
 {
     if (mspWin->keyboard().bDown[KC_ESCAPE])
         Engine::acquire()->sendMessage("quit");
+    else if (mspWin->keyboard().bDown[KC_SPACE])
+        mspWin->invalidate();
 }
 
 //===========================================================================//
@@ -156,7 +208,7 @@ main (int argc, char** argv)
         EnginePtr   spEngine   = Engine::acquire();
         spEngine->addViewPlugin("LxCanvas", [] (View* pView) { return new LxCanvasImp; });
         
-        DocumentPtr spDocument = spEngine->loadDocument("media2/appdata/sm_terrain/scene.xml");
+        DocumentPtr spDocument = spEngine->loadDocument("media2/appdata/sm_raytracer/basic_single_sphere_defaults.xml");
         ViewPtr     spView     = spDocument->createView("LxCanvas", "view");
         spView->show();
 

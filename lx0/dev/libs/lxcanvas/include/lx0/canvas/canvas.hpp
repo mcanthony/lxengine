@@ -94,6 +94,7 @@ namespace lx0 { namespace canvas {
             KC_Z,
 
             KC_ESCAPE,
+            KC_SPACE,
 
             KC_COUNT
         };

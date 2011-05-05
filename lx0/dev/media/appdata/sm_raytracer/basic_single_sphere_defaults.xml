@@ -1,0 +1,45 @@
+<Document>
+    <Library>
+        <Camera id="camera">
+        {
+            position : [ 4, 4, 4 ],
+            look_at  : [ .5, .5, .5 ]
+        }
+        </Camera>
+        <View id="view">
+        {
+            camera : "camera"
+        }
+        </View>
+    </Library>
+    <Scene view="view">
+        <Group id="plane_group">
+            <Plane id="x_axis_plane">
+            {
+                normal : [ 1, 0, 0 ],
+                d      : 0
+            }
+            </Plane>
+            <Plane id="y_axis_plane">
+            {
+                normal : [ 0, 1, 0 ],
+                d      : 0
+            }
+            </Plane>
+            <Plane id="z_axis_plane">
+            {
+                normal : [ 0, 0, 1 ],
+                d      : 0
+            }
+            </Plane>
+        </Group>
+        <Group id="sphere_group">
+            <Sphere>
+            {
+                center : [ .5, .5, .5 ],
+                radius : .5
+            }
+            </Sphere>
+        </Group>
+    </Scene>
+</Document>
