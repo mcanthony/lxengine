@@ -391,6 +391,7 @@ namespace lx0
             {
                 inline void    _convert    (lxvar& v, int& i)          { i = v.asInt(); }
                 inline void    _convert    (lxvar& v, float& f)        { f = v.asFloat(); }
+                inline void    _convert    (lxvar& v, double& d)       { d = double( v.asFloat() ); }
                 inline void    _convert    (lxvar& v, std::string& s)  { s = v.asString(); }
             }
 

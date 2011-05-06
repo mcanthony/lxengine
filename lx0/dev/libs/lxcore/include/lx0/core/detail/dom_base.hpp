@@ -74,6 +74,11 @@ namespace lx0 { namespace core {  namespace detail {
         { 
             ComponentPtr spValue(pComponent);
             mComponents.insert( std::make_pair(name, spValue) );
+
+            // Have the host object send out notification that the Component
+            // was attached
+            static_cast<Derived*>(this)->notifyAttached(spValue);
+            
             return spValue;
         }
         
@@ -104,7 +109,6 @@ namespace lx0 { namespace core {  namespace detail {
             if (!spComponent)
             {
                 spComponent = attachComponent(name, ctor());
-                static_cast<Derived*>(this)->notifyAttached(spComponent);
             }
             return std::dynamic_pointer_cast<T>(spComponent);
         }

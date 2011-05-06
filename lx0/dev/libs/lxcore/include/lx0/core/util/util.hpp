@@ -5,7 +5,7 @@
     LICENSE
     * MIT License (http://www.opensource.org/licenses/mit-license.php)
 
-    Copyright (c) 2010 athile@athile.net (http://www.athile.net)
+    Copyright (c) 2010-2011 athile@athile.net (http://www.athile.net)
 
     Permission is hereby granted, free of charge, to any person obtaining a 
     copy of this software and associated documentation files (the "Software"), 
@@ -46,5 +46,7 @@ namespace lx0 { namespace util {
 
     unsigned int        lx_milliseconds         (void);
     void                lx_message_box          (std::string caption, std::string message);
+
+    void                _lx_reposition_console  (void);
 
 }}

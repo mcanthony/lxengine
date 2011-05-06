@@ -274,6 +274,8 @@ namespace lx0 { namespace core {
 	int
 	Engine::run()
 	{
+        _lx_reposition_console();
+
         for(auto it = m_documents.begin(); it != m_documents.end(); ++it)
             (*it)->beginRun();
 

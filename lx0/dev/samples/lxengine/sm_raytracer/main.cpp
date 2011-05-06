@@ -51,6 +51,7 @@
 #include <lx0/view.hpp>
 #include <lx0/engine.hpp>
 #include <lx0/document.hpp>
+#include <lx0/element.hpp>
 #include <glgeom/glgeom.hpp>
 
 #include <windows.h>
@@ -59,10 +60,37 @@
 using namespace lx0::core;
 using namespace lx0::prototype;
 using namespace lx0::canvas::platform;
+using namespace glgeom;
 
 Camera             gCamera;
 
 //===========================================================================//
+
+
+class image3f
+{
+public:
+    image3f() : mWidth(0), mHeight(0) {}
+    image3f(int w, int h) : mWidth(w), mHeight(h) { mPixels.resize(mWidth * mHeight); }
+
+    bool    empty() const { return (mWidth == 0 && mHeight == 0); }
+
+    void    set (int x, int y, const color3f& c) { mPixels[y * mWidth + x] = c; }
+    color3f& get (int x, int y) { return mPixels[y * mWidth + x]; }
+    float*  ptr (void) { return &mPixels[0].r; }
+
+    int     width() const { return mWidth; }
+    int     height() const { return mHeight; }
+
+protected:
+    int                  mWidth;
+    int                  mHeight;
+    std::vector<color3f> mPixels;
+};
+
+//===========================================================================//
+
+image3f img(128, 128);
 
 class Renderer
 {
@@ -79,8 +107,8 @@ public:
         GLuint id;
         glGenTextures(1, &id);
         glBindTexture(GL_TEXTURE_2D, id);
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, 16, 16, 0, GL_RGB, GL_FLOAT, NULL);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, img.width(), img.height(), 0, GL_RGB, GL_FLOAT, NULL);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 	    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
         mId = id;
     }  
@@ -94,27 +122,10 @@ public:
     void 
     render (void)	
     {
-        glgeom::color3f img[16 * 16];
-        for (int y = 0; y < 16; y++)
-        {
-            for (int x = 0; x < 16; ++x)
-            {
-                glgeom::color3f& c = img[y * 16 + x];
-                switch ( 2*(y%2) + (x%2) )
-                {
-                default:
-                case 0: c = glgeom::color3f(0, 0, 0); break;
-                case 1: c = glgeom::color3f(1, 0, 0); break;
-                case 2: c = glgeom::color3f(0, 1, 0); break;
-                case 3: c = glgeom::color3f(0, 0, 1); break;
-                };
-            }
-        }
-
         glEnable(GL_TEXTURE_2D);
         
         glBindTexture(GL_TEXTURE_2D, mId);
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, 16, 16, 0, GL_RGB, GL_FLOAT, &img[0].r);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, img.width(), img.height(), 0, GL_RGB, GL_FLOAT, img.ptr());
         glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
 
         glColor3f(0, 1, 1);
@@ -191,9 +202,153 @@ LxCanvasImp::updateFrame (DocumentPtr spDocument)
 {
     if (mspWin->keyboard().bDown[KC_ESCAPE])
         Engine::acquire()->sendMessage("quit");
-    else if (mspWin->keyboard().bDown[KC_SPACE])
+    
+    static unsigned int last = lx0::util::lx_milliseconds();
+    auto now = lx0::util::lx_milliseconds();
+    if (now > last + 20)
+    {
+        last = now;
         mspWin->invalidate();
+    }
 }
+
+//===========================================================================//
+
+namespace lx0 { namespace core { namespace lxvar_ns { namespace detail {
+    void _convert (lxvar& v, vector3d& u)
+    {
+        u.x = v.at(0).convert();
+        u.y = v.at(1).convert();
+        u.z = v.at(2).convert();
+    }
+    void _convert (lxvar& v, point3d& u)
+    {
+        u.x = v.at(0).convert();
+        u.y = v.at(1).convert();
+        u.z = v.at(2).convert();
+    }
+}}}}
+
+class Geometry : public std::enable_shared_from_this<Geometry>
+{
+public:
+    virtual ~Geometry(){}
+};
+
+class Plane : public Geometry
+{
+public:
+    glgeom::plane3d geom;
+};
+
+class Sphere : public Geometry
+{
+public:
+    glgeom::sphere3d geom;
+};
+
+
+class ScanIterator
+{
+public:
+    ScanIterator(int w, int h, std::function<void(int,int)> func)
+        : x (0)
+        , y (0)
+        , width (w)
+        , height (h)
+        , f (func)
+    {
+    }
+
+    bool done() { return !(y < height && x < width); }
+    void next() 
+    {
+        f(x, y);
+        if (++x >= width)
+        {
+            x = 0;
+            ++y;
+        }
+    }
+
+protected:
+    int x;
+    int y;
+    int width;
+    int height;
+    std::function<void (int, int)> f;
+};
+
+class RayTracer : public Document::Component
+{
+public: 
+    RayTracer()
+        : mIterator (img.width(), img.height(), [&](int x, int y) { _trace(x, y); })
+    {
+        mHandlers.insert(std::make_pair("Plane", [&](ElementPtr spElem) {
+            auto pGeom = new Plane;
+            pGeom->geom.normal = (vector3d)spElem->value().find("normal").convert();
+            pGeom->geom.d      = spElem->value().find("d").convert();
+            mGeometry.push_back(std::shared_ptr<Plane>(pGeom));
+        }));
+
+        mHandlers.insert(std::make_pair("Sphere", [&](ElementPtr spElem) {
+            auto pGeom = new Sphere;
+            pGeom->geom.center = spElem->value().find("center").convert();
+            pGeom->geom.radius = spElem->value().find("radius").convert();
+            mGeometry.push_back(std::shared_ptr<Sphere>(pGeom));
+        }));
+    }
+
+    virtual void onAttached (DocumentPtr spDocument) 
+    {
+        spDocument->iterateElements([&](ElementPtr spElem) -> bool { _onElementAddRemove(spElem, true); return false; });
+    }
+    virtual void onElementAdded (DocumentPtr spDocument, ElementPtr spElem) 
+    {
+    }
+    virtual void onElementRemoved (Document*   pDocument, ElementPtr spElem) 
+    {
+    }
+    virtual void onUpdate (DocumentPtr spDocument)
+    {
+        if (!mIterator.done())
+            mIterator.next();
+    }
+
+    void _trace (int x, int y)
+    {
+        if (x == 0)
+            std::cout << "Tracing row " << y << std::endl;
+
+        auto& c = img.get(x, y);
+        switch ( 2*(y%2) + (x%2) )
+        {
+        default:
+        case 0: c = glgeom::color3f(.3f, .9f, .7f); break;
+        case 1: c = glgeom::color3f(.7f, .7f, .7f); break;
+        case 2: c = glgeom::color3f(.4f, .4f, .9f); break;
+        case 3: c = glgeom::color3f(.6f, 1, 1); break;
+        };
+    }
+
+protected:
+    void _onElementAddRemove (ElementPtr spElem, bool bAdd)
+    {
+        const std::string tag = spElem->tagName();
+
+        auto it = mHandlers.find(spElem->tagName());
+        if (it != mHandlers.end())
+            it->second(spElem);
+        else
+            std::cout << "Unprocessed tag: " << tag << std::endl;
+    }
+
+    std::map<std::string, std::function<void (ElementPtr spElem)>> mHandlers;
+
+    ScanIterator                                                   mIterator;
+    std::vector<std::shared_ptr<Geometry>>                         mGeometry;
+};
 
 //===========================================================================//
 //   E N T R Y - P O I N T
@@ -209,6 +364,7 @@ main (int argc, char** argv)
         spEngine->addViewPlugin("LxCanvas", [] (View* pView) { return new LxCanvasImp; });
         
         DocumentPtr spDocument = spEngine->loadDocument("media2/appdata/sm_raytracer/basic_single_sphere_defaults.xml");
+        spDocument->attachComponent("ray", new RayTracer);
         ViewPtr     spView     = spDocument->createView("LxCanvas", "view");
         spView->show();
 

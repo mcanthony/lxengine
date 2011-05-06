@@ -718,26 +718,6 @@ main (int argc, char** argv)
     int exitCode = -1;
     try
     {
-        // Windows specific hack 
-        //
-        // Get the console window in a good default position for debugging
-        ::MoveWindow(::GetConsoleWindow(), 960, 0, 880, 1024, TRUE);
-
-	    CONSOLE_FONT_INFOEX lpConsoleCurrentFontEx;
-	    lpConsoleCurrentFontEx.cbSize = sizeof(CONSOLE_FONT_INFOEX);
-	    lpConsoleCurrentFontEx.dwFontSize.X = 7;
-	    lpConsoleCurrentFontEx.dwFontSize.Y = 12;
-	    lpConsoleCurrentFontEx.FontWeight = 400;
-	    lpConsoleCurrentFontEx.nFont = 1;
-	    lpConsoleCurrentFontEx.FontFamily = FF_DONTCARE;
-	    lstrcpyW(lpConsoleCurrentFontEx.FaceName, L"Ariel");
-	    ::SetCurrentConsoleFontEx ( ::GetStdHandle(STD_OUTPUT_HANDLE), false, &lpConsoleCurrentFontEx );
-        //
-        // End Windows specific hack
-
-
-
-
         EnginePtr   spEngine   = Engine::acquire();
         spEngine->addDocumentComponent("physics2", [] () { return new PhysicsSubsystem; } );
         spEngine->addViewPlugin("LxCanvas", [] (View* pView) { return new LxCanvasImp; });

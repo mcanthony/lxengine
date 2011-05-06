@@ -58,7 +58,7 @@ namespace glgeom
                     typedef point3t<P>  point;
                     typedef vector3t<P> vector;
 
-                    plane3t () : a(0) b(0), c(0), d(0) {}
+                    plane3t () : a(0), b(0), c(0), d(0) {}
                     plane3t (type a_, type b_, type c_, type d_) : a(a_), b(b_), c(c_), d(d_) {}
                     plane3t (point p, vector n) : normal(n), d( -dot(vector(p), n) ) {}
         
@@ -75,6 +75,14 @@ namespace glgeom
                     };
                     type d;
                 };
+
+                template <typename T>
+                bool    
+                valid (const plane3t<T>& plane)
+                {
+                    return (length(plane.normal) > 0);
+                }
+
             }
 
             using detail::plane3t;

@@ -155,6 +155,8 @@ namespace lx0 { namespace core {
         const ElementComponentMap&  elementComponents       (void) const  { return mElementComponents; }
         ///@}
 
+        void                notifyAttached      (ComponentPtr spComponent) { /*! \todo */ } 
+
         // Stats
         void                incObjectCount      (std::string name);
         void                decObjectCount      (std::string name);

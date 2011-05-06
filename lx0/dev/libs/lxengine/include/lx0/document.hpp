@@ -64,6 +64,9 @@ namespace lx0 { namespace core {
     public:
         virtual         ~DocumentComponent() {}
 
+        /*!
+            Called immediatedly after the Component is attached to the Document
+         */
         virtual void    onAttached          (DocumentPtr spDocument) {}
 
         virtual void    onUpdate            (DocumentPtr spDocument) {}
@@ -101,6 +104,8 @@ namespace lx0 { namespace core {
         ElementPtr              getElementById          (std::string id);
         std::vector<ElementPtr> getElementsByTagName    (std::string name);
         std::vector<ElementPtr> getElements             (void);
+
+        void                    iterateElements     (std::function<bool (ElementPtr)> f) { _walkElements(f); }
 
         void                    beginRun        (void);
         void                    updateRun       (void);

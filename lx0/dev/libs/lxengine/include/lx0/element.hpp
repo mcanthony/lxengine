@@ -123,6 +123,7 @@ namespace lx0 { namespace core {
         void            notifyAdded     (Document* pDocument);
         void            notifyRemoved   (Document* pDocument);
         void            notifyUpdate    (Document* pDocument);
+        void            notifyAttached  (ComponentPtr spComponent) { /*! \todo */ } 
 
         DocumentPtr     document        (void);
 
