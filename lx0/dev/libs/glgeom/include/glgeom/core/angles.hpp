@@ -97,15 +97,18 @@ namespace glgeom
                 degrees     operator/   (float s) const     { return degrees(value / s); }
 
                 void        operator+=  (degrees d)         { value += d.value; }
-                void        operator-=  (radians r)         { value -= r.value; }
+                void        operator+=  (float   t)         { value += t; }
+                void        operator-=  (degrees t)         { value -= t.value; }
 
-                degrees     operator+   (degrees r) const   { return degrees(value + r.value); }
-                degrees     operator-   (degrees r) const   { return degrees(value - r.value); }
+                degrees     operator+   (degrees d) const   { return degrees(value + d.value); }
+                degrees     operator-   (degrees d) const   { return degrees(value - d.value); }
 
-                bool        operator!=  (degrees r) const   { return value != r.value; }
-                bool        operator==  (degrees r) const   { return value == r.value; }
-                bool        operator<   (degrees r) const   { return value < r.value; }
-                bool        operator>   (degrees r) const   { return value > r.value; }
+                bool        operator!=  (degrees t) const   { return value != t.value; }
+                bool        operator==  (degrees t) const   { return value == t.value; }
+                bool        operator<   (degrees t) const   { return value < t.value; }
+                bool        operator<   (float   t) const   { return value < t; }
+                bool        operator>   (degrees t) const   { return value > t.value; }
+                bool        operator>   (float   t) const   { return value > t; }
 
 
                 float value;
@@ -118,10 +121,14 @@ namespace glgeom
             using ::cos;
             using ::sin;
             using ::abs;
+
             inline radians      abs     (radians r) { return radians(::abs(r.value)); }
-            inline degrees      abs     (degrees r) { return degrees(::abs(r.value)); }
             inline float        cos     (radians r) { return cosf(r.value); }
             inline float        sin     (radians r) { return sinf(r.value); }
+            
+            inline degrees      abs     (degrees t) { return degrees(::abs(t.value)); }
+            inline float        cos     (degrees t) { return cosf(radians(t).value); }
+            inline float        sin     (degrees t) { return sinf(radians(t).value); }
 
             //---------------------------------------------------------------------------//
                 

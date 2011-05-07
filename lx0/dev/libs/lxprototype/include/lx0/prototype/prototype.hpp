@@ -81,3 +81,18 @@ namespace lx0 { namespace prototype {
             void                rotate_vertical     (Camera& camera, float angle);
 
 }}
+
+
+namespace lx0 
+{
+    namespace prototype
+    {
+        namespace general
+        {
+            namespace detail
+            {
+
+            }
+        }
+    }
+}

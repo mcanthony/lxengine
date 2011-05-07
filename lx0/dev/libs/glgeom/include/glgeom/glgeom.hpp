@@ -37,6 +37,21 @@ enum
     GLGEOM_VERSION_REVISION = 0,
 };
 
+//
+// Import some common glm symbols
+//
+#include <glm/glm.hpp>
+#include <glm/gtc/quaternion.hpp>
+
+namespace glgeom
+{
+    using glm::detail::tquat;
+}
+
+//
+//
+//
+
 #include <glgeom/core/angles.hpp>
 
 #include <glgeom/core/vector.hpp>       // directed distance primitive

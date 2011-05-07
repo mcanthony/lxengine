@@ -145,6 +145,35 @@ namespace glgeom
                     
                     return glm::quat_cast(mat);
                 }
+
+                template <typename T>
+                typename glm::detail::tquat<T>
+                orientation_dir_up (const vector3t<T>& v, bool right_handed, const vector3t<T>& reference_up)
+                {
+                    const auto right = normalize( cross(v, world_up) );
+                    const auto up = normalize( cross(right, v) );
+
+                    const auto sign = right_handed ? -1 : 1;
+                    glm::detail::tmat3x3<T> mat(right.vec, up.vec, sign * v.vec);
+                    
+                    return glm::quat_cast(mat);
+                }
+
+                //! Create a quaternion from an axis-angle representation
+                /*
+                 */
+                template <typename T>
+                glm::detail::tquat<T>  
+                orientation (const vector3t<T>& axis, glgeom::radians r)
+                {
+                    const T sin_half_r ( sin(r / 2) );
+                    glm::fquat q;
+                    q.x = axis.x * sin_half_r;
+                    q.y = axis.y * sin_half_r;
+                    q.z = axis.z * sin_half_r;
+                    q.w = cos(r / 2);
+                    return q;
+                }
             }
 
             //
@@ -156,6 +185,8 @@ namespace glgeom
             typedef camera3t<double>    camera3d;
 
             using camera_ns::detail::orientation_from_to_up;
+            using camera_ns::detail::orientation_dir_up;
+            using camera_ns::detail::orientation;
         }
     }
     

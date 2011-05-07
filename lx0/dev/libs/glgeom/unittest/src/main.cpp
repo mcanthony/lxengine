@@ -37,6 +37,7 @@
 
 #include "glgeom/glgeom.hpp"
 #include "glgeom/prototype/camera.hpp"
+#include "glgeom/prototype/transform_srt.hpp"
 
 using namespace glgeom;
 
@@ -119,6 +120,8 @@ public:
 
     void check (bool b, int line, std::string expression) 
     {
+        mContext.checkLastFailed = !b;
+
         if (!b)
         {
             mContext.checkFail++;
@@ -126,7 +129,6 @@ public:
             f.name = mContext.pTest->mName;
             f.line = line;
             f.expression = expression;
-            f.detail = mDetail.str();
             mFailures.push_back(f);
         }
         else
@@ -152,9 +154,8 @@ public:
         check(b, -1, "<unknown>");
     }
 
-    bool    detailNeeded() const { return mContext.checkFail > 0; }
-    std::stringstream& detail() { mDetail.str(""); return mDetail; }
-    std::stringstream mDetail;
+    bool    failed() const { return mContext.checkLastFailed; }
+    void    set_detail (std::stringstream& ss) { ss << std::endl; mFailures.back().detail = ss.str(); }
 
 protected:
     struct
@@ -166,6 +167,7 @@ protected:
         int         check;
         int         checkPass;
         int         checkFail;
+        bool        checkLastFailed;
     } mContext;
 
     struct Count
@@ -203,6 +205,9 @@ TestRun::run (TestModule& module)
         for (size_t j = 0; j < sets.size(); ++j)
         {
             mContext.pSet = &sets[j];
+
+            std::cout << "= Set '" << mContext.pSet->mName << "'" << std::endl;
+
             auto& tests = mContext.pSet->mTests;
             for (size_t k = 0; k < tests.size(); ++k)
             {
@@ -210,7 +215,7 @@ TestRun::run (TestModule& module)
                 mContext.check = 0;
                 mContext.checkPass = 0;
                 mContext.checkFail = 0;
-                mDetail.clear();
+                mContext.checkLastFailed = false;
                 auto& test = *mContext.pTest;
 
                 test.mFunc(*this);
@@ -263,8 +268,8 @@ TestRun::run (TestModule& module)
         }
     }
     std::cout << std::endl;
-    std::cout << "Total: " << mTest.total << " tests (" << mTest.fail << " fail / " << mTest.pass << " pass) " << mTest.percent() << "%" << std::endl
-              << "       " << mCheck.total << " checks (" << mCheck.fail << " fail / " << mCheck.pass << " pass) " << mCheck.percent() << "%" << std::endl;
+    std::cout << "Total: " << mCheck.total << " checks (" << mCheck.fail << " fail / " << mCheck.pass << " pass) " << mCheck.percent() << "%" << std::endl
+              << "       " << mTest.total << " tests (" << mTest.fail << " fail / " << mTest.pass << " pass) " << mTest.percent() << "%" << std::endl;
 }
 
 #define CHECK(R,EXP) R.check(EXP, __LINE__, #EXP);
@@ -301,8 +306,7 @@ public:
 
             ray3t<T>    ray (expected - direction * (T(.1) + f()), direction);
 
-            auto& detail = r.detail();
-
+            std::stringstream detail;
             detail 
                 << "ray o:(" << ray.origin.x << ", " << ray.origin.y << ", " << ray.origin.z << ") d:(" << ray.direction.x << ", " << ray.direction.y << ", " << ray.direction.z << ")" << std::endl
                 << "sphere c:(" << sphere.center.x << ", " << sphere.center.y << ", " << sphere.center.z << ") r:(" << sphere.radius << ")" << std::endl
@@ -312,8 +316,13 @@ public:
 
             // Preliminary checks on the generated data
             CHECK(r, point_on_surface(expected, sphere, tol));
+            if (r.failed()) r.set_detail(detail);
+
             CHECK(r, point_on_curve(expected, ray, tol));
+            if (r.failed()) r.set_detail(detail);
+            
             CHECK(r, distance(ray.origin, sphere.center) > sphere.radius);
+            if (r.failed()) r.set_detail(detail);
 
             intersect3t<T> isect;
             const bool b = intersect(ray, sphere, isect);
@@ -323,10 +332,19 @@ public:
                 << "distance: " << distance(ray.origin, sphere.center) << std::endl;
 
             CHECK(r, b == true);
+            if (r.failed()) r.set_detail(detail);
+
             CHECK_CMP(r, distance(isect.position, sphere), T(0.0), tol);
+            if (r.failed()) r.set_detail(detail);
+
             CHECK(r, point_on_curve(isect.position, ray, tol));
+            if (r.failed()) r.set_detail(detail);
+
             CHECK_CMP(r, distance(expected, isect.position), T(0.0), tol);
+            if (r.failed()) r.set_detail(detail);
+
             CHECK_CMP(r, degrees(angle_between(normal, isect.normal)).value, T(0.0), T(5.0));
+            if (r.failed()) r.set_detail(detail);
         }
     }
 };
@@ -403,6 +421,7 @@ testset_vector(TestSet& set)
 void
 testset_camera(TestSet& set)
 {
+    set.mName = "Camera tests";
     set.push("orientation_from_to_up (5,5,5)", [] (TestRun& r) {
 
         glgeom::camera3f camera;
@@ -430,6 +449,260 @@ testset_camera(TestSet& set)
             CHECK_CMP(r, u.z, -5.0f, 1e-3f);
         }
 
+    });
+}
+
+std::string
+fmt (const point3f& p)
+{
+    std::stringstream ss;
+    ss << "(" << p.x << ", " << p.y << ", " << p.z << ")";
+    return ss.str();
+}
+
+void
+testset_transform_srt (TestSet& set)
+{
+    set.mName = "transform_srt";
+    
+    set.push("transform_srt ctor", [](TestRun& r) {
+        
+        transform_srt_3f t;    
+        CHECK_CMP(r, glm::distance(t.scale.vec, glm::vec3(1,1,1)), 0.0f, 1e-6f);
+        CHECK_CMP(r, glm::distance(t.scale.vec, glm::vec3(0,0,0)), sqrtf(3), 1e-6f); 
+
+        CHECK_CMP(r, length(t.translate), 0.0f, 1e-6f);
+
+    });
+
+    set.push("identity transformations", [](TestRun& r) {
+        
+        const transform_srt_3f t;
+        point3f p, q;
+
+        p = point3f(0, 0, 0);
+        q = transform(p, t);
+        CHECK_CMP(r, distance(q, p), 0.0f, 1e-6f);
+        CHECK(r, distance(q, point3f(10, 10, 10)) > 10.0f);
+
+        p = point3f(1, 1, 1);
+        q = transform(p, t);
+        CHECK_CMP(r, distance(q, p), 0.0f, 1e-6f);
+
+        for (float s = 1.0f; s <= 10000.0f; s *= 10.0f)
+        {
+            for (int i = 0; i < 6; ++i)
+            {
+                p = point3f(0, 0, 0);
+                p[i % 3] = (i / 3 == 0) ? 1 : -1;
+
+                q = transform(p, t);
+                CHECK_CMP(r, distance(q, p), 0.0f, 1e-6f);
+            }
+        }
+    });
+
+    set.push("scale transformations", [](TestRun& r) {
+        transform_srt_3f t;
+        point3f p, q, e;
+
+        t.scale = vector3f(2, 2, 2);
+        p = point3f(0, 0, 0);
+        q = transform(p, t);
+        e = point3f(0, 0, 0);
+        CHECK_CMP(r, distance(q, e), 0.0f, 1e-6f);
+
+        t.scale = vector3f(2, 2, 2);
+        p = point3f(1, 1, 1);
+        q = transform(p, t);
+        e = point3f(2, 2, 2);
+        CHECK_CMP(r, distance(q, e), 0.0f, 1e-6f);
+
+        t.scale = vector3f(2, 2, 2);
+        p = point3f(0, 1, -1);
+        q = transform(p, t);
+        e = point3f(0, 2, -2);
+        CHECK_CMP(r, distance(q, e), 0.0f, 1e-6f);
+    });
+
+    set.push("rotate transformations", [](TestRun& r) {
+        transform_srt_3f t;
+        point3f p, q, e;
+
+        auto check_fail = [&]() {
+            if (r.failed())
+            {
+                std::stringstream ss;
+                ss << "Expected: " << fmt(e) << std::endl
+                   << "Actual:   " << fmt(q);
+                r.set_detail(ss);
+            }
+        };
+
+        // Preliminary santity checks
+        {           
+            // Stage 0
+            {
+                auto axis_angle = [](glm::vec3 axis, float r) -> glm::fquat
+                {
+                    glm::fquat q;
+                    q.x = axis.x * sin(r / 2.0f);
+                    q.y = axis.y * sin(r / 2.0f);
+                    q.z = axis.z * sin(r / 2.0f);
+                    q.w = cos(r / 2.0f);
+                    return q;
+                };
+
+                glm::fquat q = axis_angle( glm::vec3(0, 0, 1), 3.1415962f / 2.0f );
+                glm::vec3  p(1, 0, 0);
+                glm::vec3  t = q * p;
+                glm::vec3  e(0, 1, 0);
+
+                CHECK_CMP(r, glm::distance(t, e), 0.0f, 1e-5f);
+            }
+
+            // Stage 1
+            {
+                glm::fquat o;
+              
+                o = orientation( vector3f(0, 0, 1), radians(degrees(0)) );
+                p = point3f(1, 0, 0);
+                q.vec = o * p.vec * glm::conjugate(o);
+                e = point3f(1, 0, 0);
+                CHECK_CMP(r, distance(q, e), 0.0f, 1e-6f);
+                check_fail();
+
+                o = orientation( vector3f(0, 0, 1), radians(degrees(90)) );
+                p = point3f(1, 0, 0);
+                q.vec = o * p.vec;
+                e = point3f(0, 1, 0);
+                CHECK_CMP(r, distance(q, e), 0.0f, 1e-5f);
+                check_fail();
+            }
+
+        }
+
+        // 90 degree rotations about the z-axis
+        {
+            t.rotate = orientation( vector3f(0, 0, 1), radians(degrees(90)) );
+            p = point3f(0, 0, 0);
+            q = transform(p, t);
+            e = point3f(0, 0, 0);
+            CHECK_CMP(r, distance(q, e), 0.0f, 1e-6f);
+            check_fail();
+
+            t.rotate = orientation( vector3f(0, 0, 1), radians(degrees(90)) );
+            p = point3f(1, 0, 0);
+            q = transform(p, t);
+            e = point3f(0, 1, 0);
+            CHECK_CMP(r, distance(q, e), 0.0f, 1e-5f);
+            check_fail();
+
+            t.rotate = orientation( vector3f(0, 0, 1), radians(degrees(90)) );
+            p = point3f(0, 1, 0);
+            q = transform(p, t);
+            e = point3f(-1, 0, 0);
+            CHECK_CMP(r, distance(q, e), 0.0f, 1e-5f);
+            check_fail();
+
+            t.rotate = orientation( vector3f(0, 0, 1), radians(degrees(90)) );
+            p = point3f(0, 0, 1);
+            q = transform(p, t);
+            e = point3f(0, 0, 1);
+            CHECK_CMP(r, distance(q, e), 0.0f, 1e-5f);
+            check_fail();
+        }
+
+        // Rotate about the Y axis
+        if (true)
+        {
+            t.rotate = orientation( vector3f(0, 1, 0), radians(degrees(90)) );
+            p = point3f(1, 0, 0);
+            q = transform(p, t);
+            e = point3f(0, 0, -1);
+            CHECK_CMP(r, distance(q, e), 0.0f, 1e-5f);
+            check_fail();
+        }
+    });
+
+ 
+
+    set.push("translate transformations", [](TestRun& r) {
+        transform_srt_3f t;
+        point3f p, q, e;
+
+        t.translate = vector3f(2, 2, 2);
+        p = point3f(0, 0, 0);
+        q = transform(p, t);
+        e = point3f(2, 2, 2);
+        CHECK_CMP(r, distance(q, e), 0.0f, 1e-6f);
+
+        t.translate = vector3f(2, 2, 2);
+        p = point3f(1, 1, 1);
+        q = transform(p, t);
+        e = point3f(3, 3, 3);
+        CHECK_CMP(r, distance(q, e), 0.0f, 1e-6f);
+
+        t.translate = vector3f(2, 2, 2);
+        p = point3f(0, 1, -1);
+        q = transform(p, t);
+        e = point3f(2, 3,  1);
+        CHECK_CMP(r, distance(q, e), 0.0f, 1e-6f);
+    });
+
+
+   // http://www.siggraph.org/education/materials/HyperGraph/modeling/mod_tran/3drota.htm#Y-Axis%20Rotation
+    set.push("standard axis rotations", [](TestRun& r) {
+        transform_srt_3f t;
+        point3f p, q, e;
+        degrees deg;
+
+        auto check_fail = [&]() {
+            if (r.failed())
+            {
+                std::stringstream ss;
+                ss << "Expected: " << fmt(e) << std::endl
+                    << "Actual:   " << fmt(q) << std::endl
+                    << "Degrees: " << deg.value;
+                r.set_detail(ss);
+            }
+        };
+
+        // X about the Z
+        for (deg = degrees(0); deg < 360; deg += 15)
+        {
+            t.rotate = orientation( vector3f(0, 0, 1), radians(deg) );
+            p = point3f(1, 0, 0);
+            q = transform(p, t);
+            e = point3f(cos(deg), sin(deg), 0);
+            CHECK_CMP(r, distance(q, e), 0.0f, 1e-5f);
+            check_fail();
+        }
+
+        // X about the Y
+        for (deg = degrees(0); deg < 360; deg += 15)
+        {
+            t.rotate = orientation( vector3f(0, 1, 0), radians(deg) );
+            p = point3f(0, 0, 1);
+            q = transform(p, t);
+            e = point3f(sin(deg), 0, cos(deg));
+            
+            CHECK_CMP(r, distance(q, e), 0.0f, 1e-5f);
+            check_fail();
+        }
+
+        // Z about the X
+        for (deg = degrees(0); deg < 360; deg += 15)
+        {
+            t.rotate = orientation( vector3f(1, 0, 0), radians(deg) );
+            p = point3f(0, 0, 1);
+            q = transform(p, t);
+            e = point3f(0, -sin(deg), cos(deg));
+            
+            CHECK_CMP(r, distance(q, e), 0.0f, 1e-5f);
+            check_fail();
+        }
+      
     });
 }
 
@@ -594,6 +867,11 @@ main (int argc, char** argv)
         {
             TestSet set;
             testset_camera(set);
+            group.mSets.push_back(set);
+        }
+        {
+            TestSet set;
+            testset_transform_srt(set);
             group.mSets.push_back(set);
         }
         module.mGroups.push_back(group);
