@@ -36,6 +36,8 @@
 #include <string>
 
 #include "glgeom/glgeom.hpp"
+#include "glgeom/prototype/camera.hpp"
+
 using namespace glgeom;
 
 
@@ -329,6 +331,108 @@ public:
     }
 };
 
+void
+testset_vector(TestSet& set)
+{
+    set.mName = "Basic";
+
+    set.push("vector2f constructor", [] (TestRun& r) {
+        vector2f v;
+        CHECK(r, sizeof(v) == sizeof(float) * 2);
+        CHECK(r, v.x == 0.0f);
+        CHECK(r, v.y == 0.0f);
+    });
+    set.push("vector3f constructor", [] (TestRun& r) {
+        vector3f v;
+        CHECK(r, sizeof(v) == sizeof(float) * 3);
+        CHECK(r, v.x == 0.0f);
+        CHECK(r, v.y == 0.0f);
+        CHECK(r, v.z == 0.0f);
+    });
+    set.push("vector4f constructor", [] (TestRun& r) {
+        vector4f v;
+        CHECK(r, sizeof(v) == sizeof(float) * 4);
+        CHECK(r, v.x == 0.0f);
+        CHECK(r, v.y == 0.0f);
+        CHECK(r, v.z == 0.0f);
+        CHECK(r, v.w == 0.0f);
+    });
+
+    set.push("vector2d constructor", [] (TestRun& r) {
+        vector2d v;
+        CHECK(r, sizeof(v) == sizeof(double) * 2);
+        CHECK(r, v.x == 0.0);
+        CHECK(r, v.y == 0.0);
+    });
+    set.push("vector3d constructor", [] (TestRun& r) {
+        vector3d v;
+        CHECK(r, sizeof(v) == sizeof(double) * 3);
+        CHECK(r, v.x == 0.0);
+        CHECK(r, v.y == 0.0);
+        CHECK(r, v.z == 0.0);
+    });
+    set.push("vector4d constructor", [] (TestRun& r) {
+        vector4d v;
+        CHECK(r, sizeof(v) == sizeof(double) * 4);
+        CHECK(r, v.x == 0.0);
+        CHECK(r, v.y == 0.0);
+        CHECK(r, v.z == 0.0);
+        CHECK(r, v.w == 0.0);
+    });
+
+    set.push("vector3f dot product", [] (TestRun& r) {
+        vector3f v (0, 1, 2);
+        vector3f u (3, 6, 9);
+                
+        float w = dot(v, u);
+        float h = dot(u, v);
+                
+        CHECK(r,  w == h );
+        CHECK(r,  w == 24.0f);
+
+        CHECK(r, v.x == 0.0f);
+        CHECK(r, v.y == 1.0f);
+        CHECK(r, v.z == 2.0f);
+
+        CHECK(r, u.x == 3.0f);
+        CHECK(r, u.y == 6.0f);
+        CHECK(r, u.z == 9.0f);
+    });
+}
+
+void
+testset_camera(TestSet& set)
+{
+    set.push("orientation_from_to_up (5,5,5)", [] (TestRun& r) {
+
+        glgeom::camera3f camera;
+        camera.position = point3f(5, 5, 5);
+        camera.orientation = orientation_from_to_up(camera.position, point3f(0, 0, 0), vector3f(0, 0, 1));
+        auto u = (glm::vec3(0, 0, 0) - camera.position.vec) * camera.orientation;
+
+        CHECK_CMP(r, u.x, 0.0f, 1e-5f);
+        CHECK_CMP(r, u.y, 0.0f, 1e-5f);
+        CHECK_CMP(r, u.z, -8.66025404f, 1e-3f);
+    });
+    
+    set.push("orientation_from_to_up (axes)", [] (TestRun& r) {   
+        for (int i = 0; i < 6; ++i)
+        {
+            glgeom::camera3f camera;
+            camera.position = point3f(0, 0, 0);
+            camera.position[i%3] = ((i/3 == 0) ? 1 : -1) * 5;
+            
+            camera.orientation = orientation_from_to_up(camera.position, point3f(0, 0, 0), vector3f(0, 0, 1));
+            auto u = (glm::vec3(0, 0, 0) - camera.position.vec) * camera.orientation;
+
+            CHECK_CMP(r, u.x, 0.0f, 1e-5f);
+            CHECK_CMP(r, u.y, 0.0f, 1e-5f);
+            CHECK_CMP(r, u.z, -5.0f, 1e-3f);
+        }
+
+    });
+}
+
 int 
 main (int argc, char** argv)
 {
@@ -339,75 +443,17 @@ main (int argc, char** argv)
         group.mName = "Simple";
         {
             TestSet set;
-            set.mName = "Basics";
+            set.mName = "Empty";
             
             set.push("Empty test", [] (TestRun& r) {
                 /* Do nothing test */
             });
 
-            set.push("vector2f constructor", [] (TestRun& r) {
-                vector2f v;
-                CHECK(r, sizeof(v) == sizeof(float) * 2);
-                CHECK(r, v.x == 0.0f);
-                CHECK(r, v.y == 0.0f);
-            });
-            set.push("vector3f constructor", [] (TestRun& r) {
-                vector3f v;
-                CHECK(r, sizeof(v) == sizeof(float) * 3);
-                CHECK(r, v.x == 0.0f);
-                CHECK(r, v.y == 0.0f);
-                CHECK(r, v.z == 0.0f);
-            });
-            set.push("vector4f constructor", [] (TestRun& r) {
-                vector4f v;
-                CHECK(r, sizeof(v) == sizeof(float) * 4);
-                CHECK(r, v.x == 0.0f);
-                CHECK(r, v.y == 0.0f);
-                CHECK(r, v.z == 0.0f);
-                CHECK(r, v.w == 0.0f);
-            });
-
-            set.push("vector2d constructor", [] (TestRun& r) {
-                vector2d v;
-                CHECK(r, sizeof(v) == sizeof(double) * 2);
-                CHECK(r, v.x == 0.0);
-                CHECK(r, v.y == 0.0);
-            });
-            set.push("vector3d constructor", [] (TestRun& r) {
-                vector3d v;
-                CHECK(r, sizeof(v) == sizeof(double) * 3);
-                CHECK(r, v.x == 0.0);
-                CHECK(r, v.y == 0.0);
-                CHECK(r, v.z == 0.0);
-            });
-            set.push("vector4d constructor", [] (TestRun& r) {
-                vector4d v;
-                CHECK(r, sizeof(v) == sizeof(double) * 4);
-                CHECK(r, v.x == 0.0);
-                CHECK(r, v.y == 0.0);
-                CHECK(r, v.z == 0.0);
-                CHECK(r, v.w == 0.0);
-            });
-
-            set.push("vector3f dot product", [] (TestRun& r) {
-                vector3f v (0, 1, 2);
-                vector3f u (3, 6, 9);
-                
-                float w = dot(v, u);
-                float h = dot(u, v);
-                
-                CHECK(r,  w == h );
-                CHECK(r,  w == 24.0f);
-
-                CHECK(r, v.x == 0.0f);
-                CHECK(r, v.y == 1.0f);
-                CHECK(r, v.z == 2.0f);
-
-                CHECK(r, u.x == 3.0f);
-                CHECK(r, u.y == 6.0f);
-                CHECK(r, u.z == 9.0f);
-            });
-
+            group.mSets.push_back(set);
+        }
+        {
+            TestSet set;
+            testset_vector(set);
             group.mSets.push_back(set);
         }
         {
@@ -543,6 +589,11 @@ main (int argc, char** argv)
             set.push("ray-sphere intersection random points (float)",   SphereRandomTest<float, 1000>::run);
             set.push("ray-sphere intersection random points (double)",  SphereRandomTest<double, 10000000>::run);
 
+            group.mSets.push_back(set);
+        }
+        {
+            TestSet set;
+            testset_camera(set);
             group.mSets.push_back(set);
         }
         module.mGroups.push_back(group);

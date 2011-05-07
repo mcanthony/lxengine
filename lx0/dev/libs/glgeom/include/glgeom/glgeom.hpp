@@ -30,6 +30,13 @@
 #ifndef GLGEOM_HPP
 #define GLGEOM_HPP
 
+enum 
+{ 
+    GLGEOM_VERSION_MAJOR = 0,
+    GLGEOM_VERSION_MINOR = 1,
+    GLGEOM_VERSION_REVISION = 0,
+};
+
 #include <glgeom/core/angles.hpp>
 
 #include <glgeom/core/vector.hpp>       // directed distance primitive

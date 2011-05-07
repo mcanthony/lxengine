@@ -53,16 +53,14 @@
 #include <lx0/document.hpp>
 #include <lx0/element.hpp>
 #include <glgeom/glgeom.hpp>
+#include <glgeom/prototype/camera.hpp>
 
 #include <windows.h>
 #include <gl/gl.h>
 
 using namespace lx0::core;
-using namespace lx0::prototype;
 using namespace lx0::canvas::platform;
 using namespace glgeom;
-
-Camera             gCamera;
 
 //===========================================================================//
 
@@ -97,13 +95,6 @@ class Renderer
 public:
     void initialize()
     {
-        gCamera.mPosition = glgeom::point3f(10, 10, 15);
-        gCamera.mTarget = glgeom::point3f(0, 0, 0);
-        gCamera.mWorldUp = glgeom::vector3f(0, 0, 1);
-        gCamera.mFov = 60.0f;
-        gCamera.mNear = 0.01f;  // 1 cm
-        gCamera.mFar = 2000.0f; // 2 km
-
         GLuint id;
         glGenTextures(1, &id);
         glBindTexture(GL_TEXTURE_2D, id);
@@ -197,19 +188,42 @@ LxCanvasImp::show (View* pHostView, Document* pDocument)
     mspWin->show();
 }
 
+// Belongs in lx0::prototype::control_structures
+class timed_gate_block_imp
+{
+public:
+    timed_gate_block_imp (unsigned int delta)
+        : mDelta    (delta)
+        , mTrigger  (0)
+    {
+    }
+    void operator() (std::function<void()> f)
+    {
+        auto now = lx0::util::lx_milliseconds();
+        if (now > mTrigger)
+        {
+            f();
+            mTrigger = now + mDelta;
+        }
+    }
+
+protected:
+    unsigned int mTrigger;
+    unsigned int mDelta;
+};
+#define timed_gate_block(d,e) \
+    static timed_gate_block_imp _timed_block_inst ## __LINE__ (d); \
+    _timed_block_inst ## __LINE__ ([&]() e )
+
 void 
 LxCanvasImp::updateFrame (DocumentPtr spDocument) 
 {
     if (mspWin->keyboard().bDown[KC_ESCAPE])
         Engine::acquire()->sendMessage("quit");
-    
-    static unsigned int last = lx0::util::lx_milliseconds();
-    auto now = lx0::util::lx_milliseconds();
-    if (now > last + 20)
-    {
-        last = now;
+ 
+    timed_gate_block (20, { 
         mspWin->invalidate();
-    }
+    });
 }
 
 //===========================================================================//
@@ -228,6 +242,12 @@ namespace lx0 { namespace core { namespace lxvar_ns { namespace detail {
         u.z = v.at(2).convert();
     }
 }}}}
+
+class Camera : public std::enable_shared_from_this<Camera>
+{
+public:
+    camera3f camera;
+};
 
 class Geometry : public std::enable_shared_from_this<Geometry>
 {
@@ -298,6 +318,17 @@ public:
             pGeom->geom.radius = spElem->value().find("radius").convert();
             mGeometry.push_back(std::shared_ptr<Sphere>(pGeom));
         }));
+
+        mHandlers.insert(std::make_pair("Camera", [&](ElementPtr spElem) {
+            if (!mCamera)
+            {
+                auto pCam = new Camera;
+                pCam->camera.position = spElem->value().find("position").convert();
+                point3f target = spElem->value().find("look_at").convert();
+                pCam->camera.orientation = orientation_from_to_up(pCam->camera.position, target, vector3f(0, 0, 1));
+                mCamera = std::shared_ptr<Camera>(pCam);
+            }
+        }));
     }
 
     virtual void onAttached (DocumentPtr spDocument) 
@@ -319,7 +350,7 @@ public:
     void _trace (int x, int y)
     {
         if (x == 0)
-            std::cout << "Tracing row " << y << std::endl;
+            std::cout << "Tracing row " << y << "..." << std::endl;
 
         auto& c = img.get(x, y);
         switch ( 2*(y%2) + (x%2) )
@@ -347,7 +378,9 @@ protected:
     std::map<std::string, std::function<void (ElementPtr spElem)>> mHandlers;
 
     ScanIterator                                                   mIterator;
+    std::shared_ptr<Camera>                                        mCamera;
     std::vector<std::shared_ptr<Geometry>>                         mGeometry;
+
 };
 
 //===========================================================================//

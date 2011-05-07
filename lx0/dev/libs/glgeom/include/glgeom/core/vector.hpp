@@ -256,11 +256,11 @@ namespace glgeom
                 vector3t<T>  
                 rotate (const vector3t<T>& v, const vector3t<T>& axis, typename vector3t<T>::type r)
                 {
-                    vector3t<T>::type shr( sin(r / 2) );
+                    const T sin_half_r ( sin(r / 2) );
                     glm::fquat q;
-                    q.x = axis.x * shr;
-                    q.y = axis.y * shr;
-                    q.z = axis.z * shr;
+                    q.x = axis.x * sin_half_r;
+                    q.y = axis.y * sin_half_r;
+                    q.z = axis.z * sin_half_r;
                     q.w = cos(r / 2);
 
                     auto w = q * v.vec;
