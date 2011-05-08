@@ -127,6 +127,9 @@ namespace glgeom
                     typedef P   type;
                     typedef vector3t<P> vector3;
 
+
+                    assert( is_unit_length(ray.direction) );
+
                     // Construct a vector u from the ray's origin to the sphere center
 	                const vector3   u(sphere.center - ray.origin);
 	                const vector3   v(normalize(ray.direction));
@@ -223,6 +226,8 @@ namespace glgeom
             using   detail::intersect3t;
             typedef detail::intersect3t<float>  intersect3f;
             typedef detail::intersect3t<double> intersect3d;
+
+            using   detail::intersect;
         }
     }
 

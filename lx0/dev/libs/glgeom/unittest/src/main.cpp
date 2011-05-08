@@ -448,6 +448,25 @@ testset_camera(TestSet& set)
             CHECK_CMP(r, u.y, 0.0f, 1e-5f);
             CHECK_CMP(r, u.z, -5.0f, 1e-3f);
         }
+    });
+
+    set.push("primary axes", [](TestRun&r) {
+
+        glgeom::camera3f cam;
+        cam.position = point3f(0, -1, 0);
+        cam.near_plane = 1;
+        cam.far_plane = 1000;
+        cam.field_of_view = radians(degrees(45));
+        cam.aspect_ratio = 1;
+        cam.orientation = orientation_dir_up(vector3f(0, 1, 0), true, vector3f(0, 0, 1));
+
+        auto forward = camera_forward_vector(cam);
+        auto right = camera_right_vector(cam);
+        auto up = camera_up_vector(cam);
+
+        CHECK_CMP(r, glm::distance(forward.vec, glm::vec3(0, 1, 0)), 0.0f, 1e-5f);
+        CHECK_CMP(r, glm::distance(right.vec, glm::vec3(1, 0, 0)), 0.0f, 1e-5f);
+        CHECK_CMP(r, glm::distance(up.vec, glm::vec3(0, 0, 1)), 0.0f, 1e-5f);
 
     });
 }
@@ -465,7 +484,7 @@ testset_transform_srt (TestSet& set)
 {
     set.mName = "transform_srt";
     
-    set.push("transform_srt ctor", [](TestRun& r) {
+    set.push("ctor", [](TestRun& r) {
         
         transform_srt_3f t;    
         CHECK_CMP(r, glm::distance(t.scale.vec, glm::vec3(1,1,1)), 0.0f, 1e-6f);
@@ -475,7 +494,7 @@ testset_transform_srt (TestSet& set)
 
     });
 
-    set.push("identity transformations", [](TestRun& r) {
+    set.push("identity", [](TestRun& r) {
         
         const transform_srt_3f t;
         point3f p, q;
@@ -502,7 +521,7 @@ testset_transform_srt (TestSet& set)
         }
     });
 
-    set.push("scale transformations", [](TestRun& r) {
+    set.push("scale", [](TestRun& r) {
         transform_srt_3f t;
         point3f p, q, e;
 
@@ -525,7 +544,7 @@ testset_transform_srt (TestSet& set)
         CHECK_CMP(r, distance(q, e), 0.0f, 1e-6f);
     });
 
-    set.push("rotate transformations", [](TestRun& r) {
+    set.push("rotate", [](TestRun& r) {
         transform_srt_3f t;
         point3f p, q, e;
 
@@ -627,7 +646,7 @@ testset_transform_srt (TestSet& set)
 
  
 
-    set.push("translate transformations", [](TestRun& r) {
+    set.push("translate", [](TestRun& r) {
         transform_srt_3f t;
         point3f p, q, e;
 
@@ -796,7 +815,7 @@ main (int argc, char** argv)
                         ray.origin.x = cos(a);
                         ray.origin.y = sin(a);
                         ray.origin.z = h;
-                        ray.direction = glm::normalize(-ray.origin.vec);
+                        ray.direction = vector3f(glm::normalize(-ray.origin.vec));
 
                         intersect3f isect;
                         bool b = intersect(ray, plane, isect);

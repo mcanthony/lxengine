@@ -2,7 +2,7 @@
     <Library>
         <Camera id="camera">
         {
-            position : [ 4, 4, 4 ],
+            position : [ 1, 1, 1 ],
             look_at  : [ .5, .5, .5 ]
         }
         </Camera>

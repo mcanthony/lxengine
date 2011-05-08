@@ -150,10 +150,10 @@ namespace glgeom
                 typename glm::detail::tquat<T>
                 orientation_dir_up (const vector3t<T>& v, bool right_handed, const vector3t<T>& reference_up)
                 {
-                    const auto right = normalize( cross(v, world_up) );
+                    const auto right = normalize( cross(v, reference_up) );
                     const auto up = normalize( cross(right, v) );
 
-                    const auto sign = right_handed ? -1 : 1;
+                    const T sign = right_handed ? -1 : 1;
                     glm::detail::tmat3x3<T> mat(right.vec, up.vec, sign * v.vec);
                     
                     return glm::quat_cast(mat);
@@ -174,19 +174,52 @@ namespace glgeom
                     q.w = cos(r / 2);
                     return q;
                 }
+
+                template <typename T>
+                vector3t<T>
+                camera_forward_vector (const camera3t<T>& camera)
+                {
+                    // camera3t is a right-handed coordinate system, so -Z points "forward"
+                    //
+                    // Also since the transformation is from camera-space to world-space, and the 
+                    // orientation represents the transformation from world-to-camera, the inverse
+                    // is used: which is hidden in the order of operands in glm's operator* for
+                    // quaternions.  (i.e. q * pt == pt * inverse(q)).
+                    //
+                    return vector3t<T>( glm::normalize( camera.orientation * vector3t<T>(0, 0, -1).vec ) );
+                }
+
+                template <typename T>
+                vector3t<T>
+                camera_right_vector (const camera3t<T>& camera)
+                {
+                    return vector3t<T>( glm::normalize( camera.orientation * vector3t<T>(1, 0, 0).vec ) );
+                }
+
+                template <typename T>
+                vector3t<T>
+                camera_up_vector (const camera3t<T>& camera)
+                {
+                    return vector3t<T>( glm::normalize( camera.orientation * vector3t<T>(0, 1, 0).vec ) );
+                }
+
             }
 
             //
             // Explicitly import only the symbols that belong in the public namespace
             //
-            using camera_ns::detail::camera3t;
+            using detail::camera3t;
             
             typedef camera3t<float>     camera3f;
             typedef camera3t<double>    camera3d;
 
-            using camera_ns::detail::orientation_from_to_up;
-            using camera_ns::detail::orientation_dir_up;
-            using camera_ns::detail::orientation;
+            using detail::orientation_from_to_up;
+            using detail::orientation_dir_up;
+            using detail::orientation;
+
+            using detail::camera_forward_vector;
+            using detail::camera_right_vector;
+            using detail::camera_up_vector;
         }
     }
     

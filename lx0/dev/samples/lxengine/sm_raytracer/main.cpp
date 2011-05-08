@@ -64,6 +64,49 @@ using namespace glgeom;
 
 //===========================================================================//
 
+//! Quad represented in origin-axis format
+/*!
+    A rectangular quad in 3-space represented by an origin point and
+    two axes.
+ */
+template <typename T>
+class quad_oa_3t
+{
+public:
+    quad_oa_3t() {}
+    quad_oa_3t(const point3t<T>& o, const vector3t<T>& x, const vector3t<T>& y)
+        : origin(o)
+        , x_axis(x)
+        , y_axis(y)
+    {
+    }
+
+    point3t<T>      origin;
+    vector3t<T>     x_axis;
+    vector3t<T>     y_axis;
+};
+
+typedef quad_oa_3t<float>   quad_oa_3f;
+typedef quad_oa_3t<double>  quad_oa_3d;
+
+template <typename T>
+class frustum3t
+{
+public:
+    typedef T               type;
+    typedef quad_oa_3t<T>   quad;
+    typedef point3t<T>      point3;
+
+    point3      eye;
+    quad        near_quad;
+    type        far_dist;
+};
+
+typedef frustum3t<float>        frustum3f;
+typedef frustum3t<double>       frustum3d;
+
+//===========================================================================//
+
 
 class image3f
 {
@@ -228,21 +271,6 @@ LxCanvasImp::updateFrame (DocumentPtr spDocument)
 
 //===========================================================================//
 
-namespace lx0 { namespace core { namespace lxvar_ns { namespace detail {
-    void _convert (lxvar& v, vector3d& u)
-    {
-        u.x = v.at(0).convert();
-        u.y = v.at(1).convert();
-        u.z = v.at(2).convert();
-    }
-    void _convert (lxvar& v, point3d& u)
-    {
-        u.x = v.at(0).convert();
-        u.y = v.at(1).convert();
-        u.z = v.at(2).convert();
-    }
-}}}}
-
 class Camera : public std::enable_shared_from_this<Camera>
 {
 public:
@@ -253,18 +281,44 @@ class Geometry : public std::enable_shared_from_this<Geometry>
 {
 public:
     virtual ~Geometry(){}
+
+    bool intersect (const ray3f& ray, intersect3f& isect) 
+    {
+        if (_intersect(ray, isect))
+        {
+            assert( isect.distance >= 0 );
+            return true;
+        }
+        else
+            return false;
+    }
+
+protected:
+    virtual bool _intersect (const ray3f&, intersect3f& isect) { return false; }
 };
 
 class Plane : public Geometry
 {
 public:
-    glgeom::plane3d geom;
+    glgeom::plane3f geom;
+
+protected:
+    virtual bool _intersect (const ray3f& ray, intersect3f& isect) 
+    {
+        return  glgeom::intersect(ray, geom, isect);
+    }
 };
 
 class Sphere : public Geometry
 {
 public:
-    glgeom::sphere3d geom;
+    glgeom::sphere3f geom;
+
+protected:
+    virtual bool _intersect (const ray3f& ray, intersect3f& isect) 
+    {
+        return  glgeom::intersect(ray, geom, isect);
+    }
 };
 
 
@@ -307,7 +361,7 @@ public:
     {
         mHandlers.insert(std::make_pair("Plane", [&](ElementPtr spElem) {
             auto pGeom = new Plane;
-            pGeom->geom.normal = (vector3d)spElem->value().find("normal").convert();
+            pGeom->geom.normal = spElem->value().find("normal").convert();
             pGeom->geom.d      = spElem->value().find("d").convert();
             mGeometry.push_back(std::shared_ptr<Plane>(pGeom));
         }));
@@ -323,6 +377,7 @@ public:
             if (!mCamera)
             {
                 auto pCam = new Camera;
+                pCam->camera.near_plane = sqrtf(2);
                 pCam->camera.position = spElem->value().find("position").convert();
                 point3f target = spElem->value().find("look_at").convert();
                 pCam->camera.orientation = orientation_from_to_up(pCam->camera.position, target, vector3f(0, 0, 1));
@@ -349,6 +404,30 @@ public:
 
     void _trace (int x, int y)
     {
+        if (x == 0 && y == 0)
+        {
+            const auto& cam = mCamera->camera;
+
+            mspTraceContext.reset(new TraceContext);
+            auto& fr = mspTraceContext->frustum;
+
+            auto forward = camera_forward_vector(cam);
+            auto right   = camera_right_vector(cam);
+            auto up      = camera_up_vector(cam);
+
+            const auto width = cam.near_plane * tan(cam.field_of_view);
+            const auto height = width / cam.aspect_ratio;
+
+            fr.eye       = cam.position;
+            fr.near_quad.x_axis = right * width;
+            fr.near_quad.y_axis = up * height;
+            fr.near_quad.origin = fr.eye 
+                + forward * cam.near_plane
+                - right * (width / 2) 
+                - up * (height / 2);
+            fr.far_dist  = cam.far_plane;
+        }
+
         if (x == 0)
             std::cout << "Tracing row " << y << "..." << std::endl;
 
@@ -361,6 +440,36 @@ public:
         case 2: c = glgeom::color3f(.4f, .4f, .9f); break;
         case 3: c = glgeom::color3f(.6f, 1, 1); break;
         };
+
+        auto& frustum = mspTraceContext->frustum;
+        point3f screen_pt = frustum.near_quad.origin 
+            + frustum.near_quad.x_axis * ((x + 0.5f) / img.width())
+            + frustum.near_quad.y_axis * (((img.height() - y) + 0.5f) / img.height());
+        
+        ray3f ray (frustum.eye, normalize(screen_pt - frustum.eye) );
+
+        std::vector<intersect3f> hits;
+        for (auto it = mGeometry.begin(); it != mGeometry.end(); ++it)
+        {
+            intersect3f isect;
+            if ((*it)->intersect(ray, isect))
+                hits.push_back(isect);
+        }
+
+       if (!hits.empty())
+        {
+            intersect3f* pHit = &hits.front();
+            for (auto it = hits.begin(); it != hits.end(); ++it)
+            {
+                if (it->distance < pHit->distance)
+                    pHit = &(*it);
+            }
+
+            float d = dot(pHit->normal, -ray.direction);
+            c = glgeom::color3f(pHit->normal.vec);
+        }
+        else
+            c *= .5f;
     }
 
 protected:
@@ -381,6 +490,12 @@ protected:
     std::shared_ptr<Camera>                                        mCamera;
     std::vector<std::shared_ptr<Geometry>>                         mGeometry;
 
+    struct TraceContext
+    {
+        frustum3f   frustum;
+    };
+
+    std::shared_ptr<TraceContext>       mspTraceContext;
 };
 
 //===========================================================================//

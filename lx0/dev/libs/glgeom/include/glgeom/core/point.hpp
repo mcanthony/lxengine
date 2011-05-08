@@ -93,6 +93,7 @@ namespace glgeom
                                 point3t (void) { /* use glm default ctor */ }
                                 point3t (type _x, type _y, type _z) : vec(_x, _y, _z) {}
                     explicit    point3t (const glm::detail::tvec3<P>& that) : vec(that) {}
+                    explicit    point3t (const vector3& v) : vec(v.vec) {}
 
                     inline type&   operator[] (int i)          { return vec[i]; }
                     inline type    operator[] (int i) const    { return vec[i]; }
@@ -221,7 +222,7 @@ namespace glgeom
             typedef detail::point4t<double>    point4d;
 
             using detail::operator+;
-            using detail::operator-;
+            using detail::operator-;    
 
             namespace detail
             {

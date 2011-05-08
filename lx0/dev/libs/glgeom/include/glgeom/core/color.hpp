@@ -50,8 +50,11 @@ namespace glgeom
                 public:
                     typedef P       type;
 
-                    color3t (void) { /* use glm default ctor */ }
-                    color3t (type _r, type _g, type _b) : vec(_r, _g, _b) {}
+                                    color3t     (void) { /* use glm default ctor */ }
+                                    color3t     (type _r, type _g, type _b) : vec(_r, _g, _b) {}
+                    explicit        color3t     (const glm::detail::tvec3<P>& that) : vec(that) {}
+
+                    void        operator*=      (type s)        { vec *= s; }
 
                     union
                     {

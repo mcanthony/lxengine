@@ -91,9 +91,6 @@ namespace glgeom
                     explicit        vector3t    (const glm::detail::tvec3<P>& that) : vec(that) {}
                     explicit        vector3t    (const point3t<P>& p);
                     
-
-                    void            operator=   (const glm::detail::tvec3<P>& that) { vec = that; }
-
                     inline type&    operator[]  (int i)          { return vec[i]; }
                     inline type     operator[]  (int i) const    { return vec[i]; }
 

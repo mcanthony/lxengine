@@ -118,17 +118,21 @@ namespace glgeom
             inline radians     two_pi   (void)      { return radians(6.283185307179586476925286766559f); }
             inline radians     half_pi  (void)      { return radians(1.5707963267948966192313216916398f); }
 
+            using ::abs;
             using ::cos;
             using ::sin;
-            using ::abs;
+            using ::tan;
+            
 
             inline radians      abs     (radians r) { return radians(::abs(r.value)); }
             inline float        cos     (radians r) { return cosf(r.value); }
             inline float        sin     (radians r) { return sinf(r.value); }
+            inline float        tan     (radians r) { return tanf(r.value); }
             
             inline degrees      abs     (degrees t) { return degrees(::abs(t.value)); }
             inline float        cos     (degrees t) { return cosf(radians(t).value); }
             inline float        sin     (degrees t) { return sinf(radians(t).value); }
+            inline float        tan     (degrees t) { return tanf(radians(t).value); }
 
             //---------------------------------------------------------------------------//
                 

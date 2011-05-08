@@ -58,6 +58,19 @@ namespace lx0 { namespace core { namespace lxvar_ns {
             v.z = value.at(2).asFloat();
         }
 
+        void _convert (lxvar& v, glgeom::vector3d& u)
+        {
+            u.x = v.at(0).convert();
+            u.y = v.at(1).convert();
+            u.z = v.at(2).convert();
+        }
+        void _convert (lxvar& v, glgeom::point3d& u)
+        {
+            u.x = v.at(0).convert();
+            u.y = v.at(1).convert();
+            u.z = v.at(2).convert();
+        }
+
         //===========================================================================//
 
         void _convert(lxvar& v, Ogre::ColourValue& u)
