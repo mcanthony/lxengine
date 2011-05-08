@@ -180,7 +180,15 @@ copy_media_directory( media/models )
 # Sub-projects
 #
 
-recurse_subdirectories(libs)
+#recurse_subdirectories(libs)
+add_subdirectory( libs/lxblendreader )
+add_subdirectory( libs/lxcanvas)
+add_subdirectory( libs/lxcore )
+add_subdirectory( libs/lxengine )
+add_subdirectory( libs/lxprototype )
+add_subdirectory( libs/glgeom/unittest )
+add_subdirectory( libs/glgeom/benchmarks )
+
 recurse_subdirectories(benchmarks)
 recurse_subdirectories(samples)
 recurse_subdirectories(sandbox)
