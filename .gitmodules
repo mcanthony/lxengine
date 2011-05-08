@@ -1,0 +1,3 @@
+[submodule "lx0/dev/libs/glgeom"]
+	path = lx0/dev/libs/glgeom
+	url = git@github.com:athile/GLGeom.git
