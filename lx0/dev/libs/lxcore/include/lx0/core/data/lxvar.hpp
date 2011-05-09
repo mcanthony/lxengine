@@ -149,6 +149,9 @@ namespace lx0
                     lxvar           clone           (void) const;           //!< Create a deep clone of the lxvar
 
                     auto_cast2      convert         (void)                  { return auto_cast2(*this); }
+                    
+                    template <typename T>
+                    T               convert         (const T& t)            { return isUndefined() ? t : (T)auto_cast2(*this); }
 
                     bool            equal           (int i) const           { return (isInt() && asInt() == i); } //!< Is strictly equal: same type and same value
                     bool            equal           (std::string s) const   { return (isString() && asString() == s);}

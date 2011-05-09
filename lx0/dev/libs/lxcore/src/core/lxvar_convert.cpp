@@ -46,6 +46,7 @@ namespace lx0 { namespace core { namespace lxvar_ns {
         template <typename T>
         void _convert_any3f (lxvar& v, T& u)
         {
+            lx_check_error(v.isArray());
             lx_check_error(v.size() == 3);
             u[0] = v.at(0).asFloat();
             u[1] = v.at(1).asFloat();

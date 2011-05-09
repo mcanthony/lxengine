@@ -316,10 +316,35 @@ public:
     camera3f camera;
 };
 
-class Material : public Element::Component
+template <typename T>
+class material_phong_t
 {
 public:
-    glgeom::color3f color;
+    typedef T   type;
+
+    material_phong_t()
+        : ambient    (1, 1, 1)
+        , diffuse    (1, 1, 1)
+        , specular   (0, 0, 0)
+        , specular_n (8)
+    {
+    }
+
+    glgeom::color3t<T> ambient;
+    glgeom::color3t<T> diffuse;
+    glgeom::color3t<T> specular;
+    type               specular_n;
+};
+
+typedef material_phong_t<float>  material_phong_f;
+typedef material_phong_t<double> material_phong_d;
+
+
+class Material 
+    : public Element::Component
+    , public material_phong_f           // Multiple inheritance of classes without virtual methods is ok
+{
+public:
 };
 
 class Geometry : public Element::Component
@@ -446,13 +471,19 @@ image_fill_checker (image3f& img)
     }
 }
 
+/*
+    Dev Notes:
+
+    This class still needs clean-up as it has too many disparate responsibilities:
+    - Building the runtime components from Model (i.e. Doc/Element) changes
+    - Running the ray-tracer (i.e. responding to the Engine update()'s)
+ */
 class RayTracer : public Document::Component
 {
 public: 
     RayTracer()
-        : mInited (false)
     {
-        mFirstPass = ScanIterator(48, 48, [&](int x, int y) {
+        mPassQuick = ScanIterator(48, 48, [&](int x, int y) {
             int sx = (x * img.width()) / 48;
             int sy = (y * img.height()) / 48;
             int ex = std::min( ((x + 1) * img.width() ) / 48, img.width());
@@ -470,7 +501,7 @@ public:
             }
         });
 
-        mSecondPass = ScanIterator(128, 128, [&](int x, int y) {
+        mPassMedium = ScanIterator(128, 128, [&](int x, int y) {
             int sx = (x * img.width()) / 128;
             int sy = (y * img.height()) / 128;
             int ex = std::min( ((x + 1) * img.width() ) / 128, img.width());
@@ -488,9 +519,14 @@ public:
             }
         });
         
-        mIterator = ScanIterator(img.width(), img.height(), [&](int x, int y) { 
+        mPassHigh = ScanIterator(img.width(), img.height(), [&](int x, int y) { 
             img.get(x, y) = _trace(x, y); 
         });
+
+        mUpdateQueue.push_back([&]() { return _init(), true; });
+        mUpdateQueue.push_back([&]() { return mPassQuick.done() ? true : (mPassQuick.next(), false); });
+        mUpdateQueue.push_back([&]() { return mPassMedium.done() ? true : (mPassMedium.next(), false); });
+        mUpdateQueue.push_back([&]() { return mPassHigh.done() ? true : (mPassHigh.next(), false); });
         
         mHandlers.insert(std::make_pair("Plane", [&](ElementPtr spElem) {
             auto pGeom = new Plane;
@@ -518,7 +554,10 @@ public:
 
         mHandlers.insert(std::make_pair("Material", [&](ElementPtr spElem) {
             auto pMat = new Material;
-            pMat->color = spElem->value().find("color").convert();
+            pMat->diffuse = spElem->value().find("diffuse").convert(color3f(1, 1, 1));
+            pMat->specular = spElem->value().find("specular").convert(color3f(0, 0, 0));
+            pMat->specular_n = spElem->value().find("specular_n").convert(8.0f);
+
             spElem->attachComponent("raytrace", pMat);
         }));
 
@@ -549,34 +588,25 @@ public:
             _onElementAddRemove(spElem, true); return false; 
         });
     }
-    virtual void onElementAdded (DocumentPtr spDocument, ElementPtr spElem) 
-    {
-    }
-    virtual void onElementRemoved (Document*   pDocument, ElementPtr spElem) 
-    {
-    }
+
     virtual void onUpdate (DocumentPtr spDocument)
     {
-        if (!mInited)
-        {
-           image_fill_checker(img);
+        if (!mUpdateQueue.empty())
+            if (mUpdateQueue.front()())
+                mUpdateQueue.pop_front();
+    }
 
-            mspTraceContext.reset(new TraceContext);
-            mspTraceContext->frustum = frustum_from_camera(mCamera->camera);
+    void _init()
+    {
+        image_fill_checker(img);
 
-            mInited = true;
-        }
-        else if (!mFirstPass.done())
-            mFirstPass.next();
-        else if (!mSecondPass.done())
-            mSecondPass.next();
-        else if (!mIterator.done())
-            mIterator.next();
+        mspTraceContext.reset(new TraceContext);
+        mspTraceContext->frustum = frustum_from_camera(mCamera->camera);
     }
 
     color3f _trace (int x, int y)
     {
-        if (x == 0)
+        if (x == 0 & y % 4 == 0)
             std::cout << "Tracing row " << y << "..." << std::endl;
         
         ray3f ray = compute_frustum_ray<float>(mspTraceContext->frustum, x, img.height() - y, img.width(), img.height());
@@ -592,29 +622,45 @@ public:
         auto c = color3f(0, 0, 0);
         if (!hits.empty())
         {
-            intersect3f* pHit = &hits.front().second;
+            intersect3f* pIntersection = &hits.front().second;
             GeometryPtr spGeom = hits.front().first;
 
             for (auto it = hits.begin(); it != hits.end(); ++it)
             {
-                if (it->second.distance < pHit->distance)
+                if (it->second.distance < pIntersection->distance)
                 {
-                    pHit = &it->second;
+                    pIntersection = &it->second;
                     spGeom = it->first;
                 }
             }
+            const intersect3f& intersection = *pIntersection;
             
-            glgeom::color3f matDiffuse(1, 1, 1);
-            if (spGeom->mspMaterial)
-                matDiffuse = spGeom->mspMaterial->color;
+            material_phong_f defaultMaterial;
+            const material_phong_f& mat( spGeom->mspMaterial ? *spGeom->mspMaterial : defaultMaterial);
 
             for (auto it = mLights.begin(); it != mLights.end(); ++it)
             {
-                vector3f lightVec(normalize(pHit->position - (*it)->position));
-                float diffuseFactor = dot(pHit->normal, -lightVec);
+                auto& light = *(*it);
+
+                // 
+                // L = unit vector from light to intersection point; the "incidence vector" I is the
+                //     vector pointing in the opposite direction of L.
+                // N = surface normal at the point of intersection
+                //
+                const vector3f  L     (normalize(light.position - intersection.position));
+                const vector3f& N     (pIntersection->normal);
+                const float     NdotL ( cdot(N, L) );
+                
+                const float diffuseFactor = NdotL;
+
+                const vector3f R(glm::reflect(-L.vec, N.vec));
+                const float specularFactor = powf(cdot(N, R), mat.specular_n);
             
-                c += diffuseFactor * matDiffuse * (*it)->color;
+                color3f base = diffuseFactor * mat.diffuse * light.color
+                               + specularFactor * mat.specular * light.color;
+                c += base;
             }
+          
         }
         else
             c *= .5f;
@@ -636,10 +682,10 @@ protected:
 
     std::map<std::string, std::function<void (ElementPtr spElem)>> mHandlers;
 
-    bool                                    mInited;
-    ScanIterator                            mFirstPass;
-    ScanIterator                            mSecondPass;
-    ScanIterator                            mIterator;
+    std::deque<std::function<bool (void)>>  mUpdateQueue;
+    ScanIterator                            mPassQuick;
+    ScanIterator                            mPassMedium;
+    ScanIterator                            mPassHigh;
 
     std::shared_ptr<Camera>                 mCamera;
     std::vector<std::shared_ptr<Geometry>>  mGeometry;
