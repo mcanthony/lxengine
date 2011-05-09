@@ -31,6 +31,7 @@
 //===========================================================================//
 
 // Standard headers
+#define NOMINMAX
 #include <iostream>
 #include <string>
 #include <memory> 
@@ -86,6 +87,15 @@ public:
     vector3t<T>     y_axis;
 };
 
+template <typename T>
+point3t<T>
+compute_quad_pt (const quad_oa_3t<T>& quad, T x, T y, int width, int height)
+{
+    T s = (x + 0.5f) / width;
+    T t = (y + 0.5f) / height;
+    return quad.origin + quad.x_axis * s + quad.y_axis * t;
+}
+
 typedef quad_oa_3t<float>   quad_oa_3f;
 typedef quad_oa_3t<double>  quad_oa_3d;
 
@@ -101,6 +111,35 @@ public:
     quad        near_quad;
     type        far_dist;
 };
+
+template <typename T>
+frustum3t<T>
+frustum_from_camera (const camera3t<T>& cam)
+{
+    const auto forward = camera_forward_vector(cam);
+    const auto right   = camera_right_vector(cam);
+    const auto up      = camera_up_vector(cam);
+    
+    const auto width   = cam.near_plane * tan(cam.field_of_view);
+    const auto height  = width / cam.aspect_ratio;
+
+    frustum3t<T> frustum;
+    frustum.eye       = cam.position;
+    frustum.near_quad.x_axis = right * width;
+    frustum.near_quad.y_axis = up * height;
+    frustum.near_quad.origin = frustum.eye + forward * cam.near_plane - right * (width / 2) - up * (height / 2);
+    frustum.far_dist  = cam.far_plane;
+
+    return frustum;
+}
+
+template <typename T>
+ray3t<T>
+compute_frustum_ray (const frustum3t<T>& frustum, T x, T y, int width, int height)
+{
+    auto pt = compute_quad_pt(frustum.near_quad, x, y, width, height);
+    return ray3t<T>(frustum.eye, normalize(pt - frustum.eye));
+}
 
 typedef frustum3t<float>        frustum3f;
 typedef frustum3t<double>       frustum3d;
@@ -131,7 +170,7 @@ protected:
 
 //===========================================================================//
 
-image3f img(128, 128);
+image3f img(512, 512);
 
 class Renderer
 {
@@ -264,20 +303,26 @@ LxCanvasImp::updateFrame (DocumentPtr spDocument)
     if (mspWin->keyboard().bDown[KC_ESCAPE])
         Engine::acquire()->sendMessage("quit");
  
-    timed_gate_block (20, { 
+    timed_gate_block (50, { 
         mspWin->invalidate();
     });
 }
 
 //===========================================================================//
 
-class Camera : public std::enable_shared_from_this<Camera>
+class Camera : public Element::Component
 {
 public:
     camera3f camera;
 };
 
-class Geometry : public std::enable_shared_from_this<Geometry>
+class Material : public Element::Component
+{
+public:
+    glgeom::color3f color;
+};
+
+class Geometry : public Element::Component
 {
 public:
     virtual ~Geometry(){}
@@ -293,9 +338,25 @@ public:
             return false;
     }
 
+    bool setMaterial (ElementPtr spElem, std::string matName)
+    {
+        if (!matName.empty())
+        {
+            auto spMatElem = spElem->document()->getElementById(matName);
+            if (spMatElem)
+                mspMaterial = spMatElem->getComponent<Material>("raytrace");
+            return true;
+        }
+        else
+            return false;
+    }
+    std::shared_ptr<Material>   mspMaterial;
+
 protected:
     virtual bool _intersect (const ray3f&, intersect3f& isect) { return false; }
 };
+
+typedef std::shared_ptr<Geometry> GeometryPtr;
 
 class Plane : public Geometry
 {
@@ -321,10 +382,26 @@ protected:
     }
 };
 
+class Light : public Element::Component
+{
+public:
+    glgeom::point3f position;
+    glgeom::color3f color;
+};
+typedef std::shared_ptr<Light> LightPtr;
+
 
 class ScanIterator
 {
 public:
+    ScanIterator()
+        : x (0)
+        , y (0)
+        , width (0)
+        , height (0)
+    {
+    }
+
     ScanIterator(int w, int h, std::function<void(int,int)> func)
         : x (0)
         , y (0)
@@ -338,6 +415,7 @@ public:
     void next() 
     {
         f(x, y);
+
         if (++x >= width)
         {
             x = 0;
@@ -353,24 +431,103 @@ protected:
     std::function<void (int, int)> f;
 };
 
+void
+image_fill_checker (image3f& img)
+{
+    const glgeom::color3f c0(.05f, .05f, 0.0f);
+    const glgeom::color3f c1(   0,    0, 0.05f);
+
+    for (int iy = 0; iy < img.height(); ++iy)
+    {
+        for (int ix = 0; ix < img.width(); ++ix)
+        {
+            img.get(ix, iy) = (ix % 2) + (iy % 2) == 1 ? c0 : c1;
+        }
+    }
+}
+
 class RayTracer : public Document::Component
 {
 public: 
     RayTracer()
-        : mIterator (img.width(), img.height(), [&](int x, int y) { _trace(x, y); })
+        : mInited (false)
     {
+        mFirstPass = ScanIterator(48, 48, [&](int x, int y) {
+            int sx = (x * img.width()) / 48;
+            int sy = (y * img.height()) / 48;
+            int ex = std::min( ((x + 1) * img.width() ) / 48, img.width());
+            int ey = std::min( ((y + 1) * img.height() ) / 48, img.height());
+
+            auto c = _trace((sx + ex) / 2, (sy + ey) / 2);
+
+            for (int iy = sy; iy < ey; iy ++)
+            {
+                for (int ix = sx; ix < ex; ix ++)
+                {
+                    if ((ix%2) + (iy%2) != 1)
+                        img.get(ix, iy) = c;
+                }
+            }
+        });
+
+        mSecondPass = ScanIterator(128, 128, [&](int x, int y) {
+            int sx = (x * img.width()) / 128;
+            int sy = (y * img.height()) / 128;
+            int ex = std::min( ((x + 1) * img.width() ) / 128, img.width());
+            int ey = std::min( ((y + 1) * img.height() ) / 128, img.height());
+
+            auto c = _trace((sx + ex) / 2, (sy + ey) / 2);
+
+            for (int iy = sy; iy < ey; iy ++)
+            {
+                for (int ix = sx; ix < ex; ix ++)
+                {
+                    if ((ix%2) + (iy%2) == 1)
+                        img.get(ix, iy) = c;
+                }
+            }
+        });
+        
+        mIterator = ScanIterator(img.width(), img.height(), [&](int x, int y) { 
+            img.get(x, y) = _trace(x, y); 
+        });
+        
         mHandlers.insert(std::make_pair("Plane", [&](ElementPtr spElem) {
             auto pGeom = new Plane;
             pGeom->geom.normal = spElem->value().find("normal").convert();
             pGeom->geom.d      = spElem->value().find("d").convert();
-            mGeometry.push_back(std::shared_ptr<Plane>(pGeom));
+            
+            pGeom->setMaterial(spElem, spElem->attr("material").query(""));
+
+            std::shared_ptr<Plane> spComp(pGeom);
+            mGeometry.push_back(spComp);
+            spElem->attachComponent("raytrace", spComp);
         }));
 
         mHandlers.insert(std::make_pair("Sphere", [&](ElementPtr spElem) {
             auto pGeom = new Sphere;
             pGeom->geom.center = spElem->value().find("center").convert();
             pGeom->geom.radius = spElem->value().find("radius").convert();
-            mGeometry.push_back(std::shared_ptr<Sphere>(pGeom));
+
+            pGeom->setMaterial(spElem, spElem->attr("material").query(""));
+            
+            std::shared_ptr<Sphere> spComp(pGeom);
+            mGeometry.push_back(spComp);
+            spElem->attachComponent("raytrace", spComp);
+        }));
+
+        mHandlers.insert(std::make_pair("Material", [&](ElementPtr spElem) {
+            auto pMat = new Material;
+            pMat->color = spElem->value().find("color").convert();
+            spElem->attachComponent("raytrace", pMat);
+        }));
+
+        mHandlers.insert(std::make_pair("Light", [&](ElementPtr spElem) {
+            auto pLight = new Light;
+            pLight->position = spElem->value().find("position").convert();
+            pLight->color    = spElem->value().find("color").convert();
+            spElem->attachComponent("raytrace", pLight);
+            mLights.push_back(LightPtr(pLight));
         }));
 
         mHandlers.insert(std::make_pair("Camera", [&](ElementPtr spElem) {
@@ -388,7 +545,9 @@ public:
 
     virtual void onAttached (DocumentPtr spDocument) 
     {
-        spDocument->iterateElements([&](ElementPtr spElem) -> bool { _onElementAddRemove(spElem, true); return false; });
+        spDocument->iterateElements([&](ElementPtr spElem) -> bool { 
+            _onElementAddRemove(spElem, true); return false; 
+        });
     }
     virtual void onElementAdded (DocumentPtr spDocument, ElementPtr spElem) 
     {
@@ -398,78 +557,69 @@ public:
     }
     virtual void onUpdate (DocumentPtr spDocument)
     {
-        if (!mIterator.done())
+        if (!mInited)
+        {
+           image_fill_checker(img);
+
+            mspTraceContext.reset(new TraceContext);
+            mspTraceContext->frustum = frustum_from_camera(mCamera->camera);
+
+            mInited = true;
+        }
+        else if (!mFirstPass.done())
+            mFirstPass.next();
+        else if (!mSecondPass.done())
+            mSecondPass.next();
+        else if (!mIterator.done())
             mIterator.next();
     }
 
-    void _trace (int x, int y)
+    color3f _trace (int x, int y)
     {
-        if (x == 0 && y == 0)
-        {
-            const auto& cam = mCamera->camera;
-
-            mspTraceContext.reset(new TraceContext);
-            auto& fr = mspTraceContext->frustum;
-
-            auto forward = camera_forward_vector(cam);
-            auto right   = camera_right_vector(cam);
-            auto up      = camera_up_vector(cam);
-
-            const auto width = cam.near_plane * tan(cam.field_of_view);
-            const auto height = width / cam.aspect_ratio;
-
-            fr.eye       = cam.position;
-            fr.near_quad.x_axis = right * width;
-            fr.near_quad.y_axis = up * height;
-            fr.near_quad.origin = fr.eye 
-                + forward * cam.near_plane
-                - right * (width / 2) 
-                - up * (height / 2);
-            fr.far_dist  = cam.far_plane;
-        }
-
         if (x == 0)
             std::cout << "Tracing row " << y << "..." << std::endl;
-
-        auto& c = img.get(x, y);
-        switch ( 2*(y%2) + (x%2) )
-        {
-        default:
-        case 0: c = glgeom::color3f(.3f, .9f, .7f); break;
-        case 1: c = glgeom::color3f(.7f, .7f, .7f); break;
-        case 2: c = glgeom::color3f(.4f, .4f, .9f); break;
-        case 3: c = glgeom::color3f(.6f, 1, 1); break;
-        };
-
-        auto& frustum = mspTraceContext->frustum;
-        point3f screen_pt = frustum.near_quad.origin 
-            + frustum.near_quad.x_axis * ((x + 0.5f) / img.width())
-            + frustum.near_quad.y_axis * (((img.height() - y) + 0.5f) / img.height());
         
-        ray3f ray (frustum.eye, normalize(screen_pt - frustum.eye) );
-
-        std::vector<intersect3f> hits;
+        ray3f ray = compute_frustum_ray<float>(mspTraceContext->frustum, x, img.height() - y, img.width(), img.height());
+        
+        std::vector<std::pair<GeometryPtr, intersect3f>> hits;
         for (auto it = mGeometry.begin(); it != mGeometry.end(); ++it)
         {
             intersect3f isect;
             if ((*it)->intersect(ray, isect))
-                hits.push_back(isect);
+                hits.push_back(std::make_pair(*it, isect));
         }
 
-       if (!hits.empty())
+        auto c = color3f(0, 0, 0);
+        if (!hits.empty())
         {
-            intersect3f* pHit = &hits.front();
+            intersect3f* pHit = &hits.front().second;
+            GeometryPtr spGeom = hits.front().first;
+
             for (auto it = hits.begin(); it != hits.end(); ++it)
             {
-                if (it->distance < pHit->distance)
-                    pHit = &(*it);
+                if (it->second.distance < pHit->distance)
+                {
+                    pHit = &it->second;
+                    spGeom = it->first;
+                }
             }
+            
+            glgeom::color3f matDiffuse(1, 1, 1);
+            if (spGeom->mspMaterial)
+                matDiffuse = spGeom->mspMaterial->color;
 
-            float d = dot(pHit->normal, -ray.direction);
-            c = glgeom::color3f(pHit->normal.vec);
+            for (auto it = mLights.begin(); it != mLights.end(); ++it)
+            {
+                vector3f lightVec(normalize(pHit->position - (*it)->position));
+                float diffuseFactor = dot(pHit->normal, -lightVec);
+            
+                c += diffuseFactor * matDiffuse * (*it)->color;
+            }
         }
         else
             c *= .5f;
+
+        return c;
     }
 
 protected:
@@ -486,9 +636,14 @@ protected:
 
     std::map<std::string, std::function<void (ElementPtr spElem)>> mHandlers;
 
-    ScanIterator                                                   mIterator;
-    std::shared_ptr<Camera>                                        mCamera;
-    std::vector<std::shared_ptr<Geometry>>                         mGeometry;
+    bool                                    mInited;
+    ScanIterator                            mFirstPass;
+    ScanIterator                            mSecondPass;
+    ScanIterator                            mIterator;
+
+    std::shared_ptr<Camera>                 mCamera;
+    std::vector<std::shared_ptr<Geometry>>  mGeometry;
+    std::vector<LightPtr>                   mLights;
 
     struct TraceContext
     {

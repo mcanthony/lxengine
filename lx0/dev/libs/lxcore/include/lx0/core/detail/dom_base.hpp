@@ -73,6 +73,11 @@ namespace lx0 { namespace core {  namespace detail {
         ComponentPtr attachComponent (std::string name, Component* pComponent) 
         { 
             ComponentPtr spValue(pComponent);
+            return attachComponent(name, spValue);
+        }
+
+        ComponentPtr attachComponent (std::string name, ComponentPtr spValue) 
+        { 
             mComponents.insert( std::make_pair(name, spValue) );
 
             // Have the host object send out notification that the Component

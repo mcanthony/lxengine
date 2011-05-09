@@ -43,33 +43,21 @@ namespace lx0 { namespace core { namespace lxvar_ns {
 
     namespace detail
     {
-        void _convert(lxvar& v, glgeom::point3f& p)
+        template <typename T>
+        void _convert_any3f (lxvar& v, T& u)
         {
-            p.x = v.at(0).asFloat();
-            p.y = v.at(1).asFloat();
-            p.z = v.at(2).asFloat();
-        }
-        
-        void _convert(lxvar& value, glgeom::vector3f& v)
-        {
-            lx_check_error(value.size() == 3);
-            v.x = value.at(0).asFloat();
-            v.y = value.at(1).asFloat();
-            v.z = value.at(2).asFloat();
+            lx_check_error(v.size() == 3);
+            u[0] = v.at(0).asFloat();
+            u[1] = v.at(1).asFloat();
+            u[2] = v.at(2).asFloat();
         }
 
-        void _convert (lxvar& v, glgeom::vector3d& u)
-        {
-            u.x = v.at(0).convert();
-            u.y = v.at(1).convert();
-            u.z = v.at(2).convert();
-        }
-        void _convert (lxvar& v, glgeom::point3d& u)
-        {
-            u.x = v.at(0).convert();
-            u.y = v.at(1).convert();
-            u.z = v.at(2).convert();
-        }
+        void _convert (lxvar& v,    glgeom::point3f& u)     { _convert_any3f(v, u); }
+        void _convert (lxvar& v,    glgeom::point3d& u)     { _convert_any3f(v, u); }
+        void _convert (lxvar& v,    glgeom::vector3f& u)    { _convert_any3f(v, u);}
+        void _convert (lxvar& v,    glgeom::vector3d& u)    { _convert_any3f(v, u); }
+        void _convert (lxvar& v,    glgeom::color3f& u)     { _convert_any3f(v, u);}
+        void _convert (lxvar& v,    glgeom::color3d& u)     { _convert_any3f(v, u); }
 
         //===========================================================================//
 
