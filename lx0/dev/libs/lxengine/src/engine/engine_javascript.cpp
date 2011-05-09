@@ -478,8 +478,13 @@ namespace lx0 { namespace core { namespace detail {
         Handle<String> source = String::New(text.c_str());
         Handle<Script> script = Script::Compile(source);
 
-        // Run the script
+        if (script.IsEmpty())
         {
+            lx_error("Javascript script failed to compile!");
+        }
+        else
+        {
+            // Run the script
             TryCatch trycatch;
             Handle<Value> result = script->Run();
             if (result.IsEmpty()) {  
@@ -1212,6 +1217,15 @@ namespace lx0 { namespace core {
 
     /*!
         Run a set of Javascript source files together in the same execution context.
+
+        Dev Notes:
+
+        This needs to be refactored so that the Javascript Subsystem is not part
+        of LxEngine directly.
+
+        #include <lxengine/subsystems/javascript.hpp>
+
+        spDocument->getComponent<JavascriptDoc>("javascript")->runJavascript(source);
      */
     void
     Engine::_runJavascript (DocumentPtr spDocument, std::string source)

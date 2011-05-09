@@ -161,6 +161,9 @@ namespace lx0 { namespace core {
         void                incObjectCount      (std::string name);
         void                decObjectCount      (std::string name);
 
+        // Development Scaffolding Methods
+        void                workaround_runJavascript    (DocumentPtr spDoc, const std::string& source) { _runJavascript(spDoc, source); }
+
     protected:
         template <typename T> friend std::shared_ptr<T> detail::acquireSingleton (std::weak_ptr<T>&);
         static std::weak_ptr<Engine> s_wpEngine;

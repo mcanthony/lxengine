@@ -53,11 +53,13 @@
 #include <lx0/engine.hpp>
 #include <lx0/document.hpp>
 #include <lx0/element.hpp>
+#include <lx0/subsystems/javascript.hpp>
 
 #include <windows.h>
 #include <gl/gl.h>
 
 #include "raytracer.hpp"
+#include "scripting.hpp"
 
 using namespace lx0::core;
 using namespace lx0::canvas::platform;
@@ -207,22 +209,96 @@ LxCanvasImp::updateFrame (DocumentPtr spDocument)
 //   E N T R Y - P O I N T
 //===========================================================================//
 
+struct Options
+{
+    std::string filename;
+};
+
+static bool 
+parse_options (int argc, char** argv, boost::program_options::variables_map& vars)
+{
+    // See http://www.boost.org/doc/libs/1_44_0/doc/html/program_options/tutorial.html
+    using namespace boost::program_options;
+
+    // 
+    // Build the description of the expected argument format and have
+    // Boost parse the command line args.
+    //
+    std::string caption ("Syntax: %1 [options] <file>.\nOptions");
+    size_t p = caption.find("%1");
+    caption = caption.substr(0, p) + argv[0] + caption.substr(p + 2);
+
+    options_description desc (caption);
+    desc.add_options()
+        ("help", "Print usage information and exit.")
+        ("file", value<std::string>()->default_value("media2/appdata/sm_raytracer/basic_default_scene.xml"), "Scene file to display.")
+        ;
+
+    positional_options_description pos;
+    pos.add("file", -1);
+
+    store(command_line_parser(argc, argv).options(desc).positional(pos).run(), vars);
+
+    //
+    // Now check the options for anything that might prevent execution 
+    //
+
+    if (vars.count("help"))
+    {
+        std::cout << desc << std::endl;
+        return false;
+    }
+    if (vars.count("file") != 1)
+    {
+        std::cout << "Error: expected exactly one scene file to be specified." << std::endl << std::endl;
+        std::cout << desc << std::endl;
+        return false;
+    }
+
+
+    return true;
+}
+
+static bool
+validate_options (Options& options, int argc, char** argv)
+{
+    boost::program_options::variables_map vars;
+    if (!parse_options(argc, argv, vars))
+        return false;
+     
+    options.filename = vars["file"].as<std::string>();
+
+    if (!lx0::util::lx_file_exists(options.filename))
+    {
+        std::cout << "Error: file '" << options.filename << "' could not be found." << std::endl << std::endl;
+        return false;
+    }
+
+    return true;
+}
+
 int 
 main (int argc, char** argv)
 {
     int exitCode = -1;
     try
     {
-        EnginePtr   spEngine   = Engine::acquire();
-        spEngine->addViewPlugin("LxCanvas", [] (View* pView) { return new LxCanvasImp; });
+        Options options;
+        if (validate_options(options, argc, argv))
+        {
+            EnginePtr   spEngine   = Engine::acquire();
+            spEngine->addViewPlugin("LxCanvas", [] (View* pView) { return new LxCanvasImp; });
         
-        DocumentPtr spDocument = spEngine->loadDocument("media2/appdata/sm_raytracer/basic_single_sphere_defaults.xml");
-        spDocument->attachComponent("ray", create_raytracer() );
-        ViewPtr     spView     = spDocument->createView("LxCanvas", "view");
-        spView->show();
+            DocumentPtr spDocument = spEngine->loadDocument(options.filename);
+            spDocument->attachComponent("js2", lx0::CreateJavascriptDoc() );
+            spDocument->attachComponent("ray", create_raytracer() );
+            spDocument->attachComponent("scripting", create_scripting() );
+            ViewPtr     spView     = spDocument->createView("LxCanvas", "view");
+            spView->show();
 
-        exitCode = spEngine->run();
-        spEngine->shutdown();
+            exitCode = spEngine->run();
+            spEngine->shutdown();
+        }
     }
     catch (std::exception& e)
     {

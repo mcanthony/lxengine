@@ -2,8 +2,8 @@
     <Library>
         <Camera id="camera">
         {
-            position : [ 1.25, 1.25, 1.25 ],
-            look_at  : [ .5, .5, .5 ]
+            position : [ 6, 6, 6 ],
+            look_at  : [ 5, 5, .5 ]
         }
         </Camera>
       <View id="view">
@@ -42,12 +42,22 @@
             </Plane>
         </Group>
         <Group id="sphere_group">
-            <Sphere>
-            {
-                center : [ .5, .5, .5 ],
-                radius : .5
-            }
-            </Sphere>
         </Group>
+      
+      <Script language="javascript" src="media2/scripts/base/lxquery-0.0.0.js" />
+      <Script>
+        <!--
+        var group = $("#sphere_group");
+        for (var y = .5; y < 10; y += 1)
+        {
+          for (var x = .5; x < 10; x += 1)
+          {
+            var e = $("<Sphere/>");
+            e.value( { center : [ x, y, .5], radius : .5 } );
+            group.append(e);
+          }
+        }
+        -->
+      </Script>
     </Scene>
 </Document>

@@ -72,7 +72,8 @@ image_fill_checker (image3f& img)
     {
         for (int ix = 0; ix < img.width(); ++ix)
         {
-            img.get(ix, iy) = (ix % 2) + (iy % 2) == 1 ? c0 : c1;
+            const auto& c = (ix % 2) + (iy % 2) == 1 ? c0 : c1; 
+            img.set(ix, iy, c); 
         }
     }
 }
@@ -166,6 +167,10 @@ public:
     camera3f camera;
 };
 
+/*!
+    Designed to match the primary properties of a material of fixed
+    function OpenGL 1.1.
+ */
 template <typename T>
 class material_phong_t
 {
@@ -333,7 +338,7 @@ public:
                 for (int ix = sx; ix < ex; ix ++)
                 {
                     if ((ix%2) + (iy%2) != 1)
-                        img.get(ix, iy) = c;
+                        img.set(ix, iy, c);
                 }
             }
         });
@@ -351,19 +356,20 @@ public:
                 for (int ix = sx; ix < ex; ix ++)
                 {
                     if ((ix%2) + (iy%2) == 1)
-                        img.get(ix, iy) = c;
+                        img.set(ix, iy, c);
                 }
             }
         });
         
         mPassHigh = ScanIterator(img.width(), img.height(), [&](int x, int y) { 
-            img.get(x, y) = _trace(x, y); 
+            img.set(x, y, _trace(x, y)); 
         });
 
         mUpdateQueue.push_back([&]() { return _init(), true; });
         mUpdateQueue.push_back([&]() { return mPassQuick.done() ? true : (mPassQuick.next(), false); });
         mUpdateQueue.push_back([&]() { return mPassMedium.done() ? true : (mPassMedium.next(), false); });
         mUpdateQueue.push_back([&]() { return mPassHigh.done() ? true : (mPassHigh.next(), false); });
+        mUpdateQueue.push_back([&]() { return std::cout << "Done." << std::endl, true; });
         
         mHandlers.insert(std::make_pair("Plane", [&](ElementPtr spElem) {
             auto pGeom = new Plane;
@@ -422,8 +428,13 @@ public:
     virtual void onAttached (DocumentPtr spDocument) 
     {
         spDocument->iterateElements([&](ElementPtr spElem) -> bool { 
-            _onElementAddRemove(spElem, true); return false; 
+            _onElementAddRemove(spElem, true); 
+            return false; 
         });
+    }
+    virtual void onElementAdded (DocumentPtr spDocument, ElementPtr spElem) 
+    {
+        _onElementAddRemove(spElem, true); 
     }
 
     virtual void onUpdate (DocumentPtr spDocument)
