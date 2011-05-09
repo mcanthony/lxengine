@@ -216,7 +216,7 @@ namespace lx0 { namespace core {
 
         slotError(buffer);
 
-#if !defined(NDEBUG) && defined(_MSC_VER)      
+#if 0 // !defined(NDEBUG) && defined(_MSC_VER)      
         lx0::util::lx_message_box("LxEngine Error", buffer);
         *(int*)0 = 0;
 #endif

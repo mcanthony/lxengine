@@ -69,7 +69,7 @@ public:
             else
                 source = spElem->value().asString();
 
-            spElem->document()->getComponent<lx0::JavascriptDoc>("js2")->runJavascript(source);
+            spElem->document()->getComponent<lx0::IJavascript>("javascript")->run(source);
         }));
     }
 

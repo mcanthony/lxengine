@@ -4,7 +4,7 @@
 
     LICENSE
 
-    Copyright (c) 2010 athile@athile.net (http://www.athile.net)
+    Copyright (c) 2010-2011 athile@athile.net (http://www.athile.net)
 
     Permission is hereby granted, free of charge, to any person obtaining a 
     copy of this software and associated documentation files (the "Software"), 
@@ -41,10 +41,11 @@
 #include <lx0/view.hpp>
 #include <lx0/mesh.hpp>
 #include <lx0/core/util/util.hpp>
-#include <lx0/v8bind.hpp>
 #include <lx0/core/data/lxvar_convert.hpp>
+#include "v8bind.hpp"
 
 using namespace v8;
+using namespace lx0::core;
 using namespace lx0::core::v8bind;
 using namespace lx0::util;
 
@@ -52,7 +53,7 @@ using namespace lx0::util;
 //   I M P L E M E N T A T I O N 
 //===========================================================================//
 
-namespace lx0 { namespace core { namespace detail {
+namespace lx0 { namespace subsystems { namespace javascript {
 
     using v8::Object;
 
@@ -334,7 +335,7 @@ namespace lx0 { namespace core { namespace detail {
         // Call the onUpdate() JS function if one has been attached to that event
         if (!mOnUpdate.IsEmpty())
         {
-            auto spJsDoc = spElem->document()->getComponent<JavascriptDoc>("javascript");
+            auto spJsDoc = spElem->document()->getComponent<JavascriptDoc>("_js");
             Context::Scope context_scope(spJsDoc->mContext);
 
             //\todo Need to set the "this" ponter to the JS Element wrapper
@@ -452,7 +453,7 @@ namespace lx0 { namespace core { namespace detail {
     {
         // Whenever a new Element is added to the Document, ensure the JS Element
         // Component is added to that Element.
-        spElem->attachComponent("javascript", new JavascriptElem);
+        spElem->attachComponent("_js", new JavascriptElem);
     }
 
     void
@@ -845,7 +846,7 @@ namespace lx0 { namespace core { namespace detail {
             auto     pContext = _nativeData<JavascriptDoc>(info);
             Element* pThis    = _nativeThis<Element>(info);
 
-            return pThis->getComponent<JavascriptElem>("javascript")->mOnUpdate;
+            return pThis->getComponent<JavascriptElem>("_js")->mOnUpdate;
         }
 
         static void
@@ -855,7 +856,7 @@ namespace lx0 { namespace core { namespace detail {
             Element* pThis    = _nativeThis<Element>(info);
 
             Handle<Function> func     = _marshal(value);
-            pThis->getComponent<JavascriptElem>("javascript")->mOnUpdate = Persistent<Function>::New(func);
+            pThis->getComponent<JavascriptElem>("_js")->mOnUpdate = Persistent<Function>::New(func);
         }
 
         static v8::Handle<v8::Value> 
@@ -987,15 +988,15 @@ namespace lx0 { namespace core { namespace detail {
                 
             Persistent<Function> mFunc = Persistent<Function>::New(func);
 
-            auto spJElem = pThis->getComponent<JavascriptElem>("javascript");
+            auto spJElem = pThis->getComponent<JavascriptElem>("_js");
             spJElem->mCallbacks.insert(std::make_pair(name, mFunc));
 
             Element::Function wrapper = [=] (ElementPtr spElem, std::vector<lxvar>& args) {
                 DocumentPtr spDoc = spElem->document();
                 if (spDoc.get())
                 {
-                    auto spJDoc = spDoc->getComponent<JavascriptDoc>("javascript");
-                    auto spJElem = spElem->getComponent<JavascriptElem>("javascript");
+                    auto spJDoc = spDoc->getComponent<JavascriptDoc>("_js");
+                    auto spJElem = spElem->getComponent<JavascriptElem>("_js");
 
                     if (!mFunc.IsEmpty())
                     {
@@ -1203,7 +1204,7 @@ namespace lx0 { namespace core { namespace detail {
 
 namespace lx0 { namespace core { 
 
-    using namespace detail;
+    using namespace lx0::subsystems::javascript;
 
      void
      Engine::_attachJavascript (void)
@@ -1225,13 +1226,13 @@ namespace lx0 { namespace core {
 
         #include <lxengine/subsystems/javascript.hpp>
 
-        spDocument->getComponent<JavascriptDoc>("javascript")->runJavascript(source);
+        spDocument->getComponent<JavascriptDoc>("_js")->runJavascript(source);
      */
     void
     Engine::_runJavascript (DocumentPtr spDocument, std::string source)
     {
         auto ctor = [=]() { return new JavascriptDoc(spDocument); };
-        auto spComponent = spDocument->ensureComponent<JavascriptDoc>("javascript", ctor);
+        auto spComponent = spDocument->ensureComponent<JavascriptDoc>("_js", ctor);
         spComponent->run(spDocument, source);
     }
 

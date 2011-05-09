@@ -6,113 +6,15 @@
 #include "main.hpp"
 #include "ut_attributeparsers.hpp"
 
-#include <lx0/v8bind.hpp>
+#include <lx0/engine.hpp>
+#include <lx0/document.hpp>
 #include <lx0/core/util/util.hpp>
-#include <v8/v8.h>
+#include <lx0/core/base/base.hpp>
+#include <lx0/subsystems/javascript.hpp>
 
-using namespace v8;
 using namespace lx0::core;
-using v8::Object;
-
-namespace attribute_parsers
-{
-
-    class Engine
-    {
-    public:
-        lxvar parse(std::string attr, std::string value)
-        {
-            auto group = mParsers[attr];
-            for (auto it = group.begin(); it != group.end(); ++it)
-            {
-                lxvar v = (*it)(value);
-                if (v.isDefined())
-                    return v;
-            }
-            return lxvar::undefined();
-        }
-
-        void addAttributeParser (std::string attr, std::function<lxvar (std::string)> func)
-        {
-            mParsers[attr].push_back(func);
-        }
-
-    protected:
-        std::map<std::string, std::vector<std::function<lxvar (std::string s)>>> mParsers;
-    };
-
-    class TestContext : public lx0::core::v8bind::_V8Context
-    {
-    public:
-        TestContext(Engine* pEngine) : mpEngine(pEngine) {  _addEngine(); }
-    protected:
-        
-
-        void            _addEngine();
-
-    public:
-        Engine*          mpEngine;
-    };
-
-    namespace wrappers_engine
-    {
-        static v8::Handle<v8::Value> 
-        addAttributeParser (const v8::Arguments& args)
-        {
-            auto                 pThis = lx0::core::v8bind::_nativeThis<TestContext>(args);
-            std::string          attr  = lx0::core::v8bind::_marshal(args[0]); 
-            Persistent<Function> func  = Persistent<Function>::New( Handle<Function>::Cast(args[1]) ); 
-                
-            auto wrapper = [pThis, func] (std::string value) -> lxvar { 
-                Context::Scope context_scope(pThis->context);
-
-                HandleScope handle_scope;
-                Handle<v8::Object> recv = pThis->context->Global();
-                Handle<Value> callArgs[1];
-                
-                Handle<Value> ret;
-                callArgs[0] = String::New(value.c_str());
-                ret = func->Call(recv, 1, callArgs);
-
-                return lx0::core::v8bind::_marshal(ret);
-            };
-            pThis->mpEngine->addAttributeParser(attr, wrapper);
-            return v8::Undefined();
-        }
-
-        static v8::Handle<v8::Value> 
-        debug (const v8::Arguments& args)
-        {
-            std::string msg = *v8::String::AsciiValue(args[0]);                 
-            std::cout << "JS: " << msg << std::endl;
-            return v8::Undefined();
-        }
-    }
-
-    void 
-    TestContext::_addEngine()
-    {
-        namespace W = wrappers_engine;
-
-        Context::Scope context_scope(context);
-        HandleScope handle_scope;
-
-        Handle<FunctionTemplate> templ( FunctionTemplate::New() );
-        
-        Handle<ObjectTemplate> objInst( templ->InstanceTemplate() );
-        objInst->SetInternalFieldCount(1);
-
-        Handle<Template> proto_t( templ->PrototypeTemplate() );
-        proto_t->Set("debug",               FunctionTemplate::New(W::debug));
-        proto_t->Set("addAttributeParser",  FunctionTemplate::New(W::addAttributeParser));
-
-        Handle<Function> ctor( templ->GetFunction() );
-        Handle<v8::Object> obj( ctor->NewInstance() );
-        obj->SetInternalField(0, External::New(this));
-
-        context->Global()->Set(String::New("engine"), obj);
-    }
-}
+using namespace lx0;
+using namespace lx0::util;
 
 struct color
 {
@@ -130,29 +32,31 @@ namespace lx0 { namespace core { namespace lxvar_ns { namespace detail {
 
     void _convert (lxvar& v, color& c)
     {
-        lx_check_error(v.isArray(), "Cannot convert lxvar to color that is not an array!");
-        lx_check_error(v.size() == 3);
+        lx0::core::lx_check_error(v.isArray(), "Cannot convert lxvar to color that is not an array!");
+        lx0::core::lx_check_error(v.size() == 3);
+        
         c = color(
-                int (v.at(0).asFloat() * 255.0f),
-                int (v.at(1).asFloat() * 255.0f),
-                int (v.at(2).asFloat() * 255.0f)
-            );
+            int (v.at(0).asFloat() * 255.0f),
+            int (v.at(1).asFloat() * 255.0f),
+            int (v.at(2).asFloat() * 255.0f)
+        );
     }
 }}}}
 
 void test_attributeparsers()
 {
-    using namespace attribute_parsers;
+    using namespace lx0::core;
+    using namespace lx0::util;
 
-    attribute_parsers::Engine engine;
-    TestContext jsContext(&engine);
 
-    Context::Scope context_scope(jsContext.context);
-    
-    jsContext.runFile("media/scripts/engine/attribute_parsers/color.js");
+    EnginePtr spEngine = Engine::acquire();
+    DocumentPtr spDocument = spEngine->createDocument();
+    spDocument->attachComponent("javascript", lx0::createIJavascript() );
+
+    //spDocument->getComponent<IJavascript>("javascript")->run( lx_file_to_string("media2/scripts/engine/attribute_parsers/color.js") );
     {
         auto parse = [&] (std::string s) {
-            return engine.parse("color", s);
+            return spEngine->parseAttribute("color", s);
         };
 
         const color kBlack (0,0,0);
@@ -226,9 +130,9 @@ void test_attributeparsers()
  	 	CHECK( kAqua    == parse("Aqua").convert() );
 
         // Ensure some invalid cases do in fact fail
-        CHECK( parse("bla ck").isDefined() == false);
-        CHECK( parse("blakc").isDefined() == false);
-        CHECK( parse("WhiteBlack").isDefined() == false);
+        CHECK( parse("bla ck").isString() == true);
+        CHECK( parse("blakc").isString() == true);
+        CHECK( parse("WhiteBlack").isString() == true);
 
         // Check hex notation
         CHECK( kWhite             == parse("#fff").convert() );
@@ -243,8 +147,8 @@ void test_attributeparsers()
         CHECK( color(133,150,167) == parse("#8596A7").convert() );
 
         // Check some malformed hex
-        CHECK( parse("000").isUndefined() );
-        CHECK( parse("#00112").isUndefined() );
+        CHECK( parse("000").isInt() );
+        CHECK( parse("#00112").isString() );
 
 
         // Check rgb notation
@@ -255,6 +159,9 @@ void test_attributeparsers()
         // Check rgb percentage notation
         CHECK( kWhite == parse("rgb(100%, 100%, 100%)").convert() );
     }
+
+    spDocument.reset();
+    spEngine->shutdown();
 }
 
 

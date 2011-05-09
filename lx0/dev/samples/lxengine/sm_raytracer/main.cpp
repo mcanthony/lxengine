@@ -290,7 +290,7 @@ main (int argc, char** argv)
             spEngine->addViewPlugin("LxCanvas", [] (View* pView) { return new LxCanvasImp; });
         
             DocumentPtr spDocument = spEngine->loadDocument(options.filename);
-            spDocument->attachComponent("js2", lx0::CreateJavascriptDoc() );
+            spDocument->attachComponent("javascript", lx0::createIJavascript() );
             spDocument->attachComponent("ray", create_raytracer() );
             spDocument->attachComponent("scripting", create_scripting() );
             ViewPtr     spView     = spDocument->createView("LxCanvas", "view");

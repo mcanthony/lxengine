@@ -33,7 +33,7 @@ using namespace lx0::core;
 
 namespace lx0 { 
 
-    class DocImp : public JavascriptDoc
+    class DocImp : public IJavascript
     {
     public:
         virtual void    onAttached          (DocumentPtr spDocument) 
@@ -41,7 +41,7 @@ namespace lx0 {
             mpDocument = spDocument.get();
         }
 
-        virtual void runJavascript  (const std::string& source)
+        virtual void run  (const std::string& source)
         {
             Engine::acquire()->workaround_runJavascript(mpDocument->shared_from_this(), source);
         }
@@ -49,7 +49,7 @@ namespace lx0 {
         Document* mpDocument;
     };
 
-    JavascriptDoc* CreateJavascriptDoc()
+    IJavascript* createIJavascript()
     {
         return new DocImp;
     }

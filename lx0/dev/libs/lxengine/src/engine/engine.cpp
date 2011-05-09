@@ -149,7 +149,7 @@ namespace lx0 { namespace core {
         if (bLeaksFound)
         {
             lx_warn("Memory leaks detected!  All major Lx objects should be freed before the Engine "
-                    "object is freed.");
+                    "object is freed.  Was Engine::shutdown() called?");
 
             // Stop the debugger immediately if a memory leak is detected.
             // It usually is a lot less difficult to track down leaks as 
@@ -192,7 +192,19 @@ namespace lx0 { namespace core {
 
     
     DocumentPtr
+    Engine::createDocument (void)
+    {
+        return _loadDocument(true, std::string());
+    }
+
+    DocumentPtr
     Engine::loadDocument (std::string filename)
+    {
+        return _loadDocument(false, filename);
+    }
+
+    DocumentPtr
+    Engine::_loadDocument (bool bCreate, std::string filename)
     {
         DocumentPtr spDocument(new Document);
 
@@ -207,7 +219,12 @@ namespace lx0 { namespace core {
         _notifyDocumentCreated(spDocument);
         _attachPhysics(spDocument);
 
-        ElementPtr spRoot = _loadDocumentRoot(spDocument, filename);
+        ElementPtr spRoot;
+        if (!bCreate)
+            spRoot = _loadDocumentRoot(spDocument, filename);
+        else
+            spRoot = spDocument->createElement("Document");
+
         if (!spRoot)
         {
             lx_error("Could not load document.  Does file '%s' exist?", filename.c_str());

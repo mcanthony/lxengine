@@ -32,11 +32,11 @@
 
 namespace lx0 { 
 
-    class JavascriptDoc : public lx0::core::Document::Component
+    class IJavascript : public lx0::core::Document::Component
     {
     public:
-        virtual void runJavascript  (const std::string& source) = 0;
+        virtual void run (const std::string& source) = 0;
     };
 
-    JavascriptDoc* CreateJavascriptDoc();
+    IJavascript* createIJavascript();
 }

@@ -126,7 +126,9 @@ namespace lx0 { namespace core {
 
         Environment&        environment         (void)                      { return mEnvironment; }
 
+        DocumentPtr         createDocument      (void);
         DocumentPtr         loadDocument        (std::string filename);
+        
         const std::vector<DocumentPtr>& documents (void) { return m_documents; }
 
         void                sendMessage         (const char* message);
@@ -171,6 +173,7 @@ namespace lx0 { namespace core {
         Engine();
         ~Engine(); 
 
+        DocumentPtr _loadDocument           (bool bCreate, std::string filename);
         ElementPtr  _loadDocumentRoot       (DocumentPtr spDocument, std::string filename);
 
         void        _notifyDocumentCreated  (DocumentPtr spDocument);
