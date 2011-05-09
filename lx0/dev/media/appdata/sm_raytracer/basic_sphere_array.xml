@@ -2,7 +2,7 @@
     <Library>
         <Camera id="camera">
         {
-            position : [ 6, 6, 6 ],
+            position : [ 9, 9, 6 ],
             look_at  : [ 5, 5, .5 ]
         }
         </Camera>
@@ -11,6 +11,7 @@
             camera : "camera"
         }
       </View>
+      <Group id="material_group"></Group>
     </Library>
     <Scene view="view">
       <Group id="light_group">
@@ -47,14 +48,30 @@
       <Script language="javascript" src="media2/scripts/base/lxquery-0.0.0.js" />
       <Script>
         <!--
-        var group = $("#sphere_group");
-        for (var y = .5; y < 10; y += 1)
+        var geom = $("#sphere_group");
+        var mats = $("#material_group");
+        
+        var i = 0;
+        for (var y = .5; y < 11; y += 1)
         {
-          for (var x = .5; x < 10; x += 1)
+          for (var x = .5; x < 11; x += 1)
           {
+            var mat_id = "mat" + (i++);
+          
+            var m = $("<Material/>");
+            m.attr("id", mat_id);
+            m.value(
+            {
+              diffuse: [ 1, (x - .5) / 10.0, (x - .5) / 10.0 ],
+              specular : [ (y - .5) / 10.0, (y - .5) / 10.0, (y - .5) / 10.0 ],
+              specular_n : 32
+            });
+            mats.append(m);
+            
             var e = $("<Sphere/>");
+            e.attr("material", mat_id);
             e.value( { center : [ x, y, .5], radius : .5 } );
-            group.append(e);
+            geom.append(e);
           }
         }
         -->
