@@ -148,9 +148,10 @@ int
 main (int argc, char** argv)
 {
     int exitCode = -1;
+    
+    Options options;
     try
     {
-        Options options;
         if (validate_options(options, argc, argv))
         {
             EnginePtr   spEngine   = Engine::acquire();
@@ -168,9 +169,15 @@ main (int argc, char** argv)
             spEngine->shutdown();
         }
     }
+    catch (lx0::error_exception& e)
+    {
+        std::cout << "Error: " << e.details().c_str() << std::endl
+                    << "Code: " << e.type() << std::endl
+                    << std::endl;
+    }
     catch (std::exception& e)
     {
-        lx_fatal("Fatal: unhandled exception.\nException: %s\n", e.what());
+        lx_fatal("Fatal: unhandled std::exception.\nException: %s\n", e.what());
     }
 
     return exitCode;

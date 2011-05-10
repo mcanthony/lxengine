@@ -184,8 +184,30 @@ namespace lx0 { namespace core {
         }
         else
         {
-            lx_warn("Failed to load XML document '%s'", filename.c_str());
             spRoot.reset();
+
+            lx_warn("Failed to load XML document '%s'", filename.c_str());
+            switch (doc.ErrorId())
+            {
+            default:
+                lx_error2("Document.Load.Unknown", "Unknown error loading document '%s'", filename.c_str());
+            
+            case TiXmlDocument::TIXML_ERROR_DOCUMENT_EMPTY: 
+                lx_error2("Document.Load.FileEmpty", "The file '%s' appears to contain no data.", filename.c_str());
+                break;
+
+            case TiXmlDocument::TIXML_ERROR_PARSING_ELEMENT:
+            case TiXmlDocument::TIXML_ERROR_FAILED_TO_READ_ELEMENT_NAME:
+            case TiXmlDocument::TIXML_ERROR_READING_ELEMENT_VALUE:
+            case TiXmlDocument::TIXML_ERROR_READING_ATTRIBUTES:
+            case TiXmlDocument::TIXML_ERROR_PARSING_EMPTY:
+            case TiXmlDocument::TIXML_ERROR_READING_END_TAG:
+            case TiXmlDocument::TIXML_ERROR_PARSING_UNKNOWN:
+            case TiXmlDocument::TIXML_ERROR_PARSING_COMMENT:
+            case TiXmlDocument::TIXML_ERROR_PARSING_DECLARATION:
+                lx_error2("Document.Load.ParseError", "Format error loading document '%s'.", filename.c_str());
+                break;
+            }
         }
         return spRoot;
     }

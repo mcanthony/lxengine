@@ -221,13 +221,16 @@ namespace lx0 { namespace core {
 
         ElementPtr spRoot;
         if (!bCreate)
-            spRoot = _loadDocumentRoot(spDocument, filename);
-        else
-            spRoot = spDocument->createElement("Document");
-
-        if (!spRoot)
         {
-            lx_error("Could not load document.  Does file '%s' exist?", filename.c_str());
+            spRoot = _loadDocumentRoot(spDocument, filename);
+            if (!spRoot)
+            {
+                lx_error("Could not load document.  Does file '%s' exist?", filename.c_str());
+            }
+        }
+        else
+        {
+            spRoot = spDocument->createElement("Document");
         }
 
         spDocument->root(spRoot);

@@ -267,7 +267,7 @@ public:
     {
     }
 
-    bool done() { return !(y < height && x < width); }
+    bool done() const { return !(y < height && x < width); }
     void next() 
     {
         f(x, y);
@@ -301,51 +301,7 @@ class RayTracer : public Document::Component
 public: 
     RayTracer()
     {
-        mPassQuick = ScanIterator(48, 48, [&](int x, int y) {
-            int sx = (x * img.width()) / 48;
-            int sy = (y * img.height()) / 48;
-            int ex = std::min( ((x + 1) * img.width() ) / 48, img.width());
-            int ey = std::min( ((y + 1) * img.height() ) / 48, img.height());
-
-            auto c = _trace((sx + ex) / 2, (sy + ey) / 2);
-
-            for (int iy = sy; iy < ey; iy ++)
-            {
-                for (int ix = sx; ix < ex; ix ++)
-                {
-                    if ((ix%2) + (iy%2) != 1)
-                        img.set(ix, iy, c);
-                }
-            }
-        });
-
-        mPassMedium = ScanIterator(128, 128, [&](int x, int y) {
-            int sx = (x * img.width()) / 128;
-            int sy = (y * img.height()) / 128;
-            int ex = std::min( ((x + 1) * img.width() ) / 128, img.width());
-            int ey = std::min( ((y + 1) * img.height() ) / 128, img.height());
-
-            auto c = _trace((sx + ex) / 2, (sy + ey) / 2);
-
-            for (int iy = sy; iy < ey; iy ++)
-            {
-                for (int ix = sx; ix < ex; ix ++)
-                {
-                    if ((ix%2) + (iy%2) == 1)
-                        img.set(ix, iy, c);
-                }
-            }
-        });
-        
-        mPassHigh = ScanIterator(img.width(), img.height(), [&](int x, int y) { 
-            img.set(x, y, _trace(x, y)); 
-        });
-
         mUpdateQueue.push_back([&]() { return _init(), true; });
-        mUpdateQueue.push_back([&]() { return mPassQuick.done() ? true : (mPassQuick.next(), false); });
-        mUpdateQueue.push_back([&]() { return mPassMedium.done() ? true : (mPassMedium.next(), false); });
-        mUpdateQueue.push_back([&]() { return mPassHigh.done() ? true : (mPassHigh.next(), false); });
-        mUpdateQueue.push_back([&]() { return std::cout << "Done." << std::endl, true; });
         
         mHandlers.insert(std::make_pair("Plane", [&](ElementPtr spElem) {
             auto pGeom = new Plane;
@@ -424,8 +380,59 @@ public:
     {
         image_fill_checker(img);
 
+        if (!mCamera)
+        {
+            lx_warn("No camera defined.  Nothing to render.");
+            return;
+        }
+
         mspTraceContext.reset(new TraceContext);
         mspTraceContext->frustum = frustum_from_camera(mCamera->camera);
+
+        std::shared_ptr<ScanIterator> passQuick(new ScanIterator (48, 48, [&](int x, int y) {
+            int sx = (x * img.width()) / 48;
+            int sy = (y * img.height()) / 48;
+            int ex = std::min( ((x + 1) * img.width() ) / 48, img.width());
+            int ey = std::min( ((y + 1) * img.height() ) / 48, img.height());
+
+            auto c = _trace((sx + ex) / 2, (sy + ey) / 2);
+
+            for (int iy = sy; iy < ey; iy ++)
+            {
+                for (int ix = sx; ix < ex; ix ++)
+                {
+                    if ((ix%2) + (iy%2) != 1)
+                        img.set(ix, iy, c);
+                }
+            }
+        }));
+
+        std::shared_ptr<ScanIterator> passMedium(new ScanIterator (128, 128, [&](int x, int y) {
+            int sx = (x * img.width()) / 128;
+            int sy = (y * img.height()) / 128;
+            int ex = std::min( ((x + 1) * img.width() ) / 128, img.width());
+            int ey = std::min( ((y + 1) * img.height() ) / 128, img.height());
+
+            auto c = _trace((sx + ex) / 2, (sy + ey) / 2);
+
+            for (int iy = sy; iy < ey; iy ++)
+            {
+                for (int ix = sx; ix < ex; ix ++)
+                {
+                    if ((ix%2) + (iy%2) == 1)
+                        img.set(ix, iy, c);
+                }
+            }
+        }));
+        
+        std::shared_ptr<ScanIterator> passHigh(new ScanIterator (img.width(), img.height(), [&](int x, int y) { 
+            img.set(x, y, _trace(x, y)); 
+        }));
+
+        mUpdateQueue.push_back([=]() { return passQuick->done() ? true : (passQuick->next(), false); });
+        mUpdateQueue.push_back([=]() { return passMedium->done() ? true : (passMedium->next(), false); });
+        mUpdateQueue.push_back([=]() { return passHigh->done() ? true : (passHigh->next(), false); });
+        mUpdateQueue.push_back([]() { return std::cout << "Done." << std::endl, true; });
     }
 
     bool _shadowTerm (const point_light_f& light, const intersection3f& intersection)
@@ -508,9 +515,6 @@ protected:
     std::map<std::string, std::function<void (ElementPtr spElem)>> mHandlers;
 
     std::deque<std::function<bool (void)>>  mUpdateQueue;
-    ScanIterator                            mPassQuick;
-    ScanIterator                            mPassMedium;
-    ScanIterator                            mPassHigh;
 
     std::shared_ptr<Camera>                 mCamera;
     std::vector<std::shared_ptr<Geometry>>  mGeometry;

@@ -1,0 +1,10 @@
+<Document>
+  <Scene>
+    <Spher
+    {
+      position : [ 0, 0, 0],
+      radius   : 1,
+    }
+    </Sphere>
+  </Scene>
+</Document>

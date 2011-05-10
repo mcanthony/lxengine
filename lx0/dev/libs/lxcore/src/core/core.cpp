@@ -226,6 +226,21 @@ namespace lx0 { namespace core {
     }
 
     void
+    lx_error2 (const char* type, const char* format, ...)
+    {
+        _lx_check_init();
+
+        char buffer[512] = "";
+        va_list args;
+        va_start(args, format);
+        vsnprintf_s(buffer, sizeof(buffer), _TRUNCATE, format, args);
+
+        slotError(buffer);
+
+        throw lx0::error_exception(type, buffer);
+    }
+
+    void
     lx_warn (const char* format, ...)
     {
         _lx_check_init();
