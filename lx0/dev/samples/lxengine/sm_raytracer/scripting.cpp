@@ -101,4 +101,7 @@ protected:
 };
 
 
-lx0::core::DocumentComponent* create_scripting() { return new Scripting; }
+lx0::core::DocumentComponent* create_scripting() 
+{ 
+    return new Scripting; 
+}

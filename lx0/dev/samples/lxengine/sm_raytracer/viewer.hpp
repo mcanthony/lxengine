@@ -4,7 +4,7 @@
 
     LICENSE
 
-    Copyright (c) 2010-2011 athile@athile.net (http://www.athile.net)
+    Copyright (c) 2011 athile@athile.net (http://www.athile.net)
 
     Permission is hereby granted, free of charge, to any person obtaining a 
     copy of this software and associated documentation files (the "Software"), 
@@ -26,15 +26,11 @@
 */
 //===========================================================================//
 
-#ifndef RAYTRACER_HPP
-#define RAYTRACER_HPP
+#ifndef VIEWER_HPP
+#define VIEWER_HPP
 
-#include <vector>
+namespace lx0 { namespace core { class ViewImp; } }
 
-#include <glgeom/glgeom.hpp>
-
-namespace lx0 { namespace core { class DocumentComponent; } }
-
-lx0::core::DocumentComponent* create_raytracer();
+lx0::core::ViewImp* create_viewer();
 
 #endif

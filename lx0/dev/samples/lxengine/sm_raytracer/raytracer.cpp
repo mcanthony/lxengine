@@ -53,12 +53,13 @@
 #include <lx0/element.hpp>
 #include <glgeom/glgeom.hpp>
 #include <glgeom/prototype/camera.hpp>
+#include <glgeom/prototype/image.hpp>
 
 
 using namespace lx0::core;
 using namespace glgeom;
 
-extern image3f img;
+extern glgeom::image3f img;
 
 //===========================================================================//
 

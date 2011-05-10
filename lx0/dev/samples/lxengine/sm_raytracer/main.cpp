@@ -54,12 +54,14 @@
 #include <lx0/document.hpp>
 #include <lx0/element.hpp>
 #include <lx0/subsystems/javascript.hpp>
+#include <glgeom/prototype/image.hpp>
 
 #include <windows.h>
 #include <gl/gl.h>
 
 #include "raytracer.hpp"
 #include "scripting.hpp"
+#include "viewer.hpp"
 
 using namespace lx0::core;
 using namespace lx0::canvas::platform;
@@ -67,143 +69,8 @@ using namespace glgeom;
 
 //===========================================================================//
 
-image3f img(512, 512);
+glgeom::image3f img(512, 512);
 
-class Renderer
-{
-public:
-    void initialize()
-    {
-        GLuint id;
-        glGenTextures(1, &id);
-        glBindTexture(GL_TEXTURE_2D, id);
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, img.width(), img.height(), 0, GL_RGB, GL_FLOAT, NULL);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-        mId = id;
-    }  
-
-    void 
-    resize (int width, int height)
-    {
-
-    }
-
-    void 
-    render (void)	
-    {
-        glEnable(GL_TEXTURE_2D);
-        
-        glBindTexture(GL_TEXTURE_2D, mId);
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, img.width(), img.height(), 0, GL_RGB, GL_FLOAT, img.ptr());
-        glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
-
-        glColor3f(0, 1, 1);
-        glBegin(GL_QUADS);
-            glTexCoord2f(0, 1);
-            glVertex3f(-1, -1, 0);
-
-            glTexCoord2f(1, 1);
-            glVertex3f(1, -1, 0);
-
-            glTexCoord2f(1, 0);
-            glVertex3f(1, 1, 0);
-
-            glTexCoord2f(0, 0);
-            glVertex3f(-1, 1, 0);
-        glEnd();
-    }
-
-protected:
-    GLuint mId;
-};
-
-//===========================================================================//
-
-class LxCanvasImp : public ViewImp
-{
-public:
-    virtual void        createWindow    (View* pHostView, size_t& handle, unsigned int& width, unsigned int& height);
-    virtual void        destroyWindow   (void);
-    virtual void        show            (View* pHostView, Document* pDocument);
-
-    virtual     void        _onElementAdded             (ElementPtr spElem) {}
-    virtual     void        _onElementRemoved           (ElementPtr spElem) {}
-
-    virtual     void        updateBegin     (void) {}
-    virtual     void        updateFrame     (DocumentPtr spDocument);
-    virtual     void        updateEnd       (void) {}
-
-protected:
-    std::auto_ptr<CanvasGL> mspWin;
-    CanvasHost              mHost;
-    Renderer                mRenderer;
-};
-
-void 
-LxCanvasImp::createWindow (View* pHostView, size_t& handle, unsigned int& width, unsigned int& height)
-{
-    width = 512;
-    height = 512;
-
-    mspWin.reset( new CanvasGL("LxEngine Raytracer Sample", 16, 16, width, height, false) );
-    handle = mspWin->handle();
-
-    mRenderer.initialize();
-    mRenderer.resize(width, height);
-
-    mspWin->slotRedraw += [&]() { mRenderer.render(); };
-}
-
-void
-LxCanvasImp::destroyWindow (void)
-{
-    mspWin->destroy();
-}
-
-void 
-LxCanvasImp::show (View* pHostView, Document* pDocument)
-{
-    mspWin->show();
-}
-
-// Belongs in lx0::prototype::control_structures
-class timed_gate_block_imp
-{
-public:
-    timed_gate_block_imp (unsigned int delta)
-        : mDelta    (delta)
-        , mTrigger  (0)
-    {
-    }
-    void operator() (std::function<void()> f)
-    {
-        auto now = lx0::util::lx_milliseconds();
-        if (now > mTrigger)
-        {
-            f();
-            mTrigger = now + mDelta;
-        }
-    }
-
-protected:
-    unsigned int mTrigger;
-    unsigned int mDelta;
-};
-#define timed_gate_block(d,e) \
-    static timed_gate_block_imp _timed_block_inst ## __LINE__ (d); \
-    _timed_block_inst ## __LINE__ ([&]() e )
-
-void 
-LxCanvasImp::updateFrame (DocumentPtr spDocument) 
-{
-    if (mspWin->keyboard().bDown[KC_ESCAPE])
-        Engine::acquire()->sendMessage("quit");
- 
-    timed_gate_block (50, { 
-        mspWin->invalidate();
-    });
-}
 
 //===========================================================================//
 //   E N T R Y - P O I N T
@@ -287,12 +154,13 @@ main (int argc, char** argv)
         if (validate_options(options, argc, argv))
         {
             EnginePtr   spEngine   = Engine::acquire();
-            spEngine->addViewPlugin("LxCanvas", [] (View* pView) { return new LxCanvasImp; });
+            spEngine->addViewPlugin("LxCanvas", [] (View* pView) { return create_viewer(); });
         
             DocumentPtr spDocument = spEngine->loadDocument(options.filename);
             spDocument->attachComponent("javascript", lx0::createIJavascript() );
             spDocument->attachComponent("ray", create_raytracer() );
             spDocument->attachComponent("scripting", create_scripting() );
+
             ViewPtr     spView     = spDocument->createView("LxCanvas", "view");
             spView->show();
 
