@@ -51,8 +51,11 @@
 #include <lx0/engine.hpp>
 #include <lx0/document.hpp>
 #include <lx0/element.hpp>
+
 #include <glgeom/glgeom.hpp>
 #include <glgeom/prototype/camera.hpp>
+#include <glgeom/prototype/std_lights.hpp>
+#include <glgeom/prototype/material_phong.hpp>
 #include <glgeom/prototype/image.hpp>
 
 
@@ -168,34 +171,6 @@ public:
     camera3f camera;
 };
 
-/*!
-    Designed to match the primary properties of a material of fixed
-    function OpenGL 1.1.
- */
-template <typename T>
-class material_phong_t
-{
-public:
-    typedef T   type;
-
-    material_phong_t()
-        : ambient    (1, 1, 1)
-        , diffuse    (1, 1, 1)
-        , specular   (0, 0, 0)
-        , specular_n (8)
-    {
-    }
-
-    glgeom::color3t<T> ambient;
-    glgeom::color3t<T> diffuse;
-    glgeom::color3t<T> specular;
-    type               specular_n;
-};
-
-typedef material_phong_t<float>  material_phong_f;
-typedef material_phong_t<double> material_phong_d;
-
-
 class Material 
     : public Element::Component
     , public material_phong_f           // Multiple inheritance of classes without virtual methods is ok
@@ -263,11 +238,11 @@ protected:
     }
 };
 
-class Light : public Element::Component
+class Light 
+    : public Element::Component
+    , public point_light_f
 {
 public:
-    glgeom::point3f position;
-    glgeom::color3f color;
 };
 typedef std::shared_ptr<Light> LightPtr;
 
@@ -489,25 +464,7 @@ public:
 
             for (auto it = mLights.begin(); it != mLights.end(); ++it)
             {
-                auto& light = *(*it);
-
-                // 
-                // L = unit vector from light to intersection point; the "incidence vector" I is the
-                //     vector pointing in the opposite direction of L.
-                // N = surface normal at the point of intersection
-                //
-                const vector3f  L     (normalize(light.position - intersection.position));
-                const vector3f& N     (pIntersection->normal);
-                const float     NdotL ( cdot(N, L) );
-                
-                const float diffuseFactor = NdotL;
-
-                const vector3f R(glm::reflect(-L.vec, N.vec));
-                const float specularFactor = powf(cdot(N, R), mat.specular_n);
-            
-                color3f base = diffuseFactor * mat.diffuse * light.color
-                               + specularFactor * mat.specular * light.color;
-                c += base;
+                c += shade(*(*it), mat, intersection);
             }
           
         }

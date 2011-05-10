@@ -17,7 +17,7 @@
       <Group id="light_group">
         <Light>
           {
-            position : [ 3, 2, 3 ],
+            position : [ 6, 4, 3 ],
             color    : [ 1, 1, 1 ]
           }
         </Light>
@@ -57,13 +57,14 @@
           for (var x = .5; x < 11; x += 1)
           {
             var mat_id = "mat" + (i++);
+            var s = (y - .5) / 4;
           
             var m = $("<Material/>");
             m.attr("id", mat_id);
             m.value(
             {
               diffuse: [ 1, (x - .5) / 10.0, (x - .5) / 10.0 ],
-              specular : [ (y - .5) / 10.0, (y - .5) / 10.0, (y - .5) / 10.0 ],
+              specular : [ s, s, s ],
               specular_n : 32
             });
             mats.append(m);
