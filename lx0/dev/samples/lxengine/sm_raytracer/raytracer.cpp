@@ -183,7 +183,7 @@ class Geometry : public Element::Component
 public:
     virtual ~Geometry(){}
 
-    bool intersect (const ray3f& ray, intersect3f& isect) 
+    bool intersect (const ray3f& ray, intersection3f& isect) 
     {
         if (_intersect(ray, isect))
         {
@@ -209,7 +209,7 @@ public:
     std::shared_ptr<Material>   mspMaterial;
 
 protected:
-    virtual bool _intersect (const ray3f&, intersect3f& isect) { return false; }
+    virtual bool _intersect (const ray3f&, intersection3f& isect) { return false; }
 };
 
 typedef std::shared_ptr<Geometry> GeometryPtr;
@@ -220,7 +220,7 @@ public:
     glgeom::plane3f geom;
 
 protected:
-    virtual bool _intersect (const ray3f& ray, intersect3f& isect) 
+    virtual bool _intersect (const ray3f& ray, intersection3f& isect) 
     {
         return  glgeom::intersect(ray, geom, isect);
     }
@@ -232,7 +232,7 @@ public:
     glgeom::sphere3f geom;
 
 protected:
-    virtual bool _intersect (const ray3f& ray, intersect3f& isect) 
+    virtual bool _intersect (const ray3f& ray, intersection3f& isect) 
     {
         return  glgeom::intersect(ray, geom, isect);
     }
@@ -435,10 +435,10 @@ public:
         
         ray3f ray = compute_frustum_ray<float>(mspTraceContext->frustum, x, img.height() - y, img.width(), img.height());
         
-        std::vector<std::pair<GeometryPtr, intersect3f>> hits;
+        std::vector<std::pair<GeometryPtr, intersection3f>> hits;
         for (auto it = mGeometry.begin(); it != mGeometry.end(); ++it)
         {
-            intersect3f isect;
+            intersection3f isect;
             if ((*it)->intersect(ray, isect))
                 hits.push_back(std::make_pair(*it, isect));
         }
@@ -446,7 +446,7 @@ public:
         auto c = color3f(0, 0, 0);
         if (!hits.empty())
         {
-            intersect3f* pIntersection = &hits.front().second;
+            intersection3f* pIntersection = &hits.front().second;
             GeometryPtr spGeom = hits.front().first;
 
             for (auto it = hits.begin(); it != hits.end(); ++it)
@@ -457,7 +457,7 @@ public:
                     spGeom = it->first;
                 }
             }
-            const intersect3f& intersection = *pIntersection;
+            const intersection3f& intersection = *pIntersection;
             
             material_phong_f defaultMaterial;
             const material_phong_f& mat( spGeom->mspMaterial ? *spGeom->mspMaterial : defaultMaterial);
