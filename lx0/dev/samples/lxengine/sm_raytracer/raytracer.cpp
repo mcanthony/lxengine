@@ -428,9 +428,25 @@ public:
         mspTraceContext->frustum = frustum_from_camera(mCamera->camera);
     }
 
+    bool _shadowTerm (const point_light_f& light, const intersection3f& intersection)
+    {
+        const vector3f L     (light.position - intersection.position);
+        const float    distL (length(L));
+        const vector3f Ln    (L / distL);
+        const ray3f    ray   (intersection.position + 1e-3f * Ln, Ln);
+                
+        for (auto it = mGeometry.begin(); it != mGeometry.end(); ++it)
+        {
+            intersection3f isect;
+            if ((*it)->intersect(ray, isect) && isect.distance < distL)
+                return true;
+        }
+        return false;
+    }
+
     color3f _trace (int x, int y)
     {
-        if (x == 0 & y % 4 == 0)
+        if (x == 0 && y % 4 == 0)
             std::cout << "Tracing row " << y << "..." << std::endl;
         
         ray3f ray = compute_frustum_ray<float>(mspTraceContext->frustum, x, img.height() - y, img.width(), img.height());
@@ -443,7 +459,8 @@ public:
                 hits.push_back(std::make_pair(*it, isect));
         }
 
-        auto c = color3f(0, 0, 0);
+        
+        auto c = color3f(0,0,0);
         if (!hits.empty())
         {
             intersection3f* pIntersection = &hits.front().second;
@@ -462,9 +479,11 @@ public:
             material_phong_f defaultMaterial;
             const material_phong_f& mat( spGeom->mspMaterial ? *spGeom->mspMaterial : defaultMaterial);
 
+            c = mat.emmissive;
             for (auto it = mLights.begin(); it != mLights.end(); ++it)
             {
-                c += shade(*(*it), mat, intersection);
+                if (!_shadowTerm(*(*it), intersection))
+                    c += shade(*(*it), mat, intersection);
             }
           
         }

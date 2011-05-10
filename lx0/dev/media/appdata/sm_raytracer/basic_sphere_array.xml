@@ -21,6 +21,12 @@
             color    : [ 1, 1, 1 ]
           }
         </Light>
+        <Light>
+          {
+          position : [ 6, 7, 6 ],
+          color    : [ .1, .1, 0 ]
+          }
+        </Light>        
       </Group>
         <Group id="plane_group">
             <Plane id="x_axis_plane">
