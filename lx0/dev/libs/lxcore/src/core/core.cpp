@@ -35,6 +35,7 @@
 #include <cstdarg>
 #include <exception>
 #include <string>
+#include <fstream>
 
 #include <lx0/core/core.hpp>
 #include <lx0/core/util/util.hpp>
@@ -49,6 +50,17 @@ namespace lx0 { namespace core {
     slot<void (const char*)> slotDebug;
 
     static bool s_lx_init_called = false;
+    static std::ofstream s_log;
+    static int s_log_count = 0;
+
+    static struct _autoclose
+    {
+        ~_autoclose() 
+        { 
+            s_log << "</ul></body></html>" << std::endl;
+            s_log.close();
+        }
+    } __autoclose;
 
     // Internal function to ensure initialization has occured.
     /*
@@ -82,16 +94,45 @@ namespace lx0 { namespace core {
     {
         if (!s_lx_init_called)
         {
+            // On a fatal error, this should be renamed to include the time & date so it
+            // is not overwritten by the next run.
+            s_log.open("lxengine_log.html");
+            s_log 
+                << "<html>" << std::endl
+                << "<head>"
+                << "  <title>LxEngine log</title>"
+                << "  <style>"
+                << "  body { font-family: sans-serif; font-size: 9pt; }" << std:: endl
+                << "  .prefix { font-size: 85%; font-variant: small-caps; float: left; width: 48px; padding-left: 26px; }" << std::endl
+                << "  .debug { color: gray; font-size: 70%; } " << std::endl
+                << "  .log { color: black; } " << std::endl
+                << "  .warn { color: #f19527; } " << std::endl
+                << "  .error { color: red; font-weight: bold; } " << std::endl
+                << "  .fatal { color: red; background-color: yellow; font-weight: bold; } " << std::endl
+                << "  </style>"
+                << "</head>"
+                << "<body>"
+                << "<h1>Log</h1>"
+                << "<ul style='padding-left: 12px;'>" 
+                << std::endl;
+
             // Define a helper lambda function that returns a function (this effectively 
             // acts as runtime template function).
-            auto prefix_print = [](std::string prefix) -> std::function<void(const char*)> {
-                return [prefix](const char* s) { std::cout << prefix << s << std::endl; };
+            auto prefix_print = [](std::string css, std::string prefix) -> std::function<void(const char*)> {
+                return [css, prefix](const char* s) {
+                    s_log << "<li class='" << css << "'><span class='prefix'>" << prefix << "</span>"<< s << "</li>" << std::endl; 
+                    if (s_log_count++ == 100)
+                    {
+                        s_log_count = 0;
+                        s_log.flush();
+                    }
+                };
             };
-            slotDebug   = prefix_print("DBG: ");
-            slotLog     = prefix_print("LOG: ");
-            slotWarn    = prefix_print("WARN: ");
-            slotError   = prefix_print("ERROR: ");
-            slotFatal   = prefix_print("FATAL: ");
+            slotDebug   = prefix_print("debug", "DBG");
+            slotLog     = prefix_print("log",   "LOG");
+            slotWarn    = prefix_print("warn",  "WARN");
+            slotError   = prefix_print("error", "ERROR");
+            slotFatal   = prefix_print("fatal", "FATAL: ");
 
             s_lx_init_called = true;
         }
