@@ -459,10 +459,11 @@ public:
             img.set(x, y, _trace(x, y)); 
         }));
 
+        mUpdateQueue.push_back([&]() { return mRenderTime = lx0::util::lx_milliseconds(), true; });
         mUpdateQueue.push_back([=]() { return passQuick->done() ? true : (passQuick->next(), false); });
         mUpdateQueue.push_back([=]() { return passMedium->done() ? true : (passMedium->next(), false); });
         mUpdateQueue.push_back([=]() { return passHigh->done() ? true : (passHigh->next(), false); });
-        mUpdateQueue.push_back([]() { return std::cout << "Done." << std::endl, true; });
+        mUpdateQueue.push_back([&]() { return std::cout << "Done (" << lx0::util::lx_milliseconds() - mRenderTime << " ms)." << std::endl, true; });
     }
 
     bool _shadowTerm (const point_light_f& light, const intersection3f& intersection)
@@ -545,6 +546,7 @@ protected:
 
     std::deque<std::function<bool (void)>>  mUpdateQueue;
 
+    unsigned int                            mRenderTime;
     std::shared_ptr<Camera>                 mCamera;
     std::vector<std::shared_ptr<Geometry>>  mGeometry;
     std::vector<LightPtr>                   mLights;
