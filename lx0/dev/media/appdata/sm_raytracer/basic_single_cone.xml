@@ -2,8 +2,8 @@
     <Library>
         <Camera id="camera">
         {
-            position : [ 6, 4.0, 3.5 ],
-            look_at  : [ 2.5, .5, .1 ]
+            position : [ 1.1, 1.1, 1.1 ],
+            look_at  : [ .5, .5, .5 ]
         }
         </Camera>
       <View id="view">
@@ -38,7 +38,7 @@
       <Group id="light_group">
         <Light>
           {
-            position : [ 4, 4, 4 ],
+            position : [ 2, 3, 4 ],
             color    : [ 1, 1, 1 ]
           }
         </Light>     
@@ -64,48 +64,13 @@
             </Plane>
         </Group>
         <Group id="geometry">
-
-        </Group>
-      <Script language="javascript" src="media2/scripts/base/lxquery-0.0.0.js" />
-      <Script>
-        <!--
-            var group = $("#geometry");
-            for (var x = 0; x < 5; ++x)
+          <Cone>
             {
-              var e = $("<Cone/>");
-              e.attr("material", "white");
-              e.value({
-                base : [ x + .5, .5, 0 ],
-                radius : .5,
-                axis : [ 0, 0, x + .5]
-              });
-              group.append(e);
+              base : [ .5, .5, 0 ],
+              radius : .5,
+              axis : [ 0, 0, 1 ]
             }
-            
-            for (var x = 0; x < 5; ++x)
-            {
-              var e = $("<Cone/>");
-              e.attr("material", "red");
-              e.value({
-                base : [ x + .5, 1.5, 0 ],
-                radius : .5 - x / 20.0,
-                axis : [ 0, 0, 1]
-              });
-              group.append(e);
-            }      
-            
-            for (var x = 0; x < 5; ++x)
-            {
-              var e = $("<Cone/>");
-              e.attr("material", "green");
-              e.value({
-                base : [ x + .5, 2.5, x / 10 ],
-                radius : .35,
-                axis : [ 0, 0, .5]
-              });
-              group.append(e);
-            }                
-            -->
-      </Script>
+          </Cone>
+        </Group>
     </Scene>
 </Document>
