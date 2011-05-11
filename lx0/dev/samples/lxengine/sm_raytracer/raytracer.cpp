@@ -58,6 +58,8 @@
 #include <glgeom/prototype/material_phong.hpp>
 #include <glgeom/prototype/image.hpp>
 
+#include "glgeom_ext.hpp"
+
 
 using namespace lx0::core;
 using namespace glgeom;
@@ -238,6 +240,18 @@ protected:
     }
 };
 
+class Cone : public Geometry
+{
+public:
+    glgeom::unit_cone_t<float> geom;
+
+protected:
+    virtual bool _intersect (const ray3f& ray, intersection3f& isect) 
+    {
+        return  glgeom::intersect(ray, geom, isect);
+    }
+};
+
 class Light 
     : public Element::Component
     , public point_light_f
@@ -327,6 +341,16 @@ public:
             spElem->attachComponent("raytrace", spComp);
         }));
 
+        mHandlers.insert(std::make_pair("Cone", [&](ElementPtr spElem) {
+            auto pGeom = new Cone;
+            
+            pGeom->setMaterial(spElem, spElem->attr("material").query(""));
+
+            std::shared_ptr<Cone> spComp(pGeom);
+            mGeometry.push_back(spComp);
+            spElem->attachComponent("raytrace", spComp);
+        }));
+
         mHandlers.insert(std::make_pair("Material", [&](ElementPtr spElem) {
             auto pMat = new Material;
             pMat->diffuse = spElem->value().find("diffuse").convert(color3f(1, 1, 1));
@@ -366,6 +390,7 @@ public:
     }
     virtual void onElementAdded (DocumentPtr spDocument, ElementPtr spElem) 
     {
+        lx_debug("Element '%s' added", spElem->tagName().c_str());
         _onElementAddRemove(spElem, true); 
     }
 
@@ -378,6 +403,8 @@ public:
 
     void _init()
     {
+        lx_log("Initializing ray tracer");
+
         image_fill_checker(img);
 
         if (!mCamera)
@@ -425,7 +452,7 @@ public:
             }
         }));
         
-        std::shared_ptr<ScanIterator> passHigh(new ScanIterator (img.width(), img.height(), [&](int x, int y) { 
+        std::shared_ptr<ScanIterator> passHigh(new ScanIterator (img.width(), img.height(), [&](int x, int y) {
             img.set(x, y, _trace(x, y)); 
         }));
 
