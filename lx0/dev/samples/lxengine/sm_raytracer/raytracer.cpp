@@ -243,7 +243,7 @@ protected:
 class Cone : public Geometry
 {
 public:
-    glgeom::unit_cone_t<float> geom;
+    glgeom::cone3f geom;
 
 protected:
     virtual bool _intersect (const ray3f& ray, intersection3f& isect) 
@@ -343,7 +343,9 @@ public:
 
         mHandlers.insert(std::make_pair("Cone", [&](ElementPtr spElem) {
             auto pGeom = new Cone;
-            
+            pGeom->geom.base = spElem->value().find("base").convert();
+            pGeom->geom.radius = spElem->value().find("radius").convert();
+            pGeom->geom.axis = spElem->value().find("axis").convert();
             pGeom->setMaterial(spElem, spElem->attr("material").query(""));
 
             std::shared_ptr<Cone> spComp(pGeom);
@@ -353,6 +355,7 @@ public:
 
         mHandlers.insert(std::make_pair("Material", [&](ElementPtr spElem) {
             auto pMat = new Material;
+            pMat->emmissive = spElem->value().find("emmissive").convert(color3f(0, 0, 0));
             pMat->diffuse = spElem->value().find("diffuse").convert(color3f(1, 1, 1));
             pMat->specular = spElem->value().find("specular").convert(color3f(0, 0, 0));
             pMat->specular_n = spElem->value().find("specular_n").convert(8.0f);
@@ -518,8 +521,7 @@ public:
             {
                 if (!_shadowTerm(*(*it), intersection))
                     c += shade(*(*it), mat, intersection);
-            }
-          
+            }         
         }
         else
             c *= .5f;

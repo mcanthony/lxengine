@@ -2,8 +2,8 @@
     <Library>
         <Camera id="camera">
         {
-            position : [ 1.25, 1.25, 1.25 ],
-            look_at  : [ .5, .5, .5 ]
+            position : [ 6, 4.0, 3.5 ],
+            look_at  : [ 2.5, .5, .1 ]
         }
         </Camera>
       <View id="view">
@@ -38,16 +38,10 @@
       <Group id="light_group">
         <Light>
           {
-            position : [ 1, .75, .25 ],
+            position : [ 4, 4, 4 ],
             color    : [ 1, 1, 1 ]
           }
-        </Light>
-        <Light>
-          {
-          position : [ .4, .4, 1.25 ],
-          color    : [ .6, .6, .5 ]
-          }
-        </Light>        
+        </Light>     
       </Group>
         <Group id="plane_group">
             <Plane id="x_axis_plane" material="red">
@@ -70,13 +64,48 @@
             </Plane>
         </Group>
         <Group id="geometry">
-            <Cone material="white">
-            {
-                base : [ .5, .5, 0 ],
-                radius : .5,
-                axis : [ 0, 0, 1]
-            }
-            </Cone>
+
         </Group>
+      <Script language="javascript" src="media2/scripts/base/lxquery-0.0.0.js" />
+      <Script>
+        <!--
+            var group = $("#geometry");
+            for (var x = 0; x < 5; ++x)
+            {
+              var e = $("<Cone/>");
+              e.attr("material", "white");
+              e.value({
+                base : [ x + .5, .5, 0 ],
+                radius : .5,
+                axis : [ 0, 0, x + .5]
+              });
+              group.append(e);
+            }
+            
+            for (var x = 0; x < 5; ++x)
+            {
+              var e = $("<Cone/>");
+              e.attr("material", "red");
+              e.value({
+                base : [ x + .5, 1.5, 0 ],
+                radius : .5 - x / 20.0,
+                axis : [ 0, 0, 1]
+              });
+              group.append(e);
+            }      
+            
+            for (var x = 0; x < 5; ++x)
+            {
+              var e = $("<Cone/>");
+              e.attr("material", "green");
+              e.value({
+                base : [ x + .5, 2.5, x / 10 ],
+                radius : .35,
+                axis : [ 0, 0, .5]
+              });
+              group.append(e);
+            }                
+            -->
+      </Script>
     </Scene>
 </Document>

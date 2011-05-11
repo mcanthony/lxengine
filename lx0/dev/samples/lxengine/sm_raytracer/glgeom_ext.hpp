@@ -31,6 +31,7 @@
 
 #include <algorithm>
 #include <vector>
+#include <glgeom/prototype/transform_srt.hpp>
 
 namespace glgeom {
     namespace ext {
@@ -73,7 +74,7 @@ namespace glgeom {
         }
 
         template <typename P>
-        bool intersect (const glgeom::ray3t<P>& ray, const glgeom::unit_cone_t<P>& cone, glgeom::intersection3t<P>& intersection)
+        bool _intersect_unit_cone_inner (const glgeom::ray3t<P>& ray, glgeom::intersection3t<P>& intersection)
         {
             const auto& d = ray.direction;
             const auto& o = ray.origin;
@@ -142,7 +143,7 @@ namespace glgeom {
                 {
                     const auto p = o + d * t;
 
-                    if (p.x * p.x + p.y * p.y <= 1)
+                    if (p.x * p.x + p.y * p.y <= P(1))
                     {
                         intersection3t<P> intersection;
                         intersection.position = p;
@@ -167,6 +168,107 @@ namespace glgeom {
                 intersection = hits.front();
             }
             return !hits.empty();
+        }
+
+        /*!
+            Dev Notes:
+
+            - This is obviously inefficient as it adds another transformation_srt layer to the code.
+              The unit_cone is defined as radius .5, centered at the origin, height +1 Z.  The inner
+              worker method works on a radius 1, *tip* at the origin, height -1 Z.  That fixed
+              transformation should be possible to do without requiring the full srt transform
+              and inverse transforms.
+         */
+        template <typename P>
+        bool intersect (const glgeom::ray3t<P>& ray, const glgeom::unit_cone_t<P>& cone, glgeom::intersection3t<P>& intersection)
+        {
+            //
+            // Note that the translation is applied after the rotation: therefore, the unit 
+            // cone will have been rotated to -1 to 0 on the z axis, meaning it must be pushed
+            // up on the world z axis.
+            //
+            // Note glm::tquat(0, 1, 0, 0) is the quaternion to rotate 180 degrees about the
+            // x axis.
+            //
+            glgeom::transform_srt_3t<P> srt;
+            srt.scale = vector3t<P>(.5, .5, 1);
+            srt.rotate = glm::detail::tquat<P>(0, 1, 0, 0);
+            srt.translate = vector3t<P>(0, 0, .5);
+
+            ray3f rt;
+            rt.origin = inverse_transform(ray.origin, srt);
+            rt.direction = inverse_transform(ray.direction, srt);
+
+            const bool hit = _intersect_unit_cone_inner(rt, intersection);
+            if (hit)
+            {
+                intersection.normal = transform(intersection.normal, srt);
+                intersection.position = transform(intersection.position, srt);
+                intersection.distance = length(intersection.position - ray.origin);
+            }
+            return hit;
+        }
+
+        template <typename P>
+        bool intersect (const glgeom::ray3t<P>& ray, const glgeom::cone3t<P>& cone, glgeom::intersection3t<P>& intersection)
+        {
+            //
+            // Compute the height of the cone and generate a normalized version of the cone
+            // axis.
+            //
+            const P           height = length(cone.axis);
+            const vector3t<P> naxis = cone.axis / height; 
+
+            //
+            // Now transform the space such that the cone is a unit cone (radius .5, center 0, 0, 0,
+            // axis Z+).
+            //
+            glgeom::transform_srt_3f srt;
+            srt.scale     = vector3f(cone.radius / P(.5), cone.radius / P(.5), height);            
+            srt.translate = vector3f(cone.base + P(.5) * cone.axis);
+
+            // Compute the dot product of the cone axis and the Z axis in order to determine the angle the
+            // axis rotated by.  Use the cross product to generate a vector perpendicular to
+            // before/after axes that can be used to rotate about.   Check however if the rotation is 0
+            // or 180 degrees from the Z axis, as there will be no valid perpendicular.
+            //
+            // const vector3t<P> Z(0, 0, 1);
+            // const P dp = dot(Z, normalize(cone.axis));
+            // dp == naxis.z
+            //
+            if (abs(naxis.z - P(1)) < P(1e-4))
+            {
+                // The axis is the Z axis.  
+                // Leave srt.rotate as identity.
+            }
+            else if (abs(naxis.z + P(1)) < P(1e-4))
+            {
+                // 180 rotation about the X axis
+                srt.rotate = glm::detail::tquat<P>(0, 1, 0, 0);
+            }
+            else
+            {
+                // General rotation
+                const P angle = acos(naxis.z);
+                const vector3t<P> axis = cross(naxis, vector3t<P>(0,0,1));
+                srt.rotate = orientation(axis, radians(angle));
+            }
+                
+            ray3f rt;
+            rt.origin = inverse_transform(ray.origin, srt);
+            rt.direction = inverse_transform(ray.direction, srt);
+
+            const bool hit = intersect(rt, unit_cone_t<P>(), intersection);
+            if (hit)
+            {
+                intersection.normal = transform(intersection.normal, srt);
+                intersection.position = transform(intersection.position, srt);
+                intersection.distance = length(intersection.position - ray.origin);
+
+                //!\todo Rationalize why normalization should happen here rather than throughout
+                intersection.normal = normalize(intersection.normal);
+            }
+            return hit;
         }
     }
     using namespace ext;
