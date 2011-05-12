@@ -66,9 +66,9 @@
 #include <lx0/document.hpp>
 #include <lx0/element.hpp>
 #include <lx0/blendreader/blendreader.hpp>
+#include <lx0/subsystems/rasterizer.hpp>
 
 #include "main.hpp"
-#include "rasterizergl.hpp"
 #include "terrain.hpp"
 
 using namespace lx0::core;
@@ -720,6 +720,7 @@ main (int argc, char** argv)
     {
         EnginePtr   spEngine   = Engine::acquire();
         spEngine->addDocumentComponent("physics2", [] () { return new PhysicsSubsystem; } );
+        spEngine->addDocumentComponent("rasterizer", lx0::createIRasterizer);
         spEngine->addViewPlugin("LxCanvas", [] (View* pView) { return new LxCanvasImp; });
         spEngine->addElementComponent("Terrain", "runtime", [](ElementPtr spElem) { return new Terrain::Runtime(spElem); }); 
         spEngine->addElementComponent("Terrain", "renderable", [](ElementPtr spElem) { return new Terrain::Render; });

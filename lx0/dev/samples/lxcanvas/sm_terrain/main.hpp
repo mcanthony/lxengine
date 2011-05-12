@@ -30,7 +30,7 @@
 
 #include <lx0/element.hpp>
 #include <lx0/prototype/prototype.hpp>
-#include "rasterizergl.hpp"
+#include <lx0/subsystems/rasterizer.hpp>
 
 /*!
     Represents all the items to render for a particular frame.  The items are organized

@@ -52,6 +52,8 @@ include_directories( libs/glgeom/include )
 include_directories(${Boost_INCLUDE_DIR})
 link_directories(${Boost_LIBRARY_DIRS})
 
+# Glew
+include_directories( ${CMAKE_SOURCE_DIR}/libs/lxcanvas/src/extern/glew )
 
 # OGRE
 message(STATUS "Ogre include dir: ${OGRE_INCLUDE_DIR}")

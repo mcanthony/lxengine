@@ -50,7 +50,7 @@
 #include <lx0/prototype/prototype.hpp>
 
 #include "terrain.hpp"
-#include "rasterizergl.hpp"
+#include <lx0/subsystems/rasterizer.hpp>
 
 //===========================================================================//
 //   N A M E S P A C E S

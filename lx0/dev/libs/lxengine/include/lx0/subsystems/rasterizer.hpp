@@ -39,3 +39,6 @@ namespace lx0 {
 
     IRasterizer* createIRasterizer();
 }
+
+
+#include "../../../src/subsystems/rasterizer/glrasterizer.hpp"
