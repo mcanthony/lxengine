@@ -32,6 +32,8 @@
 #include <lx0/prototype/prototype.hpp>
 #include <lx0/subsystems/rasterizer.hpp>
 
+using namespace lx0::subsystem::rasterizer;
+
 /*!
     Represents all the items to render for a particular frame.  The items are organized
     into a set of layers, each with an ordered list of items.  Each layer has its own
@@ -41,7 +43,7 @@
 class RenderList
 {
 public:
-    typedef std::vector<RasterizerGL::ItemPtr> ItemList;
+    typedef std::vector<ItemPtr> ItemList;
 
     struct Layer
     {
@@ -53,12 +55,12 @@ public:
 
 
 
-    void                    push_back   (int layer, RasterizerGL::ItemPtr spItem);
+    void                    push_back   (int layer, ItemPtr spItem);
 
     LayerMap::iterator      begin       (void)  { return mLayers.begin(); }
     LayerMap::iterator      end         (void)    { return mLayers.end(); }
 
-    RasterizerGL::ItemPtr   getItem     (unsigned int id);
+    ItemPtr   getItem     (unsigned int id);
 
 protected:
     LayerMap    mLayers;
@@ -72,7 +74,7 @@ public:
     virtual void generate(lx0::core::ElementPtr spElement,
                   RasterizerGL& rasterizer,
                   lx0::prototype::Camera& cam1,
-                  RasterizerGL::CameraPtr spCamera, 
-                  RasterizerGL::LightSetPtr spLightSet, 
+                  CameraPtr spCamera, 
+                  LightSetPtr spLightSet, 
                   RenderList& list) = 0;
 };

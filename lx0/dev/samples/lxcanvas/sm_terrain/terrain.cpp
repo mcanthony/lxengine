@@ -59,7 +59,7 @@
 using namespace lx0::core;
 using namespace lx0::prototype;
 
-extern Camera gCamera;
+extern lx0::prototype::Camera gCamera;
 
 //===========================================================================//
 //   F I L E   I M P L E M E N T A T I O N 
@@ -121,9 +121,9 @@ namespace Terrain
 
     void Render::generate(ElementPtr spElement,
                     RasterizerGL& rasterizer,
-                    Camera& cam1,
-                    RasterizerGL::CameraPtr spCamera, 
-                    RasterizerGL::LightSetPtr spLightSet, 
+                    lx0::prototype::Camera& cam1,
+                    CameraPtr spCamera, 
+                    LightSetPtr spLightSet, 
                     RenderList& list)
     {
         const int bx = int(cam1.mPosition.x / 100.0f);
@@ -157,7 +157,7 @@ namespace Terrain
 
             for (auto it = buildList.begin(); it != buildList.end(); ++it)
             {
-                RasterizerGL::ItemPtr spTile;
+                ItemPtr spTile;
                 spTile = _buildTile(spElement, rasterizer, spCamera, spLightSet, it->first, it->second);
                 mMap.insert(std::make_pair(*it, spTile));
 
@@ -167,7 +167,7 @@ namespace Terrain
     }
 
 
-    RasterizerGL::GeometryPtr 
+    GeometryPtr 
     Render::_buildTileGeom2 (ElementPtr spElement, RasterizerGL& rasterizer,  int regionX, int regionY)
     {
         // Eventually the renderable should be a component of the Element.
@@ -257,7 +257,7 @@ namespace Terrain
         return rasterizer.createQuadList(indices, positions, normals, colors);
     }
 
-    RasterizerGL::MaterialPtr 
+    MaterialPtr 
     Render::_ensureMaterial (RasterizerGL& rasterizer)
     {
         if (mwpMaterial.expired())
@@ -276,19 +276,19 @@ namespace Terrain
             return mwpMaterial.lock();
     }
 
-    RasterizerGL::ItemPtr Render::_buildTile (ElementPtr spElement, 
+    ItemPtr Render::_buildTile (ElementPtr spElement, 
                                         RasterizerGL& rasterizer, 
-                                        RasterizerGL::CameraPtr spCamera, 
-                                        RasterizerGL::LightSetPtr spLightSet, 
+                                        CameraPtr spCamera, 
+                                        LightSetPtr spLightSet, 
                                         int regionX, int regionY)
     {
-        auto pItem = new RasterizerGL::Item;
+        auto pItem = new Item;
         pItem->spCamera   = spCamera;
         pItem->spLightSet = spLightSet;
         pItem->spMaterial = _ensureMaterial(rasterizer);
         pItem->spTransform = rasterizer.createTransform(regionX * 100.0f, regionY * 100.0f, 0.0f);
         pItem->spGeometry = _buildTileGeom2(spElement, rasterizer, regionX, regionY);
-        return RasterizerGL::ItemPtr(pItem);
+        return ItemPtr(pItem);
     }
 }
 

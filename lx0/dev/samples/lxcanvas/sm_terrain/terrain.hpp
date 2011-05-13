@@ -56,22 +56,22 @@ namespace Terrain
 
         virtual void generate(ElementPtr spElement,
                       RasterizerGL& rasterizer,
-                      Camera& cam1,
-                      RasterizerGL::CameraPtr spCamera, 
-                      RasterizerGL::LightSetPtr spLightSet, 
+                      lx0::prototype::Camera& cam1,
+                      CameraPtr spCamera, 
+                      LightSetPtr spLightSet, 
                       RenderList& list);
 
     protected:
-        RasterizerGL::MaterialPtr       _ensureMaterial (RasterizerGL& rasterizer);
-        RasterizerGL::ItemPtr           _buildTile (ElementPtr spElement, 
+        MaterialPtr       _ensureMaterial (RasterizerGL& rasterizer);
+        ItemPtr           _buildTile (ElementPtr spElement, 
                                             RasterizerGL& rasterizer, 
-                                            RasterizerGL::CameraPtr spCamera, 
-                                            RasterizerGL::LightSetPtr spLightSet, 
+                                            CameraPtr spCamera, 
+                                            LightSetPtr spLightSet, 
                                             int regionX, int regionY);
-        RasterizerGL::GeometryPtr       _buildTileGeom2 (ElementPtr spElement, RasterizerGL& rasterizer,  int regionX, int regionY);
+        GeometryPtr       _buildTileGeom2 (ElementPtr spElement, RasterizerGL& rasterizer,  int regionX, int regionY);
 
         std::shared_ptr<Terrain::Runtime>                        mspTerrain;
-        RasterizerGL::MaterialWPtr                               mwpMaterial;
-        std::map<std::pair<short, short>, RasterizerGL::ItemPtr> mMap;
+        MaterialWPtr                               mwpMaterial;
+        std::map<std::pair<short, short>, ItemPtr> mMap;
     };
 }

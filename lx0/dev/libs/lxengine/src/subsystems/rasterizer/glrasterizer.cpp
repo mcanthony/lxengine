@@ -39,7 +39,7 @@
 #include "glrasterizer.hpp"
 #include <lx0/subsystems/rasterizer.hpp>
 
-using namespace Rasterizer;
+using namespace lx0::subsystem::rasterizer;
 
 void RasterizerGL::initialize()
 {
@@ -59,7 +59,7 @@ void RasterizerGL::shutdown()
 {
 }
 
-Rasterizer::CameraPtr       
+CameraPtr       
 RasterizerGL::createCamera (float fov, float nearDist, float farDist, matrix4& viewMatrix)
 {
     CameraPtr spCamera (new Camera);
@@ -71,7 +71,7 @@ RasterizerGL::createCamera (float fov, float nearDist, float farDist, matrix4& v
 }
 
 void
-Rasterizer::Camera::activate()
+Camera::activate()
 {
     //
     // Setup projection matrix
@@ -98,19 +98,19 @@ Rasterizer::Camera::activate()
     glLoadTransposeMatrixf(viewMatrix.data);
 }
 
-Rasterizer::Texture::Texture()
+Texture::Texture()
     : mFileTimestamp    (0)
     , mId               (0)
 {
 }
 
-void Rasterizer::Texture::unload()
+void Texture::unload()
 {
     glDeleteTextures(1, &mId);
     mId = 0;
 }
 
-void Rasterizer::Texture::load()
+void Texture::load()
 {
     using namespace lx0::prototype;
     namespace fs = boost::filesystem;
@@ -141,11 +141,9 @@ void Rasterizer::Texture::load()
     }
 }
 
-RasterizerGL::TexturePtr
+TexturePtr
 RasterizerGL::createTexture (const char* filename)
 {
-    using namespace Rasterizer;
-    
     lx_check_error(filename != nullptr);
 
     TexturePtr spTex(new Texture);
@@ -162,7 +160,7 @@ RasterizerGL::createTexture (const char* filename)
     return spTex;
 }
 
-RasterizerGL::MaterialPtr 
+MaterialPtr 
 RasterizerGL::createMaterial (std::string fragShader)
 {
     GLuint prog = _createProgram(fragShader);
@@ -226,7 +224,7 @@ RasterizerGL::_createProgram2  (std::string fragShader)
     return prog;
 }
 
-Rasterizer::Material::Material(GLuint id)
+Material::Material(GLuint id)
     : mId           (id)
     , mBlend        (false)
     , mZWrite       (true)
@@ -237,7 +235,7 @@ Rasterizer::Material::Material(GLuint id)
 }
 
 void
-Rasterizer::Material::activate (RasterizerGL* pRasterizer, Rasterizer::GlobalPass& pass)
+Material::activate (RasterizerGL* pRasterizer, GlobalPass& pass)
 {
     // Activate the shader
     glUseProgram(mId);
@@ -400,7 +398,7 @@ RasterizerGL::_createShader(const char* filename, GLuint type)
 }
 
 
-RasterizerGL::GeometryPtr 
+GeometryPtr 
 RasterizerGL::createQuadList (std::vector<glgeom::point3f>& positionData)
 {
     GLuint vao[1];
@@ -419,7 +417,7 @@ RasterizerGL::createQuadList (std::vector<glgeom::point3f>& positionData)
         
     lx_check_error( glGetError() == GL_NO_ERROR, "OpenGL error detected." );
 
-    auto pQuadList = new RasterizerGL::QuadList;
+    auto pQuadList = new QuadList;
     pQuadList->vbo[0] = vbo[0];
     pQuadList->vao[0] = vao[0];
     pQuadList->size = positionData.size();
@@ -428,7 +426,7 @@ RasterizerGL::createQuadList (std::vector<glgeom::point3f>& positionData)
 
 
 
-void RasterizerGL::QuadList::activate()
+void QuadList::activate()
 {
     glBindVertexArray(vao[0]);
     glBindBuffer(GL_ARRAY_BUFFER, vbo[0]);
@@ -442,7 +440,7 @@ void RasterizerGL::QuadList::activate()
     glDrawArrays(GL_QUADS, 0, size); 
 }
 
-RasterizerGL::GeometryPtr
+GeometryPtr
 RasterizerGL::createQuadList (std::vector<unsigned short>& indices, 
                               std::vector<glgeom::point3f>& positions, 
                               std::vector<glgeom::vector3f>& normals,
@@ -488,7 +486,7 @@ RasterizerGL::createQuadList (std::vector<unsigned short>& indices,
 }
 
 void 
-Rasterizer::GeomImp::activate()
+GeomImp::activate()
 {
     GLint shaderProgram;
     glGetIntegerv(GL_CURRENT_PROGRAM, &shaderProgram);
@@ -535,19 +533,19 @@ Rasterizer::GeomImp::activate()
     glDrawElements(mType, mCount, GL_UNSIGNED_SHORT, 0);
 }
 
-RasterizerGL::LightSetPtr     
+LightSetPtr     
 RasterizerGL::createLightSet (void)
 {
     return LightSetPtr(new LightSet);
 }
 
-RasterizerGL::TransformPtr 
+TransformPtr 
 RasterizerGL::createTransform (matrix4& mat)
 {
     return TransformPtr(new Transform);
 }
 
-RasterizerGL::TransformPtr 
+TransformPtr 
 RasterizerGL::createTransform (float tx, float ty, float tz)
 {
     TransformPtr spTransform(new Transform);
@@ -555,7 +553,7 @@ RasterizerGL::createTransform (float tx, float ty, float tz)
     return spTransform;
 }
 
-struct EyeTransform : public Rasterizer::Transform
+struct EyeTransform : public Transform
 {
     EyeTransform (float tx, float ty, float tz, glgeom::radians zangle)
         : pos (tx, ty, tz)
@@ -563,7 +561,7 @@ struct EyeTransform : public Rasterizer::Transform
     {
     }
 
-    virtual void activate(RasterizerGL::CameraPtr spCamera)
+    virtual void activate(CameraPtr spCamera)
     {
         // The transformation intends to keep the object coordinates relative to the camera,
         // rather than relative to the world origin.   The intent is to therefore offset
@@ -599,15 +597,15 @@ struct EyeTransform : public Rasterizer::Transform
     glgeom::radians z_angle;
 };
 
-RasterizerGL::TransformPtr
+TransformPtr
 RasterizerGL::createTransformEye (float tx, float ty, float tz, glgeom::radians z_angle)
 {
     return TransformPtr(new EyeTransform(tx, ty, tz, z_angle));
 }
 
-struct BillboardTransform : public Rasterizer::Transform
+struct BillboardTransform : public Transform
 {
-    virtual void activate(RasterizerGL::CameraPtr spCamera)
+    virtual void activate(CameraPtr spCamera)
     {
         // The first column of the view matrix contains the "right" vector
         // of the camera: that is to say, the x-axis (1, 0, 0) of the camera
@@ -625,7 +623,7 @@ struct BillboardTransform : public Rasterizer::Transform
     }
 };
 
-RasterizerGL::TransformPtr
+TransformPtr
 RasterizerGL::createTransformBillboardXY (float tx, float ty, float tz)
 {
     TransformPtr spTransform(new BillboardTransform);
@@ -633,7 +631,7 @@ RasterizerGL::createTransformBillboardXY (float tx, float ty, float tz)
     return spTransform;
 }
 
-RasterizerGL::TransformPtr
+TransformPtr
 RasterizerGL::createTransformBillboardXYS (float tx, float ty, float tz, float sx, float sy, float sz)
 {
     TransformPtr spTransform(new BillboardTransform);
@@ -647,7 +645,7 @@ RasterizerGL::createTransformBillboardXYS (float tx, float ty, float tz, float s
 }
 
 void
-Rasterizer::Transform::activate (CameraPtr)
+Transform::activate (CameraPtr)
 {
     glMatrixMode(GL_MODELVIEW);
     glMultTransposeMatrixf(mat.data);
@@ -721,7 +719,7 @@ RasterizerGL::rasterizeList (RenderAlgorithm& algorithm, std::vector<std::shared
 }
 
 void 
-RasterizerGL::rasterize(Rasterizer::GlobalPass& pass, std::shared_ptr<Item> spItem)
+RasterizerGL::rasterize(GlobalPass& pass, std::shared_ptr<Item> spItem)
 {
     lx_check_error(spItem.get() != nullptr);
 

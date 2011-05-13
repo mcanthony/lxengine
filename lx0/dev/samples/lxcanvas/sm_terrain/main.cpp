@@ -75,12 +75,12 @@ using namespace lx0::core;
 using namespace lx0::prototype;
 using namespace lx0::canvas::platform;
 
-Camera             gCamera;
+lx0::prototype::Camera             gCamera;
 
 //===========================================================================//
 
 void
-RenderList::push_back (int layer, RasterizerGL::ItemPtr spItem)
+RenderList::push_back (int layer, ItemPtr spItem)
 {
     mLayers[layer].list.push_back(spItem);
 }
@@ -199,11 +199,11 @@ public:
     }
 
     void 
-    _generateRenderAlgorithm (Rasterizer::RenderAlgorithm& algorithm)
+    _generateRenderAlgorithm (RenderAlgorithm& algorithm)
     {
         algorithm.mClearColor = glgeom::color4f(0.09f, 0.09f, 0.11f, 1.0f);
 
-        Rasterizer::GlobalPass pass[4];
+        GlobalPass pass[4];
         switch (mViewMode)
         {
         default:
@@ -226,21 +226,21 @@ public:
     }
 
     void 
-    _generateSelectAlgorithm (Rasterizer::RenderAlgorithm& algorithm)
+    _generateSelectAlgorithm (RenderAlgorithm& algorithm)
     {
         algorithm.mClearColor = glgeom::color4f(0.0f, 0.0f, 0.0f, 0.0f);
 
         // The solid.frag is not sufficient since the alpha mask needs to be read from RGBA textures
         // to ensure only the right pixels are actually written to the pixel buffer.
         //
-        Rasterizer::GlobalPass pass[4];
+        GlobalPass pass[4];
         pass[0].bOverrideMaterial = true;
         pass[0].spMaterial = mRasterizer.createMaterial("media2/shaders/glsl/fragment/solid.frag");
         algorithm.mPasses.push_back(pass[0]); 
     }
 
     void
-    _renderImp (Rasterizer::RenderAlgorithm& algorithm, RenderList& items)
+    _renderImp (RenderAlgorithm& algorithm, RenderList& items)
     {
         spCamera->viewMatrix = view_matrix(gCamera);
 
@@ -258,7 +258,7 @@ public:
     void 
     render (void)	
     {
-        Rasterizer::RenderAlgorithm algorithm;
+        RenderAlgorithm algorithm;
         RenderList items;
 
         _generateRenderAlgorithm(algorithm);
@@ -267,10 +267,10 @@ public:
         mRasterizer.refreshTextures();
     }
 
-    RasterizerGL::ItemPtr
+    ItemPtr
     select (int x, int y)
     {
-        Rasterizer::RenderAlgorithm algorithm;
+        RenderAlgorithm algorithm;
         _generateSelectAlgorithm(algorithm);
 
         // Draw to the backbuffer
@@ -283,8 +283,8 @@ public:
     DocumentPtr                 mspDocument;
 
 protected:
-    RasterizerGL::CameraPtr     spCamera;       // Camera shared by all items
-    RasterizerGL::LightSetPtr   spLightSet;
+    CameraPtr     spCamera;       // Camera shared by all items
+    LightSetPtr   spLightSet;
     RasterizerGL                mRasterizer;
     int                         mViewMode;
 };
@@ -484,9 +484,9 @@ public:
 
     virtual void generate(ElementPtr spElement,
                       RasterizerGL& rasterizer,
-                      Camera& cam1,
-                      RasterizerGL::CameraPtr spCamera, 
-                      RasterizerGL::LightSetPtr spLightSet, 
+                      lx0::prototype::Camera& cam1,
+                      CameraPtr spCamera, 
+                      LightSetPtr spLightSet, 
                       RenderList& list)
     {
         if (!mspItem)
@@ -566,7 +566,7 @@ public:
                 spMat->mZWrite = false;
                 spMat->mTextures[0] = rasterizer.createTexture("media2/textures/skymaps/polar/bluesky_grayclouds.png");
 
-                auto pItem = new RasterizerGL::Item;
+                auto pItem = new Item;
                 pItem->spCamera   = spCamera;
                 pItem->spLightSet = spLightSet;
                 pItem->spMaterial = spMat;
@@ -584,7 +584,7 @@ public:
 protected:
     glgeom::point3f                 mPosition;
     glgeom::radians                 mRotation;
-    RasterizerGL::ItemPtr           mspItem;
+    ItemPtr           mspItem;
 };
 
 //===========================================================================//
@@ -592,7 +592,7 @@ protected:
 class SpriteShared
 {
 public:
-    RasterizerGL::MaterialPtr _ensureMaterial (RasterizerGL& rasterizer, std::string image)
+    MaterialPtr _ensureMaterial (RasterizerGL& rasterizer, std::string image)
     {
         if (!mspMaterial)
         {
@@ -605,7 +605,7 @@ public:
         return mspMaterial;
     }
 
-    RasterizerGL::GeometryPtr  _ensureGeom (RasterizerGL& rasterizer)
+    GeometryPtr  _ensureGeom (RasterizerGL& rasterizer)
     {
         if (!mspGeom)
         {
@@ -653,8 +653,8 @@ public:
     }
 
 protected:
-    RasterizerGL::MaterialPtr       mspMaterial;
-    RasterizerGL::GeometryPtr       mspGeom;
+    MaterialPtr       mspMaterial;
+    GeometryPtr       mspGeom;
 };
 
 class Sprite : public Renderable
@@ -662,16 +662,16 @@ class Sprite : public Renderable
 public:
     virtual void generate(ElementPtr spElement,
                       RasterizerGL& rasterizer,
-                      Camera& cam1,
-                      RasterizerGL::CameraPtr spCamera, 
-                      RasterizerGL::LightSetPtr spLightSet, 
+                      lx0::prototype::Camera& cam1,
+                      CameraPtr spCamera, 
+                      LightSetPtr spLightSet, 
                       RenderList& list)
     {
         if (!mspItem)
         {
             std::string image = spElement->attr("image").asString();
 
-            auto pItem = new RasterizerGL::Item;
+            auto pItem = new Item;
             pItem->setData<ElementPtr>(spElement);
             pItem->spCamera   = spCamera;
             pItem->spLightSet = spLightSet;
@@ -692,10 +692,10 @@ public:
     }
 
 protected:
-    RasterizerGL::ItemPtr           mspItem;
+    ItemPtr           mspItem;
 };
 
-RasterizerGL::ItemPtr 
+ItemPtr 
 RenderList::getItem (unsigned int id)
 {
     auto it = mLayers.begin();
