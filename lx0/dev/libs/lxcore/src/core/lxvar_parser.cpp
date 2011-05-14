@@ -97,7 +97,7 @@ namespace lx0 { namespace core {
                     carrot += " ";
                 carrot += "^";
 
-                lx_error(
+                lx_error2("JSON.ParseError",
                     "JSON Parse Error, line %d.\n%s\n%s\n"
                     "Did not find expected character '%c'.  Found '%c' instead.",
                          state().mLineNumber, _currentLine().c_str(), carrot.c_str(), c, *state().mpStream);
@@ -116,7 +116,20 @@ namespace lx0 { namespace core {
                 return false;
         }
 
-        
+        bool 
+        BaseParser::_consumeConditional (const char* pString)
+        {
+            auto len = strlen(pString);
+            if (strncmp(state().mpStream, pString, len) == 0)
+            {
+                while (len-- > 0)
+                    _advance();
+                return true;
+            }
+            else
+                return false;
+        }
+
         void            
         BaseParser::_skipWhitespace (void)
         {
@@ -371,6 +384,10 @@ namespace lx0 { namespace core {
             {
                 if (strchr("0123456789.-", _peek()))
                     r = _readNumber();
+                else if (_consumeConditional("true"))
+                    r = true;
+                else if (_consumeConditional("false"))
+                    r = false;
                 else if (_peekLxNamedMap())
                     r = _readLxNamedMap();
                 else

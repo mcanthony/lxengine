@@ -103,6 +103,7 @@ namespace lx0 { namespace core {
                 << "  <title>LxEngine log</title>"
                 << "  <style>"
                 << "  body { font-family: sans-serif; font-size: 9pt; }" << std:: endl
+                << "  li { white-space: pre; font-family: monospace; }" << std::endl
                 << "  .prefix { font-size: 85%; font-variant: small-caps; float: left; width: 48px; padding-left: 26px; }" << std::endl
                 << "  .debug { color: gray; font-size: 70%; } " << std::endl
                 << "  .log { color: black; } " << std::endl

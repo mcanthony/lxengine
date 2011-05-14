@@ -1,0 +1,87 @@
+<Document>
+    <Library>
+        <Camera id="camera">
+        {
+            position : [ 2.1, 2.1, 1.4 ],
+            look_at  : [ .5, .5, .5 ]
+        }
+        </Camera>
+      <View id="view">
+        {
+            camera : "camera"
+        }
+      </View>
+      <Material id="custom">
+        {
+        diffuse : [ 1, 1, .9 ],
+        specular : [ .5, .5, 1 ],
+        specular_n : 512
+        }
+      </Material>
+      <Material id="red">
+        {
+        diffuse : [ 1, 0, 0],
+        }
+      </Material>
+      <Material id="green">
+        {
+        diffuse : [ 0, 1, 0]
+        }
+      </Material>
+      <Material id="blue">
+        {
+        diffuse : [ 0, 0, 1]
+        }
+      </Material>      
+    </Library>
+    <Scene view="view">
+      <Environment>
+        {
+          shadows : true,
+        }
+      </Environment>
+      <Group id="light_group">
+        <Light>
+          {
+            position : [ 2, 2.2, 4 ],
+            color    : [ 1, 1, 1 ]
+          }
+        </Light>
+        <Light>
+          {
+          position : [ 3, 3, .25 ],
+          color    : [ .6, .6, .2 ]
+          }
+        </Light>
+      </Group>
+        <Group id="plane_group">
+            <Plane id="x_axis_plane" material="red">
+            {
+                normal : [ 1, 0, 0 ],
+                d      : 0
+            }
+            </Plane>
+            <Plane id="y_axis_plane" material="green">
+            {
+                normal : [ 0, 1, 0 ],
+                d      : 0
+            }
+            </Plane>
+            <Plane id="z_axis_plane" material="blue">
+            {
+                normal : [ 0, 0, 1 ],
+                d      : 0
+            }
+            </Plane>
+        </Group>
+        <Group id="geometry">
+          <Cylinder material="custom">
+            {
+              base : [ 0, .75, .75 ],
+              radius : .5,
+              axis : [ 1, 0, 0 ]
+            }
+          </Cylinder>
+        </Group>
+    </Scene>
+</Document>

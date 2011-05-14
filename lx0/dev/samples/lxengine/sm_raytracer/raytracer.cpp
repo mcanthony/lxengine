@@ -173,6 +173,14 @@ public:
     camera3f camera;
 };
 
+class Environment : public Element::Component
+{
+public:
+    Environment() : shadows (true) {}
+
+    bool    shadows;
+};
+
 class Material 
     : public Element::Component
     , public material_phong_f           // Multiple inheritance of classes without virtual methods is ok
@@ -252,6 +260,18 @@ protected:
     }
 };
 
+class Cylinder : public Geometry
+{
+public:
+    glgeom::cylinder3f geom;
+
+protected:
+    virtual bool _intersect (const ray3f& ray, intersection3f& isect) 
+    {
+        return  glgeom::intersect(ray, geom, isect);
+    }
+};
+
 class Light 
     : public Element::Component
     , public point_light_f
@@ -315,6 +335,8 @@ class RayTracer : public Document::Component
 public: 
     RayTracer()
     {
+        mspEnvironment.reset(new Environment);
+
         mUpdateQueue.push_back([&]() { return _init(), true; });
         
         mHandlers.insert(std::make_pair("Plane", [&](ElementPtr spElem) {
@@ -353,6 +375,18 @@ public:
             spElem->attachComponent("raytrace", spComp);
         }));
 
+        mHandlers.insert(std::make_pair("Cylinder", [&](ElementPtr spElem) {
+            auto pGeom = new Cylinder;
+            pGeom->geom.base = spElem->value().find("base").convert();
+            pGeom->geom.radius = spElem->value().find("radius").convert();
+            pGeom->geom.axis = spElem->value().find("axis").convert();
+            pGeom->setMaterial(spElem, spElem->attr("material").query(""));
+
+            std::shared_ptr<Cylinder> spComp(pGeom);
+            mGeometry.push_back(spComp);
+            spElem->attachComponent("raytrace", spComp);
+        }));
+
         mHandlers.insert(std::make_pair("Material", [&](ElementPtr spElem) {
             auto pMat = new Material;
             pMat->emmissive = spElem->value().find("emmissive").convert(color3f(0, 0, 0));
@@ -381,6 +415,10 @@ public:
                 pCam->camera.orientation = orientation_from_to_up(pCam->camera.position, target, vector3f(0, 0, 1));
                 mCamera = std::shared_ptr<Camera>(pCam);
             }
+        }));
+
+        mHandlers.insert(std::make_pair("Environment", [&](ElementPtr spElem) {
+            mspEnvironment->shadows = spElem->value().find("shadows").query(true);
         }));
     }
 
@@ -468,18 +506,23 @@ public:
 
     bool _shadowTerm (const point_light_f& light, const intersection3f& intersection)
     {
-        const vector3f L     (light.position - intersection.position);
-        const float    distL (length(L));
-        const vector3f Ln    (L / distL);
-        const ray3f    ray   (intersection.position + 1e-3f * Ln, Ln);
-                
-        for (auto it = mGeometry.begin(); it != mGeometry.end(); ++it)
+        if (mspEnvironment->shadows)
         {
-            intersection3f isect;
-            if ((*it)->intersect(ray, isect) && isect.distance < distL)
-                return true;
+            const vector3f L     (light.position - intersection.position);
+            const float    distL (length(L));
+            const vector3f Ln    (L / distL);
+            const ray3f    ray   (intersection.position + 1e-3f * Ln, Ln);
+                
+            for (auto it = mGeometry.begin(); it != mGeometry.end(); ++it)
+            {
+                intersection3f isect;
+                if ((*it)->intersect(ray, isect) && isect.distance < distL)
+                    return true;
+            }
+            return false;
         }
-        return false;
+        else
+            return false;
     }
 
     color3f _trace (int x, int y)
@@ -547,6 +590,7 @@ protected:
     std::deque<std::function<bool (void)>>  mUpdateQueue;
 
     unsigned int                            mRenderTime;
+    std::shared_ptr<Environment>            mspEnvironment;
     std::shared_ptr<Camera>                 mCamera;
     std::vector<std::shared_ptr<Geometry>>  mGeometry;
     std::vector<LightPtr>                   mLights;

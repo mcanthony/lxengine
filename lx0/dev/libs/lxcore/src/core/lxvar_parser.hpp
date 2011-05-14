@@ -44,6 +44,7 @@ namespace lx0 { namespace core { namespace detail {
         char            _advance            (void);
         void            _consume            (char c);
         bool            _consumeConditional (char c);
+        bool            _consumeConditional (const char* pString);
         void            _skipWhitespace     (void);
 
         void            _pushState          (void);
