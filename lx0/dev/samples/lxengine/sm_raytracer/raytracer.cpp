@@ -176,9 +176,13 @@ public:
 class Environment : public Element::Component
 {
 public:
-    Environment() : shadows (true) {}
+    Environment() 
+        : ambient (0.0f, 0.005f, 0.02f) 
+        , shadows (true) 
+    {}
 
-    bool    shadows;
+    color3f     ambient;
+    bool        shadows;
 };
 
 class Material 
@@ -551,6 +555,8 @@ public:
 
     color3f _trace (int x, int y)
     {
+        const auto& env = *mspEnvironment;
+
         if (x == 0 && y % 4 == 0)
             std::cout << "Tracing row " << y << "..." << std::endl;
         
@@ -584,12 +590,12 @@ public:
             material_phong_f defaultMaterial;
             const material_phong_f& mat( spGeom->mspMaterial ? *spGeom->mspMaterial : defaultMaterial);
 
-            c = mat.emmissive;
+            c = mat.emmissive + env.ambient * mat.ambient;
             for (auto it = mLights.begin(); it != mLights.end(); ++it)
             {
                 if (!_shadowTerm(*(*it), intersection))
                     c += shade(*(*it), mat, intersection);
-            }         
+            }
         }
         else
             c *= .5f;
