@@ -236,6 +236,18 @@ protected:
     }
 };
 
+class Cube : public Geometry
+{
+public:
+    glgeom::cube3f geom;
+
+protected:
+    virtual bool _intersect (const ray3f& ray, intersection3f& isect) 
+    {
+        return  glgeom::intersect(ray, geom, isect);
+    }
+};
+
 class Sphere : public Geometry
 {
 public:
@@ -338,7 +350,7 @@ public:
         mspEnvironment.reset(new Environment);
 
         mUpdateQueue.push_back([&]() { return _init(), true; });
-        
+
         mHandlers.insert(std::make_pair("Plane", [&](ElementPtr spElem) {
             auto pGeom = new Plane;
             pGeom->geom.normal = spElem->value().find("normal").convert();
@@ -354,7 +366,7 @@ public:
         mHandlers.insert(std::make_pair("Sphere", [&](ElementPtr spElem) {
             auto pGeom = new Sphere;
             pGeom->geom.center = spElem->value().find("center").convert();
-            pGeom->geom.radius = spElem->value().find("radius").convert();
+            pGeom->geom.radius = spElem->value().find("radius").convert(.5f);
 
             pGeom->setMaterial(spElem, spElem->attr("material").query(""));
             
@@ -385,6 +397,18 @@ public:
             std::shared_ptr<Cylinder> spComp(pGeom);
             mGeometry.push_back(spComp);
             spElem->attachComponent("raytrace", spComp);
+        }));
+
+        mHandlers.insert(std::make_pair("Cube", [&](ElementPtr spElem) {
+                auto pGeom = new Cube;
+                pGeom->geom.center = spElem->value().find("center").convert(point3f(0, 0, 0));
+                pGeom->geom.scale  = spElem->value().find("scale").convert(vector3f(1, 1, 1));
+                
+                pGeom->setMaterial(spElem, spElem->attr("material").query(""));
+                
+                std::shared_ptr<Cube> spComp(pGeom);
+                mGeometry.push_back(spComp);
+                spElem->attachComponent("raytrace", spComp);
         }));
 
         mHandlers.insert(std::make_pair("Material", [&](ElementPtr spElem) {
