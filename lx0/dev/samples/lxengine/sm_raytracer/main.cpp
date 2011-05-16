@@ -63,7 +63,7 @@
 #include "viewer.hpp"
 
 using namespace lx0::core;
-using namespace lx0::canvas::platform;
+using namespace lx0;
 using namespace glgeom;
 
 //===========================================================================//

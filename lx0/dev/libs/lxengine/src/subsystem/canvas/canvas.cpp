@@ -45,7 +45,7 @@ using namespace lx0::core;
 #define m_hDC  reinterpret_cast<HDC&>(m_opaque_hDC)
 #define m_hRC  reinterpret_cast<HGLRC&>(m_opaque_hRC)
 
-namespace lx0 { namespace canvas { namespace platform {
+namespace lx0 { namespace subsystem { namespace canvas_ns { namespace detail {
 
     //===========================================================================//
 
@@ -697,5 +697,5 @@ namespace lx0 { namespace canvas { namespace platform {
         ::PostQuitMessage(0);
     }
 
-}}}
+}}}}
 

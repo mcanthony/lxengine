@@ -51,8 +51,8 @@
 
 #include "viewer.hpp"
 
+using namespace lx0;
 using namespace lx0::core;
-using namespace lx0::canvas::platform;
 
 #include "raytracer.hpp"
 

@@ -52,8 +52,8 @@
 #include <windows.h>        // Unfortunately must be included on Windows for GL.h to work
 #include <gl/GL.h>
 
+using namespace lx0;
 using namespace lx0::core;
-using namespace lx0::canvas::platform;
 
 //===========================================================================//
 

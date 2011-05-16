@@ -27,17 +27,7 @@
 */
 //===========================================================================//
 
-/*!
-   \mainpage
 
-   The LxCanvas project is a lightweight, minimal library for producing a 
-   cross-platform window for hardware accelerated rendering. 
-
-   LxCanvas does not intend to be a full fledged GUI toolkit, but rather an
-   easy-to-use alternative when only OpenGL rendering is required.
-
-   In its current form, the class is Windows-only.
- */
 
 #pragma once
 
@@ -45,319 +35,356 @@
 #include <map>
 #include <string>
 
-namespace lx0 { namespace canvas {
+namespace lx0 { 
+    
+    namespace subsystem {
 
-    namespace platform {
+        /*!
+           \defgroup lx0_subsystem_canvas lx0_subsystem_canvas
+           \ingroup Subsystem
 
-        class Win32WindowClass;
+           The LxCanvas project is a lightweight, minimal library for producing a 
+           cross-platform window for hardware accelerated rendering. 
 
-        enum KeyCodes
+           LxCanvas does not intend to be a full fledged GUI toolkit, but rather an
+           easy-to-use alternative when only OpenGL rendering is required.
+
+           In its current form, the class is Windows-only.
+         */
+        namespace canvas_ns 
         {
-            KC_UNASSIGNED = 0,
-
-            KC_1,
-            KC_2,
-            KC_3,
-            KC_4,
-            KC_5,
-            KC_6,
-            KC_7,
-            KC_8,
-            KC_9,
-            KC_0,
-
-		    KC_A,
-            KC_B,
-            KC_C,
-            KC_D,
-            KC_E,
-            KC_F,
-            KC_G,
-            KC_H,
-            KC_I,
-            KC_J,
-            KC_K,
-            KC_L,
-            KC_M,
-            KC_N,
-            KC_O,
-            KC_P,
-            KC_Q,
-            KC_R,
-            KC_S,
-            KC_T,
-            KC_U,
-            KC_V,
-            KC_W,
-            KC_X,
-            KC_Y,
-            KC_Z,
-
-            KC_ESCAPE,
-            KC_SPACE,
-
-            KC_COUNT
-        };
-
-        /// WIP class
-        class KeyModifiers
-        {
-        public:
-            KeyModifiers() : packed (0) {}
-            union
+            //! \ingroup lx0_subsystem_canvas
+            enum KeyCodes
             {
-                struct 
-                {
-                    unsigned    ctrl    : 1;
-                    unsigned    rctrl   : 1;
-                    unsigned    lctrl   : 1;
-                    unsigned    alt     : 1;
-                    unsigned    ralt    : 1;
-                    unsigned    lalt    : 1;
-                    unsigned    shift   : 1;
-                    unsigned    rshift  : 1;
-                    unsigned    lshift  : 1;
-                };
-                unsigned int    packed;
+                KC_UNASSIGNED = 0,
+
+                KC_1,
+                KC_2,
+                KC_3,
+                KC_4,
+                KC_5,
+                KC_6,
+                KC_7,
+                KC_8,
+                KC_9,
+                KC_0,
+
+		        KC_A,
+                KC_B,
+                KC_C,
+                KC_D,
+                KC_E,
+                KC_F,
+                KC_G,
+                KC_H,
+                KC_I,
+                KC_J,
+                KC_K,
+                KC_L,
+                KC_M,
+                KC_N,
+                KC_O,
+                KC_P,
+                KC_Q,
+                KC_R,
+                KC_S,
+                KC_T,
+                KC_U,
+                KC_V,
+                KC_W,
+                KC_X,
+                KC_Y,
+                KC_Z,
+
+                KC_ESCAPE,
+                KC_SPACE,
+
+                KC_COUNT
             };
-        };
 
-        class KeyboardState
-        {
-        public:
-            KeyboardState();
-
-            KeyModifiers    modifers;
-            bool            bDown[KC_COUNT];
-        };
-
-        /// WIP class
-        class MouseState
-        {
-        public:
-            MouseState()
-                : x (0)
-                , y (0)
-                , previousX(0)
-                , previousY (0)
+            namespace detail 
             {
-            }
 
-            int             deltaX      (void)      const { return x - previousX; }
-            int             deltaY      (void)      const { return y - previousY; }
+                class Win32WindowClass;
 
-            int x, y;
-            int previousX, previousY;
-        };
+                //! \ingroup lx0_subsystem_canvas
+                /// WIP class
+                class KeyModifiers
+                {
+                public:
+                    KeyModifiers() : packed (0) {}
+                    union
+                    {
+                        struct 
+                        {
+                            unsigned    ctrl    : 1;
+                            unsigned    rctrl   : 1;
+                            unsigned    lctrl   : 1;
+                            unsigned    alt     : 1;
+                            unsigned    ralt    : 1;
+                            unsigned    lalt    : 1;
+                            unsigned    shift   : 1;
+                            unsigned    rshift  : 1;
+                            unsigned    lshift  : 1;
+                        };
+                        unsigned int    packed;
+                    };
+                };
 
-        /// WIP class
-        class ButtonState
-        {
-        public:
-            ButtonState()
-                : bDown     (false)
-                , bDragging (false)
-                , startX    (0)
-                , startY    (0)
-            {
-            }
+                //! \ingroup lx0_subsystem_canvas
+                class KeyboardState
+                {
+                public:
+                    KeyboardState();
 
-            bool            bDown;   
-            bool            bDragging;              // Indicates the mouse has moved since the button was initially depressed
-            int             startX, startY;         // drag starting point
-        };
+                    KeyModifiers    modifers;
+                    bool            bDown[KC_COUNT];
+                };
 
-        //===========================================================================//
-        //! Base class for a Lx Canvas Window
-        /*!
-            Base window class intended to provide an easy to use wrapper on the Win32 windowing
-            APIs.  This is not intended to provide a full GUI system but rather a host window for
-            graphical windows such an OpenGL, DirectX, Direct2D, or other direct rendering
-            Win32 technologies.
+                //! \ingroup lx0_subsystem_canvas
+                /// WIP class
+                class MouseState
+                {
+                public:
+                    MouseState()
+                        : x (0)
+                        , y (0)
+                        , previousX(0)
+                        , previousY (0)
+                    {
+                    }
 
-            This is primarily done via translating the "Window Procedure" (WNDPROC) into a 
-            series of virtual method calls that derived class can implement along with a 
-            slot/signal event mechanism for external code to hook into.   The general pattern is
-            this:
+                    int             deltaX      (void)      const { return x - previousX; }
+                    int             deltaY      (void)      const { return y - previousY; }
+
+                    int x, y;
+                    int previousX, previousY;
+                };
+
+                //! \ingroup lx0_subsystem_canvas
+                /// WIP class
+                class ButtonState
+                {
+                public:
+                    ButtonState()
+                        : bDown     (false)
+                        , bDragging (false)
+                        , startX    (0)
+                        , startY    (0)
+                    {
+                    }
+
+                    bool            bDown;   
+                    bool            bDragging;              // Indicates the mouse has moved since the button was initially depressed
+                    int             startX, startY;         // drag starting point
+                };
+
+                //===========================================================================//
+                //! Base class for a Lx Canvas Window
+                /*!
+                    \ingroup lx0_subsystem_canvas
+
+                    Base window class intended to provide an easy to use wrapper on the Win32 windowing
+                    APIs.  This is not intended to provide a full GUI system but rather a host window for
+                    graphical windows such an OpenGL, DirectX, Direct2D, or other direct rendering
+                    Win32 technologies.
+
+                    This is primarily done via translating the "Window Procedure" (WNDPROC) into a 
+                    series of virtual method calls that derived class can implement along with a 
+                    slot/signal event mechanism for external code to hook into.   The general pattern is
+                    this:
     
-            - CanvasBase's WNDPROC translates the Win32 data into more convenient form
-            - The "imp" method for the message is called.  If it return false, processing
-              stops here.
-            - The signal is emitted to any connected slots
+                    - CanvasBase's WNDPROC translates the Win32 data into more convenient form
+                    - The "imp" method for the message is called.  If it return false, processing
+                      stops here.
+                    - The signal is emitted to any connected slots
 
-            Derived classes can also use overrideParentWndProc() to handle message that the
-            base class does not provide wrappers for.
+                    Derived classes can also use overrideParentWndProc() to handle message that the
+                    base class does not provide wrappers for.
 
-            The chain of events is very simple:
-            - The WNDPROC is called
-            - The message handler in the WNDPROC
-                - Calls the imp() virtual function
-                    - If the imp() function return true, the message processing continues
-                    - The slot() for the given message is invoked
+                    The chain of events is very simple:
+                    - The WNDPROC is called
+                    - The message handler in the WNDPROC
+                        - Calls the imp() virtual function
+                            - If the imp() function return true, the message processing continues
+                            - The slot() for the given message is invoked
 
-            Therefore:
-            - To respond to an event, attach a slot handler
-            - To modify an event in a way that requires pre-processing before the handlers,
-              the derive a class and override the imp() method.  Be sure to call the parent
-              imp() as well.
-            - To respond to an entirely new type of event, derive a new class, 
-              register a new WNDPROC, implement the above pattern for that message by introducing
-              a new imp() and slot for the new message.  The new WNDPROC should call the base
-              WNDPROC to handle all the usual messages.
-         */
-        class CanvasBase
-        {
-        public:
-            ///@name Constructor / Destructor
-            ///@{
-                        CanvasBase     (void);
-                        ~CanvasBase    (void);
-            ///@}
+                    Therefore:
+                    - To respond to an event, attach a slot handler
+                    - To modify an event in a way that requires pre-processing before the handlers,
+                      the derive a class and override the imp() method.  Be sure to call the parent
+                      imp() as well.
+                    - To respond to an entirely new type of event, derive a new class, 
+                      register a new WNDPROC, implement the above pattern for that message by introducing
+                      a new imp() and slot for the new message.  The new WNDPROC should call the base
+                      WNDPROC to handle all the usual messages.
+                 */
+                class CanvasBase
+                {
+                public:
+                    ///@name Constructor / Destructor
+                    ///@{
+                                CanvasBase     (void);
+                                ~CanvasBase    (void);
+                    ///@}
                 
-            ///@name Window Functions
-            ///@{
-            size_t      handle              (void);
-            void        show                (void);
-            void        invalidate          (void);
-            void        destroy             (void);
-            ///@} 
+                    ///@name Window Functions
+                    ///@{
+                    size_t      handle              (void);
+                    void        show                (void);
+                    void        invalidate          (void);
+                    void        destroy             (void);
+                    ///@} 
 
-            ///@name Window State
-            ///@{
-            bool                    isActive    (void) const;
-            bool                    isVisible   (void) const;
+                    ///@name Window State
+                    ///@{
+                    bool                    isActive    (void) const;
+                    bool                    isVisible   (void) const;
 
-            const KeyboardState&    keyboard    (void) const;    
-            ///@}
+                    const KeyboardState&    keyboard    (void) const;    
+                    ///@}
 
-            ///@name Event Signals
-            ///@{
-            lx0::core::slot<void()>             slotCreate;
-            lx0::core::slot<void()>             slotDestroy;
-            lx0::core::slot<void(bool)>         slotActivate;
-            lx0::core::slot<void()>             slotClose;
-            lx0::core::slot<void(int, int)>     slotResize;
-            lx0::core::slot<void()>             slotRedraw;
+                    ///@name Event Signals
+                    ///@{
+                    lx0::core::slot<void()>             slotCreate;
+                    lx0::core::slot<void()>             slotDestroy;
+                    lx0::core::slot<void(bool)>         slotActivate;
+                    lx0::core::slot<void()>             slotClose;
+                    lx0::core::slot<void(int, int)>     slotResize;
+                    lx0::core::slot<void()>             slotRedraw;
 
-            lx0::core::slot<void(unsigned int)> slotKeyDown;
-            lx0::core::slot<void(unsigned int)> slotKeyUp;
+                    lx0::core::slot<void(unsigned int)> slotKeyDown;
+                    lx0::core::slot<void(unsigned int)> slotKeyUp;
 
 
-            lx0::core::slot<void(int, int)>                                            slotMouseMove;
-            lx0::core::slot<void(const MouseState&, const ButtonState&, KeyModifiers)> slotLMouseClick;
-            lx0::core::slot<void(const MouseState&, const ButtonState&, KeyModifiers)> slotMMouseClick;
-            lx0::core::slot<void(const MouseState&, const ButtonState&, KeyModifiers)> slotRMouseClick;
-            lx0::core::slot<void(const MouseState&, int)>                              slotMouseWheel;
-            lx0::core::slot<void(const MouseState&, const ButtonState&, KeyModifiers)> slotLMouseDrag;
-            lx0::core::slot<void(const MouseState&, const ButtonState&, KeyModifiers)> slotMMouseDrag;
-            lx0::core::slot<void(const MouseState&, const ButtonState&, KeyModifiers)> slotRMouseDrag;
-            ///@}
+                    lx0::core::slot<void(int, int)>                                            slotMouseMove;
+                    lx0::core::slot<void(const MouseState&, const ButtonState&, KeyModifiers)> slotLMouseClick;
+                    lx0::core::slot<void(const MouseState&, const ButtonState&, KeyModifiers)> slotMMouseClick;
+                    lx0::core::slot<void(const MouseState&, const ButtonState&, KeyModifiers)> slotRMouseClick;
+                    lx0::core::slot<void(const MouseState&, int)>                              slotMouseWheel;
+                    lx0::core::slot<void(const MouseState&, const ButtonState&, KeyModifiers)> slotLMouseDrag;
+                    lx0::core::slot<void(const MouseState&, const ButtonState&, KeyModifiers)> slotMMouseDrag;
+                    lx0::core::slot<void(const MouseState&, const ButtonState&, KeyModifiers)> slotRMouseDrag;
+                    ///@}
 
                 
-        protected:
-            ///@name Event handlers for derived classes
-            ///
-            /// Guarentees the derived class a first chance at handling the event before the
-            /// public signal is sent out.
-            ///
-            ///@{
-            virtual void    impCreate   (void)                      {}
-            virtual void    impDestroy  (void)                      {}
-            virtual bool    impResize   (int iWidth, int iHeight)   { return true; }
-            virtual bool    impClose    (void)                      { return true; }
-            virtual bool    impRedraw   (void)                      { return true; }
-            virtual bool    impKeyDown  (unsigned int keyCode)      { return true; }
-            virtual bool    impKeyUp    (unsigned int keyCode)      { return true; }
+                protected:
+                    ///@name Event handlers for derived classes
+                    ///
+                    /// Guarentees the derived class a first chance at handling the event before the
+                    /// public signal is sent out.
+                    ///
+                    ///@{
+                    virtual void    impCreate   (void)                      {}
+                    virtual void    impDestroy  (void)                      {}
+                    virtual bool    impResize   (int iWidth, int iHeight)   { return true; }
+                    virtual bool    impClose    (void)                      { return true; }
+                    virtual bool    impRedraw   (void)                      { return true; }
+                    virtual bool    impKeyDown  (unsigned int keyCode)      { return true; }
+                    virtual bool    impKeyUp    (unsigned int keyCode)      { return true; }
     
-            virtual bool    impMouseWheel   (const MouseState&, int delta)                            { return true; }
-            virtual bool    impLMouseClick  (const MouseState&, const ButtonState&, KeyModifiers)     { return true; }
-            virtual bool    impMMouseClick  (const MouseState&, const ButtonState&, KeyModifiers)     { return true; }
-            virtual bool    impRMouseClick  (const MouseState&, const ButtonState&, KeyModifiers)     { return true; }
-            virtual bool    impLMouseDrag   (const MouseState&, const ButtonState&, KeyModifiers)     { return true; }
-            virtual bool    impMMouseDrag   (const MouseState&, const ButtonState&, KeyModifiers)     { return true; }
-            virtual bool    impRMouseDrag   (const MouseState&, const ButtonState&, KeyModifiers)     { return true; }
-            ///@}
+                    virtual bool    impMouseWheel   (const MouseState&, int delta)                            { return true; }
+                    virtual bool    impLMouseClick  (const MouseState&, const ButtonState&, KeyModifiers)     { return true; }
+                    virtual bool    impMMouseClick  (const MouseState&, const ButtonState&, KeyModifiers)     { return true; }
+                    virtual bool    impRMouseClick  (const MouseState&, const ButtonState&, KeyModifiers)     { return true; }
+                    virtual bool    impLMouseDrag   (const MouseState&, const ButtonState&, KeyModifiers)     { return true; }
+                    virtual bool    impMMouseDrag   (const MouseState&, const ButtonState&, KeyModifiers)     { return true; }
+                    virtual bool    impRMouseDrag   (const MouseState&, const ButtonState&, KeyModifiers)     { return true; }
+                    ///@}
 
-            //@name Low-level override of the WNDPROC
-            //@{
-            void            overrideParentWndProc   (void* wndProc);
-            //@}
+                    //@name Low-level override of the WNDPROC
+                    //@{
+                    void            overrideParentWndProc   (void* wndProc);
+                    //@}
 
-            static int __stdcall windowProc(void* hWnd, unsigned int uMsg, unsigned int* wParam, long* lParam );
-            static Win32WindowClass s_windowClass;
+                    static int __stdcall windowProc(void* hWnd, unsigned int uMsg, unsigned int* wParam, long* lParam );
+                    static Win32WindowClass s_windowClass;
 
-            void*           mOpaqueHwnd;;
+                    void*           mOpaqueHwnd;;
 
-            KeyboardState   mKeyboard;
-            MouseState      mMouse;
-            ButtonState     mLButton;
-            ButtonState     mMButton;
-            ButtonState     mRButton;
-        };
+                    KeyboardState   mKeyboard;
+                    MouseState      mMouse;
+                    ButtonState     mLButton;
+                    ButtonState     mMButton;
+                    ButtonState     mRButton;
+                };
 
 
 
-        //===========================================================================//
-        //! Canvas window that create an OpenGL context
-        /*!
-            Further documentation TBD.
-         */
-        class CanvasGL : public CanvasBase
-        {
-        public:
+                //===========================================================================//
+                //! Canvas window that create an OpenGL context
+                /*!
+                    \ingroup lx0_subsystem_canvas
+                    
+                    Further documentation TBD.
+                 */
+                class CanvasGL : public CanvasBase
+                {
+                public:
     
-            //@name Constructor / Destructor
-            //@{
-            CanvasGL  (const char* pszTitle, int x, int y, int w, int h, bool bResizeable);
-            ~CanvasGL (void);
-            //@}
+                    //@name Constructor / Destructor
+                    //@{
+                    CanvasGL  (const char* pszTitle, int x, int y, int w, int h, bool bResizeable);
+                    ~CanvasGL (void);
+                    //@}
 
-            //@name Window Functions
-            //@{
-            //@}
+                    //@name Window Functions
+                    //@{
+                    //@}
 
-        protected:
+                protected:
 
-            //! Custom WNDPROC
-            static int __stdcall windowProc(void* hWnd, unsigned int uMsg, unsigned int* wParam, long* lParam );
+                    //! Custom WNDPROC
+                    static int __stdcall windowProc(void* hWnd, unsigned int uMsg, unsigned int* wParam, long* lParam );
    
-            //@name Event Handlers
-            //@{
-            virtual void impCreate();
-            virtual void impDestroy();   
-            virtual bool impRedraw();
-            virtual bool impResize(int width, int height);
-            //@}
+                    //@name Event Handlers
+                    //@{
+                    virtual void impCreate();
+                    virtual void impDestroy();   
+                    virtual bool impRedraw();
+                    virtual bool impResize(int width, int height);
+                    //@}
 
 
-        private:
-            void    createGlContext     (void);
-            void    destroyGlContext    (void);
+                private:
+                    void    createGlContext     (void);
+                    void    destroyGlContext    (void);
     
-            void*   m_opaque_hDC;   //!< Handle to Device Context
-            void*   m_opaque_hRC;   //!< Handle to OpenGL Rendering Context
-        };
+                    void*   m_opaque_hDC;   //!< Handle to Device Context
+                    void*   m_opaque_hRC;   //!< Handle to OpenGL Rendering Context
+                };
 
 
-        //===========================================================================//
-        //!
-        /*!
-         */
-        class CanvasHost
-        {
-        public:
-            void                create          (CanvasBase* pWin, const char* id, bool bVisible);
-            bool                processEvents   (void);
-            void                shutdown        (void);
+                //===========================================================================//
+                //!
+                /*!
+                    \ingroup lx0_subsystem_canvas
+                 */
+                class CanvasHost
+                {
+                public:
+                    void                create          (CanvasBase* pWin, const char* id, bool bVisible);
+                    bool                processEvents   (void);
+                    void                shutdown        (void);
 
-        protected:
-            void                destroyWindows  (void);
+                protected:
+                    void                destroyWindows  (void);
 
-            typedef std::map<std::string, CanvasBase*> WindowMap;
-            WindowMap   m_windows;
-        };
+                    typedef std::map<std::string, CanvasBase*> WindowMap;
+                    WindowMap   m_windows;
+                };
 
-    } // namespace platform
+            } // namespace detail
 
+            using detail::CanvasGL;
+            using detail::CanvasHost;
 
-}} // namespace lx0::canvas
+            using detail::MouseState;
+            using detail::ButtonState;
+            using detail::KeyboardState;
+            using detail::KeyModifiers;
+        }
+    }
+
+    using namespace lx0::subsystem::canvas_ns;
+} 
