@@ -53,11 +53,11 @@
     \defgroup Core
 */
 /*!
-    \defgroup lx0_core_slot lx0_core_slot
+    \defgroup lx0_core_slot slots
     \ingroup Core
  */
 /*!
-    \defgroup lx0_core_lxvar lx0_core_lxvar
+    \defgroup lx0_core_lxvar lxvar
     \ingroup Core
  */
 
@@ -68,7 +68,7 @@
     \defgroup Engine
 */
 /*!
-    \defgroup lx0_engine_dom lx0_engine_dom
+    \defgroup lx0_engine_dom DOM
     \ingroup Engine
  */
 

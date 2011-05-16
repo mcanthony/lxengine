@@ -37,7 +37,7 @@
 #include <lx0/prototype/prototype.hpp>
 #include <lx0/core/util/util.hpp>
 #include "glrasterizer.hpp"
-#include <lx0/subsystems/rasterizer.hpp>
+#include <lx0/subsystem/rasterizer.hpp>
 
 using namespace lx0::subsystem::rasterizer;
 

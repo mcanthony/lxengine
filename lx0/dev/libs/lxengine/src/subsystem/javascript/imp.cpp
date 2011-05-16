@@ -53,7 +53,7 @@ using namespace lx0::util;
 //   I M P L E M E N T A T I O N 
 //===========================================================================//
 
-namespace lx0 { namespace subsystems { namespace javascript {
+namespace lx0 { namespace subsystem { namespace javascript_ns { namespace detail {
 
     using v8::Object;
 
@@ -1196,7 +1196,7 @@ namespace lx0 { namespace subsystems { namespace javascript {
         mContext->Global()->Set(String::New("Math"), obj);
     }
 
-}}}
+}}}}
 
 //===========================================================================//
 //   Engine class
@@ -1204,7 +1204,7 @@ namespace lx0 { namespace subsystems { namespace javascript {
 
 namespace lx0 { namespace core { 
 
-    using namespace lx0::subsystems::javascript;
+    using namespace lx0::subsystem::javascript_ns::detail;
 
      void
      Engine::_attachJavascript (void)
@@ -1224,7 +1224,7 @@ namespace lx0 { namespace core {
         This needs to be refactored so that the Javascript Subsystem is not part
         of LxEngine directly.
 
-        #include <lxengine/subsystems/javascript.hpp>
+        #include <lxengine/subsystem/javascript.hpp>
 
         spDocument->getComponent<JavascriptDoc>("_js")->runJavascript(source);
      */

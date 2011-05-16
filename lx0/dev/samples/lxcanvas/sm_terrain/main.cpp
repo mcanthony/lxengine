@@ -66,7 +66,7 @@
 #include <lx0/engine/document.hpp>
 #include <lx0/engine/element.hpp>
 #include <lx0/blendreader/blendreader.hpp>
-#include <lx0/subsystems/rasterizer.hpp>
+#include <lx0/subsystem/rasterizer.hpp>
 
 #include "main.hpp"
 #include "terrain.hpp"

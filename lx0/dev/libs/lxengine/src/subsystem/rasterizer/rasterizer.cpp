@@ -26,17 +26,21 @@
 */
 //===========================================================================//
 
-#pragma once
+#include <lx0/engine/engine.hpp>
+#include <lx0/subsystem/rasterizer.hpp>
 
-#include <lx0/engine/document.hpp>
+using namespace lx0::core;
 
 namespace lx0 { 
 
-    class IJavascript : public lx0::core::Document::Component
+    class RasterizerImp : public IRasterizer
     {
     public:
-        virtual void run (const std::string& source) = 0;
     };
 
-    IJavascript* createIJavascript();
+    IRasterizer* createIRasterizer()
+    {
+        return new RasterizerImp;
+    }
+
 }

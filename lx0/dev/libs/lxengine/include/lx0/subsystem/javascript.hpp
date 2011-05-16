@@ -26,32 +26,29 @@
 */
 //===========================================================================//
 
-#include <lx0/engine/engine.hpp>
-#include <lx0/subsystems/javascript.hpp>
+#pragma once
 
-using namespace lx0::core;
+#include <lx0/engine/document.hpp>
 
-namespace lx0 { 
-
-    class DocImp : public IJavascript
+namespace lx0 
+{
+    namespace subsystem
     {
-    public:
-        virtual void    onAttached          (DocumentPtr spDocument) 
+         /*!
+            \defgroup lx0_subsystem_javascript lx0_subsystem_javascript
+            \ingroup Subsystem
+         */
+        namespace javascript_ns
         {
-            mpDocument = spDocument.get();
+            class IJavascript : public lx0::core::Document::Component
+            {
+            public:
+                virtual void run (const std::string& source) = 0;
+            };
+
+            IJavascript* createIJavascript();
         }
-
-        virtual void run  (const std::string& source)
-        {
-            Engine::acquire()->workaround_runJavascript(mpDocument->shared_from_this(), source);
-        }
-
-        Document* mpDocument;
-    };
-
-    IJavascript* createIJavascript()
-    {
-        return new DocImp;
     }
 
+    using namespace lx0::subsystem::javascript_ns;
 }

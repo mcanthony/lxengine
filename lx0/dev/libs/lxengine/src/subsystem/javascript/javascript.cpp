@@ -27,20 +27,31 @@
 //===========================================================================//
 
 #include <lx0/engine/engine.hpp>
-#include <lx0/subsystems/rasterizer.hpp>
+#include <lx0/subsystem/javascript.hpp>
 
 using namespace lx0::core;
 
-namespace lx0 { 
+namespace lx0 { namespace subsystem { namespace javascript_ns {
 
-    class RasterizerImp : public IRasterizer
+    class DocImp : public IJavascript
     {
     public:
+        virtual void    onAttached          (DocumentPtr spDocument) 
+        {
+            mpDocument = spDocument.get();
+        }
+
+        virtual void run  (const std::string& source)
+        {
+            Engine::acquire()->workaround_runJavascript(mpDocument->shared_from_this(), source);
+        }
+
+        Document* mpDocument;
     };
 
-    IRasterizer* createIRasterizer()
+    IJavascript* createIJavascript()
     {
-        return new RasterizerImp;
+        return new DocImp;
     }
 
-}
+}}}

@@ -53,7 +53,7 @@
 #include <lx0/engine/engine.hpp>
 #include <lx0/engine/document.hpp>
 #include <lx0/engine/element.hpp>
-#include <lx0/subsystems/javascript.hpp>
+#include <lx0/subsystem/javascript.hpp>
 #include <glgeom/prototype/image.hpp>
 
 #include <windows.h>

@@ -32,7 +32,7 @@
 #include <lx0/prototype/prototype.hpp>
 
 #include "main.hpp"
-#include <lx0/subsystems/rasterizer.hpp>
+#include <lx0/subsystem/rasterizer.hpp>
 
 namespace Terrain
 {
