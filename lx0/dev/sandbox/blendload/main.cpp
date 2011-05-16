@@ -43,13 +43,11 @@
 #include <iomanip>
 
 // Lx0 headers
-#include <lx0/core/core.hpp>
-#include <lx0/core/data/lxvar.hpp>
-#include <lx0/core/util/util.hpp>
-#include <lx0/blendreader/blendreader.hpp>
+#include <lx0/lxengine.hpp>
+#include <lx0/subsystem/blendreader.hpp>
 
 using namespace lx0::core;
-using namespace lx0::blendreader;
+using namespace lx0::subsystem::blendreader_ns;
 
 //===========================================================================//
 //   E N T R Y - P O I N T

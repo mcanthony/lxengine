@@ -41,9 +41,7 @@ set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${PROJECT_BINARY_DIR}")
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY "${PROJECT_BINARY_DIR}")
 
 # LxEngine
-include_directories( libs/lxcore/include )
 include_directories( libs/lxengine/include )
-include_directories( libs/lxblendreader/include )
 include_directories( libs/glgeom/include )
 
 # Boost
@@ -72,9 +70,7 @@ message(STATUS "CMAKE_EXE_LINKER_FLAGS=${CMAKE_EXE_LINKER_FLAGS}")
 #
 
 set( LX_ALL_LIBS 
-    lxcore
     lxengine
-    lxblendreader 
     ${OGRE_LIBRARIES} 
     ${V8_LIBS} 
     ${BULLET_LIBS} 
@@ -179,8 +175,6 @@ copy_media_directory( media/models )
 #
 
 #recurse_subdirectories(libs)
-add_subdirectory( libs/lxblendreader )
-add_subdirectory( libs/lxcore )
 add_subdirectory( libs/lxengine )
 add_subdirectory( libs/glgeom/unittest )
 add_subdirectory( libs/glgeom/benchmarks )

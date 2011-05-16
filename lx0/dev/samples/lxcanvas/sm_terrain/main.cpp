@@ -59,9 +59,8 @@
 #include <lx0/lxengine.hpp>
 #include <lx0/subsystem/rasterizer.hpp>
 #include <lx0/subsystem/canvas.hpp>
+#include <lx0/subsystem/blendreader.hpp>
 #include <lx0/prototype/misc.hpp>
-
-#include <lx0/blendreader/blendreader.hpp>
 
 #include "main.hpp"
 #include "terrain.hpp"
@@ -486,7 +485,7 @@ public:
     {
         if (!mspItem)
         {
-            lx0::blendreader::BlendReader reader;
+            lx0::BlendReader reader;
             reader.open("media2/models/unit_hemisphere-000.blend");
             
             auto meshBlocks = reader.getBlocksByType("Mesh");

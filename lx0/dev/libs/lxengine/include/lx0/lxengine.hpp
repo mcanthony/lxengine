@@ -32,6 +32,13 @@
 
 #include "lxengine_dox.hpp"
 
+enum 
+{ 
+    LXENGINE_VERSION_MAJOR = 0,
+    LXENGINE_VERSION_MINOR = 0,
+    LXENGINE_VERSION_REVISION = 1,
+};
+
 #include <lx0/core/core.hpp>
 #include <lx0/core/util/util.hpp>
 

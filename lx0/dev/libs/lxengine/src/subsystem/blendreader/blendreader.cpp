@@ -43,14 +43,12 @@
 #include <iomanip>
 
 // Lx0 headers
-#include <lx0/core/core.hpp>
-#include <lx0/core/data/lxvar.hpp>
-#include <lx0/core/util/util.hpp>
-#include <lx0/blendreader/blendreader.hpp>
+#include <lx0/lxengine.hpp>
+#include <lx0/subsystem/blendreader.hpp>
 
 using namespace lx0::core;
 
-namespace lx0 { namespace blendreader { 
+namespace lx0 { namespace subsystem { namespace blendreader_ns { 
 
     namespace io_util
     {
@@ -400,5 +398,5 @@ namespace lx0 { namespace blendreader {
         return mDNA.blockMap[type];
     }
 
-}}
+}}}
 

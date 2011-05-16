@@ -33,7 +33,6 @@
 #include <windows.h>
 #include <windowsx.h>
 
-#define GLEW_STATIC
 #include <gl/glew.h>
 #include <gl/wglew.h>
 #include <gl/GL.h>
