@@ -58,7 +58,7 @@
 
 #include <lx0/core/core.hpp>
 #include <lx0/core/util/util.hpp>
-#include <lx0/canvas/canvas.hpp>
+#include <lx0/subsystem/canvas.hpp>
 #include <lx0/prototype/misc.hpp>
 #include <lx0/engine/view.hpp>
 #include <lx0/engine/engine.hpp>

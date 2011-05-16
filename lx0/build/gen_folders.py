@@ -108,7 +108,6 @@ write_sln("lx0.sln", [
     "1. Libs", [
         "lxcore",
         "lxengine",
-        "lxcanvas",
         "lxblendreader",
     ],
     "2. Samples", [

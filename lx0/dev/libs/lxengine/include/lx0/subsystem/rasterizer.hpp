@@ -44,6 +44,7 @@ namespace lx0 {
 #include <list>
 #include <ctime>
 
+#define GLEW_STATIC
 #include <gl/glew.h>
 #include <windows.h>        // Unfortunately must be included on Windows for GL.h to work
 #include <gl/GL.h>

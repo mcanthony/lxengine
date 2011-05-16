@@ -45,8 +45,9 @@
 // Lx0 headers
 #include <lx0/core/core.hpp>
 #include <lx0/core/util/util.hpp>
-#include <lx0/canvas/canvas.hpp>
+#include <lx0/subsystem/canvas.hpp>
 
+#define GLEW_STATIC
 #include <gl/glew.h>
 #include <windows.h>        // Unfortunately must be included on Windows for GL.h to work
 #include <gl/GL.h>

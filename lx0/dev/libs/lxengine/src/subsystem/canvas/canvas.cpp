@@ -27,12 +27,13 @@
 */
 //===========================================================================//
 
-#include "lx0/canvas/canvas.hpp"
+#include "lx0/subsystem/canvas.hpp"
 #include "lx0/core/core.hpp"
 
 #include <windows.h>
 #include <windowsx.h>
 
+#define GLEW_STATIC
 #include <gl/glew.h>
 #include <gl/wglew.h>
 #include <gl/GL.h>

@@ -43,7 +43,6 @@ set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY "${PROJECT_BINARY_DIR}")
 # LxEngine
 include_directories( libs/lxcore/include )
 include_directories( libs/lxengine/include )
-include_directories( libs/lxcanvas/include )
 include_directories( libs/lxblendreader/include )
 include_directories( libs/glgeom/include )
 
@@ -52,7 +51,7 @@ include_directories(${Boost_INCLUDE_DIR})
 link_directories(${Boost_LIBRARY_DIRS})
 
 # Glew
-include_directories( ${CMAKE_SOURCE_DIR}/libs/lxcanvas/src/extern/glew )
+include_directories( ${CMAKE_SOURCE_DIR}/libs/lxengine/src/extern/glew )
 
 # OGRE
 message(STATUS "Ogre include dir: ${OGRE_INCLUDE_DIR}")
@@ -75,7 +74,6 @@ message(STATUS "CMAKE_EXE_LINKER_FLAGS=${CMAKE_EXE_LINKER_FLAGS}")
 set( LX_ALL_LIBS 
     lxcore
     lxengine
-    lxcanvas
     lxblendreader 
     ${OGRE_LIBRARIES} 
     ${V8_LIBS} 
@@ -182,7 +180,6 @@ copy_media_directory( media/models )
 
 #recurse_subdirectories(libs)
 add_subdirectory( libs/lxblendreader )
-add_subdirectory( libs/lxcanvas)
 add_subdirectory( libs/lxcore )
 add_subdirectory( libs/lxengine )
 add_subdirectory( libs/glgeom/unittest )
