@@ -28,7 +28,6 @@
 
 #pragma once
 
-#include <lx0/core/base/cast.hpp>
 #include <glgeom/glgeom.hpp>
 
 namespace lx0 { namespace core {    

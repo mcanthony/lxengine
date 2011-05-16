@@ -56,7 +56,6 @@
 #include <lx0/element.hpp>
 #include <lx0/mesh.hpp>
 #include <lx0/core/util/util.hpp>
-#include <lx0/core/base/cast.hpp>
 
 using namespace lx0::core;
 

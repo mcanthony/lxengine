@@ -52,7 +52,6 @@ namespace lx0
 }
 
 #include <lx0/core/base/base.hpp>
-#include <lx0/core/base/cast.hpp>
 
 #include <lx0/core/math/matrix4.hpp>
 
