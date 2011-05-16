@@ -56,17 +56,12 @@
 // Lx0 headers
 #include <glgeom/glgeom.hpp>
 
-#include <lx0/core/core.hpp>
-#include <lx0/core/util/util.hpp>
-
-#include <lx0/prototype/misc.hpp>
-#include <lx0/engine/view.hpp>
-#include <lx0/engine/engine.hpp>
-#include <lx0/engine/document.hpp>
-#include <lx0/engine/element.hpp>
-#include <lx0/blendreader/blendreader.hpp>
+#include <lx0/lxengine.hpp>
 #include <lx0/subsystem/rasterizer.hpp>
 #include <lx0/subsystem/canvas.hpp>
+#include <lx0/prototype/misc.hpp>
+
+#include <lx0/blendreader/blendreader.hpp>
 
 #include "main.hpp"
 #include "terrain.hpp"
