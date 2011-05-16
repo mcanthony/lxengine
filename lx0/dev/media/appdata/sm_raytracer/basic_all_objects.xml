@@ -1,0 +1,156 @@
+<Document>
+    <Library>
+        <Camera id="camera">
+        {
+            position : [ 4.25, 5.25, 3.25 ],
+            look_at  : [ 0.5, 2.5, 0 ]
+        }
+        </Camera>
+      <View id="view">
+        {
+            camera : "camera"
+        }
+      </View>
+      <Material id="white">
+        {
+          diffuse : [ 1, 1, 1 ],
+          specular : [ 1, 1, 1 ],
+          specular_n : 512
+        }
+      </Material>
+      <Material id="red">
+        {
+          diffuse : [ 1, 0, 0],
+        }
+      </Material>
+      <Material id="green">
+        {
+          diffuse : [ 0, 1, 0]
+        }
+      </Material>
+      <Material id="blue">
+        {
+          diffuse : [ 0, 0, 1]
+        }
+      </Material>
+    </Library>
+    <Scene view="view">
+      <Group id="light_group">
+        <Light>
+          {
+            position : [ 3, 2, 3 ],
+            color    : [ 1, .9, .9 ]
+          }
+        </Light>
+        <Light>
+          {
+          position : [ 2.1, 5, 6.2 ],
+          color    : [ 0.2, 0.2, 0.1 ]
+          }
+        </Light>
+      </Group>
+        <Group id="plane_group">
+            <Plane id="x_axis_plane" material="red">
+            {
+                normal : [ 1, 0, 0 ],
+                d      : 0
+            }
+            </Plane>
+            <Plane id="y_axis_plane" material="green">
+            {
+                normal : [ 0, 1, 0 ],
+                d      : 0
+            }
+            </Plane>
+            <Plane id="z_axis_plane" material="blue">
+            {
+                normal : [ 0, 0, 1 ],
+                d      : 0
+            }
+            </Plane>
+        </Group>
+        <Group id="sphere_group">
+            <Sphere material="white">
+            {
+                center : [ .6, .6, .6 ],
+                radius : .5
+            }
+            </Sphere>
+          <Cube>
+            {
+              center : [ .6, 1.8, .6 ],
+              scale : [ 1, 1, 1 ]
+            }
+          </Cube>
+          <Cylinder>
+            {
+              base : [ .6, 3.0, 0.0 ],
+              axis : [ 0, 0, 1],
+              radius : .5,
+            }
+          </Cylinder>
+          <Cone>
+            {
+              base : [ .6, 4.2, 0.0 ],
+              axis : [ 0, 0, 1],
+              radius : .5,
+            }
+          </Cone>
+
+          <Sphere material="white">
+            {
+            center : [ 1.8, .6, .6 ],
+            radius : .25
+            }
+          </Sphere>
+          <Cube>
+            {
+            center : [ 1.8, 1.8, .6 ],
+            scale : [ .5, .5, 1 ]
+            }
+          </Cube>
+          <Cylinder>
+            {
+            base : [ 1.8, 3.0, 0.0 ],
+            axis : [ 0, 0, 1],
+            radius : .25,
+            }
+          </Cylinder>
+          <Cone>
+            {
+            base : [ 1.8, 4.2, 0.0 ],
+            axis : [ 0, 0, 1],
+            radius : .25,
+            }
+          </Cone>
+
+          <Sphere material="white">
+            {
+            center : [ 3.0, .6, .6 ],
+            radius : .1
+            }
+          </Sphere>
+          <Cube>
+            {
+            center : [ 3.0, 1.8, .6 ],
+            scale : [ .2, .2, 1 ]
+            }
+          </Cube>
+          <Cylinder>
+            {
+            base : [ 3.0, 3.0, 0.0 ],
+            axis : [ 0, 0, 1],
+            radius : .1,
+            }
+          </Cylinder>
+          <Cone>
+            {
+            base : [ 3.0, 4.2, 0.0 ],
+            axis : [ 0, 0, 1],
+            radius : .1,
+            }
+          </Cone>          
+
+        </Group>
+    </Scene>
+</Document>
