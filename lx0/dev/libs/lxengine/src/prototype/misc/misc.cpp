@@ -46,7 +46,7 @@
 #include <lx0/core/core.hpp>
 #include <lx0/core/data/lxvar.hpp>
 #include <lx0/core/util/util.hpp>
-#include <lx0/prototype/prototype.hpp>
+#include <lx0/prototype/misc.hpp>
 
 #include "extern/lodepng/lodepng.h"
 

@@ -45,7 +45,7 @@
 #include <lx0/core/data/lxvar_convert.hpp>
 
 // Internal headers
-#include "../../dom/view_input.hpp"
+#include "../../engine/dom/view_input.hpp"
 
 #include <OGRE/OgreRoot.h>
 #include <OGRE/OgreRenderWindow.h>

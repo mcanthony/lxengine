@@ -46,7 +46,7 @@
 #include <lx0/engine/element.hpp>
 #include <lx0/core/core.hpp>
 #include <lx0/core/util/util.hpp>
-#include <lx0/prototype/prototype.hpp>
+#include <lx0/prototype/misc.hpp>
 
 #include "terrain.hpp"
 #include <lx0/subsystem/rasterizer.hpp>

@@ -34,7 +34,7 @@
 
 #include <boost/filesystem.hpp>
 
-#include <lx0/prototype/prototype.hpp>
+#include <lx0/prototype/misc.hpp>
 #include <lx0/core/util/util.hpp>
 #include "glrasterizer.hpp"
 #include <lx0/subsystem/rasterizer.hpp>

@@ -45,7 +45,6 @@ include_directories( libs/lxcore/include )
 include_directories( libs/lxengine/include )
 include_directories( libs/lxcanvas/include )
 include_directories( libs/lxblendreader/include )
-include_directories( libs/lxprototype/include )
 include_directories( libs/glgeom/include )
 
 # Boost
@@ -78,7 +77,6 @@ set( LX_ALL_LIBS
     lxengine
     lxcanvas
     lxblendreader 
-    lxprototype
     ${OGRE_LIBRARIES} 
     ${V8_LIBS} 
     ${BULLET_LIBS} 
@@ -187,7 +185,6 @@ add_subdirectory( libs/lxblendreader )
 add_subdirectory( libs/lxcanvas)
 add_subdirectory( libs/lxcore )
 add_subdirectory( libs/lxengine )
-add_subdirectory( libs/lxprototype )
 add_subdirectory( libs/glgeom/unittest )
 add_subdirectory( libs/glgeom/benchmarks )
 

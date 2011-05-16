@@ -29,7 +29,7 @@
 #pragma once
 
 #include <lx0/engine/element.hpp>
-#include <lx0/prototype/prototype.hpp>
+#include <lx0/prototype/misc.hpp>
 #include <lx0/subsystem/rasterizer.hpp>
 
 using namespace lx0::subsystem::rasterizer;

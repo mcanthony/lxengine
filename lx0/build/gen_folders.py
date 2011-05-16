@@ -110,7 +110,6 @@ write_sln("lx0.sln", [
         "lxengine",
         "lxcanvas",
         "lxblendreader",
-        "lxprototype",
     ],
     "2. Samples", [
         "sm_lx_cube_rain",
