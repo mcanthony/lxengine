@@ -57,7 +57,6 @@
 #include <glgeom/glgeom.hpp>
 
 #include <lx0/core/core.hpp>
-#include <lx0/core/math/matrix4.hpp>
 #include <lx0/core/util/util.hpp>
 #include <lx0/canvas/canvas.hpp>
 #include <lx0/prototype/prototype.hpp>
@@ -120,7 +119,7 @@ public:
         const float terrainHeight = drop(gCamera.mPosition.x, gCamera.mPosition.y);
         const float deltaZ = (terrainHeight + 32.0f) - gCamera.mPosition.z;
         gCamera.mPosition.z += deltaZ;
-        gCamera.mTarget.z = terrainHeight;
+        gCamera.mTarget.z += deltaZ;
 
         if (deltaZ > 0.001)
             spDocument->view(0)->sendEvent("redraw", lxvar::undefined());
@@ -458,7 +457,7 @@ LxCanvasImp::handleEvent (std::string evt, lx0::core::lxvar params)
         std::string name = spElement
             ? spElement->attr("image").query("unknown").c_str()
             : "no associated element";
-        lx_debug("Select: %s (%s)", spItem->spMaterial->mShaderFilename.c_str(), name.c_str());
+        printf("Select: %s (%s)\n", spItem->spMaterial->mShaderFilename.c_str(), name.c_str());
     }
     else if (evt == "cycle_viewmode")
         mRenderer.cycleViewMode();

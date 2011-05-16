@@ -29,7 +29,6 @@
 #pragma once
 
 #include <glgeom/glgeom.hpp>
-#include <lx0/core/math/matrix4.hpp>
 
 namespace lx0 { namespace prototype {
 
@@ -66,8 +65,8 @@ namespace lx0 { namespace prototype {
     };
 
             glgeom::vector3f    view_vector         (const Camera& camera);
-            void                view_matrix         (const Camera& camera, lx0::core::matrix4& viewMatrix);
-    inline  lx0::core::matrix4  view_matrix         (const Camera& camera) { lx0::core::matrix4 m; view_matrix(camera, m); return m; } 
+            void                view_matrix         (const Camera& camera, glm::mat4& viewMatrix);
+    inline  glm::mat4           view_matrix         (const Camera& camera) { glm::mat4 m; view_matrix(camera, m); return m; } 
 
             void                move_forward        (Camera& camera, float step);
     inline  void                move_backward       (Camera& camera, float step) { move_forward(camera, -step); }

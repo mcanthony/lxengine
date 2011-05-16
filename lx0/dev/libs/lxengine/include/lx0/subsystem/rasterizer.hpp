@@ -176,7 +176,7 @@ namespace lx0
                 float   fov;
                 float   nearDist;
                 float   farDist;
-                matrix4 viewMatrix;
+                glm::mat4 viewMatrix;
             };
             typedef std::shared_ptr<Camera> CameraPtr;
 
@@ -184,7 +184,7 @@ namespace lx0
             struct Transform
             {
                 virtual void activate(CameraPtr);
-                matrix4 mat;
+                glm::mat4 mat;
             };
             typedef std::shared_ptr<Transform> TransformPtr;
 
@@ -264,12 +264,12 @@ namespace lx0
                 void            initialize      (void);
                 void            shutdown        (void);
 
-                CameraPtr       createCamera    (float fov, float nearDist, float farDist, matrix4& viewMatrix);
+                CameraPtr       createCamera    (float fov, float nearDist, float farDist, glm::mat4& viewMatrix);
                 LightSetPtr     createLightSet  (void);
                 MaterialPtr     createMaterial  (std::string fragShader);
                 TexturePtr      createTexture   (const char* filename);
 
-                TransformPtr    createTransform             (matrix4& mat);
+                TransformPtr    createTransform             (glm::mat4& mat);
                 TransformPtr    createTransform             (float tx, float ty, float tz);
                 TransformPtr    createTransformBillboardXY  (float tx, float ty, float tz);
                 TransformPtr    createTransformBillboardXYS (float tx, float ty, float tz, float sx, float sy, float sz);

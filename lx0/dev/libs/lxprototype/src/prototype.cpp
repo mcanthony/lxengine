@@ -111,9 +111,9 @@ namespace lx0 { namespace prototype {
         OpenGL.
      */
     void    
-    view_matrix (const Camera& camera, lx0::core::matrix4& viewMatrix)
+    view_matrix (const Camera& camera, glm::mat4& viewMatrix)
     {
-        lookAt(viewMatrix, camera.mPosition, camera.mTarget, camera.mWorldUp);
+        viewMatrix = glm::lookAt(camera.mPosition.vec, camera.mTarget.vec, camera.mWorldUp.vec);
     }
 
     //!

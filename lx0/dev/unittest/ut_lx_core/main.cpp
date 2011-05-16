@@ -4,7 +4,7 @@
 
     LICENSE
 
-    Copyright (c) 2010 athile@athile.net (http://www.athile.net)
+    Copyright (c) 2010-2011 athile@athile.net (http://www.athile.net)
 
     Permission is hereby granted, free of charge, to any person obtaining a 
     copy of this software and associated documentation files (the "Software"), 
@@ -31,7 +31,6 @@
 #include <limits>
 #include <algorithm>
 #include <string>
-#include <lx0/core/math/matrix4.hpp>
 #include <lx0/core/core.hpp>
 
 class UnitTest
@@ -97,22 +96,21 @@ main (int argc, char** argv)
     
     test.add_group("matrices", [&test]() {
 
-        matrix4 m;
-        set_identity(m);
+        glm::mat4 m(1.0f);
 
         for (int r = 0; r < 4; r++)
             for (int c = 0; c < 4; c++)
-                test.check(m(r,c) == ((r == c) ? 1.0f : 0.0f));
+                test.check(m[c][r] == ((r == c) ? 1.0f : 0.0f));
 
-        // matrix4 is set up for row-vector multiplications: therefore,
+        // glm::mat4 is set up for row-vector multiplications: therefore,
         // translation should end up in row 4.
-        set_translation(m, 2.0f, 4.0f, 6.0f);
-        test.check(m(0,0) == 1.0f);
-        test.check(m(1,0) == 0.0f);
-        test.check(m(3,0) == 2.0f);
-        test.check(m(3,1) == 4.0f);
-        test.check(m(3,2) == 6.0f, [&]() { std::cout << m(3,2); });
-        test.compare(m(3,3), 1.0f);
+        m = glm::translate(glm::mat4(1.0f), glm::vec3(2.0f, 4.0f, 6.0f));
+        test.check(m[0][0] == 1.0f);
+        test.check(m[0][1] == 0.0f);
+        test.check(m[3][0] == 2.0f);
+        test.check(m[3][1] == 4.0f);
+        test.check(m[3][2] == 6.0f, [&]() { std::cout << m[2][3]; });
+        test.compare(m[3][3], 1.0f);
 
     });
 

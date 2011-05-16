@@ -37,22 +37,22 @@ void test_attributeparsers()
             return spEngine->parseAttribute("color", s);
         };
 
-        const color3f kBlack (0,0,0);
- 	 	const color3f kSilver (192,192,192);
- 	 	const color3f kGray (128,128,128);
- 	 	const color3f kWhite (255,255,255);
- 	 	const color3f kMaroon (128,0,0);
- 	 	const color3f kRed (255,0,0);
- 	 	const color3f kPurple (128,0,128);
- 	 	const color3f kFuchsia (255,0,255);
- 	 	const color3f kGreen (0,128,0);
- 	 	const color3f kLime (0,255,0);
- 	 	const color3f kOlive (128,128,0);
- 	 	const color3f kYellow (255,255,0);
- 	 	const color3f kNavy (0,0,128);
- 	 	const color3f kBlue (0,0,255);
- 	 	const color3f kTeal (0,128,128);
- 	 	const color3f kAqua (0,255,255);
+        const color3f kBlack (0/255.0f,0/255.0f,0/255.0f);
+ 	 	const color3f kSilver (192/255.0f,192/255.0f,192/255.0f);
+ 	 	const color3f kGray (128/255.0f,128/255.0f,128/255.0f);
+ 	 	const color3f kWhite (255/255.0f,255/255.0f,255/255.0f);
+ 	 	const color3f kMaroon (128/255.0f,0/255.0f,0/255.0f);
+ 	 	const color3f kRed (255/255.0f,0/255.0f,0/255.0f);
+ 	 	const color3f kPurple (128/255.0f,0/255.0f,128/255.0f);
+ 	 	const color3f kFuchsia (255/255.0f,0/255.0f,255/255.0f);
+ 	 	const color3f kGreen (0/255.0f,128/255.0f,0/255.0f);
+ 	 	const color3f kLime (0/255.0f,255/255.0f,0/255.0f);
+ 	 	const color3f kOlive (128/255.0f,128/255.0f,0/255.0f);
+ 	 	const color3f kYellow (255/255.0f,255/255.0f,0/255.0f);
+ 	 	const color3f kNavy (0/255.0f,0/255.0f,128/255.0f);
+ 	 	const color3f kBlue (0/255.0f,0/255.0f,255/255.0f);
+ 	 	const color3f kTeal (0/255.0f,128/255.0f,128/255.0f);
+ 	 	const color3f kAqua (0/255.0f,255/255.0f,255/255.0f);
 
         // Ensure the basic color keywords are working
         CHECK( kBlack   == parse("black").convert() );
@@ -115,14 +115,14 @@ void test_attributeparsers()
         // Check hex notation
         CHECK( kWhite             == parse("#fff").convert() );
         CHECK( kBlack             == parse("#000").convert() );
-        CHECK( color3f(255, 0, 0)   == parse("#F00").convert() );
+        CHECK( color3f(255/255.0f, 0, 0)   == parse("#F00").convert() );
 
-        CHECK( color3f(240, 15,  0) == parse("#F00F00").convert() );
-        CHECK( color3f(  1,  1,  1) == parse("#010101").convert() );
-        CHECK( color3f(  1,  1,  2) == parse("#010102").convert() );
-        CHECK( color3f(  1,  3,  4) == parse("#010304").convert() );
-        CHECK( color3f(  5,  6,  7) == parse("#050607").convert() );
-        CHECK( color3f(133,150,167) == parse("#8596A7").convert() );
+        CHECK( color3f(240/255.0f, 15/255.0f,  0) == parse("#F00F00").convert() );
+        CHECK( color3f(  1/255.0f,  1/255.0f,  1/255.0f) == parse("#010101").convert() );
+        CHECK( color3f(  1/255.0f,  1/255.0f,  2/255.0f) == parse("#010102").convert() );
+        CHECK( color3f(  1/255.0f,  3/255.0f,  4/255.0f) == parse("#010304").convert() );
+        CHECK( color3f(  5/255.0f,  6/255.0f,  7/255.0f) == parse("#050607").convert() );
+        CHECK( color3f(133/255.0f,150/255.0f,167/255.0f) == parse("#8596A7").convert() );
 
         // Check some malformed hex
         CHECK( parse("000").isInt() );
@@ -130,9 +130,9 @@ void test_attributeparsers()
 
 
         // Check rgb notation
-        CHECK( color3f(255, 255, 255) == parse("rgb(255, 255, 255)").convert() );
+        CHECK( color3f(255/255.0f, 255/255.0f, 255/255.0f) == parse("rgb(255, 255, 255)").convert() );
         CHECK( color3f(  0,   0,   0) == parse("rgb(0,0,0)").convert() );
-        CHECK( color3f( 12,  34, 5) == parse("rgb(12, 34 , 5  )").convert() );
+        CHECK( color3f( 12/255.0f,  34/255.0f, 5/255.0f) == parse("rgb(12, 34 , 5  )").convert() );
 
         // Check rgb percentage notation
         CHECK( kWhite == parse("rgb(100%, 100%, 100%)").convert() );

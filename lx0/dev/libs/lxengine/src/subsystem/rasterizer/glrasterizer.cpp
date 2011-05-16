@@ -38,11 +38,14 @@
 #include <lx0/core/util/util.hpp>
 #include "glrasterizer.hpp"
 #include <lx0/subsystem/rasterizer.hpp>
+#include <glgeom/glgeom.hpp>
 
 using namespace lx0::subsystem::rasterizer;
 
 void RasterizerGL::initialize()
 {
+    lx_log("%s", __FUNCTION__);
+
     // Initialization
     //
     lx_log("Using OpenGL v%s", (const char*)glGetString(GL_VERSION));
@@ -57,10 +60,11 @@ void RasterizerGL::initialize()
 
 void RasterizerGL::shutdown()
 {
+    lx_log("%s", __FUNCTION__);
 }
 
 CameraPtr       
-RasterizerGL::createCamera (float fov, float nearDist, float farDist, matrix4& viewMatrix)
+RasterizerGL::createCamera (float fov, float nearDist, float farDist, glm::mat4& viewMatrix)
 {
     CameraPtr spCamera (new Camera);
     spCamera->fov = fov;
@@ -88,14 +92,14 @@ Camera::activate()
     // Setup view matrix
     //
     // OpenGL matrices are laid out with rows contiguous in memory (i.e. data[1] in 
-    // the 16 element array is the second element in the first row); matrix4 uses
+    // the 16 element array is the second element in the first row); glm::mat4 uses
     // column-major ordering.  Therefore load it as a tranpose to swap the order.
     //
     // Note: it's also not necessarily faster to send the non-transpose, as the
     // OpenGL API does not necessarily match the underlying hardware representation.
     //
     glMatrixMode(GL_MODELVIEW);
-    glLoadTransposeMatrixf(viewMatrix.data);
+    glLoadMatrixf(glm::value_ptr(viewMatrix));
 }
 
 Texture::Texture()
@@ -540,7 +544,7 @@ RasterizerGL::createLightSet (void)
 }
 
 TransformPtr 
-RasterizerGL::createTransform (matrix4& mat)
+RasterizerGL::createTransform (glm::mat4& mat)
 {
     return TransformPtr(new Transform);
 }
@@ -549,7 +553,7 @@ TransformPtr
 RasterizerGL::createTransform (float tx, float ty, float tz)
 {
     TransformPtr spTransform(new Transform);
-    set_translation(spTransform->mat, tx, ty, tz);
+    spTransform->mat = glm::translate(glm::mat4(1.0f), glm::vec3(tx, ty, tz));
     return spTransform;
 }
 
@@ -568,28 +572,27 @@ struct EyeTransform : public Transform
         // the object coordinate system by the opposite of the camera offset - i.e. moving
         // the object coordinate system to be at the camera origin.
         //
-        // The camera translation is stored in the 3rd row of the view matrix.  The translation
+        // The camera translation is stored in the 3rd column of the view matrix.  The translation
         // is in eye coordinates, therefore to come up with the world coordinate equivalent,
-        // those translation values are multipled by the basis vectors (i.e. the first 3 columns
+        // those translation values are multipled by the basis vectors (i.e. the first 3 rows
         // of the view matrix).
         //
         auto& view = spCamera->viewMatrix;
 
-        const glgeom::vector3f t(view(3,0), view(3,1), view(3,2));
-        const auto& camX = spCamera->viewMatrix.column[0];
-        const auto& camY = spCamera->viewMatrix.column[1];
-        const auto& camZ = spCamera->viewMatrix.column[2];
+        const glgeom::vector3f t(view[3][0], view[3][1], view[3][2]);
+        const auto camX = glm::row(view, 0);
+        const auto camY = glm::row(view, 1);
+        const auto camZ = glm::row(view, 2);
 
         glgeom::vector3f translation;
-        translation.x = t.x * camX.x + t.y * camY.x + t.z * camZ.x; 
-        translation.y = t.x * camX.y + t.y * camY.y + t.z * camZ.y; 
-        translation.z = t.x * camX.z + t.y * camY.z + t.z * camZ.z; 
+        translation.x = t.x * camX.x + t.y * camY.x + t.z * camZ.x;
+        translation.y = t.x * camX.y + t.y * camY.y + t.z * camZ.y;
+        translation.z = t.x * camX.z + t.y * camY.z + t.z * camZ.z;
 
-        set_identity(mat);
-        set_translation(mat, -translation.x, -translation.y, -translation.z);
+        mat = glm::translate(glm::mat4(1.0f), -translation.vec);
         
         glMatrixMode(GL_MODELVIEW);
-        glMultTransposeMatrixf(mat.data);
+        glMultMatrixf(glm::value_ptr(mat));
         glRotatef(z_angle.value, 0.0f, 0.0f, 1.0f);
     }
 
@@ -614,11 +617,11 @@ struct BillboardTransform : public Transform
         // the model x is always aligned to the camera x.  I.e. rotate the
         // model by the same amount as the camera about the z-axis.
         //
-        const auto& cameraX = spCamera->viewMatrix.column[0];   
+        const auto& cameraX = glm::row(spCamera->viewMatrix, 0);   
         const float radians = atan2(cameraX.y, cameraX.x);
 
         glMatrixMode(GL_MODELVIEW);   
-        glMultTransposeMatrixf(mat.data);
+        glMultMatrixf(glm::value_ptr(mat));
         glRotatef(radians * 180.0f / 3.1415926f, 0.0f, 0.0f, 1.0f);
     }
 };
@@ -627,7 +630,7 @@ TransformPtr
 RasterizerGL::createTransformBillboardXY (float tx, float ty, float tz)
 {
     TransformPtr spTransform(new BillboardTransform);
-    set_translation(spTransform->mat, tx, ty, tz);
+    spTransform->mat = glm::translate(glm::mat4(1.0f), glm::vec3(tx, ty, tz));
     return spTransform;
 }
 
@@ -635,12 +638,11 @@ TransformPtr
 RasterizerGL::createTransformBillboardXYS (float tx, float ty, float tz, float sx, float sy, float sz)
 {
     TransformPtr spTransform(new BillboardTransform);
-    set_translation(spTransform->mat, tx, ty, tz);
+    spTransform->mat = glm::translate(glm::mat4(1.0f), glm::vec3(tx, ty, tz));
 
-    matrix4 s;
-    set_scale(s, sx, sy, sz);
+    glm::mat4 s = glm::scale(glm::mat4(1.0f), glm::vec3(sx, sy, sz));
 
-    spTransform->mat = s * spTransform->mat;
+    spTransform->mat = spTransform->mat * s;
     return spTransform;
 }
 
@@ -648,7 +650,7 @@ void
 Transform::activate (CameraPtr)
 {
     glMatrixMode(GL_MODELVIEW);
-    glMultTransposeMatrixf(mat.data);
+    glMultMatrixf(glm::value_ptr(mat));
 }
 
 /*!
