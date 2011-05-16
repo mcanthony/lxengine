@@ -3,6 +3,7 @@
                                    LxEngine
 
     LICENSE
+    * MIT License (http://www.opensource.org/licenses/mit-license.php)
 
     Copyright (c) 2011 athile@athile.net (http://www.athile.net)
 
@@ -26,21 +27,17 @@
 */
 //===========================================================================//
 
-#include <lx0/engine/engine.hpp>
-#include <lx0/subsystems/rasterizer.hpp>
+#ifndef LX0_LXENGINE_HPP
+#define LX0_LXENGINE_HPP
 
-using namespace lx0::core;
+#include "lxengine_dox.hpp"
 
-namespace lx0 { 
+#include <engine/engine.hpp>
+#include <engine/document.hpp>
+#include <engine/element.hpp>
+#include <engine/view.hpp>
+#include <engine/controller.hpp>
 
-    class RasterizerImp : public IRasterizer
-    {
-    public:
-    };
 
-    IRasterizer* createIRasterizer()
-    {
-        return new RasterizerImp;
-    }
+#endif
 
-}

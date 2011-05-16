@@ -35,8 +35,8 @@
 #include <algorithm>
 
 #include <lx0/core/core.hpp>
-#include <lx0/engine.hpp>
-#include <lx0/document.hpp>
+#include <lx0/engine/engine.hpp>
+#include <lx0/engine/document.hpp>
 #include <lx0/core/data/lxvar.hpp>
 
 namespace lx0 { namespace core {

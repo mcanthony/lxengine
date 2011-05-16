@@ -78,6 +78,7 @@ namespace lx0 { namespace core {
     //===========================================================================//
     //!
     /*!
+        \ingroup lx0_engine_dom
      */
     class Document 
         : public std::enable_shared_from_this<Document>

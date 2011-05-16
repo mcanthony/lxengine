@@ -65,6 +65,8 @@ namespace lx0 { namespace core {
     //===========================================================================//
     //!
     /*!
+        \ingroup lx0_engine_dom
+        
         Developer notes:
         
         This class could use significant clean-up and componentization once 

@@ -28,8 +28,8 @@
 
 #include <cassert>
 
-#include <lx0/transaction.hpp>
-#include <lx0/element.hpp>
+#include <lx0/engine/transaction.hpp>
+#include <lx0/engine/element.hpp>
 
 namespace lx0 { namespace core {
 

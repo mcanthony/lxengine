@@ -3,8 +3,9 @@
                                    LxEngine
 
     LICENSE
+    * MIT License (http://www.opensource.org/licenses/mit-license.php)
 
-    Copyright (c) 2010 athile@athile.net (http://www.athile.net)
+    Copyright (c) 2011 athile@athile.net (http://www.athile.net)
 
     Permission is hereby granted, free of charge, to any person obtaining a 
     copy of this software and associated documentation files (the "Software"), 
@@ -26,57 +27,70 @@
 */
 //===========================================================================//
 
-//===========================================================================//
-//   H E A D E R S
-//===========================================================================//
+#ifndef LX0_LXENGINE_DOX_HPP
+#define LX0_LXENGINE_DOX_HPP
 
-// Standard headers
-#include <iostream>
-#include <string>
-#include <memory> 
-#include <functional>
-#include <vector>
-#include <map>
-#include <deque>
-
-// Library headers
-#include <boost/program_options.hpp>
-
-// Lx0 headers
-#include <lx0/core/core.hpp>
-#include <lx0/engine/engine.hpp>
-#include <lx0/engine/document.hpp>
-#include <lx0/engine/element.hpp>
-#include <lx0/engine/view.hpp>
-#include <lx0/engine/controller.hpp>
-#include <lx0/core/util/util.hpp>
-
-using namespace lx0::core;
-
+//
+// Doxygen documentation 
+//
 
 //===========================================================================//
-//   E N T R Y - P O I N T
+//
 //===========================================================================//
+/*!
+    \mainpage
 
-int 
-main (int argc, char** argv)
-{
-    int exitCode = -1;
-    try
-    {
-        EnginePtr   spEngine   = Engine::acquire();
-        DocumentPtr spDocument = spEngine->loadDocument("data/sm_lx_cube_asteriods/level00.xml");
-        ViewPtr     spView     = spDocument->createView("OGRE", "view");
-        spView->show();
-  
-        exitCode = spEngine->run();
+    Official website: http://athile.net/library/wiki/index.php?title=Tech/LxEngine
 
-        spEngine->shutdown();
-    }
-    catch (std::exception& e)
-    {
-        lx_fatal("Fatal: unhandled exception.\nException: %s\n", e.what());
-    }
+    See the <a href="modules.html">modules</a> page for an overview of the
+    library. 
+ */
 
-    return exitCode;
-}
+//===========================================================================//
+//
+//===========================================================================//
+/*!
+    \defgroup Core
+*/
+/*!
+    \defgroup lx0_core_slot lx0_core_slot
+    \ingroup Core
+ */
+/*!
+    \defgroup lx0_core_lxvar lx0_core_lxvar
+    \ingroup Core
+ */
+
+//===========================================================================//
+//
+//===========================================================================//
+/*!
+    \defgroup Engine
+*/
+/*!
+    \defgroup lx0_engine_dom lx0_engine_dom
+    \ingroup Engine
+ */
+
+//===========================================================================//
+//
+//===========================================================================//
+/*!
+    \defgroup Subsystem
+*/
+
+//===========================================================================//
+//
+//===========================================================================//
+/*!
+    \defgroup Util
+*/
+
+//===========================================================================//
+//
+//===========================================================================//
+/*!
+    \defgroup Prototype
+*/
+
+#endif

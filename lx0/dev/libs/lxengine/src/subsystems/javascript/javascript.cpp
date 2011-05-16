@@ -26,7 +26,7 @@
 */
 //===========================================================================//
 
-#include <lx0/engine.hpp>
+#include <lx0/engine/engine.hpp>
 #include <lx0/subsystems/javascript.hpp>
 
 using namespace lx0::core;

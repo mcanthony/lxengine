@@ -41,9 +41,9 @@
 #include <lx0/core/util/util.hpp>
 #include <lx0/canvas/canvas.hpp>
 #include <lx0/prototype/prototype.hpp>
-#include <lx0/view.hpp>
-#include <lx0/engine.hpp>
-#include <lx0/document.hpp>
+#include <lx0/engine/view.hpp>
+#include <lx0/engine/engine.hpp>
+#include <lx0/engine/document.hpp>
 #include <glgeom/prototype/image.hpp>
 
 #include <windows.h>

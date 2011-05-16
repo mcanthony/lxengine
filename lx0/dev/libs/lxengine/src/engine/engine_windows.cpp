@@ -32,7 +32,7 @@
 
 #include <windows.h>
 
-#include <lx0/engine.hpp>
+#include <lx0/engine/engine.hpp>
 
 using namespace lx0::core;
 

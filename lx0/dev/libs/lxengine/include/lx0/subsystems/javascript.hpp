@@ -28,7 +28,7 @@
 
 #pragma once
 
-#include <lx0/document.hpp>
+#include <lx0/engine/document.hpp>
 
 namespace lx0 { 
 

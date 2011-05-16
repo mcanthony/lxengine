@@ -6,8 +6,8 @@
 #include "main.hpp"
 #include "ut_attributeparsers.hpp"
 
-#include <lx0/engine.hpp>
-#include <lx0/document.hpp>
+#include <lx0/engine/engine.hpp>
+#include <lx0/engine/document.hpp>
 #include <lx0/core/util/util.hpp>
 #include <lx0/core/base/base.hpp>
 #include <lx0/subsystems/javascript.hpp>

@@ -28,7 +28,7 @@
 
 #pragma once
 
-#include <lx0/document.hpp>
+#include <lx0/engine/document.hpp>
 
 namespace lx0 { 
 
@@ -59,6 +59,7 @@ namespace lx0
     {
         /*!
             \defgroup lx0_subsystem_rasterizer lx0_subsystem_rasterizer
+            \ingroup Subsystem
          */
         namespace rasterizer
         {

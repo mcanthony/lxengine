@@ -30,7 +30,7 @@
 #pragma once
 
 #include <lx0/core/detail/forward_decls.hpp>
-#include <lx0/object.hpp>
+#include <lx0/engine/object.hpp>
 #include <glgeom/glgeom.hpp>
 
 namespace lx0 { namespace dom {

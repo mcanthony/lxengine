@@ -34,7 +34,7 @@
 #include <cassert>
 
 #include <lx0/core/core.hpp>
-#include <lx0/mesh.hpp>
+#include <lx0/engine/mesh.hpp>
 #include <glgeom/glgeom.hpp>
 
 namespace lx0 { namespace core {

@@ -28,7 +28,7 @@
 
 #pragma once
 
-#include <lx0/element.hpp>
+#include <lx0/engine/element.hpp>
 #include <lx0/prototype/prototype.hpp>
 #include <lx0/subsystems/rasterizer.hpp>
 

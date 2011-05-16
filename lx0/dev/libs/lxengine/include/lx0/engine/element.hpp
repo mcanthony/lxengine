@@ -72,6 +72,8 @@ namespace lx0 { namespace core {
     //===========================================================================//
     //! Represents an Element in the Document Object Model.  
     /*!
+        \ingroup lx0_engine_dom
+
         An Element has:
         * A Tag Name
         * A lxvar value

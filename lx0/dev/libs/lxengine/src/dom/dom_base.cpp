@@ -34,9 +34,9 @@
 #include <algorithm>
 
 #include <lx0/core/core.hpp>
-#include <lx0/element.hpp>
-#include <lx0/object.hpp>
-#include <lx0/document.hpp>
+#include <lx0/engine/element.hpp>
+#include <lx0/engine/object.hpp>
+#include <lx0/engine/document.hpp>
 
 namespace lx0 { namespace core {
 
