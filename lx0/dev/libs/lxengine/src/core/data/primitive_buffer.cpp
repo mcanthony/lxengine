@@ -26,7 +26,7 @@
 */
 //===========================================================================//
 
-#include "lx0/core/data/primitive_buffer.hpp"
+#include "lx0/prototype/primitive_buffer.hpp"
 
 using namespace lx0::core;
 using namespace lx0::core::detail;

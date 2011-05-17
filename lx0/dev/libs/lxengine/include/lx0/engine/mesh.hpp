@@ -29,7 +29,7 @@
 
 #pragma once
 
-#include <lx0/core/detail/forward_decls.hpp>
+#include <lx0/_detail/forward_decls.hpp>
 #include <lx0/engine/object.hpp>
 #include <glgeom/glgeom.hpp>
 

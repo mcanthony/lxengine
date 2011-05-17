@@ -33,7 +33,7 @@
 
 #include <cassert>
 
-#include <lx0/core/core.hpp>
+#include <lx0/lxengine.hpp>
 #include <lx0/engine/mesh.hpp>
 
 using namespace lx0::core;

@@ -34,14 +34,13 @@
 
 #include <v8/v8.h>
 
-#include <lx0/core/core.hpp>
 #include <lx0/engine/engine.hpp>
 #include <lx0/engine/document.hpp>
 #include <lx0/engine/element.hpp>
 #include <lx0/engine/view.hpp>
 #include <lx0/engine/mesh.hpp>
-#include <lx0/core/util/util.hpp>
-#include <lx0/core/data/lxvar_convert.hpp>
+#include <lx0/util/misc/util.hpp>
+#include <lx0/util/misc/lxvar_convert.hpp>
 #include "v8bind.hpp"
 
 using namespace v8;

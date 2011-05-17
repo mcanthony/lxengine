@@ -31,7 +31,8 @@
 #include <limits>
 #include <algorithm>
 #include <string>
-#include <lx0/core/core.hpp>
+#include <lx0/lxengine.hpp>
+#include <glgeom/glgeom.hpp>
 
 class UnitTest
 {

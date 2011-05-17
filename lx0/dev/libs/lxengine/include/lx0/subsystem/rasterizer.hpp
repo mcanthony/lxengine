@@ -48,7 +48,7 @@ namespace lx0 {
 #include <windows.h>        // Unfortunately must be included on Windows for GL.h to work
 #include <gl/GL.h>
 
-#include <lx0/core/core.hpp>
+#include <lx0/lxengine.hpp>
 #include <glgeom/glgeom.hpp>
 
 using namespace lx0::core;

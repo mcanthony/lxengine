@@ -32,8 +32,7 @@
 #include <sstream>
 #include <ctime>
 
-#include <lx0/core/core.hpp>
-#include <lx0/core/util/util.hpp>
+#include <lx0/lxengine.hpp>
 
 using namespace lx0::core;
 

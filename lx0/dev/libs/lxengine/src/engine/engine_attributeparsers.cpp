@@ -34,10 +34,10 @@
 #include <string>
 #include <algorithm>
 
-#include <lx0/core/core.hpp>
+#include <lx0/lxengine.hpp>
 #include <lx0/engine/engine.hpp>
 #include <lx0/engine/document.hpp>
-#include <lx0/core/data/lxvar.hpp>
+#include <lx0/core/lxvar/lxvar.hpp>
 
 namespace lx0 { namespace core {
 

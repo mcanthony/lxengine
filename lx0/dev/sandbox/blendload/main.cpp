@@ -45,6 +45,7 @@
 // Lx0 headers
 #include <lx0/lxengine.hpp>
 #include <lx0/subsystem/blendreader.hpp>
+#include <glgeom/glgeom.hpp>
 
 using namespace lx0::core;
 using namespace lx0::subsystem::blendreader_ns;
@@ -69,7 +70,7 @@ void displayStructure (BlendReader& reader, std::string name)
 int 
 main (int argc, char** argv)
 {
-    lx_init();
+    lx0::lx_init();
 
     std::string filename = "media/models/unit_cube.blend";
     if (argc == 2)

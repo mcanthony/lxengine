@@ -34,6 +34,7 @@
 
 // Lx0 headers
 #include <lx0/lxengine.hpp>
+#include <lx0/util/misc/lxvar_convert.hpp>
 #include <glgeom/glgeom.hpp>
 #include <glgeom/prototype/camera.hpp>
 #include <glgeom/prototype/std_lights.hpp>

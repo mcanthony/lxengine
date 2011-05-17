@@ -35,7 +35,7 @@
 #include <boost/filesystem.hpp>
 
 #include <lx0/prototype/misc.hpp>
-#include <lx0/core/util/util.hpp>
+#include <lx0/util/misc/util.hpp>
 #include "glrasterizer.hpp"
 #include <lx0/subsystem/rasterizer.hpp>
 #include <glgeom/glgeom.hpp>

@@ -35,8 +35,9 @@
 
  */
 
-#include <lx0/core/core.hpp>
-#include <lx0/core/math/noise.hpp>
+#include <lx0/lxengine.hpp>
+#include <lx0/util/math/noise.hpp>
+#include <glgeom/glgeom.hpp>
 
 using namespace lx0;
 

@@ -33,10 +33,11 @@
 
 #include <cassert>
 
-#include <lx0/core/core.hpp>
+#include <lx0/lxengine.hpp>
 #include <lx0/engine/mesh.hpp>
 #include <lx0/subsystem/blendreader.hpp>
 
+using namespace lx0;
 using namespace lx0::core;
 
 namespace {

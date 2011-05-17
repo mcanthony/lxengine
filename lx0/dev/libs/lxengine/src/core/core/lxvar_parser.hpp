@@ -28,8 +28,8 @@
 
 #pragma once
 
-#include <lx0/core/base/slot.hpp>
-#include <lx0/core/data/lxvar.hpp>
+#include <lx0/core/slot/slot.hpp>
+#include <lx0/core/lxvar/lxvar.hpp>
 
 namespace lx0 { namespace core { namespace detail {
 

@@ -61,14 +61,23 @@ enum
 //
 // LxEngine headers
 //
-#include <lx0/core/core.hpp>
-#include <lx0/core/util/util.hpp>
+
+#include <lx0/core/init/init.hpp>
+#include <lx0/core/log/log.hpp>
+#include <lx0/core/slot/slot.hpp>
+#include <lx0/core/lxvar/lxvar.hpp>
+
+#include <lx0/util/misc/util.hpp>
 
 #include <lx0/engine/engine.hpp>
 #include <lx0/engine/document.hpp>
 #include <lx0/engine/element.hpp>
 #include <lx0/engine/view.hpp>
 #include <lx0/engine/controller.hpp>
+#include <lx0/engine/transaction.hpp>
+
+#include <lx0/util/math/noise.hpp>
+#include <lx0/util/math/smooth_functions.hpp>
 
 using namespace lx0::core::log_ns;
 

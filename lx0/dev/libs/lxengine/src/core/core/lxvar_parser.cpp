@@ -26,10 +26,11 @@
 */
 //===========================================================================//
 
-#include <lx0/core/core.hpp>
 #include "lxvar_parser.hpp"
+#include <lx0/core/log/log.hpp>
 
 using namespace lx0::core;
+using namespace lx0::core::log_ns;
 
 namespace lx0 { namespace core {
 

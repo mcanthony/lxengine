@@ -37,8 +37,8 @@
 #include <deque>
 
 // Lx0 headers
-#include <lx0/core/core.hpp>
-#include <lx0/core/util/util.hpp>
+#include <lx0/lxengine.hpp>
+#include <lx0/util/misc/util.hpp>
 #include <lx0/subsystem/canvas.hpp>
 #include <lx0/prototype/misc.hpp>
 #include <lx0/engine/view.hpp>

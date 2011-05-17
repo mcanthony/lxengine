@@ -26,7 +26,7 @@
 */
 //===========================================================================//
 
-#include <lx0/core/util/util.hpp>
+#include <lx0/util/misc/util.hpp>
 
 #include <windows.h>
 

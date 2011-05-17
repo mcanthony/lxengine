@@ -44,11 +44,12 @@
 #include <bullet/btBulletDynamicsCommon.h>
 
 // LxEngine
-#include <lx0/core/core.hpp>
+#include <lx0/lxengine.hpp>
 #include <lx0/engine/engine.hpp>
 #include <lx0/engine/document.hpp>
 #include <lx0/engine/element.hpp>
 #include <lx0/engine/mesh.hpp>
+#include <lx0/util/misc/lxvar_convert.hpp>
 
 using namespace lx0::core;
 

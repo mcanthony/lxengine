@@ -30,7 +30,7 @@
 
 #pragma once
 
-#include <lx0/core/base/slot.hpp>
+#include <lx0/core/slot/slot.hpp>
 
 namespace lx0 
 { 
@@ -38,11 +38,6 @@ namespace lx0
     {
         namespace log_ns
         {
-
-            /*!
-                \ingroup lx0_core_log
-             */
-            void lx_init();
 
             /*!
                 \ingroup lx0_core_log

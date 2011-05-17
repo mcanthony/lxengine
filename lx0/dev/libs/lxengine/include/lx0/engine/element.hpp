@@ -41,10 +41,10 @@
 #include <set>
 
 // Lx headers
-#include <lx0/core/detail/forward_decls.hpp>
-#include <lx0/core/detail/dom_base.hpp>
-#include <lx0/core/data/lxvar.hpp>
-#include <lx0/core/base/slot.hpp>
+#include <lx0/_detail/forward_decls.hpp>
+#include <lx0/_detail/dom_base.hpp>
+#include <lx0/core/lxvar/lxvar.hpp>
+#include <lx0/core/slot/slot.hpp>
 
 
 namespace lx0 { namespace core {  

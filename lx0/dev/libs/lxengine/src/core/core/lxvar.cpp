@@ -30,8 +30,8 @@
 //   H E A D E R S
 //===========================================================================//
 
-#include <lx0/core/core.hpp>
-#include <lx0/core/data/lxvar.hpp>
+#include <lx0/lxengine.hpp>
+#include <lx0/core/lxvar/lxvar.hpp>
 #include <glgeom/glgeom.hpp>
 
 #include "lxvar_parser.hpp"

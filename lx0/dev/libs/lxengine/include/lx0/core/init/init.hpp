@@ -5,7 +5,7 @@
     LICENSE
     * MIT License (http://www.opensource.org/licenses/mit-license.php)
 
-    Copyright (c) 2010-2011 athile@athile.net (http://www.athile.net)
+    Copyright (c) 2011 athile@athile.net (http://www.athile.net)
 
     Permission is hereby granted, free of charge, to any person obtaining a 
     copy of this software and associated documentation files (the "Software"), 
@@ -27,31 +27,21 @@
 */
 //===========================================================================//
 
+
 #pragma once
 
-#include <lx0/core/detail/forward_decls.hpp>
-#include <glgeom/glgeom.hpp>
-
-namespace Ogre {
-    class ColourValue;
-    class Quaternion;
-    class Vector3;
-}
-
-namespace lx0 { namespace core { namespace lxvar_ns {
-
-    namespace detail
+namespace lx0 
+{ 
+    namespace core 
     {
-        void _convert(lxvar& v, glgeom::point3f& p);
-        void _convert(lxvar& v, glgeom::point3d& p);
-        void _convert(lxvar& v, glgeom::vector3f& u);
-        void _convert(lxvar& v, glgeom::vector3d& u);
-        void _convert(lxvar& v, glgeom::color3f& p);
-        void _convert(lxvar& v, glgeom::color3d& p);
+        namespace init_ns
+        {
+            //
+            void    lx_init();
 
-        void _convert(lxvar& v, Ogre::ColourValue& u);
-        void _convert(lxvar& v, Ogre::Vector3& u);
-        void _convert(lxvar& value, Ogre::Quaternion& q);
+            bool    _lx_init_called();
+        }
     }
 
-}}}
+    using namespace lx0::core::init_ns;
+}

@@ -34,14 +34,7 @@
 #include <cassert>
 #include <string>
 
-#include <lx0/engine/document.hpp>
-#include <lx0/engine/transaction.hpp>
-#include <lx0/engine/element.hpp>
-#include <lx0/engine/view.hpp>
-#include <lx0/core/core.hpp>
-#include <lx0/engine/engine.hpp>
-#include <lx0/core/data/lxvar.hpp>
-#include <lx0/core/util/util.hpp>
+#include <lx0/lxengine.hpp>
 
 namespace lx0 { namespace core {
 

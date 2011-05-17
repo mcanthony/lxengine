@@ -29,36 +29,29 @@
 
 #pragma once
 
-namespace lx0
-{
-    //! Core API
-    namespace core 
-    {
-        namespace detail {}
-    }
+#include <lx0/_detail/forward_decls.hpp>
+#include <glgeom/glgeom.hpp>
 
-    //! Stable and supported extensions to the core API
-    namespace extensions 
-    {
-    }
-
-    //! Unstable, experimental code subject to unannounced changes & deprecation
-    /*!
-        
-     */
-    namespace prototype 
-    {
-    }
+namespace Ogre {
+    class ColourValue;
+    class Quaternion;
+    class Vector3;
 }
 
-#include <lx0/core/base/base.hpp>
+namespace lx0 { namespace core { namespace lxvar_ns {
 
-#include <lx0/core/math/noise.hpp>
-#include <lx0/core/math/smooth_functions.hpp>
+    namespace detail
+    {
+        void _convert(lxvar& v, glgeom::point3f& p);
+        void _convert(lxvar& v, glgeom::point3d& p);
+        void _convert(lxvar& v, glgeom::vector3f& u);
+        void _convert(lxvar& v, glgeom::vector3d& u);
+        void _convert(lxvar& v, glgeom::color3f& p);
+        void _convert(lxvar& v, glgeom::color3d& p);
 
-#include <lx0/core/data/lxvar.hpp>
-#include <lx0/core/data/lxvar_convert.hpp>
-#include <lx0/core/data/primitive_buffer.hpp>
+        void _convert(lxvar& v, Ogre::ColourValue& u);
+        void _convert(lxvar& v, Ogre::Vector3& u);
+        void _convert(lxvar& value, Ogre::Quaternion& q);
+    }
 
-#include <lx0/core/util/util.hpp>
-
+}}}

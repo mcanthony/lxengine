@@ -131,7 +131,7 @@ void check_exception (int line, bool bShouldThrow, std::string source, std::func
 int 
 main (int argc, char** argv)
 {
-    lx_init();
+    lx0::lx_init();
 
     try
     {

@@ -37,21 +37,22 @@
 #include <string>
 #include <fstream>
 
-#include <lx0/core/core.hpp>
-#include <lx0/core/util/util.hpp>
+#include <lx0/core/init/init.hpp>
+#include <lx0/core/log/log.hpp>
+#include <lx0/core/slot/slot.hpp>
+#include <lx0/util/misc/util.hpp>
 
 namespace lx0 { namespace core { namespace log_ns {
 
-    slot<void (const char*)> slotFatal;
-    slot<void (const char*)> slotError;
-    slot<void (const char*)> slotWarn;
-    slot<void (const char*)> slotLog;
-    slot<void (const char*)> slotAssert;
-    slot<void (const char*)> slotDebug;
+    lx0::slot<void (const char*)> slotFatal;
+    lx0::slot<void (const char*)> slotError;
+    lx0::slot<void (const char*)> slotWarn;
+    lx0::slot<void (const char*)> slotLog;
+    lx0::slot<void (const char*)> slotAssert;
+    lx0::slot<void (const char*)> slotDebug;
 
-    static bool s_lx_init_called = false;
-    static std::ofstream s_log;
-    static int s_log_count = 0;
+    std::ofstream s_log;
+    int s_log_count = 0;
 
     static struct _autoclose
     {
@@ -77,66 +78,12 @@ namespace lx0 { namespace core { namespace log_ns {
     _lx_check_init()
     {
 #ifdef _DEBUG
-        if (!s_lx_init_called)
+        if (!lx0::_lx_init_called())
         {
             lx_init();
             lx_error("lx_init() has not been called!");
         }
 #endif
-    }
-
-    /*!
-        Initializes the LxEngine code.  This is a small, low-cost function.  It can be
-        safely called multiple times.
-     */
-    void 
-    lx_init()
-    {
-        if (!s_lx_init_called)
-        {
-            // On a fatal error, this should be renamed to include the time & date so it
-            // is not overwritten by the next run.
-            s_log.open("lxengine_log.html");
-            s_log 
-                << "<html>" << std::endl
-                << "<head>"
-                << "  <title>LxEngine log</title>"
-                << "  <style>"
-                << "  body { font-family: sans-serif; font-size: 9pt; }" << std:: endl
-                << "  li { white-space: pre; font-family: monospace; }" << std::endl
-                << "  .prefix { font-size: 85%; font-variant: small-caps; float: left; width: 48px; padding-left: 26px; }" << std::endl
-                << "  .debug { color: gray; font-size: 70%; } " << std::endl
-                << "  .log { color: black; } " << std::endl
-                << "  .warn { color: #f19527; } " << std::endl
-                << "  .error { color: red; font-weight: bold; } " << std::endl
-                << "  .fatal { color: red; background-color: yellow; font-weight: bold; } " << std::endl
-                << "  </style>"
-                << "</head>"
-                << "<body>"
-                << "<h1>Log</h1>"
-                << "<ul style='padding-left: 12px;'>" 
-                << std::endl;
-
-            // Define a helper lambda function that returns a function (this effectively 
-            // acts as runtime template function).
-            auto prefix_print = [](std::string css, std::string prefix) -> std::function<void(const char*)> {
-                return [css, prefix](const char* s) {
-                    s_log << "<li class='" << css << "'><span class='prefix'>" << prefix << "</span>"<< s << "</li>" << std::endl; 
-                    if (s_log_count++ == 100)
-                    {
-                        s_log_count = 0;
-                        s_log.flush();
-                    }
-                };
-            };
-            slotDebug   = prefix_print("debug", "DBG");
-            slotLog     = prefix_print("log",   "LOG");
-            slotWarn    = prefix_print("warn",  "WARN");
-            slotError   = prefix_print("error", "ERROR");
-            slotFatal   = prefix_print("fatal", "FATAL: ");
-
-            s_lx_init_called = true;
-        }
     }
 
     /*!

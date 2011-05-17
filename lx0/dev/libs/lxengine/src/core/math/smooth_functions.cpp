@@ -28,7 +28,7 @@
 //===========================================================================//
 
 #include <cmath>
-#include <lx0/core/math/smooth_functions.hpp>
+#include <lx0/util/math/smooth_functions.hpp>
 
 namespace lx0 { namespace core {
 

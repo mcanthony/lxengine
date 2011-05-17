@@ -43,8 +43,7 @@
 #include <boost/program_options.hpp>
 
 // Lx0 headers
-#include <lx0/core/core.hpp>
-#include <lx0/core/util/util.hpp>
+#include <lx0/lxengine.hpp>
 #include <lx0/subsystem/canvas.hpp>
 
 #define GLEW_STATIC

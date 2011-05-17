@@ -39,7 +39,7 @@
 
 #include <v8/v8.h>
 
-#include <lx0/core/util/util.hpp>
+#include <lx0/util/misc/util.hpp>
 
 
 int 

@@ -31,7 +31,7 @@
 
 #pragma once
 
-#include <lx0/core/base/slot.hpp>
+#include <lx0/core/slot/slot.hpp>
 #include <map>
 #include <string>
 
