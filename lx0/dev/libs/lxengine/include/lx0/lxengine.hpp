@@ -30,8 +30,9 @@
 #ifndef LX0_LXENGINE_HPP
 #define LX0_LXENGINE_HPP
 
-#include "lxengine_dox.hpp"
-
+//
+// Version
+//
 enum 
 { 
     LXENGINE_VERSION_MAJOR = 0,
@@ -39,6 +40,27 @@ enum
     LXENGINE_VERSION_REVISION = 1,
 };
 
+//
+// Standard headers
+//
+#define NOMINMAX
+#include <deque>
+#include <vector>
+#include <map>
+#include <string>
+#include <memory> 
+#include <functional>
+
+
+//
+// Doxygen documentation
+//
+#include "lxengine_dox.hpp"
+
+
+//
+// LxEngine headers
+//
 #include <lx0/core/core.hpp>
 #include <lx0/core/util/util.hpp>
 
@@ -47,6 +69,8 @@ enum
 #include <lx0/engine/element.hpp>
 #include <lx0/engine/view.hpp>
 #include <lx0/engine/controller.hpp>
+
+using namespace lx0::core::log_ns;
 
 #endif
 

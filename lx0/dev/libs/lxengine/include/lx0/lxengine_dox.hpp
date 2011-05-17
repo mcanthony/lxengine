@@ -53,6 +53,14 @@
     \defgroup Core
 */
 /*!
+    \defgroup lx0_core_init init
+    \ingroup Core
+ */
+/*!
+    \defgroup lx0_core_log logging
+    \ingroup Core
+ */
+/*!
     \defgroup lx0_core_slot slots
     \ingroup Core
  */
@@ -85,6 +93,14 @@
 /*!
     \defgroup Util
 */
+/*!
+    \defgroup lx0_util_misc misc
+    \ingroup Util
+ */
+/*!
+    \defgroup lx0_util_math math
+    \ingroup Util
+ */
 
 //===========================================================================//
 //

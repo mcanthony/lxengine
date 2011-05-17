@@ -142,7 +142,7 @@ namespace lx0 { namespace core {
 
     protected:
         typedef std::map<std::string,Function>  FunctionMap;
-        typedef std::map<std::string,lx0::core::slot<void (ElementPtr, std::vector<lxvar>&)>> CallbackMap;
+        typedef std::map<std::string,lx0::slot<void (ElementPtr, std::vector<lxvar>&)>> CallbackMap;
         typedef std::map<std::string, lxvar>    AttrMap;
         typedef std::deque<ElementPtr>          ElemList;
 

@@ -41,11 +41,7 @@
 #include <limits>
 
 // Lx0 headers
-#include <lx0/engine/engine.hpp>
-#include <lx0/engine/document.hpp>
-#include <lx0/engine/element.hpp>
-#include <lx0/core/core.hpp>
-#include <lx0/core/util/util.hpp>
+#include <lx0/lxengine.hpp>
 #include <lx0/prototype/misc.hpp>
 
 #include "terrain.hpp"

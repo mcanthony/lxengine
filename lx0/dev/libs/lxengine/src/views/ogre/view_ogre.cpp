@@ -43,6 +43,7 @@
 #include <lx0/engine/engine.hpp>
 #include <lx0/core/util/util.hpp>
 #include <lx0/core/data/lxvar_convert.hpp>
+#include <lx0/lxengine.hpp>
 
 // Internal headers
 #include "../../engine/dom/view_input.hpp"

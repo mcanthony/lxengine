@@ -26,37 +26,21 @@
 */
 //===========================================================================//
 
-#include "raytracer.hpp"
-
 //===========================================================================//
 //   H E A D E R S   &   D E C L A R A T I O N S 
 //===========================================================================//
 
-// Standard headers
-#define NOMINMAX
 #include <iostream>
-#include <string>
-#include <memory> 
-#include <functional>
-#include <vector>
-#include <map>
-#include <deque>
 
 // Lx0 headers
-#include <lx0/core/core.hpp>
-#include <lx0/core/util/util.hpp>
-#include <lx0/prototype/misc.hpp>
-#include <lx0/engine/view.hpp>
-#include <lx0/engine/engine.hpp>
-#include <lx0/engine/document.hpp>
-#include <lx0/engine/element.hpp>
-
+#include <lx0/lxengine.hpp>
 #include <glgeom/glgeom.hpp>
 #include <glgeom/prototype/camera.hpp>
 #include <glgeom/prototype/std_lights.hpp>
 #include <glgeom/prototype/material_phong.hpp>
 #include <glgeom/prototype/image.hpp>
 
+#include "raytracer.hpp"
 #include "glgeom_ext.hpp"
 
 
@@ -82,87 +66,6 @@ image_fill_checker (image3f& img)
         }
     }
 }
-
-//===========================================================================//
-
-//! Quad represented in origin-axis format
-/*!
-    A rectangular quad in 3-space represented by an origin point and
-    two axes.
- */
-template <typename T>
-class quad_oa_3t
-{
-public:
-    quad_oa_3t() {}
-    quad_oa_3t(const point3t<T>& o, const vector3t<T>& x, const vector3t<T>& y)
-        : origin(o)
-        , x_axis(x)
-        , y_axis(y)
-    {
-    }
-
-    point3t<T>      origin;
-    vector3t<T>     x_axis;
-    vector3t<T>     y_axis;
-};
-
-template <typename T>
-point3t<T>
-compute_quad_pt (const quad_oa_3t<T>& quad, T x, T y, int width, int height)
-{
-    T s = (x + 0.5f) / width;
-    T t = (y + 0.5f) / height;
-    return quad.origin + quad.x_axis * s + quad.y_axis * t;
-}
-
-typedef quad_oa_3t<float>   quad_oa_3f;
-typedef quad_oa_3t<double>  quad_oa_3d;
-
-template <typename T>
-class frustum3t
-{
-public:
-    typedef T               type;
-    typedef quad_oa_3t<T>   quad;
-    typedef point3t<T>      point3;
-
-    point3      eye;
-    quad        near_quad;
-    type        far_dist;
-};
-
-template <typename T>
-frustum3t<T>
-frustum_from_camera (const camera3t<T>& cam)
-{
-    const auto forward = camera_forward_vector(cam);
-    const auto right   = camera_right_vector(cam);
-    const auto up      = camera_up_vector(cam);
-    
-    const auto width   = cam.near_plane * tan(cam.field_of_view);
-    const auto height  = width / cam.aspect_ratio;
-
-    frustum3t<T> frustum;
-    frustum.eye       = cam.position;
-    frustum.near_quad.x_axis = right * width;
-    frustum.near_quad.y_axis = up * height;
-    frustum.near_quad.origin = frustum.eye + forward * cam.near_plane - right * (width / 2) - up * (height / 2);
-    frustum.far_dist  = cam.far_plane;
-
-    return frustum;
-}
-
-template <typename T>
-ray3t<T>
-compute_frustum_ray (const frustum3t<T>& frustum, T x, T y, int width, int height)
-{
-    auto pt = compute_quad_pt(frustum.near_quad, x, y, width, height);
-    return ray3t<T>(frustum.eye, normalize(pt - frustum.eye));
-}
-
-typedef frustum3t<float>        frustum3f;
-typedef frustum3t<double>       frustum3d;
 
 //===========================================================================//
 

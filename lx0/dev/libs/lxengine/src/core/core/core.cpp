@@ -40,7 +40,7 @@
 #include <lx0/core/core.hpp>
 #include <lx0/core/util/util.hpp>
 
-namespace lx0 { namespace core {
+namespace lx0 { namespace core { namespace log_ns {
 
     slot<void (const char*)> slotFatal;
     slot<void (const char*)> slotError;
@@ -323,4 +323,4 @@ namespace lx0 { namespace core {
 #endif
     }
 
-}}
+}}}

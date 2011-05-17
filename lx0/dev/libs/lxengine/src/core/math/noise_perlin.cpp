@@ -38,7 +38,7 @@
 #include <lx0/core/core.hpp>
 #include <lx0/core/math/noise.hpp>
 
-using namespace lx0::core;
+using namespace lx0;
 
 namespace { 
 

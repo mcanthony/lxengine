@@ -246,25 +246,25 @@ namespace lx0 {
 
                     ///@name Event Signals
                     ///@{
-                    lx0::core::slot<void()>             slotCreate;
-                    lx0::core::slot<void()>             slotDestroy;
-                    lx0::core::slot<void(bool)>         slotActivate;
-                    lx0::core::slot<void()>             slotClose;
-                    lx0::core::slot<void(int, int)>     slotResize;
-                    lx0::core::slot<void()>             slotRedraw;
+                    lx0::slot<void()>             slotCreate;
+                    lx0::slot<void()>             slotDestroy;
+                    lx0::slot<void(bool)>         slotActivate;
+                    lx0::slot<void()>             slotClose;
+                    lx0::slot<void(int, int)>     slotResize;
+                    lx0::slot<void()>             slotRedraw;
 
-                    lx0::core::slot<void(unsigned int)> slotKeyDown;
-                    lx0::core::slot<void(unsigned int)> slotKeyUp;
+                    lx0::slot<void(unsigned int)> slotKeyDown;
+                    lx0::slot<void(unsigned int)> slotKeyUp;
 
 
-                    lx0::core::slot<void(int, int)>                                            slotMouseMove;
-                    lx0::core::slot<void(const MouseState&, const ButtonState&, KeyModifiers)> slotLMouseClick;
-                    lx0::core::slot<void(const MouseState&, const ButtonState&, KeyModifiers)> slotMMouseClick;
-                    lx0::core::slot<void(const MouseState&, const ButtonState&, KeyModifiers)> slotRMouseClick;
-                    lx0::core::slot<void(const MouseState&, int)>                              slotMouseWheel;
-                    lx0::core::slot<void(const MouseState&, const ButtonState&, KeyModifiers)> slotLMouseDrag;
-                    lx0::core::slot<void(const MouseState&, const ButtonState&, KeyModifiers)> slotMMouseDrag;
-                    lx0::core::slot<void(const MouseState&, const ButtonState&, KeyModifiers)> slotRMouseDrag;
+                    lx0::slot<void(int, int)>                                            slotMouseMove;
+                    lx0::slot<void(const MouseState&, const ButtonState&, KeyModifiers)> slotLMouseClick;
+                    lx0::slot<void(const MouseState&, const ButtonState&, KeyModifiers)> slotMMouseClick;
+                    lx0::slot<void(const MouseState&, const ButtonState&, KeyModifiers)> slotRMouseClick;
+                    lx0::slot<void(const MouseState&, int)>                              slotMouseWheel;
+                    lx0::slot<void(const MouseState&, const ButtonState&, KeyModifiers)> slotLMouseDrag;
+                    lx0::slot<void(const MouseState&, const ButtonState&, KeyModifiers)> slotMMouseDrag;
+                    lx0::slot<void(const MouseState&, const ButtonState&, KeyModifiers)> slotRMouseDrag;
                     ///@}
 
                 
