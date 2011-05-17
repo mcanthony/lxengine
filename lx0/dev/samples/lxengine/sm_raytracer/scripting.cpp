@@ -34,10 +34,6 @@
 // Lx0 headers
 #include <lx0/lxengine.hpp>
 #include <lx0/util/misc/util.hpp>
-#include <lx0/engine/view.hpp>
-#include <lx0/engine/engine.hpp>
-#include <lx0/engine/document.hpp>
-#include <lx0/engine/element.hpp>
 #include <lx0/subsystem/javascript.hpp>
 
 #include "scripting.hpp"

@@ -31,10 +31,6 @@
 
 #include <vector>
 
-#include <glgeom/glgeom.hpp>
-
-namespace lx0 { namespace core { class DocumentComponent; } }
-
 lx0::DocumentComponent* create_raytracer();
 
 #endif

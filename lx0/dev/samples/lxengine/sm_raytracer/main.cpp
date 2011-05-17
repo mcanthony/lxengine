@@ -30,10 +30,12 @@
 //   H E A D E R S   &   D E C L A R A T I O N S 
 //===========================================================================//
 
-// Standard headers
 #include <iostream>
+
 #include <boost/program_options.hpp>
+
 #include <glgeom/prototype/image.hpp>
+
 #include <lx0/lxengine.hpp>
 #include <lx0/subsystem/canvas.hpp>
 #include <lx0/subsystem/javascript.hpp>

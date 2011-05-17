@@ -122,6 +122,30 @@ namespace glgeom
 
             typedef frustum3t<float>        frustum3f;
             typedef frustum3t<double>       frustum3d;
+
+            //-----------------------------------------------------------------------------//
+            
+            /*!
+                \todo Templatize
+                \todo Either add the color as a suffice to the function name or pass the
+                    colors as parameters
+             */
+            inline void
+            image_fill_checker (image3f& img)
+            {
+                const glgeom::color3f c0(.05f, .05f, 0.0f);
+                const glgeom::color3f c1(   0,    0, 0.05f);
+
+                for (int iy = 0; iy < img.height(); ++iy)
+                {
+                    for (int ix = 0; ix < img.width(); ++ix)
+                    {
+                        const auto& c = (ix % 2) + (iy % 2) == 1 ? c0 : c1; 
+                        img.set(ix, iy, c); 
+                    }
+                }
+            }
+
         }
     }  
     using namespace glgeom::ext::misc_ns;

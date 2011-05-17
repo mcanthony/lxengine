@@ -29,8 +29,6 @@
 #ifndef SCRIPTING_HPP
 #define SCRIPTING_HPP
 
-namespace lx0 { namespace core { class DocumentComponent; } }
-
 lx0::DocumentComponent* create_scripting();
 
 #endif

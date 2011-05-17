@@ -35,6 +35,7 @@
 // Lx0 headers
 #include <lx0/lxengine.hpp>
 #include <lx0/util/misc/lxvar_convert.hpp>
+
 #include <glgeom/glgeom.hpp>
 #include <glgeom/prototype/camera.hpp>
 #include <glgeom/prototype/std_lights.hpp>
@@ -44,29 +45,10 @@
 #include "raytracer.hpp"
 #include "glgeom_ext.hpp"
 
-
 using namespace lx0;
 using namespace glgeom;
 
 extern glgeom::image3f img;
-
-//===========================================================================//
-
-void
-image_fill_checker (image3f& img)
-{
-    const glgeom::color3f c0(.05f, .05f, 0.0f);
-    const glgeom::color3f c1(   0,    0, 0.05f);
-
-    for (int iy = 0; iy < img.height(); ++iy)
-    {
-        for (int ix = 0; ix < img.width(); ++ix)
-        {
-            const auto& c = (ix % 2) + (iy % 2) == 1 ? c0 : c1; 
-            img.set(ix, iy, c); 
-        }
-    }
-}
 
 //===========================================================================//
 
@@ -75,6 +57,8 @@ class Camera : public Element::Component
 public:
     camera3f camera;
 };
+
+//===========================================================================//
 
 class Environment : public Element::Component
 {
@@ -88,12 +72,16 @@ public:
     bool        shadows;
 };
 
+//===========================================================================//
+
 class Material 
     : public Element::Component
     , public material_phong_f           // Multiple inheritance of classes without virtual methods is ok
 {
 public:
 };
+
+//===========================================================================//
 
 class Geometry : public Element::Component
 {
@@ -131,6 +119,8 @@ protected:
 
 typedef std::shared_ptr<Geometry> GeometryPtr;
 
+//===========================================================================//
+
 class Plane : public Geometry
 {
 public:
@@ -142,6 +132,8 @@ protected:
         return  glgeom::intersect(ray, geom, isect);
     }
 };
+
+//===========================================================================//
 
 class Cube : public Geometry
 {
@@ -155,6 +147,8 @@ protected:
     }
 };
 
+//===========================================================================//
+
 class Sphere : public Geometry
 {
 public:
@@ -166,6 +160,8 @@ protected:
         return  glgeom::intersect(ray, geom, isect);
     }
 };
+
+//===========================================================================//
 
 class Cone : public Geometry
 {
@@ -179,6 +175,8 @@ protected:
     }
 };
 
+//===========================================================================//
+
 class Cylinder : public Geometry
 {
 public:
@@ -191,6 +189,8 @@ protected:
     }
 };
 
+//===========================================================================//
+
 class Light 
     : public Element::Component
     , public point_light_f
@@ -199,6 +199,7 @@ public:
 };
 typedef std::shared_ptr<Light> LightPtr;
 
+//===========================================================================//
 
 class ScanIterator
 {
@@ -537,4 +538,7 @@ protected:
 };
 
 
-lx0::DocumentComponent* create_raytracer() { return new RayTracer; }
+lx0::DocumentComponent* create_raytracer() 
+{ 
+    return new RayTracer; 
+}
