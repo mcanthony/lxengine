@@ -30,11 +30,10 @@
 
 #pragma once
 
-namespace lx0 { namespace core {
+namespace lx0 { namespace engine { namespace dom_ns {
     class KeyEvent;
-}}
 
-namespace lx0 { namespace core { namespace detail {
+    namespace detail {
 
     class InputImp;
 
@@ -54,4 +53,4 @@ namespace lx0 { namespace core { namespace detail {
         std::shared_ptr<InputImp> mspImp;
     };
 
-}}}
+}}}}

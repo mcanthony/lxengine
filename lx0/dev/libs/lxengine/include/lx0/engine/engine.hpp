@@ -41,165 +41,174 @@
 
 // Lx headers
 #include <lx0/_detail/forward_decls.hpp>
-#include <lx0/_detail/dom_base.hpp>
+#include <lx0/engine/dom_base.hpp>
 #include <lx0/core/lxvar/lxvar.hpp>
 
-namespace lx0 { namespace core {
-
-    namespace detail
-    {
-        //===========================================================================//
-        //!
-        /*!
-         */
-        class AttributeParser
+namespace lx0 
+{ 
+    namespace engine 
+    { 
+        namespace dom_ns
         {
-        public:
-            virtual             ~AttributeParser (void) {}
-            virtual     lxvar   parse               (std::string s) = 0;
-        };
+            namespace detail
+            {
+                using lx0::lxvar;
 
-        _LX_FORWARD_DECL_PTRS(AttributeParser);
+                //===========================================================================//
+                //!
+                /*!
+                 */
+                class AttributeParser
+                {
+                public:
+                    virtual             ~AttributeParser (void) {}
+                    virtual     lxvar   parse               (std::string s) = 0;
+                };
+
+                _LX_FORWARD_DECL_PTRS(AttributeParser);
 
 
-        //===========================================================================//
-        //!
-        /*!
-         */
-        class ObjectCount
-        {
-        public:
-                    ObjectCount (size_t current);
+                //===========================================================================//
+                //!
+                /*!
+                 */
+                class ObjectCount
+                {
+                public:
+                            ObjectCount (size_t current);
 
-            void    inc      (void);
-            void    dec      (void);
+                    void    inc      (void);
+                    void    dec      (void);
             
-            size_t  current  (void) const { return mCurrent; }
-            size_t  total    (void) const { return mTotal; }
+                    size_t  current  (void) const { return mCurrent; }
+                    size_t  total    (void) const { return mTotal; }
 
-        protected:
-            size_t mCurrent;
-            size_t mTotal;
-        };
+                protected:
+                    size_t mCurrent;
+                    size_t mTotal;
+                };
 
-        //===========================================================================//
-        //!
-        /*!
-         */
-        class EngineComponent : public detail::_ComponentBase
-        {
-        public:
-            virtual void        onDocumentCreated   (EnginePtr spEngine, DocumentPtr spDocument) {}
-        };
+                //===========================================================================//
+                //!
+                /*!
+                 */
+                class EngineComponent : public detail::_ComponentBase
+                {
+                public:
+                    virtual void        onDocumentCreated   (EnginePtr spEngine, DocumentPtr spDocument) {}
+                };
 
-    }
+            }
 
-    //===========================================================================//
-    //!
-    /*!
-        \ingroup lx0_engine_dom
-     */
-    class Engine 
-        : public std::enable_shared_from_this<Engine>
-        , public detail::_EnableComponentList<Engine, detail::EngineComponent>
-    {
-    public:
-        class Environment
-        {
-        public:
-                            Environment     (void);
+            //===========================================================================//
+            //!
+            /*!
+                \ingroup lx0_engine_dom
+             */
+            class Engine 
+                : public std::enable_shared_from_this<Engine>
+                , public detail::_EnableComponentList<Engine, detail::EngineComponent>
+            {
+            public:
+                class Environment
+                {
+                public:
+                                    Environment     (void);
 
-            float           timeScale       (void) const    { return mTimeScale;}
-            void            setTimeScale    (float s);
+                    float           timeScale       (void) const    { return mTimeScale;}
+                    void            setTimeScale    (float s);
 
-        protected:
-            float       mTimeScale;
-        };
+                protected:
+                    float       mTimeScale;
+                };
 
 
-        //! Acquire the Singleton for the Engine
-        static EnginePtr    acquire             (void) { return detail::acquireSingleton<Engine>(s_wpEngine); }
+                //! Acquire the Singleton for the Engine
+                static EnginePtr    acquire             (void) { return lx0::detail::acquireSingleton<Engine>(s_wpEngine); }
         
-        void                shutdown            (void);
+                void                shutdown            (void);
 
-        int                 versionMajor        (void)                      { return 0; }
-        int                 versionMinor        (void)                      { return 0; }
+                int                 versionMajor        (void)                      { return 0; }
+                int                 versionMinor        (void)                      { return 0; }
 
-        Environment&        environment         (void)                      { return mEnvironment; }
+                Environment&        environment         (void)                      { return mEnvironment; }
 
-        DocumentPtr         createDocument      (void);
-        DocumentPtr         loadDocument        (std::string filename);
+                DocumentPtr         createDocument      (void);
+                DocumentPtr         loadDocument        (std::string filename);
         
-        const std::vector<DocumentPtr>& documents (void) { return m_documents; }
+                const std::vector<DocumentPtr>& documents (void) { return m_documents; }
 
-        void                sendMessage         (const char* message);
-        int	                run                 (void);
+                void                sendMessage         (const char* message);
+                int	                run                 (void);
 
-        ///@name Attribute Parsing
-        ///@{
-        void                addAttributeParser  (std::string attr, std::function<lxvar(std::string)> parser);
-        void                addPsuedoAttribute  (std::string attr, std::function<bool(std::string)> parser);
+                ///@name Attribute Parsing
+                ///@{
+                void                addAttributeParser  (std::string attr, std::function<lxvar(std::string)> parser);
+                void                addPsuedoAttribute  (std::string attr, std::function<bool(std::string)> parser);
 
-        lxvar               parseAttribute      (std::string name, std::string value);
-        ///@}
+                lxvar               parseAttribute      (std::string name, std::string value);
+                ///@}
 
-        ///@name Engine plug-ins
-        ///@{
-        void                addViewPlugin       (std::string name, std::function<ViewImp*(View*)> ctor);
-        ViewImp*            _createViewImp      (std::string name, View* pView);
+                ///@name Engine plug-ins
+                ///@{
+                void                addViewPlugin       (std::string name, std::function<ViewImp*(View*)> ctor);
+                ViewImp*            _createViewImp      (std::string name, View* pView);
         
-        void                addDocumentComponent (std::string name, std::function<DocumentComponent* ()> ctor);
+                void                addDocumentComponent (std::string name, std::function<DocumentComponent* ()> ctor);
         
-        typedef std::function<ElementComponent*(ElementPtr spElem)>      ElementComponentCtor;
-        typedef std::pair<std::string,ElementComponentCtor>              ElementComponentPair;
-        typedef std::map<std::string, std::vector<ElementComponentPair>> ElementComponentMap;
+                typedef std::function<ElementComponent*(ElementPtr spElem)>      ElementComponentCtor;
+                typedef std::pair<std::string,ElementComponentCtor>              ElementComponentPair;
+                typedef std::map<std::string, std::vector<ElementComponentPair>> ElementComponentMap;
 
-        void                        addElementComponent     (std::string tag, std::string name, ElementComponentCtor ctor);
-        const ElementComponentMap&  elementComponents       (void) const  { return mElementComponents; }
-        ///@}
+                void                        addElementComponent     (std::string tag, std::string name, ElementComponentCtor ctor);
+                const ElementComponentMap&  elementComponents       (void) const  { return mElementComponents; }
+                ///@}
 
-        void                notifyAttached      (ComponentPtr spComponent) { /*! \todo */ } 
+                void                notifyAttached      (ComponentPtr spComponent) { /*! \todo */ } 
 
-        // Stats
-        void                incObjectCount      (std::string name);
-        void                decObjectCount      (std::string name);
+                // Stats
+                void                incObjectCount      (std::string name);
+                void                decObjectCount      (std::string name);
 
-        // Development Scaffolding Methods
-        void                workaround_runJavascript    (DocumentPtr spDoc, const std::string& source) { _runJavascript(spDoc, source); }
+                // Development Scaffolding Methods
+                void                workaround_runJavascript    (DocumentPtr spDoc, const std::string& source) { _runJavascript(spDoc, source); }
 
-    protected:
-        template <typename T> friend std::shared_ptr<T> detail::acquireSingleton (std::weak_ptr<T>&);
-        static std::weak_ptr<Engine> s_wpEngine;
+            protected:
+                template <typename T> friend std::shared_ptr<T> lx0::detail::acquireSingleton (std::weak_ptr<T>&);
+                static std::weak_ptr<Engine> s_wpEngine;
 
-        Engine();
-        ~Engine(); 
+                Engine();
+                ~Engine(); 
 
-        DocumentPtr _loadDocument           (bool bCreate, std::string filename);
-        ElementPtr  _loadDocumentRoot       (DocumentPtr spDocument, std::string filename);
+                DocumentPtr _loadDocument           (bool bCreate, std::string filename);
+                ElementPtr  _loadDocumentRoot       (DocumentPtr spDocument, std::string filename);
 
-        void        _notifyDocumentCreated  (DocumentPtr spDocument);
+                void        _notifyDocumentCreated  (DocumentPtr spDocument);
  
-        void        _attachSound            (void);
-        void        _attachPhysics          (DocumentPtr spDocument);
-        void        _attachJavascript       (void);
-        void        _runJavascript          (DocumentPtr spDocument, std::string source);
+                void        _attachSound            (void);
+                void        _attachPhysics          (DocumentPtr spDocument);
+                void        _attachJavascript       (void);
+                void        _runJavascript          (DocumentPtr spDocument, std::string source);
         
-        void        _processDocumentHeader  (DocumentPtr spDocument);
+                void        _processDocumentHeader  (DocumentPtr spDocument);
 
-        bool        _handlePlatformMessages (void);
+                bool        _handlePlatformMessages (void);
 
-        Environment                 mEnvironment;
-        std::vector<DocumentPtr>    m_documents;
-        std::deque<std::string>     m_messageQueue;
+                Environment                 mEnvironment;
+                std::vector<DocumentPtr>    m_documents;
+                std::deque<std::string>     m_messageQueue;
 
-        std::map<std::string, detail::ObjectCount>   m_objectCounts;
+                std::map<std::string, detail::ObjectCount>   m_objectCounts;
 
-        std::map<std::string, std::function<ViewImp*(View*)>>                   mViewImps;
-        std::map<std::string, std::function<DocumentComponent* ()>>             mDocumentComponents;
-        ElementComponentMap                                                     mElementComponents;
+                std::map<std::string, std::function<ViewImp*(View*)>>                   mViewImps;
+                std::map<std::string, std::function<DocumentComponent* ()>>             mDocumentComponents;
+                ElementComponentMap                                                     mElementComponents;
 
-        std::map<std::string, std::vector<std::function<bool(std::string)>>>    m_psuedoAttributes;
-        std::map<std::string, std::vector<std::function<lxvar(std::string)>>>   m_attributeParsers;
-    };
+                std::map<std::string, std::vector<std::function<bool(std::string)>>>    m_psuedoAttributes;
+                std::map<std::string, std::vector<std::function<lxvar(std::string)>>>   m_attributeParsers;
+            };
 
-}}
+        }
+    }
+    using namespace lx0::engine::dom_ns;
+}

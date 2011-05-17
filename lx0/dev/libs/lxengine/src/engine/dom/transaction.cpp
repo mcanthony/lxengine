@@ -31,7 +31,7 @@
 #include <lx0/engine/transaction.hpp>
 #include <lx0/engine/element.hpp>
 
-namespace lx0 { namespace core {
+namespace lx0 { namespace engine { namespace dom_ns {
 
     ElementPtr  
     Transaction::write (ElementCPtr spElement)
@@ -95,4 +95,4 @@ namespace lx0 { namespace core {
         // document.unlock();
         return bValid;
     }
-}}
+}}}

@@ -78,6 +78,7 @@ enum
 
 #include <lx0/util/math/noise.hpp>
 #include <lx0/util/math/smooth_functions.hpp>
+#include <lx0/util/misc/util.hpp>
 
 using namespace lx0::core::log_ns;
 

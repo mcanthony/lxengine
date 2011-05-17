@@ -32,7 +32,7 @@
 #include <memory>
 #include <lx0/core/lxvar/lxvar.hpp>
 
-namespace lx0 { namespace core {
+namespace lx0 { namespace engine { namespace dom_ns {
 
     //===========================================================================//
     //! 
@@ -56,4 +56,4 @@ namespace lx0 { namespace core {
     };
 
 
-}}
+}}}

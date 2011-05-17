@@ -39,7 +39,7 @@
 #include "main.hpp"
 #include "ut_attributeparsers.hpp"
 
-using namespace lx0::core;
+using namespace lx0;
 
 int mChecksOkay;
 int mChecksTotal;

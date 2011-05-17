@@ -44,7 +44,7 @@
 // Internal headers
 #include "view_input.hpp"
 
-namespace lx0 { namespace core {
+namespace lx0 { namespace engine { namespace dom_ns {
 
 
     View::View (std::string impType, Document* pDocument)
@@ -152,4 +152,4 @@ namespace lx0 { namespace core {
         return mspLxInputManager->isKeyDown(keyCode);
     }
 
-}}
+}}}

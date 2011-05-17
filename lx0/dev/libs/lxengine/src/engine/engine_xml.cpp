@@ -60,7 +60,7 @@ namespace {
 //   I M P L E M E N T A T I O N 
 //===========================================================================//
 
-namespace lx0 { namespace core {
+namespace lx0 { namespace engine { namespace dom_ns {
 
     
     ElementPtr  
@@ -145,11 +145,11 @@ namespace lx0 { namespace core {
 
                     if (ext == "blend" && tagName == "Mesh")
                     {
-                        spElem->value( lx0::dom::load_blend( srcAttr.asString() ) );
+                        spElem->value( lx0::load_blend( srcAttr.asString() ) );
                         bSet = true;
                     }
                     else
-                        elemValue = lx0::util::lx_file_to_json(srcAttr.asString().c_str());
+                        elemValue = lx0::lx_file_to_json(srcAttr.asString().c_str());
                 }
                 else if (!elemText.empty())
                 {
@@ -166,7 +166,7 @@ namespace lx0 { namespace core {
                 if (!bSet)
                 {
                     if (tagName == "Mesh") 
-                        spElem->value(lx0::dom::load_lxson(elemValue));
+                        spElem->value(lx0::load_lxson(elemValue));
                     else
                         spElem->value(elemValue);
                 }
@@ -212,5 +212,5 @@ namespace lx0 { namespace core {
         return spRoot;
     }
  
-}}
+}}}
 

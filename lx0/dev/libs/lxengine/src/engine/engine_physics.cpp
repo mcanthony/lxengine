@@ -504,7 +504,7 @@ namespace lx0 { namespace core { namespace detail {
     void 
     PhysicsDoc::onAttached (DocumentPtr spDocument)
     {
-        mLastUpdate = lx0::util::lx_milliseconds();
+        mLastUpdate = lx0::lx_milliseconds();
     }
 
 
@@ -663,7 +663,7 @@ namespace lx0 { namespace core { namespace detail {
         const float kFps = 60.0f;
         const unsigned int kFrameDurationMs = unsigned int( (1.0f / kFps) * 1000.0f );
 
-        auto timeNow = lx0::util::lx_milliseconds();
+        auto timeNow = lx0::lx_milliseconds();
 
         if (timeNow - mLastUpdate >= kFrameDurationMs)
         {
@@ -693,9 +693,9 @@ namespace lx0 { namespace core { namespace detail {
 
 }}}
 
-namespace lx0 { namespace core {
+namespace lx0 { namespace engine { namespace dom_ns {
     
-    using namespace detail;
+    using namespace lx0::core::detail;
 
     void
     Engine::_attachPhysics (DocumentPtr spDocument)
@@ -703,4 +703,4 @@ namespace lx0 { namespace core {
         spDocument->attachComponent("physicsSystem", new PhysicsDoc);
     }
 
-}}
+}}}

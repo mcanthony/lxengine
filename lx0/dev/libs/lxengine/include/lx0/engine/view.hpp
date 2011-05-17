@@ -32,11 +32,13 @@
 #include <memory>
 
 #include <lx0/_detail/forward_decls.hpp>
-#include <lx0/_detail/dom_base.hpp>
+#include <lx0/engine/dom_base.hpp>
 #include <lx0/core/slot/slot.hpp>
 #include <lx0/core/lxvar/lxvar.hpp>
 
-namespace lx0 { namespace core {
+namespace lx0 { namespace engine { namespace dom_ns {
+
+    class KeyEvent;
 
     namespace detail {
         _LX_FORWARD_DECL_PTRS(LxInputManager);
@@ -58,7 +60,7 @@ namespace lx0 { namespace core {
         virtual     void        updateFrame     (DocumentPtr spDocument) = 0;
         virtual     void        updateEnd       (void) = 0;
 
-        virtual     void        handleEvent     (std::string evt, lx0::core::lxvar params) {}
+        virtual     void        handleEvent     (std::string evt, lx0::lxvar params) {}
     };
 
 
@@ -85,7 +87,7 @@ namespace lx0 { namespace core {
         void        updateFrame     (void);
         void        updateEnd       (void);
 
-        void        sendEvent       (std::string evt, lx0::core::lxvar params);
+        void        sendEvent       (std::string evt, lx0::lxvar params);
 
         bool        isKeyDown       (int keyCode) const;
 
@@ -110,3 +112,6 @@ namespace lx0 { namespace core {
         int mOnElementAddedId;
     };
 }}
+
+using namespace lx0::engine::dom_ns;
+}

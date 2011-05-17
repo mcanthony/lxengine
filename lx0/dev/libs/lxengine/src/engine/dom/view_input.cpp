@@ -51,7 +51,7 @@ using namespace lx0::util;
 //   I M P L E M E N T A T I O N 
 //===========================================================================//
 
-namespace lx0 { namespace core { namespace detail {
+namespace lx0 { namespace engine { namespace dom_ns { namespace detail {
 
     using OIS::KeyEvent;
 
@@ -147,7 +147,7 @@ namespace lx0 { namespace core { namespace detail {
 
         virtual bool keyPressed( const KeyEvent &arg )
         {
-            lx0::core::KeyEvent e;
+            lx0::KeyEvent e;
             e.keyCode = int(arg.key);
             e.keyChar = char(arg.text);
 
@@ -203,4 +203,4 @@ namespace lx0 { namespace core { namespace detail {
         return mspImp->isKeyDown(keyCode);
     }
 
-}}}
+}}}}

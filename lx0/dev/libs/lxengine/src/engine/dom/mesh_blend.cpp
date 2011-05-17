@@ -47,7 +47,7 @@ namespace {
     }
 }
 
-namespace lx0 { namespace dom {
+namespace lx0 { namespace engine { namespace dom_ns {
 
     Mesh*
     load_blend (std::string filename)
@@ -113,4 +113,4 @@ namespace lx0 { namespace dom {
         }
     }
 
-}}
+}}}

@@ -513,7 +513,7 @@ namespace lx0 { namespace subsystem { namespace javascript_ns { namespace detail
                 if (args.Length() == 1)
                 {
                     std::string text = _marshal(args[0]->ToString());
-                    lx0::util::lx_message_box("Alert", text);
+                    lx0::lx_message_box("Alert", text);
                 }
                 else
                     lx_error("alert() called from script with too few arguments.");
@@ -1201,7 +1201,7 @@ namespace lx0 { namespace subsystem { namespace javascript_ns { namespace detail
 //   Engine class
 //===========================================================================//
 
-namespace lx0 { namespace core { 
+namespace lx0 { namespace engine { namespace dom_ns { 
 
     using namespace lx0::subsystem::javascript_ns::detail;
 
@@ -1235,4 +1235,4 @@ namespace lx0 { namespace core {
         spComponent->run(spDocument, source);
     }
 
-}}
+}}}

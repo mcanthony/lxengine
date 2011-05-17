@@ -31,36 +31,17 @@
 //===========================================================================//
 
 // Standard headers
-#define NOMINMAX
 #include <iostream>
-#include <string>
-#include <memory> 
-#include <functional>
-#include <vector>
-#include <map>
-#include <deque>
-
-// Library headers
 #include <boost/program_options.hpp>
-
-// Lx0 headers
 #include <glgeom/prototype/image.hpp>
-
 #include <lx0/lxengine.hpp>
 #include <lx0/subsystem/canvas.hpp>
 #include <lx0/subsystem/javascript.hpp>
 #include <lx0/prototype/misc.hpp>
 
-#include <windows.h>
-#include <gl/gl.h>
-
 #include "raytracer.hpp"
 #include "scripting.hpp"
 #include "viewer.hpp"
-
-using namespace lx0::core;
-using namespace lx0;
-using namespace glgeom;
 
 //===========================================================================//
 
@@ -130,7 +111,7 @@ validate_options (Options& options, int argc, char** argv)
      
     options.filename = vars["file"].as<std::string>();
 
-    if (!lx0::util::lx_file_exists(options.filename))
+    if (!lx0::lx_file_exists(options.filename))
     {
         std::cout << "Error: file '" << options.filename << "' could not be found." << std::endl << std::endl;
         return false;
@@ -142,6 +123,8 @@ validate_options (Options& options, int argc, char** argv)
 int 
 main (int argc, char** argv)
 {
+    using namespace lx0;
+
     int exitCode = -1;
     
     Options options;

@@ -44,9 +44,7 @@
 
 // Lx0 headers
 #include <lx0/lxengine.hpp>
-
-using namespace lx0::core;
-
+using namespace lx0;
 
 //===========================================================================//
 //   E N T R Y - P O I N T

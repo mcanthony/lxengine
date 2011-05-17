@@ -40,7 +40,7 @@ namespace lx0
          */
         namespace javascript_ns
         {
-            class IJavascript : public lx0::core::Document::Component
+            class IJavascript : public lx0::Document::Component
             {
             public:
                 virtual void run (const std::string& source) = 0;

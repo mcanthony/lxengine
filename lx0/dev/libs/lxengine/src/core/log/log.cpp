@@ -206,7 +206,7 @@ namespace lx0 { namespace core { namespace log_ns {
         slotError(buffer);
 
 #if 0 // !defined(NDEBUG) && defined(_MSC_VER)      
-        lx0::util::lx_message_box("LxEngine Error", buffer);
+        lx0::lx_message_box("LxEngine Error", buffer);
         *(int*)0 = 0;
 #endif
 

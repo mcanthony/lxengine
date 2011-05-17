@@ -66,12 +66,12 @@ protected:
     LayerMap    mLayers;
 };
 
-class Renderable : public lx0::core::Element::Component
+class Renderable : public lx0::Element::Component
 {
 public:
-    virtual void update(lx0::core::ElementPtr spElement) {}
+    virtual void update(lx0::ElementPtr spElement) {}
 
-    virtual void generate(lx0::core::ElementPtr spElement,
+    virtual void generate(lx0::ElementPtr spElement,
                   RasterizerGL& rasterizer,
                   lx0::prototype::Camera& cam1,
                   CameraPtr spCamera, 

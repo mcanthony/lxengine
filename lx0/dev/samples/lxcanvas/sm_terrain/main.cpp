@@ -351,7 +351,7 @@ public:
     virtual     void        updateFrame     (DocumentPtr spDocument);
     virtual     void        updateEnd       (void) {}
 
-    virtual     void        handleEvent     (std::string evt, lx0::core::lxvar params);
+    virtual     void        handleEvent     (std::string evt, lx0::lxvar params);
 
 protected:
     View*                   mpHostView;
@@ -427,7 +427,7 @@ LxCanvasImp::updateFrame (DocumentPtr spDocument)
 }
 
 void 
-LxCanvasImp::handleEvent (std::string evt, lx0::core::lxvar params)
+LxCanvasImp::handleEvent (std::string evt, lx0::lxvar params)
 {
     bool bInvalidate = true;
 

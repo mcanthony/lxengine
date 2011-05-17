@@ -485,13 +485,13 @@ namespace lx0 { namespace core { namespace detail {
 
 }}}
 
-namespace lx0 { namespace core { 
+namespace lx0 { namespace engine { namespace dom_ns { 
     
-    using namespace detail;
+    using namespace lx0::core::detail;
 
     void        
     Engine::_attachSound (void)
     {
         attachComponent("soundBootstrap", new SoundEngineBootstrap);
     }
-}}
+}}}

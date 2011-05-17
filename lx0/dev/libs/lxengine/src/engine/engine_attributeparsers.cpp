@@ -39,7 +39,7 @@
 #include <lx0/engine/document.hpp>
 #include <lx0/core/lxvar/lxvar.hpp>
 
-namespace lx0 { namespace core {
+namespace lx0 { namespace engine { namespace dom_ns {
 
     /*!
         By default all attributes in the XML document are parsed as lxson formatted 
@@ -85,4 +85,4 @@ namespace lx0 { namespace core {
         m_psuedoAttributes[attr].push_back(parser);
     }
 
-}}
+}}}

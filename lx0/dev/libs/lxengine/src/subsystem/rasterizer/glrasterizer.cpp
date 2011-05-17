@@ -384,7 +384,7 @@ RasterizerGL::_createShader(const char* filename, GLuint type)
 {
     GLuint shaderHandle = 0; 
 
-    std::string shaderText = lx0::util::lx_file_to_string(filename);
+    std::string shaderText = lx0::lx_file_to_string(filename);
     if (!shaderText.empty())
     {
         shaderHandle = glCreateShader(type);
@@ -396,7 +396,7 @@ RasterizerGL::_createShader(const char* filename, GLuint type)
         glCompileShader(shaderHandle);
     }
     else
-        lx_error("Could not load shader '%s' (file exists = %s)", filename, lx0::util::lx_file_exists(filename) ? "true" : "false");
+        lx_error("Could not load shader '%s' (file exists = %s)", filename, lx0::lx_file_exists(filename) ? "true" : "false");
 
     return shaderHandle;
 }
@@ -675,7 +675,7 @@ RasterizerGL::refreshTextures (void)
             // Check that the file is not still open; if the file was just saved and
             // not yet closed, this could fail while the file is still being written
             // to.
-            if (!lx0::util::lx_file_is_open(spTex->mFilename))
+            if (!lx0::lx_file_is_open(spTex->mFilename))
             {
                 spTex->unload();
                 spTex->load();

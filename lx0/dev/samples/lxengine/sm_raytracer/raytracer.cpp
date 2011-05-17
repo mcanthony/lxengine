@@ -45,7 +45,7 @@
 #include "glgeom_ext.hpp"
 
 
-using namespace lx0::core;
+using namespace lx0;
 using namespace glgeom;
 
 extern glgeom::image3f img;
@@ -428,11 +428,11 @@ public:
             img.set(x, y, _trace(x, y)); 
         }));
 
-        mUpdateQueue.push_back([&]() { return mRenderTime = lx0::util::lx_milliseconds(), true; });
+        mUpdateQueue.push_back([&]() { return mRenderTime = lx0::lx_milliseconds(), true; });
         mUpdateQueue.push_back([=]() { return passQuick->done() ? true : (passQuick->next(), false); });
         mUpdateQueue.push_back([=]() { return passMedium->done() ? true : (passMedium->next(), false); });
         mUpdateQueue.push_back([=]() { return passHigh->done() ? true : (passHigh->next(), false); });
-        mUpdateQueue.push_back([&]() { return std::cout << "Done (" << lx0::util::lx_milliseconds() - mRenderTime << " ms)." << std::endl, true; });
+        mUpdateQueue.push_back([&]() { return std::cout << "Done (" << lx0::lx_milliseconds() - mRenderTime << " ms)." << std::endl, true; });
     }
 
     bool _shadowTerm (const point_light_f& light, const intersection3f& intersection)
@@ -537,4 +537,4 @@ protected:
 };
 
 
-lx0::core::DocumentComponent* create_raytracer() { return new RayTracer; }
+lx0::DocumentComponent* create_raytracer() { return new RayTracer; }

@@ -35,6 +35,6 @@
 
 namespace lx0 { namespace core { class DocumentComponent; } }
 
-lx0::core::DocumentComponent* create_raytracer();
+lx0::DocumentComponent* create_raytracer();
 
 #endif

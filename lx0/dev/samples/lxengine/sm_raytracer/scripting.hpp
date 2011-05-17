@@ -31,6 +31,6 @@
 
 namespace lx0 { namespace core { class DocumentComponent; } }
 
-lx0::core::DocumentComponent* create_scripting();
+lx0::DocumentComponent* create_scripting();
 
 #endif

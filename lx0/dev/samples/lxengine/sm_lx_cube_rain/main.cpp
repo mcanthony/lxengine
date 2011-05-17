@@ -45,7 +45,7 @@
 // Lx0 headers
 #include <lx0/lxengine.hpp>
 
-using namespace lx0::core;
+using namespace lx0;
 
 //===========================================================================//
 //  D E F I N I T I O N S

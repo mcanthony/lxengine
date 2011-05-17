@@ -36,21 +36,28 @@
 
 #include <lx0/_detail/forward_decls.hpp>
 
-namespace lx0 { namespace core {
+namespace lx0 
+{ 
+    namespace engine 
+    { 
+        namespace dom_ns 
+        {
+            class Transaction
+            {
+            public:
+                void        add     (ElementPtr spParent, ElementPtr spChild);
+                ElementPtr  write   (ElementCPtr spElement);
 
-    class Transaction
-    {
-    public:
-        void        add     (ElementPtr spParent, ElementPtr spChild);
-        ElementPtr  write   (ElementCPtr spElement);
+                bool submit();
+                void revert();
 
-        bool submit();
-        void revert();
+            protected:
+                typedef std::vector<std::function<bool()>>  Operations;
 
-    protected:
-        typedef std::vector<std::function<bool()>>  Operations;
-        
-        Operations m_validations;
-        Operations m_operations;
-    };
-}}
+                Operations m_validations;
+                Operations m_operations;
+            };
+        }
+    }
+    using namespace lx0::engine::dom_ns;
+}

@@ -38,8 +38,7 @@
 #include <lx0/core/lxvar/lxvar.hpp>
 #include <lx0/util/misc/util.hpp>
 
-using namespace lx0::core;
-using namespace lx0::util;
+using namespace lx0;
 
 inline int generate(int i)
 {

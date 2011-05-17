@@ -5,7 +5,7 @@
     LICENSE
     * MIT License (http://www.opensource.org/licenses/mit-license.php)
 
-    Copyright (c) 2010 athile@athile.net (http://www.athile.net)
+    Copyright (c) 2010-2011 athile@athile.net (http://www.athile.net)
 
     Permission is hereby granted, free of charge, to any person obtaining a 
     copy of this software and associated documentation files (the "Software"), 
@@ -33,14 +33,10 @@
 #include <lx0/engine/object.hpp>
 #include <glgeom/glgeom.hpp>
 
-namespace lx0 { namespace dom {
-    
-    lx0::core::Mesh*     load_blend (std::string name);
-    lx0::core::Mesh*     load_lxson (lx0::core::lxvar& v);
+namespace lx0 { namespace engine { namespace dom_ns {
 
-}}
-
-namespace lx0 { namespace core {
+    lx0::engine::dom_ns::Mesh*     load_blend (std::string name);
+    lx0::engine::dom_ns::Mesh*     load_lxson (lx0::lxvar& v);
 
     //===========================================================================//
     //!
@@ -81,4 +77,6 @@ namespace lx0 { namespace core {
     };
 
 }}
+using namespace lx0::engine::dom_ns;
+}
 

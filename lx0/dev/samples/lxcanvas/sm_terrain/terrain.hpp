@@ -36,7 +36,7 @@
 
 namespace Terrain
 {
-    using namespace lx0::core;
+    using namespace lx0;
     using namespace lx0::prototype;
 
     class Runtime : public Element::Component

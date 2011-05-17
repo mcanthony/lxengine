@@ -133,7 +133,7 @@ protected:
     {
         GLuint shaderHandle = 0; 
 
-        std::string shaderText = lx0::util::lx_file_to_string(filename);
+        std::string shaderText = lx0::lx_file_to_string(filename);
         if (!shaderText.empty())
         {
             shaderHandle = glCreateShader(type);
@@ -145,7 +145,7 @@ protected:
             glCompileShader(shaderHandle);
         }
         else
-            lx_error("Could not load shader '%s' (file exists = %s)", filename, lx0::util::lx_file_exists(filename) ? "true" : "false");
+            lx_error("Could not load shader '%s' (file exists = %s)", filename, lx0::lx_file_exists(filename) ? "true" : "false");
 
         return shaderHandle;
     }

@@ -29,8 +29,6 @@
 #ifndef VIEWER_HPP
 #define VIEWER_HPP
 
-namespace lx0 { namespace core { class ViewImp; } }
-
-lx0::core::ViewImp* create_viewer();
+lx0::ViewImp* create_viewer();
 
 #endif

@@ -34,16 +34,11 @@
 #include <iostream>
 #include <string>
 #include <sstream>
-#include <memory> 
-#include <functional>
-#include <vector>
-#include <map>
-#include <deque>
 
 // Lx0 headers
 #include <lx0/lxengine.hpp>
 
-using namespace lx0::core;
+using namespace lx0;
 
 
 class Fragment
@@ -186,7 +181,7 @@ main (int argc, char** argv)
     {
         ShaderGraphRuntime runtime;
 
-        lxvar frag = lxvar::parse( lx0::util::lx_file_to_string("data/sandbox_shadergraph/phong.lxfrag").c_str() );
+        lxvar frag = lxvar::parse( lx0::lx_file_to_string("data/sandbox_shadergraph/phong.lxfrag").c_str() );
         runtime.registerFragment(frag);
         std::string src = runtime.compile(lxvar::parse("phong { }"));
         std::cout << src << std::endl;

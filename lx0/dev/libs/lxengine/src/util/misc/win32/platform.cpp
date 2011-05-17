@@ -30,7 +30,7 @@
 
 #include <windows.h>
 
-namespace lx0 { namespace util {
+namespace lx0 { namespace util { namespace misc {
 
     unsigned int        
     lx_milliseconds (void)
@@ -91,4 +91,4 @@ namespace lx0 { namespace util {
         // End Windows specific hack
     }
 
-}}
+}}}

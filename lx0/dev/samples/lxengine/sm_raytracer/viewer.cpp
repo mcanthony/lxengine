@@ -172,7 +172,7 @@ public:
     }
     void operator() (std::function<void()> f)
     {
-        auto now = lx0::util::lx_milliseconds();
+        auto now = lx0::lx_milliseconds();
         if (now > mTrigger)
         {
             f();
@@ -202,7 +202,7 @@ LxCanvasImp::updateFrame (DocumentPtr spDocument)
 //===========================================================================//
 
 
-lx0::core::ViewImp* create_viewer()
+lx0::ViewImp* create_viewer()
 {
     return new LxCanvasImp;;
 }

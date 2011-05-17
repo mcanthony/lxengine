@@ -4,7 +4,7 @@
 
     LICENSE
 
-    Copyright (c) 2010 athile@athile.net (http://www.athile.net)
+    Copyright (c) 2010-2011 athile@athile.net (http://www.athile.net)
 
     Permission is hereby granted, free of charge, to any person obtaining a 
     copy of this software and associated documentation files (the "Software"), 
@@ -32,12 +32,24 @@
 //   H E A D E R S
 //===========================================================================//
 
-// Standard headers
 #include <memory>
 
+// The forward declarations require use of lx0::lxshared_ptr<>
+#include <lx0/core/lxshared_ptr/lxshared_ptr.hpp>
+
 //===========================================================================//
-//  F O R W A R D   D E C L A R A T I O N S 
+//  M A C R O S
 //===========================================================================//
+
+/*
+    Note about the use of std::shared_ptr:
+
+    std::shared_ptr is not as lightweight or efficient as could be desired,
+    since it is non-intrusive and supports weak pointers.  However, it is
+    a standard class, therefore it is used whenever the inefficiency is not
+    a bottleneck.  Keep is simple.  Don't force developers to learn new 
+    classes unless necessary.
+ */
 
 #define _LX_FORWARD_DECL_PTRS(Klass) \
     class Klass; \
@@ -48,78 +60,46 @@
 
 #define _LX_FORWARD_DECL_LXPTRS(Klass) \
     class Klass; \
-    typedef detail::lxshared_ptr<Klass> Klass ## Ptr; \
-    typedef detail::lxshared_ptr<const Klass> Klass ## CPtr; \
+    typedef lx0::lxshared_ptr<Klass> Klass ## Ptr; \
+    typedef lx0::lxshared_ptr<const Klass> Klass ## CPtr; \
 
-namespace lx0 { namespace core {
+//===========================================================================//
+//  F O R W A R D   D E C L A R A T I O N S 
+//===========================================================================//
 
-    namespace detail {
 
-        /*!
-            This is effectively a boost::intrusive_ptr<>.   The fact that it
-            (a) does not support weak pointers and (b) stores the reference
-            count on the object rather than on the pointer itself, makes this
-            noticeably faster and half the size of std::shared_ptr<>.  For a
-            small, performance sensitive object like lxvar, using a custom
-            class is warranted.
-         */
-        template <typename T>
-        struct lxshared_ptr
-        {
-            lxshared_ptr (T* p) 
-                : mPtr (p)
-            {
-                if (mPtr)
-                    mPtr->_incRef();                    
-            }
-            ~lxshared_ptr ()
-            {
-                if (mPtr)
-                    mPtr->_decRef();
-            }
-            lxshared_ptr(const lxshared_ptr& that)
-                : mPtr (that.mPtr)
-            {
-                if (mPtr)
-                    mPtr->_incRef();
-            }
-            void operator= (const lxshared_ptr& that)
-            {
-                if (that.mPtr)
-                    that.mPtr->_incRef();
-                if (mPtr)
-                    mPtr->_decRef();
-                mPtr = that.mPtr;
-            }
-
-            T*      operator->  () { return mPtr; }
-            T*      get         () { return mPtr; }
-            void    reset       () { if (mPtr) mPtr->_decRef(); mPtr = 0; }
-            void    reset       (T* p) { if (p) p->_incRef(); if (mPtr) mPtr->_decRef(); mPtr = p; }
-
-        protected:
-            T* mPtr;
-        };
+namespace lx0
+{
+    namespace core
+    {
     }
 
+    namespace engine
+    {
+        namespace dom_ns
+        {
+            _LX_FORWARD_DECL_PTRS(Element);
+            _LX_FORWARD_DECL_PTRS(Transaction);
+            _LX_FORWARD_DECL_PTRS(Document);
+            _LX_FORWARD_DECL_PTRS(Space);
+            _LX_FORWARD_DECL_PTRS(Engine);
+            _LX_FORWARD_DECL_PTRS(View);
+            _LX_FORWARD_DECL_PTRS(Controller);
+            _LX_FORWARD_DECL_PTRS(Object);
+            _LX_FORWARD_DECL_PTRS(LxVarObject);
+
+            _LX_FORWARD_DECL_LXPTRS(Mesh);
+
+            class DocumentComponent;
+            class ElementComponent;
+            class ViewImp;
+        }
+    }
     
-    _LX_FORWARD_DECL_PTRS(Element);
-    _LX_FORWARD_DECL_PTRS(Transaction);
-    _LX_FORWARD_DECL_PTRS(Document);
-    class DocumentComponent;
-    class ElementComponent;
-    _LX_FORWARD_DECL_PTRS(Space);
-    _LX_FORWARD_DECL_PTRS(Engine);
-    _LX_FORWARD_DECL_PTRS(View);
-    class ViewImp;
-    _LX_FORWARD_DECL_PTRS(Controller);
+}
 
-    _LX_FORWARD_DECL_PTRS(Object);
-    _LX_FORWARD_DECL_PTRS(LxVarObject);
 
-    _LX_FORWARD_DECL_LXPTRS(Mesh);
-
-    class KeyEvent;
+namespace lx0 { 
 
     namespace detail {
    
@@ -170,10 +150,8 @@ static std::shared_ptr<MyClass> acquire() { return detail::acquireSingleton<MyCl
             }  
             return sp;
         }
-    };
-
-
-}}
+    }
+}
 
 namespace Ogre
 {

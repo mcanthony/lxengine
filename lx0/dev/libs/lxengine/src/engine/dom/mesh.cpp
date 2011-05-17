@@ -5,7 +5,7 @@
     LICENSE
     * MIT License (http://www.opensource.org/licenses/mit-license.php)
 
-    Copyright (c) 2010 athile@athile.net (http://www.athile.net)
+    Copyright (c) 2010-2011 athile@athile.net (http://www.athile.net)
 
     Permission is hereby granted, free of charge, to any person obtaining a 
     copy of this software and associated documentation files (the "Software"), 
@@ -37,7 +37,7 @@
 #include <lx0/engine/mesh.hpp>
 #include <glgeom/glgeom.hpp>
 
-namespace lx0 { namespace core {
+namespace lx0 { namespace engine { namespace dom_ns {
 
     Mesh::Mesh (void)
     {
@@ -101,4 +101,4 @@ namespace lx0 { namespace core {
         return 1.0f;
     }
 
-}}
+}}}

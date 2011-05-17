@@ -76,7 +76,7 @@ namespace lx0 { namespace core { namespace detail {
     class LxsonParser : public detail::BaseParser
     {
     public:
-        typedef lx0::core::lxvar        lxvar;
+        typedef lx0::lxvar        lxvar;
 
         lxvar           parse (const char* s);
 

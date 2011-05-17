@@ -38,7 +38,7 @@
 
 using namespace lx0::core;
 
-namespace lx0 { namespace dom {
+namespace lx0 { namespace engine { namespace dom_ns {
 
     Mesh*
     load_lxson (lxvar& v)
@@ -109,4 +109,4 @@ namespace lx0 { namespace dom {
 
         return pMesh;
     }
-}}
+}}}

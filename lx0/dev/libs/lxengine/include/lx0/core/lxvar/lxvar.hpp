@@ -53,7 +53,7 @@ namespace lx0
                 class lxarray;
                 class lxstringmap;
             
-                using lx0::core::detail::lxshared_ptr;
+                using lx0::lxshared_ptr;
         
                 /*!
                     Dev Notes:
@@ -400,8 +400,8 @@ namespace lx0
 
         }   // end namespace lxvar
 
-        using lx0::core::lxvar_ns::detail::lxvar;
-
     }   // end namespace core
+
+    using lx0::core::lxvar_ns::detail::lxvar;
 
 } // end namespace lx0

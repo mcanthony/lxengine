@@ -60,9 +60,7 @@
 #include <OGRE/OgreMeshManager.h>
 #include <OGRE/OgreSubEntity.h>
 
-using namespace lx0::core;
-using namespace lx0::util;
-
+using namespace lx0;
 
 //===========================================================================//
 //   Components
@@ -823,11 +821,11 @@ namespace {
 // 
 //===========================================================================//
 
-namespace lx0 { namespace core {
+namespace lx0 { namespace engine { namespace dom_ns {
 
     ViewImp* 
     View::_createViewImpOgre  (View* pView)
     {
         return new OgreImp(pView);
     }
-}}
+}}}

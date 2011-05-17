@@ -42,7 +42,7 @@
 
 #include "scripting.hpp"
 
-using namespace lx0::core;
+using namespace lx0;
 
 //===========================================================================//
 //   H E A D E R S   &   D E C L A R A T I O N S 
@@ -65,7 +65,7 @@ public:
             
             std::string source;
             if (spElem->attr("src").isString())
-                source = lx0::util::lx_file_to_string(spElem->attr("src").asString());
+                source = lx0::lx_file_to_string(spElem->attr("src").asString());
             else
                 source = spElem->value().asString();
 
@@ -101,7 +101,7 @@ protected:
 };
 
 
-lx0::core::DocumentComponent* create_scripting() 
+lx0::DocumentComponent* create_scripting() 
 { 
     return new Scripting; 
 }

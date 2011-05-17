@@ -36,7 +36,7 @@
 
 using namespace lx0::core;
 
-namespace lx0 { namespace util {
+namespace lx0 { namespace util { namespace misc {
 
 
     /*!
@@ -81,7 +81,7 @@ namespace lx0 { namespace util {
         return s;
     }
 
-    lx0::core::lxvar 
+    lx0::lxvar 
     lx_file_to_json (const char* pszFilename)
     {
         std::string s = lx_file_to_string(pszFilename);
@@ -119,4 +119,4 @@ namespace lx0 { namespace util {
         return s;
     }
 
-}}
+}}}

@@ -32,7 +32,7 @@
 
 namespace lx0 { 
 
-    class IRasterizer : public lx0::core::Document::Component
+    class IRasterizer : public lx0::Document::Component
     {
     public:
     };

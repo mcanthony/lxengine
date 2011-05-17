@@ -36,7 +36,7 @@
 
 #include <lx0/lxengine.hpp>
 
-namespace lx0 { namespace core {
+namespace lx0 { namespace engine { namespace dom_ns {
 
     Document::Document()
         : m_spRoot ( new Element )
@@ -285,4 +285,4 @@ namespace lx0 { namespace core {
         slotElementRemoved(spElem);
     }
 
-}}
+}}}

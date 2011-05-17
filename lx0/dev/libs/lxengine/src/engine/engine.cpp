@@ -45,7 +45,7 @@ using namespace lx0::util;
 //   I M P L E M E N T A T I O N 
 //===========================================================================//
 
-namespace lx0 { namespace core {
+namespace lx0 { namespace engine { namespace dom_ns {
 
     namespace detail
     {
@@ -154,7 +154,7 @@ namespace lx0 { namespace core {
             // Stop the debugger immediately if a memory leak is detected.
             // It usually is a lot less difficult to track down leaks as 
             // soon as they are introduced.
-            lx0::util::lx_break_if_debugging();
+            lx0::lx_break_if_debugging();
         }
     }
 
@@ -271,7 +271,7 @@ namespace lx0 { namespace core {
                         else
                         {
                             std::string filename = spElem->attr("src").asString();
-                            content = lx0::util::lx_file_to_string(filename);
+                            content = lx0::lx_file_to_string(filename);
                         }
 
                         lx_check_error(language.empty() || language == "javascript");
@@ -370,4 +370,4 @@ namespace lx0 { namespace core {
         mElementComponents[tag].push_back(std::make_pair(name, ctor));
     }
 
-}}
+}}}

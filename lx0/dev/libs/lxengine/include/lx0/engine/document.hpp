@@ -39,10 +39,10 @@
 
 // Lx headers
 #include <lx0/_detail/forward_decls.hpp>
-#include <lx0/_detail/dom_base.hpp>
+#include <lx0/engine/dom_base.hpp>
 #include <lx0/core/slot/slot.hpp>
 
-namespace lx0 { namespace core {
+namespace lx0 { namespace engine { namespace dom_ns {
 
     //===========================================================================//
     //!
@@ -136,4 +136,7 @@ namespace lx0 { namespace core {
         std::map<std::string, ViewPtr>  m_views;
     };
 
-}}
+        }
+    }
+    using namespace lx0::engine::dom_ns;
+}

@@ -32,21 +32,24 @@
 #include <string>
 #include <lx0/core/lxvar/lxvar.hpp>
 
-namespace lx0 { namespace util {
+namespace lx0 { namespace util { namespace misc {
 
-    void                lx_break_if_debugging   (void);
+            void                lx_break_if_debugging   (void);
 
-    bool                lx_file_exists          (std::string filename);
-    bool                lx_file_is_open         (std::string filename);
-    std::string         lx_file_to_string       (std::string filename);
-    lx0::core::lxvar    lx_file_to_json         (const char* pszFilename);
+            bool                lx_file_exists          (std::string filename);
+            bool                lx_file_is_open         (std::string filename);
+            std::string         lx_file_to_string       (std::string filename);
+            lx0::lxvar    lx_file_to_json         (const char* pszFilename);
 
-    std::string         lx_itoa                 (size_t i);
-    std::string         lx_ctime                (void);
+            std::string         lx_itoa                 (size_t i);
+            std::string         lx_ctime                (void);
 
-    unsigned int        lx_milliseconds         (void);
-    void                lx_message_box          (std::string caption, std::string message);
+            unsigned int        lx_milliseconds         (void);
+            void                lx_message_box          (std::string caption, std::string message);
 
-    void                _lx_reposition_console  (void);
+            void                _lx_reposition_console  (void);
 
-}}
+        }
+    }
+    using namespace lx0::util::misc;
+}
