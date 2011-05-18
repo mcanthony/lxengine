@@ -27,39 +27,25 @@
 //===========================================================================//
 
 // Standard headers
-#define NOMINMAX
 #include <iostream>
-#include <string>
-#include <memory> 
-#include <functional>
-#include <vector>
-#include <map>
-#include <deque>
 
 // Lx0 headers
 #include <lx0/lxengine.hpp>
-#include <lx0/util/misc/util.hpp>
 #include <lx0/subsystem/canvas.hpp>
-#include <lx0/prototype/misc.hpp>
-#include <lx0/engine/view.hpp>
-#include <lx0/engine/engine.hpp>
-#include <lx0/engine/document.hpp>
+#include <lx0/prototype/control_structures.hpp>
 #include <glgeom/prototype/image.hpp>
 
 #include <windows.h>
 #include <gl/gl.h>
 
 #include "viewer.hpp"
+#include "raytracer.hpp"
 
 using namespace lx0;
-using namespace lx0::core;
-
-#include "raytracer.hpp"
 
 extern glgeom::image3f img;
 
 //===========================================================================//
-
 
 class Renderer
 {
@@ -74,12 +60,6 @@ public:
 	    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
         mId = id;
     }  
-
-    void 
-    resize (int width, int height)
-    {
-
-    }
 
     void 
     render (void)	
@@ -142,7 +122,6 @@ LxCanvasImp::createWindow (View* pHostView, size_t& handle, unsigned int& width,
     handle = mspWin->handle();
 
     mRenderer.initialize();
-    mRenderer.resize(width, height);
 
     mspWin->slotRedraw += [&]() { mRenderer.render(); };
 }
@@ -159,35 +138,6 @@ LxCanvasImp::show (View* pHostView, Document* pDocument)
     mspWin->show();
 }
 
-//===========================================================================//
-
-// Belongs in lx0::prototype::control_structures
-class timed_gate_block_imp
-{
-public:
-    timed_gate_block_imp (unsigned int delta)
-        : mDelta    (delta)
-        , mTrigger  (0)
-    {
-    }
-    void operator() (std::function<void()> f)
-    {
-        auto now = lx0::lx_milliseconds();
-        if (now > mTrigger)
-        {
-            f();
-            mTrigger = now + mDelta;
-        }
-    }
-
-protected:
-    unsigned int mTrigger;
-    unsigned int mDelta;
-};
-#define timed_gate_block(d,e) \
-    static timed_gate_block_imp _timed_block_inst ## __LINE__ (d); \
-    _timed_block_inst ## __LINE__ ([&]() e )
-
 void 
 LxCanvasImp::updateFrame (DocumentPtr spDocument) 
 {
@@ -200,7 +150,6 @@ LxCanvasImp::updateFrame (DocumentPtr spDocument)
 }
 
 //===========================================================================//
-
 
 lx0::ViewImp* create_viewer()
 {

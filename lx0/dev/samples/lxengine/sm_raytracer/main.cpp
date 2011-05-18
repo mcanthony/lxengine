@@ -31,11 +31,8 @@
 //===========================================================================//
 
 #include <iostream>
-
 #include <boost/program_options.hpp>
-
 #include <glgeom/prototype/image.hpp>
-
 #include <lx0/lxengine.hpp>
 #include <lx0/subsystem/canvas.hpp>
 #include <lx0/subsystem/javascript.hpp>

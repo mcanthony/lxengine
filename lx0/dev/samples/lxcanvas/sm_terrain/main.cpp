@@ -40,14 +40,7 @@
 //===========================================================================//
 
 // Standard headers
-#define NOMINMAX 
 #include <iostream>
-#include <string>
-#include <memory> 
-#include <functional>
-#include <vector>
-#include <map>
-#include <deque>
 #include <limits>
 
 // Library headers
@@ -66,7 +59,6 @@
 #include "terrain.hpp"
 
 using namespace lx0;
-using namespace lx0::core;
 using namespace lx0::prototype;
 
 lx0::prototype::Camera             gCamera;

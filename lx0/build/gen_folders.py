@@ -117,6 +117,7 @@ write_sln("lx0.sln", [
         "sm_v8_basic",
         "cpp_smartptr",
         "sm_raytracer",
+        "sm_lxcraft",
     ],
     "3. Sandbox", [
         "blendload",
@@ -127,10 +128,12 @@ write_sln("lx0.sln", [
     ],
     "4. Benchmarks", [
         "bm_lxvar",
+        "glgeom_benchmark",
     ],
     "5. Unit Tests", [
         "ut_jsonparser",
         "ut_lx_vector",
+        "glgeom_unittest",
     ],
     "6. CMake", [
         "ALL_BUILD",
