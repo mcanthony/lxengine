@@ -4,7 +4,7 @@
 
     LICENSE
 
-    Copyright (c) 2010-2011 athile@athile.net (http://www.athile.net)
+    Copyright (c) 2011 athile@athile.net (http://www.athile.net)
 
     Permission is hereby granted, free of charge, to any person obtaining a 
     copy of this software and associated documentation files (the "Software"), 
@@ -26,26 +26,27 @@
 */
 //===========================================================================//
 
-#pragma once
-
-#include <lx0/lxengine.hpp>
-#include <lx0/prototype/misc.hpp>
-#include <lx0/subsystem/rasterizer.hpp>
 #include "rasterizer_ext.hpp"
 
-using namespace lx0;
+using namespace lx0::subsystem::rasterizer;
 
 //===========================================================================//
 
-class PhysicsSubsystem : public DocumentComponent
+void
+RenderList::push_back (int layer, ItemPtr spItem)
 {
-public: 
-    virtual void onElementAdded (DocumentPtr spDocument, ElementPtr spElem);
-    virtual void onElementRemoved (Document*   pDocument, ElementPtr spElem);
-    
-    float drop (float x, float y);
+    mLayers[layer].list.push_back(spItem);
+}
 
-    virtual void onUpdate (DocumentPtr spDocument);
+ItemPtr 
+RenderList::getItem (unsigned int id)
+{
+    auto it = mLayers.begin();
 
-    std::map<Element*, ElementPtr> mElems;
-};
+    while (it->second.list.size() < id)
+    {
+        id -= it->second.list.size();
+        it++;
+    }
+    return it->second.list[id];
+}

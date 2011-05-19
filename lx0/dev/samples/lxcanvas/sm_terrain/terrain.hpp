@@ -33,6 +33,7 @@
 
 #include "main.hpp"
 #include <lx0/subsystem/rasterizer.hpp>
+#include "renderer.hpp"
 
 namespace Terrain
 {

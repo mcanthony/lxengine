@@ -4,7 +4,7 @@
 
     LICENSE
 
-    Copyright (c) 2010-2011 athile@athile.net (http://www.athile.net)
+    Copyright (c) 2011 athile@athile.net (http://www.athile.net)
 
     Permission is hereby granted, free of charge, to any person obtaining a 
     copy of this software and associated documentation files (the "Software"), 
@@ -28,24 +28,37 @@
 
 #pragma once
 
-#include <lx0/lxengine.hpp>
-#include <lx0/prototype/misc.hpp>
 #include <lx0/subsystem/rasterizer.hpp>
-#include "rasterizer_ext.hpp"
 
-using namespace lx0;
-
-//===========================================================================//
-
-class PhysicsSubsystem : public DocumentComponent
+/*!
+    Represents all the items to render for a particular frame.  The items are organized
+    into a set of layers, each with an ordered list of items.  Each layer has its own
+    set of settings which may control the optimization, re-ordering, etc. of the list
+    for that layer.
+ */
+class RenderList
 {
-public: 
-    virtual void onElementAdded (DocumentPtr spDocument, ElementPtr spElem);
-    virtual void onElementRemoved (Document*   pDocument, ElementPtr spElem);
-    
-    float drop (float x, float y);
+public:
+    typedef lx0::subsystem::rasterizer::ItemPtr ItemPtr;
+    typedef std::vector<ItemPtr>                ItemList;
 
-    virtual void onUpdate (DocumentPtr spDocument);
+    struct Layer
+    {
+        void*       pSettings;
+        ItemList    list;
+    };
 
-    std::map<Element*, ElementPtr> mElems;
+    typedef std::map<int,Layer> LayerMap;
+
+
+
+    void                    push_back   (int layer, ItemPtr spItem);
+
+    LayerMap::iterator      begin       (void)      { return mLayers.begin(); }
+    LayerMap::iterator      end         (void)      { return mLayers.end(); }
+
+    ItemPtr                 getItem     (unsigned int id);
+
+protected:
+    LayerMap    mLayers;
 };

@@ -4,7 +4,7 @@
 
     LICENSE
 
-    Copyright (c) 2010-2011 athile@athile.net (http://www.athile.net)
+    Copyright (c) 2011 athile@athile.net (http://www.athile.net)
 
     Permission is hereby granted, free of charge, to any person obtaining a 
     copy of this software and associated documentation files (the "Software"), 
@@ -29,23 +29,3 @@
 #pragma once
 
 #include <lx0/lxengine.hpp>
-#include <lx0/prototype/misc.hpp>
-#include <lx0/subsystem/rasterizer.hpp>
-#include "rasterizer_ext.hpp"
-
-using namespace lx0;
-
-//===========================================================================//
-
-class PhysicsSubsystem : public DocumentComponent
-{
-public: 
-    virtual void onElementAdded (DocumentPtr spDocument, ElementPtr spElem);
-    virtual void onElementRemoved (Document*   pDocument, ElementPtr spElem);
-    
-    float drop (float x, float y);
-
-    virtual void onUpdate (DocumentPtr spDocument);
-
-    std::map<Element*, ElementPtr> mElems;
-};
