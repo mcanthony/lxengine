@@ -116,6 +116,19 @@ namespace lx0 { namespace engine { namespace dom_ns {
         _attachJavascript();
     }
 
+    void 
+    Engine::incPerformanceCounter (std::string name, lx0::uint64 t) 
+    { 
+        auto it = m_perfCounters.find(name);
+        if (it != m_perfCounters.end())
+        {
+            it->second.events++;
+            it->second.total += t;
+        }
+        else
+            m_perfCounters.insert(std::make_pair(name, PerfCounter(1, t))); 
+    }
+
     /*!
         Subject to future change.
 
@@ -125,8 +138,17 @@ namespace lx0 { namespace engine { namespace dom_ns {
     void
     Engine::shutdown()
     {
+        lx_log("Engine::shutdown()");
+
+        for (auto it = m_perfCounters.begin(); it != m_perfCounters.end(); ++it)
+        {
+            lx_log("COUNTER: %s => %lf avg, %lf total %.0lf events", it->first.c_str(), 
+                double(it->second.total) / double(it->second.events), 
+                double(it->second.total), double(it->second.events));
+        }
+            
         // Explicitly free all references to shared objects so that memory leak checks will work
-       m_documents.clear();
+        m_documents.clear();
     }
 
     Engine::~Engine()
@@ -180,6 +202,26 @@ namespace lx0 { namespace engine { namespace dom_ns {
         lx_check_fatal(it->second.current() >= 1);
 
         it->second.dec();
+    }
+
+    /*!
+        Defers an exception such that it will be rethrown at the start of the next update.
+        This is reserved for cases where the exception simply cannot be thrown all the
+        way up the call stack to where it can be handled appropriately.
+
+        For example, the Windows message loop code will consume any exception that 
+        propogates through it; therefore, this method is used to get the exception back
+        to the client code - albeit postponed until the next update - so that the 
+        relevant failure is communicated to the client.
+
+        This method should be used as rarely as possible.
+     */ 
+    void
+    Engine::postponeException (lx0::error_exception& e)
+    {
+        lx_break_if_debugging();
+
+        m_postponedExceptions.push_back(e);
     }
 
     void
@@ -291,9 +333,22 @@ namespace lx0 { namespace engine { namespace dom_ns {
         m_messageQueue.push_back(message);
     }
 
+    void        
+    Engine::_throwPostponedException (void)
+    {
+        if (!m_postponedExceptions.empty())
+        {
+            auto e = m_postponedExceptions.front();
+            m_postponedExceptions.pop_front();
+            throw e;
+        }
+    }
+
 	int
 	Engine::run()
 	{
+        const lx0::uint64 start = lx0::lx_milliseconds();
+
         _lx_reposition_console();
 
         for(auto it = m_documents.begin(); it != m_documents.end(); ++it)
@@ -302,6 +357,10 @@ namespace lx0 { namespace engine { namespace dom_ns {
         bool bDone = false;
         do
         {
+            const auto startLoop = lx0::lx_milliseconds();
+
+            _throwPostponedException();
+
             while (!m_messageQueue.empty())
             {
                 std::string msg = m_messageQueue.front();
@@ -314,16 +373,28 @@ namespace lx0 { namespace engine { namespace dom_ns {
 
             if (!bDone)
                 bDone = _handlePlatformMessages();
+            
+            _throwPostponedException();
 
             ///@todo Devise a better way to hand time-slices from the main loop to the individual documents
             /// for updates.  Also consider multi-threading.
-            for(auto it = m_documents.begin(); it != m_documents.end(); ++it)
-                (*it)->updateRun();
+            {
+                const auto startLoop = lx0::lx_milliseconds();
+
+                for(auto it = m_documents.begin(); it != m_documents.end(); ++it)
+                    (*it)->updateRun();
+
+                incPerformanceCounter("Engine>run>doc update", lx0::lx_milliseconds() - startLoop);
+            }
+
+            incPerformanceCounter("Engine>run>loop", lx0::lx_milliseconds() - startLoop);
 
         } while (!bDone);
 
         for(auto it = m_documents.begin(); it != m_documents.end(); ++it)
             (*it)->endRun();
+
+        incPerformanceCounter("Engine>run", lx0::lx_milliseconds() - start);
 
 		return 0;
 	}

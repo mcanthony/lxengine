@@ -34,6 +34,8 @@
 
 #include <memory>
 
+#include <glm/glm.hpp>
+
 // The forward declarations require use of lx0::lxshared_ptr<>
 #include <lx0/core/lxshared_ptr/lxshared_ptr.hpp>
 
@@ -67,6 +69,18 @@
 //  F O R W A R D   D E C L A R A T I O N S 
 //===========================================================================//
 
+namespace lx0
+{
+    typedef glm::detail::int8   int8;
+    typedef glm::detail::int16  int16;
+    typedef glm::detail::int32  int32;
+    typedef glm::detail::int64  int64;
+
+    typedef glm::detail::uint8   uint8;
+    typedef glm::detail::uint16  uint16;
+    typedef glm::detail::uint32  uint32;
+    typedef glm::detail::uint64  uint64;
+}
 
 namespace lx0
 {

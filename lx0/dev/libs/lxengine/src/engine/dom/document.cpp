@@ -234,8 +234,14 @@ namespace lx0 { namespace engine { namespace dom_ns {
     Document::updateRun ()
     {
         _foreach ([&](ComponentPtr it) {
+            lx0::uint64 start = lx0::lx_milliseconds();
+            
             it->onUpdate(shared_from_this());
+
+            lx0::uint64 end = lx0::lx_milliseconds();
+            Engine::acquire()->incPerformanceCounter(std::string("update>") + std::string(it->name()), end - start);
         });          
+        
         slotUpdateRun();
 
         _walkElements([&](ElementPtr spElem) -> bool {

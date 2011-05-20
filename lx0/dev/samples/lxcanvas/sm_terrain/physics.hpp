@@ -28,13 +28,17 @@
 
 #pragma once
 
-#include <lx0/lxengine.hpp>
-#include <lx0/prototype/misc.hpp>
-#include <lx0/subsystem/rasterizer.hpp>
-#include "rasterizer_ext.hpp"
+class PhysicsSubsystem : public lx0::Document::Component
+{
+public: 
+    virtual const char* name () const { return "PhysicsSubsystem"; }
 
-using namespace lx0;
+    virtual void onElementAdded     (lx0::DocumentPtr spDocument, lx0::ElementPtr spElem);
+    virtual void onElementRemoved   (lx0::Document*   pDocument,  lx0::ElementPtr spElem);
+    
+    float drop (float x, float y);
 
-//===========================================================================//
+    virtual void onUpdate (lx0::DocumentPtr spDocument);
 
-
+    std::map<lx0::Element*, lx0::ElementPtr> mElems;
+};

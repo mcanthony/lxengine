@@ -51,7 +51,7 @@ public:
 };
 
 
-class Renderer
+class Renderer : public lx0::Document::Component
 {
 public:
     Renderer()
@@ -103,6 +103,8 @@ public:
     {
         std::vector<lx0::ElementPtr> elems;
         elems.swap( mspDocument->getElements() );
+
+        size_t count = 0;
         for (auto it = elems.begin(); it != elems.end(); ++it)
         {
             auto spRenderable = (*it)->getComponent<Renderable>("renderable");
@@ -110,6 +112,7 @@ public:
             {
                 spRenderable->generate(*it, mRasterizer, gCamera, spCamera, spLightSet, items);
             }
+            count ++;
         }
     }
 

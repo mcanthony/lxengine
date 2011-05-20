@@ -43,6 +43,7 @@
 #include <lx0/_detail/forward_decls.hpp>
 #include <lx0/engine/dom_base.hpp>
 #include <lx0/core/lxvar/lxvar.hpp>
+#include <lx0/core/log/log.hpp>
 
 namespace lx0 
 { 
@@ -167,11 +168,14 @@ namespace lx0
                 void                notifyAttached      (ComponentPtr spComponent) { /*! \todo */ } 
 
                 // Stats
-                void                incObjectCount      (std::string name);
-                void                decObjectCount      (std::string name);
+                void                incObjectCount          (std::string name);
+                void                decObjectCount          (std::string name);
+                void                incPerformanceCounter   (std::string name, lx0::uint64 t);
+
+                void                postponeException       (lx0::error_exception& e);
 
                 // Development Scaffolding Methods
-                void                workaround_runJavascript    (DocumentPtr spDoc, const std::string& source) { _runJavascript(spDoc, source); }
+                void                workaround_runJavascript(DocumentPtr spDoc, const std::string& source) { _runJavascript(spDoc, source); }
 
             protected:
                 template <typename T> friend std::shared_ptr<T> lx0::detail::acquireSingleton (std::weak_ptr<T>&);
@@ -192,13 +196,23 @@ namespace lx0
         
                 void        _processDocumentHeader  (DocumentPtr spDocument);
 
-                bool        _handlePlatformMessages (void);
+                void        _throwPostponedException (void);
+                bool        _handlePlatformMessages  (void);
 
                 Environment                 mEnvironment;
                 std::vector<DocumentPtr>    m_documents;
                 std::deque<std::string>     m_messageQueue;
 
-                std::map<std::string, detail::ObjectCount>   m_objectCounts;
+                std::deque<lx0::error_exception>            m_postponedExceptions;
+                std::map<std::string, detail::ObjectCount>  m_objectCounts;
+                
+                struct PerfCounter
+                {
+                    PerfCounter(lx0::uint64 e, lx0::uint64 t) : events(e), total (t) {}
+                    lx0::uint64 events;
+                    lx0::uint64 total;
+                };
+                std::map<std::string, PerfCounter>          m_perfCounters;
 
                 std::map<std::string, std::function<ViewImp*(View*)>>                   mViewImps;
                 std::map<std::string, std::function<DocumentComponent* ()>>             mDocumentComponents;

@@ -47,7 +47,7 @@ namespace lx0 { namespace core { namespace lxvar_ns {
         void _convert_any3f (lxvar& v, T& u)
         {
             lx_check_error(v.isArray());
-            lx_check_error(v.size() == 3);
+            lx_check_error(v.size() == 3, "Cannot convert lxvar: array size is not 3 (%s:%d).", __FILE__, __LINE__);
             u[0] = v.at(0).asFloat();
             u[1] = v.at(1).asFloat();
             u[2] = v.at(2).asFloat();

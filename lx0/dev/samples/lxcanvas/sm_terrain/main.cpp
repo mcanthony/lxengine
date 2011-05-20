@@ -57,6 +57,7 @@
 #include "main.hpp"
 #include "terrain.hpp"
 #include "viewimp.hpp"
+#include "physics.hpp"
 
 using namespace lx0;
 using namespace lx0::prototype;
@@ -65,42 +66,6 @@ lx0::prototype::Camera             gCamera;
 
 //===========================================================================//
 
-void PhysicsSubsystem::onElementAdded (DocumentPtr spDocument, ElementPtr spElem) 
-{
-    if (spElem->tagName() == "Terrain")
-    {
-        mElems.insert(std::make_pair(spElem.get(), spElem));
-    }
-}
-
-void PhysicsSubsystem::onElementRemoved (Document*   pDocument, ElementPtr spElem) 
-{
-    auto it = mElems.find(spElem.get());
-    if (it != mElems.end())
-        mElems.erase(it);
-}
-    
-float PhysicsSubsystem::drop (float x, float y)
-{
-    float maxZ = std::numeric_limits<float>::min();
-    for (auto it = mElems.begin(); it != mElems.end(); ++it)
-    {
-        auto spTerrain = it->second->getComponent<Terrain::Runtime>("runtime");
-        maxZ = std::max(maxZ, spTerrain->calcHeight(x, y));
-    }
-    return maxZ; 
-}
-
-void PhysicsSubsystem::onUpdate (DocumentPtr spDocument)
-{
-    const float terrainHeight = drop(gCamera.mPosition.x, gCamera.mPosition.y);
-    const float deltaZ = (terrainHeight + 32.0f) - gCamera.mPosition.z;
-    gCamera.mPosition.z += deltaZ;
-    gCamera.mTarget.z += deltaZ;
-
-    if (deltaZ > 0.001)
-        spDocument->view(0)->sendEvent("redraw", lxvar::undefined());
-}
 
 
 ViewImp* create_lxcanvasimp();
@@ -133,6 +98,10 @@ main (int argc, char** argv)
         exitCode = spEngine->run();
         spDocument->destroyView("view");
         spEngine->shutdown();
+    }
+    catch (lx0::error_exception& e)
+    {
+        std::cout << "Lx Error: " << e.details() << std::endl;
     }
     catch (std::exception& e)
     {

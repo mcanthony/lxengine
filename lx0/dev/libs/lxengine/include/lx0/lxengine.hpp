@@ -51,12 +51,16 @@ enum
 #include <memory> 
 #include <functional>
 
+// 
+// Support libraries
+//
+#include <glm/glm.hpp>
+#include <glgeom/glgeom.hpp>
 
 //
 // Doxygen documentation
 //
 #include "lxengine_dox.hpp"
-
 
 //
 // LxEngine headers

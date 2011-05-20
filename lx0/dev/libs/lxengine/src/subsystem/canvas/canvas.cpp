@@ -433,8 +433,9 @@ namespace lx0 { namespace subsystem { namespace canvas_ns { namespace detail {
     //===========================================================================//
 
     CanvasGL::CanvasGL (const char* pszTitle, int x, int y, int w, int h, bool bResizeable)
-        : m_opaque_hDC     (0)
-        , m_opaque_hRC   (0)
+        : m_opaque_hDC      (0)
+        , m_opaque_hRC      (0)
+        , mRedrawActive     (false)
     {
         DWORD dwStyle   = WS_OVERLAPPEDWINDOW | WS_CLIPSIBLINGS | WS_CLIPCHILDREN;
         DWORD dwExStyle = WS_EX_APPWINDOW | WS_EX_WINDOWEDGE;
@@ -520,13 +521,33 @@ namespace lx0 { namespace subsystem { namespace canvas_ns { namespace detail {
 
     bool CanvasGL::impRedraw()
     {
-        // The default behavior of the imp/signal is to call the imp method, then the signals.
-        // However, in this case the imp methods wants to swap the buffer *after* the slots
-        // have been called.  
-        // 
-        slotRedraw();
+        try
+        {
+            if (!mRedrawActive)
+            {
+                mRedrawActive = true;
 
-        ::SwapBuffers(::GetDC(m_hWnd));
+                // The default behavior of the imp/signal is to call the imp method, then the signals.
+                // However, in this case the imp methods wants to swap the buffer *after* the slots
+                // have been called.  
+                // 
+                slotRedraw();
+
+                ::SwapBuffers(::GetDC(m_hWnd));
+
+                mRedrawActive = false;
+            }
+            else
+                lx_warn("Recursive redraw detected.  Ignoring recursive call.");
+        }
+        catch (lx0::error_exception& e)
+        {
+            // Prevent the exception from slipping into the Windows OS message handling code.
+            // The message handling code would blindly consume and ignore the exception, which
+            // is confusing to the developer.  Since the exception cannot be passed directly
+            // up the call stack, postpone the exception until the next Engine update().
+            Engine::acquire()->postponeException(e);
+        }
 
         return false;
     }

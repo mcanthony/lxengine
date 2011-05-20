@@ -350,6 +350,8 @@ namespace lx0 {
     
                     void*   m_opaque_hDC;   //!< Handle to Device Context
                     void*   m_opaque_hRC;   //!< Handle to OpenGL Rendering Context
+
+                    bool    mRedrawActive;
                 };
 
 

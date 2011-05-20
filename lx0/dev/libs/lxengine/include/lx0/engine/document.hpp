@@ -64,6 +64,8 @@ namespace lx0 { namespace engine { namespace dom_ns {
     public:
         virtual         ~DocumentComponent() {}
 
+
+        virtual const char* name            (void) const { return "<unnamed>"; }
         /*!
             Called immediatedly after the Component is attached to the Document
          */

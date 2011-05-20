@@ -211,7 +211,7 @@ namespace lx0 { namespace core { namespace log_ns {
 #endif
 
         std::string err("lx_error (re-throw if error is non-recoverable).\n");
-        throw std::exception((err + buffer).c_str());
+        throw lx0::error_exception("Generic", (err + buffer).c_str());
     }
 
     void

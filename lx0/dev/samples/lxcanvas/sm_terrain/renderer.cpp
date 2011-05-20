@@ -28,9 +28,11 @@
 //===========================================================================//
 
 #include <lx0/lxengine.hpp>
+#include <lx0/util/misc/lxvar_convert.hpp>
 #include "renderer.hpp"
 #include <lx0/subsystem/blendreader.hpp>
 #include "main.hpp"
+#include "physics.hpp"
 
 using namespace lx0;
 
@@ -115,8 +117,6 @@ public:
                 }
                  
                 glgeom::point3f pos( 0.0f, 0.0f, 0.0f);
-                pos.z = spElement->document()->getComponent<PhysicsSubsystem>("physics2")->drop(pos.x, pos.y);
-                pos.z -= 20.0f;
                 mPosition = pos;
 
                 auto spGeom = rasterizer.createQuadList(indicies, positions, normals, colors);
@@ -243,10 +243,8 @@ public:
             mspItem.reset(pItem);
         }
 
-        lxvar attrPos = spElement->attr("position");
-        glgeom::point3f pos( attrPos.at(0).asFloat(), attrPos.at(1).asFloat(), 0.0f);
-        pos.z = spElement->document()->getComponent<PhysicsSubsystem>("physics2")->drop(pos.x, pos.y);
-
+        lxvar px = spElement->attr("position");
+        glgeom::point3f pos(px.at(0).asFloat(), px.at(1).asFloat(), px.size() == 3 ? px.at(2).asFloat() : 0.0f); 
         float scale = spElement->attr("scale").query(1.0f);
         mspItem->spTransform = rasterizer.createTransformBillboardXYS(pos.x, pos.y, pos.z, scale, scale, scale);
 
