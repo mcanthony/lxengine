@@ -52,6 +52,15 @@ extern glgeom::image3f img;
 
 //===========================================================================//
 
+template <typename T>
+color3t<T> shade_ambient (const color3t<T>& env_ambient, 
+                          const material_phong_t<T>& mat) 
+{
+    return mat.emmissive + env_ambient * mat.ambient;
+}
+
+//===========================================================================//
+
 class Camera : public Element::Component
 {
 public:
@@ -74,12 +83,38 @@ public:
 
 //===========================================================================//
 
-class Material 
-    : public Element::Component
+class Material : public Element::Component
+{
+public:
+    virtual     color3f     shadeAmbient   (const color3f& ambient, const intersection3f& intersection) const { return color3f(0, 0, 0); }
+    virtual     color3f     shadeLight     (const point_light_f& light, const intersection3f& intersection) const { return color3f(0, 0, 0); }
+};
+
+class PhongMaterial
+    : public Material
     , public material_phong_f           // Multiple inheritance of classes without virtual methods is ok
 {
 public:
+    virtual     color3f     shadeAmbient   (const color3f& ambient, const intersection3f& intersection) const { return shade_ambient(ambient, *this); }
+    virtual     color3f     shadeLight     (const point_light_f& light, const intersection3f& intersection) const { return glgeom::shade_light(light, *this, intersection); }
 };
+
+class NormalMaterial
+    : public Material
+{
+public:
+    virtual     color3f     shadeAmbient   (const color3f& ambient, const intersection3f& intersection) const 
+    { 
+        color3f c;
+        c.vec = abs(intersection.normal).vec;
+        return c;
+    }
+    virtual     color3f     shadeLight     (const point_light_f& light, const intersection3f& intersection) const 
+    { 
+        return color3f(0, 0, 0); 
+    }
+};
+
 
 //===========================================================================//
 
@@ -199,6 +234,21 @@ public:
 };
 typedef std::shared_ptr<Light> LightPtr;
 
+
+//===========================================================================//
+
+class Context
+{
+public:
+    Context()
+        : mspMaterial( new PhongMaterial )
+    {
+    }
+
+    std::shared_ptr<Material>   mspMaterial;
+};
+
+
 //===========================================================================//
 
 class ScanIterator
@@ -256,6 +306,7 @@ public:
     RayTracer()
     {
         mspEnvironment.reset(new Environment);
+        mspContext.reset(new Context);
 
         mUpdateQueue.push_back([&]() { return _init(), true; });
 
@@ -320,12 +371,17 @@ public:
         }));
 
         mHandlers.insert(std::make_pair("Material", [&](ElementPtr spElem) {
-            auto pMat = new Material;
+            auto pMat = new PhongMaterial;
             pMat->emmissive = spElem->value().find("emmissive").convert(color3f(0, 0, 0));
             pMat->diffuse = spElem->value().find("diffuse").convert(color3f(1, 1, 1));
             pMat->specular = spElem->value().find("specular").convert(color3f(0, 0, 0));
             pMat->specular_n = spElem->value().find("specular_n").convert(8.0f);
 
+            spElem->attachComponent("raytrace", pMat);
+        }));
+
+        mHandlers.insert(std::make_pair("NormalMaterial", [&](ElementPtr spElem) {
+            auto pMat = new NormalMaterial;
             spElem->attachComponent("raytrace", pMat);
         }));
 
@@ -490,15 +546,13 @@ public:
                 }
             }
             const intersection3f& intersection = *pIntersection;
-            
-            material_phong_f defaultMaterial;
-            const material_phong_f& mat( spGeom->mspMaterial ? *spGeom->mspMaterial : defaultMaterial);
+            const Material* pMat ( spGeom->mspMaterial ? spGeom->mspMaterial.get() : mspContext->mspMaterial.get());
 
-            c = mat.emmissive + env.ambient * mat.ambient;
+            c = pMat->shadeAmbient(env.ambient, intersection);
             for (auto it = mLights.begin(); it != mLights.end(); ++it)
             {
                 if (!_shadowTerm(*(*it), intersection))
-                    c += shade(*(*it), mat, intersection);
+                    c += pMat->shadeLight(*(*it), intersection);
             }
         }
         else
@@ -524,6 +578,7 @@ protected:
     std::deque<std::function<bool (void)>>  mUpdateQueue;
 
     unsigned int                            mRenderTime;
+    std::shared_ptr<Context>                mspContext;
     std::shared_ptr<Environment>            mspEnvironment;
     std::shared_ptr<Camera>                 mCamera;
     std::vector<std::shared_ptr<Geometry>>  mGeometry;

@@ -1,0 +1,76 @@
+<Document>
+    <Library>
+        <Camera id="camera">
+        {
+            position : [ 2.25, 1.65, 1.1 ],
+            look_at  : [ .5, .5, .5 ]
+        }
+        </Camera>
+      <View id="view">
+        {
+            camera : "camera"
+        }
+      </View>
+      <Group id="material_group">
+        <Material id="mat1">
+          {
+          diffuse : [ 1, 1, 0]
+          }
+        </Material>
+        <NormalMaterial id="mat2">
+          {
+          }
+        </NormalMaterial>        
+      </Group>
+    </Library>
+    <Scene view="view">
+      <Group id="light_group">
+        <Light>
+          {
+            position : [ 6, 4, 3 ],
+            color    : [ 1, 1, 1 ]
+          }
+        </Light>
+        <Light>
+          {
+          position : [ 6, 7, 6 ],
+          color    : [ .1, .1, 0 ]
+          }
+        </Light>        
+      </Group>
+        <Group id="plane_group">
+            <Plane id="x_axis_plane">
+            {
+                normal : [ 1, 0, 0 ],
+                d      : 0
+            }
+            </Plane>
+            <Plane id="y_axis_plane">
+            {
+                normal : [ 0, 1, 0 ],
+                d      : 0
+            }
+            </Plane>
+            <Plane id="z_axis_plane">
+            {
+                normal : [ 0, 0, 1 ],
+                d      : 0
+            }
+            </Plane>
+        </Group>
+        <Group id="sphere_group">
+          <Sphere material="mat1">
+            {
+              center : [ .5, .5, .5 ],
+              radius : .5
+            }
+          </Sphere>
+          <Sphere material="mat2">
+            {
+            center : [ .5, 1.5, .5 ],
+            radius : .5
+            }
+          </Sphere>          
+        </Group>
+    </Scene>
+</Document>
