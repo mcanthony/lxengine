@@ -35,6 +35,7 @@
 // Lx0 headers
 #include <lx0/lxengine.hpp>
 #include <lx0/util/misc/lxvar_convert.hpp>
+#include <lx0/prototype/misc.hpp>
 
 #include <glgeom/glgeom.hpp>
 #include <glgeom/prototype/camera.hpp>
@@ -47,6 +48,7 @@
 
 using namespace lx0;
 using namespace glgeom;
+
 
 extern glgeom::image3f img;
 
@@ -86,6 +88,7 @@ public:
 class Material : public Element::Component
 {
 public:
+    virtual     bool        allowShadow    (void) const { return true; }
     virtual     color3f     shadeAmbient   (const color3f& ambient, const intersection3f& intersection) const { return color3f(0, 0, 0); }
     virtual     color3f     shadeLight     (const point_light_f& light, const intersection3f& intersection) const { return color3f(0, 0, 0); }
 };
@@ -105,9 +108,7 @@ class NormalMaterial
 public:
     virtual     color3f     shadeAmbient   (const color3f& ambient, const intersection3f& intersection) const 
     { 
-        color3f c;
-        c.vec = abs(intersection.normal).vec;
-        return c;
+        return color3f( abs(intersection.normal).vec );
     }
     virtual     color3f     shadeLight     (const point_light_f& light, const intersection3f& intersection) const 
     { 
@@ -115,6 +116,42 @@ public:
     }
 };
 
+
+class LightGradientMaterial
+    : public Material
+{
+public:
+    virtual     bool        allowShadow    (void) const { return false; }
+
+    virtual     color3f     shadeAmbient   (const color3f& ambient, const intersection3f& intersection) const 
+    { 
+        return color3f(0, 0, 0);
+    }
+    virtual     color3f     shadeLight     (const point_light_f& light, const intersection3f& intersection) const 
+    { 
+        // 
+        // L = unit vector from light to intersection point; the "incidence vector" I is the
+        //     vector pointing in the opposite direction of L.
+        // N = surface normal at the point of intersection
+        //
+        const vector3f  L     (normalize(light.position - intersection.position));
+        const vector3f& N     (intersection.normal);
+        const float     NdotL ( dot(N, L) );
+                
+        const float diffuseSample = (NdotL + 1.0f) / 2.0f;
+        const auto diffuse = mGradient.get(int(diffuseSample * (mGradient.width() - 1)), 0);
+
+        return diffuse * light.color;
+    }
+
+    void    setTexture (std::string s)
+    {
+        lx0::load_png(mGradient, s.c_str());
+    }
+
+protected:
+    glgeom::image3f mGradient;
+};
 
 //===========================================================================//
 
@@ -384,6 +421,11 @@ public:
             auto pMat = new NormalMaterial;
             spElem->attachComponent("raytrace", pMat);
         }));
+        mHandlers.insert(std::make_pair("LightGradientMaterial", [&](ElementPtr spElem) {
+            auto pMat = new LightGradientMaterial;
+            pMat->setTexture( spElem->value().find("texture").asString() );
+            spElem->attachComponent("raytrace", pMat);
+        }));
 
         mHandlers.insert(std::make_pair("Light", [&](ElementPtr spElem) {
             auto pLight = new Light;
@@ -396,12 +438,12 @@ public:
         mHandlers.insert(std::make_pair("Camera", [&](ElementPtr spElem) {
             if (!mCamera)
             {
-                auto pCam = new Camera;
+                auto pCam = new ::Camera;
                 pCam->camera.near_plane = sqrtf(2);
                 pCam->camera.position = spElem->value().find("position").convert();
                 point3f target = spElem->value().find("look_at").convert();
                 pCam->camera.orientation = orientation_from_to_up(pCam->camera.position, target, vector3f(0, 0, 1));
-                mCamera = std::shared_ptr<Camera>(pCam);
+                mCamera = std::shared_ptr<::Camera>(pCam);
             }
         }));
 
@@ -551,7 +593,7 @@ public:
             c = pMat->shadeAmbient(env.ambient, intersection);
             for (auto it = mLights.begin(); it != mLights.end(); ++it)
             {
-                if (!_shadowTerm(*(*it), intersection))
+                if (!pMat->allowShadow() || !_shadowTerm(*(*it), intersection))
                     c += pMat->shadeLight(*(*it), intersection);
             }
         }
@@ -580,7 +622,7 @@ protected:
     unsigned int                            mRenderTime;
     std::shared_ptr<Context>                mspContext;
     std::shared_ptr<Environment>            mspEnvironment;
-    std::shared_ptr<Camera>                 mCamera;
+    std::shared_ptr<::Camera>               mCamera;
     std::vector<std::shared_ptr<Geometry>>  mGeometry;
     std::vector<LightPtr>                   mLights;
 

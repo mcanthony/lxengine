@@ -52,7 +52,31 @@
 
 using namespace lx0::core;
 
-namespace lx0 { namespace prototype { 
+namespace lx0 { namespace prototype { namespace misc_ns {
+
+    void 
+    load_png (glgeom::image3f& image, const char* filename)
+    {
+        // Leverage the old code based on the Image4b class.  This should
+        // be rewritten to use the GLGeom primitives directly.
+        Image4b img;
+        load_png(img, filename);
+
+        image = glgeom::image3f(img.mWidth, img.mHeight);
+        for (int y = 0; y < image.height(); ++y)
+        {
+            for (int x = 0; x < image.width(); ++x)
+            {
+                const auto& p = img.mData[y * image.width() + x]; 
+                glgeom::color3f c;
+                c.r = p.r / 255.0f;
+                c.g = p.g / 255.0f;
+                c.b = p.b / 255.0f;
+                image.set(x, y, c);
+            }
+        }
+
+    }
 
     void 
     load_png (Image4b& image, const char* filename)
@@ -178,5 +202,5 @@ namespace lx0 { namespace prototype {
         camera.mTarget = camera.mPosition + rotated;
     }
 
-}}
+}}}
 

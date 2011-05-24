@@ -29,69 +29,65 @@
 #pragma once
 
 #include <glgeom/glgeom.hpp>
-
-namespace lx0 { namespace prototype {
-
-    struct Image4b
-    {
-        struct Pixel
-        {
-            unsigned char r;
-            unsigned char g;
-            unsigned char b;
-            unsigned char a;
-        };
-
-        int                      mWidth;
-        int                      mHeight;
-        std::unique_ptr<Pixel[]> mData;
-    };
-
-    void    load_png (Image4b& image, const char* filename);
-
-
-    struct Camera
-    {
-        glgeom::vector3f forward () const { return mTarget - mPosition; }
-
-        glgeom::point3f    mPosition;
-        glgeom::point3f    mTarget;
-        
-        glgeom::vector3f   mWorldUp;        //! Reference vector for the "up" direction in the world
-
-        float              mFov;
-        float              mNear;
-        float              mFar;
-    };
-
-            glgeom::vector3f    view_vector         (const Camera& camera);
-            void                view_matrix         (const Camera& camera, glm::mat4& viewMatrix);
-    inline  glm::mat4           view_matrix         (const Camera& camera) { glm::mat4 m; view_matrix(camera, m); return m; } 
-
-            void                move_forward        (Camera& camera, float step);
-    inline  void                move_backward       (Camera& camera, float step) { move_forward(camera, -step); }
-            void                move_up             (Camera& camera, float step);
-    inline  void                move_down           (Camera& camera, float step) { move_up(camera, -step); }
-            void                move_vertical       (Camera& camera, float step);
-            void                move_right          (Camera& camera, float step);
-    inline  void                move_left           (Camera& camera, float step) { move_right(camera, -step); }
-            
-            void                rotate_horizontal   (Camera& camera, float angle);
-            void                rotate_vertical     (Camera& camera, float angle);
-
-}}
-
+#include <glgeom/prototype/image.hpp>
 
 namespace lx0 
-{
-    namespace prototype
+{ 
+    namespace prototype 
     {
-        namespace general
+        namespace misc_ns
         {
-            namespace detail
+            struct Image4b
             {
+                struct Pixel
+                {
+                    unsigned char r;
+                    unsigned char g;
+                    unsigned char b;
+                    unsigned char a;
+                };
 
-            }
+                int                      mWidth;
+                int                      mHeight;
+                std::unique_ptr<Pixel[]> mData;
+            };
+
+            void    load_png (Image4b& image, const char* filename);
+            void    load_png (glgeom::image3f& image, const char* filename);
+
+
+            struct Camera
+            {
+                glgeom::vector3f forward () const { return mTarget - mPosition; }
+
+                glgeom::point3f    mPosition;
+                glgeom::point3f    mTarget;
+        
+                glgeom::vector3f   mWorldUp;        //! Reference vector for the "up" direction in the world
+
+                float              mFov;
+                float              mNear;
+                float              mFar;
+            };
+
+                    glgeom::vector3f    view_vector         (const Camera& camera);
+                    void                view_matrix         (const Camera& camera, glm::mat4& viewMatrix);
+            inline  glm::mat4           view_matrix         (const Camera& camera) { glm::mat4 m; view_matrix(camera, m); return m; } 
+
+                    void                move_forward        (Camera& camera, float step);
+            inline  void                move_backward       (Camera& camera, float step) { move_forward(camera, -step); }
+                    void                move_up             (Camera& camera, float step);
+            inline  void                move_down           (Camera& camera, float step) { move_up(camera, -step); }
+                    void                move_vertical       (Camera& camera, float step);
+                    void                move_right          (Camera& camera, float step);
+            inline  void                move_left           (Camera& camera, float step) { move_right(camera, -step); }
+            
+                    void                rotate_horizontal   (Camera& camera, float angle);
+                    void                rotate_vertical     (Camera& camera, float angle);
+
         }
     }
+
+    using namespace lx0::prototype::misc_ns;
 }
+
