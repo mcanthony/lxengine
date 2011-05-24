@@ -60,9 +60,8 @@
 #include "physics.hpp"
 
 using namespace lx0;
-using namespace lx0::prototype;
 
-lx0::prototype::Camera             gCamera;
+lx0::Camera2             gCamera;
 
 //===========================================================================//
 

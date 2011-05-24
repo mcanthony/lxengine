@@ -48,7 +48,7 @@ public:
 
     virtual void generate(ElementPtr spElement,
                       RasterizerGL& rasterizer,
-                      lx0::prototype::Camera& cam1,
+                      lx0::Camera2& cam1,
                       CameraPtr spCamera, 
                       LightSetPtr spLightSet, 
                       RenderList& list)
@@ -224,7 +224,7 @@ class Sprite : public Renderable
 public:
     virtual void generate(ElementPtr spElement,
                       RasterizerGL& rasterizer,
-                      lx0::prototype::Camera& cam1,
+                      lx0::Camera2& cam1,
                       CameraPtr spCamera, 
                       LightSetPtr spLightSet, 
                       RenderList& list)

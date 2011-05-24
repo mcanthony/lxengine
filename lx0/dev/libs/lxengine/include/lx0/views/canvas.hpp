@@ -3,6 +3,7 @@
                                    LxEngine
 
     LICENSE
+    * MIT License (http://www.opensource.org/licenses/mit-license.php)
 
     Copyright (c) 2011 athile@athile.net (http://www.athile.net)
 
@@ -29,29 +30,16 @@
 #pragma once
 
 #include <lx0/_detail/forward_decls.hpp>
-#include <lx0/engine/dom_base.hpp>
 
-namespace lx0 
-{ 
-    namespace engine 
-    { 
-        namespace dom_ns 
+namespace lx0
+{
+    namespace views
+    {
+        namespace canvas_ns
         {
-            //===========================================================================//
-            //!
-            /*!
-                \ingroup lx0_engine_dom
-             */
-            class Controller
-            {
-            public:
-                virtual                 ~Controller() {}
-
-                virtual     void        onLClick        (ViewPtr spView, const MouseState&, const ButtonState&, KeyModifiers) {}
-                virtual     void        updateFrame     (ViewPtr spView,
-                                                            const KeyboardState& keyboard) {};
-            };
+            lx0::ViewImp*  createCanvasViewImp    (void);
         }
     }
-    using namespace lx0::engine::dom_ns;
+
+    using namespace lx0::views::canvas_ns;
 }

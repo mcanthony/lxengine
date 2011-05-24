@@ -47,10 +47,28 @@ extern glgeom::image3f img;
 
 //===========================================================================//
 
-class Renderer
+class ControllerImp : public lx0::Controller
 {
 public:
-    void initialize()
+
+    virtual     void        updateFrame     (ViewPtr spView,
+                                             const KeyboardState& keyboard)
+    {
+        if (keyboard.bDown[KC_ESCAPE])
+            Engine::acquire()->sendMessage("quit");
+ 
+        timed_gate_block (50, { 
+            spView->sendEvent("redraw", lxvar());
+        });
+    }
+};
+
+//===========================================================================//
+
+class Renderer : public IRenderer
+{
+public:
+    virtual void initialize()
     {
         GLuint id;
         glGenTextures(1, &id);
@@ -61,8 +79,7 @@ public:
         mId = id;
     }  
 
-    void 
-    render (void)	
+    virtual void render (void)	
     {
         glEnable(GL_TEXTURE_2D);
         
@@ -92,66 +109,5 @@ protected:
 
 //===========================================================================//
 
-class LxCanvasImp : public ViewImp
-{
-public:
-    virtual void        createWindow    (View* pHostView, size_t& handle, unsigned int& width, unsigned int& height);
-    virtual void        destroyWindow   (void);
-    virtual void        show            (View* pHostView, Document* pDocument);
-
-    virtual     void        _onElementAdded             (ElementPtr spElem) {}
-    virtual     void        _onElementRemoved           (ElementPtr spElem) {}
-
-    virtual     void        updateBegin     (void) {}
-    virtual     void        updateFrame     (DocumentPtr spDocument);
-    virtual     void        updateEnd       (void) {}
-
-protected:
-    std::auto_ptr<CanvasGL> mspWin;
-    CanvasHost              mHost;
-    Renderer                mRenderer;
-};
-
-void 
-LxCanvasImp::createWindow (View* pHostView, size_t& handle, unsigned int& width, unsigned int& height)
-{
-    width = 512;
-    height = 512;
-
-    mspWin.reset( new CanvasGL("LxEngine Raytracer Sample", 16, 16, width, height, false) );
-    handle = mspWin->handle();
-
-    mRenderer.initialize();
-
-    mspWin->slotRedraw += [&]() { mRenderer.render(); };
-}
-
-void
-LxCanvasImp::destroyWindow (void)
-{
-    mspWin->destroy();
-}
-
-void 
-LxCanvasImp::show (View* pHostView, Document* pDocument)
-{
-    mspWin->show();
-}
-
-void 
-LxCanvasImp::updateFrame (DocumentPtr spDocument) 
-{
-    if (mspWin->keyboard().bDown[KC_ESCAPE])
-        Engine::acquire()->sendMessage("quit");
- 
-    timed_gate_block (50, { 
-        mspWin->invalidate();
-    });
-}
-
-//===========================================================================//
-
-lx0::ViewImp* create_viewer()
-{
-    return new LxCanvasImp;;
-}
+lx0::IRenderer* create_renderer() { return new Renderer; }
+lx0::Controller* create_controller() { return new ControllerImp; }

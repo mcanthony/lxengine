@@ -34,7 +34,7 @@
 #include <boost/program_options.hpp>
 #include <glgeom/prototype/image.hpp>
 #include <lx0/lxengine.hpp>
-#include <lx0/subsystem/canvas.hpp>
+#include <lx0/views/canvas.hpp>
 #include <lx0/subsystem/javascript.hpp>
 #include <lx0/prototype/misc.hpp>
 
@@ -132,14 +132,15 @@ main (int argc, char** argv)
         if (validate_options(options, argc, argv))
         {
             EnginePtr   spEngine   = Engine::acquire();
-            spEngine->addViewPlugin("LxCanvas", [] (View* pView) { return create_viewer(); });
+            spEngine->addViewPlugin("Canvas", [] (View* pView) { return lx0::createCanvasViewImp(); });
         
             DocumentPtr spDocument = spEngine->loadDocument(options.filename);
             spDocument->attachComponent("javascript", lx0::createIJavascript() );
             spDocument->attachComponent("ray", create_raytracer() );
             spDocument->attachComponent("scripting", create_scripting() );
 
-            ViewPtr     spView     = spDocument->createView("LxCanvas", "view");
+            ViewPtr     spView     = spDocument->createView("Canvas", "view", create_renderer() );
+            spView->addController( create_controller() );
             spView->show();
 
             exitCode = spEngine->run();

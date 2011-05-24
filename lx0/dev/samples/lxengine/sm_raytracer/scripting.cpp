@@ -52,8 +52,6 @@ class Scripting : public Document::Component
 public: 
     Scripting()
     {
-        mUpdateQueue.push_back([&]() { return true; });
-        
         mHandlers.insert(std::make_pair("Script", [&](ElementPtr spElem) {
             
             std::string source;
@@ -73,14 +71,6 @@ public:
         });
     }
 
-    virtual void onUpdate (DocumentPtr spDocument)
-    {
-        if (!mUpdateQueue.empty())
-            if (mUpdateQueue.front()())
-                mUpdateQueue.pop_front();
-    }
-
-
 protected:
     void _onElementAddRemove (ElementPtr spElem, bool bAdd)
     {
@@ -90,7 +80,6 @@ protected:
     }
 
     std::map<std::string, std::function<void (ElementPtr spElem)>> mHandlers;
-    std::deque<std::function<bool (void)>>                         mUpdateQueue;
 };
 
 

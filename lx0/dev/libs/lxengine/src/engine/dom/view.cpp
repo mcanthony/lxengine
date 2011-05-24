@@ -152,4 +152,12 @@ namespace lx0 { namespace engine { namespace dom_ns {
         return mspLxInputManager->isKeyDown(keyCode);
     }
 
+    //===========================================================================//
+
+    KeyboardState::KeyboardState()
+    {
+        for (int i = 0; i < KC_COUNT; ++i)
+            bDown[i] = false;
+    }
+
 }}}

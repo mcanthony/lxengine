@@ -4,7 +4,7 @@
 
     LICENSE
 
-    Copyright (c) 2010 athile@athile.net (http://www.athile.net)
+    Copyright (c) 2010-2011 athile@athile.net (http://www.athile.net)
 
     Permission is hereby granted, free of charge, to any person obtaining a 
     copy of this software and associated documentation files (the "Software"), 
@@ -44,6 +44,138 @@ namespace lx0 { namespace engine { namespace dom_ns {
         _LX_FORWARD_DECL_PTRS(LxInputManager);
     };
 
+    //! \ingroup lx0_engine_dom
+    enum KeyCodes
+    {
+        KC_UNASSIGNED = 0,
+
+        KC_1,
+        KC_2,
+        KC_3,
+        KC_4,
+        KC_5,
+        KC_6,
+        KC_7,
+        KC_8,
+        KC_9,
+        KC_0,
+
+		KC_A,
+        KC_B,
+        KC_C,
+        KC_D,
+        KC_E,
+        KC_F,
+        KC_G,
+        KC_H,
+        KC_I,
+        KC_J,
+        KC_K,
+        KC_L,
+        KC_M,
+        KC_N,
+        KC_O,
+        KC_P,
+        KC_Q,
+        KC_R,
+        KC_S,
+        KC_T,
+        KC_U,
+        KC_V,
+        KC_W,
+        KC_X,
+        KC_Y,
+        KC_Z,
+
+        KC_ESCAPE,
+        KC_SPACE,
+
+        KC_COUNT
+    };
+
+    //! \ingroup lx0_engine_dom
+    /// WIP class
+    class KeyModifiers
+    {
+    public:
+        KeyModifiers() : packed (0) {}
+        union
+        {
+            struct 
+            {
+                unsigned    ctrl    : 1;
+                unsigned    rctrl   : 1;
+                unsigned    lctrl   : 1;
+                unsigned    alt     : 1;
+                unsigned    ralt    : 1;
+                unsigned    lalt    : 1;
+                unsigned    shift   : 1;
+                unsigned    rshift  : 1;
+                unsigned    lshift  : 1;
+            };
+            unsigned int    packed;
+        };
+    };
+
+    //! \ingroup lx0_engine_dom
+    class KeyboardState
+    {
+    public:
+        KeyboardState();
+
+        KeyModifiers    modifers;
+        bool            bDown[KC_COUNT];
+    };
+
+    //! \ingroup lx0_engine_dom
+    /// WIP class
+    class MouseState
+    {
+    public:
+        MouseState()
+            : x (0)
+            , y (0)
+            , previousX(0)
+            , previousY (0)
+        {
+        }
+
+        int             deltaX      (void)      const { return x - previousX; }
+        int             deltaY      (void)      const { return y - previousY; }
+
+        int x, y;
+        int previousX, previousY;
+    };
+
+    //! \ingroup lx0_engine_dom
+    /// WIP class
+    class ButtonState
+    {
+    public:
+        ButtonState()
+            : bDown     (false)
+            , bDragging (false)
+            , startX    (0)
+            , startY    (0)
+        {
+        }
+
+        bool            bDown;   
+        bool            bDragging;              // Indicates the mouse has moved since the button was initially depressed
+        int             startX, startY;         // drag starting point
+    };
+
+    //===========================================================================//
+
+    class IRenderer
+    {
+    public:
+        virtual void initialize() {}
+        virtual void render() {}
+    };
+
+    //===========================================================================//
+
     class ViewImp
     {
     public:
@@ -59,6 +191,9 @@ namespace lx0 { namespace engine { namespace dom_ns {
         virtual     void        updateBegin     (void) = 0;
         virtual     void        updateFrame     (DocumentPtr spDocument) = 0;
         virtual     void        updateEnd       (void) = 0;
+
+        virtual     void        setRenderer     (IRenderer* pRenderer) {} 
+        virtual     void        addController   (Controller* pController) {}
 
         virtual     void        handleEvent     (std::string evt, lx0::lxvar params) {}
     };
@@ -95,6 +230,9 @@ namespace lx0 { namespace engine { namespace dom_ns {
         slot<void (KeyEvent&)>      slotKeyDown;
 
         void        notifyViewImpIdle   (void);
+
+        void        setRenderer     (IRenderer* pRenderer)    { mspImp->setRenderer(pRenderer); } 
+        void        addController   (Controller* pController) { mspImp->addController(pController); }
 
     protected:
 

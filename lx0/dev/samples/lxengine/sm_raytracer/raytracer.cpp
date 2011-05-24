@@ -396,15 +396,15 @@ public:
         }));
 
         mHandlers.insert(std::make_pair("Cube", [&](ElementPtr spElem) {
-                auto pGeom = new Cube;
-                pGeom->geom.center = spElem->value().find("center").convert(point3f(0, 0, 0));
-                pGeom->geom.scale  = spElem->value().find("scale").convert(vector3f(1, 1, 1));
+            auto pGeom = new Cube;
+            pGeom->geom.center = spElem->value().find("center").convert(point3f(0, 0, 0));
+            pGeom->geom.scale  = spElem->value().find("scale").convert(vector3f(1, 1, 1));
                 
-                pGeom->setMaterial(spElem, spElem->attr("material").query(""));
+            pGeom->setMaterial(spElem, spElem->attr("material").query(""));
                 
-                std::shared_ptr<Cube> spComp(pGeom);
-                mGeometry.push_back(spComp);
-                spElem->attachComponent("raytrace", spComp);
+            std::shared_ptr<Cube> spComp(pGeom);
+            mGeometry.push_back(spComp);
+            spElem->attachComponent("raytrace", spComp);
         }));
 
         mHandlers.insert(std::make_pair("Material", [&](ElementPtr spElem) {
@@ -421,6 +421,7 @@ public:
             auto pMat = new NormalMaterial;
             spElem->attachComponent("raytrace", pMat);
         }));
+
         mHandlers.insert(std::make_pair("LightGradientMaterial", [&](ElementPtr spElem) {
             auto pMat = new LightGradientMaterial;
             pMat->setTexture( spElem->value().find("texture").asString() );

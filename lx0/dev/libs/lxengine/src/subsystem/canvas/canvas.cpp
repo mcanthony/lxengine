@@ -95,14 +95,6 @@ namespace lx0 { namespace subsystem { namespace canvas_ns { namespace detail {
     }
 
     //===========================================================================//
-
-    KeyboardState::KeyboardState()
-    {
-        for (int i = 0; i < KC_COUNT; ++i)
-            bDown[i] = false;
-    }
-
-    //===========================================================================//
     //!
     /*!
      */

@@ -56,7 +56,7 @@ namespace lx0
             void    load_png (glgeom::image3f& image, const char* filename);
 
 
-            struct Camera
+            struct Camera2
             {
                 glgeom::vector3f forward () const { return mTarget - mPosition; }
 
@@ -70,20 +70,20 @@ namespace lx0
                 float              mFar;
             };
 
-                    glgeom::vector3f    view_vector         (const Camera& camera);
-                    void                view_matrix         (const Camera& camera, glm::mat4& viewMatrix);
-            inline  glm::mat4           view_matrix         (const Camera& camera) { glm::mat4 m; view_matrix(camera, m); return m; } 
+                    glgeom::vector3f    view_vector         (const Camera2& camera);
+                    void                view_matrix         (const Camera2& camera, glm::mat4& viewMatrix);
+            inline  glm::mat4           view_matrix         (const Camera2& camera) { glm::mat4 m; view_matrix(camera, m); return m; } 
 
-                    void                move_forward        (Camera& camera, float step);
-            inline  void                move_backward       (Camera& camera, float step) { move_forward(camera, -step); }
-                    void                move_up             (Camera& camera, float step);
-            inline  void                move_down           (Camera& camera, float step) { move_up(camera, -step); }
-                    void                move_vertical       (Camera& camera, float step);
-                    void                move_right          (Camera& camera, float step);
-            inline  void                move_left           (Camera& camera, float step) { move_right(camera, -step); }
+                    void                move_forward        (Camera2& camera, float step);
+            inline  void                move_backward       (Camera2& camera, float step) { move_forward(camera, -step); }
+                    void                move_up             (Camera2& camera, float step);
+            inline  void                move_down           (Camera2& camera, float step) { move_up(camera, -step); }
+                    void                move_vertical       (Camera2& camera, float step);
+                    void                move_right          (Camera2& camera, float step);
+            inline  void                move_left           (Camera2& camera, float step) { move_right(camera, -step); }
             
-                    void                rotate_horizontal   (Camera& camera, float angle);
-                    void                rotate_vertical     (Camera& camera, float angle);
+                    void                rotate_horizontal   (Camera2& camera, float angle);
+                    void                rotate_vertical     (Camera2& camera, float angle);
 
         }
     }

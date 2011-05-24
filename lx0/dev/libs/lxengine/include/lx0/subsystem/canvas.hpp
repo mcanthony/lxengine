@@ -33,6 +33,8 @@
 #include <map>
 #include <string>
 
+#include <lx0/engine/view.hpp>
+
 namespace lx0 { 
     
     namespace subsystem {
@@ -51,131 +53,10 @@ namespace lx0 {
          */
         namespace canvas_ns 
         {
-            //! \ingroup lx0_subsystem_canvas
-            enum KeyCodes
-            {
-                KC_UNASSIGNED = 0,
-
-                KC_1,
-                KC_2,
-                KC_3,
-                KC_4,
-                KC_5,
-                KC_6,
-                KC_7,
-                KC_8,
-                KC_9,
-                KC_0,
-
-		        KC_A,
-                KC_B,
-                KC_C,
-                KC_D,
-                KC_E,
-                KC_F,
-                KC_G,
-                KC_H,
-                KC_I,
-                KC_J,
-                KC_K,
-                KC_L,
-                KC_M,
-                KC_N,
-                KC_O,
-                KC_P,
-                KC_Q,
-                KC_R,
-                KC_S,
-                KC_T,
-                KC_U,
-                KC_V,
-                KC_W,
-                KC_X,
-                KC_Y,
-                KC_Z,
-
-                KC_ESCAPE,
-                KC_SPACE,
-
-                KC_COUNT
-            };
-
             namespace detail 
             {
 
                 class Win32WindowClass;
-
-                //! \ingroup lx0_subsystem_canvas
-                /// WIP class
-                class KeyModifiers
-                {
-                public:
-                    KeyModifiers() : packed (0) {}
-                    union
-                    {
-                        struct 
-                        {
-                            unsigned    ctrl    : 1;
-                            unsigned    rctrl   : 1;
-                            unsigned    lctrl   : 1;
-                            unsigned    alt     : 1;
-                            unsigned    ralt    : 1;
-                            unsigned    lalt    : 1;
-                            unsigned    shift   : 1;
-                            unsigned    rshift  : 1;
-                            unsigned    lshift  : 1;
-                        };
-                        unsigned int    packed;
-                    };
-                };
-
-                //! \ingroup lx0_subsystem_canvas
-                class KeyboardState
-                {
-                public:
-                    KeyboardState();
-
-                    KeyModifiers    modifers;
-                    bool            bDown[KC_COUNT];
-                };
-
-                //! \ingroup lx0_subsystem_canvas
-                /// WIP class
-                class MouseState
-                {
-                public:
-                    MouseState()
-                        : x (0)
-                        , y (0)
-                        , previousX(0)
-                        , previousY (0)
-                    {
-                    }
-
-                    int             deltaX      (void)      const { return x - previousX; }
-                    int             deltaY      (void)      const { return y - previousY; }
-
-                    int x, y;
-                    int previousX, previousY;
-                };
-
-                //! \ingroup lx0_subsystem_canvas
-                /// WIP class
-                class ButtonState
-                {
-                public:
-                    ButtonState()
-                        : bDown     (false)
-                        , bDragging (false)
-                        , startX    (0)
-                        , startY    (0)
-                    {
-                    }
-
-                    bool            bDown;   
-                    bool            bDragging;              // Indicates the mouse has moved since the button was initially depressed
-                    int             startX, startY;         // drag starting point
-                };
 
                 //===========================================================================//
                 //! Base class for a Lx Canvas Window
@@ -378,11 +259,6 @@ namespace lx0 {
 
             using detail::CanvasGL;
             using detail::CanvasHost;
-
-            using detail::MouseState;
-            using detail::ButtonState;
-            using detail::KeyboardState;
-            using detail::KeyModifiers;
         }
     }
 

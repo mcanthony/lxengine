@@ -37,7 +37,7 @@
 using namespace lx0;
 using namespace lx0::prototype;
 
-extern lx0::prototype::Camera gCamera;
+extern lx0::Camera2 gCamera;
 
 class Controller2
 {

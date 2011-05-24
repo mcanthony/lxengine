@@ -94,6 +94,7 @@ namespace lx0 { namespace engine { namespace dom_ns {
         TransactionPtr          transaction     (void);
 
         ViewPtr                 createView      (std::string type, std::string name);
+        ViewPtr                 createView      (std::string type, std::string name, lx0::IRenderer* pRenderer);
         void                    destroyView     (std::string name);
 
         ViewPtr                 view            (int index);

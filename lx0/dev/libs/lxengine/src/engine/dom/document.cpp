@@ -5,7 +5,7 @@
     LICENSE
     * MIT License (http://www.opensource.org/licenses/mit-license.php)
 
-    Copyright (c) 2010 athile@athile.net (http://www.athile.net)
+    Copyright (c) 2010-2011 athile@athile.net (http://www.athile.net)
 
     Permission is hereby granted, free of charge, to any person obtaining a 
     copy of this software and associated documentation files (the "Software"), 
@@ -75,6 +75,17 @@ namespace lx0 { namespace engine { namespace dom_ns {
         // Forward the events along so they can be caught at any level
         spView->slotKeyDown += [&](KeyEvent& e) { this->slotKeyDown(e); };
 
+        return spView;
+    }
+
+    //!
+    /*!
+     */
+    ViewPtr 
+    Document::createView (std::string type, std::string name, lx0::IRenderer* pRenderer)
+    {
+        auto spView = createView(type, name);
+        spView->setRenderer(pRenderer);
         return spView;
     }
     

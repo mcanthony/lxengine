@@ -33,7 +33,7 @@
 #include "rasterizer_ext.hpp"
 
 
-extern lx0::prototype::Camera             gCamera;
+extern lx0::Camera2             gCamera;
 
 using namespace lx0::subsystem::rasterizer;
 
@@ -44,7 +44,7 @@ public:
 
     virtual void generate(lx0::ElementPtr spElement,
                   RasterizerGL& rasterizer,
-                  lx0::prototype::Camera& cam1,
+                  lx0::Camera2& cam1,
                   CameraPtr spCamera, 
                   LightSetPtr spLightSet, 
                   RenderList& list) = 0;

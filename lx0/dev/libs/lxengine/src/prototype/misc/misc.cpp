@@ -121,7 +121,7 @@ namespace lx0 { namespace prototype { namespace misc_ns {
         Returns the unnormalized vector between the camera position and target.
      */
     glgeom::vector3f
-    view_vector (const Camera& camera)
+    view_vector (const Camera2& camera)
     {
         lx_check_error( !is_zero_length(camera.mTarget - camera.mPosition) );
         return camera.mTarget - camera.mPosition;
@@ -135,14 +135,14 @@ namespace lx0 { namespace prototype { namespace misc_ns {
         OpenGL.
      */
     void    
-    view_matrix (const Camera& camera, glm::mat4& viewMatrix)
+    view_matrix (const Camera2& camera, glm::mat4& viewMatrix)
     {
         viewMatrix = glm::lookAt(camera.mPosition.vec, camera.mTarget.vec, camera.mWorldUp.vec);
     }
 
     //!
     void    
-    move_forward (Camera& camera, float step)
+    move_forward (Camera2& camera, float step)
     {
         const glgeom::vector3f view = normalize( view_vector(camera) ) * step;
         camera.mTarget += view;
@@ -151,7 +151,7 @@ namespace lx0 { namespace prototype { namespace misc_ns {
 
     //!
     void    
-    move_up (Camera& camera, float step)
+    move_up (Camera2& camera, float step)
     {
         lx_check_error( is_unit_length( camera.mWorldUp ) );
 
@@ -165,7 +165,7 @@ namespace lx0 { namespace prototype { namespace misc_ns {
 
     //!
     void    
-    move_vertical (Camera& camera, float step)
+    move_vertical (Camera2& camera, float step)
     {
         lx_check_error( is_unit_length( camera.mWorldUp ) );
 
@@ -175,7 +175,7 @@ namespace lx0 { namespace prototype { namespace misc_ns {
 
     //!
     void    
-    move_right (Camera& camera, float step)
+    move_right (Camera2& camera, float step)
     {
         const glgeom::vector3f view  = normalize( view_vector(camera) );
         const glgeom::vector3f right = normalize( glgeom::cross(view, camera.mWorldUp) );
@@ -185,7 +185,7 @@ namespace lx0 { namespace prototype { namespace misc_ns {
 
     //! Rotate the camera horizontally about the world "up" axis
     void    
-    rotate_horizontal (Camera& camera, float angle)
+    rotate_horizontal (Camera2& camera, float angle)
     {
         const glgeom::vector3f view = camera.mTarget - camera.mPosition;
         const glgeom::vector3f rotated = rotate(view, camera.mWorldUp, angle);
@@ -194,7 +194,7 @@ namespace lx0 { namespace prototype { namespace misc_ns {
 
     //! Rotate the camera vertically (about the rightward facing axis of the camera)
     void    
-    rotate_vertical (Camera& camera, float angle)
+    rotate_vertical (Camera2& camera, float angle)
     {
         const glgeom::vector3f view  = camera.mTarget - camera.mPosition;
         const glgeom::vector3f right = normalize( cross(view, camera.mWorldUp) );

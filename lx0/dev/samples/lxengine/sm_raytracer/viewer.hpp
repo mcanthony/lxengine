@@ -31,4 +31,7 @@
 
 lx0::ViewImp* create_viewer();
 
+lx0::IRenderer* create_renderer();
+lx0::Controller* create_controller();
+
 #endif

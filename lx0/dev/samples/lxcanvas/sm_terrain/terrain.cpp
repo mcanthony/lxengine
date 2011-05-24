@@ -52,9 +52,8 @@
 //===========================================================================//
 
 using namespace lx0::core;
-using namespace lx0::prototype;
 
-extern lx0::prototype::Camera gCamera;
+extern lx0::Camera2 gCamera;
 
 //===========================================================================//
 //   F I L E   I M P L E M E N T A T I O N 
@@ -116,7 +115,7 @@ namespace Terrain
 
     void Render::generate(ElementPtr spElement,
                     RasterizerGL& rasterizer,
-                    lx0::prototype::Camera& cam1,
+                    lx0::Camera2& cam1,
                     CameraPtr spCamera, 
                     LightSetPtr spLightSet, 
                     RenderList& list)
