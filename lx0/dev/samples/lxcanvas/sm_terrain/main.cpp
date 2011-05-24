@@ -92,6 +92,7 @@ main (int argc, char** argv)
         
         DocumentPtr spDocument = spEngine->loadDocument("media2/appdata/sm_terrain/scene.xml");
         ViewPtr     spView     = spDocument->createView("LxCanvas", "view");
+        spView->addEventController( create_event_controller() );
         spView->show();
 
         exitCode = spEngine->run();

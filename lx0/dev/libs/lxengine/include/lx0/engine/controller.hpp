@@ -41,6 +41,17 @@ namespace lx0
             //!
             /*!
                 \ingroup lx0_engine_dom
+
+                A Controller is intended to map UI state such as keyboard presses, 
+                mouse movements, frame updates, etc. into high-level application events
+                such as "select_object", "move_camera", etc.  
+
+                The high-level mapping is intended allow for reuse between multiple
+                applications.  For example, a UIController might be set up to allow for
+                FPS-like camera control.  The internal camera representation might vary
+                between apps, but the WASD keyboard controls could be reused easily.
+                
+                \todo Rename UIController
              */
             class Controller
             {
@@ -50,6 +61,27 @@ namespace lx0
                 virtual     void        onLClick        (ViewPtr spView, const MouseState&, const ButtonState&, KeyModifiers) {}
                 virtual     void        updateFrame     (ViewPtr spView,
                                                             const KeyboardState& keyboard) {};
+            };
+
+            //===========================================================================//
+            //!
+            /*!
+                \ingroup lx0_engine_dom
+
+                An EventController is intended for use along with a Controller in a 
+                processing chain.
+
+                User event -> Controller -> Application Event -> EventController -> Implementation
+
+                The EventController maps the application events produced by the Controller
+                into actual calls in the code.
+             */
+            class EventController
+            {
+            public:
+                virtual                 ~EventController() {}
+
+                virtual     void        handleEvent     (std::string evt, lx0::lxvar params) {}
             };
         }
     }

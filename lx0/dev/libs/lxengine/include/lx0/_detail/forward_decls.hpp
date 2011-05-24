@@ -100,6 +100,7 @@ namespace lx0
             _LX_FORWARD_DECL_PTRS(View);
             _LX_FORWARD_DECL_PTRS(IRenderer);
             _LX_FORWARD_DECL_PTRS(Controller);
+            _LX_FORWARD_DECL_PTRS(EventController);
             _LX_FORWARD_DECL_PTRS(Object);
             _LX_FORWARD_DECL_PTRS(LxVarObject);
 

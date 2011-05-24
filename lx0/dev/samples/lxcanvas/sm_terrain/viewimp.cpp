@@ -33,23 +33,11 @@
 #include "main.hpp"
 #include "renderer.hpp"
 
-
 using namespace lx0;
-using namespace lx0::prototype;
 
 extern lx0::Camera2 gCamera;
 
-class Controller2
-{
-public:
-    virtual                 ~Controller2() {}
-
-    virtual     void        onLClick        (ViewPtr spView, const MouseState&, const ButtonState&, KeyModifiers) {}
-    virtual     void        updateFrame     (ViewPtr spView,
-                                             const KeyboardState& keyboard) = 0;
-};
-
-class CameraController : public Controller2
+class CameraController : public lx0::Controller
 {
 public:
     virtual     void        onLClick        (ViewPtr spView, const MouseState&, const ButtonState&, KeyModifiers);
@@ -116,7 +104,7 @@ protected:
     lx0::CanvasHost              mHost;
     std::auto_ptr<lx0::CanvasGL> mspWin;
     Renderer                     mRenderer;
-    CameraController             mController;
+    lx0::ControllerPtr           mspController;
 };
 
 ViewImp* create_lxcanvasimp()
@@ -137,6 +125,8 @@ LxCanvasImp::~LxCanvasImp()
 void 
 LxCanvasImp::createWindow (View* pHostView, size_t& handle, unsigned int& width, unsigned int& height)
 {
+    mspController.reset( new CameraController );
+
     width = 800;
     height = 400;
 
@@ -148,7 +138,7 @@ LxCanvasImp::createWindow (View* pHostView, size_t& handle, unsigned int& width,
 
     mspWin->slotRedraw += [&]() { mRenderer.render(); };
     mspWin->slotLMouseClick += [&](const MouseState& ms, const ButtonState& bs, KeyModifiers km) { 
-        mController.onLClick(mpHostView->shared_from_this(), ms, bs, km);
+        mspController->onLClick(mpHostView->shared_from_this(), ms, bs, km);
     };
     mspWin->slotLMouseDrag += [&](const MouseState& ms, const ButtonState& bs, KeyModifiers km) {
         
@@ -182,7 +172,7 @@ LxCanvasImp::show (View* pHostView, Document* pDocument)
 void 
 LxCanvasImp::updateFrame (DocumentPtr spDocument) 
 {
-    mController.updateFrame(mpHostView->shared_from_this(), mspWin->keyboard());
+    mspController->updateFrame(mpHostView->shared_from_this(), mspWin->keyboard());
     mRenderer.update();
 
     mspWin->invalidate(); 
@@ -195,18 +185,6 @@ LxCanvasImp::handleEvent (std::string evt, lx0::lxvar params)
 
     if (evt == "redraw")
         bInvalidate = true;
-    else if (evt == "move_forward")
-        move_forward(gCamera, params.asFloat());
-    else if (evt == "move_backward")
-        move_backward(gCamera, params.asFloat());
-    else if (evt == "move_left")
-        move_left(gCamera, params.asFloat());
-    else if (evt == "move_right")
-        move_right(gCamera, params.asFloat());
-    else if (evt == "move_up")
-        move_vertical(gCamera, params.asFloat());
-    else if (evt == "move_down")
-        move_vertical(gCamera, -params.asFloat());
     else if (evt == "select_object")
     {
         auto& spItem = mRenderer.select( params.at(0).asInt(), params.at(1).asInt() );
@@ -220,10 +198,36 @@ LxCanvasImp::handleEvent (std::string evt, lx0::lxvar params)
         mRenderer.cycleViewMode();
     else
     {
-        lx_warn("Unhandled event '%s'", evt.c_str());
         bInvalidate = false;
     }
 
     if (bInvalidate)
         mspWin->invalidate();
+
+
+}
+
+class EventHandler : public lx0::EventController
+{
+public:
+    virtual void handleEvent(std::string evt, lx0::lxvar params)
+    {
+        if (evt == "move_forward")
+            move_forward(gCamera, params.asFloat());
+        else if (evt == "move_backward")
+            move_backward(gCamera, params.asFloat());
+        else if (evt == "move_left")
+            move_left(gCamera, params.asFloat());
+        else if (evt == "move_right")
+            move_right(gCamera, params.asFloat());
+        else if (evt == "move_up")
+            move_vertical(gCamera, params.asFloat());
+        else if (evt == "move_down")
+            move_vertical(gCamera, -params.asFloat());
+    }
+};
+
+lx0::EventController*   create_event_controller()
+{
+    return new EventHandler;
 }

@@ -192,8 +192,8 @@ namespace lx0 { namespace engine { namespace dom_ns {
         virtual     void        updateFrame     (DocumentPtr spDocument) = 0;
         virtual     void        updateEnd       (void) = 0;
 
-        virtual     void        setRenderer     (IRenderer* pRenderer) {} 
-        virtual     void        addController   (Controller* pController) {}
+        virtual     void        setRenderer         (IRenderer* pRenderer) {} 
+        virtual     void        addController       (Controller* pController) {}
 
         virtual     void        handleEvent     (std::string evt, lx0::lxvar params) {}
     };
@@ -231,8 +231,9 @@ namespace lx0 { namespace engine { namespace dom_ns {
 
         void        notifyViewImpIdle   (void);
 
-        void        setRenderer     (IRenderer* pRenderer)    { mspImp->setRenderer(pRenderer); } 
-        void        addController   (Controller* pController) { mspImp->addController(pController); }
+        void        setRenderer         (IRenderer* pRenderer)              { mspImp->setRenderer(pRenderer); } 
+        void        addController       (Controller* pController)           { mspImp->addController(pController); }
+        void        addEventController  (EventController* pEventController);
 
     protected:
 
@@ -245,6 +246,7 @@ namespace lx0 { namespace engine { namespace dom_ns {
         Document*                   mpDocument;         //! Non-owning pointer
         detail::LxInputManagerPtr   mspLxInputManager;
         std::unique_ptr<ViewImp>    mspImp;
+        std::vector<lx0::EventControllerPtr> mEventControllers;
 
         int mOnElementRemovedId;
         int mOnElementAddedId;

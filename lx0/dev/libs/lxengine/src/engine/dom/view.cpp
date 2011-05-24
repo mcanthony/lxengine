@@ -4,7 +4,7 @@
 
     LICENSE
 
-    Copyright (c) 2010 athile@athile.net (http://www.athile.net)
+    Copyright (c) 2010-2011 athile@athile.net (http://www.athile.net)
 
     Permission is hereby granted, free of charge, to any person obtaining a 
     copy of this software and associated documentation files (the "Software"), 
@@ -127,6 +127,9 @@ namespace lx0 { namespace engine { namespace dom_ns {
     View::sendEvent (std::string evt, lxvar params)
     {
         mspImp->handleEvent(evt, params);
+
+        for (auto it = mEventControllers.begin(); it != mEventControllers.end(); ++it)
+            (*it)->handleEvent(evt, params);
     }
 
     /*
@@ -150,6 +153,12 @@ namespace lx0 { namespace engine { namespace dom_ns {
     View::isKeyDown (int keyCode) const
     {
         return mspLxInputManager->isKeyDown(keyCode);
+    }
+
+    void        
+    View::addEventController (EventController* pEventController)
+    {
+        mEventControllers.push_back( EventControllerPtr(pEventController) );
     }
 
     //===========================================================================//

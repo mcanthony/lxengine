@@ -29,3 +29,5 @@
 #pragma once
 
 #include <lx0/lxengine.hpp>
+
+lx0::EventController*   create_event_controller();
