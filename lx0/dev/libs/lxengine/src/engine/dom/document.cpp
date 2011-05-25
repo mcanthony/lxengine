@@ -202,6 +202,8 @@ namespace lx0 { namespace engine { namespace dom_ns {
     std::vector<ElementPtr> 
     Document::getElementsByTagName (std::string name)
     {
+        lx_check_error(this != nullptr);
+
         std::vector<ElementPtr> matches;
         _walkElements([&](ElementPtr spElem) -> bool {
             if (spElem->tagName() == name)
@@ -219,6 +221,8 @@ namespace lx0 { namespace engine { namespace dom_ns {
     std::vector<ElementPtr> 
     Document::getElements (void)
     {
+        lx_check_error(this != nullptr);
+
         std::vector<ElementPtr> matches;
         _walkElements([&](ElementPtr spElem) -> bool {
             matches.push_back(spElem);

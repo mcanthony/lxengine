@@ -141,7 +141,12 @@ main (int argc, char** argv)
 
             ViewPtr     spView     = spDocument->createView("Canvas", "view", create_renderer() );
             spView->addController( create_controller() );
-            spView->show();
+
+            lxvar options;
+            options.insert("title", "LxEngine Raytracer Sample");
+            options.insert("width", 512);
+            options.insert("height", 512);
+            spView->show(options);
 
             exitCode = spEngine->run();
             spEngine->shutdown();

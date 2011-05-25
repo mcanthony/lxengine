@@ -42,7 +42,7 @@ namespace lx0
             /*!
                 \ingroup lx0_engine_dom
 
-                A Controller is intended to map UI state such as keyboard presses, 
+                A UIController is intended to map UI state such as keyboard presses, 
                 mouse movements, frame updates, etc. into high-level application events
                 such as "select_object", "move_camera", etc.  
 
@@ -50,17 +50,15 @@ namespace lx0
                 applications.  For example, a UIController might be set up to allow for
                 FPS-like camera control.  The internal camera representation might vary
                 between apps, but the WASD keyboard controls could be reused easily.
-                
-                \todo Rename UIController
              */
-            class Controller
+            class UIController
             {
             public:
-                virtual                 ~Controller() {}
+                virtual                 ~UIController() {}
 
                 virtual     void        onLClick        (ViewPtr spView, const MouseState&, const ButtonState&, KeyModifiers) {}
-                virtual     void        updateFrame     (ViewPtr spView,
-                                                            const KeyboardState& keyboard) {};
+                virtual     void        onLDrag         (ViewPtr spView, const MouseState& ms, const ButtonState& bs, KeyModifiers km) {}
+                virtual     void        updateFrame     (ViewPtr spView, const KeyboardState& keyboard) {}
             };
 
             //===========================================================================//
@@ -68,12 +66,12 @@ namespace lx0
             /*!
                 \ingroup lx0_engine_dom
 
-                An EventController is intended for use along with a Controller in a 
+                An EventController is intended for use along with a UIController in a 
                 processing chain.
 
-                User event -> Controller -> Application Event -> EventController -> Implementation
+                User event -> UIController -> Application Event -> EventController -> Implementation
 
-                The EventController maps the application events produced by the Controller
+                The EventController maps the application events produced by the UIController
                 into actual calls in the code.
              */
             class EventController

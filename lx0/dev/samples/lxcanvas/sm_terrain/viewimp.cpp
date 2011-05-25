@@ -37,10 +37,11 @@ using namespace lx0;
 
 extern lx0::Camera2 gCamera;
 
-class CameraController : public lx0::Controller
+class CameraController : public lx0::UIController
 {
 public:
     virtual     void        onLClick        (ViewPtr spView, const MouseState&, const ButtonState&, KeyModifiers);
+    virtual     void        onLDrag         (ViewPtr spView, const MouseState& ms, const ButtonState& bs, KeyModifiers km);
     virtual     void        updateFrame     (ViewPtr spView,
                                              const KeyboardState& keyboard);
 };
@@ -49,6 +50,20 @@ void
 CameraController::onLClick (ViewPtr spView, const MouseState& mouse, const ButtonState&, KeyModifiers)
 {
     spView->sendEvent("select_object", lxvar(mouse.x, mouse.y));
+}
+
+void
+CameraController::onLDrag (ViewPtr spView, const MouseState& ms, const ButtonState& bs, KeyModifiers km)
+{
+    // Rotate horizontal
+    rotate_horizontal(gCamera, ms.deltaX() * -3.14f / 1000.0f );
+
+    // Rotate vertical..
+    //@todo:  only if not going to cause the camera to be staring straight up or straight down
+    float vertAngle = ms.deltaY() * -3.1415f / 1000.0f;
+    rotate_vertical(gCamera, vertAngle);
+        
+    spView->sendEvent("redraw", lxvar());
 }
 
 void
@@ -74,138 +89,11 @@ CameraController::updateFrame (ViewPtr spView, const KeyboardState& keyboard)
 
     if (keyboard.bDown[KC_M])
         spView->sendEvent("cycle_viewmode", lxvar());
+
+    spView->sendEvent("redraw", lxvar());
 }
 
-
-
-
-class LxCanvasImp : public lx0::ViewImp
-{
-public:
-                        LxCanvasImp();
-                        ~LxCanvasImp();
-
-    virtual void        createWindow    (lx0::View* pHostView, size_t& handle, unsigned int& width, unsigned int& height);
-    virtual void        destroyWindow   (void);
-    virtual void        show            (lx0::View* pHostView, lx0::Document* pDocument);
-
-    virtual     void        _onElementAdded             (lx0::ElementPtr spElem) {}
-    virtual     void        _onElementRemoved           (lx0::ElementPtr spElem) {}
-
-    virtual     void        updateBegin     (void) {}
-    virtual     void        updateFrame     (lx0::DocumentPtr spDocument);
-    virtual     void        updateEnd       (void) {}
-
-    virtual     void        handleEvent     (std::string evt, lx0::lxvar params);
-
-protected:
-    lx0::View*                   mpHostView;
-    lx0::DocumentPtr             mspDocument;
-    lx0::CanvasHost              mHost;
-    std::auto_ptr<lx0::CanvasGL> mspWin;
-    Renderer                     mRenderer;
-    lx0::ControllerPtr           mspController;
-};
-
-ViewImp* create_lxcanvasimp()
-{
-    return new LxCanvasImp;
-}
-
-LxCanvasImp::LxCanvasImp()
-{
-    lx_debug("LxCanvasImp ctor");
-}
-
-LxCanvasImp::~LxCanvasImp()
-{
-    lx_debug("LxCanvasImp dtor");
-}
-
-void 
-LxCanvasImp::createWindow (View* pHostView, size_t& handle, unsigned int& width, unsigned int& height)
-{
-    mspController.reset( new CameraController );
-
-    width = 800;
-    height = 400;
-
-    mspWin.reset( new CanvasGL("Terrain Sample (OpenGL 3.2)", 16, 16, width, height, false) );
-    handle = mspWin->handle();
-
-    mRenderer.initialize();
-    mRenderer.resize(width, height);
-
-    mspWin->slotRedraw += [&]() { mRenderer.render(); };
-    mspWin->slotLMouseClick += [&](const MouseState& ms, const ButtonState& bs, KeyModifiers km) { 
-        mspController->onLClick(mpHostView->shared_from_this(), ms, bs, km);
-    };
-    mspWin->slotLMouseDrag += [&](const MouseState& ms, const ButtonState& bs, KeyModifiers km) {
-        
-        // Rotate horizontal
-        rotate_horizontal(gCamera, ms.deltaX() * -3.14f / 1000.0f );
-
-        // Rotate vertical..
-        //@todo:  only if not going to cause the camera to be staring straight up or straight down
-        float vertAngle = ms.deltaY() * -3.1415f / 1000.0f;
-        rotate_vertical(gCamera, vertAngle);
-        
-        mspWin->invalidate(); 
-    };
-}
-
-void
-LxCanvasImp::destroyWindow (void)
-{
-    mspWin->destroy();
-}
-
-void 
-LxCanvasImp::show (View* pHostView, Document* pDocument)
-{
-    mpHostView = pHostView;
-    mspDocument = pDocument->shared_from_this();
-    mRenderer.mspDocument = mspDocument;
-    mspWin->show();
-}
-
-void 
-LxCanvasImp::updateFrame (DocumentPtr spDocument) 
-{
-    mspController->updateFrame(mpHostView->shared_from_this(), mspWin->keyboard());
-    mRenderer.update();
-
-    mspWin->invalidate(); 
-}
-
-void 
-LxCanvasImp::handleEvent (std::string evt, lx0::lxvar params)
-{
-    bool bInvalidate = true;
-
-    if (evt == "redraw")
-        bInvalidate = true;
-    else if (evt == "select_object")
-    {
-        auto& spItem = mRenderer.select( params.at(0).asInt(), params.at(1).asInt() );
-        auto spElement = spItem->getData<ElementPtr>();
-        std::string name = spElement
-            ? spElement->attr("image").query("unknown").c_str()
-            : "no associated element";
-        printf("Select: %s (%s)\n", spItem->spMaterial->mShaderFilename.c_str(), name.c_str());
-    }
-    else if (evt == "cycle_viewmode")
-        mRenderer.cycleViewMode();
-    else
-    {
-        bInvalidate = false;
-    }
-
-    if (bInvalidate)
-        mspWin->invalidate();
-
-
-}
+lx0::UIController*        create_camera_controller() { return new CameraController; }
 
 class EventHandler : public lx0::EventController
 {

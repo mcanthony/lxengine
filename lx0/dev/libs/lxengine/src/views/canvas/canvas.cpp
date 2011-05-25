@@ -38,7 +38,7 @@ using namespace lx0;
 class LxCanvasImp : public ViewImp
 {
 public:
-    virtual void        createWindow    (View* pHostView, size_t& handle, unsigned int& width, unsigned int& height);
+    virtual void        createWindow    (View* pHostView, size_t& handle, unsigned int& width, unsigned int& height, lxvar options);
     virtual void        destroyWindow   (void);
     virtual void        show            (View* pHostView, Document* pDocument);
 
@@ -52,31 +52,43 @@ public:
     virtual     void        handleEvent     (std::string evt, lx0::lxvar params);
 
     virtual void            setRenderer         (IRenderer* pRenderer)         { mspRenderer.reset( pRenderer ); }
-    virtual void            addController       (lx0::Controller* pController) { mControllers.push_back(std::shared_ptr<lx0::Controller>(pController)); }
+    virtual void            addController       (lx0::UIController* pController) { mControllers.push_back(std::shared_ptr<lx0::UIController>(pController)); }
 
 protected:
     lx0::View*                  mpHostView;
     std::auto_ptr<CanvasGL>     mspWin;
     CanvasHost                  mHost;
    
-    std::vector<std::shared_ptr<lx0::Controller>> mControllers;
+    std::vector<std::shared_ptr<lx0::UIController>> mControllers;
     std::shared_ptr<IRenderer>  mspRenderer;
 };
 
 void 
-LxCanvasImp::createWindow (View* pHostView, size_t& handle, unsigned int& width, unsigned int& height)
+LxCanvasImp::createWindow (View* pHostView, size_t& handle, unsigned int& width, unsigned int& height, lxvar options)
 {
     mpHostView = pHostView;
 
-    width = 512;
-    height = 512;
+    std::string title = options.query("title", "LxEngine Canvas");
+    width = options.query("width", 512);
+    height = options.query("height", 512);
 
-    mspWin.reset( new CanvasGL("LxEngine Raytracer Sample", 16, 16, width, height, false) );
+    mspWin.reset( new CanvasGL(title.c_str(), 16, 16, width, height, false) );
     handle = mspWin->handle();
 
     mspRenderer->initialize();
 
     mspWin->slotRedraw += [&]() { mspRenderer->render(); };
+
+    for (auto it = mControllers.begin(); it != mControllers.end(); ++it)
+    {
+        auto spController = *it;
+        mspWin->slotLMouseClick += [spController, this](const MouseState& ms, const ButtonState& bs, KeyModifiers km) { 
+            spController->onLClick(mpHostView->shared_from_this(), ms, bs, km);
+        };
+        mspWin->slotLMouseDrag += [spController, this](const MouseState& ms, const ButtonState& bs, KeyModifiers km) {
+            spController->onLDrag(mpHostView->shared_from_this(), ms, bs, km);
+        };
+    };
 }
 
 void
@@ -96,6 +108,8 @@ LxCanvasImp::updateFrame (DocumentPtr spDocument)
 {
     for (auto it = mControllers.begin(); it != mControllers.end(); ++it)
         (*it)->updateFrame( mpHostView->shared_from_this(), mspWin->keyboard() );
+
+    mspRenderer->update();
 }
 
 void        
@@ -103,6 +117,8 @@ LxCanvasImp::handleEvent (std::string evt, lx0::lxvar params)
 {
     if (evt == "redraw")
         mspWin->invalidate();
+    else
+        mspRenderer->handleEvent(evt, params);
 }
 
 //===========================================================================//

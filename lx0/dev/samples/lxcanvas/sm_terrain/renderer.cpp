@@ -255,6 +255,23 @@ protected:
     ItemPtr           mspItem;
 };
 
+
+void 
+Renderer::handleEvent (std::string evt, lx0::lxvar params)
+{
+    if (evt == "select_object")
+    {
+        auto& spItem = select( params.at(0).asInt(), params.at(1).asInt() );
+        auto spElement = spItem->getData<ElementPtr>();
+        std::string name = spElement
+            ? spElement->attr("image").query("unknown").c_str()
+            : "no associated element";
+        printf("Select: %s (%s)\n", spItem->spMaterial->mShaderFilename.c_str(), name.c_str());
+    }
+    else if (evt == "cycle_viewmode")
+        cycleViewMode();
+}
+
 Element::Component* new_Sprite() { return new Sprite; }
 Element::Component* new_SkyMap() { return new SkyMap; }
 

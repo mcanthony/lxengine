@@ -327,7 +327,7 @@ namespace {
 
         Ogre::Root* root() { return mspRoot.get(); }
 
-        void        createWindow    (View* pHostView, size_t& handle, unsigned int& width, unsigned int& height);
+        void        createWindow    (View* pHostView, size_t& handle, unsigned int& width, unsigned int& height, lxvar options);
         void        show            (View* pHostView, Document* pDocument);
 
 
@@ -413,7 +413,7 @@ namespace {
     }
 
     void
-    OgreImp::createWindow (View* pHostView, size_t& handle, unsigned int& width, unsigned int& height)
+    OgreImp::createWindow (View* pHostView, size_t& handle, unsigned int& width, unsigned int& height, lxvar options)
     {
         // The render window creation also creates many internal OGRE data objects; therefore,
         // the client must create it first.  Otherwise, objects like the Camera won't even work.

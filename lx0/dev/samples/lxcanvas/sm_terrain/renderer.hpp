@@ -29,6 +29,7 @@
 
 #pragma once
 
+#include <lx0/lxengine.hpp>
 #include <lx0/prototype/misc.hpp>
 #include "rasterizer_ext.hpp"
 
@@ -51,11 +52,15 @@ public:
 };
 
 
-class Renderer : public lx0::Document::Component
+/*!
+ */
+class Renderer 
+    : public lx0::IRenderer
 {
 public:
-    Renderer()
+    Renderer (lx0::DocumentPtr spDoc)
         : mViewMode (0)
+        , mspDocument (spDoc)
     {
     }
 
@@ -203,6 +208,8 @@ public:
         unsigned int id = mRasterizer.readPixel(x, y);
         return items.getItem(id);
     }
+
+    virtual void handleEvent (std::string evt, lx0::lxvar params);
 
     lx0::DocumentPtr                 mspDocument;
 

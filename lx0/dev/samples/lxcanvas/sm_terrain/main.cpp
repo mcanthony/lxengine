@@ -32,7 +32,6 @@
 /*!
     - Clean-up code
     - Reduce dependencies
-    - Add Controller object that maps UI to Engine events
  */
 
 //===========================================================================//
@@ -53,6 +52,7 @@
 #include <lx0/subsystem/rasterizer.hpp>
 #include <lx0/subsystem/canvas.hpp>
 #include <lx0/prototype/misc.hpp>
+#include <lx0/views/canvas.hpp>
 
 #include "main.hpp"
 #include "terrain.hpp"
@@ -82,18 +82,26 @@ main (int argc, char** argv)
     try
     {
         EnginePtr   spEngine   = Engine::acquire();
+        spEngine->addViewPlugin("Canvas", [] (View* pView) { return lx0::createCanvasViewImp(); });
+
         spEngine->addDocumentComponent("physics2", [] () { return new PhysicsSubsystem; } );
         spEngine->addDocumentComponent("rasterizer", lx0::createIRasterizer);
-        spEngine->addViewPlugin("LxCanvas", [] (View* pView) { return create_lxcanvasimp(); });
+
         spEngine->addElementComponent("Terrain", "runtime", [](ElementPtr spElem) { return new Terrain::Runtime(spElem); }); 
         spEngine->addElementComponent("Terrain", "renderable", [](ElementPtr spElem) { return new Terrain::Render; });
         spEngine->addElementComponent("Sprite", "renderable", [](ElementPtr spElem) { return new_Sprite(); });
         spEngine->addElementComponent("SkyMap", "renderable", [](ElementPtr spElem) { return new_SkyMap(); });
         
         DocumentPtr spDocument = spEngine->loadDocument("media2/appdata/sm_terrain/scene.xml");
-        ViewPtr     spView     = spDocument->createView("LxCanvas", "view");
+        ViewPtr     spView     = spDocument->createView("Canvas", "view", new Renderer(spDocument));
+        spView->addController( create_camera_controller() );
         spView->addEventController( create_event_controller() );
-        spView->show();
+        
+        lxvar options;
+        options.insert("title", "Terrain Sample (OpenGL 3.2)");
+        options.insert("width", 800);
+        options.insert("height", 400);
+        spView->show(options);
 
         exitCode = spEngine->run();
         spDocument->destroyView("view");

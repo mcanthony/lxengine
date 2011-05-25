@@ -98,17 +98,23 @@ namespace lx0 { namespace engine { namespace dom_ns {
         Makes the view or window visible.
      */
     void 
-    View::show()
+    View::show(lxvar options)
     {
         size_t hWindowHandle;
         unsigned int width, height;
-        mspImp->createWindow(this, hWindowHandle, width, height);
+        mspImp->createWindow(this, hWindowHandle, width, height, options);
 
         // Create the input manager for the window, now that the window has been created
         mspLxInputManager.reset( new detail::LxInputManager(hWindowHandle, width, height) );
         mspLxInputManager->slotKeyDown += [&] (KeyEvent& e) { this->slotKeyDown(e); };
     
         mspImp->show(this, mpDocument);
+    }
+
+    void 
+    View::show (void)
+    {
+        show(lxvar());
     }
 
     void

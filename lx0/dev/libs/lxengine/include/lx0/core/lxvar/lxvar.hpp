@@ -161,6 +161,9 @@ namespace lx0
                     int             query           (int def) const         { return isInt() ? asInt() : def; }
                     std::string     query           (std::string def) const { return isString() ? asString() : def; }
                     float           query           (float def) const       { return isFloat() ? asFloat() : (isInt() ? asInt() : def); }
+                    std::string     query           (std::string path, std::string def);
+                    int             query           (std::string path, int def);
+
 
                     //@name Type checks
                     //@{

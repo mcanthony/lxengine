@@ -170,8 +170,13 @@ namespace lx0 { namespace engine { namespace dom_ns {
     class IRenderer
     {
     public:
+        virtual ~IRenderer() {}
+
         virtual void initialize() {}
         virtual void render() {}
+        virtual void update() {}
+
+        virtual void handleEvent (std::string evt, lx0::lxvar params) {}
     };
 
     //===========================================================================//
@@ -181,7 +186,7 @@ namespace lx0 { namespace engine { namespace dom_ns {
     public:
         virtual     ~ViewImp() {}
 
-        virtual void        createWindow    (View* pHostView, size_t& handle, unsigned int& width, unsigned int& height) = 0;
+        virtual void        createWindow    (View* pHostView, size_t& handle, unsigned int& width, unsigned int& height, lxvar options) = 0;
         virtual void        destroyWindow   (void) {}
         virtual void        show            (View* pHostView, Document* pDocument) = 0;
 
@@ -193,7 +198,7 @@ namespace lx0 { namespace engine { namespace dom_ns {
         virtual     void        updateEnd       (void) = 0;
 
         virtual     void        setRenderer         (IRenderer* pRenderer) {} 
-        virtual     void        addController       (Controller* pController) {}
+        virtual     void        addController       (UIController* pController) {}
 
         virtual     void        handleEvent     (std::string evt, lx0::lxvar params) {}
     };
@@ -217,6 +222,7 @@ namespace lx0 { namespace engine { namespace dom_ns {
                     ~View           (void);
         
         void        show            (void);
+        void        show            (lxvar options);
 
         void        updateBegin     (void);
         void        updateFrame     (void);
@@ -232,7 +238,7 @@ namespace lx0 { namespace engine { namespace dom_ns {
         void        notifyViewImpIdle   (void);
 
         void        setRenderer         (IRenderer* pRenderer)              { mspImp->setRenderer(pRenderer); } 
-        void        addController       (Controller* pController)           { mspImp->addController(pController); }
+        void        addController       (UIController* pController)           { mspImp->addController(pController); }
         void        addEventController  (EventController* pEventController);
 
     protected:
