@@ -7,8 +7,6 @@ echo.
 erase CMakeCache.txt
 cmake ..\dev -G "Visual Studio 10"
 echo.
-gen_folders.py
-echo.
 dir /b *.sln
 echo.
 echo Run:

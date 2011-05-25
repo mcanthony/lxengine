@@ -139,7 +139,7 @@ main (int argc, char** argv)
             spDocument->attachComponent("ray", create_raytracer() );
             spDocument->attachComponent("scripting", create_scripting() );
 
-            ViewPtr     spView     = spDocument->createView("Canvas", "view", create_renderer() );
+            ViewPtr spView = spDocument->createView("Canvas", "view", create_renderer() );
             spView->addController( create_controller() );
 
             lxvar options;

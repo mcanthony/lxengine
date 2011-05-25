@@ -185,3 +185,32 @@ recurse_subdirectories(sandbox)
 recurse_subdirectories(unittest)
 
 
+#
+# Organize projects into folders
+#
+SET_PROPERTY(GLOBAL PROPERTY USE_FOLDERS ON)
+
+SET_PROPERTY(TARGET lxengine                PROPERTY FOLDER "Libs/LxEngine")
+SET_PROPERTY(TARGET glgeom_benchmark        PROPERTY FOLDER "Libs/GLGeom")
+SET_PROPERTY(TARGET glgeom_unittest         PROPERTY FOLDER "Libs/GLGeom")
+
+SET_PROPERTY(TARGET sm_lx_cube_rain         PROPERTY FOLDER "Samples/LxEngine")
+SET_PROPERTY(TARGET sm_lx_cube_asteriods    PROPERTY FOLDER "Samples/LxEngine")
+SET_PROPERTY(TARGET sm_lxcanvas             PROPERTY FOLDER "Samples/LxEngine")
+SET_PROPERTY(TARGET sm_terrain              PROPERTY FOLDER "Samples/LxEngine")
+SET_PROPERTY(TARGET sm_raytracer            PROPERTY FOLDER "Samples/LxEngine")
+SET_PROPERTY(TARGET sm_lxcraft              PROPERTY FOLDER "Samples/LxEngine")
+SET_PROPERTY(TARGET sm_rasterizer           PROPERTY FOLDER "Samples/LxEngine")
+SET_PROPERTY(TARGET sm_ogre_minimal         PROPERTY FOLDER "Samples/ThirdPartyLibs")
+SET_PROPERTY(TARGET sm_v8_basic             PROPERTY FOLDER "Samples/ThirdPartyLibs")
+SET_PROPERTY(TARGET cpp_smartptr            PROPERTY FOLDER "Samples/Cpp")
+
+SET_PROPERTY(TARGET bm_lxvar                PROPERTY FOLDER "Benchmarks")
+SET_PROPERTY(TARGET blendload               PROPERTY FOLDER "Sandbox")
+SET_PROPERTY(TARGET elm_reference           PROPERTY FOLDER "Sandbox")
+SET_PROPERTY(TARGET elm_function            PROPERTY FOLDER "Sandbox")
+SET_PROPERTY(TARGET sandbox_shadergraph     PROPERTY FOLDER "Sandbox")
+SET_PROPERTY(TARGET sb_fixedpoint           PROPERTY FOLDER "Sandbox")
+SET_PROPERTY(TARGET ut_jsonparser           PROPERTY FOLDER "UnitTest")
+SET_PROPERTY(TARGET ut_lx_vector            PROPERTY FOLDER "UnitTest")
+
