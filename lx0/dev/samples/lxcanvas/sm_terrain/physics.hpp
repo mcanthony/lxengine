@@ -28,6 +28,11 @@
 
 #pragma once
 
+namespace Terrain
+{
+    class Runtime;
+}
+
 class PhysicsSubsystem : public lx0::Document::Component
 {
 public: 
@@ -52,5 +57,6 @@ protected:
         glgeom::point3f     lastPosition;
     };
 
-    std::map<lx0::Element*, ElemData> mElems;
+    std::shared_ptr<Terrain::Runtime> mspTerrain;
+    std::map<lx0::Element*, ElemData> mSprites;
 };

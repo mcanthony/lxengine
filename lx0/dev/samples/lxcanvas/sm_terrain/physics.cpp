@@ -34,32 +34,31 @@ using namespace lx0;
 
 void PhysicsSubsystem::onElementAdded (DocumentPtr spDocument, ElementPtr spElem) 
 {
-    if (spElem->tagName() == "Terrain" || spElem->tagName() == "Sprite")
+    if (spElem->tagName() == "Terrain")
     {
-        mElems.insert(std::make_pair(spElem.get(), ElemData(spElem)));
+        mspTerrain = spElem->getComponent<Terrain::Runtime>("runtime");
+    }
+    else if (spElem->tagName() == "Sprite")
+    {
+        mSprites.insert(std::make_pair(spElem.get(), ElemData(spElem)));
     }
 }
 
 void PhysicsSubsystem::onElementRemoved (Document*   pDocument, ElementPtr spElem) 
 {
-    auto it = mElems.find(spElem.get());
-    if (it != mElems.end())
-        mElems.erase(it);
+    auto it = mSprites.find(spElem.get());
+    if (it != mSprites.end())
+        mSprites.erase(it);
+
+    if (spElem->getComponent<Terrain::Runtime>("runtime").get() == mspTerrain.get())
+        mspTerrain.reset();
 }
     
 float PhysicsSubsystem::drop (float x, float y)
 {
     lx0::uint64 start = lx0::lx_milliseconds();
             
-    float maxZ = std::numeric_limits<float>::min();
-    for (auto it = mElems.begin(); it != mElems.end(); ++it)
-    {
-        if (it->second.spElem->tagName() == "Terrain")
-        {
-            auto spTerrain = it->second.spElem->getComponent<Terrain::Runtime>("runtime");
-            maxZ = std::max(maxZ, spTerrain->calcHeight(x, y));
-        }
-    }
+    float maxZ = std::max(maxZ, mspTerrain->calcHeight(x, y));
 
     lx0::uint64 end = lx0::lx_milliseconds();
     Engine::acquire()->incPerformanceCounter("PhysicsSubsystem drop()", end - start);
@@ -70,32 +69,30 @@ float PhysicsSubsystem::drop (float x, float y)
 void PhysicsSubsystem::onUpdate (DocumentPtr spDocument)
 {
     const float terrainHeight = drop(gCamera.mPosition.x, gCamera.mPosition.y);
-    const float deltaZ = (terrainHeight + 32.0f) - gCamera.mPosition.z;
+    const float deltaZ = (terrainHeight + 2.0f) - gCamera.mPosition.z;
     gCamera.mPosition.z += deltaZ;
     gCamera.mTarget.z += deltaZ;
 
     int processed = 0;
     int skipped = 0;
 
-    for (auto it = mElems.begin(); it != mElems.end(); ++it)
+    for (auto it = mSprites.begin(); it != mSprites.end(); ++it)
     {
         auto spElement = it->second.spElem;
-        if (spElement->tagName() == "Sprite")
-        {
-            lxvar attrPos = spElement->attr("position");
-            const float z = attrPos.size() > 2 ? attrPos.at(2).asFloat() : 0.0f;
-            glgeom::point3f pos( attrPos.at(0).asFloat(), attrPos.at(1).asFloat(), z);
-            if (pos != it->second.lastPosition || true)
-            {
-                pos.z = drop(pos.x, pos.y);
-                spElement->attr("position", lxvar(pos.x, pos.y, pos.z));
-                it->second.lastPosition = pos;
 
-                processed++;
-            }
-            else
-                skipped++;
+        lxvar attrPos = spElement->attr("position");
+        const float z = attrPos.size() > 2 ? attrPos.at(2).asFloat() : 0.0f;
+        glgeom::point3f pos( attrPos.at(0).asFloat(), attrPos.at(1).asFloat(), z);
+        if (pos != it->second.lastPosition || true)
+        {
+            pos.z = drop(pos.x, pos.y);
+            spElement->attr("position", lxvar(pos.x, pos.y, pos.z));
+            it->second.lastPosition = pos;
+
+            processed++;
         }
+        else
+            skipped++;
     }
 
     spDocument->view(0)->sendEvent("redraw", lxvar::undefined());

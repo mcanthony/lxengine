@@ -36,6 +36,8 @@
 
 using namespace lx0;
 
+lx0::Camera2             gCamera;
+
 //===========================================================================//
 
 class SkyMap : public Renderable

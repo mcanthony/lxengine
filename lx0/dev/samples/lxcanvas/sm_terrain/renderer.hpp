@@ -66,7 +66,7 @@ public:
 
     void initialize()
     {
-        gCamera.mPosition = glgeom::point3f(20, 20, 32);
+        gCamera.mPosition = glgeom::point3f(20, 20, 2);
         gCamera.mTarget = glgeom::point3f(0, 0, 0);
         gCamera.mWorldUp = glgeom::vector3f(0, 0, 1);
         gCamera.mFov = 60.0f;

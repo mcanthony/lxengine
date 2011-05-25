@@ -60,11 +60,7 @@
 
 using namespace lx0;
 
-lx0::Camera2             gCamera;
-
 //===========================================================================//
-
-
 
 ViewImp* create_lxcanvasimp();
 Element::Component* new_Sprite();
