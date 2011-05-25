@@ -36,7 +36,7 @@ void PhysicsSubsystem::onElementAdded (DocumentPtr spDocument, ElementPtr spElem
 {
     if (spElem->tagName() == "Terrain" || spElem->tagName() == "Sprite")
     {
-        mElems.insert(std::make_pair(spElem.get(), spElem));
+        mElems.insert(std::make_pair(spElem.get(), ElemData(spElem)));
     }
 }
 
@@ -49,12 +49,21 @@ void PhysicsSubsystem::onElementRemoved (Document*   pDocument, ElementPtr spEle
     
 float PhysicsSubsystem::drop (float x, float y)
 {
+    lx0::uint64 start = lx0::lx_milliseconds();
+            
     float maxZ = std::numeric_limits<float>::min();
     for (auto it = mElems.begin(); it != mElems.end(); ++it)
     {
-        auto spTerrain = it->second->getComponent<Terrain::Runtime>("runtime");
-        maxZ = std::max(maxZ, spTerrain->calcHeight(x, y));
+        if (it->second.spElem->tagName() == "Terrain")
+        {
+            auto spTerrain = it->second.spElem->getComponent<Terrain::Runtime>("runtime");
+            maxZ = std::max(maxZ, spTerrain->calcHeight(x, y));
+        }
     }
+
+    lx0::uint64 end = lx0::lx_milliseconds();
+    Engine::acquire()->incPerformanceCounter("PhysicsSubsystem drop()", end - start);
+
     return maxZ; 
 }
 
@@ -65,18 +74,29 @@ void PhysicsSubsystem::onUpdate (DocumentPtr spDocument)
     gCamera.mPosition.z += deltaZ;
     gCamera.mTarget.z += deltaZ;
 
+    int processed = 0;
+    int skipped = 0;
+
     for (auto it = mElems.begin(); it != mElems.end(); ++it)
     {
-        auto spElement = it->second;
+        auto spElement = it->second.spElem;
         if (spElement->tagName() == "Sprite")
         {
             lxvar attrPos = spElement->attr("position");
-            glgeom::point3f pos( attrPos.at(0).asFloat(), attrPos.at(1).asFloat(), 0.0f);
-            pos.z = drop(pos.x, pos.y);
-            spElement->attr("position", lxvar(pos.x, pos.y, pos.z));
+            const float z = attrPos.size() > 2 ? attrPos.at(2).asFloat() : 0.0f;
+            glgeom::point3f pos( attrPos.at(0).asFloat(), attrPos.at(1).asFloat(), z);
+            if (pos != it->second.lastPosition || true)
+            {
+                pos.z = drop(pos.x, pos.y);
+                spElement->attr("position", lxvar(pos.x, pos.y, pos.z));
+                it->second.lastPosition = pos;
+
+                processed++;
+            }
+            else
+                skipped++;
         }
     }
 
-    if (deltaZ > 0.001)
-        spDocument->view(0)->sendEvent("redraw", lxvar::undefined());
+    spDocument->view(0)->sendEvent("redraw", lxvar::undefined());
 }

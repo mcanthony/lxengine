@@ -17,7 +17,7 @@
       {
         var ref = $("<Sprite/>");
         ref.attr("ref", "unit_cube");
-        ref.attr("position", [x, y]);
+        ref.attr("position", [x, y, 0]);
         ref.attr("scale", 2);
         ref.attr("image", "media2/textures/icons/creatures/sheep-000.png");
         $("#trees").append(ref);
@@ -34,7 +34,7 @@
           var dy = e.data.target[1] - pos[1];
           
           if (Math.abs(dx) > .2 && Math.abs(dy) > .2) {
-            var npos = [ pos[0] + Math.sign(dx) * .1, pos[1] + Math.sign(dy) * .1 ];
+            var npos = [ pos[0] + Math.sign(dx) * .1, pos[1] + Math.sign(dy) * .1, pos[2] ];
             e.setAttribute("position", npos);
           }
           else

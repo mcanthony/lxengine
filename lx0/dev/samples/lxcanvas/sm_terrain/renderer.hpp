@@ -214,8 +214,8 @@ public:
     lx0::DocumentPtr                 mspDocument;
 
 protected:
-    lx0::CameraPtr       spCamera;       // Camera shared by all items
-    lx0::LightSetPtr     spLightSet;
-    lx0::RasterizerGL    mRasterizer;
-    int             mViewMode;
+    lx0::CameraPtr      spCamera;       // Camera shared by all items
+    lx0::LightSetPtr    spLightSet;
+    lx0::RasterizerGL   mRasterizer;
+    int                 mViewMode;
 };

@@ -50,7 +50,6 @@
 
 #include <lx0/lxengine.hpp>
 #include <lx0/subsystem/rasterizer.hpp>
-#include <lx0/subsystem/canvas.hpp>
 #include <lx0/prototype/misc.hpp>
 #include <lx0/views/canvas.hpp>
 

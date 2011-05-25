@@ -40,5 +40,17 @@ public:
 
     virtual void onUpdate (lx0::DocumentPtr spDocument);
 
-    std::map<lx0::Element*, lx0::ElementPtr> mElems;
+protected:
+    struct ElemData
+    {
+        ElemData (lx0::ElementPtr spElement) 
+            : spElem        (spElement) 
+            , lastPosition  (std::numeric_limits<float>::infinity(), std::numeric_limits<float>::infinity(), std::numeric_limits<float>::infinity()) 
+        { }
+
+        lx0::ElementPtr     spElem;
+        glgeom::point3f     lastPosition;
+    };
+
+    std::map<lx0::Element*, ElemData> mElems;
 };
