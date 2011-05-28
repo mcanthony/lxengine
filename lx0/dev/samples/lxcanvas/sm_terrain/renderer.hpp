@@ -64,23 +64,7 @@ public:
     {
     }
 
-    void initialize()
-    {
-        gCamera.mPosition = glgeom::point3f(20, 20, 2);
-        gCamera.mTarget = glgeom::point3f(0, 0, 0);
-        gCamera.mWorldUp = glgeom::vector3f(0, 0, 1);
-        gCamera.mFov = 60.0f;
-        gCamera.mNear = 0.01f;  // 1 cm
-        gCamera.mFar = 2000.0f; // 2 km
-
-        gCamera.mPosition.z = 0.0f;
-        //gCamera.mTarget.z = gCamera.mPosition.z;
-
-        mRasterizer.initialize();
-
-        spCamera = mRasterizer.createCamera(gCamera.mFov, gCamera.mNear, gCamera.mFar, view_matrix(gCamera));
-        spLightSet = mRasterizer.createLightSet();
-    }  
+    virtual void initialize (lx0::ViewPtr spView);
 
     void 
     resize (int width, int height)

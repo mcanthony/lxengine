@@ -31,6 +31,7 @@
 #include <lx0/util/misc/lxvar_convert.hpp>
 #include "renderer.hpp"
 #include <lx0/subsystem/blendreader.hpp>
+#include <lx0/util/blendload.hpp>
 #include "main.hpp"
 #include "physics.hpp"
 
@@ -56,89 +57,26 @@ public:
                       RenderList& list)
     {
         if (!mspItem)
-        {
-            lx0::BlendReader reader;
-            reader.open("media2/models/unit_hemisphere-000.blend");
+        {               
+            mPosition = glgeom::point3f ( 0.0f, 0.0f, 0.0f);
+
+            auto spGeom = lx0::quadlist_from_blendfile(rasterizer, "media2/models/unit_hemisphere-000.blend");
+
+            auto spMat = rasterizer.createMaterial("media2/shaders/glsl/fragment/skymap.frag");
+            spMat->mBlend = false;
+            spMat->mWireframe = false;
+            spMat->mZTest = false;
+            spMat->mZWrite = false;
+            spMat->mTextures[0] = rasterizer.createTexture("media2/textures/skymaps/polar/bluesky_grayclouds.png");
+
+            auto pItem = new Item;
+            pItem->spCamera   = spCamera;
+            pItem->spLightSet = spLightSet;
+            pItem->spMaterial = spMat;
+            pItem->spTransform = rasterizer.createTransformEye(mPosition.x, mPosition.y, mPosition.z, glgeom::radians(0.0f));
+            pItem->spGeometry = spGeom;
             
-            auto meshBlocks = reader.getBlocksByType("Mesh");
-            for (auto it = meshBlocks.begin(); it != meshBlocks.end(); ++it)
-            {
-                auto spBlock = *it;
-                auto spMesh = reader.readObject( spBlock->address );
-                const auto totalVertices = spMesh->field<int>("totvert");
-                const auto totalFaces = spMesh->field<int>("totface");
-
-                std::vector<glgeom::point3f>  positions;
-                std::vector<glgeom::vector3f> normals;
-                std::vector<glgeom::color3f>  colors;
-                std::vector<unsigned short> indicies;
-
-                positions.reserve(totalVertices);
-                normals.reserve(totalVertices);
-                colors.reserve(totalVertices);
-                indicies.reserve(totalFaces * 4);
-
-                auto spVerts = reader.readObject( spMesh->field<unsigned __int64>("mvert") );
-                for (int i = 0; i < totalVertices; ++i)
-                {
-                    glgeom::point3f p;
-                    p.x = spVerts->field<float>("co", 0);
-                    p.y = spVerts->field<float>("co", 1);
-                    p.z = spVerts->field<float>("co", 2);
-                    p.vec *= 200;
-                    positions.push_back(p);
-
-                    glgeom::vector3f n;
-                    n.x = spVerts->field<short>("no", 0) / float(std::numeric_limits<short>::max());
-                    n.y = spVerts->field<short>("no", 1) / float(std::numeric_limits<short>::max());
-                    n.z = spVerts->field<short>("no", 2) / float(std::numeric_limits<short>::max());
-                    normals.push_back(n);
-
-                    colors.push_back( glgeom::color3f(1, 1, 1) );
-
-                    spVerts->next();
-                }
-
-                auto spFaces = reader.readObject( spMesh->field<unsigned __int64>("mface") );
-                for (int i = 0; i < totalFaces; ++i)
-                {
-                    int vi[4];
-                    vi[0] = spFaces->field<int>("v1");
-                    vi[1] = spFaces->field<int>("v2");
-                    vi[2] = spFaces->field<int>("v3");
-                    vi[3] = spFaces->field<int>("v4");
-
-                    // Convert tris into degenerate quads
-                    if (vi[3] == 0)
-                        vi[3] = vi[2];
-
-                    for (int j = 0; j < 4; ++j)
-                        indicies.push_back(vi[j]);
-
-                    spFaces->next();
-                }
-                 
-                glgeom::point3f pos( 0.0f, 0.0f, 0.0f);
-                mPosition = pos;
-
-                auto spGeom = rasterizer.createQuadList(indicies, positions, normals, colors);
-
-                auto spMat = rasterizer.createMaterial("media2/shaders/glsl/fragment/skymap.frag");
-                spMat->mBlend = false;
-                spMat->mWireframe = false;
-                spMat->mZTest = false;
-                spMat->mZWrite = false;
-                spMat->mTextures[0] = rasterizer.createTexture("media2/textures/skymaps/polar/bluesky_grayclouds.png");
-
-                auto pItem = new Item;
-                pItem->spCamera   = spCamera;
-                pItem->spLightSet = spLightSet;
-                pItem->spMaterial = spMat;
-                pItem->spTransform = rasterizer.createTransformEye(pos.x, pos.y, pos.z, glgeom::radians(0.0f));
-                pItem->spGeometry = spGeom;
-            
-                mspItem.reset(pItem);
-            }
+            mspItem.reset(pItem);
         }
 
         mspItem->spTransform = rasterizer.createTransformEye(mPosition.x, mPosition.y, mPosition.z, mRotation);
@@ -256,6 +194,27 @@ public:
 protected:
     ItemPtr           mspItem;
 };
+
+//===========================================================================//
+
+void 
+Renderer::initialize (lx0::ViewPtr spView)
+{
+    gCamera.mPosition = glgeom::point3f(20, 20, 2);
+    gCamera.mTarget = glgeom::point3f(0, 0, 0);
+    gCamera.mWorldUp = glgeom::vector3f(0, 0, 1);
+    gCamera.mFov = 60.0f;
+    gCamera.mNear = 0.01f;  // 1 cm
+    gCamera.mFar = 2000.0f; // 2 km
+
+    gCamera.mPosition.z = 0.0f;
+    //gCamera.mTarget.z = gCamera.mPosition.z;
+
+    mRasterizer.initialize();
+
+    spCamera = mRasterizer.createCamera(gCamera.mFov, gCamera.mNear, gCamera.mFar, view_matrix(gCamera));
+    spLightSet = mRasterizer.createLightSet();
+} 
 
 
 void 

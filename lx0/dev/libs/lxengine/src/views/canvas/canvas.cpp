@@ -75,7 +75,7 @@ LxCanvasImp::createWindow (View* pHostView, size_t& handle, unsigned int& width,
     mspWin.reset( new CanvasGL(title.c_str(), 16, 16, width, height, false) );
     handle = mspWin->handle();
 
-    mspRenderer->initialize();
+    mspRenderer->initialize(pHostView->shared_from_this());
 
     mspWin->slotRedraw += [&]() { mspRenderer->render(); };
 

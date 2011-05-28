@@ -29,8 +29,6 @@
 #ifndef VIEWER_HPP
 #define VIEWER_HPP
 
-lx0::ViewImp* create_viewer();
-
 lx0::IRenderer* create_renderer();
 lx0::UIController* create_controller();
 

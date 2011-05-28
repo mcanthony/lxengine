@@ -3,6 +3,7 @@
                                    LxEngine
 
     LICENSE
+    * MIT License (http://www.opensource.org/licenses/mit-license.php)
 
     Copyright (c) 2011 athile@athile.net (http://www.athile.net)
 
@@ -29,4 +30,16 @@
 #pragma once
 
 #include <lx0/subsystem/rasterizer.hpp>
+    
+namespace lx0 
+{ 
+    namespace util 
+    { 
+        namespace blendload_ns 
+        {
+            lx0::GeometryPtr    quadlist_from_blendfile (lx0::RasterizerGL& rasterizer, const char* filename);
 
+        }
+    }
+    using namespace lx0::util::blendload_ns;
+}

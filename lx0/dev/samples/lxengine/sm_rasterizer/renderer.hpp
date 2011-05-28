@@ -26,7 +26,11 @@
 */
 //===========================================================================//
 
+
 #pragma once
 
-#include <lx0/subsystem/rasterizer.hpp>
+#include <lx0/lxengine.hpp>
 
+lx0::Document::Component*   create_scene();
+lx0::IRenderer*             create_renderer();
+lx0::UIController*          create_controller();

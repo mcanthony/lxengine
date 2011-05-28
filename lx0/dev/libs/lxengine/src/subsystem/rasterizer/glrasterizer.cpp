@@ -768,3 +768,24 @@ RasterizerGL::readPixel (int x, int y)
     unsigned int id = (pixel[0] << 16) + (pixel[1] << 8) + pixel[2];
     return id;
 }
+
+//===========================================================================//
+
+void
+RenderList::push_back (int layer, ItemPtr spItem)
+{
+    mLayers[layer].list.push_back(spItem);
+}
+
+ItemPtr 
+RenderList::getItem (unsigned int id)
+{
+    auto it = mLayers.begin();
+
+    while (it->second.list.size() < id)
+    {
+        id -= it->second.list.size();
+        it++;
+    }
+    return it->second.list[id];
+}

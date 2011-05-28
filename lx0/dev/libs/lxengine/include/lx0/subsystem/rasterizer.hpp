@@ -255,6 +255,44 @@ namespace lx0
                 GLuint vbo[1];
                 GLuint vao[1];
             };
+            typedef std::shared_ptr<QuadList> QuadListPtr;
+
+            /*!
+                \ingroup lx0_subsystem_rasterizer
+                
+                Represents all the items to render for a particular frame.  The items are organized
+                into a set of layers, each with an ordered list of items.  Each layer has its own
+                set of settings which may control the optimization, re-ordering, etc. of the list
+                for that layer.
+             */
+            class RenderList
+            {
+            public:
+                typedef lx0::subsystem::rasterizer::ItemPtr ItemPtr;
+                typedef std::vector<ItemPtr>                ItemList;
+
+                struct Layer
+                {
+                    void*       pSettings;
+                    ItemList    list;
+                };
+
+                typedef std::map<int,Layer> LayerMap;
+
+
+
+                void                    push_back   (int layer, ItemPtr spItem);
+
+                LayerMap::iterator      begin       (void)      { return mLayers.begin(); }
+                LayerMap::iterator      end         (void)      { return mLayers.end(); }
+
+                ItemPtr                 getItem     (unsigned int id);
+
+            protected:
+                LayerMap    mLayers;
+            };
+
+
 
             //! \ingroup lx0_subsystem_rasterizer
             class RasterizerGL

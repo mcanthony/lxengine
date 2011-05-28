@@ -172,9 +172,9 @@ namespace lx0 { namespace engine { namespace dom_ns {
     public:
         virtual ~IRenderer() {}
 
-        virtual void initialize() {}
-        virtual void render() {}
-        virtual void update() {}
+        virtual void initialize (ViewPtr spView) {}
+        virtual void render     (void) {}
+        virtual void update     (void) {}
 
         virtual void handleEvent (std::string evt, lx0::lxvar params) {}
     };
@@ -209,6 +209,10 @@ namespace lx0 { namespace engine { namespace dom_ns {
     /*!
         \ingroup lx0_engine_dom
         
+        - A View is associated with one Document
+        - A Document may have many views
+        - A Document may embed other documents
+
         Developer notes:
         
         This class could use significant clean-up and componentization once 
@@ -220,6 +224,8 @@ namespace lx0 { namespace engine { namespace dom_ns {
     public:
                     View            (std::string impType, Document* pDocument);
                     ~View           (void);
+
+        DocumentPtr document        (void);
         
         void        show            (void);
         void        show            (lxvar options);

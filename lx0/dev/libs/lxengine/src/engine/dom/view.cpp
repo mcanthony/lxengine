@@ -82,6 +82,13 @@ namespace lx0 { namespace engine { namespace dom_ns {
         Engine::acquire()->decObjectCount("View");
     }
 
+    
+    DocumentPtr 
+    View::document (void)  
+    { 
+        return mpDocument->shared_from_this(); 
+    }
+
     void
     View::_onElementAdded (ElementPtr spElem)
     {

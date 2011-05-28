@@ -68,7 +68,7 @@ public:
 class Renderer : public IRenderer
 {
 public:
-    virtual void initialize()
+    virtual void initialize(ViewPtr spView)
     {
         GLuint id;
         glGenTextures(1, &id);
