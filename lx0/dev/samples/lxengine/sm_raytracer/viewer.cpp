@@ -65,7 +65,7 @@ public:
 
 //===========================================================================//
 
-class Renderer : public IRenderer
+class Renderer : public View::Component
 {
 public:
     virtual void initialize(ViewPtr spView)
@@ -109,5 +109,5 @@ protected:
 
 //===========================================================================//
 
-lx0::IRenderer* create_renderer() { return new Renderer; }
+lx0::View::Component* create_renderer() { return new Renderer; }
 lx0::UIController* create_controller() { return new ControllerImp; }

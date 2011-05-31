@@ -34,7 +34,7 @@
 using namespace lx0;
 
 lx0::GeometryPtr
-lx0::util::blendload_ns::quadlist_from_blendfile (RasterizerGL& rasterizer, const char* filename)
+lx0::util::blendload_ns::quadlist_from_blendfile (RasterizerGL& rasterizer, const char* filename, float scale)
 {
     lx0::BlendReader reader;
     reader.open(filename);
@@ -77,7 +77,7 @@ lx0::util::blendload_ns::quadlist_from_blendfile (RasterizerGL& rasterizer, cons
             p.x = spVerts->field<float>("co", 0);
             p.y = spVerts->field<float>("co", 1);
             p.z = spVerts->field<float>("co", 2);
-            p.vec *= 200;
+            p.vec *= scale;
             positions.push_back(p);
 
             glgeom::vector3f n;

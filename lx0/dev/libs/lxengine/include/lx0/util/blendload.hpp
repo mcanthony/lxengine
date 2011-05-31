@@ -37,7 +37,7 @@ namespace lx0
     { 
         namespace blendload_ns 
         {
-            lx0::GeometryPtr    quadlist_from_blendfile (lx0::RasterizerGL& rasterizer, const char* filename);
+            lx0::GeometryPtr    quadlist_from_blendfile (lx0::RasterizerGL& rasterizer, const char* filename, float scale = 1.0f);
 
         }
     }

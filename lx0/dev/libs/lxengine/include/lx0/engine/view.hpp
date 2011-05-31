@@ -32,9 +32,10 @@
 #include <memory>
 
 #include <lx0/_detail/forward_decls.hpp>
-#include <lx0/engine/dom_base.hpp>
 #include <lx0/core/slot/slot.hpp>
 #include <lx0/core/lxvar/lxvar.hpp>
+#include <lx0/engine/dom_base.hpp>
+#include <lx0/engine/document.hpp>
 
 namespace lx0 { namespace engine { namespace dom_ns {
 
@@ -167,20 +168,6 @@ namespace lx0 { namespace engine { namespace dom_ns {
 
     //===========================================================================//
 
-    class IRenderer
-    {
-    public:
-        virtual ~IRenderer() {}
-
-        virtual void initialize (ViewPtr spView) {}
-        virtual void render     (void) {}
-        virtual void update     (void) {}
-
-        virtual void handleEvent (std::string evt, lx0::lxvar params) {}
-    };
-
-    //===========================================================================//
-
     class ViewImp
     {
     public:
@@ -197,10 +184,25 @@ namespace lx0 { namespace engine { namespace dom_ns {
         virtual     void        updateFrame     (DocumentPtr spDocument) = 0;
         virtual     void        updateEnd       (void) = 0;
 
-        virtual     void        setRenderer         (IRenderer* pRenderer) {} 
         virtual     void        addController       (UIController* pController) {}
 
         virtual     void        handleEvent     (std::string evt, lx0::lxvar params) {}
+    };
+
+
+    //===========================================================================//
+    //! Interface for attaching objects to the View
+    /*!
+     */
+    class ViewComponent : public Document::Component
+    {
+    public:
+
+        virtual void initialize (ViewPtr spView) {}
+        virtual void render     (void) {}
+        virtual void update     (void) {}
+
+        virtual void handleEvent (std::string evt, lx0::lxvar params) {}
     };
 
 
@@ -219,7 +221,9 @@ namespace lx0 { namespace engine { namespace dom_ns {
         the code progresses a bit further to make the class' responsibilities
         more clear.
      */
-    class View : public std::enable_shared_from_this<View>
+    class View 
+        : public std::enable_shared_from_this<View>
+        , public detail::_EnableComponentList<View, ViewComponent>
     {
     public:
                     View            (std::string impType, Document* pDocument);
@@ -242,14 +246,12 @@ namespace lx0 { namespace engine { namespace dom_ns {
         slot<void (KeyEvent&)>      slotKeyDown;
 
         void        notifyViewImpIdle   (void);
+        void        notifyAttached      (ComponentPtr spComponent) { /*! \todo */ } 
 
-        void        setRenderer         (IRenderer* pRenderer)              { mspImp->setRenderer(pRenderer); } 
         void        addController       (UIController* pController)           { mspImp->addController(pController); }
         void        addEventController  (EventController* pEventController);
 
     protected:
-
-
         void        _onElementAdded     (ElementPtr spElem);
         void        _onElementRemoved   (ElementPtr spElem);
 

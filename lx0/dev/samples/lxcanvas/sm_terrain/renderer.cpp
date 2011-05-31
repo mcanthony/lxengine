@@ -60,7 +60,7 @@ public:
         {               
             mPosition = glgeom::point3f ( 0.0f, 0.0f, 0.0f);
 
-            auto spGeom = lx0::quadlist_from_blendfile(rasterizer, "media2/models/unit_hemisphere-000.blend");
+            auto spGeom = lx0::quadlist_from_blendfile(rasterizer, "media2/models/unit_hemisphere-000.blend", 200.0f);
 
             auto spMat = rasterizer.createMaterial("media2/shaders/glsl/fragment/skymap.frag");
             spMat->mBlend = false;

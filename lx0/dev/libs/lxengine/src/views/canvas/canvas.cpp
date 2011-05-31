@@ -51,7 +51,6 @@ public:
 
     virtual     void        handleEvent     (std::string evt, lx0::lxvar params);
 
-    virtual void            setRenderer         (IRenderer* pRenderer)         { mspRenderer.reset( pRenderer ); }
     virtual void            addController       (lx0::UIController* pController) { mControllers.push_back(std::shared_ptr<lx0::UIController>(pController)); }
 
 protected:
@@ -60,7 +59,6 @@ protected:
     CanvasHost                  mHost;
    
     std::vector<std::shared_ptr<lx0::UIController>> mControllers;
-    std::shared_ptr<IRenderer>  mspRenderer;
 };
 
 void 
@@ -75,9 +73,13 @@ LxCanvasImp::createWindow (View* pHostView, size_t& handle, unsigned int& width,
     mspWin.reset( new CanvasGL(title.c_str(), 16, 16, width, height, false) );
     handle = mspWin->handle();
 
-    mspRenderer->initialize(pHostView->shared_from_this());
+    pHostView->foreachComponent([=](View::ComponentPtr spComp) {
+        spComp->initialize(pHostView->shared_from_this());
+    });
 
-    mspWin->slotRedraw += [&]() { mspRenderer->render(); };
+    pHostView->foreachComponent([&](View::ComponentPtr spComp) {
+        mspWin->slotRedraw += [spComp]() { spComp->render(); };
+    });
 
     for (auto it = mControllers.begin(); it != mControllers.end(); ++it)
     {
@@ -109,7 +111,9 @@ LxCanvasImp::updateFrame (DocumentPtr spDocument)
     for (auto it = mControllers.begin(); it != mControllers.end(); ++it)
         (*it)->updateFrame( mpHostView->shared_from_this(), mspWin->keyboard() );
 
-    mspRenderer->update();
+    mpHostView->foreachComponent([](View::ComponentPtr spComp) {
+        spComp->update();
+    });
 }
 
 void        
@@ -118,7 +122,11 @@ LxCanvasImp::handleEvent (std::string evt, lx0::lxvar params)
     if (evt == "redraw")
         mspWin->invalidate();
     else
-        mspRenderer->handleEvent(evt, params);
+    {
+        mpHostView->foreachComponent([&](View::ComponentPtr spComp) {
+            spComp->handleEvent(evt, params);
+        });
+    }
 }
 
 //===========================================================================//

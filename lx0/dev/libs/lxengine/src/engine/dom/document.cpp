@@ -82,10 +82,10 @@ namespace lx0 { namespace engine { namespace dom_ns {
     /*!
      */
     ViewPtr 
-    Document::createView (std::string type, std::string name, lx0::IRenderer* pRenderer)
+    Document::createView (std::string type, std::string name, lx0::View::Component* pRenderer)
     {
         auto spView = createView(type, name);
-        spView->setRenderer(pRenderer);
+        spView->attachComponent("renderer", pRenderer);
         return spView;
     }
     

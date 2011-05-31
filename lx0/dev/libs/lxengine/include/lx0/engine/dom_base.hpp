@@ -118,6 +118,8 @@ namespace lx0 { namespace engine {  namespace dom_ns { namespace detail {
             return std::dynamic_pointer_cast<T>(spComponent);
         }
 
+        void foreachComponent (std::function<void(ComponentPtr)> f) { _foreach(f); }
+
     protected:         
 
         void _foreach        (std::function<void(ComponentPtr)> f)

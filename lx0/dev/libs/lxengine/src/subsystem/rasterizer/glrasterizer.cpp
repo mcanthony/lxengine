@@ -687,6 +687,8 @@ RasterizerGL::refreshTextures (void)
 void 
 RasterizerGL::beginScene (RenderAlgorithm& algorithm)
 {
+    lx_check_error( glGetError() == GL_NO_ERROR );
+
     // Should the clear actually be part of the GlobalPass?  Additionally to this?
     const auto& color = algorithm.mClearColor;
     glClearColor(color.r, color.g, color.b, color.a);
@@ -696,6 +698,7 @@ RasterizerGL::beginScene (RenderAlgorithm& algorithm)
 
 void RasterizerGL::endScene()
 {
+    lx_check_error( glGetError() == GL_NO_ERROR );
 }
 
 void 

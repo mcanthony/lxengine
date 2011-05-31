@@ -29,7 +29,7 @@
 #ifndef VIEWER_HPP
 #define VIEWER_HPP
 
-lx0::IRenderer* create_renderer();
+lx0::View::Component* create_renderer();
 lx0::UIController* create_controller();
 
 #endif

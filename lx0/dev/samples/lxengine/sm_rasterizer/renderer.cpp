@@ -49,12 +49,12 @@ public:
     virtual void onAttached (DocumentPtr spDocument) 
     {
         lx0::Camera2             gCamera;
-        gCamera.mPosition = glgeom::point3f(20, 20, 20);
+        gCamera.mPosition = glgeom::point3f(4, 4, 4);
         gCamera.mTarget = glgeom::point3f(0, 0, 0);
         gCamera.mWorldUp = glgeom::vector3f(0, 0, 1);
         gCamera.mFov = 60.0f;
-        gCamera.mNear = 0.01f;  // 1 cm
-        gCamera.mFar = 2000.0f; // 2 km
+        gCamera.mNear = 0.1f;  
+        gCamera.mFar = 100.0f; 
 
         mspCamera = mspRasterizer->createCamera(60.0f, 0.1f, 2000.0f, view_matrix(gCamera));
         mspLightSet = mspRasterizer->createLightSet();
@@ -85,7 +85,7 @@ protected:
             auto pItem = new Item;
             pItem->spCamera   = mspCamera;
             pItem->spLightSet = mspLightSet;
-            pItem->spMaterial = mspRasterizer->createMaterial("media2/shaders/glsl/fragment/solid.frag");;
+            pItem->spMaterial = mspRasterizer->createMaterial("media2/shaders/glsl/fragment/diffuse_gray.frag");;
             pItem->spTransform = mspRasterizer->createTransform(center.x, center.y, center.z);
             pItem->spGeometry = lx0::quadlist_from_blendfile(*mspRasterizer.get(), "media2/models/unit_sphere-000.blend");
 
@@ -109,7 +109,7 @@ protected:
 
 //===========================================================================//
 
-class Renderer : public IRenderer
+class Renderer : public View::Component
 {
 public:
     virtual void initialize(ViewPtr spView)
@@ -131,7 +131,7 @@ public:
         RenderAlgorithm algorithm;
         algorithm.mClearColor = glgeom::color4f(0.0f, 0.3f, 0.32f, 1.0f);
         GlobalPass pass[4];
-        pass[0].bOverrideMaterial = true;
+        pass[0].bOverrideMaterial = false;
         pass[0].spMaterial = mspRasterizer->createMaterial("media2/shaders/glsl/fragment/solid.frag");
         algorithm.mPasses.push_back(pass[0]);
 
@@ -170,6 +170,6 @@ public:
     }
 };
 
-lx0::IRenderer*             create_renderer()       { return new Renderer; }
-lx0::UIController*          create_controller()     { return new ControllerImp; }
+lx0::View::Component*   create_renderer()       { return new Renderer; }
+lx0::UIController*      create_controller()     { return new ControllerImp; }
 

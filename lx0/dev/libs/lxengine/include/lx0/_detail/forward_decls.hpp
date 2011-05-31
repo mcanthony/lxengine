@@ -98,7 +98,6 @@ namespace lx0
             _LX_FORWARD_DECL_PTRS(Space);
             _LX_FORWARD_DECL_PTRS(Engine);
             _LX_FORWARD_DECL_PTRS(View);
-            _LX_FORWARD_DECL_PTRS(IRenderer);
             _LX_FORWARD_DECL_PTRS(UIController);
             _LX_FORWARD_DECL_PTRS(EventController);
             _LX_FORWARD_DECL_PTRS(Object);
@@ -108,6 +107,7 @@ namespace lx0
 
             class DocumentComponent;
             class ElementComponent;
+            class ViewComponent;
             class ViewImp;
         }
     }

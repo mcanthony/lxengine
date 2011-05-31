@@ -55,7 +55,7 @@ public:
 /*!
  */
 class Renderer 
-    : public lx0::IRenderer
+    : public lx0::View::Component
 {
 public:
     Renderer (lx0::DocumentPtr spDoc)
