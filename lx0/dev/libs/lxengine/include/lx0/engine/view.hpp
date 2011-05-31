@@ -246,12 +246,29 @@ namespace lx0 { namespace engine { namespace dom_ns {
         slot<void (KeyEvent&)>      slotKeyDown;
 
         void        notifyViewImpIdle   (void);
-        void        notifyAttached      (ComponentPtr spComponent) { /*! \todo */ } 
+        void        notifyAttached      (ComponentPtr spComponent) { spComponent->onAttached(mpDocument->shared_from_this()); } 
 
         void        addController       (UIController* pController)           { mspImp->addController(pController); }
         void        addEventController  (EventController* pEventController);
 
     protected:
+        class DocForwarder : public Document::Component
+        {
+        public:
+            DocForwarder (View* pView) : mpView (pView) {}
+
+            virtual void    onAttached          (DocumentPtr spDocument);
+
+            virtual void    onUpdate            (DocumentPtr spDocument);
+
+            virtual void    onElementAdded      (DocumentPtr spDocument, ElementPtr spElem);
+            virtual void    onElementRemoved    (Document*   pDocument, ElementPtr spElem);
+        
+        protected:
+            View* mpView;
+        };
+
+
         void        _onElementAdded     (ElementPtr spElem);
         void        _onElementRemoved   (ElementPtr spElem);
 
@@ -260,6 +277,7 @@ namespace lx0 { namespace engine { namespace dom_ns {
         Document*                   mpDocument;         //! Non-owning pointer
         detail::LxInputManagerPtr   mspLxInputManager;
         std::unique_ptr<ViewImp>    mspImp;
+        DocForwarder*               mpDocForwarder;
         std::vector<lx0::EventControllerPtr> mEventControllers;
 
         int mOnElementRemovedId;

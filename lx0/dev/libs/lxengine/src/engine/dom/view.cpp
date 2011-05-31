@@ -49,6 +49,7 @@ namespace lx0 { namespace engine { namespace dom_ns {
 
     View::View (std::string impType, Document* pDocument)
         : mpDocument (pDocument)
+        , mpDocForwarder (nullptr)
     {
         Engine::acquire()->incObjectCount("View");
 
@@ -69,6 +70,9 @@ namespace lx0 { namespace engine { namespace dom_ns {
         //
         // Hook into Document events
         //
+        mpDocForwarder = new DocForwarder(this);
+        pDocument->attachComponent("_docforwarder", mpDocForwarder);
+
         mOnElementRemovedId = (mpDocument->slotElementRemoved += [&](ElementPtr spElem) { _onElementRemoved(spElem); }); 
         mOnElementAddedId = (mpDocument->slotElementAdded += [&](ElementPtr spElem) { _onElementAdded(spElem); });
     }
@@ -172,6 +176,36 @@ namespace lx0 { namespace engine { namespace dom_ns {
     View::addEventController (EventController* pEventController)
     {
         mEventControllers.push_back( EventControllerPtr(pEventController) );
+    }
+
+    //===========================================================================//
+
+    void View::DocForwarder::onAttached (DocumentPtr spDocument)
+    {
+        mpView->foreachComponent([&](ComponentPtr spComp) { 
+            spComp->onAttached(spDocument);
+        });
+    }
+
+    void View::DocForwarder::onUpdate (DocumentPtr spDocument)
+    {
+        mpView->foreachComponent([&](ComponentPtr spComp) { 
+            spComp->onUpdate(spDocument);
+        });
+    }
+
+    void View::DocForwarder::onElementAdded (DocumentPtr spDocument, ElementPtr spElem)
+    {
+        mpView->foreachComponent([&](ComponentPtr spComp) { 
+            spComp->onElementAdded(spDocument, spElem);
+        });
+    }
+
+    void View::DocForwarder::onElementRemoved (Document*   pDocument, ElementPtr spElem)
+    {
+        mpView->foreachComponent([&](ComponentPtr spComp) { 
+            spComp->onElementRemoved(pDocument, spElem);
+        });
     }
 
     //===========================================================================//

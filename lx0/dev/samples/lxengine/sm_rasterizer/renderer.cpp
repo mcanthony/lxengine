@@ -30,39 +30,50 @@
 #include <lx0/util/misc/lxvar_convert.hpp>
 #include <lx0/util/blendload.hpp>
 #include <lx0/prototype/misc.hpp>
+#include <glgeom/prototype/camera.hpp>
 #include "renderer.hpp"
 
 using namespace lx0;
 
 //===========================================================================//
 
-class Scene : public Document::Component
+class Renderer : public View::Component
 {
 public:
-    friend class Renderer;
-
-    Scene (std::shared_ptr<RasterizerGL> spRast)
-        : mspRasterizer( spRast )
+    virtual void initialize(ViewPtr spView)
     {
-    }
+        mspRasterizer.reset( new RasterizerGL );
+        mspRasterizer->initialize();
 
-    virtual void onAttached (DocumentPtr spDocument) 
-    {
-        lx0::Camera2             gCamera;
-        gCamera.mPosition = glgeom::point3f(4, 4, 4);
-        gCamera.mTarget = glgeom::point3f(0, 0, 0);
-        gCamera.mWorldUp = glgeom::vector3f(0, 0, 1);
-        gCamera.mFov = 60.0f;
-        gCamera.mNear = 0.1f;  
-        gCamera.mFar = 100.0f; 
-
-        mspCamera = mspRasterizer->createCamera(60.0f, 0.1f, 2000.0f, view_matrix(gCamera));
         mspLightSet = mspRasterizer->createLightSet();
 
-        spDocument->iterateElements([&](ElementPtr spElem) -> bool { 
+        spView->document()->iterateElements([&](ElementPtr spElem) -> bool { 
             _onElementAddRemove(spElem, true); 
             return false; 
         });
+    }  
+
+    virtual void render (void)	
+    {
+        RenderAlgorithm algorithm;
+        algorithm.mClearColor = glgeom::color4f(0.0f, 0.3f, 0.32f, 1.0f);
+        GlobalPass pass[4];
+        pass[0].bOverrideMaterial = false;
+        pass[0].spMaterial = mspRasterizer->createMaterial("media2/shaders/glsl/fragment/solid.frag");
+        algorithm.mPasses.push_back(pass[0]);
+
+        RenderList items;
+        for (auto it = mGeometry.begin(); it != mGeometry.end(); ++it)
+            items.push_back(0, *it);
+
+        mspRasterizer->beginScene(algorithm);
+
+        for (auto it = items.begin(); it != items.end(); ++it)
+        {
+            mspRasterizer->rasterizeList(algorithm, it->second.list);
+        }
+
+        mspRasterizer->endScene();
     }
 
     virtual void onElementAdded (DocumentPtr spDocument, ElementPtr spElem) 
@@ -93,65 +104,26 @@ protected:
             
             mGeometry.push_back(ItemPtr(pItem));
         }
+        else if (tag == "Camera")
+        {
+            glgeom::vector3f position = spElem->value().find("position").convert();
+            glgeom::point3f target = spElem->value().find("look_at").convert();
+
+            auto view = glm::lookAt(position.vec, target.vec, glm::vec3(0, 0, 1));
+            mspCamera = mspRasterizer->createCamera(60.0f, 0.1f, 2000.0f, view);
+        }
         else 
         { 
         }
     }
 
-    std::shared_ptr<RasterizerGL> mspRasterizer;
 
+    std::shared_ptr<RasterizerGL> mspRasterizer;
 
     lx0::CameraPtr       mspCamera;       // Camera shared by all items
     lx0::LightSetPtr     mspLightSet;
 
     std::vector<ItemPtr> mGeometry;
-};
-
-//===========================================================================//
-
-class Renderer : public View::Component
-{
-public:
-    virtual void initialize(ViewPtr spView)
-    {
-        // This is a bit awkward: the view needs to grab the document component
-        // and only initialize it after the view is initialized.  This should
-        // be simplified: the Renderer internally should add a Document::Component
-        // to the document being viewed.
-        //
-        mspRasterizer.reset( new RasterizerGL );
-        mspRasterizer->initialize();
-
-        mpScene = new Scene(mspRasterizer);
-        spView->document()->attachComponent("scene", mpScene);
-    }  
-
-    virtual void render (void)	
-    {
-        RenderAlgorithm algorithm;
-        algorithm.mClearColor = glgeom::color4f(0.0f, 0.3f, 0.32f, 1.0f);
-        GlobalPass pass[4];
-        pass[0].bOverrideMaterial = false;
-        pass[0].spMaterial = mspRasterizer->createMaterial("media2/shaders/glsl/fragment/solid.frag");
-        algorithm.mPasses.push_back(pass[0]);
-
-        RenderList items;
-        for (auto it = mpScene->mGeometry.begin(); it != mpScene->mGeometry.end(); ++it)
-            items.push_back(0, *it);
-
-        mspRasterizer->beginScene(algorithm);
-
-        for (auto it = items.begin(); it != items.end(); ++it)
-        {
-            mspRasterizer->rasterizeList(algorithm, it->second.list);
-        }
-
-        mspRasterizer->endScene();
-    }
-
-protected:
-    Scene*                        mpScene;
-    std::shared_ptr<RasterizerGL> mspRasterizer;
 };
 
 //===========================================================================//
