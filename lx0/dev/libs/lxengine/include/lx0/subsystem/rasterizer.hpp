@@ -28,6 +28,7 @@
 
 #pragma once
 
+#include <boost/logic/tribool.hpp>
 #include <lx0/engine/document.hpp>
 
 namespace lx0 { 
@@ -66,20 +67,22 @@ namespace lx0
             class GlobalPass;
             class RasterizerGL;
 
+            //===========================================================================//
             //! \ingroup lx0_subsystem_rasterizer
             struct Geometry
             {
-                virtual void activate() = 0;
+                virtual void activate(GlobalPass& pass) = 0;
             };
             typedef std::shared_ptr<Geometry> GeometryPtr;
 
+            //===========================================================================//
             //! \ingroup lx0_subsystem_rasterizer
             class GeomImp : public Geometry
             {
             public:
                 GeomImp() : mType(0), mVboIndices (0),  mVao(0), mVboPosition(0), mVboNormal(0), mCount(0), mVboColors(0) {}
 
-                virtual void activate();
+                virtual void activate(GlobalPass& pass);
 
                 GLenum  mType;
                 GLuint  mVao;
@@ -90,6 +93,7 @@ namespace lx0
                 GLuint  mVboIndices;
             };
 
+            //===========================================================================//
             //! \ingroup lx0_subsystem_rasterizer
             class Resource
             {
@@ -101,6 +105,7 @@ namespace lx0
             };
             typedef std::shared_ptr<Resource> ResourcePtr;
 
+            //===========================================================================//
             //! \ingroup lx0_subsystem_rasterizer
             class Texture : public Resource
             {
@@ -118,6 +123,7 @@ namespace lx0
             };
             typedef std::shared_ptr<Texture> TexturePtr;
 
+            //===========================================================================//
             //! \ingroup lx0_subsystem_rasterizer
             class Material
             {
@@ -143,23 +149,25 @@ namespace lx0
             typedef std::shared_ptr<Material> MaterialPtr;
             typedef std::weak_ptr<Material> MaterialWPtr;
 
+            //===========================================================================//
             //! \ingroup lx0_subsystem_rasterizer
             class GlobalPass
             {
             public:
                      GlobalPass()
-                         : bOverrideWireframe (false)
-                         , bOverrideMaterial  (false)
-                         , bWireframe         (false)
+                         : bOverrideMaterial    (false)
+                         , tbWireframe          (boost::indeterminate)
+                         , tbFlatShading        (boost::indeterminate)
                      { }
 
-                bool bOverrideWireframe;
-                bool bWireframe;
-
-                bool bOverrideMaterial;
+                bool        bOverrideMaterial;
                 MaterialPtr spMaterial;
+
+                boost::tribool  tbWireframe;
+                boost::tribool  tbFlatShading;
             };
 
+            //===========================================================================//
             //! \ingroup lx0_subsystem_rasterizer
             class RenderAlgorithm
             {
@@ -169,6 +177,7 @@ namespace lx0
             };
 
 
+            //===========================================================================//
             //! \ingroup lx0_subsystem_rasterizer
             struct Camera
             {
@@ -188,13 +197,24 @@ namespace lx0
             };
             typedef std::shared_ptr<Transform> TransformPtr;
 
+            struct Light
+            {
+                glgeom::point3f position;
+                glgeom::color3f color;
+            };
+            typedef std::shared_ptr<Light> LightPtr;
+
+            //===========================================================================//
             //! \ingroup lx0_subsystem_rasterizer
             struct LightSet
             {
                 virtual void activate() {}
+
+                std::vector<LightPtr> mLights;
             };
             typedef std::shared_ptr<LightSet> LightSetPtr;
 
+            //===========================================================================//
             //! \ingroup lx0_subsystem_rasterizer
             class Item
             {
@@ -246,10 +266,11 @@ namespace lx0
             };
             typedef std::shared_ptr<Item> ItemPtr;
 
+            //===========================================================================//
             //! \ingroup lx0_subsystem_rasterizer
             struct QuadList : public Geometry
             {
-                virtual void activate();
+                virtual void activate(GlobalPass& pass);
 
                 size_t size;
                 GLuint vbo[1];
@@ -257,6 +278,7 @@ namespace lx0
             };
             typedef std::shared_ptr<QuadList> QuadListPtr;
 
+            //===========================================================================//
             /*!
                 \ingroup lx0_subsystem_rasterizer
                 
@@ -293,7 +315,7 @@ namespace lx0
             };
 
 
-
+            //===========================================================================//
             //! \ingroup lx0_subsystem_rasterizer
             class RasterizerGL
             {
@@ -303,7 +325,10 @@ namespace lx0
                 void            shutdown        (void);
 
                 CameraPtr       createCamera    (float fov, float nearDist, float farDist, glm::mat4& viewMatrix);
+                
+                LightPtr        createLight     (void);
                 LightSetPtr     createLightSet  (void);
+
                 MaterialPtr     createMaterial  (std::string fragShader);
                 TexturePtr      createTexture   (const char* filename);
 
@@ -331,6 +356,8 @@ namespace lx0
 
                 struct 
                 {
+                    GlobalPass*     pGlobalPass;
+                    ItemPtr         spItem;
                     unsigned int    itemId;
                     glm::mat4*      viewMatrix;
                 } mContext;

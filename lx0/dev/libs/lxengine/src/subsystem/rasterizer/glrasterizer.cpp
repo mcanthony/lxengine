@@ -41,6 +41,7 @@
 #include <glgeom/glgeom.hpp>
 
 using namespace lx0::subsystem::rasterizer;
+using namespace glgeom;
 
 void RasterizerGL::initialize()
 {
@@ -260,6 +261,61 @@ Material::activate (RasterizerGL* pRasterizer, GlobalPass& pass)
             glUniformMatrix4fv(unifIndex, 1, GL_FALSE, glm::value_ptr(*pRasterizer->mContext.viewMatrix));
         }
     }
+    
+    //
+    // Set up lights
+    //
+    {
+        auto& spLightSet = pRasterizer->mContext.spItem->spLightSet;
+        int lightCount = (int)spLightSet->mLights.size();
+
+        {
+            GLint unifIndex = glGetUniformLocation(mId, "unifAmbient");
+            if (unifIndex != -1)
+            {
+                glUniform3f(unifIndex, 0.1f, 0.1f, 0.1f);
+            }
+        }
+
+        {
+            GLint unifIndex = glGetUniformLocation(mId, "unifLightCount");
+            if (unifIndex != -1)
+            {
+                glUniform1i(unifIndex, lightCount);
+            }
+        }
+
+
+        if (lightCount > 0)
+        {
+            {
+                GLint idx = glGetUniformLocation(mId, "unifLightPosition[0]");
+                if (idx != -1)
+                {
+                    std::vector<point3f> positions;
+                    positions.reserve(lightCount);
+
+                    for (int i = 0; i < lightCount; ++i)
+                        positions.push_back( spLightSet->mLights[i]->position );
+
+                    glUniform3fv(idx, lightCount, &positions[0].x);
+                }
+            }
+            {
+                GLint idx = glGetUniformLocation(mId, "unifLightColor[0]");
+                if (idx != -1)
+                {
+                    std::vector<color3f> colors;
+                    colors.reserve(lightCount);
+
+                    for (int i = 0; i < lightCount; ++i)
+                        colors.push_back( spLightSet->mLights[i]->color );
+
+                    glUniform3fv(idx, lightCount, &colors[0].r);
+                }
+            }
+        }
+    }
 
     //
     // Set up color
@@ -360,9 +416,9 @@ Material::activate (RasterizerGL* pRasterizer, GlobalPass& pass)
     //
     // Wireframe render mode?
     //
-    bool bWireframe = pass.bOverrideWireframe 
-        ? pass.bWireframe
-        : mWireframe;
+    bool bWireframe = boost::indeterminate(pass.tbWireframe)
+        ? mWireframe
+        : pass.tbWireframe;
 
     if (bWireframe)
         glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
@@ -447,7 +503,7 @@ RasterizerGL::createQuadList (std::vector<glgeom::point3f>& positionData)
 
 
 
-void QuadList::activate()
+void QuadList::activate(GlobalPass& pass)
 {
     glBindVertexArray(vao[0]);
     glBindBuffer(GL_ARRAY_BUFFER, vbo[0]);
@@ -507,7 +563,7 @@ RasterizerGL::createQuadList (std::vector<unsigned short>& indices,
 }
 
 void 
-GeomImp::activate()
+GeomImp::activate(GlobalPass& pass)
 {
     GLint shaderProgram;
     glGetIntegerv(GL_CURRENT_PROGRAM, &shaderProgram);
@@ -548,10 +604,19 @@ GeomImp::activate()
     // Options
     {
         GLint loc = glGetUniformLocation(shaderProgram, "unifFlatNormals");
-        glUniform1i(loc,  1);
+        if (loc != -1)
+        {
+            glUniform1i(loc,  (pass.tbFlatShading == true) ? 0 : 1);
+        }
     }
 
     glDrawElements(mType, mCount, GL_UNSIGNED_SHORT, 0);
+}
+
+LightPtr  
+RasterizerGL::createLight (void)
+{
+    return LightPtr(new Light);
 }
 
 LightSetPtr     
@@ -756,6 +821,8 @@ RasterizerGL::rasterize(GlobalPass& pass, std::shared_ptr<Item> spItem)
 {
     lx_check_error(spItem.get() != nullptr);
 
+    mContext.spItem = spItem;
+
     spItem->spCamera->activate();
     mContext.viewMatrix = &spItem->spCamera->viewMatrix;
 
@@ -768,7 +835,9 @@ RasterizerGL::rasterize(GlobalPass& pass, std::shared_ptr<Item> spItem)
     spMaterial->activate(this, pass);
 
     spItem->spTransform->activate(spItem->spCamera);
-    spItem->spGeometry->activate();     
+    spItem->spGeometry->activate(pass);    
+
+    mContext.spItem = nullptr;
 }
 
 

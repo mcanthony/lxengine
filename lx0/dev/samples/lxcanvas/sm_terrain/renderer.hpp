@@ -112,31 +112,7 @@ public:
     }
 
     void 
-    _generateRenderAlgorithm (lx0::RenderAlgorithm& algorithm)
-    {
-        algorithm.mClearColor = glgeom::color4f(0.09f, 0.09f, 0.11f, 1.0f);
-
-        GlobalPass pass[4];
-        switch (mViewMode)
-        {
-        default:
-            lx_error("Invalid view mode %d", mViewMode);
-        case 0:
-            // Use a single pass with all the default settings
-            algorithm.mPasses.push_back(pass[0]);
-            break;
-        case 1:
-            pass[0].bOverrideWireframe = true;
-            pass[0].bWireframe = true;
-            algorithm.mPasses.push_back(pass[0]);
-            break;
-        case 2:
-            pass[0].bOverrideMaterial = true;
-            pass[0].spMaterial = mRasterizer.createMaterial("media2/shaders/glsl/fragment/solid.frag");
-            algorithm.mPasses.push_back(pass[0]);
-            break;
-        }  
-    }
+    _generateRenderAlgorithm (lx0::RenderAlgorithm& algorithm);
 
     void 
     _generateSelectAlgorithm (lx0::RenderAlgorithm& algorithm)

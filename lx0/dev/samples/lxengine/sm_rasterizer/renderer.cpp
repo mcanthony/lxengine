@@ -58,8 +58,7 @@ public:
         RenderAlgorithm algorithm;
         algorithm.mClearColor = glgeom::color4f(0.0f, 0.3f, 0.32f, 1.0f);
         GlobalPass pass[4];
-        pass[0].bOverrideMaterial = false;
-        pass[0].spMaterial = mspRasterizer->createMaterial("media2/shaders/glsl/fragment/solid.frag");
+        pass[0].tbFlatShading = true;
         algorithm.mPasses.push_back(pass[0]);
 
         RenderList items;
@@ -96,7 +95,7 @@ protected:
             auto pItem = new Item;
             pItem->spCamera   = mspCamera;
             pItem->spLightSet = mspLightSet;
-            pItem->spMaterial = mspRasterizer->createMaterial("media2/shaders/glsl/fragment/normal.frag");
+            pItem->spMaterial = mspRasterizer->createMaterial("media2/shaders/glsl/fragment/phong2.frag");
             pItem->spTransform = mspRasterizer->createTransform(scale, center);
             pItem->spGeometry = _loadMesh("media2/models/unit_sphere-000.blend");
 
@@ -110,7 +109,7 @@ protected:
             auto pItem = new Item;
             pItem->spCamera   = mspCamera;
             pItem->spLightSet = mspLightSet;
-            pItem->spMaterial = mspRasterizer->createMaterial("media2/shaders/glsl/fragment/normal.frag");
+            pItem->spMaterial = mspRasterizer->createMaterial("media2/shaders/glsl/fragment/phong2.frag");
             pItem->spTransform = mspRasterizer->createTransform(scale, center);
             pItem->spGeometry = _loadMesh("media2/models/unit_cube-000.blend");
             
@@ -126,9 +125,9 @@ protected:
             auto pItem = new Item;
             pItem->spCamera   = mspCamera;
             pItem->spLightSet = mspLightSet;
-            pItem->spMaterial = mspRasterizer->createMaterial("media2/shaders/glsl/fragment/normal.frag");
+            pItem->spMaterial = mspRasterizer->createMaterial("media2/shaders/glsl/fragment/phong2.frag");
             pItem->spTransform = mspRasterizer->createTransform(scale, center);
-            pItem->spGeometry = _loadMesh("media2/models/unit_geometry/unit_cylinder-000.blend");
+            pItem->spGeometry = _loadMesh("media2/models/unit_geometry/unit_cylinder-001.blend");
             
             mGeometry.push_back(ItemPtr(pItem));
         }
@@ -142,7 +141,7 @@ protected:
             auto pItem = new Item;
             pItem->spCamera   = mspCamera;
             pItem->spLightSet = mspLightSet;
-            pItem->spMaterial = mspRasterizer->createMaterial("media2/shaders/glsl/fragment/normal.frag");
+            pItem->spMaterial = mspRasterizer->createMaterial("media2/shaders/glsl/fragment/phong2.frag");
             pItem->spTransform = mspRasterizer->createTransform(scale, center);
             pItem->spGeometry = _loadMesh("media2/models/unit_geometry/unit_cone-000.blend");
             
@@ -194,6 +193,14 @@ protected:
             pItem->spGeometry = _loadMesh("media2/models/plane_1k-000.blend");
             
             mGeometry.push_back(ItemPtr(pItem));
+        }
+        else if (tag == "Light")
+        {
+            LightPtr spLight = mspRasterizer->createLight();
+            spLight->position = spElem->value().find("position").convert();
+            spLight->color    = spElem->value().find("color").convert();
+
+            mspLightSet->mLights.push_back(spLight);
         }
         else if (tag == "Camera")
         {
