@@ -557,6 +557,15 @@ RasterizerGL::createTransform (float tx, float ty, float tz)
     return spTransform;
 }
 
+TransformPtr 
+RasterizerGL::createTransform (const glgeom::vector3f& scale, const glgeom::point3f& center)
+{
+    TransformPtr spTransform(new Transform);
+    spTransform->mat = glm::translate(glm::mat4(1.0f), center.vec);
+    spTransform->mat = glm::scale(spTransform->mat, scale.vec);
+    return spTransform;
+}
+
 struct EyeTransform : public Transform
 {
     EyeTransform (float tx, float ty, float tz, glgeom::radians zangle)

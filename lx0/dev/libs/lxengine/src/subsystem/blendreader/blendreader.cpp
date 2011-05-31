@@ -262,28 +262,42 @@ namespace lx0 { namespace subsystem { namespace blendreader_ns {
     //   BlendReader
     //===========================================================================//
 
-    char*
-    BlendReader::Object::fieldImp (std::string ref, int index)
+    std::pair<char*,size_t>
+    BlendReader::Object::fieldImp (std::string ref, int index, size_t expectedSize)
     {
         auto it = spStruct->fieldMap.find(ref);
         if (it != spStruct->fieldMap.end())
         {
             auto spField = it->second;
+
+            lx_check_error(expectedSize == 0 || spField->size == expectedSize * spField->dim, 
+                "Size mismatch in loading .blend field '%s'.  Is an 32/64-bit address being loaded?", ref.c_str());
+
             char* pBase = &pCurrent[ spField->offset ];
             if (index != 0)
                 pBase += (spField->size / spField->dim) * index;
             
             lx_check_error(size_t(pBase - &chunk[0]) < chunk.size());
         
-            return pBase;
+            return std::make_pair(pBase, spField->size);
         }
         else
         {
             lx_error("Field '%s' does not exist in object of type '%s'",
                 ref.c_str(),
                 spStruct->name.c_str());
-            return nullptr;
+            return std::make_pair(nullptr, 0);
         }
+    }
+
+    lx0::uint64
+    BlendReader::Object::address (std::string ref, int index)
+    {
+        auto v = fieldImp(ref, index, 0);
+        if (v.second == 4)
+            return lx0::uint64( *reinterpret_cast<lx0::uint32*>(v.first) );
+        else
+            return lx0::uint64( *reinterpret_cast<lx0::uint64*>(v.first) );
     }
 
     void    

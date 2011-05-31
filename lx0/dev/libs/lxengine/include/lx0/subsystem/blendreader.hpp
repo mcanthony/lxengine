@@ -136,11 +136,12 @@ namespace lx0
 
                     template <typename T>
                     T                   field        (std::string ref, int index = 0);
+                    lx0::uint64         address      (std::string ref, int index = 0);
             
                     void                next         (void);
 
                 protected:
-                    char*               fieldImp     (std::string ref, int index);
+                    std::pair<char*,size_t> fieldImp     (std::string ref, int index, size_t expectedSize);
 
                     StructurePtr        spStruct;
                     BlockPtr            spBlock;
@@ -174,7 +175,7 @@ namespace lx0
             template <typename T>
             T BlendReader::Object::field (std::string ref, int index)
             {
-                return *reinterpret_cast<T*>( fieldImp(ref, index) );
+                return *reinterpret_cast<T*>( fieldImp(ref, index, sizeof(T)).first );
             }
         }
     }

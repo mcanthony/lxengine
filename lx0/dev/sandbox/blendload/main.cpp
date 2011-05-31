@@ -70,9 +70,10 @@ void displayStructure (BlendReader& reader, std::string name)
 int 
 main (int argc, char** argv)
 {
+    // It is necessary to call lx_init() if the Engine class is not being used.
     lx0::lx_init();
 
-    std::string filename = "media/models/unit_cube.blend";
+    std::string filename = "media2/models/unit_cube-000.blend";
     if (argc == 2)
         filename = argv[1];
 
@@ -97,7 +98,7 @@ main (int argc, char** argv)
             auto totalFaces = spMesh->field<int>("totface");
             std::cout << "Total vertices: " << totalVertices << std::endl;
 
-            auto spVerts = reader.readObject( spMesh->field<unsigned __int64>("mvert") );
+            auto spVerts = reader.readObject( spMesh->address("mvert") );
             for (int i = 0; i < totalVertices; ++i)
             {
                 float x = spVerts->field<float>("co", 0);
@@ -115,7 +116,7 @@ main (int argc, char** argv)
                 spVerts->next();
             }
 
-            auto spFaces = reader.readObject( spMesh->field<unsigned __int64>("mface") );
+            auto spFaces = reader.readObject( spMesh->address("mface") );
             for (int i = 0; i < totalFaces; ++i)
             {
                 int vi[4];

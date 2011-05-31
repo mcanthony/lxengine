@@ -70,7 +70,7 @@ lx0::util::blendload_ns::quadlist_from_blendfile (RasterizerGL& rasterizer, cons
         colors.reserve(totalVertices);
         indicies.reserve(totalFaces * 4);
 
-        auto spVerts = reader.readObject( spMesh->field<unsigned __int64>("mvert") );
+        auto spVerts = reader.readObject( spMesh->address("mvert") );
         for (int i = 0; i < totalVertices; ++i)
         {
             glgeom::point3f p;
@@ -91,7 +91,7 @@ lx0::util::blendload_ns::quadlist_from_blendfile (RasterizerGL& rasterizer, cons
             spVerts->next();
         }
 
-        auto spFaces = reader.readObject( spMesh->field<unsigned __int64>("mface") );
+        auto spFaces = reader.readObject( spMesh->address("mface") );
         for (int i = 0; i < totalFaces; ++i)
         {
             int vi[4];

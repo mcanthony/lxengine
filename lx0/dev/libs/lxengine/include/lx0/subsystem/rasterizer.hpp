@@ -309,6 +309,7 @@ namespace lx0
 
                 TransformPtr    createTransform             (glm::mat4& mat);
                 TransformPtr    createTransform             (float tx, float ty, float tz);
+                TransformPtr    createTransform             (const glgeom::vector3f& scale, const glgeom::point3f& center);
                 TransformPtr    createTransformBillboardXY  (float tx, float ty, float tz);
                 TransformPtr    createTransformBillboardXYS (float tx, float ty, float tz, float sx, float sy, float sz);
                 TransformPtr    createTransformEye          (float tx, float ty, float tz, glgeom::radians z_angle);

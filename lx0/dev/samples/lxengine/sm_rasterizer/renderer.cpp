@@ -97,11 +97,9 @@ protected:
             pItem->spCamera   = mspCamera;
             pItem->spLightSet = mspLightSet;
             pItem->spMaterial = mspRasterizer->createMaterial("media2/shaders/glsl/fragment/diffuse_gray.frag");;
-            pItem->spTransform = mspRasterizer->createTransform(center.x, center.y, center.z);
+            pItem->spTransform = mspRasterizer->createTransform(scale, center);
             pItem->spGeometry = lx0::quadlist_from_blendfile(*mspRasterizer.get(), "media2/models/unit_sphere-000.blend");
 
-            //pGeom->setMaterial(spElem, spElem->attr("material").query(""));
-            
             mGeometry.push_back(ItemPtr(pItem));
         }
         else if (tag == "Camera")
@@ -110,7 +108,21 @@ protected:
             glgeom::point3f target = spElem->value().find("look_at").convert();
 
             auto view = glm::lookAt(position.vec, target.vec, glm::vec3(0, 0, 1));
-            mspCamera = mspRasterizer->createCamera(60.0f, 0.1f, 2000.0f, view);
+            mspCamera = mspRasterizer->createCamera(90.0f, 0.1f, 2000.0f, view);
+        }
+        else if (tag == "Cube")
+        {
+            glgeom::point3f center = spElem->value().find("center").convert();
+            glgeom::vector3f scale = spElem->value().find("scale").convert();
+
+            auto pItem = new Item;
+            pItem->spCamera   = mspCamera;
+            pItem->spLightSet = mspLightSet;
+            pItem->spMaterial = mspRasterizer->createMaterial("media2/shaders/glsl/fragment/diffuse_gray.frag");;
+            pItem->spTransform = mspRasterizer->createTransform(scale, center);
+            pItem->spGeometry = lx0::quadlist_from_blendfile(*mspRasterizer.get(), "media2/models/unit_cube-000.blend");
+            
+            mGeometry.push_back(ItemPtr(pItem));
         }
         else 
         { 
