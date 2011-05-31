@@ -238,11 +238,28 @@ Material::Material(GLuint id)
 {
 }
 
+/*!
+    Dev Notes:
+    
+    - Eventually the index look-ups and which fields need to be set can be 
+      cached for performance reasons on the first activation.  
+ */
 void
 Material::activate (RasterizerGL* pRasterizer, GlobalPass& pass)
 {
     // Activate the shader
     glUseProgram(mId);
+
+    //
+    // Pass in additional transform information
+    // 
+    {
+        GLint unifIndex = glGetUniformLocation(mId, "unifViewMatrix");
+        if (unifIndex != -1)
+        {
+            glUniformMatrix4fv(unifIndex, 1, GL_FALSE, glm::value_ptr(*pRasterizer->mContext.viewMatrix));
+        }
+    }
 
     //
     // Set up color
@@ -546,7 +563,9 @@ RasterizerGL::createLightSet (void)
 TransformPtr 
 RasterizerGL::createTransform (glm::mat4& mat)
 {
-    return TransformPtr(new Transform);
+    auto spTransform = TransformPtr(new Transform);
+    spTransform->mat = mat;
+    return spTransform;
 }
 
 TransformPtr 
@@ -738,6 +757,8 @@ RasterizerGL::rasterize(GlobalPass& pass, std::shared_ptr<Item> spItem)
     lx_check_error(spItem.get() != nullptr);
 
     spItem->spCamera->activate();
+    mContext.viewMatrix = &spItem->spCamera->viewMatrix;
+
     spItem->spLightSet->activate();
 
     // Activate the material

@@ -96,19 +96,11 @@ protected:
             auto pItem = new Item;
             pItem->spCamera   = mspCamera;
             pItem->spLightSet = mspLightSet;
-            pItem->spMaterial = mspRasterizer->createMaterial("media2/shaders/glsl/fragment/diffuse_gray.frag");;
+            pItem->spMaterial = mspRasterizer->createMaterial("media2/shaders/glsl/fragment/normal.frag");
             pItem->spTransform = mspRasterizer->createTransform(scale, center);
-            pItem->spGeometry = lx0::quadlist_from_blendfile(*mspRasterizer.get(), "media2/models/unit_sphere-000.blend");
+            pItem->spGeometry = _loadMesh("media2/models/unit_sphere-000.blend");
 
             mGeometry.push_back(ItemPtr(pItem));
-        }
-        else if (tag == "Camera")
-        {
-            glgeom::vector3f position = spElem->value().find("position").convert();
-            glgeom::point3f target = spElem->value().find("look_at").convert();
-
-            auto view = glm::lookAt(position.vec, target.vec, glm::vec3(0, 0, 1));
-            mspCamera = mspRasterizer->createCamera(90.0f, 0.1f, 2000.0f, view);
         }
         else if (tag == "Cube")
         {
@@ -118,14 +110,117 @@ protected:
             auto pItem = new Item;
             pItem->spCamera   = mspCamera;
             pItem->spLightSet = mspLightSet;
-            pItem->spMaterial = mspRasterizer->createMaterial("media2/shaders/glsl/fragment/diffuse_gray.frag");;
+            pItem->spMaterial = mspRasterizer->createMaterial("media2/shaders/glsl/fragment/normal.frag");
             pItem->spTransform = mspRasterizer->createTransform(scale, center);
-            pItem->spGeometry = lx0::quadlist_from_blendfile(*mspRasterizer.get(), "media2/models/unit_cube-000.blend");
+            pItem->spGeometry = _loadMesh("media2/models/unit_cube-000.blend");
             
             mGeometry.push_back(ItemPtr(pItem));
         }
+        else if (tag == "Cylinder")
+        {
+            glgeom::point3f center = spElem->value().find("base").convert();
+            center.z += .5f;
+            float radius = spElem->value().find("radius").convert();
+            glgeom::vector3f scale(radius / .5f, radius / .5f, radius / .5f);
+
+            auto pItem = new Item;
+            pItem->spCamera   = mspCamera;
+            pItem->spLightSet = mspLightSet;
+            pItem->spMaterial = mspRasterizer->createMaterial("media2/shaders/glsl/fragment/normal.frag");
+            pItem->spTransform = mspRasterizer->createTransform(scale, center);
+            pItem->spGeometry = _loadMesh("media2/models/unit_geometry/unit_cylinder-000.blend");
+            
+            mGeometry.push_back(ItemPtr(pItem));
+        }
+        else if (tag == "Cone")
+        {
+            glgeom::point3f center = spElem->value().find("base").convert();
+            center.z += .5f;
+            float radius = spElem->value().find("radius").convert();
+            glgeom::vector3f scale(radius / .5f, radius / .5f, radius / .5f);
+
+            auto pItem = new Item;
+            pItem->spCamera   = mspCamera;
+            pItem->spLightSet = mspLightSet;
+            pItem->spMaterial = mspRasterizer->createMaterial("media2/shaders/glsl/fragment/normal.frag");
+            pItem->spTransform = mspRasterizer->createTransform(scale, center);
+            pItem->spGeometry = _loadMesh("media2/models/unit_geometry/unit_cone-000.blend");
+            
+            mGeometry.push_back(ItemPtr(pItem));
+        }
+        else if (tag == "Plane")
+        {
+            glgeom::vector3f normal = spElem->value().find("normal").convert();
+            normal = normalize(normal);
+            float d = spElem->value().find("d").convert();
+
+            // The unit geometry has the normal pointing toward +Z.  Create a new basis
+            // where +Z points in the direction of the specified normal.
+            glm::mat4 mat;
+            {
+                using namespace glgeom;
+
+                vector3f right;
+                if (abs((abs(normal.x) - 1.0f)) < 0.1f)
+                    right = vector3f(0, 1, 0);
+                else
+                    right = vector3f(1, 0, 0);
+
+                vector3f yaxis = normalize( cross(normal, right) );
+                vector3f xaxis = normalize( cross(yaxis, normal) );
+
+                // Create the new basis.  This creates a right-handed coordinate system where
+                // -z is into the screen / increasing depth.
+                //
+                // A basis transformation from one coordinate system to another via a matrix
+                // is done by setting each column of the matrix to the vectors representing
+                // the new coordinate system (in terms of the old coordinate system).
+                //
+                // The final step is simply to convert that basis transformation matrix into
+                // quaternion form and return the value.
+                //
+                mat = glm::mat4(glm::mat3(xaxis.vec, yaxis.vec, normal.vec));
+
+                // Now add in the translation
+                mat = glm::translate(mat, (normal * d).vec);
+            }
+
+
+            auto pItem = new Item;
+            pItem->spCamera   = mspCamera;
+            pItem->spLightSet = mspLightSet;
+            pItem->spMaterial = mspRasterizer->createMaterial("media2/shaders/glsl/fragment/normal.frag");
+            pItem->spTransform = mspRasterizer->createTransform(glm::mat4(mat));
+            pItem->spGeometry = _loadMesh("media2/models/plane_1k-000.blend");
+            
+            mGeometry.push_back(ItemPtr(pItem));
+        }
+        else if (tag == "Camera")
+        {
+            glgeom::vector3f position = spElem->value().find("position").convert();
+            glgeom::point3f target = spElem->value().find("look_at").convert();
+
+            auto view = glm::lookAt(position.vec, target.vec, glm::vec3(0, 0, 1));
+            mspCamera = mspRasterizer->createCamera(60.0f, 0.1f, 2000.0f, view);
+        }
         else 
         { 
+        }
+    }
+
+    GeometryPtr _loadMesh (const char* filename)
+    {
+        auto it = mMeshes.find(filename);
+        if (it != mMeshes.end())
+        {
+            lx_debug("Reusing cache for '%s'", filename);
+            return it->second;
+        }
+        else
+        {
+            auto spGeom = lx0::quadlist_from_blendfile(*mspRasterizer.get(), filename);
+            mMeshes.insert(std::make_pair(filename, spGeom));
+            return spGeom;
         }
     }
 
@@ -135,7 +230,8 @@ protected:
     lx0::CameraPtr       mspCamera;       // Camera shared by all items
     lx0::LightSetPtr     mspLightSet;
 
-    std::vector<ItemPtr> mGeometry;
+    std::map<std::string,GeometryPtr>   mMeshes;
+    std::vector<ItemPtr>                mGeometry;
 };
 
 //===========================================================================//

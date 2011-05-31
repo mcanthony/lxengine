@@ -332,6 +332,7 @@ namespace lx0
                 struct 
                 {
                     unsigned int    itemId;
+                    glm::mat4*      viewMatrix;
                 } mContext;
 
             protected:
