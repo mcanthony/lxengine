@@ -82,11 +82,35 @@ public:
     }
 
 protected:
+    MaterialPtr _findMaterial(ElementPtr spElem)
+    {
+        auto it = mMaterials.find(spElem->attr("material").query(""));
+        if (it != mMaterials.end())
+            return it->second;
+        else
+            return mspRasterizer->createPhongMaterial(glgeom::material_phong_f());
+    }
+
     void _onElementAddRemove (ElementPtr spElem, bool bAdd)
     {
+        using namespace glgeom;
+
         const std::string tag = spElem->tagName();
 
-        if (tag == "Sphere")
+        if (tag == "Material")
+        {
+            glgeom::material_phong_f phong;
+            phong.emmissive = spElem->value().find("emmissive").convert(color3f(0, 0, 0));
+            phong.diffuse = spElem->value().find("diffuse").convert(color3f(1, 1, 1));
+            phong.specular = spElem->value().find("specular").convert(color3f(0, 0, 0));
+            phong.specular_n = spElem->value().find("specular_n").convert(8.0f);
+
+            std::string name = spElem->attr("id").query("");
+            auto spMat = mspRasterizer->createPhongMaterial(phong);
+
+            mMaterials.insert(std::make_pair(name, spMat));
+        }
+        else if (tag == "Sphere")
         {
             glgeom::point3f center = spElem->value().find("center").convert();
             float radius = spElem->value().find("radius").convert(.5f);
@@ -95,7 +119,7 @@ protected:
             auto pItem = new Item;
             pItem->spCamera   = mspCamera;
             pItem->spLightSet = mspLightSet;
-            pItem->spMaterial = mspRasterizer->createMaterial("media2/shaders/glsl/fragment/phong2.frag");
+            pItem->spMaterial = _findMaterial(spElem);
             pItem->spTransform = mspRasterizer->createTransform(scale, center);
             pItem->spGeometry = _loadMesh("media2/models/unit_sphere-000.blend");
 
@@ -109,7 +133,7 @@ protected:
             auto pItem = new Item;
             pItem->spCamera   = mspCamera;
             pItem->spLightSet = mspLightSet;
-            pItem->spMaterial = mspRasterizer->createMaterial("media2/shaders/glsl/fragment/phong2.frag");
+            pItem->spMaterial = _findMaterial(spElem);
             pItem->spTransform = mspRasterizer->createTransform(scale, center);
             pItem->spGeometry = _loadMesh("media2/models/unit_cube-000.blend");
             
@@ -125,7 +149,7 @@ protected:
             auto pItem = new Item;
             pItem->spCamera   = mspCamera;
             pItem->spLightSet = mspLightSet;
-            pItem->spMaterial = mspRasterizer->createMaterial("media2/shaders/glsl/fragment/phong2.frag");
+            pItem->spMaterial = _findMaterial(spElem);
             pItem->spTransform = mspRasterizer->createTransform(scale, center);
             pItem->spGeometry = _loadMesh("media2/models/unit_geometry/unit_cylinder-001.blend");
             
@@ -141,7 +165,7 @@ protected:
             auto pItem = new Item;
             pItem->spCamera   = mspCamera;
             pItem->spLightSet = mspLightSet;
-            pItem->spMaterial = mspRasterizer->createMaterial("media2/shaders/glsl/fragment/phong2.frag");
+            pItem->spMaterial = _findMaterial(spElem);
             pItem->spTransform = mspRasterizer->createTransform(scale, center);
             pItem->spGeometry = _loadMesh("media2/models/unit_geometry/unit_cone-000.blend");
             
@@ -188,7 +212,7 @@ protected:
             auto pItem = new Item;
             pItem->spCamera   = mspCamera;
             pItem->spLightSet = mspLightSet;
-            pItem->spMaterial = mspRasterizer->createMaterial("media2/shaders/glsl/fragment/normal.frag");
+            pItem->spMaterial = _findMaterial(spElem);
             pItem->spTransform = mspRasterizer->createTransform(glm::mat4(mat));
             pItem->spGeometry = _loadMesh("media2/models/plane_1k-000.blend");
             
@@ -239,6 +263,7 @@ protected:
 
     std::map<std::string,GeometryPtr>   mMeshes;
     std::vector<ItemPtr>                mGeometry;
+    std::map<std::string,MaterialPtr>   mMaterials;
 };
 
 //===========================================================================//

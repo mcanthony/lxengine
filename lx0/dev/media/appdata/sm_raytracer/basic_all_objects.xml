@@ -33,6 +33,11 @@
           diffuse : [ 0, 0, 1]
         }
       </Material>
+      <Material id="yellow">
+        {
+        diffuse : [ 1, 1, 0],
+        }
+      </Material>      
     </Library>
     <Scene view="view">
       <Group id="light_group">
@@ -70,7 +75,7 @@
             </Plane>
         </Group>
         <Group id="sphere_group">
-            <Sphere material="white">
+            <Sphere material="yellow">
             {
                 center : [ .6, .6, .6 ],
                 radius : .5

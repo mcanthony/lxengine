@@ -31,6 +31,9 @@
 #include <boost/logic/tribool.hpp>
 #include <lx0/engine/document.hpp>
 
+#include <glgeom/glgeom.hpp>
+#include <glgeom/prototype/material_phong.hpp>
+
 namespace lx0 { 
 
     class IRasterizer : public lx0::Document::Component
@@ -148,6 +151,18 @@ namespace lx0
             };
             typedef std::shared_ptr<Material> MaterialPtr;
             typedef std::weak_ptr<Material> MaterialWPtr;
+
+            //===========================================================================//
+            //! \ingroup lx0_subsystem_rasterizer
+            class PhongMaterial : public Material
+            {
+            public:
+                        PhongMaterial(GLuint id);
+
+                virtual void activate   (RasterizerGL*, GlobalPass& pass);
+
+                glgeom::material_phong_f    mPhong;
+            };
 
             //===========================================================================//
             //! \ingroup lx0_subsystem_rasterizer
@@ -329,8 +344,9 @@ namespace lx0
                 LightPtr        createLight     (void);
                 LightSetPtr     createLightSet  (void);
 
-                MaterialPtr     createMaterial  (std::string fragShader);
-                TexturePtr      createTexture   (const char* filename);
+                MaterialPtr     createMaterial              (std::string fragShader);
+                MaterialPtr     createPhongMaterial         (const glgeom::material_phong_f& mat);
+                TexturePtr      createTexture               (const char* filename);
 
                 TransformPtr    createTransform             (glm::mat4& mat);
                 TransformPtr    createTransform             (float tx, float ty, float tz);

@@ -174,6 +174,16 @@ RasterizerGL::createMaterial (std::string fragShader)
     return spMat;
 }
 
+MaterialPtr 
+RasterizerGL::createPhongMaterial (const glgeom::material_phong_f& mat)
+{
+    GLuint prog = _createProgram("media2/shaders/glsl/fragment/phong2.frag");
+    auto pPhong = new PhongMaterial(prog);
+    pPhong->mShaderFilename = "media2/shaders/glsl/fragment/phong2.frag";
+    pPhong->mPhong = mat;
+    return MaterialPtr(pPhong);
+}
+
 GLuint 
 RasterizerGL::_createProgram   (std::string fragShader)
 {
@@ -342,6 +352,11 @@ Material::activate (RasterizerGL* pRasterizer, GlobalPass& pass)
             glUniform4f(unifIndex, r, g, b, a);
         }
     }
+    {
+        GLint idx = glGetUniformLocation(mId, "unifMaterialDiffuse");
+        if (idx != -1)
+            glUniform3f(idx, 1.0f, 1.0f, 1.0f);
+    }
 
     const char* unifTextureName[8] = {
         "unifTexture0",
@@ -424,6 +439,26 @@ Material::activate (RasterizerGL* pRasterizer, GlobalPass& pass)
         glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
     else
         glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+}
+
+PhongMaterial::PhongMaterial (GLuint id)
+    : Material (id)
+{
+}
+
+void
+PhongMaterial::activate (RasterizerGL* pRasterizer, GlobalPass& pass)
+{
+    Material::activate(pRasterizer, pass);
+
+    //
+    // Set up color
+    //
+    {
+        GLint idx = glGetUniformLocation(mId, "unifMaterialDiffuse");
+        if (idx != -1)
+            glUniform3f(idx, mPhong.diffuse.r, mPhong.diffuse.g, mPhong.diffuse.b);
+    }
 }
 
 void 
