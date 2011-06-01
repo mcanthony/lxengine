@@ -31,6 +31,6 @@
 
 #include <lx0/lxengine.hpp>
 
-lx0::Document::Component*   create_scene();
 lx0::View::Component*       create_renderer();
-lx0::UIBinding*          create_uibinding();
+lx0::UIBinding*             create_uibinding();
+lx0::Controller*            create_controller(lx0::DocumentPtr spDoc);

@@ -243,13 +243,13 @@ namespace lx0 { namespace engine { namespace dom_ns {
         bool        isKeyDown       (int keyCode) const;
 
 
-        slot<void (KeyEvent&)>      slotKeyDown;
+        slot<void (KeyEvent&)>          slotKeyDown;
 
         void        notifyViewImpIdle   (void);
         void        notifyAttached      (ComponentPtr spComponent) { spComponent->onAttached(mpDocument->shared_from_this()); } 
 
-        void        addUIBinding       (UIBinding* pController)           { mspImp->addUIBinding(pController); }
-        void        addController  (Controller* pController);
+        void        addUIBinding        (UIBinding* pController)           { mspImp->addUIBinding(pController); }
+        void        addController       (Controller* pController);
 
     protected:
         class DocForwarder : public Document::Component

@@ -130,6 +130,7 @@ main (int argc, char** argv)
             DocumentPtr spDocument = spEngine->loadDocument(options.filename);
             spDocument->attachComponent("javascript", lx0::createIJavascript() );
             spDocument->attachComponent("scripting", create_scripting() );
+            spDocument->addController( create_controller(spDocument) );
 
             ViewPtr spView = spDocument->createView("Canvas", "view", create_renderer() );
             spView->addUIBinding( create_uibinding() );

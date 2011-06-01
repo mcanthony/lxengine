@@ -138,6 +138,11 @@ namespace lx0 { namespace engine {  namespace dom_ns { namespace detail {
             }
         }
 
+        void _clearComponents ()
+        {
+            mComponents.clear();
+        }
+
         Map mComponents;
     };
    

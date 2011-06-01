@@ -272,6 +272,12 @@ class UIBindingImp : public lx0::UIBinding
 {
 public:
 
+    UIBindingImp()
+    {
+        // _sendDocEventOnKeyIsDown(KC_W, "move_forward", lxvar(.1f));
+        // _sendDocEventOnKeyDown(KC_R, "redraw", lxvar());
+    }
+
     virtual     void        updateFrame     (ViewPtr spView,
                                              const KeyboardState& keyboard)
     {
@@ -280,10 +286,45 @@ public:
         if (keyboard.bDown[KC_R])
             spView->sendEvent("redraw", lxvar());
         if (keyboard.bDown[KC_W])
-            spView->sendEvent("move_forward", lxvar(.1f));
+            spView->document()->sendEvent("move_forward", lxvar(.1f));
     }
 };
 
+//===========================================================================//
+
+class ControllerImp : public lx0::Controller
+{
+public:
+    ControllerImp (lx0::Document* pDoc) : mpDocument(pDoc) {}
+
+    virtual void handleEvent (std::string evt, lx0::lxvar params)
+    {
+        if (evt == "move_forward")
+        {
+            const float step = params.convert();
+            auto spElem = mpDocument->getElementsByTagName("Camera")[0];
+            
+            /*
+                Modify the camera position and target.  
+                
+                Do this via attribute modification, which may or may not, 
+                map to native functions rather than the normal notification system.
+                I.e. there may be a 'virtual' attribute such as "target" which is
+                not directly in the XML document.
+
+                Once this change occurs, it should send out notification to all
+                document components.  This includes the renderer.  It should see
+                the change to the Camera element.  It should reparse the Camera
+                entirely, for simplicity.
+             */
+            lx_debug("Stub: moving camera forward by %f", step);
+        }
+    }
+
+    lx0::Document* mpDocument;
+};
+
 lx0::View::Component*   create_renderer()       { return new Renderer; }
-lx0::UIBinding*      create_uibinding()     { return new UIBindingImp; }
+lx0::UIBinding*         create_uibinding()      { return new UIBindingImp; }
+lx0::Controller*        create_controller(DocumentPtr spDoc)    { return new ControllerImp(spDoc.get()); }
 

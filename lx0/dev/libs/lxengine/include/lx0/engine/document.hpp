@@ -41,6 +41,7 @@
 #include <lx0/_detail/forward_decls.hpp>
 #include <lx0/engine/dom_base.hpp>
 #include <lx0/core/slot/slot.hpp>
+#include <lx0/core/lxvar/lxvar.hpp>
 
 namespace lx0 { namespace engine { namespace dom_ns {
 
@@ -115,6 +116,9 @@ namespace lx0 { namespace engine { namespace dom_ns {
         void                    updateRun       (void);
         void                    endRun          (void);
 
+        void                    sendEvent       (std::string evt, lx0::lxvar params);
+        void                    addController   (Controller* pController);
+
         void                    notifyAttached          (ComponentPtr spComponent) { spComponent->onAttached(shared_from_this()); }
         void                    notifyElementAdded      (ElementPtr spElem);
         void                    notifyElementRemoved    (ElementPtr spElem);
@@ -137,6 +141,7 @@ namespace lx0 { namespace engine { namespace dom_ns {
         TrWList                         m_openTransactions;     //!< Not currently implemented
         ElementPtr                      m_spRoot;
         std::map<std::string, ViewPtr>  m_views;
+        std::vector<lx0::ControllerPtr> mControllers;
     };
 
         }

@@ -48,8 +48,9 @@ namespace lx0 { namespace engine { namespace dom_ns {
 
     Document::~Document()
     {
-        m_spRoot->notifyRemoved(this);
         m_views.clear();
+        _clearComponents();
+        m_spRoot->notifyRemoved(this);
 
         Engine::acquire()->decObjectCount("Document");
     }
@@ -304,6 +305,19 @@ namespace lx0 { namespace engine { namespace dom_ns {
             it->onElementRemoved(this, spElem);
         });  
         slotElementRemoved(spElem);
+    }
+
+    void        
+    Document::sendEvent (std::string evt, lxvar params)
+    {
+        for (auto it = mControllers.begin(); it != mControllers.end(); ++it)
+            (*it)->handleEvent(evt, params);
+    }
+
+    void        
+    Document::addController (Controller* pController)
+    {
+        mControllers.push_back( ControllerPtr(pController) );
     }
 
 }}}
