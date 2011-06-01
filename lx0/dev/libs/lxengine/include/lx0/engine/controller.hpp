@@ -42,19 +42,19 @@ namespace lx0
             /*!
                 \ingroup lx0_engine_dom
 
-                A UIController is intended to map UI state such as keyboard presses, 
+                A UIBinding is intended to map UI state such as keyboard presses, 
                 mouse movements, frame updates, etc. into high-level application events
                 such as "select_object", "move_camera", etc.  
 
                 The high-level mapping is intended allow for reuse between multiple
-                applications.  For example, a UIController might be set up to allow for
+                applications.  For example, a UIBinding might be set up to allow for
                 FPS-like camera control.  The internal camera representation might vary
                 between apps, but the WASD keyboard controls could be reused easily.
              */
-            class UIController
+            class UIBinding
             {
             public:
-                virtual                 ~UIController() {}
+                virtual                 ~UIBinding() {}
 
                 virtual     void        onLClick        (ViewPtr spView, const MouseState&, const ButtonState&, KeyModifiers) {}
                 virtual     void        onLDrag         (ViewPtr spView, const MouseState& ms, const ButtonState& bs, KeyModifiers km) {}
@@ -66,18 +66,18 @@ namespace lx0
             /*!
                 \ingroup lx0_engine_dom
 
-                An EventController is intended for use along with a UIController in a 
+                An Controller is intended for use along with a UIBinding in a 
                 processing chain.
 
-                User event -> UIController -> Application Event -> EventController -> Implementation
+                User event -> UIBinding -> Application Event -> Controller -> Implementation
 
-                The EventController maps the application events produced by the UIController
+                The Controller maps the application events produced by the UIBinding
                 into actual calls in the code.
              */
-            class EventController
+            class Controller
             {
             public:
-                virtual                 ~EventController() {}
+                virtual                 ~Controller() {}
 
                 virtual     void        handleEvent     (std::string evt, lx0::lxvar params) {}
             };

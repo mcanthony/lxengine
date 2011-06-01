@@ -26,6 +26,10 @@
 */
 //===========================================================================//
 
+//===========================================================================//
+//   H E A D E R S   &   D E C L A R A T I O N S 
+//===========================================================================//
+
 #include <deque>
 #include <functional>
 #include <map>
@@ -39,29 +43,11 @@
 using namespace lx0;
 
 //===========================================================================//
-//   H E A D E R S   &   D E C L A R A T I O N S 
-//===========================================================================//
-
-//===========================================================================//
 /*!
  */
 class Scripting : public Document::Component
 {
 public: 
-    Scripting()
-    {
-        mHandlers.insert(std::make_pair("Script", [&](ElementPtr spElem) {
-            
-            std::string source;
-            if (spElem->attr("src").isString())
-                source = lx0::lx_file_to_string(spElem->attr("src").asString());
-            else
-                source = spElem->value().asString();
-
-            spElem->document()->getComponent<lx0::IJavascript>("javascript")->run(source);
-        }));
-    }
-
     virtual void onAttached (DocumentPtr spDocument) 
     {
         spDocument->iterateElements([&](ElementPtr spElem) -> bool { 
@@ -72,12 +58,17 @@ public:
 protected:
     void _onElementAddRemove (ElementPtr spElem, bool bAdd)
     {
-        auto it = mHandlers.find(spElem->tagName());
-        if (it != mHandlers.end())
-            it->second(spElem);
-    }
+        if (spElem->tagName() == "Script") 
+        {
+            std::string source;
+            if (spElem->attr("src").isString())
+                source = lx0::lx_file_to_string(spElem->attr("src").asString());
+            else
+                source = spElem->value().asString();
 
-    std::map<std::string, std::function<void (ElementPtr spElem)>> mHandlers;
+            spElem->document()->getComponent<lx0::IJavascript>("javascript")->run(source);
+        }
+    }
 };
 
 

@@ -51,14 +51,14 @@ public:
 
     virtual     void        handleEvent     (std::string evt, lx0::lxvar params);
 
-    virtual void            addController       (lx0::UIController* pController) { mControllers.push_back(std::shared_ptr<lx0::UIController>(pController)); }
+    virtual void            addUIBinding       (lx0::UIBinding* pController) { mControllers.push_back(std::shared_ptr<lx0::UIBinding>(pController)); }
 
 protected:
     lx0::View*                  mpHostView;
     std::auto_ptr<CanvasGL>     mspWin;
     CanvasHost                  mHost;
    
-    std::vector<std::shared_ptr<lx0::UIController>> mControllers;
+    std::vector<std::shared_ptr<lx0::UIBinding>> mControllers;
 };
 
 void 

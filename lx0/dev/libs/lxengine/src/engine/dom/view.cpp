@@ -145,7 +145,7 @@ namespace lx0 { namespace engine { namespace dom_ns {
     {
         mspImp->handleEvent(evt, params);
 
-        for (auto it = mEventControllers.begin(); it != mEventControllers.end(); ++it)
+        for (auto it = mControllers.begin(); it != mControllers.end(); ++it)
             (*it)->handleEvent(evt, params);
     }
 
@@ -173,9 +173,9 @@ namespace lx0 { namespace engine { namespace dom_ns {
     }
 
     void        
-    View::addEventController (EventController* pEventController)
+    View::addController (Controller* pController)
     {
-        mEventControllers.push_back( EventControllerPtr(pEventController) );
+        mControllers.push_back( ControllerPtr(pController) );
     }
 
     //===========================================================================//

@@ -47,7 +47,7 @@ extern glgeom::image3f img;
 
 //===========================================================================//
 
-class ControllerImp : public lx0::UIController
+class ControllerImp : public lx0::UIBinding
 {
 public:
 
@@ -110,4 +110,4 @@ protected:
 //===========================================================================//
 
 lx0::View::Component* create_renderer() { return new Renderer; }
-lx0::UIController* create_controller() { return new ControllerImp; }
+lx0::UIBinding* create_uibinding() { return new ControllerImp; }

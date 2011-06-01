@@ -184,7 +184,7 @@ namespace lx0 { namespace engine { namespace dom_ns {
         virtual     void        updateFrame     (DocumentPtr spDocument) = 0;
         virtual     void        updateEnd       (void) = 0;
 
-        virtual     void        addController       (UIController* pController) {}
+        virtual     void        addUIBinding       (UIBinding* pController) {}
 
         virtual     void        handleEvent     (std::string evt, lx0::lxvar params) {}
     };
@@ -248,8 +248,8 @@ namespace lx0 { namespace engine { namespace dom_ns {
         void        notifyViewImpIdle   (void);
         void        notifyAttached      (ComponentPtr spComponent) { spComponent->onAttached(mpDocument->shared_from_this()); } 
 
-        void        addController       (UIController* pController)           { mspImp->addController(pController); }
-        void        addEventController  (EventController* pEventController);
+        void        addUIBinding       (UIBinding* pController)           { mspImp->addUIBinding(pController); }
+        void        addController  (Controller* pController);
 
     protected:
         class DocForwarder : public Document::Component
@@ -278,7 +278,7 @@ namespace lx0 { namespace engine { namespace dom_ns {
         detail::LxInputManagerPtr   mspLxInputManager;
         std::unique_ptr<ViewImp>    mspImp;
         DocForwarder*               mpDocForwarder;
-        std::vector<lx0::EventControllerPtr> mEventControllers;
+        std::vector<lx0::ControllerPtr> mControllers;
 
         int mOnElementRemovedId;
         int mOnElementAddedId;

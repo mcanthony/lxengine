@@ -140,7 +140,7 @@ main (int argc, char** argv)
             spDocument->attachComponent("scripting", create_scripting() );
 
             ViewPtr spView = spDocument->createView("Canvas", "view", create_renderer() );
-            spView->addController( create_controller() );
+            spView->addUIBinding( create_uibinding() );
 
             lxvar options;
             options.insert("title", "LxEngine Raytracer Sample");

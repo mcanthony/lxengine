@@ -89,8 +89,8 @@ main (int argc, char** argv)
         
         DocumentPtr spDocument = spEngine->loadDocument("media2/appdata/sm_terrain/scene.xml");
         ViewPtr     spView     = spDocument->createView("Canvas", "view", new Renderer(spDocument));
-        spView->addController( create_camera_controller() );
-        spView->addEventController( create_event_controller() );
+        spView->addUIBinding( create_camera_controller() );
+        spView->addController( create_event_controller() );
         
         lxvar options;
         options.insert("title", "Terrain Sample (OpenGL 3.2)");

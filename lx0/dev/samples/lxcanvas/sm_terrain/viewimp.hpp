@@ -30,5 +30,5 @@
 
 #include <lx0/lxengine.hpp>
 
-lx0::UIController*        create_camera_controller();
-lx0::EventController*   create_event_controller();
+lx0::UIBinding*        create_camera_controller();
+lx0::Controller*   create_event_controller();

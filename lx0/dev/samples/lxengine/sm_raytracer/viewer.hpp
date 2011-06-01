@@ -30,6 +30,6 @@
 #define VIEWER_HPP
 
 lx0::View::Component* create_renderer();
-lx0::UIController* create_controller();
+lx0::UIBinding* create_uibinding();
 
 #endif

@@ -37,7 +37,7 @@ using namespace lx0;
 
 extern lx0::Camera2 gCamera;
 
-class CameraController : public lx0::UIController
+class CameraController : public lx0::UIBinding
 {
 public:
     virtual     void        onLClick        (ViewPtr spView, const MouseState&, const ButtonState&, KeyModifiers);
@@ -93,9 +93,9 @@ CameraController::updateFrame (ViewPtr spView, const KeyboardState& keyboard)
     spView->sendEvent("redraw", lxvar());
 }
 
-lx0::UIController*        create_camera_controller() { return new CameraController; }
+lx0::UIBinding*        create_camera_controller() { return new CameraController; }
 
-class EventHandler : public lx0::EventController
+class EventHandler : public lx0::Controller
 {
 public:
     virtual void handleEvent(std::string evt, lx0::lxvar params)
@@ -115,7 +115,7 @@ public:
     }
 };
 
-lx0::EventController*   create_event_controller()
+lx0::Controller*   create_event_controller()
 {
     return new EventHandler;
 }

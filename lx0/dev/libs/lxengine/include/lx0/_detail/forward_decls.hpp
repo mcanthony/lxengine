@@ -98,8 +98,8 @@ namespace lx0
             _LX_FORWARD_DECL_PTRS(Space);
             _LX_FORWARD_DECL_PTRS(Engine);
             _LX_FORWARD_DECL_PTRS(View);
-            _LX_FORWARD_DECL_PTRS(UIController);
-            _LX_FORWARD_DECL_PTRS(EventController);
+            _LX_FORWARD_DECL_PTRS(UIBinding);
+            _LX_FORWARD_DECL_PTRS(Controller);
             _LX_FORWARD_DECL_PTRS(Object);
             _LX_FORWARD_DECL_PTRS(LxVarObject);
 

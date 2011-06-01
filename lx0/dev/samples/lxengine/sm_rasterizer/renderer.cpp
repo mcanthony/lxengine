@@ -268,7 +268,7 @@ protected:
 
 //===========================================================================//
 
-class ControllerImp : public lx0::UIController
+class UIBindingImp : public lx0::UIBinding
 {
 public:
 
@@ -277,11 +277,13 @@ public:
     {
         if (keyboard.bDown[KC_ESCAPE])
             Engine::acquire()->sendMessage("quit");
-        if (keyboard.bDown[KC_W])
+        if (keyboard.bDown[KC_R])
             spView->sendEvent("redraw", lxvar());
+        if (keyboard.bDown[KC_W])
+            spView->sendEvent("move_forward", lxvar(.1f));
     }
 };
 
 lx0::View::Component*   create_renderer()       { return new Renderer; }
-lx0::UIController*      create_controller()     { return new ControllerImp; }
+lx0::UIBinding*      create_uibinding()     { return new UIBindingImp; }
 
