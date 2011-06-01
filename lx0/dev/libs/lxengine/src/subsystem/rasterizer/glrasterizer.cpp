@@ -50,6 +50,7 @@ void RasterizerGL::initialize()
     // Initialization
     //
     lx_log("Using OpenGL v%s", (const char*)glGetString(GL_VERSION));
+    lx_log("Using GLSL v%s", (const char*)glGetString(GL_SHADING_LANGUAGE_VERSION));
 
     glClearColor(0.09f, 0.09f, 0.11f, 1.0f);
 
@@ -78,6 +79,8 @@ RasterizerGL::createCamera (float fov, float nearDist, float farDist, glm::mat4&
 void
 Camera::activate()
 {
+    lx_check_error( glGetError() == GL_NO_ERROR );
+
     //
     // Setup projection matrix
     //
@@ -101,6 +104,8 @@ Camera::activate()
     //
     glMatrixMode(GL_MODELVIEW);
     glLoadMatrixf(glm::value_ptr(viewMatrix));
+
+    lx_check_error( glGetError() == GL_NO_ERROR );
 }
 
 Texture::Texture()
@@ -578,6 +583,25 @@ RasterizerGL::createQuadList (std::vector<unsigned short>& indices,
                               std::vector<glgeom::vector3f>& normals,
                               std::vector<glgeom::color3f>& colors)
 {
+    std::vector<lx0::uint8> flags(indices.size() / 4);
+    std::fill(flags.begin(), flags.end(), 0);
+
+    return createQuadList(indices, flags, positions, normals, colors);
+}
+
+GeometryPtr
+RasterizerGL::createQuadList (std::vector<unsigned short>& indices, 
+                              std::vector<lx0::uint8>& faceFlags,
+                              std::vector<glgeom::point3f>& positions, 
+                              std::vector<glgeom::vector3f>& normals,
+                              std::vector<glgeom::color3f>& colors)
+{
+    lx_check_error( glGetError() == GL_NO_ERROR );
+
+    lx_check_error(indices.size() == faceFlags.size() * 4, 
+        "Expected a single flag per quad.  Count mismatch (%u indicies, %u flags).",
+        indices.size(), faceFlags.size());
+
     // Create a vertex array to store the vertex data
     //
     GLuint vao;
@@ -604,6 +628,13 @@ RasterizerGL::createQuadList (std::vector<unsigned short>& indices,
     glBindBuffer(GL_ARRAY_BUFFER, vboColors);
     glBufferData(GL_ARRAY_BUFFER, colors.size() * sizeof(colors[0]), &colors[0], GL_STATIC_DRAW);
 
+    GLuint vboFlags;
+    glGenBuffers(1, &vboFlags);
+    glBindBuffer(GL_ARRAY_BUFFER, vboFlags);
+    glBufferData(GL_ARRAY_BUFFER, faceFlags.size() * sizeof(faceFlags[0]), &faceFlags[0], GL_STATIC_DRAW);
+
+    lx_check_error( glGetError() == GL_NO_ERROR );
+
     // Create the cache to encapsulate the created OGL resources
     //
     auto pGeom = new GeomImp;
@@ -614,12 +645,15 @@ RasterizerGL::createQuadList (std::vector<unsigned short>& indices,
     pGeom->mVboPosition = vboPositions;
     pGeom->mVboNormal   = vboNormals;
     pGeom->mVboColors   = vboColors;
+    pGeom->mVboFlags    = vboFlags;
     return GeometryPtr(pGeom);
 }
 
 void 
 GeomImp::activate(GlobalPass& pass)
 {
+    lx_check_error( glGetError() == GL_NO_ERROR );
+
     GLint shaderProgram;
     glGetIntegerv(GL_CURRENT_PROGRAM, &shaderProgram);
 
@@ -656,6 +690,22 @@ GeomImp::activate(GlobalPass& pass)
             glDisableVertexAttribArray(colorIndex);
     }
 
+    // Set per-primitive flags
+    {
+        GLint idx = glGetAttribLocation(shaderProgram, "primFlag");
+        if (idx != -1)
+        {
+            if (mVboFlags)
+            {
+                glBindBuffer(GL_ARRAY_BUFFER, mVboFlags);
+                glVertexAttribPointer(idx, 1, GL_UNSIGNED_BYTE, GL_FALSE, 0, 0);
+                glEnableVertexAttribArray(idx);
+            }
+            else
+                glDisableVertexAttribArray(idx);
+        }
+    }
+
     // Options
     {
         GLint loc = glGetUniformLocation(shaderProgram, "unifFlatNormals");
@@ -665,7 +715,11 @@ GeomImp::activate(GlobalPass& pass)
         }
     }
 
+    lx_check_error( glGetError() == GL_NO_ERROR );
+
     glDrawElements(mType, mCount, GL_UNSIGNED_SHORT, 0);
+
+    lx_check_error( glGetError() == GL_NO_ERROR );
 }
 
 LightPtr  

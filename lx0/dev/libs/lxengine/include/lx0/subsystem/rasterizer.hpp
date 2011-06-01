@@ -83,17 +83,29 @@ namespace lx0
             class GeomImp : public Geometry
             {
             public:
-                GeomImp() : mType(0), mVboIndices (0),  mVao(0), mVboPosition(0), mVboNormal(0), mCount(0), mVboColors(0) {}
+                GeomImp() 
+                    : mType(0)
+                    , mVboIndices (0)
+                    ,  mVao(0)
+                    , mVboPosition(0)
+                    , mVboNormal(0)
+                    , mCount(0)
+                    , mVboColors(0)
+                    , mVboFlags(0) 
+                {}
 
                 virtual void activate(GlobalPass& pass);
 
                 GLenum  mType;
                 GLuint  mVao;
                 GLsizei mCount;
+                
                 GLuint  mVboPosition;
                 GLuint  mVboNormal;
                 GLuint  mVboColors;
+
                 GLuint  mVboIndices;
+                GLuint  mVboFlags;
             };
 
             //===========================================================================//
@@ -357,6 +369,11 @@ namespace lx0
 
                 GeometryPtr     createQuadList  (std::vector<glgeom::point3f>& quads);
                 GeometryPtr     createQuadList  (std::vector<unsigned short>& indices, 
+                                                    std::vector<glgeom::point3f>& positions, 
+                                                    std::vector<glgeom::vector3f>& normals,
+                                                    std::vector<glgeom::color3f>& colors);
+                GeometryPtr     createQuadList  (std::vector<unsigned short>& indices,
+                                                 std::vector<lx0::uint8>& faceFlags,
                                                     std::vector<glgeom::point3f>& positions, 
                                                     std::vector<glgeom::vector3f>& normals,
                                                     std::vector<glgeom::color3f>& colors);

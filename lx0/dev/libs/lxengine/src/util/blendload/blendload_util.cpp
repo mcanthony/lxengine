@@ -60,15 +60,17 @@ lx0::util::blendload_ns::quadlist_from_blendfile (RasterizerGL& rasterizer, cons
         const auto totalVertices = spMesh->field<int>("totvert");
         const auto totalFaces = spMesh->field<int>("totface");
 
-        std::vector<glgeom::point3f>  positions;
-        std::vector<glgeom::vector3f> normals;
-        std::vector<glgeom::color3f>  colors;
-        std::vector<unsigned short> indicies;
+        std::vector<glgeom::point3f>    positions;
+        std::vector<glgeom::vector3f>   normals;
+        std::vector<glgeom::color3f>    colors;
+        std::vector<unsigned short>     indicies;
+        std::vector<lx0::uint8>         flags;
 
         positions.reserve(totalVertices);
         normals.reserve(totalVertices);
         colors.reserve(totalVertices);
         indicies.reserve(totalFaces * 4);
+        flags.reserve(totalFaces);
 
         auto spVerts = reader.readObject( spMesh->address("mvert") );
         for (int i = 0; i < totalVertices; ++i)
@@ -99,20 +101,28 @@ lx0::util::blendload_ns::quadlist_from_blendfile (RasterizerGL& rasterizer, cons
             vi[1] = spFaces->field<int>("v2");
             vi[2] = spFaces->field<int>("v3");
             vi[3] = spFaces->field<int>("v4");
-
+            
             // Convert tris into degenerate quads
+            // Is there a better way to handle meshes which can potentially contain tri/quad mixes?
             if (vi[3] == 0)
                 vi[3] = vi[2];
 
             for (int j = 0; j < 4; ++j)
                 indicies.push_back(vi[j]);
 
+            // The blender source code implies that
+            // 1 = ME_SMOOTH
+            // 2 = ME_FACE_SEL
+            lx0::uint8 flag;
+            flag = spFaces->field<lx0::uint8>("flag");
+            flags.push_back(flag);
+
             spFaces->next();
         }
 
         lx_debug("Loaded '%s'.  %u vertices, %u faces.", filename, positions.size(), indicies.size() / 4);
 
-        return rasterizer.createQuadList(indicies, positions, normals, colors);
+        return rasterizer.createQuadList(indicies, flags, positions, normals, colors);
     }
 }
 
