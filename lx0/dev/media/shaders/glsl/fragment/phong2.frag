@@ -9,6 +9,8 @@ uniform vec3    unifLightPosition[4];
 uniform vec3    unifLightColor[4];
 
 uniform vec3    unifMaterialDiffuse;
+uniform vec3    unifMaterialSpecular;
+uniform float   unifMaterialSpecularEx;
 
 in vec3         fragVertexOc;
 in vec3         fragVertexEc;
@@ -39,7 +41,7 @@ vec3 phong(vec3 ambient, vec3 diffuse, vec3 specular, float specularEx)
         float atten = 1;    // / (unifLightAtten[i].x + unifLightAtten[i].y * d  + unifLightAtten[i].x * d * d);
         vec3 lc = unifLightColor[i].rgb * atten;
     
-        c += diffuse * lc * unifMaterialDiffuse * max(dot(N,L), 0.0);                   // diffuse term
+        c += diffuse * lc * max(dot(N,L), 0.0);                   // diffuse term
         c += lc * specular * pow(max(dot(R,L),0.0), specularEx);  // specular term
     }
                
@@ -48,5 +50,5 @@ vec3 phong(vec3 ambient, vec3 diffuse, vec3 specular, float specularEx)
 
 void main()
 {              
-    outColor = vec4( phong(unifAmbient, fragColor, vec3(1.0, 1.0, 1.0), 32), 1.0);    	
+    outColor = vec4( phong(unifAmbient, unifMaterialDiffuse, unifMaterialSpecular, unifMaterialSpecularEx), 1.0);    	
 }

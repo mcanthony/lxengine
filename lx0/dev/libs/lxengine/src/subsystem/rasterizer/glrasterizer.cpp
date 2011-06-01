@@ -357,6 +357,16 @@ Material::activate (RasterizerGL* pRasterizer, GlobalPass& pass)
         if (idx != -1)
             glUniform3f(idx, 1.0f, 1.0f, 1.0f);
     }
+    {
+        GLint idx = glGetUniformLocation(mId, "unifMaterialSpecular");
+        if (idx != -1)
+            glUniform3f(idx, 1.0f, 1.0f, 1.0f);
+    }
+    {
+        GLint idx = glGetUniformLocation(mId, "unifMaterialSpecularEx");
+        if (idx != -1)
+            glUniform1f(idx, 32.0f);
+    }
 
     const char* unifTextureName[8] = {
         "unifTexture0",
@@ -458,6 +468,16 @@ PhongMaterial::activate (RasterizerGL* pRasterizer, GlobalPass& pass)
         GLint idx = glGetUniformLocation(mId, "unifMaterialDiffuse");
         if (idx != -1)
             glUniform3f(idx, mPhong.diffuse.r, mPhong.diffuse.g, mPhong.diffuse.b);
+    }
+    {
+        GLint idx = glGetUniformLocation(mId, "unifMaterialSpecular");
+        if (idx != -1)
+            glUniform3f(idx, mPhong.specular.r, mPhong.specular.g, mPhong.specular.b);
+    }
+    {
+        GLint idx = glGetUniformLocation(mId, "unifMaterialSpecularEx");
+        if (idx != -1)
+            glUniform1f(idx, mPhong.specular_n);
     }
 }
 
