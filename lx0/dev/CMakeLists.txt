@@ -166,8 +166,6 @@ endmacro(recurse_subdirectories BASEDIR)
 copy_media_directory( media/scripts/base )
 copy_media_directory( media/scripts/engine/attribute_parsers )
 copy_media_directory( media/shaders/ogre )
-copy_media_directory( media/shaders/glsl/vertex )
-copy_media_directory( media/shaders/glsl/geometry )
 copy_media_directory( media/models )
 
 #
