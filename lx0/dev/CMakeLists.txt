@@ -174,6 +174,7 @@ copy_media_directory( media/models )
 
 #recurse_subdirectories(libs)
 add_subdirectory( libs/lxengine )
+add_subdirectory( libs/lxengine/unittest )
 add_subdirectory( libs/glgeom/unittest )
 add_subdirectory( libs/glgeom/benchmarks )
 
@@ -209,6 +210,7 @@ SET_PROPERTY(TARGET elm_reference           PROPERTY FOLDER "Sandbox")
 SET_PROPERTY(TARGET elm_function            PROPERTY FOLDER "Sandbox")
 SET_PROPERTY(TARGET sandbox_shadergraph     PROPERTY FOLDER "Sandbox")
 SET_PROPERTY(TARGET sb_fixedpoint           PROPERTY FOLDER "Sandbox")
+SET_PROPERTY(TARGET unittest_lxengine       PROPERTY FOLDER "UnitTest")
 SET_PROPERTY(TARGET ut_jsonparser           PROPERTY FOLDER "UnitTest")
 SET_PROPERTY(TARGET ut_lx_vector            PROPERTY FOLDER "UnitTest")
 
