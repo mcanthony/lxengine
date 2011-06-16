@@ -2,6 +2,8 @@
 #extension GL_EXT_geometry_shader4 : enable
 
 uniform int         unifFlatNormals;
+uniform sampler1D   unifFaceFlags;
+uniform int         unifFaceCount;
 
 in vec3             geomLightDirEc[];
 
@@ -11,13 +13,13 @@ in vec3             geomNormalOc[];
 in vec3             geomNormalEc[];
 in vec3             geomColor[];
 
-varying out vec3    fragLightDirEc;
+out vec3            fragLightDirEc;
 
-varying out vec3    fragVertexOc;
-varying out vec3    fragVertexEc;
-varying out vec3    fragNormalOc;
-varying out vec3    fragNormalEc;
-varying out vec3    fragColor;
+out vec3            fragVertexOc;
+out vec3            fragVertexEc;
+out vec3            fragNormalOc;
+out vec3            fragNormalEc;
+out vec3            fragColor;
 
 vec3 computeNormal (vec3 v0, vec3 v1, vec3 v2)
 {
@@ -44,8 +46,17 @@ void main()
         gl_Position = gl_PositionIn[i];
         
         fragVertexOc = geomVertexOc[i];
-        fragVertexEc = geomVertexEc[i];        
-        if (unifFlatNormals == 0)
+        fragVertexEc = geomVertexEc[i];
+        
+        int flatFace = (unifFlatNormals == 0) ? 0 : 1;
+        if (unifFaceCount > 0)
+        {
+            float s = (gl_PrimitiveIDIn + .5) / textureSize(unifFaceFlags, 0);
+            float f = textureLod(unifFaceFlags, s, 0).x;
+            flatFace = (f > 0.5) ? 0 : 1;
+        }
+
+        if (flatFace != 0)
         {
             fragNormalEc = n;
             fragNormalOc = computeNormal(geomVertexOc[0], geomVertexOc[1], geomVertexOc[2]);
@@ -56,7 +67,7 @@ void main()
             fragNormalOc = geomNormalOc[i];
         }
         fragColor    = geomColor[i];
-        
+
         EmitVertex();
     }
     EndPrimitive();

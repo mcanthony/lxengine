@@ -198,7 +198,7 @@ namespace lx0 { namespace core { namespace log_ns {
     {
         _lx_check_init();
 
-        char buffer[512] = "";
+        char buffer[4096] = "";
         va_list args;
         va_start(args, format);
         vsnprintf_s(buffer, sizeof(buffer), _TRUNCATE, format, args);
@@ -219,7 +219,7 @@ namespace lx0 { namespace core { namespace log_ns {
     {
         _lx_check_init();
 
-        char buffer[512] = "";
+        char buffer[4096] = "";
         va_list args;
         va_start(args, format);
         vsnprintf_s(buffer, sizeof(buffer), _TRUNCATE, format, args);

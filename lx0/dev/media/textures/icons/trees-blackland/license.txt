@@ -1,0 +1,3 @@
+All the graphics included in this directory are licensed under CC-BY-SA 3.0.
+
+They are modified versions of graphics originally authored by the Widelands project team.  The art was acquired from http://opengameart.org/content/widelands-trees-blackland.

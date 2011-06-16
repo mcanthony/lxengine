@@ -18,7 +18,6 @@ in vec3         fragNormalOc;
 in vec3         fragNormalEc;
 in vec3         fragColor;
 
-
 vec3 phong(vec3 ambient, vec3 diffuse, vec3 specular, float specularEx)
 {
     // Since the eye is at <0,0,0>, the direction vector to the vertex and 
@@ -50,5 +49,5 @@ vec3 phong(vec3 ambient, vec3 diffuse, vec3 specular, float specularEx)
 
 void main()
 {              
-    outColor = vec4( phong(unifAmbient, unifMaterialDiffuse, unifMaterialSpecular, unifMaterialSpecularEx), 1.0);    	
+    outColor = vec4( phong(unifAmbient, unifMaterialDiffuse, unifMaterialSpecular, unifMaterialSpecularEx), 1.0);   
 }

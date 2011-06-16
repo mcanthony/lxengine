@@ -398,11 +398,13 @@ Material::activate (RasterizerGL* pRasterizer, GlobalPass& pass)
 
             if (mTextures[i])
             {
+                const auto unit = pRasterizer->mContext.textureUnit++;
+
                 // Set the shader uniform to the *texture unit* containing the texture
-                glUniform1i(unifIndex, i);
+                glUniform1i(unifIndex, unit);
 
                 // Activate the corresponding texture unit and set *that* to the GL id
-                glActiveTexture(GL_TEXTURE0 + i);
+                glActiveTexture(GL_TEXTURE0 + unit);
                 glBindTexture(GL_TEXTURE_2D, mTextures[i]->mId);
 
                 // Set the parameters on the texture unit
@@ -563,7 +565,7 @@ RasterizerGL::createQuadList (std::vector<glgeom::point3f>& positionData)
 
 
 
-void QuadList::activate(GlobalPass& pass)
+void QuadList::activate(RasterizerGL*, GlobalPass& pass)
 {
     glBindVertexArray(vao[0]);
     glBindBuffer(GL_ARRAY_BUFFER, vbo[0]);
@@ -589,6 +591,12 @@ RasterizerGL::createQuadList (std::vector<unsigned short>& indices,
     return createQuadList(indices, flags, positions, normals, colors);
 }
 
+static void check_glerror()
+{
+	GLenum errCode = glGetError();
+    lx_check_error( errCode == GL_NO_ERROR, "glError() == %d: %s", errCode, gluErrorString(errCode) );
+}
+
 GeometryPtr
 RasterizerGL::createQuadList (std::vector<unsigned short>& indices, 
                               std::vector<lx0::uint8>& faceFlags,
@@ -596,7 +604,7 @@ RasterizerGL::createQuadList (std::vector<unsigned short>& indices,
                               std::vector<glgeom::vector3f>& normals,
                               std::vector<glgeom::color3f>& colors)
 {
-    lx_check_error( glGetError() == GL_NO_ERROR );
+    check_glerror();
 
     lx_check_error(indices.size() == faceFlags.size() * 4, 
         "Expected a single flag per quad.  Count mismatch (%u indicies, %u flags).",
@@ -628,12 +636,22 @@ RasterizerGL::createQuadList (std::vector<unsigned short>& indices,
     glBindBuffer(GL_ARRAY_BUFFER, vboColors);
     glBufferData(GL_ARRAY_BUFFER, colors.size() * sizeof(colors[0]), &colors[0], GL_STATIC_DRAW);
 
-    GLuint vboFlags;
-    glGenBuffers(1, &vboFlags);
-    glBindBuffer(GL_ARRAY_BUFFER, vboFlags);
-    glBufferData(GL_ARRAY_BUFFER, faceFlags.size() * sizeof(faceFlags[0]), &faceFlags[0], GL_STATIC_DRAW);
+    check_glerror();
 
-    lx_check_error( glGetError() == GL_NO_ERROR );
+    auto flags = faceFlags;
+    for (auto it = flags.begin(); it != flags.end(); ++it)
+        *it = (*it != 0) ? 255 : 0;
+
+    GLuint texFlags;
+    glGenTextures(1, &texFlags);
+    glBindTexture(GL_TEXTURE_1D, texFlags);
+    glTexImage1D(GL_TEXTURE_1D, 0, 1, flags.size(), 0, GL_RED, GL_UNSIGNED_BYTE, &flags[0]);
+    check_glerror();
+    glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_WRAP_S, GL_CLAMP);
+	glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_WRAP_T, GL_CLAMP);
+    check_glerror();
 
     // Create the cache to encapsulate the created OGL resources
     //
@@ -645,12 +663,19 @@ RasterizerGL::createQuadList (std::vector<unsigned short>& indices,
     pGeom->mVboPosition = vboPositions;
     pGeom->mVboNormal   = vboNormals;
     pGeom->mVboColors   = vboColors;
-    pGeom->mVboFlags    = vboFlags;
+    pGeom->mTexFlags    = texFlags;
+    pGeom->mFaceCount   = faceFlags.size();
     return GeometryPtr(pGeom);
 }
 
+/*!
+    This method takes the entire set of geometry properties (e.g. the list of vertices,
+    the indices, the vertex attributes like normals, colors, etc.) and searches for
+    shader program variables to bind those attriutes to.  The shader program variable
+    names are mapped to geometry variables *by convention*.
+ */
 void 
-GeomImp::activate(GlobalPass& pass)
+GeomImp::activate(RasterizerGL* pRasterizer, GlobalPass& pass)
 {
     lx_check_error( glGetError() == GL_NO_ERROR );
 
@@ -692,17 +717,37 @@ GeomImp::activate(GlobalPass& pass)
 
     // Set per-primitive flags
     {
-        GLint idx = glGetAttribLocation(shaderProgram, "primFlag");
+        bool texture1dUsed = false;
+
+        GLint idx = glGetUniformLocation(shaderProgram, "unifFaceFlags");
         if (idx != -1)
         {
-            if (mVboFlags)
+            if (mTexFlags)
             {
-                glBindBuffer(GL_ARRAY_BUFFER, mVboFlags);
-                glVertexAttribPointer(idx, 1, GL_UNSIGNED_BYTE, GL_FALSE, 0, 0);
-                glEnableVertexAttribArray(idx);
+                const auto unit = pRasterizer->mContext.textureUnit++;
+
+                // Set the shader uniform to the *texture unit* containing the texture
+                glUniform1i(idx, unit);
+
+                // Activate the corresponding texture unit and set *that* to the GL id
+                glActiveTexture(GL_TEXTURE0 + unit);
+                glBindTexture(GL_TEXTURE_1D, mTexFlags);
+
+                texture1dUsed = true;
             }
-            else
-                glDisableVertexAttribArray(idx);
+        }
+
+        if (texture1dUsed)
+            glEnable(GL_TEXTURE_1D);
+        else
+            glDisable(GL_TEXTURE_1D);
+    }
+
+    {
+        GLint idx = glGetUniformLocation(shaderProgram, "unifFaceCount");
+        if (idx != -1)
+        {
+            glUniform1i(idx, mFaceCount);
         }
     }
 
@@ -931,6 +976,7 @@ RasterizerGL::rasterize(GlobalPass& pass, std::shared_ptr<Item> spItem)
     lx_check_error(spItem.get() != nullptr);
 
     mContext.spItem = spItem;
+    mContext.textureUnit = 0;
 
     spItem->spCamera->activate();
     mContext.viewMatrix = &spItem->spCamera->viewMatrix;
@@ -944,7 +990,7 @@ RasterizerGL::rasterize(GlobalPass& pass, std::shared_ptr<Item> spItem)
     spMaterial->activate(this, pass);
 
     spItem->spTransform->activate(spItem->spCamera);
-    spItem->spGeometry->activate(pass);    
+    spItem->spGeometry->activate(this, pass);    
 
     mContext.spItem = nullptr;
 }

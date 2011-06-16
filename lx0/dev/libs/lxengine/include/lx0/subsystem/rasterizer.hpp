@@ -74,7 +74,7 @@ namespace lx0
             //! \ingroup lx0_subsystem_rasterizer
             struct Geometry
             {
-                virtual void activate(GlobalPass& pass) = 0;
+                virtual void activate(RasterizerGL*, GlobalPass& pass) = 0;
             };
             typedef std::shared_ptr<Geometry> GeometryPtr;
 
@@ -86,15 +86,16 @@ namespace lx0
                 GeomImp() 
                     : mType(0)
                     , mVboIndices (0)
-                    ,  mVao(0)
+                    , mVao(0)
                     , mVboPosition(0)
                     , mVboNormal(0)
                     , mCount(0)
                     , mVboColors(0)
-                    , mVboFlags(0) 
+                    , mTexFlags (0) 
+                    , mFaceCount (0)
                 {}
 
-                virtual void activate(GlobalPass& pass);
+                virtual void activate(RasterizerGL*, GlobalPass& pass);
 
                 GLenum  mType;
                 GLuint  mVao;
@@ -105,7 +106,8 @@ namespace lx0
                 GLuint  mVboColors;
 
                 GLuint  mVboIndices;
-                GLuint  mVboFlags;
+                GLuint  mTexFlags;
+                GLuint  mFaceCount;
             };
 
             //===========================================================================//
@@ -297,7 +299,7 @@ namespace lx0
             //! \ingroup lx0_subsystem_rasterizer
             struct QuadList : public Geometry
             {
-                virtual void activate(GlobalPass& pass);
+                virtual void activate(RasterizerGL*, GlobalPass& pass);
 
                 size_t size;
                 GLuint vbo[1];
@@ -393,6 +395,8 @@ namespace lx0
                     ItemPtr         spItem;
                     unsigned int    itemId;
                     glm::mat4*      viewMatrix;
+
+                    unsigned int    textureUnit;
                 } mContext;
 
             protected:
