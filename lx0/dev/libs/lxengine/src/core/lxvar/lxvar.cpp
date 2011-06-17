@@ -173,6 +173,17 @@ namespace lx0 { namespace core { namespace lxvar_ns {
             mValue = that.mValue->clone();
     }
 
+    const lxvar& lxvar::operator= (const lxvar& that)
+    {
+        if (that.mValue->sharedType())
+            mValue = that.mValue;
+        else
+            mValue = that.mValue->clone();
+
+        return *this;
+    }
+
+
     lxvar::lxvar (detail::lxvalue* imp)
         : mValue ( imp )
     {
@@ -266,7 +277,7 @@ namespace lx0 { namespace core { namespace lxvar_ns {
     bool
     lxvar::isShared () const
     {
-        return (mValue->_refCount() > 0);
+        return (mValue->_refCount() > 1);
     }
 
     bool

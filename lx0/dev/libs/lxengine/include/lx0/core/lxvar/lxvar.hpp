@@ -204,6 +204,11 @@ namespace lx0
                     void            insert          (const char* key, const lxvar& value);
 
                     auto_cast       operator*       (void) { return auto_cast(*this); }
+                    const lxvar&    operator=       (const lxvar& that);
+
+                    lxvar           operator[]      (int i) { return at(i); }
+                    lxvar           operator()      (const char* s) { return find(s); }
+                    lxvar           operator()      (std::string s) { return find(s); }
 
                 protected:
                     template <typename T>   bool    _isType (void) const;
