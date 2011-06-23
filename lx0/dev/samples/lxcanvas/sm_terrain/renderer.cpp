@@ -171,7 +171,7 @@ public:
     {
         if (!mspItem)
         {
-            std::string image = spElement->attr("image").asString();
+            std::string image = spElement->attr("image").as<std::string>();
 
             auto pItem = new Item;
             pItem->setData<ElementPtr>(spElement);
@@ -184,7 +184,7 @@ public:
         }
 
         lxvar px = spElement->attr("position");
-        glgeom::point3f pos(px.at(0).asFloat(), px.at(1).asFloat(), px.size() == 3 ? px.at(2).asFloat() : 0.0f); 
+        glgeom::point3f pos(px.at(0).as<float>(), px.at(1).as<float>(), px.size() == 3 ? px.at(2).as<float>() : 0.0f); 
         float scale = spElement->attr("scale").query(1.0f);
         mspItem->spTransform = rasterizer.createTransformBillboardXYS(pos.x, pos.y, pos.z, scale, scale, scale);
 
@@ -222,7 +222,7 @@ Renderer::handleEvent (std::string evt, lx0::lxvar params)
 {
     if (evt == "select_object")
     {
-        auto& spItem = select( params.at(0).asInt(), params.at(1).asInt() );
+        auto& spItem = select( params.at(0).as<int>(), params.at(1).as<int>() );
         auto spElement = spItem->getData<ElementPtr>();
         std::string name = spElement
             ? spElement->attr("image").query("unknown").c_str()

@@ -304,15 +304,15 @@ namespace lx0 { namespace engine { namespace dom_ns {
                     ElementCPtr spElem = spChild->child(j);
                     if (spElem->tagName() == "Script")
                     {
-                        std::string language = spElem->attr("language").asString();
+                        std::string language = spElem->attr("language").as<std::string>();
                         std::string content;
                         if (spElem->value().isDefined())
                         {
-                            content = spElem->value().asString();
+                            content = spElem->value().as<std::string>();
                         }
                         else
                         {
-                            std::string filename = spElem->attr("src").asString();
+                            std::string filename = spElem->attr("src").as<std::string>();
                             content = lx0::lx_file_to_string(filename);
                         }
 

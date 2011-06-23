@@ -146,6 +146,12 @@ macro(simple_executable EXENAME)
 
 endmacro(simple_executable EXENAME)
 
+macro(sample_executable EXENAME)
+   simple_executable(${EXENAME})
+   SET_PROPERTY(TARGET ${EXENAME} PROPERTY FOLDER "Sandbox")
+endmacro(sample_executable EXENAME)
+
+
 # Recursively add all subdirectories containing a CMakeLists.txt.
 
 macro(recurse_subdirectories BASEDIR)

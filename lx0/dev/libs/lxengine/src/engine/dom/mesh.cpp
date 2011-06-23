@@ -85,7 +85,7 @@ namespace lx0 { namespace engine { namespace dom_ns {
     {
         if (value.isFloat() || value.isInt())
         {
-            float maxExtent = *value;
+            float maxExtent = value;
             if (maxExtent > 0.0f)
             {
                 auto extents = 2 * boundingVector();

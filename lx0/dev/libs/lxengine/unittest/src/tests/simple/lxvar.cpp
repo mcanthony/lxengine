@@ -26,6 +26,29 @@ testset_lxvar(TestSet& set)
 {
     lx0::lx_init();
 
+    set.push("example usage", [] (TestRun& r) {
+        lxvar v;
+        //v = true;
+        v = 1;
+        CHECK(r, v.as<int>() == 1);
+
+        try
+        {
+            v.as<std::string>();
+            CHECK(r, false);
+        }
+        catch (std::exception& e)
+        {
+            CHECK(r, true);
+        }
+        
+        v = 1.0f;
+        //v = 1.0;
+        v = "one";
+
+
+    });
+
     set.push("ctor", [] (TestRun& r) {
         lxvar v;
 
@@ -40,37 +63,37 @@ testset_lxvar(TestSet& set)
 
         CHECK(r, v.isSharedType() == false);
         CHECK(r, v.isShared() == false);
-        CHECK(r, v.asFloat() == 1.0f);
+        CHECK(r, v.as<float>() == 1.0f);
         
         q = v;
 
         CHECK(r, v.isSharedType() == false);
         CHECK(r, v.isShared() == false);
-        CHECK(r, v.asFloat() == 1.0f);
+        CHECK(r, v.as<float>() == 1.0f);
         CHECK(r, q.isSharedType() == false);
         CHECK(r, q.isShared() == false);
-        CHECK(r, q.asFloat() == 1.0f);
+        CHECK(r, q.as<float>() == 1.0f);
 
         v = 2.0f;
-        CHECK(r, v.asFloat() == 2.0f);
-        CHECK(r, q.asFloat() == 1.0f);
+        CHECK(r, v.as<float>() == 2.0f);
+        CHECK(r, q.as<float>() == 1.0f);
 
         v = "alpha";
         q = v;
         CHECK(r, v.isSharedType() == false);
         CHECK(r, v.isShared() == false);
-        CHECK(r, v.asString() == "alpha");
+        CHECK(r, v.as<std::string>() == "alpha");
         CHECK(r, q.isSharedType() == false);
         CHECK(r, q.isShared() == false);
-        CHECK(r, q.asString() == "alpha");
+        CHECK(r, q.as<std::string>() == "alpha");
 
         v = "beta";
         CHECK(r, v.isSharedType() == false);
         CHECK(r, v.isShared() == false);
-        CHECK(r, v.asString() == "beta");
+        CHECK(r, v.as<std::string>() == "beta");
         CHECK(r, q.isSharedType() == false);
         CHECK(r, q.isShared() == false);
-        CHECK(r, q.asString() == "alpha");
+        CHECK(r, q.as<std::string>() == "alpha");
     });
 
     set.push("custom object", [] (TestRun& r) {
@@ -117,10 +140,10 @@ testset_lxvar(TestSet& set)
 
         lxvar v(new lxcamera);
         v.find("position");
-        CHECK_CMP(r, v.find("position").at(0).asFloat(), 5.0f, 1e-4f);
+        CHECK_CMP(r, v.find("position").at(0).as<float>(), 5.0f, 1e-4f);
         CHECK(r, v.find("direction").size() == 3);
-        CHECK(r, v("direction").size() == 3);
-        CHECK(r, v("direction")[0].asFloat() < 0.0);
+        CHECK(r, v["direction"].size() == 3);
+        CHECK(r, v["direction"][0].as<float>() < 0.0);
 
     });
 }

@@ -344,8 +344,8 @@ public:
             auto spElem = mpDocument->getElementsByTagName("Camera")[0];
  
             lxvar val = spElem->value();
-            glgeom::point3f pos = val("position").convert();
-            glgeom::point3f target = val("look_at").convert();
+            glgeom::point3f pos = val["position"].convert();
+            glgeom::point3f target = val["look_at"].convert();
 
             auto dir = glgeom::normalize(target - pos);
             pos += dir * step;
@@ -362,8 +362,8 @@ public:
             auto spElem = mpDocument->getElementsByTagName("Camera")[0];
  
             lxvar val = spElem->value();
-            glgeom::point3f pos = val("position").convert();
-            glgeom::point3f target = val("look_at").convert();
+            glgeom::point3f pos = val["position"].convert();
+            glgeom::point3f target = val["look_at"].convert();
 
             auto dir = glgeom::normalize(target - pos);
             dir = glgeom::cross(dir, glgeom::vector3f(0, 0, 1));

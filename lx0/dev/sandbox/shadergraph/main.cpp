@@ -72,17 +72,17 @@ ShaderGraphRuntime::registerFragment (lxvar frag)
 {
     Fragment* pFrag = new Fragment;
 
-    pFrag->mName = frag.find("name").asString();
-    pFrag->mOutput = frag.find("output").asString();
+    pFrag->mName = frag.find("name").as<std::string>();
+    pFrag->mOutput = frag.find("output").as<std::string>();
 
     auto inputs = frag.find("input");
     for (auto it = inputs.begin(); it != inputs.end(); ++it)
     {
         Fragment::Input in;
-        in.mName = (*it).at(0).asString();
-        in.mType = (*it).at(1).asString();
+        in.mName = (*it).at(0).as<std::string>();
+        in.mType = (*it).at(1).as<std::string>();
         in.mDefault = (*it).at(2);
-        in.mSemantic = ((*it).size() > 3) ? (*it).at(3).asString() : "";
+        in.mSemantic = ((*it).size() > 3) ? (*it).at(3).as<std::string>() : "";
         
         pFrag->mInputs.push_back(in);
     }
@@ -94,7 +94,7 @@ std::string
 ShaderGraphRuntime::compile (lxvar desc)
 {
     lx_check_error( desc.isArray() );
-    Fragment* pFrag = mFragments.find(desc.at(0).asString())->second.get();
+    Fragment* pFrag = mFragments.find(desc.at(0).as<std::string>())->second.get();
 
     std::ostringstream func;
     func << pFrag->mOutput << " " << pFrag->mName << "(";
@@ -115,14 +115,14 @@ ShaderGraphRuntime::compile (lxvar desc)
         if (def.isArray() && def.size() == 3)
         {
             call << "vec3("
-                 << def.at(0).asFloat() << "," 
-                 << def.at(1).asFloat() << "," 
-                 << def.at(2).asFloat() << ")";
+                 << def.at(0).as<float>() << "," 
+                 << def.at(1).as<float>() << "," 
+                 << def.at(2).as<float>() << ")";
         }
         else if (def.isFloat())
-            call << def.asFloat();
+            call << def.as<float>();
         else if (def.isInt())
-            call << def.asInt();
+            call << def.as<int>();
         
         if (it + 1 != pFrag->mInputs.end())
             call << ", ";

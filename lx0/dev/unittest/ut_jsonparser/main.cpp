@@ -192,31 +192,31 @@ main (int argc, char** argv)
             CHECK(v.size() == 0);
 
             v = lxvar::parse("{ \"alpha\" : 1, \"beta\" : \"two\" }");
-            CHECK(v.find("alpha").asInt() == 1);
-            CHECK(v.find("beta").asString() == "two");
+            CHECK(v.find("alpha").as<int>() == 1);
+            CHECK(v.find("beta").as<std::string>() == "two");
             CHECK(v.size() == 2);
 
             // Trailing comma should be ok.
             v = lxvar::parse("{ \"alpha\" : 1, \"beta\" : \"two\", }");
-            CHECK(v.find("alpha").asInt() == 1);
-            CHECK(v.find("beta").asString() == "two");
+            CHECK(v.find("alpha").as<int>() == 1);
+            CHECK(v.find("beta").as<std::string>() == "two");
             CHECK(v.size() == 2);
 
             // Single quotes should be ok.
             v = lxvar::parse("{ 'alpha' : 1, 'beta' : 'two', }");
-            CHECK(v.find("alpha").asInt() == 1);
-            CHECK(v.find("beta").asString() == "two");
+            CHECK(v.find("alpha").as<int>() == 1);
+            CHECK(v.find("beta").as<std::string>() == "two");
             CHECK(v.size() == 2);
 
             v = lxvar::parse("{ 'al pha' : 1, \"beta \" :  ' two', }");
-            CHECK(v.find("al pha").asInt() == 1);
-            CHECK(v.find("beta ").asString() == " two");
+            CHECK(v.find("al pha").as<int>() == 1);
+            CHECK(v.find("beta ").as<std::string>() == " two");
             CHECK(v.size() == 2);
 
             // Unquoted associative array keys should be okay
             v = lxvar::parse("{ alpha : 1, beta:' two', }");
-            CHECK(v.find("alpha").asInt() == 1);
-            CHECK(v.find("beta").asString() == " two");
+            CHECK(v.find("alpha").as<int>() == 1);
+            CHECK(v.find("beta").as<std::string>() == " two");
             CHECK(v.size() == 2);
             CHECK_EXCEPTION({ lxvar::parse("{ al pha : 1, beta:' two', }"); });
             CHECK_EXCEPTION({ lxvar::parse("{ alpha : 1, beta:two, }"); });
@@ -226,17 +226,17 @@ main (int argc, char** argv)
             lxvar v;
 
             v = lxvar::parse("0");
-            CHECK(v.isInt() && v.asInt() == 0);
+            CHECK(v.isInt() && v.as<int>() == 0);
 
             v = lxvar::parse("123");
-            CHECK(v.isInt() && v.asInt() == 123);
+            CHECK(v.isInt() && v.as<int>() == 123);
 
             v = lxvar::parse("1.1");
-            CHECK(v.isFloat() && v.asFloat() == 1.1f);
+            CHECK(v.isFloat() && v.as<float>() == 1.1f);
 
             v = lxvar::parse("\"This is a string.\"");
             CHECK(v.isString());
-            CHECK(v.asString() == "This is a string.");
+            CHECK(v.as<std::string>() == "This is a string.");
         });
 
         F.add("invalid ops", []() {
@@ -255,7 +255,7 @@ main (int argc, char** argv)
                 auto et = v.end();
                 for (auto it = v.begin(); it != v.end(); ++it)
                 {
-                    bool b = ((*it).asInt() == i);
+                    bool b = ((*it).as<int>() == i);
                     CHECK(b);
                     i++;
                 }
@@ -276,7 +276,7 @@ main (int argc, char** argv)
                 auto et = v.end();
                 for (auto it = v.begin(); it != v.end(); ++it)
                 {
-                    bool b = ((*it).asInt() == i);
+                    bool b = ((*it).as<int>() == i);
                     CHECK(b);
                     i++;
                 }
@@ -295,14 +295,14 @@ main (int argc, char** argv)
             lxvar b = a;
             a = 7;
 
-            CHECK( a.asInt() == 7 );
-            CHECK( b.asInt() == 9 );
+            CHECK( a.as<int>() == 7 );
+            CHECK( b.as<int>() == 9 );
 
             a = lxvar::parse("[ 0 ] ");
             b = a;
             b.at(0, 1);
-            CHECK(a.at(0).asInt() == 1);
-            CHECK(b.at(0).asInt() == 1);
+            CHECK(a.at(0).as<int>() == 1);
+            CHECK(b.at(0).as<int>() == 1);
         });
 
         F.add("attribute parsers", []() { test_attributeparsers(); });

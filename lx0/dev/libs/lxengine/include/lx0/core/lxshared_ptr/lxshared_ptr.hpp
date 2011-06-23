@@ -58,6 +58,11 @@ namespace lx0
             template <typename T>
             struct lxshared_ptr
             {
+                lxshared_ptr (void)
+                    : mPtr (nullptr)
+                {
+                }
+
                 lxshared_ptr (T* p) 
                     : mPtr (p)
                 {

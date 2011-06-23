@@ -122,7 +122,7 @@ namespace {
 
             std::string name("anonymousRef");
             name += lx_itoa(uniquePrefix++);
-            std::string ref = spElem->attr("ref").asString();
+            std::string ref = spElem->attr("ref").as<std::string>();
                    
             Ogre::Entity* pEntity = mpSceneMgr->createEntity(ref);
             pEntity->setCastShadows(true);
@@ -153,7 +153,7 @@ namespace {
             lxvar varMaterial = spElem->attr("material");
             if (varMaterial.isArray() && varMaterial.size() == 2)
             {
-                std::string base = varMaterial.at(0).asString();
+                std::string base = varMaterial.at(0).as<std::string>();
                 lxvar       params = varMaterial.at(1);
 
                 if (base == "phong")
@@ -204,7 +204,7 @@ namespace {
                 if (elemSpecular.isDefined())
                     specular = (Ogre::Vector3)elemSpecular.convert();
                 if (elemShininess.isDefined())
-                    shininess = *elemShininess;
+                    shininess = elemShininess;
 
                 if (material == "solid")
                 {
@@ -239,7 +239,7 @@ namespace {
 
         void _setMaxExtent (ElementPtr spElem, lxvar value)
         {
-            MeshPtr spMesh = spElem->document()->getElementById( spElem->attr("ref").asString() )->value().imp<Mesh>();
+            MeshPtr spMesh = spElem->document()->getElementById( spElem->attr("ref").as<std::string>() )->value().imp<Mesh>();
             const float f = spMesh->maxExtentScale(value);
 
             _node()->setScale(f, f, f);
@@ -529,7 +529,7 @@ namespace {
                     if (spMeshElem->tagName() == "Mesh")
                     {
                         MeshPtr spMesh = spMeshElem->value().imp<Mesh>();
-                        _processMesh(spMeshElem->attr("id").asString(), spMesh);
+                        _processMesh(spMeshElem->attr("id").as<std::string>(), spMesh);
                     }
                 }
             }

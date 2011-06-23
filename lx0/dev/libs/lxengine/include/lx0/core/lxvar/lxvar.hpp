@@ -77,17 +77,6 @@ namespace lx0
                 class lxvar
                 {
                 public:
-
-                    struct auto_cast
-                    {
-                        auto_cast (lxvar& v) : mValue (v) {}
-                        lxvar& mValue;
-
-                        operator int ()         { return mValue.asInt(); }
-                        operator float ()       { return mValue.asFloat(); }
-                        operator std::string () { return mValue.asString(); }
-                    };
-
                     struct auto_cast2
                     {
                         auto_cast2 (lxvar& v) : mValue (v) {}
@@ -124,6 +113,7 @@ namespace lx0
 
                                     lxvar           (detail::lxvalue* imp);
 
+                                    lxvar           (bool b);
                                     lxvar           (int i);
                                     lxvar           (int a, int b);
                                     lxvar           (int a, int b, int c);
@@ -154,14 +144,14 @@ namespace lx0
                     template <typename T>
                     T               convert         (const T& t)            { return isUndefined() ? t : (T)auto_cast2(*this); }
 
-                    bool            equal           (int i) const           { return (isInt() && asInt() == i); } //!< Is strictly equal: same type and same value
-                    bool            equal           (std::string s) const   { return (isString() && asString() == s);}
+                    bool            equal           (int i) const           { return (isInt() && as<int>() == i); } //!< Is strictly equal: same type and same value
+                    bool            equal           (std::string s) const   { return (isString() && as<std::string>() == s);}
 
                     bool            equiv           (const char* s) const;  //!< Is equal, or is equal after a type conversion
 
-                    int             query           (int def) const         { return isInt() ? asInt() : def; }
-                    std::string     query           (std::string def) const { return isString() ? asString() : def; }
-                    float           query           (float def) const       { return isFloat() ? asFloat() : (isInt() ? asInt() : def); }
+                    int             query           (int def) const         { return isInt() ? as<int>() : def; }
+                    std::string     query           (std::string def) const { return isString() ? as<std::string>() : def; }
+                    float           query           (float def) const       { return isFloat() ? as<float>() : (isInt() ? as<int>() : def); }
                     std::string     query           (std::string path, std::string def);
                     int             query           (std::string path, int def);
 
@@ -184,9 +174,8 @@ namespace lx0
                     bool            __isBinary      (void) const;           //!< Reserved for future binary blob support (specialization of an array)
                     //@}
 
-                    int             asInt           (void) const;
-                    float           asFloat         (void) const;
-                    std::string     asString        (void) const;
+                    template <typename T>
+                    T               as              (void) const;
 
                     void            toArray         (void);
                     void            toMap           (void);
@@ -199,17 +188,20 @@ namespace lx0
                     void            at              (int index, lxvar value);
                     void            push            (const lxvar& e);
 
-                    bool            containsKey     (const char* key) const;
+                    bool            has             (const char* key) const;
                     lxvar           find            (const char* key) const;
                     lxvar           find            (const std::string& s) const;
                     void            insert          (const char* key, const lxvar& value);
 
-                    auto_cast       operator*       (void) { return auto_cast(*this); }
+  
+                    template <typename T>
+                    operator T () { T t; _convert(*this, t); return t; }
+
                     const lxvar&    operator=       (const lxvar& that);
 
                     lxvar           operator[]      (int i) { return at(i); }
-                    lxvar           operator()      (const char* s) { return find(s); }
-                    lxvar           operator()      (std::string s) { return find(s); }
+                    lxvar           operator[]      (const char* s) { return find(s); }
+                    lxvar           operator[]      (const std::string& s) { return find(s.c_str()); }
 
                 protected:
                     template <typename T>   bool    _isType (void) const;
@@ -263,6 +255,12 @@ namespace lx0
                     virtual std::string handleType  (void) const    { _invalid(); return ""; }
                     virtual void*       unwrap      (void)          { return nullptr; }
 
+                    virtual void        as          (bool&) const { _invalid(); }
+                    virtual void        as          (int&) const { _invalid(); }
+                    virtual void        as          (float&) const { _invalid(); }
+                    virtual void        as          (double&) const { _invalid(); }
+                    virtual void        as          (std::string&) const { _invalid(); }
+
                     virtual int         size        (void) const                { _invalid(); return 0; }
                     virtual lxvar       at          (int i)                     { _invalid(); return lxvar(); }
                     virtual void        at          (int index, lxvar value)    { _invalid(); }
@@ -278,7 +276,13 @@ namespace lx0
                     unsigned int        mRefCount;
                 };
 
-
+                template <typename T>
+                typename T lxvar::as (void) const
+                { 
+                    T t; 
+                    mValue->as(t); 
+                    return t; 
+                }
 
                 class lxundefined : public lxvalue
                 {
@@ -294,41 +298,53 @@ namespace lx0
                     static lxundefined s_singleton;
                 };
 
-                class lxint : public lxvalue
+                template <typename Derived, typename T>
+                class lxvalue_basic : public lxvalue
                 {
                 public:
-                    lxint() : mValue (0) {}
-                    lxint(int i) : mValue (i) {}
+                    typedef lxvalue_basic<Derived, T>   Base;
+                    lxvalue_basic() {}
+                    lxvalue_basic(T v) : mValue (v) {}
+                    virtual bool sharedType (void) const { return false; }
+                    virtual lxvalue* clone (void) const { return new Derived(mValue); }
 
-                    virtual bool        sharedType  (void) const { return false; }
-                    virtual lxvalue*    clone       (void) const { return new lxint(mValue); }
-
-                    int mValue;
+                    virtual void as(T& v) const { v = mValue; }
+                    T mValue;
                 };
 
-                class lxfloat : public lxvalue
+                class lxbool : public lxvalue_basic<lxbool, bool>
                 {
                 public:
-                    lxfloat() : mValue (0.0f) {}
-                    lxfloat(float f) : mValue(f) {}
-
-                    virtual bool        sharedType  (void) const { return false; }
-                    virtual lxvalue*    clone       (void) const { return new lxfloat(mValue); }
-
-                    float mValue;
+                    lxbool(bool b) : Base (b) {}
                 };
 
-                class lxstring : public lxvalue
+                class lxint : public lxvalue_basic<lxint, int>
+                {
+                public:
+                    lxint() : Base (0) {}
+                    lxint(int i) : Base (i) {}
+                };
+
+                class lxfloat : public lxvalue_basic<lxfloat, float>
+                {
+                public:
+                    lxfloat() : Base (0.0f) {}
+                    lxfloat(float f) : Base(f) {}
+                };
+
+                class lxdouble : public lxvalue_basic<lxdouble, double>
+                {
+                public:
+                    lxdouble() : Base (0.0) {}
+                    lxdouble(double f) : Base(f) {}
+                };
+
+                class lxstring : public lxvalue_basic<lxstring, std::string>
                 {
                 public:
                     lxstring() {}
-                    lxstring(std::string s) : mValue(s) {}
-                    lxstring(const char* s) : mValue(s) {}
-
-                    virtual bool        sharedType  (void) const { return false; }
-                    virtual lxvalue*    clone       (void) const { return new lxstring(mValue); }
-
-                    std::string mValue;
+                    lxstring(std::string s) : Base(s) {}
+                    lxstring(const char* s) : Base(s) {}
                 };
 
                 /*!
@@ -401,10 +417,11 @@ namespace lx0
     
             namespace detail
             {
-                inline void    _convert    (lxvar& v, int& i)          { i = v.asInt(); }
-                inline void    _convert    (lxvar& v, float& f)        { f = v.asFloat(); }
-                inline void    _convert    (lxvar& v, double& d)       { d = double( v.asFloat() ); }
-                inline void    _convert    (lxvar& v, std::string& s)  { s = v.asString(); }
+                inline void    _convert    (lxvar& v, bool& b)         { b = v.as<bool>(); }
+                inline void    _convert    (lxvar& v, int& i)          { i = v.as<int>(); }
+                inline void    _convert    (lxvar& v, float& f)        { f = v.as<float>(); }
+                inline void    _convert    (lxvar& v, double& d)       { d = double( v.as<float>() ); }
+                inline void    _convert    (lxvar& v, std::string& s)  { s = v.as<std::string>(); }
             }
 
         }   // end namespace lxvar

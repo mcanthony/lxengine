@@ -101,17 +101,17 @@ public:
     virtual void handleEvent(std::string evt, lx0::lxvar params)
     {
         if (evt == "move_forward")
-            move_forward(gCamera, params.asFloat());
+            move_forward(gCamera, params.as<float>());
         else if (evt == "move_backward")
-            move_backward(gCamera, params.asFloat());
+            move_backward(gCamera, params.as<float>());
         else if (evt == "move_left")
-            move_left(gCamera, params.asFloat());
+            move_left(gCamera, params.as<float>());
         else if (evt == "move_right")
-            move_right(gCamera, params.asFloat());
+            move_right(gCamera, params.as<float>());
         else if (evt == "move_up")
-            move_vertical(gCamera, params.asFloat());
+            move_vertical(gCamera, params.as<float>());
         else if (evt == "move_down")
-            move_vertical(gCamera, -params.asFloat());
+            move_vertical(gCamera, -params.as<float>());
     }
 };
 

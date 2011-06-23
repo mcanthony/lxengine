@@ -966,7 +966,7 @@ namespace lx0 { namespace subsystem { namespace javascript_ns { namespace detail
             lxvar value = _marshal(args[1]);
                 
             if (value.isString())
-                value = Engine::acquire()->parseAttribute(name, value.asString());
+                value = Engine::acquire()->parseAttribute(name, value.as<std::string>());
 
             pThis->attr(name, value);
 

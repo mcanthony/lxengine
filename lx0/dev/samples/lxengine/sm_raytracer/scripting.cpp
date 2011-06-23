@@ -54,9 +54,9 @@ public:
             
             std::string source;
             if (spElem->attr("src").isString())
-                source = lx0::lx_file_to_string(spElem->attr("src").asString());
+                source = lx0::lx_file_to_string(spElem->attr("src").as<std::string>());
             else
-                source = spElem->value().asString();
+                source = spElem->value().as<std::string>();
 
             spElem->document()->getComponent<lx0::IJavascript>("javascript")->run(source);
         }));

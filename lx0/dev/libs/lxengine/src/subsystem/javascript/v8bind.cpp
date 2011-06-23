@@ -41,11 +41,11 @@ namespace lx0 { namespace core { namespace v8bind
         if (v.isUndefined())
             mValue = v8::Undefined();
         else if (v.isString())
-            *this = _marshal(v.asString());
+            *this = _marshal(v.as<std::string>());
         else if (v.isFloat())
-            *this = _marshal(v.asFloat());
+            *this = _marshal(v.as<float>());
         else if (v.isInt())
-            *this = _marshal(v.asInt());
+            *this = _marshal(v.as<int>());
         else if (v.isArray())
         {
             Handle<Array> arr = Array::New(v.size());

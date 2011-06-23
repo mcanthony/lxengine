@@ -50,9 +50,9 @@ namespace lx0 { namespace engine { namespace dom_ns {
         // if src.type() == Mesh, set *this to a clone
 
         lx_check_error(v.isMap());
-        lx_check_error(v.containsKey("type"));
-        lx_check_error(v.containsKey("vertices"));
-        lx_check_error(v.containsKey("faces"));
+        lx_check_error(v.has("type"));
+        lx_check_error(v.has("vertices"));
+        lx_check_error(v.has("faces"));
 
         // Deserialize the vertices list
         {
@@ -65,16 +65,16 @@ namespace lx0 { namespace engine { namespace dom_ns {
                 lxvar src = lxverts.at(i);
 
                 Mesh::Vertex v;
-                v.position.x = src.at(0).asFloat();
-                v.position.y = src.at(1).asFloat();
-                v.position.z = src.at(2).asFloat();
+                v.position.x = src.at(0).as<float>();
+                v.position.y = src.at(1).as<float>();
+                v.position.z = src.at(2).as<float>();
 
                 if (src.size() >= 6)
                 {
                     pMesh->mFlags.mVertexNormals  = true;
-                    v.normal.x = src.at(3).asFloat();
-                    v.normal.y = src.at(4).asFloat();
-                    v.normal.z = src.at(5).asFloat();
+                    v.normal.x = src.at(3).as<float>();
+                    v.normal.y = src.at(4).as<float>();
+                    v.normal.z = src.at(5).as<float>();
                 }
                 else
                 {
@@ -96,11 +96,11 @@ namespace lx0 { namespace engine { namespace dom_ns {
             {
                 Mesh::Quad q;
            
-                q.index[0] = lxfaces.at(i).at(0).asInt();
-                q.index[1] = lxfaces.at(i).at(1).asInt();
-                q.index[2] = lxfaces.at(i).at(2).asInt();
+                q.index[0] = lxfaces.at(i).at(0).as<int>();
+                q.index[1] = lxfaces.at(i).at(1).as<int>();
+                q.index[2] = lxfaces.at(i).at(2).as<int>();
                 q.index[3] = (lxfaces.at(i).size() == 4)
-                    ? lxfaces.at(i).at(3).asInt()
+                    ? lxfaces.at(i).at(3).as<int>()
                     : -1;
 
                 pMesh->mFaces.push_back(q);

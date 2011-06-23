@@ -141,15 +141,15 @@ namespace lx0 { namespace engine { namespace dom_ns {
                         lx_warn("Element has both a 'src' attribute and an inline value!  "
                                 "The src attribute overrides the value.");
 
-                    std::string ext = get_extension(srcAttr.asString());
+                    std::string ext = get_extension(srcAttr.as<std::string>());
 
                     if (ext == "blend" && tagName == "Mesh")
                     {
-                        spElem->value( lx0::load_blend( srcAttr.asString() ) );
+                        spElem->value( lx0::load_blend( srcAttr.as<std::string>() ) );
                         bSet = true;
                     }
                     else
-                        elemValue = lx0::lx_file_to_json(srcAttr.asString().c_str());
+                        elemValue = lx0::lx_file_to_json(srcAttr.as<std::string>().c_str());
                 }
                 else if (!elemText.empty())
                 {

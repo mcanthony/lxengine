@@ -48,9 +48,9 @@ namespace lx0 { namespace core { namespace lxvar_ns {
         {
             lx_check_error(v.isArray());
             lx_check_error(v.size() == 3, "Cannot convert lxvar: array size is not 3 (%s:%d).", __FILE__, __LINE__);
-            u[0] = v.at(0).asFloat();
-            u[1] = v.at(1).asFloat();
-            u[2] = v.at(2).asFloat();
+            u[0] = v.at(0).as<float>();
+            u[1] = v.at(1).as<float>();
+            u[2] = v.at(2).as<float>();
         }
 
         void _convert (lxvar& v,    glgeom::point3f& u)     { _convert_any3f(v, u); }
@@ -65,22 +65,22 @@ namespace lx0 { namespace core { namespace lxvar_ns {
         void _convert(lxvar& v, Ogre::ColourValue& u)
         {
             lx_check_error(v.size() == 3);
-            u = Ogre::ColourValue(v.at(0).asFloat(), v.at(1).asFloat(), v.at(2).asFloat());
+            u = Ogre::ColourValue(v.at(0).as<float>(), v.at(1).as<float>(), v.at(2).as<float>());
         }
 
         void _convert(lxvar& v, Ogre::Vector3& u)
         {
             lx_check_error(v.size() == 3);
-            u = Ogre::Vector3(v.at(0).asFloat(), v.at(1).asFloat(), v.at(2).asFloat());
+            u = Ogre::Vector3(v.at(0).as<float>(), v.at(1).as<float>(), v.at(2).as<float>());
         }
 
         void _convert(lxvar& value, Ogre::Quaternion& q)
         {
             lx_check_error(value.size() == 4);
-            q.x = value.at(0).asFloat();
-            q.y = value.at(1).asFloat();
-            q.z = value.at(2).asFloat();
-            q.w = value.at(3).asFloat();
+            q.x = value.at(0).as<float>();
+            q.y = value.at(1).as<float>();
+            q.z = value.at(2).as<float>();
+            q.w = value.at(3).as<float>();
         }
 
     }

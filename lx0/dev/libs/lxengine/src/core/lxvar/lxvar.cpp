@@ -191,6 +191,11 @@ namespace lx0 { namespace core { namespace lxvar_ns {
             mValue = mValue->clone();
     }
 
+    lxvar::lxvar (bool b)
+        : mValue( new lxbool(b) )
+    {
+    }
+
     lxvar::lxvar(int i)
         : mValue( new lxint(i) )
     {
@@ -319,27 +324,6 @@ namespace lx0 { namespace core { namespace lxvar_ns {
         }
     }
 
-    int 
-    lxvar::asInt (void) const
-    {
-        return _castTo<lxint>()->mValue;
-    }
-
-    float 
-    lxvar::asFloat (void) const
-    {
-        if (_isType<lxint>())
-            return float( _castTo<lxint>()->mValue );
-        else
-            return _castTo<lxfloat>()->mValue;
-    }
-
-    std::string 
-    lxvar::asString (void) const
-    {
-        return _castTo<lxstring>()->mValue;
-    }
-
     lxvar::iterator
     lxvar::begin (void)
     {
@@ -434,7 +418,7 @@ namespace lx0 { namespace core { namespace lxvar_ns {
     }
 
     bool
-    lxvar::containsKey (const char* key) const
+    lxvar::has (const char* key) const
     {
          auto map = _castTo<lxstringmap>()->mValue;
          return map.find(key) != map.end();

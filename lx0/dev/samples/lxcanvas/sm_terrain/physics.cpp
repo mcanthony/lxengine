@@ -81,8 +81,8 @@ void PhysicsSubsystem::onUpdate (DocumentPtr spDocument)
         auto spElement = it->second.spElem;
 
         lxvar attrPos = spElement->attr("position");
-        const float z = attrPos.size() > 2 ? attrPos.at(2).asFloat() : 0.0f;
-        glgeom::point3f pos( attrPos.at(0).asFloat(), attrPos.at(1).asFloat(), z);
+        const float z = attrPos.size() > 2 ? attrPos.at(2).as<float>() : 0.0f;
+        glgeom::point3f pos( attrPos.at(0).as<float>(), attrPos.at(1).as<float>(), z);
         if (pos != it->second.lastPosition || true)
         {
             pos.z = drop(pos.x, pos.y);

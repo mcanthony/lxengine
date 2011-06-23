@@ -188,7 +188,7 @@ namespace lx0 { namespace engine { namespace dom_ns {
             lxvar v = spElem->attr("id");
             if (v.isString())
             {
-                std::string elemId = v.asString();
+                std::string elemId = v.as<std::string>();
                 if (elemId == id)
                 {
                     spMatch = spElem;

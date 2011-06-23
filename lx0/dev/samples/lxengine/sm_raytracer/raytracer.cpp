@@ -424,7 +424,7 @@ public:
 
         mHandlers.insert(std::make_pair("LightGradientMaterial", [&](ElementPtr spElem) {
             auto pMat = new LightGradientMaterial;
-            pMat->setTexture( spElem->value().find("texture").asString() );
+            pMat->setTexture( spElem->value().find("texture").as<std::string>() );
             spElem->attachComponent("raytrace", pMat);
         }));
 
