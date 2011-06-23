@@ -26,6 +26,7 @@
 */
 //===========================================================================//
 
+#include <lx0/lxengine.hpp>
 #include <lx0/engine/engine.hpp>
 #include <lx0/subsystem/javascript.hpp>
 
@@ -52,6 +53,49 @@ namespace lx0 { namespace subsystem { namespace javascript_ns {
     IJavascript* createIJavascript()
     {
         return new DocImp;
+    }
+
+    //===========================================================================//
+    /*!
+     */
+    class Scripting : public Document::Component
+    {
+    public: 
+        virtual void onAttached (DocumentPtr spDocument) 
+        {
+            spDocument->iterateElements([&](ElementPtr spElem) -> bool { 
+                _onElementAddRemove(spElem, true); return false; 
+            });
+        }
+
+        virtual void onElementAdded (DocumentPtr spDocument, ElementPtr spElem) 
+        {
+            _onElementAddRemove(spElem, true);
+        }
+
+    protected:
+        void _onElementAddRemove (ElementPtr spElem, bool bAdd)
+        {
+            if (spElem->tagName() == "Script") 
+            {
+                std::string source;
+                if (spElem->attr("src").isString())
+                    source = lx0::lx_file_to_string(spElem->attr("src").as<std::string>());
+                else
+                    source = spElem->value().as<std::string>();
+
+                spElem->document()->getComponent<lx0::IJavascript>("javascript")->run(source);
+            }
+        }
+    };
+
+    void JavascriptPlugin::onDocumentCreated (EnginePtr spEngine, DocumentPtr spDocument)
+    {
+        lx_log("Attaching Javascript components");
+        lx_log("Attaching <Script/> component");
+
+        spDocument->attachComponent("javascript", new DocImp);
+        spDocument->attachComponent("scripting", new Scripting);
     }
 
 }}}

@@ -323,6 +323,12 @@ namespace lx0
                 public:
                     lxint() : Base (0) {}
                     lxint(int i) : Base (i) {}
+
+                    //@name Implicit up-casts
+                    //@{
+                    virtual void as (float& v)  const { v = float(mValue); }
+                    virtual void as (double& v) const { v = double(mValue); }
+                    //@}
                 };
 
                 class lxfloat : public lxvalue_basic<lxfloat, float>
@@ -330,6 +336,11 @@ namespace lx0
                 public:
                     lxfloat() : Base (0.0f) {}
                     lxfloat(float f) : Base(f) {}
+
+                    //@name Implicit up-casts
+                    //@{
+                    virtual void as (double& v) const { v = mValue; }
+                    //@}
                 };
 
                 class lxdouble : public lxvalue_basic<lxdouble, double>

@@ -47,6 +47,18 @@ namespace lx0
             };
 
             IJavascript* createIJavascript();
+
+            class Plugin
+            {
+            public:
+                virtual ~Plugin() {}
+            };
+
+            class JavascriptPlugin : public Engine::Component
+            {
+            public:
+                virtual void    onDocumentCreated   (EnginePtr spEngine, DocumentPtr spDocument);
+            };
         }
     }
 

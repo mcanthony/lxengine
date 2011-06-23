@@ -99,7 +99,22 @@ namespace lx0 { namespace core { namespace init_ns {
             // acts as runtime template function).
             auto prefix_print = [](std::string css, std::string prefix) -> std::function<void(const char*)> {
                 return [css, prefix](const char* s) {
-                    s_log << "<li class='" << css << "'><span class='prefix'>" << prefix << "</span>"<< s << "</li>" << std::endl; 
+                    
+                    // Quick and ugly HTML escaping
+                    std::string t;
+                    t.reserve(strlen(s));
+                    for (size_t i = 0; i < t.size(); ++i)
+                    {
+                        switch (s[i])
+                        {
+                        case '<':   t += "&lt;";    break;
+                        case '>':   t += "&gt;";    break;
+                        default:
+                            t += s[i];
+                        }
+                    }
+
+                    s_log << "<li class='" << css << "'><span class='prefix'>" << prefix << "</span>"<< t << "</li>" << std::endl; 
                     if (s_log_count++ == 100)
                     {
                         s_log_count = 0;

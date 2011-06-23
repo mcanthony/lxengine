@@ -268,6 +268,10 @@ class Light
     , public point_light_f
 {
 public:
+    ~Light()
+    {
+        lx_log("Light dtor");
+    }
 };
 typedef std::shared_ptr<Light> LightPtr;
 
@@ -432,8 +436,10 @@ public:
             auto pLight = new Light;
             pLight->position = spElem->value().find("position").convert();
             pLight->color    = spElem->value().find("color").convert();
-            spElem->attachComponent("raytrace", pLight);
-            mLights.push_back(LightPtr(pLight));
+            
+            LightPtr spLight(pLight);
+            spElem->attachComponent("raytrace", spLight);
+            mLights.push_back(spLight);
         }));
 
         mHandlers.insert(std::make_pair("Camera", [&](ElementPtr spElem) {

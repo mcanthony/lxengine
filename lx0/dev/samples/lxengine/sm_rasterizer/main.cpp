@@ -111,8 +111,6 @@ validate_options (Options& options, int argc, char** argv)
 //   E N T R Y - P O I N T
 //===========================================================================//
 
-lx0::DocumentComponent* create_scripting();
-
 int 
 main (int argc, char** argv)
 {
@@ -125,11 +123,10 @@ main (int argc, char** argv)
         if (validate_options(options, argc, argv))
         {
             EnginePtr   spEngine   = Engine::acquire();
+            spEngine->attachComponent("Javascript", new JavascriptPlugin);
             spEngine->addViewPlugin("Canvas", [] (View* pView) { return lx0::createCanvasViewImp(); });
         
             DocumentPtr spDocument = spEngine->loadDocument(options.filename);
-            spDocument->attachComponent("javascript", lx0::createIJavascript() );
-            spDocument->attachComponent("scripting", create_scripting() );
             spDocument->addController( create_controller(spDocument) );
 
             ViewPtr spView = spDocument->createView("Canvas", "view", create_renderer() );

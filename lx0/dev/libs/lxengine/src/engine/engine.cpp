@@ -429,6 +429,12 @@ namespace lx0 { namespace engine { namespace dom_ns {
         }
     }
 
+    /*!
+        Register a Document::Component that is added to all created / loaded documents.
+
+        @todo Eventually, Documents should have a type, such that a Document::Component is
+            added to only certain types (or a * selector for all types).
+     */
     void
     Engine::addDocumentComponent (std::string name, std::function<Document::Component* ()> ctor)
     {

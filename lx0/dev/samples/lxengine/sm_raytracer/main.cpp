@@ -39,7 +39,6 @@
 #include <lx0/prototype/misc.hpp>
 
 #include "raytracer.hpp"
-#include "scripting.hpp"
 #include "viewer.hpp"
 
 //===========================================================================//
@@ -132,12 +131,11 @@ main (int argc, char** argv)
         if (validate_options(options, argc, argv))
         {
             EnginePtr   spEngine   = Engine::acquire();
+            spEngine->attachComponent("Scripting", new lx0::JavascriptPlugin);
             spEngine->addViewPlugin("Canvas", [] (View* pView) { return lx0::createCanvasViewImp(); });
         
             DocumentPtr spDocument = spEngine->loadDocument(options.filename);
-            spDocument->attachComponent("javascript", lx0::createIJavascript() );
             spDocument->attachComponent("ray", create_raytracer() );
-            spDocument->attachComponent("scripting", create_scripting() );
 
             ViewPtr spView = spDocument->createView("Canvas", "view", create_renderer() );
             spView->addUIBinding( create_uibinding() );

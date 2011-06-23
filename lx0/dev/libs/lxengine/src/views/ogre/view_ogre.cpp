@@ -46,7 +46,7 @@
 #include <lx0/lxengine.hpp>
 
 // Internal headers
-#include "../../engine/dom/view_input.hpp"
+#include "../../engine/view_input.hpp"
 
 #include <OGRE/OgreRoot.h>
 #include <OGRE/OgreRenderWindow.h>

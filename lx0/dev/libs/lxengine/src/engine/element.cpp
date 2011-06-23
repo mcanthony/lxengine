@@ -246,9 +246,11 @@ namespace lx0 { namespace engine { namespace dom_ns {
 
         pDocument->notifyElementRemoved(shared_from_this());
 
-        _foreach([](ComponentPtr it) {
-            it->onRemoved();
-        });
+        for (auto it = mComponents.begin(); it != mComponents.end(); ++it)
+        {
+            auto spComponent = it->second;
+            spComponent->onRemoved();
+        }
 
         for (auto it = mChildren.begin(); it != mChildren.end(); ++it)
             (*it)->notifyRemoved(pDocument);
