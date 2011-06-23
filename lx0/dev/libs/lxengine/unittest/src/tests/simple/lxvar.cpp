@@ -71,8 +71,6 @@ testset_lxvar(TestSet& set)
         CHECK(r, q.isSharedType() == false);
         CHECK(r, q.isShared() == false);
         CHECK(r, q.asString() == "alpha");
-
-
     });
 
     set.push("custom object", [] (TestRun& r) {

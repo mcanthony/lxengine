@@ -84,4 +84,18 @@ namespace lx0 { namespace core { namespace lxvar_ns {
         }
 
     }
-}}}
+}}
+
+
+    lxvar lxvar_from    (const glgeom::vector3f& v)
+    {
+        return lxvar(v.x, v.y, v.z);
+    }
+    
+    
+    lxvar lxvar_from    (const glgeom::point3f& v)
+    {
+        return lxvar(v.x, v.y, v.z);
+    }
+
+}

@@ -72,6 +72,7 @@ namespace lx0
                         given the reference-counted nature of the underlying objects.
                     @todo Iterators should be use the pImpl approach so a begin() method can return either
                         an array or a map iterator.
+                    @todo Move lxvar to its own library
                     */
                 class lxvar
                 {

@@ -508,7 +508,9 @@ namespace lx0 { namespace core { namespace lxvar_ns {
     void 
     lxvar::insert (const char* key, const lxvar& value)
     {
-        _castTo<lxstringmap>()->mValue.insert(std::make_pair(key, value));
+        auto imp = _castTo<lxstringmap>();
+        imp->mValue.erase(key);
+        imp->mValue.insert(std::make_pair(key, value));
     }
 
     lxvar    

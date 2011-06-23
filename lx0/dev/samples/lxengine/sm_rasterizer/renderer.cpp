@@ -37,6 +37,25 @@ using namespace lx0;
 
 //===========================================================================//
 
+class CameraComp : public Element::Component
+{
+public:
+    CameraComp (lx0::CameraPtr spCam) : mspCamera (spCam) {}
+
+    virtual void    onValueChange       (ElementPtr spElem, lxvar value)
+    {
+        glgeom::vector3f position = value.find("position").convert();
+        glgeom::point3f target = value.find("look_at").convert();
+
+        auto view = glm::lookAt(position.vec, target.vec, glm::vec3(0, 0, 1));
+        mspCamera->viewMatrix = view;
+    }
+
+    lx0::CameraPtr       mspCamera; 
+};
+
+//===========================================================================//
+
 class Renderer : public View::Component
 {
 public:
@@ -233,6 +252,8 @@ protected:
 
             auto view = glm::lookAt(position.vec, target.vec, glm::vec3(0, 0, 1));
             mspCamera = mspRasterizer->createCamera(60.0f, 0.1f, 2000.0f, view);
+
+            spElem->attachComponent("rasterizer", new CameraComp(mspCamera));
         }
         else 
         { 
@@ -286,7 +307,25 @@ public:
         if (keyboard.bDown[KC_R])
             spView->sendEvent("redraw", lxvar());
         if (keyboard.bDown[KC_W])
-            spView->document()->sendEvent("move_forward", lxvar(.1f));
+        {
+            spView->document()->sendEvent("move_forward", lxvar(.04f));
+            spView->sendEvent("redraw", lxvar());
+        }
+        if (keyboard.bDown[KC_S])
+        {
+            spView->document()->sendEvent("move_forward", lxvar(-.04f));
+            spView->sendEvent("redraw", lxvar());
+        }
+        if (keyboard.bDown[KC_A])
+        {
+            spView->document()->sendEvent("move_right", lxvar(-.04f));
+            spView->sendEvent("redraw", lxvar());
+        }
+        if (keyboard.bDown[KC_D])
+        {
+            spView->document()->sendEvent("move_right", lxvar(.04f));
+            spView->sendEvent("redraw", lxvar());
+        }
     }
 };
 
@@ -303,22 +342,40 @@ public:
         {
             const float step = params.convert();
             auto spElem = mpDocument->getElementsByTagName("Camera")[0];
-            
-            /*
-                Modify the camera position and target.  
-                
-                Do this via attribute modification, which may or may not, 
-                map to native functions rather than the normal notification system.
-                I.e. there may be a 'virtual' attribute such as "target" which is
-                not directly in the XML document.
+ 
+            lxvar val = spElem->value();
+            glgeom::point3f pos = val("position").convert();
+            glgeom::point3f target = val("look_at").convert();
 
-                Once this change occurs, it should send out notification to all
-                document components.  This includes the renderer.  It should see
-                the change to the Camera element.  It should reparse the Camera
-                entirely, for simplicity.
-             */
-            lx_debug("Stub: moving camera forward by %f", step);
+            auto dir = glgeom::normalize(target - pos);
+            pos += dir * step;
+            target += dir * step;
+
+            val.insert("position", lx0::lxvar_from(pos));
+            val.insert("look_at", lx0::lxvar_from(target));
+
+            spElem->value(val);
         }
+        else if (evt == "move_right")
+        {
+            const float step = params.convert();
+            auto spElem = mpDocument->getElementsByTagName("Camera")[0];
+ 
+            lxvar val = spElem->value();
+            glgeom::point3f pos = val("position").convert();
+            glgeom::point3f target = val("look_at").convert();
+
+            auto dir = glgeom::normalize(target - pos);
+            dir = glgeom::cross(dir, glgeom::vector3f(0, 0, 1));
+            pos += dir * step;
+            target += dir * step;
+
+            val.insert("position", lx0::lxvar_from(pos));
+            val.insert("look_at", lx0::lxvar_from(target));
+
+            spElem->value(val);
+        }
+
     }
 
     lx0::Document* mpDocument;

@@ -54,4 +54,8 @@ namespace lx0 { namespace core { namespace lxvar_ns {
         void _convert(lxvar& value, Ogre::Quaternion& q);
     }
 
-}}}
+}}
+
+    lxvar lxvar_from    (const glgeom::vector3f& v);
+    lxvar lxvar_from    (const glgeom::point3f& p);
+}
