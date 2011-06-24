@@ -304,28 +304,35 @@ public:
     {
         if (keyboard.bDown[KC_ESCAPE])
             Engine::acquire()->sendMessage("quit");
+        
         if (keyboard.bDown[KC_R])
             spView->sendEvent("redraw", lxvar());
+
         if (keyboard.bDown[KC_W])
-        {
             spView->document()->sendEvent("move_forward", lxvar(.04f));
-            spView->sendEvent("redraw", lxvar());
-        }
         if (keyboard.bDown[KC_S])
-        {
             spView->document()->sendEvent("move_forward", lxvar(-.04f));
-            spView->sendEvent("redraw", lxvar());
-        }
         if (keyboard.bDown[KC_A])
-        {
             spView->document()->sendEvent("move_right", lxvar(-.04f));
-            spView->sendEvent("redraw", lxvar());
-        }
         if (keyboard.bDown[KC_D])
-        {
             spView->document()->sendEvent("move_right", lxvar(.04f));
-            spView->sendEvent("redraw", lxvar());
-        }
+        if (keyboard.bDown[KC_Q])
+            spView->document()->sendEvent("move_up", lxvar(-.04f));
+        if (keyboard.bDown[KC_E])
+            spView->document()->sendEvent("move_up", lxvar(.04f));
+    }
+
+    void onLDrag (ViewPtr spView, const MouseState& ms, const ButtonState& bs, KeyModifiers km)
+    {
+        const float horz = ms.deltaX() * -3.14f / 1000.0f;
+        const float vert = ms.deltaY() * -3.1415f / 1000.0f;
+
+        if (fabs(horz) > 1e-3f)
+            spView->document()->sendEvent("rotate_horizontal", horz);
+        if (fabs(vert) > 1e-3f)
+            spView->document()->sendEvent("rotate_vertical", vert);
+
+        spView->sendEvent("redraw");
     }
 };
 
@@ -355,6 +362,8 @@ public:
             val.insert("look_at", lx0::lxvar_from(target));
 
             spElem->value(val);
+
+            mpDocument->view(0)->sendEvent("redraw");
         }
         else if (evt == "move_right")
         {
@@ -371,6 +380,62 @@ public:
             target += dir * step;
 
             val.insert("position", lx0::lxvar_from(pos));
+            val.insert("look_at", lx0::lxvar_from(target));
+
+            spElem->value(val);
+
+            mpDocument->view(0)->sendEvent("redraw");
+        }
+        else if (evt == "move_up")
+        {
+            const float step = params.convert();
+            auto spElem = mpDocument->getElementsByTagName("Camera")[0];
+ 
+            lxvar val = spElem->value();
+            glgeom::point3f pos = val["position"].convert();
+            glgeom::point3f target = val["look_at"].convert();
+
+            pos.z += step;
+            target.z += step;
+
+            val.insert("position", lx0::lxvar_from(pos));
+            val.insert("look_at", lx0::lxvar_from(target));
+
+            spElem->value(val);
+
+            mpDocument->view(0)->sendEvent("redraw");
+        }
+        else if (evt == "rotate_horizontal")
+        {
+            const float step = params.convert();
+            auto spElem = mpDocument->getElementsByTagName("Camera")[0];
+            lxvar val = spElem->value();
+            glgeom::point3f position = val["position"];
+            glgeom::point3f target = val["look_at"];
+
+            const auto view = target - position;
+            const glgeom::vector3f rotated = rotate(view, glgeom::vector3f(0, 0, 1), float(params));
+            target = position + rotated;
+
+            val.insert("position", lx0::lxvar_from(position));
+            val.insert("look_at", lx0::lxvar_from(target));
+
+            spElem->value(val);
+        }
+        else if (evt == "rotate_vertical")
+        {
+            const float step = params.convert();
+            auto spElem = mpDocument->getElementsByTagName("Camera")[0];
+            lxvar val = spElem->value();
+            glgeom::point3f position = val["position"];
+            glgeom::point3f target = val["look_at"];
+
+            const auto view = target - position;
+            const auto right = cross(view, glgeom::vector3f(0, 0, 1));
+            const glgeom::vector3f rotated = rotate(view, right, float(params));
+            target = position + rotated;
+
+            val.insert("position", lx0::lxvar_from(position));
             val.insert("look_at", lx0::lxvar_from(target));
 
             spElem->value(val);

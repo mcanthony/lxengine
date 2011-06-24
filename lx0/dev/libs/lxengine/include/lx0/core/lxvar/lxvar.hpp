@@ -124,6 +124,12 @@ namespace lx0
                                     lxvar           (const char* s);
                                     lxvar           (std::string s);
 
+                                    /*template <typename T>
+                                    lxvar           (const T& t)
+                                    {
+                                        *this = detail::lxvar_from(t);
+                                    }*/
+
                     static lxvar    undefined       (void);                 //!< Return an undefined lxvar
                     static lxvar    map             (void);                 //!< Return an empty map
                     static lxvar    array           (void);                 //!< Return an empty array
@@ -431,7 +437,7 @@ namespace lx0
                 inline void    _convert    (lxvar& v, bool& b)         { b = v.as<bool>(); }
                 inline void    _convert    (lxvar& v, int& i)          { i = v.as<int>(); }
                 inline void    _convert    (lxvar& v, float& f)        { f = v.as<float>(); }
-                inline void    _convert    (lxvar& v, double& d)       { d = double( v.as<float>() ); }
+                inline void    _convert    (lxvar& v, double& d)       { d = v.as<double>(); }
                 inline void    _convert    (lxvar& v, std::string& s)  { s = v.as<std::string>(); }
             }
 

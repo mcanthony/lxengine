@@ -238,6 +238,7 @@ namespace lx0 { namespace engine { namespace dom_ns {
         void        updateFrame     (void);
         void        updateEnd       (void);
 
+        void        sendEvent       (std::string evt) { sendEvent(evt, lxvar()); }
         void        sendEvent       (std::string evt, lx0::lxvar params);
 
         bool        isKeyDown       (int keyCode) const;
@@ -252,6 +253,10 @@ namespace lx0 { namespace engine { namespace dom_ns {
         void        addController       (Controller* pController);
 
     protected:
+        /*
+            Forwards all document events to the View; thus creating per-view 
+            versions of the document events.
+         */
         class DocForwarder : public Document::Component
         {
         public:
