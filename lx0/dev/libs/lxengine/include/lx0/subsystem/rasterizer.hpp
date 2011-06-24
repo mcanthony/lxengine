@@ -69,6 +69,10 @@ namespace lx0
         {
             class GlobalPass;
             class RasterizerGL;
+            class Camera;
+            typedef std::shared_ptr<Camera> CameraPtr;
+            class LightSet;
+            typedef std::shared_ptr<LightSet> LightSetPtr;
 
             //===========================================================================//
             //! \ingroup lx0_subsystem_rasterizer
@@ -168,6 +172,18 @@ namespace lx0
 
             //===========================================================================//
             //! \ingroup lx0_subsystem_rasterizer
+            class SolidColorMaterial : public Material
+            {
+            public:
+                        SolidColorMaterial(GLuint id);
+
+                virtual void activate   (RasterizerGL*, GlobalPass& pass);
+
+                glgeom::color3f    mColor;
+            };
+
+            //===========================================================================//
+            //! \ingroup lx0_subsystem_rasterizer
             class PhongMaterial : public Material
             {
             public:
@@ -189,8 +205,11 @@ namespace lx0
                          , tbFlatShading        (boost::indeterminate)
                      { }
 
-                bool        bOverrideMaterial;
-                MaterialPtr spMaterial;
+                CameraPtr       spCamera;
+                LightSetPtr     spLightSet;
+
+                bool            bOverrideMaterial;
+                MaterialPtr     spMaterial;
 
                 boost::tribool  tbWireframe;
                 boost::tribool  tbFlatShading;
@@ -208,16 +227,17 @@ namespace lx0
 
             //===========================================================================//
             //! \ingroup lx0_subsystem_rasterizer
-            struct Camera
+            class Camera
             {
+            public:
                 virtual void activate();
                 float   fov;
                 float   nearDist;
                 float   farDist;
                 glm::mat4 viewMatrix;
             };
-            typedef std::shared_ptr<Camera> CameraPtr;
-
+            
+            //===========================================================================//
             //! \ingroup lx0_subsystem_rasterizer
             struct Transform
             {
@@ -226,8 +246,12 @@ namespace lx0
             };
             typedef std::shared_ptr<Transform> TransformPtr;
 
-            struct Light
+            //===========================================================================//
+            //! \ingroup lx0_subsystem_rasterizer
+
+            class Light
             {
+            public:
                 glgeom::point3f position;
                 glgeom::color3f color;
             };
@@ -235,8 +259,9 @@ namespace lx0
 
             //===========================================================================//
             //! \ingroup lx0_subsystem_rasterizer
-            struct LightSet
+            class LightSet
             {
+            public:
                 virtual void activate() {}
 
                 std::vector<LightPtr> mLights;
@@ -297,8 +322,9 @@ namespace lx0
 
             //===========================================================================//
             //! \ingroup lx0_subsystem_rasterizer
-            struct QuadList : public Geometry
+            class QuadList : public Geometry
             {
+            public:
                 virtual void activate(RasterizerGL*, GlobalPass& pass);
 
                 size_t size;
@@ -359,7 +385,9 @@ namespace lx0
                 LightSetPtr     createLightSet  (void);
 
                 MaterialPtr     createMaterial              (std::string fragShader);
+                MaterialPtr     createSolidColorMaterial    (const glgeom::color3f& rgb);
                 MaterialPtr     createPhongMaterial         (const glgeom::material_phong_f& mat);
+
                 TexturePtr      createTexture               (const char* filename);
 
                 TransformPtr    createTransform             (glm::mat4& mat);
@@ -394,7 +422,10 @@ namespace lx0
                     GlobalPass*     pGlobalPass;
                     ItemPtr         spItem;
                     unsigned int    itemId;
-                    glm::mat4*      viewMatrix;
+
+                    LightSetPtr     spLightSet;
+                    CameraPtr       spCamera;
+                    MaterialPtr     spMaterial;
 
                     unsigned int    textureUnit;
                 } mContext;

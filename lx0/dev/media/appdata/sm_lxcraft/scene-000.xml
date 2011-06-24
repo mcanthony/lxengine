@@ -1,0 +1,21 @@
+<Document>
+    <Library>
+        <Camera id="camera">
+        {
+            position : [ 24.25, 48.25, 32.25 ],
+            look_at  : [ .6, .6, 0 ]
+        }
+        </Camera>
+      <View id="view">
+        {
+            camera : "camera"
+        }
+      </View>
+    </Library>
+    <Scene view="view">
+      <SparseGrid3D>
+        <VoxelCell>        
+        </VoxelCell>
+      </SparseGrid3D>
+    </Scene>
+</Document>

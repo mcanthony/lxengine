@@ -33,10 +33,15 @@
 #include <iostream>
 #include <boost/program_options.hpp>
 #include <lx0/lxengine.hpp>
+#include <lx0/views/canvas.hpp>
 
 //===========================================================================//
 //   E N T R Y - P O I N T
 //===========================================================================//
+
+lx0::View::Component*       create_renderer();
+lx0::UIBinding*             create_uibinding();
+lx0::Controller*            create_controller(lx0::DocumentPtr spDoc);
 
 int 
 main (int argc, char** argv)
@@ -47,8 +52,20 @@ main (int argc, char** argv)
     try
     {
         EnginePtr   spEngine   = Engine::acquire();
+        spEngine->addViewPlugin("Canvas", [] (View* pView) { return lx0::createCanvasViewImp(); });
         
-        DocumentPtr spDocument = spEngine->createDocument();
+        DocumentPtr spDocument = spEngine->loadDocument("media2/appdata/sm_lxcraft/scene-000.xml");
+        spDocument->addController( create_controller(spDocument) );
+
+        ViewPtr spView = spDocument->createView("Canvas", "view", create_renderer() );
+        spView->addUIBinding( create_uibinding() );
+
+
+        lxvar options;
+        options.insert("title", "LxCraft");
+        options.insert("width", 800);
+        options.insert("height", 400);
+        spView->show(options);
 
         exitCode = spEngine->run();
         spEngine->shutdown();

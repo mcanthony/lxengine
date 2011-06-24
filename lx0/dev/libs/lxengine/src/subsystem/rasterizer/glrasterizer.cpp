@@ -43,6 +43,12 @@
 using namespace lx0::subsystem::rasterizer;
 using namespace glgeom;
 
+static void check_glerror()
+{
+	GLenum errCode = glGetError();
+    lx_check_error( errCode == GL_NO_ERROR, "glError() == %d: %s", errCode, gluErrorString(errCode) );
+}
+
 void RasterizerGL::initialize()
 {
     lx_log("%s", __FUNCTION__);
@@ -79,7 +85,7 @@ RasterizerGL::createCamera (float fov, float nearDist, float farDist, glm::mat4&
 void
 Camera::activate()
 {
-    lx_check_error( glGetError() == GL_NO_ERROR );
+    check_glerror();
 
     //
     // Setup projection matrix
@@ -105,7 +111,7 @@ Camera::activate()
     glMatrixMode(GL_MODELVIEW);
     glLoadMatrixf(glm::value_ptr(viewMatrix));
 
-    lx_check_error( glGetError() == GL_NO_ERROR );
+    check_glerror();
 }
 
 Texture::Texture()
@@ -179,14 +185,28 @@ RasterizerGL::createMaterial (std::string fragShader)
     return spMat;
 }
 
+MaterialPtr     
+RasterizerGL::createSolidColorMaterial (const color3f& rgb)
+{
+    GLuint prog = _createProgram("media2/shaders/glsl/fragment/solid.frag");
+
+    auto pMat = new SolidColorMaterial(prog);
+    pMat->mShaderFilename = "media2/shaders/glsl/fragment/solid.frag";
+    pMat->mColor = rgb;
+    
+    return MaterialPtr(pMat);
+}
+
 MaterialPtr 
 RasterizerGL::createPhongMaterial (const glgeom::material_phong_f& mat)
 {
     GLuint prog = _createProgram("media2/shaders/glsl/fragment/phong2.frag");
-    auto pPhong = new PhongMaterial(prog);
-    pPhong->mShaderFilename = "media2/shaders/glsl/fragment/phong2.frag";
-    pPhong->mPhong = mat;
-    return MaterialPtr(pPhong);
+
+    auto pMat = new PhongMaterial(prog);
+    pMat->mShaderFilename = "media2/shaders/glsl/fragment/phong2.frag";
+    pMat->mPhong = mat;
+    
+    return MaterialPtr(pMat);
 }
 
 GLuint 
@@ -263,6 +283,8 @@ Material::Material(GLuint id)
 void
 Material::activate (RasterizerGL* pRasterizer, GlobalPass& pass)
 {
+    check_glerror();
+
     // Activate the shader
     glUseProgram(mId);
 
@@ -273,7 +295,7 @@ Material::activate (RasterizerGL* pRasterizer, GlobalPass& pass)
         GLint unifIndex = glGetUniformLocation(mId, "unifViewMatrix");
         if (unifIndex != -1)
         {
-            glUniformMatrix4fv(unifIndex, 1, GL_FALSE, glm::value_ptr(*pRasterizer->mContext.viewMatrix));
+            glUniformMatrix4fv(unifIndex, 1, GL_FALSE, glm::value_ptr(pRasterizer->mContext.spCamera->viewMatrix));
         }
     }
     
@@ -281,7 +303,7 @@ Material::activate (RasterizerGL* pRasterizer, GlobalPass& pass)
     // Set up lights
     //
     {
-        auto& spLightSet = pRasterizer->mContext.spItem->spLightSet;
+        auto& spLightSet = pRasterizer->mContext.spLightSet;
         int lightCount = (int)spLightSet->mLights.size();
 
         {
@@ -423,6 +445,8 @@ Material::activate (RasterizerGL* pRasterizer, GlobalPass& pass)
     else
         glDisable(GL_TEXTURE_2D);
 
+    check_glerror();
+
     //
     // Z Test/Write
     //
@@ -456,6 +480,33 @@ Material::activate (RasterizerGL* pRasterizer, GlobalPass& pass)
         glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
     else
         glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+
+    check_glerror();
+}
+
+
+SolidColorMaterial::SolidColorMaterial (GLuint id)
+    : Material (id)
+{
+}
+
+void
+SolidColorMaterial::activate (RasterizerGL* pRasterizer, GlobalPass& pass)
+{
+    check_glerror();
+
+    Material::activate(pRasterizer, pass);
+
+    //
+    // Set up color
+    //
+    {
+        GLint idx = glGetUniformLocation(mId, "inColor");
+        if (idx != -1)
+            glUniform4f(idx, mColor.r, mColor.g, mColor.b, 1.0f);
+    }
+
+    check_glerror();
 }
 
 PhongMaterial::PhongMaterial (GLuint id)
@@ -591,12 +642,6 @@ RasterizerGL::createQuadList (std::vector<unsigned short>& indices,
     return createQuadList(indices, flags, positions, normals, colors);
 }
 
-static void check_glerror()
-{
-	GLenum errCode = glGetError();
-    lx_check_error( errCode == GL_NO_ERROR, "glError() == %d: %s", errCode, gluErrorString(errCode) );
-}
-
 GeometryPtr
 RasterizerGL::createQuadList (std::vector<unsigned short>& indices, 
                               std::vector<lx0::uint8>& faceFlags,
@@ -677,7 +722,7 @@ RasterizerGL::createQuadList (std::vector<unsigned short>& indices,
 void 
 GeomImp::activate(RasterizerGL* pRasterizer, GlobalPass& pass)
 {
-    lx_check_error( glGetError() == GL_NO_ERROR );
+    check_glerror();
 
     GLint shaderProgram;
     glGetIntegerv(GL_CURRENT_PROGRAM, &shaderProgram);
@@ -760,11 +805,11 @@ GeomImp::activate(RasterizerGL* pRasterizer, GlobalPass& pass)
         }
     }
 
-    lx_check_error( glGetError() == GL_NO_ERROR );
+    check_glerror();
 
     glDrawElements(mType, mCount, GL_UNSIGNED_SHORT, 0);
 
-    lx_check_error( glGetError() == GL_NO_ERROR );
+    check_glerror();
 }
 
 LightPtr  
@@ -954,6 +999,8 @@ RasterizerGL::rasterizeList (RenderAlgorithm& algorithm, std::vector<std::shared
     for (auto pass = algorithm.mPasses.begin(); pass != algorithm.mPasses.end(); ++pass)
     {
         mContext.itemId = 0;
+        mContext.pGlobalPass = &(*pass);
+
         for (auto it = list.begin(); it != list.end(); ++it)
         {
             auto spItem = *it;
@@ -967,6 +1014,8 @@ RasterizerGL::rasterizeList (RenderAlgorithm& algorithm, std::vector<std::shared
             }
             mContext.itemId ++;
         }
+
+        mContext.pGlobalPass = nullptr;
     }
 }
 
@@ -975,23 +1024,39 @@ RasterizerGL::rasterize(GlobalPass& pass, std::shared_ptr<Item> spItem)
 {
     lx_check_error(spItem.get() != nullptr);
 
+    // Set up the context variables that have changed
     mContext.spItem = spItem;
     mContext.textureUnit = 0;
 
-    spItem->spCamera->activate();
-    mContext.viewMatrix = &spItem->spCamera->viewMatrix;
-
-    spItem->spLightSet->activate();
-
-    // Activate the material
-    MaterialPtr spMaterial = (pass.bOverrideMaterial) 
+    // Fill in any unspecified or overridden item variables via the current context
+    mContext.spCamera = (spItem->spCamera) 
+        ? spItem->spCamera
+        : pass.spCamera;
+    mContext.spLightSet = (spItem->spLightSet)
+        ? spItem->spLightSet
+        : pass.spLightSet;
+    mContext.spMaterial = (pass.bOverrideMaterial) 
         ? pass.spMaterial
         : spItem->spMaterial;
-    spMaterial->activate(this, pass);
 
-    spItem->spTransform->activate(spItem->spCamera);
-    spItem->spGeometry->activate(this, pass);    
+    // Activate the item
+    {
+        check_glerror();
 
+        mContext.spCamera->activate();
+        mContext.spLightSet->activate();
+        mContext.spMaterial->activate(this, pass);
+        check_glerror();
+        spItem->spTransform->activate(spItem->spCamera);
+        check_glerror();
+        spItem->spGeometry->activate(this, pass);    
+    
+        check_glerror();
+    }
+
+    mContext.spCamera = nullptr;
+    mContext.spLightSet = nullptr;
+    mContext.spMaterial = nullptr;
     mContext.spItem = nullptr;
 }
 
