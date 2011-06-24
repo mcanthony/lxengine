@@ -26,5 +26,29 @@
 */
 //===========================================================================//
 
-#include "rasterizer_ext.hpp"
+#include "lx0/subsystem/rasterizer.hpp"
+#include <lx0/util/blendload.hpp>
 
+
+using namespace lx0::subsystem::rasterizer_ns;
+
+MeshCache::MeshCache(std::shared_ptr<RasterizerGL> spRasterizer)
+    : mspRasterizer (spRasterizer)
+{
+}
+
+GeometryPtr MeshCache::acquire (const char* filename)
+{
+    auto it = mMeshes.find(filename);
+    if (it != mMeshes.end())
+    {
+        lx_debug("Reusing cache for '%s'", filename);
+        return it->second;
+    }
+    else
+    {
+        auto spGeom = lx0::quadlist_from_blendfile(*mspRasterizer.get(), filename);
+        mMeshes.insert(std::make_pair(filename, spGeom));
+        return spGeom;
+    }
+}

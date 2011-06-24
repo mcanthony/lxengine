@@ -36,7 +36,7 @@
 
 extern lx0::Camera2             gCamera;
 
-using namespace lx0::subsystem::rasterizer;
+using namespace lx0::subsystem::rasterizer_ns;
 
 class Renderable : public lx0::Element::Component
 {

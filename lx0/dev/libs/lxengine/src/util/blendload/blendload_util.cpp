@@ -124,5 +124,7 @@ lx0::util::blendload_ns::quadlist_from_blendfile (RasterizerGL& rasterizer, cons
 
         return rasterizer.createQuadList(indicies, flags, positions, normals, colors);
     }
+
+    return lx0::GeometryPtr();
 }
 

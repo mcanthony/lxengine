@@ -34,48 +34,7 @@
 
 using namespace lx0;
 
-//===========================================================================//
 
-/*
-    A full cache intended to eventually support:
-    - Resource finding
-    - Resource codec plug-ins
-    - Automatic resource sharing
-    - Resource usage tracking
-    - Paging
-    - Auto-reload
-    - etc.
- */
-class MeshCache
-{
-public:
-    MeshCache(std::shared_ptr<RasterizerGL> spRasterizer)
-        : mspRasterizer (spRasterizer)
-    {
-    }
-
-    GeometryPtr acquire (const char* filename)
-    {
-        auto it = mMeshes.find(filename);
-        if (it != mMeshes.end())
-        {
-            lx_debug("Reusing cache for '%s'", filename);
-            return it->second;
-        }
-        else
-        {
-            auto spGeom = lx0::quadlist_from_blendfile(*mspRasterizer.get(), filename);
-            mMeshes.insert(std::make_pair(filename, spGeom));
-            return spGeom;
-        }
-    }
-
-protected:
-    std::shared_ptr<RasterizerGL>       mspRasterizer;
-    std::map<std::string,GeometryPtr>   mMeshes;
-};
-
-typedef std::shared_ptr<MeshCache> MeshCachePtr;
 
 //===========================================================================//
 

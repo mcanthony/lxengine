@@ -29,10 +29,13 @@
 #pragma once
 
 #include <boost/logic/tribool.hpp>
-#include <lx0/engine/document.hpp>
-
 #include <glgeom/glgeom.hpp>
 #include <glgeom/prototype/material_phong.hpp>
+
+#include <lx0/engine/document.hpp>
+
+
+
 
 namespace lx0 { 
 
@@ -65,7 +68,7 @@ namespace lx0
             \defgroup lx0_subsystem_rasterizer lx0_subsystem_rasterizer
             \ingroup Subsystem
          */
-        namespace rasterizer
+        namespace rasterizer_ns
         {
             class GlobalPass;
             class RasterizerGL;
@@ -345,7 +348,7 @@ namespace lx0
             class RenderList
             {
             public:
-                typedef lx0::subsystem::rasterizer::ItemPtr ItemPtr;
+                typedef lx0::subsystem::rasterizer_ns::ItemPtr ItemPtr;
                 typedef std::vector<ItemPtr>                ItemList;
 
                 struct Layer
@@ -444,7 +447,7 @@ namespace lx0
         }
     }
 
-    using namespace lx0::subsystem::rasterizer;
+    using namespace lx0::subsystem::rasterizer_ns;
 }
 
-
+#include <lx0/subsystem/rasterizer/cache/meshcache.hpp>

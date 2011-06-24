@@ -26,5 +26,45 @@
 */
 //===========================================================================//
 
-#include "rasterizer_ext.hpp"
+#pragma once
 
+#include <memory>
+
+namespace lx0
+{
+    namespace subsystem 
+    {
+        namespace rasterizer_ns
+        {
+
+            //===========================================================================//
+            //! 
+            /*!
+                \ingroup lx0_subsystem_rasterizer
+                
+                A full cache intended to eventually support:
+                - Resource finding
+                - Resource codec plug-ins
+                - Automatic resource sharing
+                - Resource usage tracking
+                - Paging
+                - Auto-reload
+                - etc.
+             */
+            class MeshCache
+            {
+            public:
+                            MeshCache   (std::shared_ptr<RasterizerGL> spRasterizer);
+    
+                GeometryPtr acquire     (const char* filename);
+
+            protected:
+                std::shared_ptr<RasterizerGL>       mspRasterizer;
+                std::map<std::string,GeometryPtr>   mMeshes;
+            };
+
+            typedef std::shared_ptr<MeshCache> MeshCachePtr;
+
+        }
+    }
+}

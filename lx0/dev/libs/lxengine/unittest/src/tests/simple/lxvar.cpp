@@ -37,7 +37,7 @@ testset_lxvar(TestSet& set)
             v.as<std::string>();
             CHECK(r, false);
         }
-        catch (std::exception& e)
+        catch (std::exception&)
         {
             CHECK(r, true);
         }

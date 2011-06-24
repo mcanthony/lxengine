@@ -40,7 +40,7 @@
 #include <lx0/subsystem/rasterizer.hpp>
 #include <glgeom/glgeom.hpp>
 
-using namespace lx0::subsystem::rasterizer;
+using namespace lx0::subsystem::rasterizer_ns;
 using namespace glgeom;
 
 static void check_glerror()
