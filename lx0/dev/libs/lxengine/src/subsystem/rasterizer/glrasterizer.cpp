@@ -49,6 +49,11 @@ static void check_glerror()
     lx_check_error( errCode == GL_NO_ERROR, "glError() == %d: %s", errCode, gluErrorString(errCode) );
 }
 
+RasterizerGL::RasterizerGL()
+    : gl (new GLInterface)
+{
+}
+
 void RasterizerGL::initialize()
 {
     lx_log("%s", __FUNCTION__);
@@ -82,12 +87,12 @@ void RasterizerGL::shutdown()
     mStats.tmLifetime.stop();
 
     lx_log("%s", __FUNCTION__);
-    log_timer("Lifetime",           mStats.tmLifetime, mStats.tmLifetime);
-    log_timer("scene",              mStats.tmScene, mStats.tmScene);
-    log_timer("rasterizeList",      mStats.tmRasterizeList, mStats.tmScene);
-    log_timer("rasterizeItem",      mStats.tmRasterizeItem, mStats.tmScene);
-    log_timer("activate Material",  mStats.tmMaterialActivate, mStats.tmScene);
-    log_timer("activate Geometry",  mStats.tmGeometryActivate, mStats.tmScene);
+    log_timer("Lifetime",           mStats.tmLifetime,          mStats.tmLifetime);
+    log_timer("scene",              mStats.tmScene,             mStats.tmLifetime);
+    log_timer("rasterizeList",      mStats.tmRasterizeList,     mStats.tmScene);
+    log_timer("rasterizeItem",      mStats.tmRasterizeItem,     mStats.tmScene);
+    log_timer("activate Material",  mStats.tmMaterialActivate,  mStats.tmScene);
+    log_timer("activate Geometry",  mStats.tmGeometryActivate,  mStats.tmScene);
 }
 
 CameraPtr       
@@ -212,6 +217,17 @@ RasterizerGL::createSolidColorMaterial (const color3f& rgb)
     auto pMat = new SolidColorMaterial(prog);
     pMat->mShaderFilename = "media2/shaders/glsl/fragment/solid.frag";
     pMat->mColor = rgb;
+    
+    return MaterialPtr(pMat);
+}
+
+MaterialPtr
+RasterizerGL::createVertexColorMaterial (void)
+{
+    GLuint prog = _createProgram("media2/shaders/glsl/fragment/vertexColor.frag");
+
+    auto pMat = new VertexColorMaterial(prog);
+    pMat->mShaderFilename = "media2/shaders/glsl/fragment/vertexColor.frag";
     
     return MaterialPtr(pMat);
 }
@@ -528,6 +544,22 @@ SolidColorMaterial::activate (RasterizerGL* pRasterizer, GlobalPass& pass)
     check_glerror();
 }
 
+
+VertexColorMaterial::VertexColorMaterial (GLuint id)
+    : Material (id)
+{
+}
+
+void
+VertexColorMaterial::activate (RasterizerGL* pRasterizer, GlobalPass& pass)
+{
+    check_glerror();
+
+    Material::activate(pRasterizer, pass);
+
+    check_glerror();
+}
+
 PhongMaterial::PhongMaterial (GLuint id)
     : Material (id)
 {
@@ -633,8 +665,6 @@ RasterizerGL::createQuadList (std::vector<glgeom::point3f>& positionData)
     return GeometryPtr(pQuadList);
 }
 
-
-
 void QuadList::activate(RasterizerGL*, GlobalPass& pass)
 {
     glBindVertexArray(vao[0]);
@@ -647,6 +677,44 @@ void QuadList::activate(RasterizerGL*, GlobalPass& pass)
     glEnableVertexAttribArray(positionIndex);
 
     glDrawArrays(GL_QUADS, 0, size); 
+}
+
+GeometryPtr 
+RasterizerGL::createQuadList (std::vector<glgeom::point3f>& positions, 
+                              std::vector<glgeom::color3f>& colors)
+{
+    lx_check_error(!positions.empty());
+    lx_check_error(positions.size() == colors.size());
+
+    check_glerror();
+
+    // Create a vertex array to store the vertex data
+    //
+    GLuint vao;
+    gl->genVertexArrays(1, &vao);
+    gl->bindVertexArray(vao);
+
+    GLuint vboPositions;
+    gl->genBuffers(1, &vboPositions);
+    gl->bindBuffer(GL_ARRAY_BUFFER, vboPositions);
+    gl->bufferData(GL_ARRAY_BUFFER, positions.size() * sizeof(positions[0]), &positions[0], GL_STATIC_DRAW);
+    
+    GLuint vboColors;
+    gl->genBuffers(1, &vboColors);
+    gl->bindBuffer(GL_ARRAY_BUFFER, vboColors);
+    gl->bufferData(GL_ARRAY_BUFFER, colors.size() * sizeof(colors[0]), &colors[0], GL_STATIC_DRAW);
+
+    check_glerror();
+
+    // Create the cache to encapsulate the created OGL resources
+    //
+    auto pGeom = new GeomImp;
+    pGeom->mType        = GL_QUADS;
+    pGeom->mVao         = vao;
+    pGeom->mCount       = positions.size() / 4;
+    pGeom->mVboPosition = vboPositions;
+    pGeom->mVboColors   = vboColors;
+    return GeometryPtr(pGeom);
 }
 
 GeometryPtr
@@ -826,7 +894,10 @@ GeomImp::activate(RasterizerGL* pRasterizer, GlobalPass& pass)
 
     check_glerror();
 
-    glDrawElements(mType, mCount, GL_UNSIGNED_SHORT, 0);
+    if (mVboIndices)
+        glDrawElements(mType, mCount, GL_UNSIGNED_SHORT, 0);
+    else
+        glDrawArrays(GL_QUADS, 0, mCount * 4); 
 
     check_glerror();
 }

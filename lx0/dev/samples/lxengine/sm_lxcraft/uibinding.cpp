@@ -45,7 +45,7 @@ public:
     virtual     void        updateFrame     (ViewPtr spView,
                                              const KeyboardState& keyboard)
     {
-        const float step = 0.4f;
+        const float step = 1.4f;
 
         if (keyboard.bDown[KC_ESCAPE])
             Engine::acquire()->sendMessage("quit");
@@ -70,7 +70,7 @@ public:
     void onLDrag (ViewPtr spView, const MouseState& ms, const ButtonState& bs, KeyModifiers km)
     {
         const float horz = ms.deltaX() * -3.14f / 1000.0f;
-        const float vert = ms.deltaY() * -3.1415f / 1000.0f;
+        const float vert = ms.deltaY() * -3.1415f / 10000.0f;
 
         if (fabs(horz) > 1e-3f)
             spView->document()->sendEvent("rotate_horizontal", horz);

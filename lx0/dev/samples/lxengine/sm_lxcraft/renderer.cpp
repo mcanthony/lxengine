@@ -44,17 +44,16 @@ public:
         : mPosition (1, 1, 1)
         , mTarget   (0, 0, 0)
     {
-        mspCamera = pRasterizer->createCamera(60.0f, 0.01f, 5000.0f, glm::lookAt(mPosition.vec, mTarget.vec, glm::vec3(0, 0, 1)));
+        mspCamera = pRasterizer->createCamera(60.0f, 0.01f, 8000.0f, glm::lookAt(mPosition.vec, mTarget.vec, glm::vec3(0, 0, 1)));
     }
 
     virtual void    onValueChange       (ElementPtr spElem, lxvar value)
     {
-        resetViewDirection(spElem);
+        resetViewDirection(spElem, value);
     }
 
-    void resetViewDirection (ElementPtr spElem)
+    void resetViewDirection (ElementPtr spElem, lxvar value)
     {
-        auto value = spElem->value();
         mPosition = value.find("position").convert();
         mTarget = value.find("look_at").convert();
 
@@ -90,24 +89,14 @@ public:
             {
                 for (int x = 0; x < 16; ++x)
                 {
-                    glgeom::color3f color(.5f + x / 31.0f, .5f + y / 31.0f, .5f + z / 7.0f);
-                    if ((x + y + z) % 2 == 1)
-                        color = glgeom::color3f(.2f, .2f, .8f);
-                    auto spMat = pRasterizer->createSolidColorMaterial(color);
-                    
-                    if (z > 0)
-                    {
-                        ItemPtr spItem(new Item);
-
-                        spItem->spMaterial = spMat;
-                        spItem->spTransform = pRasterizer->createTransform(glgeom::vector3f(1, 1, 1), offset + glgeom::point3f(x + .5f, y + 5.f, z + .5f));
-                        spItem->spGeometry = spMeshCache->acquire("media2/models/unit_cube-000.blend");
-
-                        mBlocks[z * 16 * 16 + y * 16 + x] = spItem;
-                    }
+                    if (offset.z > 0)
+                        mExists[_computeOffset(x, y, z)] = false;
+                    else
+                        mExists[_computeOffset(x, y, z)] = true;
                 }
             }
         }
+        mspItem = _createItem(pRasterizer, offset);
     }
 
     virtual void onValueChange (ElementPtr spElem, lxvar value)
@@ -116,14 +105,130 @@ public:
 
     virtual void generate (RasterizerGL* pRasterizer, MeshCachePtr spMeshCache, RdCameraPtr spCamera, RenderList& list)
     {
-        for (int i = 0; i < 16 * 16 * 4; ++i)
-        {
-            if (mBlocks[i])
-                list.push_back(0, mBlocks[i]);
-        }
+        if (mspItem)
+            list.push_back(0, mspItem);
     }
 
-    ItemPtr mBlocks[16 * 16 * 4];
+protected:
+    ItemPtr _createItem (RasterizerGL* pRasterizer, const vector3f& offset)
+    {
+        std::vector<point3f> position;
+        std::vector<color3f> colors;
+
+        for (int z = 0; z < 4; ++z)
+        {
+            for (int y = 0; y < 16; ++y)
+            {
+                for (int x = 0; x < 16; ++x)
+                {
+                    if (mExists[_computeOffset(x, y, z)])
+                    {
+                        glgeom::color3f color(.5f + x / 31.0f, .5f + y / 31.0f, .5f + z / 7.0f);
+                        if ((x + y + z) % 2 == 1)
+                            color = glgeom::color3f(.2f, .2f, .8f);
+
+                        if (!_hasLocalBlock(x + 1, y, z))
+                        {
+                            position.push_back( point3f(x + .5f, y - .5f, z - .5f) );
+                            colors.push_back(color);
+                            position.push_back( point3f(x + .5f, y - .5f, z + .5f) );
+                            colors.push_back(color);
+                            position.push_back( point3f(x + .5f, y + .5f, z + .5f) );
+                            colors.push_back(color);
+                            position.push_back( point3f(x + .5f, y + .5f, z - .5f) );
+                            colors.push_back(color);
+                        }
+                        if (!_hasLocalBlock(x - 1, y, z))
+                        {
+                            position.push_back( point3f(x - .5f, y - .5f, z - .5f) );
+                            colors.push_back(color);
+                            position.push_back( point3f(x - .5f, y + .5f, z - .5f) );
+                            colors.push_back(color);
+                            position.push_back( point3f(x - .5f, y + .5f, z + .5f) );
+                            colors.push_back(color);
+                            position.push_back( point3f(x - .5f, y - .5f, z + .5f) );
+                            colors.push_back(color);
+                        }
+
+                        if (!_hasLocalBlock(x, y + 1, z))
+                        {
+                            position.push_back( point3f(x - .5f, y + .5f, z - .5f) );
+                            colors.push_back(color);
+                            position.push_back( point3f(x - .5f, y + .5f, z + .5f) );
+                            colors.push_back(color);
+                            position.push_back( point3f(x + .5f, y + .5f, z + .5f) );
+                            colors.push_back(color);
+                            position.push_back( point3f(x + .5f, y + .5f, z - .5f) );
+                            colors.push_back(color);
+                        }
+                        if (!_hasLocalBlock(x, y - 1, z))
+                        {
+                            position.push_back( point3f(x - .5f, y - .5f, z - .5f) );
+                            colors.push_back(color);
+                            position.push_back( point3f(x + .5f, y - .5f, z - .5f) );
+                            colors.push_back(color);
+                            position.push_back( point3f(x + .5f, y - .5f, z + .5f) );
+                            colors.push_back(color);
+                            position.push_back( point3f(x - .5f, y - .5f, z + .5f) );
+                            colors.push_back(color);
+                        }
+
+                        if (!_hasLocalBlock(x, y, z + 1))
+                        {
+                            position.push_back( point3f(x - .5f, y - .5f, z + .5f) );
+                            colors.push_back(color);
+                            position.push_back( point3f(x - .5f, y + .5f, z + .5f) );
+                            colors.push_back(color);
+                            position.push_back( point3f(x + .5f, y + .5f, z + .5f) );
+                            colors.push_back(color);
+                            position.push_back( point3f(x + .5f, y - .5f, z + .5f) );
+                            colors.push_back(color);
+                        }
+                        if (!_hasLocalBlock(x, y, z - 1))
+                        {
+                            position.push_back( point3f(x - .5f, y - .5f, z - .5f) );
+                            colors.push_back(color);
+                            position.push_back( point3f(x + .5f, y - .5f, z - .5f) );
+                            colors.push_back(color);
+                            position.push_back( point3f(x + .5f, y + .5f, z - .5f) );
+                            colors.push_back(color);
+                            position.push_back( point3f(x - .5f, y + .5f, z - .5f) );
+                            colors.push_back(color);
+                        }
+                    }
+                }
+            }
+        }
+
+        if (!position.empty())
+        {
+            ItemPtr spItem(new Item);
+            spItem->spMaterial = pRasterizer->createVertexColorMaterial();
+            spItem->spTransform = pRasterizer->createTransform(glgeom::vector3f(1, 1, 1), offset + glgeom::point3f(.5f, .5f, .5f));
+            spItem->spGeometry = pRasterizer->createQuadList(position, colors);
+            return spItem;
+        }
+        else 
+            return ItemPtr();
+    }
+
+
+    int  _computeOffset (int x, int y, int z)
+    {
+        return z * 16 * 16 + y * 16 + x;
+    }
+
+    bool _hasLocalBlock (int x, int y, int z)
+    {
+        int offset = _computeOffset(x, y, z);
+        if (offset < 0 || offset > 16 * 16 * 4)
+            return false;
+        else
+            return mExists[offset];
+    }
+
+    bool    mExists[16 * 16 * 4];
+    ItemPtr mspItem;
 };
 
 typedef std::shared_ptr<RdVoxelCell> RdVoxelCellPtr;
@@ -137,7 +242,7 @@ public:
 
     virtual void generate (RasterizerGL* pRasterizer, MeshCachePtr spMeshCache, RdCameraPtr spCamera, RenderList& list)
     {
-        const int radius = 1;
+        const int radius = 6;
         const int x0 = int(spCamera->mPosition.x/16) - radius;
         const int x1 = int(spCamera->mPosition.x/16) + radius;
         const int y0 = int(spCamera->mPosition.y/16) - radius;
@@ -277,9 +382,8 @@ protected:
         }
         else if (tag == "Camera")
         {
-            auto pComp = new RdCamera(mspRasterizer.get());
-            pComp->resetViewDirection(spElem);
-            spElem->attachComponent("rasterizer", pComp);
+            mspCamera->resetViewDirection(spElem, spElem->value());
+            spElem->attachComponent("rasterizer", mspCamera);
         }
         else 
         { 

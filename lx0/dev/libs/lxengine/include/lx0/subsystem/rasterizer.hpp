@@ -29,11 +29,18 @@
 #pragma once
 
 #include <boost/logic/tribool.hpp>
-#include <glgeom/glgeom.hpp>
 #include <glgeom/prototype/material_phong.hpp>
 
-#include <lx0/engine/document.hpp>
+#include <list>
+#include <ctime>
+
+#include <lx0/lxengine.hpp>
 #include <lx0/util/misc.hpp>
+#include <lx0/subsystem/rasterizer/gl/glinterface.hpp>
+
+#include <gl/glew.h>
+#include <windows.h>        // Unfortunately must be included on Windows for GL.h to work
+#include <gl/GL.h>
 
 
 
@@ -46,17 +53,6 @@ namespace lx0 {
 
     IRasterizer* createIRasterizer();
 }
-
-
-#include <list>
-#include <ctime>
-
-#include <gl/glew.h>
-#include <windows.h>        // Unfortunately must be included on Windows for GL.h to work
-#include <gl/GL.h>
-
-#include <lx0/lxengine.hpp>
-#include <glgeom/glgeom.hpp>
 
 using namespace lx0::core;
 
@@ -87,6 +83,10 @@ namespace lx0
 
             //===========================================================================//
             //! \ingroup lx0_subsystem_rasterizer
+            /*!
+                \todo Eventually move to a generic vector of string attrib-name to 
+                    VBO id/type pairs.
+             */
             class GeomImp : public Geometry
             {
             public:
@@ -183,6 +183,16 @@ namespace lx0
                 virtual void activate   (RasterizerGL*, GlobalPass& pass);
 
                 glgeom::color3f    mColor;
+            };
+
+            //===========================================================================//
+            //! \ingroup lx0_subsystem_rasterizer
+            class VertexColorMaterial : public Material
+            {
+            public:
+                        VertexColorMaterial(GLuint id);
+
+                virtual void activate   (RasterizerGL*, GlobalPass& pass);
             };
 
             //===========================================================================//
@@ -378,6 +388,7 @@ namespace lx0
             class RasterizerGL
             {
             public:
+                                RasterizerGL    ();
 
                 void            initialize      (void);
                 void            shutdown        (void);
@@ -389,6 +400,7 @@ namespace lx0
 
                 MaterialPtr     createMaterial              (std::string fragShader);
                 MaterialPtr     createSolidColorMaterial    (const glgeom::color3f& rgb);
+                MaterialPtr     createVertexColorMaterial   (void);
                 MaterialPtr     createPhongMaterial         (const glgeom::material_phong_f& mat);
 
                 TexturePtr      createTexture               (const char* filename);
@@ -401,15 +413,17 @@ namespace lx0
                 TransformPtr    createTransformEye          (float tx, float ty, float tz, glgeom::radians z_angle);
 
                 GeometryPtr     createQuadList  (std::vector<glgeom::point3f>& quads);
+                GeometryPtr     createQuadList  (std::vector<glgeom::point3f>& positions, 
+                                                 std::vector<glgeom::color3f>& colors);
                 GeometryPtr     createQuadList  (std::vector<unsigned short>& indices, 
-                                                    std::vector<glgeom::point3f>& positions, 
-                                                    std::vector<glgeom::vector3f>& normals,
-                                                    std::vector<glgeom::color3f>& colors);
+                                                 std::vector<glgeom::point3f>& positions, 
+                                                 std::vector<glgeom::vector3f>& normals,
+                                                 std::vector<glgeom::color3f>& colors);
                 GeometryPtr     createQuadList  (std::vector<unsigned short>& indices,
                                                  std::vector<lx0::uint8>& faceFlags,
-                                                    std::vector<glgeom::point3f>& positions, 
-                                                    std::vector<glgeom::vector3f>& normals,
-                                                    std::vector<glgeom::color3f>& colors);
+                                                 std::vector<glgeom::point3f>& positions, 
+                                                 std::vector<glgeom::vector3f>& normals,
+                                                 std::vector<glgeom::color3f>& colors);
 
                 void            refreshTextures (void);
 
@@ -438,6 +452,8 @@ namespace lx0
                 GLuint      _createProgram2  (std::string fragShader);
                 GLuint      _createShader    (const char* filename, GLuint type);
                 void        _linkProgram     (GLuint prog);
+
+                std::auto_ptr<GLInterface>  gl;
 
                 std::map<std::string, GLuint> mCachePrograms;
 
