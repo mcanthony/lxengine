@@ -709,9 +709,10 @@ RasterizerGL::createQuadList (std::vector<glgeom::point3f>& positions,
     // Create the cache to encapsulate the created OGL resources
     //
     auto pGeom = new GeomImp;
+    pGeom->mtbFlatShading = true;
     pGeom->mType        = GL_QUADS;
     pGeom->mVao         = vao;
-    pGeom->mCount       = positions.size() / 4;
+    pGeom->mCount       = positions.size();
     pGeom->mVboPosition = vboPositions;
     pGeom->mVboColors   = vboColors;
     return GeometryPtr(pGeom);
@@ -888,7 +889,8 @@ GeomImp::activate(RasterizerGL* pRasterizer, GlobalPass& pass)
         GLint loc = glGetUniformLocation(shaderProgram, "unifFlatNormals");
         if (loc != -1)
         {
-            glUniform1i(loc,  (pass.tbFlatShading == true) ? 0 : 1);
+            const int flatShading = (pRasterizer->mContext.tbFlatShading == true) ? 1 : 0; 
+            glUniform1i(loc, flatShading);
         }
     }
 
@@ -897,7 +899,7 @@ GeomImp::activate(RasterizerGL* pRasterizer, GlobalPass& pass)
     if (mVboIndices)
         glDrawElements(mType, mCount, GL_UNSIGNED_SHORT, 0);
     else
-        glDrawArrays(GL_QUADS, 0, mCount * 4); 
+        glDrawArrays(mType, 0, mCount); 
 
     check_glerror();
 }
@@ -1137,6 +1139,10 @@ RasterizerGL::rasterizeItem (GlobalPass& pass, std::shared_ptr<Item> spItem)
     mContext.spMaterial = (pass.bOverrideMaterial) 
         ? pass.spMaterial
         : spItem->spMaterial;
+
+    mContext.tbFlatShading = boost::indeterminate(spItem->spGeometry->mtbFlatShading) 
+        ? pass.tbFlatShading
+        : spItem->spGeometry->mtbFlatShading;
 
     // Activate the item
     {

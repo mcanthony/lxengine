@@ -77,7 +77,14 @@ namespace lx0
             //! \ingroup lx0_subsystem_rasterizer
             struct Geometry
             {
+                Geometry()
+                    : mtbFlatShading (boost::indeterminate)
+                {}
+                virtual ~Geometry() {}
+                
                 virtual void activate(RasterizerGL*, GlobalPass& pass) = 0;
+
+                boost::tribool  mtbFlatShading;
             };
             typedef std::shared_ptr<Geometry> GeometryPtr;
 
@@ -434,8 +441,12 @@ namespace lx0
                 void            rasterizeItem   (GlobalPass& pass, std::shared_ptr<Item> spItem);
                 unsigned int    readPixel       (int x, int y);
 
-                struct 
+                struct Context
                 {
+                    Context()
+                        : tbFlatShading     (boost::indeterminate)
+                    {}
+
                     GlobalPass*     pGlobalPass;
                     ItemPtr         spItem;
                     unsigned int    itemId;
@@ -445,6 +456,8 @@ namespace lx0
                     MaterialPtr     spMaterial;
 
                     unsigned int    textureUnit;
+
+                    boost::tribool  tbFlatShading;
                 } mContext;
 
             protected:

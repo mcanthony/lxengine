@@ -68,6 +68,14 @@ public:
 
 typedef std::shared_ptr<RdCamera> RdCameraPtr;
 
+static float computeHeight (const point3f& p)
+{
+    auto sparse0 = 4 * lx0::core::noise3d_perlin(p.x / 20.0f, p.y / 16.0f, .5f);
+    auto sparse1 = lx0::core::noise3d_perlin(p.x / 60.0f, p.y / 68.0f, .25f);
+    auto h = powf(sparse0, 2.0f);
+    return h;
+}
+
 //===========================================================================//
 
 class Renderable : public Element::Component
@@ -89,7 +97,10 @@ public:
             {
                 for (int x = 0; x < 16; ++x)
                 {
-                    if (offset.z > 0)
+                    const auto pt = offset + point3f(x + .5f, y + .5f, z + .5f);
+                    auto h = computeHeight(pt);
+
+                    if (pt.z > h)
                         mExists[_computeOffset(x, y, z)] = false;
                     else
                         mExists[_computeOffset(x, y, z)] = true;
@@ -126,7 +137,7 @@ protected:
                         glgeom::color3f color(.5f + x / 31.0f, .5f + y / 31.0f, .5f + z / 7.0f);
                         if ((x + y + z) % 2 == 1)
                             color = glgeom::color3f(.2f, .2f, .8f);
-
+ 
                         if (!_hasLocalBlock(x + 1, y, z))
                         {
                             position.push_back( point3f(x + .5f, y - .5f, z - .5f) );
@@ -221,7 +232,13 @@ protected:
     bool _hasLocalBlock (int x, int y, int z)
     {
         int offset = _computeOffset(x, y, z);
-        if (offset < 0 || offset > 16 * 16 * 4)
+        if (offset < 0 || offset >= 16 * 16 * 4)
+            return false;
+        else if (x < 0 || x >= 16)
+            return false;
+        else if (y < 0 || y >= 16)
+            return false;
+        else if (z < 0 || z >= 4)
             return false;
         else
             return mExists[offset];
@@ -242,13 +259,13 @@ public:
 
     virtual void generate (RasterizerGL* pRasterizer, MeshCachePtr spMeshCache, RdCameraPtr spCamera, RenderList& list)
     {
-        const int radius = 6;
+        const int radius = 5;
         const int x0 = int(spCamera->mPosition.x/16) - radius;
         const int x1 = int(spCamera->mPosition.x/16) + radius;
         const int y0 = int(spCamera->mPosition.y/16) - radius;
         const int y1 = int(spCamera->mPosition.y/16) + radius;
-        const int z0 = int(spCamera->mPosition.z/16) - radius;
-        const int z1 = int(spCamera->mPosition.z/16) + radius;
+        const int z0 = int(spCamera->mPosition.z/4) - radius * 4;
+        const int z1 = int(spCamera->mPosition.z/4) + radius * 4;
 
         for (int z = z0; z <= z1; ++z)
         {
@@ -263,7 +280,7 @@ public:
                     auto it = mGrid.find(idx);
                     if (it == mGrid.end())
                     {
-                        vector3f offset(x * 16, y * 16, z * 16);
+                        vector3f offset(x * 16, y * 16, z * 4);
                         auto pCell = new RdVoxelCell(pRasterizer, spMeshCache, offset);
 
                         spRenderable = RenderablePtr(pCell);
