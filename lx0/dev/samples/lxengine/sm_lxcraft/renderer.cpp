@@ -204,6 +204,11 @@ protected:
 class Renderer : public View::Component
 {
 public:
+    ~Renderer()
+    {
+        lx_log("Renderer dtor");
+    }
+
     virtual void initialize(ViewPtr spView)
     {
         mspRasterizer.reset( new RasterizerGL );
@@ -218,7 +223,12 @@ public:
             _onElementAddRemove(spElem, true); 
             return false; 
         });
-    }  
+    }
+
+    virtual void shutdown   (View* pView)
+    {
+        mspRasterizer->shutdown();
+    }
 
     virtual void render (void)	
     {

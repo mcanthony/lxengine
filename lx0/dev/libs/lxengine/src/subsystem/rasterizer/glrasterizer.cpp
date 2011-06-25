@@ -52,6 +52,7 @@ static void check_glerror()
 void RasterizerGL::initialize()
 {
     lx_log("%s", __FUNCTION__);
+    mStats.tmLifetime.start();
 
     // Initialization
     //
@@ -66,9 +67,27 @@ void RasterizerGL::initialize()
     glAlphaFunc(GL_GREATER, 0.01f);
 }
 
+static void log_timer(const char* name, const lx0::Timer& timer, const lx0::Timer& base)
+{
+    lx_log("\t%-24s %-6u ms  %-9.2lf avg  %6.2lf%%  (%u)", 
+        name, 
+        timer.totalMs(), timer.averageMs(), 
+        100.0 * double(timer.totalMs()) / double(base.totalMs()),
+        timer.count()
+        );
+}
+
 void RasterizerGL::shutdown()
 {
+    mStats.tmLifetime.stop();
+
     lx_log("%s", __FUNCTION__);
+    log_timer("Lifetime",           mStats.tmLifetime, mStats.tmLifetime);
+    log_timer("scene",              mStats.tmScene, mStats.tmScene);
+    log_timer("rasterizeList",      mStats.tmRasterizeList, mStats.tmScene);
+    log_timer("rasterizeItem",      mStats.tmRasterizeItem, mStats.tmScene);
+    log_timer("activate Material",  mStats.tmMaterialActivate, mStats.tmScene);
+    log_timer("activate Geometry",  mStats.tmGeometryActivate, mStats.tmScene);
 }
 
 CameraPtr       
@@ -979,6 +998,8 @@ RasterizerGL::refreshTextures (void)
 void 
 RasterizerGL::beginScene (RenderAlgorithm& algorithm)
 {
+    mStats.tmScene.start();
+
     lx_check_error( glGetError() == GL_NO_ERROR );
 
     // Should the clear actually be part of the GlobalPass?  Additionally to this?
@@ -991,11 +1012,14 @@ RasterizerGL::beginScene (RenderAlgorithm& algorithm)
 void RasterizerGL::endScene()
 {
     lx_check_error( glGetError() == GL_NO_ERROR );
+    mStats.tmScene.stop();
 }
 
 void 
 RasterizerGL::rasterizeList (RenderAlgorithm& algorithm, std::vector<std::shared_ptr<Item>>& list)
 {
+    mStats.tmRasterizeList.start();
+
     for (auto pass = algorithm.mPasses.begin(); pass != algorithm.mPasses.end(); ++pass)
     {
         mContext.itemId = 0;
@@ -1006,7 +1030,7 @@ RasterizerGL::rasterizeList (RenderAlgorithm& algorithm, std::vector<std::shared
             auto spItem = *it;
             if (spItem)
             {
-                rasterize(*pass, *it);
+                rasterizeItem(*pass, *it);
             }
             else
             {
@@ -1017,11 +1041,15 @@ RasterizerGL::rasterizeList (RenderAlgorithm& algorithm, std::vector<std::shared
 
         mContext.pGlobalPass = nullptr;
     }
+
+    mStats.tmRasterizeList.stop();
 }
 
 void 
-RasterizerGL::rasterize(GlobalPass& pass, std::shared_ptr<Item> spItem)
+RasterizerGL::rasterizeItem (GlobalPass& pass, std::shared_ptr<Item> spItem)
 {
+    mStats.tmRasterizeItem.start();
+
     lx_check_error(spItem.get() != nullptr);
 
     // Set up the context variables that have changed
@@ -1045,11 +1073,16 @@ RasterizerGL::rasterize(GlobalPass& pass, std::shared_ptr<Item> spItem)
 
         mContext.spCamera->activate();
         mContext.spLightSet->activate();
+        
+        mStats.tmMaterialActivate.start();
         mContext.spMaterial->activate(this, pass);
-        check_glerror();
+        mStats.tmMaterialActivate.stop();
+        
         spItem->spTransform->activate(spItem->spCamera);
-        check_glerror();
-        spItem->spGeometry->activate(this, pass);    
+        
+        mStats.tmGeometryActivate.start();
+        spItem->spGeometry->activate(this, pass);
+        mStats.tmGeometryActivate.stop();
     
         check_glerror();
     }
@@ -1058,6 +1091,8 @@ RasterizerGL::rasterize(GlobalPass& pass, std::shared_ptr<Item> spItem)
     mContext.spLightSet = nullptr;
     mContext.spMaterial = nullptr;
     mContext.spItem = nullptr;
+
+    mStats.tmRasterizeItem.stop();
 }
 
 

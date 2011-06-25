@@ -91,4 +91,18 @@ namespace lx0 { namespace util { namespace misc {
         // End Windows specific hack
     }
 
+    lx0::int64  Timer::_ticks()
+    {
+        LARGE_INTEGER li;
+        QueryPerformanceCounter(&li);
+        return li.QuadPart;
+    }
+
+    lx0::int64  Timer::_ticksPerSec()
+    {
+        LARGE_INTEGER li;
+        QueryPerformanceFrequency(&li);
+        return li.QuadPart;
+    }
+
 }}}

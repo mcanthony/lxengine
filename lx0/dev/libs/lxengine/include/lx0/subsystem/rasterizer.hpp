@@ -33,7 +33,7 @@
 #include <glgeom/prototype/material_phong.hpp>
 
 #include <lx0/engine/document.hpp>
-
+#include <lx0/util/misc.hpp>
 
 
 
@@ -417,7 +417,7 @@ namespace lx0
                 void            endScene        (void);
 
                 void            rasterizeList   (RenderAlgorithm& algorithm, std::vector<std::shared_ptr<Item>>& list);
-                void            rasterize       (GlobalPass& pass, std::shared_ptr<Item> spItem);
+                void            rasterizeItem   (GlobalPass& pass, std::shared_ptr<Item> spItem);
                 unsigned int    readPixel       (int x, int y);
 
                 struct 
@@ -443,6 +443,16 @@ namespace lx0
 
                 std::list<ResourcePtr>      mResources;
                 std::vector<TexturePtr>     mTextures;
+
+                struct
+                {
+                    lx0::Timer  tmLifetime;
+                    lx0::Timer  tmScene;
+                    lx0::Timer  tmRasterizeList;
+                    lx0::Timer  tmRasterizeItem;
+                    lx0::Timer  tmMaterialActivate;
+                    lx0::Timer  tmGeometryActivate;
+                } mStats;
             };
         }
     }

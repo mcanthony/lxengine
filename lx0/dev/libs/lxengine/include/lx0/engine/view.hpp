@@ -199,6 +199,8 @@ namespace lx0 { namespace engine { namespace dom_ns {
     public:
 
         virtual void initialize (ViewPtr spView) {}
+        virtual void shutdown   (View* pView) {}
+
         virtual void render     (void) {}
         virtual void update     (void) {}
 

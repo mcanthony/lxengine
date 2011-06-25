@@ -101,9 +101,10 @@ namespace lx0 { namespace core { namespace init_ns {
                 return [css, prefix](const char* s) {
                     
                     // Quick and ugly HTML escaping
+                    size_t len = strlen(s);
                     std::string t;
-                    t.reserve(strlen(s));
-                    for (size_t i = 0; i < t.size(); ++i)
+                    t.reserve(len);
+                    for (size_t i = 0; i < len; ++i)
                     {
                         switch (s[i])
                         {

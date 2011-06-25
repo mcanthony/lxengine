@@ -49,6 +49,28 @@ namespace lx0 { namespace util { namespace misc {
 
             void                _lx_reposition_console  (void);
 
+
+            class Timer
+            {
+            public:
+                            Timer() : mCount(0), mTotal(0) {}
+
+            void            start       (void)      { mStart = _ticks(); }
+            void            stop        (void)      { mTotal += _ticks() - mStart; mCount++; mStart = 0; }
+
+            int             count       (void) const { return mCount; }
+            double          averageMs   (void) const { return (lx0::uint32)(mTotal * 1000 / (_ticksPerSec() * mCount)); } 
+            lx0::uint32     totalMs     (void) const { return (lx0::uint32)(mTotal * 1000 / _ticksPerSec()); }
+
+            protected:
+                static  lx0::int64  _ticks();
+                static  lx0::int64  _ticksPerSec();
+
+                int         mCount;
+                lx0::int64  mStart;
+                lx0::int64  mTotal;
+            };
+
         }
     }
     using namespace lx0::util::misc;
