@@ -3,6 +3,7 @@
                                    LxEngine
 
     LICENSE
+    * MIT License (http://www.opensource.org/licenses/mit-license.php)
 
     Copyright (c) 2011 athile@athile.net (http://www.athile.net)
 
@@ -26,50 +27,7 @@
 */
 //===========================================================================//
 
-#include "lx0/subsystem/rasterizer.hpp"
-#include <lx0/util/blendload.hpp>
+#pragma once
 
-
-using namespace lx0::subsystem::rasterizer_ns;
-
-MeshCache::MeshCache(std::shared_ptr<RasterizerGL> spRasterizer)
-    : mspRasterizer     (spRasterizer)
-{
-    mStats.acquireCount = 0;
-}
-
-MeshCache::~MeshCache()
-{
-    lx_log("MeshCache dtor");
-}
-
-GeometryPtr 
-MeshCache::acquire (const char* filename)
-{
-    mStats.acquireCount++;
-
-    auto it = mCache.find(filename);
-    if (it != mCache.end())
-    {
-        lx_debug("Reusing cache for '%s'", filename);
-        return it->second;
-    }
-    else
-    {
-        lx_log("Adding mesh '%s' to MeshCache", filename);
-
-        auto spGeom = lx0::quadlist_from_blendfile(*mspRasterizer.get(), filename);
-        mCache.insert(std::make_pair(filename, spGeom));
-        return spGeom;
-    }
-}
-
-size_t MeshCache::acquireCount (void) const
-{
-    return mStats.acquireCount;
-}
-
-size_t MeshCache::cacheSize (void) const
-{
-    return mCache.size();
-}
+#include <lx0/util/misc/lxvar_convert.hpp>
+#include <lx0/util/misc/util.hpp>

@@ -33,15 +33,19 @@
 #include <glgeom/prototype/camera.hpp>
 
 using namespace lx0;
-
-
+using namespace glgeom;
 
 //===========================================================================//
 
-class CameraComp : public Element::Component
+class RdCamera : public Element::Component
 {
 public:
-    CameraComp (lx0::CameraPtr spCam) : mspCamera (spCam) {}
+    RdCamera (RasterizerGL* pRasterizer)
+        : mPosition (1, 1, 1)
+        , mTarget   (0, 0, 0)
+    {
+        mspCamera = pRasterizer->createCamera(60.0f, 0.01f, 5000.0f, glm::lookAt(mPosition.vec, mTarget.vec, glm::vec3(0, 0, 1)));
+    }
 
     virtual void    onValueChange       (ElementPtr spElem, lxvar value)
     {
@@ -51,22 +55,26 @@ public:
     void resetViewDirection (ElementPtr spElem)
     {
         auto value = spElem->value();
-        glgeom::vector3f position = value.find("position").convert();
-        glgeom::point3f target = value.find("look_at").convert();
+        mPosition = value.find("position").convert();
+        mTarget = value.find("look_at").convert();
 
-        auto view = glm::lookAt(position.vec, target.vec, glm::vec3(0, 0, 1));
+        auto view = glm::lookAt(mPosition.vec, mTarget.vec, glm::vec3(0, 0, 1));
         mspCamera->viewMatrix = view;
     }
 
-    lx0::CameraPtr       mspCamera; 
+    glgeom::point3f     mPosition;
+    glgeom::point3f     mTarget;
+    lx0::CameraPtr      mspCamera; 
 };
+
+typedef std::shared_ptr<RdCamera> RdCameraPtr;
 
 //===========================================================================//
 
 class Renderable : public Element::Component
 {
 public:
-    virtual void    generate (RenderList& list) = 0;
+    virtual void    generate (RasterizerGL* pRasterizer, MeshCachePtr spMeshCache, RdCameraPtr spCamera, RenderList& list) = 0;
 };
 
 typedef std::shared_ptr<Renderable> RenderablePtr;
@@ -74,7 +82,7 @@ typedef std::shared_ptr<Renderable> RenderablePtr;
 class RdVoxelCell : public Renderable
 {
 public:
-    RdVoxelCell (RasterizerGL* pRasterizer, MeshCachePtr spMeshCache)
+    RdVoxelCell (RasterizerGL* pRasterizer, MeshCachePtr spMeshCache, const vector3f& offset)
     {
         for (int z = 0; z < 4; ++z)
         {
@@ -86,13 +94,17 @@ public:
                     if ((x + y + z) % 2 == 1)
                         color = glgeom::color3f(.2f, .2f, .8f);
                     auto spMat = pRasterizer->createSolidColorMaterial(color);
+                    
+                    if (z > 0)
+                    {
+                        ItemPtr spItem(new Item);
 
-                    ItemPtr spItem(new Item);
-                    spItem->spMaterial = spMat;
-                    spItem->spTransform = pRasterizer->createTransform(glgeom::vector3f(1, 1, 1), glgeom::point3f(x, y, z));
-                    spItem->spGeometry = spMeshCache->acquire("media2/models/unit_cube-000.blend");
+                        spItem->spMaterial = spMat;
+                        spItem->spTransform = pRasterizer->createTransform(glgeom::vector3f(1, 1, 1), offset + glgeom::point3f(x + .5f, y + 5.f, z + .5f));
+                        spItem->spGeometry = spMeshCache->acquire("media2/models/unit_cube-000.blend");
 
-                    mBlocks[z * 16 * 16 + y * 16 + x] = spItem;
+                        mBlocks[z * 16 * 16 + y * 16 + x] = spItem;
+                    }
                 }
             }
         }
@@ -102,14 +114,90 @@ public:
     {
     }
 
-    virtual void generate (RenderList& list)
+    virtual void generate (RasterizerGL* pRasterizer, MeshCachePtr spMeshCache, RdCameraPtr spCamera, RenderList& list)
     {
         for (int i = 0; i < 16 * 16 * 4; ++i)
-            list.push_back(0, mBlocks[i]);
+        {
+            if (mBlocks[i])
+                list.push_back(0, mBlocks[i]);
+        }
     }
 
     ItemPtr mBlocks[16 * 16 * 4];
 };
+
+typedef std::shared_ptr<RdVoxelCell> RdVoxelCellPtr;
+
+class RdSparseGrid : public Renderable
+{
+public:
+    RdSparseGrid ()
+    {
+    }
+
+    virtual void generate (RasterizerGL* pRasterizer, MeshCachePtr spMeshCache, RdCameraPtr spCamera, RenderList& list)
+    {
+        const int radius = 1;
+        const int x0 = int(spCamera->mPosition.x/16) - radius;
+        const int x1 = int(spCamera->mPosition.x/16) + radius;
+        const int y0 = int(spCamera->mPosition.y/16) - radius;
+        const int y1 = int(spCamera->mPosition.y/16) + radius;
+        const int z0 = int(spCamera->mPosition.z/16) - radius;
+        const int z1 = int(spCamera->mPosition.z/16) + radius;
+
+        for (int z = z0; z <= z1; ++z)
+        {
+            for (int y = y0; y <= y1; ++y)
+            {
+                for (int x = x0; x <= x1; ++x)
+                {
+                    Index idx(x, y, z);
+
+                    RenderablePtr spRenderable;
+
+                    auto it = mGrid.find(idx);
+                    if (it == mGrid.end())
+                    {
+                        vector3f offset(x * 16, y * 16, z * 16);
+                        auto pCell = new RdVoxelCell(pRasterizer, spMeshCache, offset);
+
+                        spRenderable = RenderablePtr(pCell);
+                        mGrid.insert(std::make_pair(idx, spRenderable));
+                    }
+                    else
+                        spRenderable = it->second;
+
+                    spRenderable->generate(pRasterizer, spMeshCache, spCamera, list);
+                }
+            }
+        }
+    }
+
+protected:
+    struct Index
+    {
+        Index(int x_, int y_, int z_) : x(x_), y(y_), z(z_) {}
+        bool operator < (const Index& that) const
+        {
+            if (x < that.x) 
+                return true;
+            else if (x > that.x)
+                return false;
+            else if (y < that.y) 
+                return true;
+            else if (y > that.y)
+                return false;
+            else if (z < that.z) 
+                return true;
+            else
+                return false;
+        }
+        int x, y, z;
+    };
+
+    std::map<Index, RenderablePtr> mGrid;
+};
+
 
 //===========================================================================//
 
@@ -123,7 +211,7 @@ public:
 
         mspMeshCache.reset( new MeshCache(mspRasterizer) );
 
-        mspCamera = mspRasterizer->createCamera(60.0f, 0.01f, 5000.0f, glm::lookAt(glm::vec3(24, 48, 32), glm::vec3(0, 0, 0), glm::vec3(0, 0, 1)));
+        mspCamera.reset(new RdCamera(mspRasterizer.get()));
         mspLightSet = mspRasterizer->createLightSet();
 
         spView->document()->iterateElements([&](ElementPtr spElem) -> bool { 
@@ -138,13 +226,13 @@ public:
         algorithm.mClearColor = glgeom::color4f(0.1f, 0.1f, 0.0f, 1.0f);
         GlobalPass pass[4];
         pass[0].tbFlatShading = true;
-        pass[0].spCamera = mspCamera;
+        pass[0].spCamera = mspCamera->mspCamera;
         pass[0].spLightSet = mspLightSet;
         algorithm.mPasses.push_back(pass[0]);
 
         RenderList items;
         for (auto it = mRenderables.begin(); it != mRenderables.end(); ++it)
-            (*it)->generate(items);
+            (*it)->generate(mspRasterizer.get(), mspMeshCache, mspCamera, items);
 
         mspRasterizer->beginScene(algorithm);
         for (auto it = items.begin(); it != items.end(); ++it)
@@ -169,14 +257,17 @@ protected:
 
         const std::string tag = spElem->tagName();
 
-        if (tag == "VoxelCell")
+        /*if (tag == "VoxelCell")
         {
             mRenderables.push_back(RenderablePtr(new RdVoxelCell(mspRasterizer.get(), mspMeshCache)));
+        }*/
+        if (tag == "SparseGrid")
+        {
+            mRenderables.push_back(RenderablePtr(new RdSparseGrid));
         }
         else if (tag == "Camera")
         {
-            mspCamera = mspRasterizer->createCamera(60.0f, 0.1f, 2000.0f, glm::mat4());
-            auto pComp = new CameraComp(mspCamera);
+            auto pComp = new RdCamera(mspRasterizer.get());
             pComp->resetViewDirection(spElem);
             spElem->attachComponent("rasterizer", pComp);
         }
@@ -186,177 +277,15 @@ protected:
     }
 
     std::shared_ptr<RasterizerGL>       mspRasterizer;
-    std::auto_ptr<MeshCache>            mspMeshCache;
+    MeshCachePtr                        mspMeshCache;
 
-    lx0::CameraPtr                      mspCamera;
+    RdCameraPtr                         mspCamera;
     lx0::LightSetPtr                    mspLightSet;
     std::vector<RenderablePtr>          mRenderables;
     
     std::map<std::string,MaterialPtr>   mMaterials;
 };
 
-//===========================================================================//
 
-class UIBindingImp : public lx0::UIBinding
-{
-public:
-
-    UIBindingImp()
-    {
-        // _sendDocEventOnKeyIsDown(KC_W, "move_forward", lxvar(.1f));
-        // _sendDocEventOnKeyDown(KC_R, "redraw", lxvar());
-    }
-
-    virtual     void        updateFrame     (ViewPtr spView,
-                                             const KeyboardState& keyboard)
-    {
-        const float step = 0.4f;
-
-        if (keyboard.bDown[KC_ESCAPE])
-            Engine::acquire()->sendMessage("quit");
-        
-        if (keyboard.bDown[KC_R])
-            spView->sendEvent("redraw", lxvar());
-
-        if (keyboard.bDown[KC_W])
-            spView->document()->sendEvent("move_forward", lxvar(step));
-        if (keyboard.bDown[KC_S])
-            spView->document()->sendEvent("move_forward", lxvar(-step));
-        if (keyboard.bDown[KC_A])
-            spView->document()->sendEvent("move_right", lxvar(-step));
-        if (keyboard.bDown[KC_D])
-            spView->document()->sendEvent("move_right", lxvar(step));
-        if (keyboard.bDown[KC_Q])
-            spView->document()->sendEvent("move_up", lxvar(-step));
-        if (keyboard.bDown[KC_E])
-            spView->document()->sendEvent("move_up", lxvar(step));
-    }
-
-    void onLDrag (ViewPtr spView, const MouseState& ms, const ButtonState& bs, KeyModifiers km)
-    {
-        const float horz = ms.deltaX() * -3.14f / 1000.0f;
-        const float vert = ms.deltaY() * -3.1415f / 1000.0f;
-
-        if (fabs(horz) > 1e-3f)
-            spView->document()->sendEvent("rotate_horizontal", horz);
-        if (fabs(vert) > 1e-3f)
-            spView->document()->sendEvent("rotate_vertical", vert);
-
-        spView->sendEvent("redraw");
-    }
-};
-
-//===========================================================================//
-
-class ControllerImp : public lx0::Controller
-{
-public:
-    ControllerImp (lx0::Document* pDoc) : mpDocument(pDoc) {}
-
-    virtual void handleEvent (std::string evt, lx0::lxvar params)
-    {
-        if (evt == "move_forward")
-        {
-            const float step = params.convert();
-            auto spElem = mpDocument->getElementsByTagName("Camera")[0];
- 
-            lxvar val = spElem->value();
-            glgeom::point3f pos = val["position"].convert();
-            glgeom::point3f target = val["look_at"].convert();
-
-            auto dir = glgeom::normalize(target - pos);
-            pos += dir * step;
-            target += dir * step;
-
-            val.insert("position", lx0::lxvar_from(pos));
-            val.insert("look_at", lx0::lxvar_from(target));
-
-            spElem->value(val);
-
-            mpDocument->view(0)->sendEvent("redraw");
-        }
-        else if (evt == "move_right")
-        {
-            const float step = params.convert();
-            auto spElem = mpDocument->getElementsByTagName("Camera")[0];
- 
-            lxvar val = spElem->value();
-            glgeom::point3f pos = val["position"].convert();
-            glgeom::point3f target = val["look_at"].convert();
-
-            auto dir = glgeom::normalize(target - pos);
-            dir = glgeom::cross(dir, glgeom::vector3f(0, 0, 1));
-            pos += dir * step;
-            target += dir * step;
-
-            val.insert("position", lx0::lxvar_from(pos));
-            val.insert("look_at", lx0::lxvar_from(target));
-
-            spElem->value(val);
-
-            mpDocument->view(0)->sendEvent("redraw");
-        }
-        else if (evt == "move_up")
-        {
-            const float step = params.convert();
-            auto spElem = mpDocument->getElementsByTagName("Camera")[0];
- 
-            lxvar val = spElem->value();
-            glgeom::point3f pos = val["position"].convert();
-            glgeom::point3f target = val["look_at"].convert();
-
-            pos.z += step;
-            target.z += step;
-
-            val.insert("position", lx0::lxvar_from(pos));
-            val.insert("look_at", lx0::lxvar_from(target));
-
-            spElem->value(val);
-
-            mpDocument->view(0)->sendEvent("redraw");
-        }
-        else if (evt == "rotate_horizontal")
-        {
-            const float step = params.convert();
-            auto spElem = mpDocument->getElementsByTagName("Camera")[0];
-            lxvar val = spElem->value();
-            glgeom::point3f position = val["position"];
-            glgeom::point3f target = val["look_at"];
-
-            const auto view = target - position;
-            const glgeom::vector3f rotated = rotate(view, glgeom::vector3f(0, 0, 1), float(params));
-            target = position + rotated;
-
-            val.insert("position", lx0::lxvar_from(position));
-            val.insert("look_at", lx0::lxvar_from(target));
-
-            spElem->value(val);
-        }
-        else if (evt == "rotate_vertical")
-        {
-            const float step = params.convert();
-            auto spElem = mpDocument->getElementsByTagName("Camera")[0];
-            lxvar val = spElem->value();
-            glgeom::point3f position = val["position"];
-            glgeom::point3f target = val["look_at"];
-
-            const auto view = target - position;
-            const auto right = cross(view, glgeom::vector3f(0, 0, 1));
-            const glgeom::vector3f rotated = rotate(view, right, float(params));
-            target = position + rotated;
-
-            val.insert("position", lx0::lxvar_from(position));
-            val.insert("look_at", lx0::lxvar_from(target));
-
-            spElem->value(val);
-        }
-
-    }
-
-    lx0::Document* mpDocument;
-};
 
 lx0::View::Component*   create_renderer()       { return new Renderer; }
-lx0::UIBinding*         create_uibinding()      { return new UIBindingImp; }
-lx0::Controller*        create_controller(DocumentPtr spDoc)    { return new ControllerImp(spDoc.get()); }
-

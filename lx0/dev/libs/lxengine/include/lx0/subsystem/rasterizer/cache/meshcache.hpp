@@ -55,12 +55,24 @@ namespace lx0
             {
             public:
                             MeshCache   (std::shared_ptr<RasterizerGL> spRasterizer);
+                            ~MeshCache  ();
     
                 GeometryPtr acquire     (const char* filename);
 
+                //@name Statistics
+                //@{
+                size_t      acquireCount    (void) const;
+                size_t      cacheSize       (void) const;
+                //@}
+
             protected:
                 std::shared_ptr<RasterizerGL>       mspRasterizer;
-                std::map<std::string,GeometryPtr>   mMeshes;
+                std::map<std::string,GeometryPtr>   mCache;
+
+                struct
+                {
+                    size_t                          acquireCount;
+                } mStats;
             };
 
             typedef std::shared_ptr<MeshCache> MeshCachePtr;

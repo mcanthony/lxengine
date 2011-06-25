@@ -13,9 +13,9 @@
       </View>
     </Library>
     <Scene view="view">
-      <SparseGrid3D>
+      <SparseGrid>
         <VoxelCell>        
         </VoxelCell>
-      </SparseGrid3D>
+      </SparseGrid>
     </Scene>
 </Document>
