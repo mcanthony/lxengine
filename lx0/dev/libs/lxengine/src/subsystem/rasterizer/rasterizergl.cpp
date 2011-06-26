@@ -315,34 +315,7 @@ RasterizerGL::_createShader(const char* filename, GLuint type)
     return shaderHandle;
 }
 
-
-GeometryPtr 
-RasterizerGL::createQuadList (std::vector<glgeom::point3f>& positionData)
-{
-    GLuint vao[1];
-
-    // Create a vertex array to store the vertex data
-    //
-    glGenVertexArrays(1, &vao[0]);
-    glBindVertexArray(vao[0]);
-
-    lx_check_error( glGetError() == GL_NO_ERROR, "OpenGL error detected." );
-
-    GLuint vbo[1];
-    glGenBuffers(1, &vbo[0]);
-    glBindBuffer(GL_ARRAY_BUFFER, vbo[0]);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(glgeom::point3f) * positionData.size(), &positionData[0], GL_STATIC_DRAW);
-        
-    lx_check_error( glGetError() == GL_NO_ERROR, "OpenGL error detected." );
-
-    auto pQuadList = new QuadList;
-    pQuadList->vbo[0] = vbo[0];
-    pQuadList->vao[0] = vao[0];
-    pQuadList->size = positionData.size();
-    return GeometryPtr(pQuadList);
-}
-
-GeometryPtr 
+GeometryPtr
 RasterizerGL::createQuadList (std::vector<glgeom::point3f>& positions, 
                               std::vector<glgeom::color3f>& colors)
 {
@@ -394,7 +367,7 @@ RasterizerGL::createQuadList (std::vector<unsigned short>& indices,
 }
 
 GeometryPtr
-RasterizerGL::createQuadList (std::vector<unsigned short>& indices, 
+RasterizerGL::createQuadList (std::vector<unsigned short>& quadIndices, 
                               std::vector<lx0::uint8>& faceFlags,
                               std::vector<glgeom::point3f>& positions, 
                               std::vector<glgeom::vector3f>& normals,
@@ -402,9 +375,9 @@ RasterizerGL::createQuadList (std::vector<unsigned short>& indices,
 {
     check_glerror();
 
-    lx_check_error(indices.size() == faceFlags.size() * 4, 
+    lx_check_error(quadIndices.size() == faceFlags.size() * 4, 
         "Expected a single flag per quad.  Count mismatch (%u indicies, %u flags).",
-        indices.size(), faceFlags.size());
+        quadIndices.size(), faceFlags.size());
 
     // Create a vertex array to store the vertex data
     //
@@ -412,10 +385,33 @@ RasterizerGL::createQuadList (std::vector<unsigned short>& indices,
     glGenVertexArrays(1, &vao);
     glBindVertexArray(vao);
 
+    // Create the index array
+    //
+    // OpenGL 3.2 Core Profile does not support GL_QUADS, so convert the indices to a triangle list
+    //
+    std::vector<lx0::uint16> triIndices( (quadIndices.size() * 3) / 2);
+    {
+        lx0::uint16* pDst = &triIndices[0];
+        lx0::uint16* pSrc = &quadIndices[0];
+
+        for (size_t i = 0; i < quadIndices.size(); i += 4)
+        {
+            pDst[0] = pSrc[0];  // Triangle 1
+            pDst[1] = pSrc[1];
+            pDst[2] = pSrc[2];
+            pDst[3] = pSrc[0];  // Triangle 2
+            pDst[4] = pSrc[2];
+            pDst[5] = pSrc[3];
+
+            pDst += 6;
+            pSrc  += 4;
+        }
+    }
+
     GLuint vio;
     glGenBuffers(1, &vio);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, vio);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(indices[0]), &indices[0], GL_STATIC_DRAW);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, triIndices.size() * sizeof(triIndices[0]), &triIndices[0], GL_STATIC_DRAW);
 
     GLuint vboPositions;
     glGenBuffers(1, &vboPositions);
@@ -434,9 +430,18 @@ RasterizerGL::createQuadList (std::vector<unsigned short>& indices,
 
     check_glerror();
 
-    auto flags = faceFlags;
-    for (auto it = flags.begin(); it != flags.end(); ++it)
-        *it = (*it != 0) ? 255 : 0;
+    //
+    // Convert the face flags.  Need to double the number of faces (since going from a quad to tri)
+    // and force the flag to a 0 or 255 value to indicate flat or smooth shading; eventually these
+    // flags might have additional purposes.
+    //
+    std::vector<lx0::uint8> flags(faceFlags.size() * 2);
+    for (size_t i = 0; i < faceFlags.size(); ++i)
+    {
+        const auto v = (faceFlags[i] != 0) ? 255 : 0; 
+        flags[i * 2 + 0] = v;
+        flags[i * 2 + 1] = v;
+    }
 
     GLuint texFlags;
     glGenTextures(1, &texFlags);
@@ -452,15 +457,15 @@ RasterizerGL::createQuadList (std::vector<unsigned short>& indices,
     // Create the cache to encapsulate the created OGL resources
     //
     auto pGeom = new GeomImp;
-    pGeom->mType        = GL_QUADS;
+    pGeom->mType        = GL_TRIANGLES;
     pGeom->mVao         = vao;
     pGeom->mVboIndices  = vio;
-    pGeom->mCount       = indices.size();
+    pGeom->mCount       = triIndices.size();
     pGeom->mVboPosition = vboPositions;
     pGeom->mVboNormal   = vboNormals;
     pGeom->mVboColors   = vboColors;
     pGeom->mTexFlags    = texFlags;
-    pGeom->mFaceCount   = faceFlags.size();
+    pGeom->mFaceCount   = flags.size();
     return GeometryPtr(pGeom);
 }
 

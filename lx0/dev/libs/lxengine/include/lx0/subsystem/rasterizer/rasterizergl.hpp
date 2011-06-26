@@ -161,7 +161,6 @@ namespace lx0
                 TransformPtr    createTransformBillboardXYS (float tx, float ty, float tz, float sx, float sy, float sz);
                 TransformPtr    createTransformEye          (float tx, float ty, float tz, glgeom::radians z_angle);
 
-                GeometryPtr     createQuadList  (std::vector<glgeom::point3f>& quads);
                 GeometryPtr     createQuadList  (std::vector<glgeom::point3f>& positions, 
                                                  std::vector<glgeom::color3f>& colors);
                 GeometryPtr     createQuadList  (std::vector<unsigned short>& indices, 

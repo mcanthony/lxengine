@@ -77,7 +77,6 @@ public:
         RenderAlgorithm algorithm;
         algorithm.mClearColor = glgeom::color4f(0.0f, 0.3f, 0.32f, 1.0f);
         GlobalPass pass[4];
-        pass[0].tbFlatShading = true;
         algorithm.mPasses.push_back(pass[0]);
 
         RenderList items;
