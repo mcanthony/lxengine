@@ -44,7 +44,10 @@ namespace lx0
             class Camera
             {
             public:
-                virtual void activate();
+                virtual ~Camera() {}
+
+                virtual void activate(RasterizerGL* pRasterizer);
+                
                 float   fov;
                 float   nearDist;
                 float   farDist;

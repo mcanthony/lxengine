@@ -31,30 +31,26 @@
 using namespace lx0;
 
 void
-Camera::activate()
+Camera::activate(RasterizerGL* pRasterizer)
 {
     check_glerror();
-
+        
     //
     // Setup projection matrix
     //
-    glMatrixMode(GL_PROJECTION);
-    glLoadIdentity();
-
     int vp[4];  // x, y, width, height
     glGetIntegerv(GL_VIEWPORT, vp);
     GLfloat aspectRatio = (GLfloat)vp[2]/(GLfloat)vp[3];
-    gluPerspective(fov, aspectRatio, nearDist, farDist);
+
+    // Recompute every time
+    ///@todo This is dangerous - projMatrix can easily fall out of sync and it is
+    /// not documented how and where this variable is set.
+    glMatrixMode(GL_PROJECTION);
+    auto projMatrix = glm::perspective(fov, aspectRatio, nearDist, farDist);
+    glLoadMatrixf(glm::value_ptr(projMatrix));
 
     //
     // Setup view matrix
-    //
-    // OpenGL matrices are laid out with rows contiguous in memory (i.e. data[1] in 
-    // the 16 element array is the second element in the first row); glm::mat4 uses
-    // column-major ordering.  Therefore load it as a tranpose to swap the order.
-    //
-    // Note: it's also not necessarily faster to send the non-transpose, as the
-    // OpenGL API does not necessarily match the underlying hardware representation.
     //
     glMatrixMode(GL_MODELVIEW);
     glLoadMatrixf(glm::value_ptr(viewMatrix));

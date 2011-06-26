@@ -708,7 +708,7 @@ RasterizerGL::rasterizeItem (GlobalPass& pass, std::shared_ptr<Item> spItem)
     {
         check_glerror();
 
-        mContext.spCamera->activate();
+        mContext.spCamera->activate(this);
         mContext.spLightSet->activate();
         
         mStats.tmMaterialActivate.start();

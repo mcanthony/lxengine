@@ -80,7 +80,6 @@ main (int argc, char** argv)
         spEngine->addViewPlugin("Canvas", [] (View* pView) { return lx0::createCanvasViewImp(); });
 
         spEngine->addDocumentComponent("physics2", [] () { return new PhysicsSubsystem; } );
-        spEngine->addDocumentComponent("rasterizer", lx0::createIRasterizer);
 
         spEngine->addElementComponent("Terrain", "runtime", [](ElementPtr spElem) { return new Terrain::Runtime(spElem); }); 
         spEngine->addElementComponent("Terrain", "renderable", [](ElementPtr spElem) { return new Terrain::Render; });

@@ -51,6 +51,9 @@ link_directories(${Boost_LIBRARY_DIRS})
 # Glew
 include_directories( ${CMAKE_SOURCE_DIR}/libs/lxengine/src/extern/glew )
 
+# Modified Gl3w
+include_directories( ${CMAKE_SOURCE_DIR}/libs/lxengine/src/extern/gl3w/include )
+
 # OGRE
 message(STATUS "Ogre include dir: ${OGRE_INCLUDE_DIR}")
 include_directories(${OGRE_INCLUDE_DIR})
