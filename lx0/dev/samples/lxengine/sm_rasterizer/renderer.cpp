@@ -303,7 +303,7 @@ public:
                                              const KeyboardState& keyboard)
     {
         if (keyboard.bDown[KC_ESCAPE])
-            Engine::acquire()->sendMessage("quit");
+            Engine::acquire()->sendEvent("quit");
         
         if (keyboard.bDown[KC_R])
             spView->sendEvent("redraw", lxvar());

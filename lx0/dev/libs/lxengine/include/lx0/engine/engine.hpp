@@ -139,7 +139,7 @@ namespace lx0
         
                 const std::vector<DocumentPtr>& documents (void) { return m_documents; }
 
-                void                sendMessage         (const char* message);
+                void                sendEvent           (const char* evt);
                 int	                run                 (void);
 
                 ///@name Attribute Parsing

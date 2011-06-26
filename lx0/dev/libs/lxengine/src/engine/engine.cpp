@@ -325,7 +325,7 @@ namespace lx0 { namespace engine { namespace dom_ns {
     }
 
 	void   
-	Engine::sendMessage (const char* message)
+	Engine::sendEvent (const char* message)
     {
         if (strcmp("quit", message) == 0)
             lx_debug("Message 'quit' sent to Engine");

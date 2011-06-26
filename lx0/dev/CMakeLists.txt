@@ -209,6 +209,7 @@ SET_PROPERTY(TARGET sm_rasterizer           PROPERTY FOLDER "Samples/LxEngine")
 SET_PROPERTY(TARGET sm_ogre_minimal         PROPERTY FOLDER "Samples/ThirdPartyLibs")
 SET_PROPERTY(TARGET sm_v8_basic             PROPERTY FOLDER "Samples/ThirdPartyLibs")
 SET_PROPERTY(TARGET cpp_smartptr            PROPERTY FOLDER "Samples/Cpp")
+SET_PROPERTY(TARGET tutorial_01             PROPERTY FOLDER "Samples/Tutorial")
 
 SET_PROPERTY(TARGET bm_lxvar                PROPERTY FOLDER "Benchmarks")
 SET_PROPERTY(TARGET blendload               PROPERTY FOLDER "Sandbox")

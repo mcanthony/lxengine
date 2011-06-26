@@ -72,7 +72,7 @@ CameraController::updateFrame (ViewPtr spView, const KeyboardState& keyboard)
     const float kStep = 2.0f;
 
     if (keyboard.bDown[KC_ESCAPE])
-        Engine::acquire()->sendMessage("quit");
+        Engine::acquire()->sendEvent("quit");
 
     if (keyboard.bDown[KC_W])
         spView->sendEvent("move_forward", kStep);

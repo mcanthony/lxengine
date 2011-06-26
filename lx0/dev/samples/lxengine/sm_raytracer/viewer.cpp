@@ -55,7 +55,7 @@ public:
                                              const KeyboardState& keyboard)
     {
         if (keyboard.bDown[KC_ESCAPE])
-            Engine::acquire()->sendMessage("quit");
+            Engine::acquire()->sendEvent("quit");
  
         timed_gate_block (50, { 
             spView->sendEvent("redraw", lxvar());

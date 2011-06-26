@@ -294,7 +294,7 @@ namespace {
     public:
         virtual void windowClosed(Ogre::RenderWindow* pRenderWindow)
         {
-            Engine::acquire()->sendMessage("quit");
+            Engine::acquire()->sendEvent("quit");
         }
     };
 

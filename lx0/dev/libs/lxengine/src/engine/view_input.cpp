@@ -136,7 +136,7 @@ namespace lx0 { namespace engine { namespace dom_ns { namespace detail {
 
             // Test code...
             if (mpKeyboard->isKeyDown(OIS::KC_ESCAPE))
-                Engine::acquire()->sendMessage("quit");
+                Engine::acquire()->sendEvent("quit");
         }
 
         bool 
