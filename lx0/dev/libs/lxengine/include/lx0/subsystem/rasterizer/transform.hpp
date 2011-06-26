@@ -26,21 +26,23 @@
 */
 //===========================================================================//
 
-#include <lx0/engine/engine.hpp>
-#include <lx0/subsystem/rasterizer.hpp>
+#pragma once
 
-using namespace lx0::core;
-
-namespace lx0 { 
-
-    class RasterizerImp : public IRasterizer
+namespace lx0
+{
+    namespace subsystem
     {
-    public:
-    };
-
-    IRasterizer* createIRasterizer()
-    {
-        return new RasterizerImp;
+        namespace rasterizer_ns
+        {
+            //===========================================================================//
+            //! \ingroup lx0_subsystem_rasterizer
+            class Transform
+            {
+            public:
+                virtual void activate(CameraPtr);
+                glm::mat4 mat;
+            };
+            typedef std::shared_ptr<Transform> TransformPtr;
+        }
     }
-
 }

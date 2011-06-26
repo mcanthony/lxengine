@@ -28,33 +28,23 @@
 
 #pragma once
 
-#include <boost/logic/tribool.hpp>
-#include <glgeom/prototype/material_phong.hpp>
+//===========================================================================//
+// S T A N D A R D   H E A D E R S
+//===========================================================================//
 
 #include <list>
 #include <ctime>
-
+#include <boost/logic/tribool.hpp>
+#include <glgeom/prototype/material_phong.hpp>
 #include <lx0/lxengine.hpp>
-#include <lx0/util/misc.hpp>
-#include <lx0/subsystem/rasterizer/gl/glinterface.hpp>
 
 #include <gl/glew.h>
 #include <windows.h>        // Unfortunately must be included on Windows for GL.h to work
 #include <gl/GL.h>
 
-
-
-namespace lx0 { 
-
-    class IRasterizer : public lx0::Document::Component
-    {
-    public:
-    };
-
-    IRasterizer* createIRasterizer();
-}
-
-using namespace lx0::core;
+//===========================================================================//
+// F O R W A R D   D E C L A R A T I O N S
+//===========================================================================//
 
 namespace lx0 
 {
@@ -67,426 +57,40 @@ namespace lx0
         namespace rasterizer_ns
         {
             class GlobalPass;
-            class RasterizerGL;
-            class Camera;
-            typedef std::shared_ptr<Camera> CameraPtr;
-            class LightSet;
-            typedef std::shared_ptr<LightSet> LightSetPtr;
 
-            //===========================================================================//
-            //! \ingroup lx0_subsystem_rasterizer
-            struct Geometry
-            {
-                Geometry()
-                    : mtbFlatShading (boost::indeterminate)
-                {}
-                virtual ~Geometry() {}
-                
-                virtual void activate(RasterizerGL*, GlobalPass& pass) = 0;
+            _LX_FORWARD_DECL_PTRS(Camera);
+            _LX_FORWARD_DECL_PTRS(LightSet);
+            _LX_FORWARD_DECL_PTRS(Light);
+            _LX_FORWARD_DECL_PTRS(Geometry);
+            _LX_FORWARD_DECL_PTRS(Transform);
+            _LX_FORWARD_DECL_PTRS(Material);
+            _LX_FORWARD_DECL_PTRS(Texture);
 
-                boost::tribool  mtbFlatShading;
-            };
-            typedef std::shared_ptr<Geometry> GeometryPtr;
+            _LX_FORWARD_DECL_PTRS(Item);
 
-            //===========================================================================//
-            //! \ingroup lx0_subsystem_rasterizer
-            /*!
-                \todo Eventually move to a generic vector of string attrib-name to 
-                    VBO id/type pairs.
-             */
-            class GeomImp : public Geometry
-            {
-            public:
-                GeomImp() 
-                    : mType(0)
-                    , mVboIndices (0)
-                    , mVao(0)
-                    , mVboPosition(0)
-                    , mVboNormal(0)
-                    , mCount(0)
-                    , mVboColors(0)
-                    , mTexFlags (0) 
-                    , mFaceCount (0)
-                {}
+            _LX_FORWARD_DECL_PTRS(RasterizerGL);
 
-                virtual void activate(RasterizerGL*, GlobalPass& pass);
-
-                GLenum  mType;
-                GLuint  mVao;
-                GLsizei mCount;
-                
-                GLuint  mVboPosition;
-                GLuint  mVboNormal;
-                GLuint  mVboColors;
-
-                GLuint  mVboIndices;
-                GLuint  mTexFlags;
-                GLuint  mFaceCount;
-            };
-
-            //===========================================================================//
-            //! \ingroup lx0_subsystem_rasterizer
-            class Resource
-            {
-            public:
-                virtual ~Resource() {}
-
-                virtual void load () = 0;
-                virtual void unload () = 0;
-            };
-            typedef std::shared_ptr<Resource> ResourcePtr;
-
-            //===========================================================================//
-            //! \ingroup lx0_subsystem_rasterizer
-            class Texture : public Resource
-            {
-            public:
-                std::string mFilename;
-                std::time_t mFileTimestamp;
-
-        
-                GLuint      mId;
-
-                Texture();
-
-                virtual void load ();
-                virtual void unload ();
-            };
-            typedef std::shared_ptr<Texture> TexturePtr;
-
-            //===========================================================================//
-            //! \ingroup lx0_subsystem_rasterizer
-            class Material
-            {
-            public:
-                             Material   (GLuint id);
-
-                virtual void activate   (RasterizerGL*, GlobalPass& pass);
-
-                std::string mShaderFilename;
-
-                bool        mBlend;
-                bool        mZTest;
-                bool        mZWrite;
-                bool        mWireframe;
-                int         mFilter;
-                TexturePtr  mTextures[8];
-    
-            protected:
-                // Note: the program should be separate from the parameters passed to
-                // it.
-                GLuint      mId;
-            };
-            typedef std::shared_ptr<Material> MaterialPtr;
-            typedef std::weak_ptr<Material> MaterialWPtr;
-
-            //===========================================================================//
-            //! \ingroup lx0_subsystem_rasterizer
-            class SolidColorMaterial : public Material
-            {
-            public:
-                        SolidColorMaterial(GLuint id);
-
-                virtual void activate   (RasterizerGL*, GlobalPass& pass);
-
-                glgeom::color3f    mColor;
-            };
-
-            //===========================================================================//
-            //! \ingroup lx0_subsystem_rasterizer
-            class VertexColorMaterial : public Material
-            {
-            public:
-                        VertexColorMaterial(GLuint id);
-
-                virtual void activate   (RasterizerGL*, GlobalPass& pass);
-            };
-
-            //===========================================================================//
-            //! \ingroup lx0_subsystem_rasterizer
-            class PhongMaterial : public Material
-            {
-            public:
-                        PhongMaterial(GLuint id);
-
-                virtual void activate   (RasterizerGL*, GlobalPass& pass);
-
-                glgeom::material_phong_f    mPhong;
-            };
-
-            //===========================================================================//
-            //! \ingroup lx0_subsystem_rasterizer
-            class GlobalPass
-            {
-            public:
-                     GlobalPass()
-                         : bOverrideMaterial    (false)
-                         , tbWireframe          (boost::indeterminate)
-                         , tbFlatShading        (boost::indeterminate)
-                     { }
-
-                CameraPtr       spCamera;
-                LightSetPtr     spLightSet;
-
-                bool            bOverrideMaterial;
-                MaterialPtr     spMaterial;
-
-                boost::tribool  tbWireframe;
-                boost::tribool  tbFlatShading;
-            };
-
-            //===========================================================================//
-            //! \ingroup lx0_subsystem_rasterizer
-            class RenderAlgorithm
-            {
-            public:
-                glgeom::color4f         mClearColor;
-                std::vector<GlobalPass> mPasses;
-            };
-
-
-            //===========================================================================//
-            //! \ingroup lx0_subsystem_rasterizer
-            class Camera
-            {
-            public:
-                virtual void activate();
-                float   fov;
-                float   nearDist;
-                float   farDist;
-                glm::mat4 viewMatrix;
-            };
-            
-            //===========================================================================//
-            //! \ingroup lx0_subsystem_rasterizer
-            struct Transform
-            {
-                virtual void activate(CameraPtr);
-                glm::mat4 mat;
-            };
-            typedef std::shared_ptr<Transform> TransformPtr;
-
-            //===========================================================================//
-            //! \ingroup lx0_subsystem_rasterizer
-
-            class Light
-            {
-            public:
-                glgeom::point3f position;
-                glgeom::color3f color;
-            };
-            typedef std::shared_ptr<Light> LightPtr;
-
-            //===========================================================================//
-            //! \ingroup lx0_subsystem_rasterizer
-            class LightSet
-            {
-            public:
-                virtual void activate() {}
-
-                std::vector<LightPtr> mLights;
-            };
-            typedef std::shared_ptr<LightSet> LightSetPtr;
-
-            //===========================================================================//
-            //! \ingroup lx0_subsystem_rasterizer
-            class Item
-            {
-            public:
-                class Data
-                {
-                public:
-                    virtual ~Data() {}
-                };
-
-                template <typename T>
-                class DataT : public Data
-                {
-                public:
-                    DataT(const T& t) : data(t) {}
-                    T data;
-                };
-
-
-                Item() {}
-        
-                //virtual void rasterize(RasterizerGL*);
-
-                //weak_ptr<Target> wpTarget;  - probably should be a member of the RenderList layer or RenderAlgorithm?
-                CameraPtr    spCamera;
-                TransformPtr spTransform;
-                MaterialPtr  spMaterial;
-                GeometryPtr  spGeometry;
-                LightSetPtr  spLightSet;
-
-                template <typename T>
-                void setData (const T& data)
-                {
-                    mpData.reset( new DataT<T>(data) );
-                }
-
-                template <typename T>
-                T getData () 
-                {  
-                    DataT<T>* pData = dynamic_cast<DataT<T>*>(mpData.get());
-                    if (pData)
-                        return pData->data;
-                    else
-                        return T();
-                }
-
-            protected:
-                std::auto_ptr<Data> mpData;
-            };
-            typedef std::shared_ptr<Item> ItemPtr;
-
-            //===========================================================================//
-            //! \ingroup lx0_subsystem_rasterizer
-            class QuadList : public Geometry
-            {
-            public:
-                virtual void activate(RasterizerGL*, GlobalPass& pass);
-
-                size_t size;
-                GLuint vbo[1];
-                GLuint vao[1];
-            };
-            typedef std::shared_ptr<QuadList> QuadListPtr;
-
-            //===========================================================================//
-            /*!
-                \ingroup lx0_subsystem_rasterizer
-                
-                Represents all the items to render for a particular frame.  The items are organized
-                into a set of layers, each with an ordered list of items.  Each layer has its own
-                set of settings which may control the optimization, re-ordering, etc. of the list
-                for that layer.
-             */
-            class RenderList
-            {
-            public:
-                typedef lx0::subsystem::rasterizer_ns::ItemPtr ItemPtr;
-                typedef std::vector<ItemPtr>                ItemList;
-
-                struct Layer
-                {
-                    void*       pSettings;
-                    ItemList    list;
-                };
-
-                typedef std::map<int,Layer> LayerMap;
-
-
-
-                void                    push_back   (int layer, ItemPtr spItem);
-
-                LayerMap::iterator      begin       (void)      { return mLayers.begin(); }
-                LayerMap::iterator      end         (void)      { return mLayers.end(); }
-
-                ItemPtr                 getItem     (unsigned int id);
-
-            protected:
-                LayerMap    mLayers;
-            };
-
-
-            //===========================================================================//
-            //! \ingroup lx0_subsystem_rasterizer
-            class RasterizerGL
-            {
-            public:
-                                RasterizerGL    ();
-
-                void            initialize      (void);
-                void            shutdown        (void);
-
-                CameraPtr       createCamera    (float fov, float nearDist, float farDist, glm::mat4& viewMatrix);
-                
-                LightPtr        createLight     (void);
-                LightSetPtr     createLightSet  (void);
-
-                MaterialPtr     createMaterial              (std::string fragShader);
-                MaterialPtr     createSolidColorMaterial    (const glgeom::color3f& rgb);
-                MaterialPtr     createVertexColorMaterial   (void);
-                MaterialPtr     createPhongMaterial         (const glgeom::material_phong_f& mat);
-
-                TexturePtr      createTexture               (const char* filename);
-
-                TransformPtr    createTransform             (glm::mat4& mat);
-                TransformPtr    createTransform             (float tx, float ty, float tz);
-                TransformPtr    createTransform             (const glgeom::vector3f& scale, const glgeom::point3f& center);
-                TransformPtr    createTransformBillboardXY  (float tx, float ty, float tz);
-                TransformPtr    createTransformBillboardXYS (float tx, float ty, float tz, float sx, float sy, float sz);
-                TransformPtr    createTransformEye          (float tx, float ty, float tz, glgeom::radians z_angle);
-
-                GeometryPtr     createQuadList  (std::vector<glgeom::point3f>& quads);
-                GeometryPtr     createQuadList  (std::vector<glgeom::point3f>& positions, 
-                                                 std::vector<glgeom::color3f>& colors);
-                GeometryPtr     createQuadList  (std::vector<unsigned short>& indices, 
-                                                 std::vector<glgeom::point3f>& positions, 
-                                                 std::vector<glgeom::vector3f>& normals,
-                                                 std::vector<glgeom::color3f>& colors);
-                GeometryPtr     createQuadList  (std::vector<unsigned short>& indices,
-                                                 std::vector<lx0::uint8>& faceFlags,
-                                                 std::vector<glgeom::point3f>& positions, 
-                                                 std::vector<glgeom::vector3f>& normals,
-                                                 std::vector<glgeom::color3f>& colors);
-
-                void            refreshTextures (void);
-
-                void            beginScene      (RenderAlgorithm& algorithm);
-                void            endScene        (void);
-
-                void            rasterizeList   (RenderAlgorithm& algorithm, std::vector<std::shared_ptr<Item>>& list);
-                void            rasterizeItem   (GlobalPass& pass, std::shared_ptr<Item> spItem);
-                unsigned int    readPixel       (int x, int y);
-
-                struct Context
-                {
-                    Context()
-                        : tbFlatShading     (boost::indeterminate)
-                    {}
-
-                    GlobalPass*     pGlobalPass;
-                    ItemPtr         spItem;
-                    unsigned int    itemId;
-
-                    LightSetPtr     spLightSet;
-                    CameraPtr       spCamera;
-                    MaterialPtr     spMaterial;
-
-                    unsigned int    textureUnit;
-
-                    boost::tribool  tbFlatShading;
-                } mContext;
-
-            protected:
-                GLuint      _createProgram   (std::string fragShader);
-                GLuint      _createProgram2  (std::string fragShader);
-                GLuint      _createShader    (const char* filename, GLuint type);
-                void        _linkProgram     (GLuint prog);
-
-                std::auto_ptr<GLInterface>  gl;
-
-                std::map<std::string, GLuint> mCachePrograms;
-
-                std::list<ResourcePtr>      mResources;
-                std::vector<TexturePtr>     mTextures;
-
-                struct
-                {
-                    lx0::Timer  tmLifetime;
-                    lx0::Timer  tmScene;
-                    lx0::Timer  tmRasterizeList;
-                    lx0::Timer  tmRasterizeItem;
-                    lx0::Timer  tmMaterialActivate;
-                    lx0::Timer  tmGeometryActivate;
-                } mStats;
-            };
+            ///@todo This belong in a detail namespace that's only included internally
+            void    check_glerror();
         }
     }
 
     using namespace lx0::subsystem::rasterizer_ns;
 }
+
+//===========================================================================//
+// S U B - H E A D E R S
+//===========================================================================//
+
+#include <lx0/subsystem/rasterizer/gl/glinterface.hpp>
+
+#include <lx0/subsystem/rasterizer/camera.hpp>
+#include <lx0/subsystem/rasterizer/lightset.hpp>
+#include <lx0/subsystem/rasterizer/geometry.hpp>
+#include <lx0/subsystem/rasterizer/material.hpp>
+#include <lx0/subsystem/rasterizer/transform.hpp>
+#include <lx0/subsystem/rasterizer/item.hpp>
+
+#include <lx0/subsystem/rasterizer/rasterizergl.hpp>
 
 #include <lx0/subsystem/rasterizer/cache/meshcache.hpp>

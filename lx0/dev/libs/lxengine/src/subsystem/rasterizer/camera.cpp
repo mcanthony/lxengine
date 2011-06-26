@@ -26,6 +26,38 @@
 */
 //===========================================================================//
 
-#pragma once
+#include <lx0/subsystem/rasterizer.hpp>
 
+using namespace lx0;
 
+void
+Camera::activate()
+{
+    check_glerror();
+
+    //
+    // Setup projection matrix
+    //
+    glMatrixMode(GL_PROJECTION);
+    glLoadIdentity();
+
+    int vp[4];  // x, y, width, height
+    glGetIntegerv(GL_VIEWPORT, vp);
+    GLfloat aspectRatio = (GLfloat)vp[2]/(GLfloat)vp[3];
+    gluPerspective(fov, aspectRatio, nearDist, farDist);
+
+    //
+    // Setup view matrix
+    //
+    // OpenGL matrices are laid out with rows contiguous in memory (i.e. data[1] in 
+    // the 16 element array is the second element in the first row); glm::mat4 uses
+    // column-major ordering.  Therefore load it as a tranpose to swap the order.
+    //
+    // Note: it's also not necessarily faster to send the non-transpose, as the
+    // OpenGL API does not necessarily match the underlying hardware representation.
+    //
+    glMatrixMode(GL_MODELVIEW);
+    glLoadMatrixf(glm::value_ptr(viewMatrix));
+
+    check_glerror();
+}
