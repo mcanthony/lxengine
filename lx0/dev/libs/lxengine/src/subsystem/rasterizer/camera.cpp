@@ -42,18 +42,10 @@ Camera::activate(RasterizerGL* pRasterizer)
     glGetIntegerv(GL_VIEWPORT, vp);
     GLfloat aspectRatio = (GLfloat)vp[2]/(GLfloat)vp[3];
 
-    // Recompute every time
-    ///@todo This is dangerous - projMatrix can easily fall out of sync and it is
-    /// not documented how and where this variable is set.
-    glMatrixMode(GL_PROJECTION);
     auto projMatrix = glm::perspective(fov, aspectRatio, nearDist, farDist);
-    glLoadMatrixf(glm::value_ptr(projMatrix));
-
-    //
-    // Setup view matrix
-    //
-    glMatrixMode(GL_MODELVIEW);
-    glLoadMatrixf(glm::value_ptr(viewMatrix));
+    
+    pRasterizer->mContext.uniforms.spProjMatrix.reset(new glm::mat4(projMatrix));
+    pRasterizer->mContext.uniforms.spViewMatrix.reset(new glm::mat4(viewMatrix));
 
     check_glerror();
 }

@@ -55,17 +55,6 @@ Material::activate (RasterizerGL* pRasterizer, GlobalPass& pass)
 
     // Activate the shader
     glUseProgram(mId);
-
-    //
-    // Pass in additional transform information
-    // 
-    {
-        GLint unifIndex = glGetUniformLocation(mId, "unifViewMatrix");
-        if (unifIndex != -1)
-        {
-            glUniformMatrix4fv(unifIndex, 1, GL_FALSE, glm::value_ptr(pRasterizer->mContext.spCamera->viewMatrix));
-        }
-    }
     
     //
     // Set up lights

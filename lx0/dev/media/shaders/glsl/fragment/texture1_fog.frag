@@ -19,5 +19,7 @@ void main()
 {	
     vec2 uv = fragColor.xy;
 	outColor = texture2D(unifTexture0, uv);
+    if (outColor.a < .01)
+        discard;
     outColor.xyz = fog(outColor.xyz);
 }

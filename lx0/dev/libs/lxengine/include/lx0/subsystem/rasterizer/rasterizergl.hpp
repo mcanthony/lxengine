@@ -138,6 +138,7 @@ namespace lx0
             {
             public:
                                 RasterizerGL    ();
+                                ~RasterizerGL   ();
 
                 void            initialize      (void);
                 void            shutdown        (void);
@@ -199,6 +200,22 @@ namespace lx0
                     unsigned int    textureUnit;
 
                     boost::tribool  tbFlatShading;
+
+                    class Uniforms
+                    {
+                    public:
+                        void reset()
+                        {
+                            spProjMatrix.reset();
+                            spViewMatrix.reset();
+                        }
+                        void activate();
+
+                        std::shared_ptr<glm::mat4>  spProjMatrix;
+                        std::shared_ptr<glm::mat4>  spViewMatrix;
+
+                    } uniforms;
+
                 } mContext;
 
             protected:
@@ -212,6 +229,9 @@ namespace lx0
                 std::map<std::string, GLuint>   mCachePrograms;
                 std::list<ResourcePtr>          mResources;
                 std::vector<TexturePtr>         mTextures;
+
+                bool                            mInited;
+                bool                            mShutdown;
 
                 struct
                 {

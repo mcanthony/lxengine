@@ -132,19 +132,3 @@ GeomImp::activate(RasterizerGL* pRasterizer, GlobalPass& pass)
 
     check_glerror();
 }
-
-
-void 
-QuadList::activate(RasterizerGL*, GlobalPass& pass)
-{
-    glBindVertexArray(vao[0]);
-    glBindBuffer(GL_ARRAY_BUFFER, vbo[0]);
-
-    // TODO: The position input to the vertex shader is apparently always 0.  Find out where
-    // this is documented.
-    const int positionIndex = 0;   // glGetAttribLocation(prog, "gl_Vertex");
-    glVertexAttribPointer(positionIndex, 3, GL_FLOAT, GL_FALSE, 0, 0);
-    glEnableVertexAttribArray(positionIndex);
-
-    glDrawArrays(GL_QUADS, 0, size); 
-}

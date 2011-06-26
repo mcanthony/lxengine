@@ -38,6 +38,8 @@
 #include <lx0/util/misc/util.hpp>
 #include <lx0/subsystem/rasterizer.hpp>
 
+#include <gl/glu.h>
+
 using namespace lx0::subsystem::rasterizer_ns;
 using namespace glgeom;
 
@@ -48,13 +50,22 @@ void lx0::subsystem::rasterizer_ns::check_glerror()
 }
 
 RasterizerGL::RasterizerGL()
-    : gl (new GLInterface)
+    : gl        (new GLInterface)
+    , mInited   (false)
+    , mShutdown (false)
 {
+}
+
+RasterizerGL::~RasterizerGL()
+{
+    if (!mShutdown)
+        lx_warn("RasterizerGL::shutdown() not called!");
 }
 
 void RasterizerGL::initialize()
 {
     lx_log("%s", __FUNCTION__);
+    mInited = true;
     mStats.tmLifetime.start();
 
     // Initialization
@@ -65,9 +76,6 @@ void RasterizerGL::initialize()
     glClearColor(0.09f, 0.09f, 0.11f, 1.0f);
 
     glEnable(GL_DEPTH_TEST);
-
-    glEnable(GL_ALPHA_TEST);
-    glAlphaFunc(GL_GREATER, 0.01f);
 }
 
 static void log_timer(const char* name, const lx0::Timer& timer, const lx0::Timer& base)
@@ -91,6 +99,9 @@ void RasterizerGL::shutdown()
     log_timer("rasterizeItem",      mStats.tmRasterizeItem,     mStats.tmScene);
     log_timer("activate Material",  mStats.tmMaterialActivate,  mStats.tmScene);
     log_timer("activate Geometry",  mStats.tmGeometryActivate,  mStats.tmScene);
+
+    mShutdown = true;
+    mInited = false;
 }
 
 CameraPtr       
@@ -103,8 +114,6 @@ RasterizerGL::createCamera (float fov, float nearDist, float farDist, glm::mat4&
     spCamera->viewMatrix = viewMatrix;
     return spCamera;
 }
-
-
 
 Texture::Texture()
     : mFileTimestamp    (0)
@@ -435,24 +444,43 @@ RasterizerGL::createQuadList (std::vector<unsigned short>& quadIndices,
     // and force the flag to a 0 or 255 value to indicate flat or smooth shading; eventually these
     // flags might have additional purposes.
     //
-    std::vector<lx0::uint8> flags(faceFlags.size() * 2);
-    for (size_t i = 0; i < faceFlags.size(); ++i)
-    {
-        const auto v = (faceFlags[i] != 0) ? 255 : 0; 
-        flags[i * 2 + 0] = v;
-        flags[i * 2 + 1] = v;
-    }
-
     GLuint texFlags;
-    glGenTextures(1, &texFlags);
-    glBindTexture(GL_TEXTURE_1D, texFlags);
-    glTexImage1D(GL_TEXTURE_1D, 0, 1, flags.size(), 0, GL_RED, GL_UNSIGNED_BYTE, &flags[0]);
-    check_glerror();
-    glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-	glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_WRAP_S, GL_CLAMP);
-	glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_WRAP_T, GL_CLAMP);
-    check_glerror();
+    GLuint faceCount;
+
+    if (faceFlags.size() <= 2048)
+    {
+        std::vector<lx0::uint8> flags(faceFlags.size() * 2);
+        for (size_t i = 0; i < faceFlags.size(); ++i)
+        {
+            const auto v = (faceFlags[i] != 0) ? 255 : 0; 
+            flags[i * 2 + 0] = v;
+            flags[i * 2 + 1] = v;
+        }
+
+        glGenTextures(1, &texFlags);
+        glBindTexture(GL_TEXTURE_1D, texFlags);
+        glTexImage1D(GL_TEXTURE_1D, 0, 1, flags.size(), 0, GL_RED, GL_UNSIGNED_BYTE, &flags[0]);
+        check_glerror();
+        glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	    glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_WRAP_S, GL_CLAMP);
+	    glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_WRAP_T, GL_CLAMP);
+        check_glerror();
+
+        faceCount = flags.size();
+    }
+    else
+    {
+        //@todo Handle face flags properly
+        /*
+            This is essentially laziness: the face flags should be opt-in, not
+            determined by the overally face count.  Also, if the face count is
+            too high, a 2D texture should be used.
+         */
+        lx_warn("Skipping face flags since the data size is too large!");
+        texFlags = 0;
+        faceCount = 0;
+    }
 
     // Create the cache to encapsulate the created OGL resources
     //
@@ -465,7 +493,7 @@ RasterizerGL::createQuadList (std::vector<unsigned short>& quadIndices,
     pGeom->mVboNormal   = vboNormals;
     pGeom->mVboColors   = vboColors;
     pGeom->mTexFlags    = texFlags;
-    pGeom->mFaceCount   = flags.size();
+    pGeom->mFaceCount   = faceCount;
     return GeometryPtr(pGeom);
 }
 
@@ -514,7 +542,7 @@ struct EyeTransform : public Transform
     {
     }
 
-    virtual void activate(CameraPtr spCamera)
+    virtual void activate(RasterizerGL* pRasterizer, CameraPtr spCamera)
     {
         // The transformation intends to keep the object coordinates relative to the camera,
         // rather than relative to the world origin.   The intent is to therefore offset
@@ -540,9 +568,10 @@ struct EyeTransform : public Transform
 
         mat = glm::translate(glm::mat4(1.0f), -translation.vec);
         
-        glMatrixMode(GL_MODELVIEW);
-        glMultMatrixf(glm::value_ptr(mat));
-        glRotatef(z_angle.value, 0.0f, 0.0f, 1.0f);
+        glm::mat4 viewMatrix(*pRasterizer->mContext.uniforms.spViewMatrix);
+        viewMatrix = viewMatrix * mat;
+        viewMatrix = glm::rotate(viewMatrix, glgeom::degrees(z_angle).value, glm::vec3(0.0f, 0.0f, 1.0f));
+        pRasterizer->mContext.uniforms.spViewMatrix.reset(new glm::mat4(viewMatrix));
     }
 
     glgeom::point3f  pos;
@@ -557,7 +586,9 @@ RasterizerGL::createTransformEye (float tx, float ty, float tz, glgeom::radians 
 
 struct BillboardTransform : public Transform
 {
-    virtual void activate(CameraPtr spCamera)
+    ///@todo Move billboarding function into glgeom:
+    /// mat = billboard_z_axis(view_matrix);
+    virtual void activate(RasterizerGL* pRasterizer, CameraPtr spCamera)
     {
         // The first column of the view matrix contains the "right" vector
         // of the camera: that is to say, the x-axis (1, 0, 0) of the camera
@@ -569,9 +600,10 @@ struct BillboardTransform : public Transform
         const auto& cameraX = glm::row(spCamera->viewMatrix, 0);   
         const float radians = atan2(cameraX.y, cameraX.x);
 
-        glMatrixMode(GL_MODELVIEW);   
-        glMultMatrixf(glm::value_ptr(mat));
-        glRotatef(radians * 180.0f / 3.1415926f, 0.0f, 0.0f, 1.0f);
+        glm::mat4 viewMatrix(*pRasterizer->mContext.uniforms.spViewMatrix);
+        viewMatrix = viewMatrix * mat;
+        viewMatrix = glm::rotate(viewMatrix, radians * 180.0f / 3.1415926f, glm::vec3(0.0f, 0.0f, 1.0f));
+        pRasterizer->mContext.uniforms.spViewMatrix.reset(new glm::mat4(viewMatrix));
     }
 };
 
@@ -596,10 +628,10 @@ RasterizerGL::createTransformBillboardXYS (float tx, float ty, float tz, float s
 }
 
 void
-Transform::activate (CameraPtr)
+Transform::activate (RasterizerGL* pRasterizer, CameraPtr)
 {
-    glMatrixMode(GL_MODELVIEW);
-    glMultMatrixf(glm::value_ptr(mat));
+    auto m = (*pRasterizer->mContext.uniforms.spViewMatrix) * mat;
+    pRasterizer->mContext.uniforms.spViewMatrix.reset(new glm::mat4(m));
 }
 
 /*!
@@ -683,6 +715,42 @@ RasterizerGL::rasterizeList (RenderAlgorithm& algorithm, std::vector<std::shared
     mStats.tmRasterizeList.stop();
 }
 
+void
+RasterizerGL::Context::Uniforms::activate ()
+{
+    GLint progId;
+    glGetIntegerv(GL_CURRENT_PROGRAM, &progId);
+
+    //
+    // Pass in additional transform information
+    // 
+    if (spProjMatrix)
+    {
+        GLint idx = glGetUniformLocation(progId, "unifProjMatrix");
+        if (idx != -1)
+        {
+            glUniformMatrix4fv(idx, 1, GL_FALSE, glm::value_ptr(*spProjMatrix));
+        }
+    }
+
+    //
+    // Pass in additional transform information
+    // 
+    if (spViewMatrix)
+    {
+        GLint idx = glGetUniformLocation(progId, "unifViewMatrix");
+        if (idx != -1)
+        {
+            glUniformMatrix4fv(idx, 1, GL_FALSE, glm::value_ptr(*spViewMatrix));
+        }
+
+        // Temporary code to ensure gl_NormalMatrix works until it can be removed
+        // from all shaders
+        glMatrixMode(GL_MODELVIEW);
+        glLoadMatrixf(glm::value_ptr(*spViewMatrix));
+    }
+}
+
 void 
 RasterizerGL::rasterizeItem (GlobalPass& pass, std::shared_ptr<Item> spItem)
 {
@@ -693,6 +761,7 @@ RasterizerGL::rasterizeItem (GlobalPass& pass, std::shared_ptr<Item> spItem)
     // Set up the context variables that have changed
     mContext.spItem = spItem;
     mContext.textureUnit = 0;
+    mContext.uniforms.reset();
 
     // Fill in any unspecified or overridden item variables via the current context
     mContext.spCamera = (spItem->spCamera) 
@@ -720,7 +789,9 @@ RasterizerGL::rasterizeItem (GlobalPass& pass, std::shared_ptr<Item> spItem)
         mContext.spMaterial->activate(this, pass);
         mStats.tmMaterialActivate.stop();
         
-        spItem->spTransform->activate(spItem->spCamera);
+        spItem->spTransform->activate(this, spItem->spCamera);
+
+        mContext.uniforms.activate();
         
         mStats.tmGeometryActivate.start();
         spItem->spGeometry->activate(this, pass);

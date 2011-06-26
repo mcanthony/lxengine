@@ -46,7 +46,7 @@ class SkyMap : public Renderable
 public:
     virtual void update(ElementPtr spElement)
     {
-        mRotation += glgeom::two_pi() / 30.0f;
+        mRotation += glgeom::two_pi() / 1000.0f;
     }
 
     virtual void generate(ElementPtr spElement,

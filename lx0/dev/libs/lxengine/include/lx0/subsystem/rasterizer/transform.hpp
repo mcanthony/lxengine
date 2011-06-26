@@ -39,7 +39,7 @@ namespace lx0
             class Transform
             {
             public:
-                virtual void activate(CameraPtr);
+                virtual void activate (RasterizerGL*, CameraPtr);
                 glm::mat4 mat;
             };
             typedef std::shared_ptr<Transform> TransformPtr;

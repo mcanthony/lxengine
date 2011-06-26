@@ -38,9 +38,13 @@
 #include <glgeom/prototype/material_phong.hpp>
 #include <lx0/lxengine.hpp>
 
+#if 1
 #include <gl/glew.h>
 #include <windows.h>        // Unfortunately must be included on Windows for GL.h to work
 #include <gl/GL.h>
+#else
+#include <GL3/gl3w_modified.hpp>
+#endif
 
 //===========================================================================//
 // F O R W A R D   D E C L A R A T I O N S

@@ -1,4 +1,7 @@
 
+uniform mat4    unifProjMatrix;
+uniform mat4    unifViewMatrix;
+
 in vec3 vertNormal;
 in vec3 vertColor;
 
@@ -27,11 +30,11 @@ void main(void)
     // the glViewport settings.) 
     //
     geomVertexOc = gl_Vertex;
-    vec4 vertexEc = gl_ModelViewMatrix * gl_Vertex;
+    vec4 vertexEc = unifViewMatrix * gl_Vertex;
     geomVertexEc = vertexEc.xyz;
     
     // The Projection matrix
-    gl_Position = gl_ProjectionMatrix * vertexEc;
+    gl_Position = unifProjMatrix * vertexEc;
 
     geomNormalOc = vertNormal;
     geomNormalEc = gl_NormalMatrix * vertNormal;
