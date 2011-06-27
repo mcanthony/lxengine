@@ -31,6 +31,9 @@ set(Boost_USE_STATIC_LIBS   ON)
 set(Boost_USE_MULTITHREADED ON)
 set(ENV{BOOST_INCLUDEDIR} "$ENV{BOOST_ROOT}/include")
 set(ENV{BOOST_LIBRARYDIR} "$ENV{BOOST_ROOT}/lib")
+set(Boost_INCLUDE_DIR "$ENV{BOOST_ROOT}/include")
+message("Set BOOST_ROOT = " $ENV{BOOST_ROOT})
+message("Set Boost_INCLUDE_DIR = " ${Boost_INCLUDE_DIR})
 
 #
 # V8

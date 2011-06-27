@@ -247,10 +247,15 @@ echo bjam.exe >>_t.bat
 echo bjam.exe install --prefix=..\..\sdk\boost >>_t.bat
 
 call:build_project %PROJECT% %ROOTDIR% %TESTFILE%
+call:test_file_or_fail %ROOTDIR%\boost\any.hpp
 IF %FAILURE%==1 (goto:EOF)
 
-call:copy_directory %ROOTDIR%\sdk\include\boost-1_44 %PSDK%\boost\include
-call:copy_directory %ROOTDIR%\sdk\lib %PSDK%\boost\lib
+REM This needs to be fixed
+REM call:copy_directory %ROOTDIR%\boost %PSDK%\boost\include
+REM call:copy_directory %ROOTDIR%\sdk\lib %PSDK%\boost\lib
+
+call:test_file_or_fail %PSDK%\boost\include\boost\any.hpp
+IF %FAILURE%==1 (goto:EOF)
 
 REM ===========================================================================
 REM Build OGRE
@@ -328,12 +333,18 @@ call:copy_directory %ROOTDIR%\lib %PSDK%\bullet\lib
 REM ===========================================================================
 REM Build Google V8
 REM ===========================================================================
+REM
+REM Not sure why copying msobj100.dll is necessary, but it seems to be.  Since
+REM this is a one time process, go ahead and copy the file without worrying
+REM about why...
+REM
 
 set PROJECT=V8
 set ROOTDIR=v8\v8
 set TESTFILE=sdk\lib\v8.lib
 
-echo call "%PYTHONEXE_PATH%\Scripts\scons.bat" env="PATH:%PATH%,INCLUDE:%INCLUDE%,LIB:%LIB%" mode=debug >_t.bat
+echo copy "%VS100COMNTOOLS%\..\IDE\msobj100.dll" v8\v8 >> _t.bat
+echo call "%PYTHONEXE_PATH%\Scripts\scons.bat" env="PATH:%PATH%,INCLUDE:%INCLUDE%,LIB:%LIB%" mode=debug >>_t.bat
 echo call "%PYTHONEXE_PATH%\Scripts\scons.bat" env="PATH:%PATH%,INCLUDE:%INCLUDE%,LIB:%LIB%">>_t.bat
 echo mkdir sdk>>_t.bat
 echo mkdir sdk\lib>>_t.bat
@@ -565,6 +576,23 @@ xcopy %1 %2 /D /S /Y
 goto:EOF
 
 
+REM test_file_or_fail
+REM
+REM
+:test_file_or_fail
+IF NOT EXIST %1% (
+    echo.
+    echo ERROR Could not find %1%!
+    echo Assuming build failed.
+    echo.
+    echo Please post a request for help at http://athile.net/library/forums/!
+    echo.
+    set FAILURE=1
+) ELSE (
+    echo OK: Found file %1% 
+)
+goto:EOF
+
 REM build_project
 REM
 REM Changes the working directory, checks for the existence of a test file
@@ -576,6 +604,8 @@ REM
     set PROJECT=%1
     set ROOTDIR=%2
     set TESTFILE=%3
+    
+    echo Building %PROJECT% from %ROOTDIR%
 
     REM The caller is supposed to generate a file called _t.bat containing
     REM the build steps before calling build_project.
