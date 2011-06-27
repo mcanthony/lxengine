@@ -1,0 +1,4 @@
+*
+!.gitignore
+!*.bat
+!gen_folders.py
