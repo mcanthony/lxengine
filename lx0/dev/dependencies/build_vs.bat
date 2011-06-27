@@ -251,10 +251,11 @@ call:test_file_or_fail %ROOTDIR%\boost\any.hpp
 IF %FAILURE%==1 (goto:EOF)
 
 REM This needs to be fixed
-REM call:copy_directory %ROOTDIR%\boost %PSDK%\boost\include
-REM call:copy_directory %ROOTDIR%\sdk\lib %PSDK%\boost\lib
+call:copy_directory sdk\boost\include\boost-1_44\boost %PSDK%\boost\include\boost
+call:copy_directory sdk\boost\lib %PSDK%\boost\lib
 
 call:test_file_or_fail %PSDK%\boost\include\boost\any.hpp
+call:test_file_or_fail %PSDK%\boost\lib\libboost_filesystem-vc100-mt-gd.lib
 IF %FAILURE%==1 (goto:EOF)
 
 REM ===========================================================================
@@ -343,7 +344,7 @@ set PROJECT=V8
 set ROOTDIR=v8\v8
 set TESTFILE=sdk\lib\v8.lib
 
-echo copy "%VS100COMNTOOLS%\..\IDE\msobj100.dll" v8\v8 >> _t.bat
+echo copy "%VS100COMNTOOLS%..\IDE\msobj100.dll" . > _t.bat
 echo call "%PYTHONEXE_PATH%\Scripts\scons.bat" env="PATH:%PATH%,INCLUDE:%INCLUDE%,LIB:%LIB%" mode=debug >>_t.bat
 echo call "%PYTHONEXE_PATH%\Scripts\scons.bat" env="PATH:%PATH%,INCLUDE:%INCLUDE%,LIB:%LIB%">>_t.bat
 echo mkdir sdk>>_t.bat
@@ -374,6 +375,8 @@ echo msbuild OpenAL.sln /p:Configuration=Debug >>_t.bat
 echo msbuild OpenAL.sln /p:Configuration=Release >>_t.bat
 echo popd >>_t.bat
 echo pushd .>>_t.bat
+echo REM Hack since alut does not include the AL prefix on the headers>>_t.bat
+echo copy include\AL\*.h include >>_t.bat
 echo mkdir alut_build_debug >>_t.bat
 echo cd alut_build_debug >>_t.bat
 echo cmake -DOPENAL_LIB_DIR=..\OpenAL-Soft\build\Debug -DOPENAL_INCLUDE_DIR=..\include ..\alut>>_t.bat
@@ -396,6 +399,15 @@ call:copy_files %ROOTDIR%\alut_build_debug\Debug\*.lib %PSDK%\openal\lib\Debug
 call:copy_files %ROOTDIR%\alut_build_release\Release\*.lib %PSDK%\openal\lib\Release
 call:copy_files %ROOTDIR%\alut_build_debug\Debug\*.dll %PSDK%\openal\bin\Debug
 call:copy_files %ROOTDIR%\alut_build_release\Release\*.dll %PSDK%\openal\bin\Release
+
+call:test_file_or_fail %PSDK%\openal\lib\Debug\OpenAL32.lib
+call:test_file_or_fail %PSDK%\openal\lib\Debug\alut.lib
+call:test_file_or_fail %PSDK%\openal\lib\Release\OpenAL32.lib
+call:test_file_or_fail %PSDK%\openal\lib\Release\alut.lib
+IF %FAILURE%==1 (
+    erase %ROOTDIR%\%TESTFILE%
+    goto:EOF
+)
 
 REM ===========================================================================
 REM Build Ogg
@@ -605,7 +617,7 @@ REM
     set ROOTDIR=%2
     set TESTFILE=%3
     
-    echo Building %PROJECT% from %ROOTDIR%
+    echo * Building %PROJECT% from %ROOTDIR%
 
     REM The caller is supposed to generate a file called _t.bat containing
     REM the build steps before calling build_project.

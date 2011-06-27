@@ -35,6 +35,9 @@ set(Boost_INCLUDE_DIR "$ENV{BOOST_ROOT}/include")
 message("Set BOOST_ROOT = " $ENV{BOOST_ROOT})
 message("Set Boost_INCLUDE_DIR = " ${Boost_INCLUDE_DIR})
 
+include_directories("${DEPS_SDK}/boost/include")
+link_directories("${DEPS_SDK}/boost/lib")
+
 #
 # V8
 #
