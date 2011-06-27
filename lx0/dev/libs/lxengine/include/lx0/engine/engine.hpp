@@ -41,6 +41,7 @@
 
 // Lx headers
 #include <lx0/_detail/forward_decls.hpp>
+#include <lx0/core/init/version.hpp>
 #include <lx0/engine/dom_base.hpp>
 #include <lx0/core/lxvar/lxvar.hpp>
 #include <lx0/core/log/log.hpp>
@@ -76,6 +77,7 @@ namespace lx0
                 class ObjectCount
                 {
                 public:
+                            ObjectCount ();
                             ObjectCount (size_t current);
 
                     void    inc      (void);
@@ -129,15 +131,17 @@ namespace lx0
         
                 void                shutdown            (void);
 
-                int                 versionMajor        (void)                      { return 0; }
-                int                 versionMinor        (void)                      { return 0; }
+                int                 versionMajor        (void) const                { return lx0::LXENGINE_VERSION_MAJOR; }
+                int                 versionMinor        (void) const                { return lx0::LXENGINE_VERSION_MINOR; }
+                int                 versionRevision     (void) const                { return lx0::LXENGINE_VERSION_REVISION; }
 
                 Environment&        environment         (void)                      { return mEnvironment; }
 
                 DocumentPtr         createDocument      (void);
                 DocumentPtr         loadDocument        (std::string filename);
+                void                closeDocument       (DocumentPtr spDocument);
         
-                const std::vector<DocumentPtr>& documents (void) { return m_documents; }
+                const std::vector<DocumentPtr>& documents (void) { return mDocuments; }
 
                 void                sendEvent           (const char* evt);
                 int	                run                 (void);
@@ -170,6 +174,7 @@ namespace lx0
                 // Stats
                 void                incObjectCount          (std::string name);
                 void                decObjectCount          (std::string name);
+                const detail::ObjectCount& objectCount      (std::string name) { return m_objectCounts[name]; }
                 void                incPerformanceCounter   (std::string name, lx0::uint64 t);
 
                 void                postponeException       (lx0::error_exception& e);
@@ -200,7 +205,7 @@ namespace lx0
                 bool        _handlePlatformMessages  (void);
 
                 Environment                 mEnvironment;
-                std::vector<DocumentPtr>    m_documents;
+                std::vector<DocumentPtr>    mDocuments;
                 std::deque<std::string>     m_messageQueue;
 
                 std::deque<lx0::error_exception>            m_postponedExceptions;

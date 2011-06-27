@@ -1,8 +1,9 @@
 //===========================================================================//
 /*
-                                   GLGeom
+                                   LxEngine
 
     LICENSE
+    * MIT License (http://www.opensource.org/licenses/mit-license.php)
 
     Copyright (c) 2011 athile@athile.net (http://www.athile.net)
 
@@ -26,26 +27,26 @@
 */
 //===========================================================================//
 
-#include "unittest.hpp"
 
-int 
-main (int argc, char** argv)
-{
-    TestModule module;
-    module.mName = "lxengine";
+#pragma once
+
+namespace lx0 
+{ 
+    namespace core 
     {
-        TestGroup group;
-        group.mName = "simple";
-
-        ADD_TESTSET(group, empty);
-        ADD_TESTSET(group, lxvar);
-        ADD_TESTSET(group, engine);
-
-        module.mGroups.push_back(group);
+        namespace version_ns
+        {
+            //
+            // Version
+            //
+            enum 
+            { 
+                LXENGINE_VERSION_MAJOR = 0,
+                LXENGINE_VERSION_MINOR = 0,
+                LXENGINE_VERSION_REVISION = 1,
+            };
+        }
     }
 
-    TestRun run;
-    run.run(module);
-
-    return 0;
+    using namespace lx0::core::version_ns;
 }

@@ -31,16 +31,6 @@
 #define LX0_LXENGINE_HPP
 
 //
-// Version
-//
-enum 
-{ 
-    LXENGINE_VERSION_MAJOR = 0,
-    LXENGINE_VERSION_MINOR = 0,
-    LXENGINE_VERSION_REVISION = 1,
-};
-
-//
 // Standard headers
 //
 #define NOMINMAX
@@ -65,7 +55,7 @@ enum
 //
 // LxEngine headers
 //
-
+#include <lx0/core/init/version.hpp>
 #include <lx0/core/init/init.hpp>
 #include <lx0/core/log/log.hpp>
 #include <lx0/core/slot/slot.hpp>

@@ -49,6 +49,12 @@ namespace lx0 { namespace engine { namespace dom_ns {
 
     namespace detail
     {
+        ObjectCount::ObjectCount (void)
+            : mCurrent (0)
+            , mTotal   (0)
+        {
+        }
+
         ObjectCount::ObjectCount (size_t current)
             : mCurrent (current)
             , mTotal   (current)
@@ -148,7 +154,7 @@ namespace lx0 { namespace engine { namespace dom_ns {
         }
             
         // Explicitly free all references to shared objects so that memory leak checks will work
-        m_documents.clear();
+        mDocuments.clear();
     }
 
     Engine::~Engine()
@@ -245,6 +251,28 @@ namespace lx0 { namespace engine { namespace dom_ns {
         return _loadDocument(false, filename);
     }
 
+    /*!
+        \todo Design choice: do documents need to be explicitly closed?  Can they be implicitly closed
+            when the Engine is released?
+     */
+    void
+    Engine::closeDocument (DocumentPtr spDocument)
+    {
+        // Find the document and remove it from the internal list
+        auto it = mDocuments.begin();
+        while (it != mDocuments.end())
+        {
+            if (it->get() == spDocument.get())
+                break;
+            ++it;
+        }
+
+        if (it != mDocuments.end())
+            mDocuments.erase(it);
+        else
+            lx_error("Document being closed but not in Engine Document list! Was this Document already closed?");
+    }
+
     DocumentPtr
     Engine::_loadDocument (bool bCreate, std::string filename)
     {
@@ -278,7 +306,7 @@ namespace lx0 { namespace engine { namespace dom_ns {
         spDocument->root(spRoot);
 
 
-        m_documents.push_back(spDocument);
+        mDocuments.push_back(spDocument);
 
         // This is probably not the exactly right place for the scripts to be run.
         // If nothing else, this is likely not consistent with HTML which runs
@@ -351,7 +379,7 @@ namespace lx0 { namespace engine { namespace dom_ns {
 
         _lx_reposition_console();
 
-        for(auto it = m_documents.begin(); it != m_documents.end(); ++it)
+        for(auto it = mDocuments.begin(); it != mDocuments.end(); ++it)
             (*it)->beginRun();
 
         bool bDone = false;
@@ -381,7 +409,7 @@ namespace lx0 { namespace engine { namespace dom_ns {
             {
                 const auto startLoop = lx0::lx_milliseconds();
 
-                for(auto it = m_documents.begin(); it != m_documents.end(); ++it)
+                for(auto it = mDocuments.begin(); it != mDocuments.end(); ++it)
                     (*it)->updateRun();
 
                 incPerformanceCounter("Engine>run>doc update", lx0::lx_milliseconds() - startLoop);
@@ -391,7 +419,7 @@ namespace lx0 { namespace engine { namespace dom_ns {
 
         } while (!bDone);
 
-        for(auto it = m_documents.begin(); it != m_documents.end(); ++it)
+        for(auto it = mDocuments.begin(); it != mDocuments.end(); ++it)
             (*it)->endRun();
 
         incPerformanceCounter("Engine>run", lx0::lx_milliseconds() - start);
