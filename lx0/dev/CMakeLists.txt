@@ -48,9 +48,6 @@ include_directories( libs/glgeom/include )
 include_directories(${Boost_INCLUDE_DIR})
 link_directories(${Boost_LIBRARY_DIRS})
 
-# Glew
-include_directories( ${CMAKE_SOURCE_DIR}/libs/lxengine/src/extern/glew )
-
 # Modified Gl3w
 include_directories( ${CMAKE_SOURCE_DIR}/libs/lxengine/src/extern/gl3w/include )
 

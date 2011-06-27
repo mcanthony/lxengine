@@ -33,9 +33,23 @@
 #include <windows.h>
 #include <windowsx.h>
 
-#include <gl/glew.h>
-#include <gl/wglew.h>
-#include <gl/GL.h>
+#include <GL3/gl3w_modified.hpp>
+
+// Inline the WGL defines since this is the only place they're used
+#define WGL_CONTEXT_MAJOR_VERSION_ARB		        0x2091
+#define WGL_CONTEXT_MINOR_VERSION_ARB		        0x2092
+#define WGL_CONTEXT_LAYER_PLANE_ARB		            0x2093
+#define WGL_CONTEXT_FLAGS_ARB			            0x2094
+#define WGL_CONTEXT_PROFILE_MASK_ARB		        0x9126
+
+#define WGL_CONTEXT_DEBUG_BIT_ARB		            0x0001
+#define WGL_CONTEXT_FORWARD_COMPATIBLE_BIT_ARB	    0x0002
+
+#define WGL_CONTEXT_CORE_PROFILE_BIT_ARB	        0x00000001
+#define WGL_CONTEXT_COMPATIBILITY_PROFILE_BIT_ARB   0x00000002
+
+typedef HGLRC (WINAPI * PFNWGLCREATECONTEXTATTRIBSARBPROC) (HDC hDC, HGLRC hShareContext, const int* attribList);
+
 
 
 using namespace lx0::core;
@@ -562,12 +576,10 @@ namespace lx0 { namespace subsystem { namespace canvas_ns { namespace detail {
         1) Create the "pixel format" - i.e. choose a rendering context type from among those
            available on the hardware.  Not all graphics cards support the same set of formats.
     
-        2) Initialize GLEW.  GLEW is being used as the interface to OpenGL to avoid having
-           to manually pull in all the extensions.  No need to unnecessarily duplicate 
-           boilerplate code.
+        2) Initialize the OpenGL extensions.
 
         3) Create the OpenGL 3.2 context using the pixel format found in (1) and the methods
-           made available via GLEW in (2).
+           made available via extensions in (2).
      */
     void 
     CanvasGL::createGlContext()
@@ -594,7 +606,7 @@ namespace lx0 { namespace subsystem { namespace canvas_ns { namespace detail {
         if (::SetPixelFormat(m_hDC, uPixelFormat, &pfd) == FALSE)
             lx_error("Cannot set pixel format");
 
-        // Create a temporary context so that GLEW will initialize properly
+        // Create a temporary context so that the extensions will initialize properly
         //
         HGLRC tempRC = wglCreateContext(m_hDC);
 
@@ -604,9 +616,8 @@ namespace lx0 { namespace subsystem { namespace canvas_ns { namespace detail {
         if (!wglMakeCurrent(m_hDC, tempRC))
             lx_error("Cannot set rendering context");
 
-        // Initialize GLEW (pulls in all the OpenGL extension functions)
-        //
-        glewInit();
+        // Initialize (pulls in all the OpenGL extension functions)
+        gl3wInit();
 
         // Create the OpenGL 3.2 context using wglCreateContextAttribsARB.
         //
@@ -621,8 +632,7 @@ namespace lx0 { namespace subsystem { namespace canvas_ns { namespace detail {
             0
         };
     
-        PFNWGLCREATECONTEXTATTRIBSARBPROC wglCreateContextAttribsARB = 0;
-        wglCreateContextAttribsARB = (PFNWGLCREATECONTEXTATTRIBSARBPROC) wglGetProcAddress("wglCreateContextAttribsARB");
+        PFNWGLCREATECONTEXTATTRIBSARBPROC wglCreateContextAttribsARB = (PFNWGLCREATECONTEXTATTRIBSARBPROC) wglGetProcAddress("wglCreateContextAttribsARB");
 
         if (wglCreateContextAttribsARB)
         {

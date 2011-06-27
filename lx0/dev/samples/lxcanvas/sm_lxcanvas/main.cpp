@@ -46,10 +46,7 @@
 #include <lx0/lxengine.hpp>
 #include <lx0/subsystem/canvas.hpp>
 
-#define GLEW_STATIC
-#include <gl/glew.h>
-#include <windows.h>        // Unfortunately must be included on Windows for GL.h to work
-#include <gl/GL.h>
+#include <GL3/gl3w_modified.hpp>
 
 using namespace lx0;
 using namespace lx0::core;
@@ -109,13 +106,13 @@ public:
     void 
     resize (int width, int height)
     {
-        glMatrixMode(GL_PROJECTION);
+        /*glMatrixMode(GL_PROJECTION);
         glLoadIdentity();
 
         gluPerspective(45.0f, (GLfloat)width/(GLfloat)height, 0.1f, 100.0f);
 
         glMatrixMode(GL_MODELVIEW);
-        glLoadIdentity();
+        glLoadIdentity();*/
     }
 
     void 
@@ -163,6 +160,15 @@ main (int argc, char** argv)
     int exitCode = 0;
 
     lx_init();
+
+    /*
+     LxEngine was upgraded to use the OpenGL 3.2 Core Profile.  This sample is
+     still based on the Compatibility profile.  The primary issue is the use
+     of the view and projection matrices, which need to be replaced with 
+     uniform variables in the shader.  This is not difficult, but there is a 
+     question of how relevant this sample is in the first place.
+     */
+    lx_error("This sample is currently broken! It needs to be fixed or removed.");
 
     CanvasHost host;
     Renderer renderer;

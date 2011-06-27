@@ -242,6 +242,8 @@ RasterizerGL::_createProgram   (std::string fragShader)
 GLuint 
 RasterizerGL::_createProgram2  (std::string fragShader)
 {
+    check_glerror();
+
     lx_debug("Creating program for shader '%s'", fragShader.c_str());
 
     // Create the shader program
@@ -256,21 +258,11 @@ RasterizerGL::_createProgram2  (std::string fragShader)
         glAttachShader(prog, gs);
         glAttachShader(prog, fs);
         
-        // OpenGL 3.2 spec states that geometry shaders must output strips for
-        // lines and triangles.
-        if (gs)
-        {
-            GLenum geometryInput = GL_TRIANGLES;
-            GLenum geometryOutput = GL_TRIANGLE_STRIP;
-            int maxPrimitives = 3;
-                
-            glProgramParameteriEXT(prog, GL_GEOMETRY_INPUT_TYPE_EXT,    geometryInput);
-            glProgramParameteriEXT(prog, GL_GEOMETRY_OUTPUT_TYPE_EXT,   geometryOutput);
-            glProgramParameteriEXT(prog, GL_GEOMETRY_VERTICES_OUT_EXT,  maxPrimitives);
-        }
+        check_glerror();
             
         glBindAttribLocation(prog, 0, "inPosition");
     }
+    check_glerror();
 
     _linkProgram(prog);
     glUseProgram(prog);
@@ -281,7 +273,7 @@ RasterizerGL::_createProgram2  (std::string fragShader)
 void 
 RasterizerGL::_linkProgram (GLuint prog)
 {
-    lx_check_error(glGetError() == GL_NO_ERROR, "GL error status detected!");
+    check_glerror();
 
     glLinkProgram(prog);
 
@@ -327,13 +319,46 @@ RasterizerGL::_createShader(const char* filename, GLuint type)
 }
 
 GeometryPtr
-RasterizerGL::createQuadList (std::vector<glgeom::point3f>& positions, 
-                              std::vector<glgeom::color3f>& colors)
+RasterizerGL::createQuadList (std::vector<glgeom::point3f>& quadPositions, 
+                              std::vector<glgeom::color3f>& quadColors)
 {
-    lx_check_error(!positions.empty());
-    lx_check_error(positions.size() == colors.size());
+    lx_check_error(!quadPositions.empty());
+    lx_check_error(quadPositions.size() == quadColors.size());
 
     check_glerror();
+
+    // Convert the quads to triangles - OpenGL 3.2+ doesn't support quads natively
+    std::vector<glgeom::point3f> positions ((quadPositions.size() * 3) / 2);
+    std::vector<glgeom::color3f> colors ((quadColors.size() * 3) / 2);
+    {
+        const auto* pSrcP = &quadPositions[0];
+        const auto* pSrcC = &quadColors[0];
+        auto* pDstP = &positions[0];
+        auto* pDstC = &colors[0];
+
+        for (size_t i = 0; i < quadPositions.size(); i += 4)
+        {
+            pDstP[0] = pSrcP[0];
+            pDstP[1] = pSrcP[1];
+            pDstP[2] = pSrcP[2];
+            pDstP[3] = pSrcP[0];
+            pDstP[4] = pSrcP[2];
+            pDstP[5] = pSrcP[3];
+
+            pDstC[0] = pSrcC[0];
+            pDstC[1] = pSrcC[1];
+            pDstC[2] = pSrcC[2];
+            pDstC[3] = pSrcC[0];
+            pDstC[4] = pSrcC[2];
+            pDstC[5] = pSrcC[3];
+
+            pDstP += 6;
+            pDstC += 6;
+            pSrcP += 4;
+            pSrcC += 4;
+        }
+    }
+
 
     // Create a vertex array to store the vertex data
     //
@@ -357,7 +382,7 @@ RasterizerGL::createQuadList (std::vector<glgeom::point3f>& positions,
     //
     auto pGeom = new GeomImp;
     pGeom->mtbFlatShading = true;
-    pGeom->mType        = GL_QUADS;
+    pGeom->mType        = GL_TRIANGLES;
     pGeom->mVao         = vao;
     pGeom->mCount       = positions.size();
     pGeom->mVboPosition = vboPositions;
@@ -465,8 +490,8 @@ RasterizerGL::createQuadList (std::vector<unsigned short>& quadIndices,
         check_glerror();
         glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 	    glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-        glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_WRAP_S, GL_CLAMP);
-	    glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_WRAP_T, GL_CLAMP);
+        glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	    glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
         check_glerror();
 
         faceCount = flags.size();

@@ -1,6 +1,9 @@
 #version 150 
 #extension GL_EXT_geometry_shader4 : enable
 
+layout(triangles) in;
+layout(triangle_strip, max_vertices = 3) out;
+
 uniform int         unifFlatNormals;
 uniform sampler1D   unifFaceFlags;
 uniform int         unifFaceCount;
