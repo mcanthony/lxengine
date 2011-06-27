@@ -38,6 +38,8 @@
 #include <lx0/util/misc/util.hpp>
 #include <lx0/subsystem/rasterizer.hpp>
 
+#include <glm/gtc/matrix_inverse.hpp>
+
 #include <gl/glu.h>
 
 using namespace lx0::subsystem::rasterizer_ns;
@@ -718,6 +720,8 @@ RasterizerGL::rasterizeList (RenderAlgorithm& algorithm, std::vector<std::shared
 void
 RasterizerGL::Context::Uniforms::activate ()
 {
+    check_glerror();
+
     GLint progId;
     glGetIntegerv(GL_CURRENT_PROGRAM, &progId);
 
@@ -744,11 +748,17 @@ RasterizerGL::Context::Uniforms::activate ()
             glUniformMatrix4fv(idx, 1, GL_FALSE, glm::value_ptr(*spViewMatrix));
         }
 
-        // Temporary code to ensure gl_NormalMatrix works until it can be removed
-        // from all shaders
-        glMatrixMode(GL_MODELVIEW);
-        glLoadMatrixf(glm::value_ptr(*spViewMatrix));
+        // The gl_NormalMatrix is the upper 3x3 of the inverse transpose of the model view matrix
+        glm::mat3 normalMatrix = glm::mat3(glm::gtx::matrix_inverse::inverseTranspose(*spViewMatrix));
+        {
+            GLint idx = glGetUniformLocation(progId, "unifNormalMatrix");
+            if (idx != -1)
+            {
+                glUniformMatrix3fv(idx, 1, GL_FALSE, glm::value_ptr(normalMatrix));
+            }
+        }
     }
+    check_glerror();
 }
 
 void 

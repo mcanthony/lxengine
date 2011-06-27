@@ -1,6 +1,7 @@
 
 uniform mat4    unifProjMatrix;
 uniform mat4    unifViewMatrix;
+uniform mat3    unifNormalMatrix;
 
 in vec3 vertNormal;
 in vec3 vertColor;
@@ -37,7 +38,7 @@ void main(void)
     gl_Position = unifProjMatrix * vertexEc;
 
     geomNormalOc = vertNormal;
-    geomNormalEc = gl_NormalMatrix * vertNormal;
+    geomNormalEc = unifNormalMatrix * vertNormal;
     geomColor  = vertColor;
     
     geomLightDirEc = normalize(vec3(-1, 1, -1));
