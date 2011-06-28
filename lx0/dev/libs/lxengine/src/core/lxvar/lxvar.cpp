@@ -55,11 +55,11 @@ namespace lx0 { namespace core { namespace lxvar_ns {
             return pClone;
         }
 
-        lxvar 
+        lxvar*
         lxarray::at (int i)      
         {
             lx_check_error(i >= 0 && i < int(mValue.size()));
-            return mValue[i]; 
+            return &mValue[i]; 
         }
 
         void 
@@ -78,14 +78,14 @@ namespace lx0 { namespace core { namespace lxvar_ns {
             return pClone;
         }
 
-        lxvar
+        lxvar*
         lxstringmap::find (const char* key) const
         {
             auto it = mValue.find(key);
             if (it != mValue.end())
-                return it->second;
+                return const_cast<lxvar*>(&it->second);
             else
-                return lxvar();
+                return nullptr;
         }
 
         void 
@@ -132,7 +132,7 @@ namespace lx0 { namespace core { namespace lxvar_ns {
             lxvar::iterator     begin           (void) { return lxvar::iterator(new iterator_imp(this, mOrder.begin())); }
             lxvar::iterator     end             (void) { return lxvar::iterator(new iterator_imp(this, mOrder.end())); }
 
-            virtual lxvar       find        (const char* key) const;
+            virtual lxvar*      find        (const char* key) const;
             virtual void        insert      (const char* key, lxvar& value);
 
             OrderMap     mOrder;
@@ -159,14 +159,14 @@ namespace lx0 { namespace core { namespace lxvar_ns {
             return pClone;
         }
 
-        lxvar
+        lxvar*
         lxorderedmap::find (const char* key) const
         {
             auto it = mValues.find(key);
             if (it != mValues.end())
-                return it->second;
+                return const_cast<lxvar*>(&it->second);
             else
-                return lxvar();
+                return nullptr;
         }
 
         void 
@@ -468,7 +468,8 @@ namespace lx0 { namespace core { namespace lxvar_ns {
     lxvar 
     lxvar::at (int index) const
     {
-        return mValue->at(index);
+        auto p = mValue->at(index);
+        return p ? *p : lxvar::undefined();
     }
 
     void
@@ -538,13 +539,28 @@ namespace lx0 { namespace core { namespace lxvar_ns {
          return map.find(key) != map.end();
     }
 
-    lxvar
+    lxvar&
+    lxvar::operator[] (int i)
+    {
+        if (!isDefined()) 
+            *this = array();
+
+        return *mValue->at(i);
+    }
+
+    lxvar&
     lxvar::operator[] (const char* s)
     {
         if (!isDefined()) 
             *this = map();
 
-        return find(s);
+        auto p = mValue->find(s);
+        if (!p)
+        {
+            mValue->insert(s, lxvar::undefined());
+            p = mValue->find(s);
+        }
+        return *p;
     }
 
     lxvar
@@ -556,8 +572,26 @@ namespace lx0 { namespace core { namespace lxvar_ns {
     lxvar
     lxvar::find (const char* key) const
     {
-        return mValue->find(key);
+        auto p = mValue->find(key);
+        return p ? *p : lxvar::undefined();
     }
+
+    bool
+    lxvar::operator== (const lxvar& that) const
+    {
+        if (!isDefined())
+            return !that.isDefined();
+        if (isInt())
+            return that.isInt() && as<int>() == that.as<int>();
+        if (isFloat())
+            return that.isFloat() && as<float>() == that.as<float>();
+        if (isString())
+            return that.isString() && as<std::string>() == that.as<std::string>();
+        
+        lx_error("Not yet support type!");
+        return false;
+    }
+
 
     static lxvar
     _query_path (lxvar v, std::string path)

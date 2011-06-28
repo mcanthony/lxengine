@@ -143,6 +143,35 @@ testset_lxvar(TestSet& set)
         ++it;
     });
 
+    set.push("ref", [&test_maps] (TestRun& r) {
+        lxvar v;
+        v["size"]["a"] = 7;
+
+        lxvar u = v["red"];
+        u = 6;
+
+        CHECK(r, v["size"]["a"] == 7);
+        CHECK(r, v["red"] == lxvar::undefined());
+
+        lxvar info = lxvar::ordered_map();
+        info["sizes"] = lxvar::ordered_map();
+        info["sizes"]["char"] =            (int)sizeof(char);
+        info["sizes"]["short"] =           (int)sizeof(short);
+        info["sizes"]["int"] =             (int)sizeof(int);
+        info["sizes"]["long"] =            (int)sizeof(long);
+        info["sizes"]["float"] =           (int)sizeof(long);
+        info["sizes"]["double"] =          (int)sizeof(long);
+        info["sizes"]["pointer"] =         (int)sizeof(void*);
+
+        auto it = info["sizes"].begin();
+        CHECK(r, it.key() == "char");
+        CHECK(r, *it == (int)sizeof(char));
+        ++it;
+        CHECK(r, it.key() == "short");
+        CHECK(r, *it == (int)sizeof(short));
+
+    });
+
     set.push("custom object", [] (TestRun& r) {
         
         struct Camera
@@ -158,22 +187,22 @@ testset_lxvar(TestSet& set)
 
 
 
-        struct lxpoint3f : public lxvalue_ref<point3f, lxpoint3f>
+        /*struct lxpoint3f : public lxvalue_ref<point3f, lxpoint3f>
         {
             lxpoint3f (const Data* p) : Base(p) {}
-            virtual lxvar at(int i)  
+            virtual lxvar* at(int i)  
             {
-                return (*mpData)[i];
+                return &(*mpData)[i];
             }
-        };
+        };*/
 
-        struct lxcamera 
+        /*struct lxcamera 
             : public lx0::core::lxvar_ns::detail::lxvalue
             , public Camera
         {
             virtual lxvalue* clone() const { return nullptr; }
 
-            virtual lxvar find(const char* _key) const
+            virtual lxvar* find(const char* _key) const
             {
                 std::string key(_key);
                      if (key == "position")     return new lxpoint3f(&position);
@@ -190,7 +219,7 @@ testset_lxvar(TestSet& set)
         CHECK_CMP(r, v.find("position").at(0).as<float>(), 5.0f, 1e-4f);
         CHECK(r, v.find("direction").size() == 3);
         CHECK(r, v["direction"].size() == 3);
-        CHECK(r, v["direction"][0].as<float>() < 0.0);
+        CHECK(r, v["direction"][0].as<float>() < 0.0);*/
 
     });
 }

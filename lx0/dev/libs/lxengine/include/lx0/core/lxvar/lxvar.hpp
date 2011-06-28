@@ -209,9 +209,13 @@ namespace lx0
 
                     const lxvar&    operator=       (const lxvar& that);
 
-                    lxvar           operator[]      (int i) { return at(i); }
-                    lxvar           operator[]      (const char* s);
-                    lxvar           operator[]      (const std::string& s) { return (*this)[s.c_str()]; }
+                    lxvar&          operator[]      (int i);
+                    lxvar&          operator[]      (const char* s);
+                    lxvar&          operator[]      (const std::string& s) { return (*this)[s.c_str()]; }
+
+                    bool            operator==      (const lxvar& that) const;
+                    bool            operator==      (int i) const { return equal(i); }
+                    
 
                 protected:
                     template <typename T>   bool    _isType (void) const;
@@ -274,10 +278,10 @@ namespace lx0
                     virtual void        as          (std::string&) const { _invalid(); }
 
                     virtual int         size        (void) const                { _invalid(); return 0; }
-                    virtual lxvar       at          (int i)                     { _invalid(); return lxvar(); }
+                    virtual lxvar*      at          (int i)                     { _invalid(); return nullptr; }
                     virtual void        at          (int index, lxvar value)    { _invalid(); }
 
-                    virtual lxvar       find        (const char* key) const     { _invalid(); return lxvar::undefined(); }
+                    virtual lxvar*      find        (const char* key) const     { _invalid(); return nullptr; }
                     virtual void        insert      (const char* key, lxvar& value) { _invalid(); }
 
                     virtual lxvar::iterator begin  (void)                       { _invalid(); return lxvar::iterator(); }
@@ -396,7 +400,7 @@ namespace lx0
                     virtual lxvalue*    clone       (void) const;
 
                     virtual int         size        (void) const { return int( mValue.size() ); }
-                    virtual lxvar       at          (int i);
+                    virtual lxvar*      at          (int i);
                     virtual void        at          (int index, lxvar value);
 
                     lxvar::iterator     begin           (void) { return lxvar::iterator(new iterator_imp(mValue.begin())); }
@@ -434,7 +438,7 @@ namespace lx0
                     lxvar::iterator     begin           (void) { return lxvar::iterator(new iterator_imp(mValue.begin())); }
                     lxvar::iterator     end             (void) { return lxvar::iterator(new iterator_imp(mValue.end())); }
 
-                    virtual lxvar       find        (const char* key) const;
+                    virtual lxvar*      find        (const char* key) const;
                     virtual void        insert      (const char* key, lxvar& value);
 
                     typedef std::map<std::string, lxvar> Map;

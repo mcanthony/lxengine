@@ -227,50 +227,44 @@ namespace lx0 { namespace engine { namespace dom_ns {
             info = lxvar::ordered_map();
 
             {
-                lxvar v = lxvar::ordered_map();
-                v.insert("char",            (int)sizeof(char));
-                v.insert("short",           (int)sizeof(short));
-                v.insert("int",             (int)sizeof(int));
-                v.insert("long",            (int)sizeof(long));
-                v.insert("float",           (int)sizeof(long));
-                v.insert("double",          (int)sizeof(long));
-                v.insert("pointer",         (int)sizeof(void*));
-                v.insert("std::unique_ptr", (int)sizeof(std::shared_ptr<int>));
-                v.insert("std::shared_ptr", (int)sizeof(std::shared_ptr<int>));
-                v.insert("std::weak_ptr",   (int)sizeof(std::weak_ptr<int>));
-                v.insert("std::string",     (int)sizeof(std::string));
-                v.insert("Document",        (int)sizeof(Document));
-                v.insert("Element",         (int)sizeof(Element));
-                info.insert("sizes", v);
+                info["sizes"] = lxvar::ordered_map();
+                info["sizes"]["char"] =            (int)sizeof(char);
+                info["sizes"]["short"] =           (int)sizeof(short);
+                info["sizes"]["int"] =             (int)sizeof(int);
+                info["sizes"]["long"] =            (int)sizeof(long);
+                info["sizes"]["float"] =           (int)sizeof(long);
+                info["sizes"]["double"] =          (int)sizeof(long);
+                info["sizes"]["pointer"] =         (int)sizeof(void*);
+                info["sizes"]["std::unique_ptr"] = (int)sizeof(std::shared_ptr<int>);
+                info["sizes"]["std::shared_ptr"] = (int)sizeof(std::shared_ptr<int>);
+                info["sizes"]["std::weak_ptr"] =   (int)sizeof(std::weak_ptr<int>);
+                info["sizes"]["std::string"] =     (int)sizeof(std::string);
+                info["sizes"]["Document"] =        (int)sizeof(Document);
+                info["sizes"]["Element"] =         (int)sizeof(Element);
             }       
             {
-                lxvar v = lxvar::ordered_map();
-                v.insert("current_time", lx_ctime());
+                info["system"] = lxvar::ordered_map();
+                info["system"]["current_time"] = lx_ctime();
 
                 // Credit to the Quake 2 source code (Swap_Init) for this test
                 {
                     lx0::uint8 bytes[2] = { 1, 0 };
-                    v.insert("endian", (*(short*)bytes == 1) ? "little" : "big");
+                    info["system"]["endian"] = (*(short*)bytes == 1) ? "little" : "big";
                 }
 
                 {
-                    lxvar os = lxvar::ordered_map();
-                    lx_operating_system_info(os);
-                    v.insert("operating_system", os);
+                    info["system"]["operating_system"] = lxvar::ordered_map();
+                    lx_operating_system_info(info["system"]["operating_system"]);
                 }
-
-                info.insert("system", v);
             }
             {
-                lxvar v = lxvar::ordered_map();
-                v.insert("version", boost::str( boost::format("%d.%d.%d") % versionMajor() % versionMinor() % versionRevision() ) ); 
-                info.insert("lxengine", v);
+                info["lxengine"] = lxvar::ordered_map();
+                info["lxengine"]["version"] = boost::str( boost::format("%d.%d.%d") % versionMajor() % versionMinor() % versionRevision() ); 
             }
             {
-                lxvar v = lxvar::ordered_map();
-                v.insert("date", boost::str( boost::format("%s %s") % __DATE__ % __TIME__ ) ); 
-                v.insert("compiler_version", boost::str( boost::format("0x%04x") % _MSC_VER ) ); 
-                info.insert("build", v);
+                info["build"] = lxvar::ordered_map();
+                info["build"]["date"] = boost::str( boost::format("%s %s") % __DATE__ % __TIME__ ); 
+                info["build"]["compiler_version"] = boost::str( boost::format("0x%04x") % _MSC_VER ); 
             }
         }
         return mSystemInfo.clone();
