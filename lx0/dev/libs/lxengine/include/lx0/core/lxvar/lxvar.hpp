@@ -34,6 +34,7 @@
 #include <memory>
 #include <map>
 #include <string>
+#include <functional>
 
 namespace lx0 
 { 
@@ -43,16 +44,22 @@ namespace lx0
         {
             namespace detail 
             {
+                class lxvar;
                 class lxvalue;
                 class lxvalue_iterator;
         
                 class lxundefined;
-                class lxint;
-                class lxfloat;
-                class lxstring;
-                class lxarray;
-                class lxstringmap;
-                class lxorderedmap;
+                lxvalue* create_lxbool          (bool b);
+                lxvalue* create_lxint           (int i);
+                lxvalue* create_lxstring        (const char* s);
+                lxvalue* create_lxstring        (const std::string& s);
+                lxvalue* create_lxfloat         (float f);
+                lxvalue* create_lxdouble        (double d);
+                lxvalue* create_lxstringmap     (void);
+                lxvalue* create_lxorderedmap    (void);
+                lxvalue* create_lxdecoratedmap  (void);
+
+                typedef std::function<bool (lxvar, lxvar&)> ValidateFunction;
             
                 using lx0::lxshared_ptr;
         
@@ -77,7 +84,7 @@ namespace lx0
                     @todo Iterators should be use the pImpl approach so a begin() method can return either
                         an array or a map iterator.
                     @todo Move lxvar to its own library
-                    */
+                */
                 class lxvar
                 {
                 public:
@@ -137,6 +144,7 @@ namespace lx0
                     static lxvar    undefined       (void);                 //!< Return an undefined lxvar
                     static lxvar    map             (void);                 //!< Return an empty map
                     static lxvar    ordered_map     (void);                 //!< Return an empty ordered map
+                    static lxvar    decorated_map   (void);                 //!< Return an empty decorated map
                     static lxvar    array           (void);                 //!< Return an empty array
 
                     static lxvar    parse           (const char* s);
@@ -170,11 +178,11 @@ namespace lx0
                     //@name Type checks
                     //@{
                     bool            isDefined       (void) const            { return !isUndefined(); }
-                    bool            isUndefined     (void) const            { return _isType<detail::lxundefined>(); }
-                    bool            isInt           (void) const            { return _isType<detail::lxint>(); }
-                    bool            isFloat         (void) const            { return _isType<detail::lxfloat>(); }
-                    bool            isString        (void) const            { return _isType<detail::lxstring>(); }
-                    bool            isArray         (void) const            { return _isType<detail::lxarray>(); }
+                    bool            isUndefined     (void) const;
+                    bool            isInt           (void) const;
+                    bool            isFloat         (void) const;
+                    bool            isString        (void) const;
+                    bool            isArray         (void) const;
                     bool            isMap           (void) const;
         
                     bool            isHandle        (void) const;
@@ -203,6 +211,8 @@ namespace lx0
                     lxvar           find            (const char* key) const;
                     lxvar           find            (const std::string& s) const;
                     void            insert          (const char* key, const lxvar& value);
+
+                    void            add             (const char* key, lx0::uint32 flags, ValidateFunction validate);
 
   
                     template <typename T>
@@ -236,6 +246,10 @@ namespace lx0
                     return typeid(*mValue.get()) == typeid(T);
                 }
 
+                //===========================================================================//
+                //!
+                /*!
+                 */
                 class lxvalue_iterator
                 {
                 public:
@@ -252,7 +266,10 @@ namespace lx0
                     void            _invalid            (void) const;
                 };
 
-
+                //===========================================================================//
+                //!
+                /*!
+                 */
                 class lxvalue
                 {
                 public:
@@ -266,24 +283,34 @@ namespace lx0
                     virtual bool        sharedType  (void) const    { return true; }    //!< On a set operation, is the r-value referenced or copied?
                     virtual lxvalue*    clone       (void) const = 0;                   //!< Deep clone of the value
             
-                    virtual bool        isHandle    (void) const    { return false; }
-                    virtual std::string handleType  (void) const    { _invalid(); return ""; }
-                    virtual void*       unwrap      (void)          { return nullptr; }
+                    virtual bool        isHandle    (void) const                { return false; }
+                    virtual std::string handleType  (void) const                { _invalid(); return ""; }
+                    virtual void*       unwrap      (void)                      { return nullptr; }
 
-                    virtual bool        is_map      (void) const    { return false; }
 
-                    virtual void        as          (bool&) const { _invalid(); }
-                    virtual void        as          (int&) const { _invalid(); }
-                    virtual void        as          (float&) const { _invalid(); }
-                    virtual void        as          (double&) const { _invalid(); }
-                    virtual void        as          (std::string&) const { _invalid(); }
+                    virtual bool        is_undefined(void) const            { return false; }
+                    virtual bool        is_bool     (void) const            { return false; }
+                    virtual bool        is_int      (void) const            { return false; }
+                    virtual bool        is_float    (void) const            { return false; }
+                    virtual bool        is_string   (void) const            { return false; }
+                    virtual bool        is_array    (void) const            { return false; }
+                    virtual bool        is_map      (void) const            { return false; }
+
+                    virtual void        as          (bool&)        const        { _invalid(); }
+                    virtual void        as          (int&)         const        { _invalid(); }
+                    virtual void        as          (float&)       const        { _invalid(); }
+                    virtual void        as          (double&)      const        { _invalid(); }
+                    virtual void        as          (std::string&) const        { _invalid(); }
 
                     virtual int         size        (void) const                { _invalid(); return 0; }
                     virtual lxvar*      at          (int i)                     { _invalid(); return nullptr; }
                     virtual void        at          (int index, lxvar value)    { _invalid(); }
 
+                    virtual bool        has         (const char* key) const     { _invalid(); return false; }
                     virtual lxvar*      find        (const char* key) const     { _invalid(); return nullptr; }
                     virtual void        insert      (const char* key, lxvar& value) { _invalid(); }
+
+                    virtual void        add         (const char* key, lx0::uint32 flags, ValidateFunction validate) { _invalid(); }
 
                     virtual lxvar::iterator begin  (void)                       { _invalid(); return lxvar::iterator(); }
                     virtual lxvar::iterator end    (void)                       { _invalid(); return lxvar::iterator(); }
@@ -301,9 +328,6 @@ namespace lx0
                     mValue->as(t); 
                     return t; 
                 }
-
-
-
             }
     
             namespace detail

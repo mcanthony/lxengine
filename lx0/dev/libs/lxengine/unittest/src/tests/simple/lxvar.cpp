@@ -5,6 +5,10 @@
 using lx0::lxvar;
 using namespace glgeom;
 
+using lx0::core::lxvar_ns::detail::lxvalue;
+using lx0::core::lxvar_ns::detail::lxvalue_iterator;
+
+//===========================================================================//
 
 template <typename T, typename D> 
 struct lxvalue_ref : public lx0::core::lxvar_ns::detail::lxvalue
@@ -95,53 +99,7 @@ testset_lxvar(TestSet& set)
         CHECK(r, q.as<std::string>() == "alpha");
     });
 
-    auto test_maps = [] (TestRun& r, lxvar& v) {
-        
-        CHECK(r, v.isSharedType() == true);
-
-        v.insert("test", 7);
-        CHECK(r, v.find("test").as<int>() == 7);
-        CHECK(r, v.size() == 1);
-
-        v.insert("test2", 8);
-        CHECK(r, v.size() == 2);
-        CHECK(r, v.find("test").as<int>() == 7);
-        CHECK(r, v.find("test2").as<int>() == 8);
-
-        v.insert("test", 9);
-        CHECK(r, v.size() == 2);
-        CHECK(r, v.find("test").as<int>() == 9);
-        CHECK(r, v.find("test2").as<int>() == 8);
-
-        v.insert("test3", "alpha");
-        CHECK(r, v.size() == 3);
-        CHECK(r, v.find("test").as<int>() == 9);
-        CHECK(r, v.find("test2").as<int>() == 8);
-        CHECK(r, v.find("test3").as<std::string>() == "alpha");
-    };
-
-    set.push("map", [&test_maps] (TestRun& r) {
-        test_maps(r, lxvar::map());
-    });
-
-    set.push("ordered_map", [&test_maps] (TestRun& r) {
-        test_maps(r, lxvar::ordered_map());
-
-        lxvar m = lxvar::ordered_map();
-        m.insert("b", "one");
-        m.insert("a", "two");
-        m.insert("0", "three");
-
-        auto it = m.begin();
-        CHECK(r, (*it).as<std::string>() == "one");
-        ++it;
-        CHECK(r, (*it).as<std::string>() == "two");
-        ++it;
-        CHECK(r, (*it).as<std::string>() == "three");
-        ++it;
-    });
-
-    set.push("ref", [&test_maps] (TestRun& r) {
+    set.push("ref", [] (TestRun& r) {
         lxvar v;
         v["size"]["a"] = 7;
 
@@ -170,54 +128,114 @@ testset_lxvar(TestSet& set)
 
     });
 
-    set.push("custom object", [] (TestRun& r) {
+    auto test_maps = [] (TestRun& r, lxvar& v) {
         
-        struct Camera
-        {
-            Camera()
-                : position (5, 4, 3)
-                , target   (0, 1, 2)
-            {
-            }
-            point3f position;
-            point3f target;
-        };
+        CHECK(r, v.isSharedType() == true);
 
+        v.insert("test", 7);
+        CHECK(r, v.find("test").as<int>() == 7);
+        CHECK(r, v.size() == 1);
 
+        v.insert("test2", 8);
+        CHECK(r, v.size() == 2);
+        CHECK(r, v.find("test").as<int>() == 7);
+        CHECK(r, v.find("test2").as<int>() == 8);
 
-        /*struct lxpoint3f : public lxvalue_ref<point3f, lxpoint3f>
-        {
-            lxpoint3f (const Data* p) : Base(p) {}
-            virtual lxvar* at(int i)  
-            {
-                return &(*mpData)[i];
-            }
-        };*/
+        v.insert("test", 9);
+        CHECK(r, v.size() == 2);
+        CHECK(r, v.find("test").as<int>() == 9);
+        CHECK(r, v.find("test2").as<int>() == 8);
 
-        /*struct lxcamera 
-            : public lx0::core::lxvar_ns::detail::lxvalue
-            , public Camera
-        {
-            virtual lxvalue* clone() const { return nullptr; }
+        v.insert("test3", "alpha");
+        CHECK(r, v.size() == 3);
+        CHECK(r, v.find("test").as<int>() == 9);
+        CHECK(r, v.find("test2").as<int>() == 8);
+        CHECK(r, v.find("test3").as<std::string>() == "alpha");
 
-            virtual lxvar* find(const char* _key) const
-            {
-                std::string key(_key);
-                     if (key == "position")     return new lxpoint3f(&position);
-                else if (key == "target")       return new lxpoint3f(&target);
-                else if (key == "direction")    return lxvar_from(normalize(target - position));
-                else                            return _invalid(), lxvar::undefined();
-            }
+        v.insert("test4", lxvar::undefined());
+        CHECK(r, v.size() == 4);
+        CHECK(r, v.has("test4") == true);
+        CHECK(r, v.find("test4") == lxvar::undefined());
+    };
 
-        };
-
-
-        lxvar v(new lxcamera);
-        v.find("position");
-        CHECK_CMP(r, v.find("position").at(0).as<float>(), 5.0f, 1e-4f);
-        CHECK(r, v.find("direction").size() == 3);
-        CHECK(r, v["direction"].size() == 3);
-        CHECK(r, v["direction"][0].as<float>() < 0.0);*/
-
+    set.push("map", [&test_maps] (TestRun& r) {
+        test_maps(r, lxvar::map());
     });
+
+    set.push("ordered_map", [&test_maps] (TestRun& r) {
+        test_maps(r, lxvar::ordered_map());
+
+        lxvar m = lxvar::ordered_map();
+        m.insert("b", "one");
+        m.insert("a", "two");
+        m.insert("0", "three");
+
+        auto it = m.begin();
+        CHECK(r, (*it).as<std::string>() == "one");
+        ++it;
+        CHECK(r, (*it).as<std::string>() == "two");
+        ++it;
+        CHECK(r, (*it).as<std::string>() == "three");
+        ++it;
+    });
+
+    set.push("decorated map", [&test_maps] (TestRun& r) {
+        
+        {
+            lxvar v = lxvar::decorated_map();
+            test_maps(r, v);
+        }
+        {
+            lxvar v = lxvar::decorated_map();
+
+            v.add("percent", 0, [] (lxvar v, lxvar& out) -> bool {
+                if (v.isInt())
+                {
+                    auto i = v.as<int>();
+                    if (i < 0)
+                        out = 0;
+                    else if (i > 100)
+                        out = 100;
+                    else
+                        out = v;
+                    return true;
+                }
+                else
+                    return false;
+            });
+
+            v.insert("percent", 42);
+            CHECK(r, v["percent"] == 42);
+
+            v.insert("percent", 199);
+            CHECK(r, v["percent"] == 100);
+
+            v.insert("percent", "test");
+            CHECK(r, v["percent"] == 100);
+
+            v.add("percent", 0, [] (lxvar v, lxvar& out) -> bool {
+                if (v.isInt())
+                {
+                    auto i = v.as<int>();
+                    if (i >= 0 && i <= 100)
+                    {
+                        out = v;
+                        return true;
+                    }
+                }
+                return false;
+            });
+
+
+            v.insert("percent", 42);
+            CHECK(r, v["percent"] == 42);
+
+            v.insert("percent", 199);
+            CHECK(r, v["percent"] == 42);
+
+            v.insert("percent", "test");
+            CHECK(r, v["percent"] == 42);
+        }
+    });
+
 }

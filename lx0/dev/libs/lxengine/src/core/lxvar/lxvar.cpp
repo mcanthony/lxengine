@@ -53,6 +53,8 @@ namespace lx0 { namespace core { namespace lxvar_ns {
             virtual bool        sharedType() const { return true; }
             virtual lxvalue*    clone() const { return const_cast<lxundefined*>(this); }
 
+            virtual bool        is_undefined(void) const            { return true; }
+
         private:
             lxundefined() { _incRef(); }
             ~lxundefined() {}
@@ -60,78 +62,6 @@ namespace lx0 { namespace core { namespace lxvar_ns {
         };
 
         lxundefined lxundefined::s_singleton;
-
-        //===========================================================================//
-
-        template <typename Derived, typename T>
-        class lxvalue_basic : public lxvalue
-        {
-        public:
-            typedef lxvalue_basic<Derived, T>   Base;
-            lxvalue_basic() {}
-            lxvalue_basic(T v) : mValue (v) {}
-            virtual bool sharedType (void) const { return false; }
-            virtual lxvalue* clone (void) const { return new Derived(mValue); }
-
-            virtual void as(T& v) const { v = mValue; }
-            T mValue;
-        };
-
-        //===========================================================================//
-
-        class lxbool : public lxvalue_basic<lxbool, bool>
-        {
-        public:
-            lxbool(bool b) : Base (b) {}
-        };
-
-        //===========================================================================//
-
-        class lxint : public lxvalue_basic<lxint, int>
-        {
-        public:
-            lxint() : Base (0) {}
-            lxint(int i) : Base (i) {}
-
-            //@name Implicit up-casts
-            //@{
-            virtual void as (float& v)  const { v = float(mValue); }
-            virtual void as (double& v) const { v = double(mValue); }
-            //@}
-        };
-
-        //===========================================================================//
-
-        class lxfloat : public lxvalue_basic<lxfloat, float>
-        {
-        public:
-            lxfloat() : Base (0.0f) {}
-            lxfloat(float f) : Base(f) {}
-
-            //@name Implicit up-casts
-            //@{
-            virtual void as (double& v) const { v = mValue; }
-            //@}
-        };
-
-        //===========================================================================//
-
-        class lxdouble : public lxvalue_basic<lxdouble, double>
-        {
-        public:
-            lxdouble() : Base (0.0) {}
-            lxdouble(double f) : Base(f) {}
-        };
-
-        //===========================================================================//
-
-        class lxstring : public lxvalue_basic<lxstring, std::string>
-        {
-        public:
-            lxstring() {}
-            lxstring(std::string s) : Base(s) {}
-            lxstring(const char* s) : Base(s) {}
-        };
 
         //===========================================================================//
         /*!
@@ -223,6 +153,7 @@ namespace lx0 { namespace core { namespace lxvar_ns {
             lxvar::iterator     begin           (void) { return lxvar::iterator(new iterator_imp(mValue.begin())); }
             lxvar::iterator     end             (void) { return lxvar::iterator(new iterator_imp(mValue.end())); }
 
+            virtual bool        has         (const char* key) const { return mValue.find(key) != mValue.end(); }
             virtual lxvar*      find        (const char* key) const;
             virtual void        insert      (const char* key, lxvar& value);
 
@@ -255,6 +186,8 @@ namespace lx0 { namespace core { namespace lxvar_ns {
             mValue.erase(key);
             mValue.insert(std::make_pair(key, value));
         }
+
+        lxvalue* create_lxstringmap     (void) { return new lxstringmap; }
 
         //===========================================================================//
 
@@ -293,6 +226,7 @@ namespace lx0 { namespace core { namespace lxvar_ns {
             lxvar::iterator     begin           (void) { return lxvar::iterator(new iterator_imp(this, mOrder.begin())); }
             lxvar::iterator     end             (void) { return lxvar::iterator(new iterator_imp(this, mOrder.end())); }
 
+            virtual bool        has         (const char* key) const { return mValues.find(key) != mValues.end(); }
             virtual lxvar*      find        (const char* key) const;
             virtual void        insert      (const char* key, lxvar& value);
 
@@ -346,6 +280,8 @@ namespace lx0 { namespace core { namespace lxvar_ns {
                 mValues.insert(std::make_pair(key, value));
             }
         }
+
+        lxvalue* create_lxorderedmap    (void) { return new lxorderedmap; }
 
         //===========================================================================//
 
@@ -458,12 +394,12 @@ namespace lx0 { namespace core { namespace lxvar_ns {
     }
 
     lxvar::lxvar (bool b)
-        : mValue( new lxbool(b) )
+        : mValue( create_lxbool(b) )
     {
     }
 
     lxvar::lxvar(int i)
-        : mValue( new lxint(i) )
+        : mValue( create_lxint(i) )
     {
     }
 
@@ -492,7 +428,7 @@ namespace lx0 { namespace core { namespace lxvar_ns {
     }
 
     lxvar::lxvar(float a)
-        : mValue ( new lxfloat(a) )
+        : mValue ( create_lxfloat(a) )
     {
     }
 
@@ -514,12 +450,12 @@ namespace lx0 { namespace core { namespace lxvar_ns {
     }
 
     lxvar::lxvar (const char* s)
-        : mValue(new lxstring(s))
+        : mValue(create_lxstring(s))
     {
     }
 
     lxvar::lxvar (std::string s)
-        : mValue(new lxstring(s))
+        : mValue(create_lxstring(s))
     {   
     }
 
@@ -532,9 +468,7 @@ namespace lx0 { namespace core { namespace lxvar_ns {
     lxvar
     lxvar::map (void)
     {
-        lxvar v;
-        v._castTo<lxstringmap>();
-        return v;
+        return lxvar(create_lxstringmap());
     }
 
     /*!
@@ -545,9 +479,22 @@ namespace lx0 { namespace core { namespace lxvar_ns {
     lxvar
     lxvar::ordered_map (void)
     {
-        lxvar v;
-        v._castTo<lxorderedmap>();
-        return v;
+        return lxvar(create_lxorderedmap());
+    }
+
+    /*!
+        A decorated map is a work-in-progress class designed as standard string-based
+        map that adds practical features such as different types of flags and validation 
+        for specific keys in the map.  This is particularly useful for settings maps.
+
+        For example, the "view_width" key could be set to have a validator that only
+        allows 320 to 1024 as value values.  Or it could do the same but automatically
+        clamp out-of-range values.
+     */
+    lxvar
+    lxvar::decorated_map (void)
+    {
+        return lxvar(create_lxdecoratedmap());
     }
 
     lxvar
@@ -651,6 +598,36 @@ namespace lx0 { namespace core { namespace lxvar_ns {
     }
 
     bool
+    lxvar::isUndefined (void) const
+    {
+        return mValue->is_undefined();
+    }
+
+    bool
+    lxvar::isInt (void) const
+    {
+        return mValue->is_int();
+    }
+
+    bool
+    lxvar::isFloat (void) const
+    {
+        return mValue->is_float();
+    }
+
+    bool
+    lxvar::isString (void) const
+    {
+        return mValue->is_string();
+    }
+
+    bool
+    lxvar::isArray (void) const
+    {
+        return mValue->is_array();
+    }
+
+    bool
     lxvar::isMap (void) const
     {
         return mValue->is_map();
@@ -700,8 +677,7 @@ namespace lx0 { namespace core { namespace lxvar_ns {
     bool
     lxvar::has (const char* key) const
     {
-         auto map = _castTo<lxstringmap>()->mValue;
-         return map.find(key) != map.end();
+        return mValue->has(key);
     }
 
     lxvar&
@@ -818,6 +794,15 @@ namespace lx0 { namespace core { namespace lxvar_ns {
             *this = map();
 
         mValue->insert(key, const_cast<lxvar&>(value));
+    }
+
+    void
+    lxvar::add (const char* key, lx0::uint32 flags, ValidateFunction validate)
+    {
+        if (!isDefined())
+            *this = decorated_map();
+
+        mValue->add(key, flags, validate);
     }
 
     lxvar    
