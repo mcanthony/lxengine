@@ -190,7 +190,6 @@ namespace lx0
                     std::string     handleType      (void) const;
                     void*           unwrap          (void);
 
-                    bool            __isBoolean     (void) const;
                     bool            __isBinary      (void) const;           //!< Reserved for future binary blob support (specialization of an array)
                     //@}
 
