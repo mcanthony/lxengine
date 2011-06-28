@@ -49,19 +49,19 @@ namespace lx0 { namespace core {  namespace lxvar_ns {
         std::string buffer;
         std::function<void (lxvar, std::string)> fmt = [&fmt, &buffer](lxvar v, std::string indent) 
         {
-            if (v.isArray())
+            if (v.is_array())
             {
                 for (auto it = v.begin(); it != v.end(); ++it)
                 {
                     fmt(*it, indent);
                 }
             }
-            else if (v.isMap())
+            else if (v.is_map())
             {
                 for (auto it = v.begin(); it != v.end(); ++it)
                 {
                     buffer += boost::str( boost::format("%s%s : ") % indent % it.key() );
-                    if ((*it).isArray() || (*it).isMap())
+                    if ((*it).is_array() || (*it).is_map())
                     {
                         buffer += "\n" + indent;
                         fmt(*it, indent + "    ");
@@ -71,11 +71,11 @@ namespace lx0 { namespace core {  namespace lxvar_ns {
                         
                 }
             }
-            else if (v.isInt())
+            else if (v.is_int())
                 buffer += boost::str( boost::format("%d\n") % v.as<int>() );
-            else if (v.isFloat())
+            else if (v.is_float())
                 buffer += boost::str( boost::format("%f\n") % v.as<float>() );
-            else if (v.isString())
+            else if (v.is_string())
                 buffer += boost::str( boost::format("%s\n") % v.as<std::string>().c_str() );
             else
                 buffer += "<unknown>";

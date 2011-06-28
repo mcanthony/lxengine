@@ -138,39 +138,39 @@ main (int argc, char** argv)
         F.add("lxvar tests", []() {
             
             lxvar v;
-            CHECK(v.isUndefined());
-            CHECK(!v.isDefined());
+            CHECK(v.is_undefined());
+            CHECK(!v.is_defined());
             CHECK_EXCEPTION({ v.size(); });
             CHECK_EXCEPTION({ v.at(0); });
 
             v = 1;
-            CHECK(v.isInt());
+            CHECK(v.is_int());
             CHECK_EXCEPTION({ v.size(); });
 
             v = 1.1f;
-            CHECK(v.isFloat());
+            CHECK(v.is_float());
             CHECK_EXCEPTION({ v.size(); });
 
             v = lxvar::undefined();
-            CHECK(v.isUndefined());
+            CHECK(v.is_undefined());
             CHECK_EXCEPTION({ v.size(); });
 
             v = lxvar::map();
-            CHECK(v.isDefined());
-            CHECK(v.isMap());
+            CHECK(v.is_defined());
+            CHECK(v.is_map());
             CHECK(v.size() == 0);
-            CHECK(v.find("a").isUndefined());
+            CHECK(v.find("a").is_undefined());
             CHECK_EXCEPTION({ v.at(0); });
 
             v = lxvar::array();
-            CHECK(v.isDefined());
-            CHECK(v.isArray());
+            CHECK(v.is_defined());
+            CHECK(v.is_array());
             CHECK(v.size() == 0);
             CHECK_EXCEPTION({ v.at(0); });
 
             v.push(1.1f);
             CHECK( v.size() == 1 );
-            CHECK( v.at(0).isFloat() );
+            CHECK( v.at(0).is_float() );
             CHECK_EXCEPTION({ v.at(1); });
         });
 
@@ -178,17 +178,17 @@ main (int argc, char** argv)
             lxvar v;
 
             v = lxvar::parse("0.8");
-            CHECK(v.isFloat());
+            CHECK(v.is_float());
 
             v = lxvar::parse(" 0.8");
-            CHECK(v.isFloat());
+            CHECK(v.is_float());
 
             v = lxvar::parse("{}");
-            CHECK(v.isMap());
+            CHECK(v.is_map());
             CHECK(v.size() == 0);
 
             v = lxvar::parse(" { } ");
-            CHECK(v.isMap());
+            CHECK(v.is_map());
             CHECK(v.size() == 0);
 
             v = lxvar::parse("{ \"alpha\" : 1, \"beta\" : \"two\" }");
@@ -226,16 +226,16 @@ main (int argc, char** argv)
             lxvar v;
 
             v = lxvar::parse("0");
-            CHECK(v.isInt() && v.as<int>() == 0);
+            CHECK(v.is_int() && v.as<int>() == 0);
 
             v = lxvar::parse("123");
-            CHECK(v.isInt() && v.as<int>() == 123);
+            CHECK(v.is_int() && v.as<int>() == 123);
 
             v = lxvar::parse("1.1");
-            CHECK(v.isFloat() && v.as<float>() == 1.1f);
+            CHECK(v.is_float() && v.as<float>() == 1.1f);
 
             v = lxvar::parse("\"This is a string.\"");
-            CHECK(v.isString());
+            CHECK(v.is_string());
             CHECK(v.as<std::string>() == "This is a string.");
         });
 

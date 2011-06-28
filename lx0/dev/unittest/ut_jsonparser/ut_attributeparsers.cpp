@@ -107,9 +107,9 @@ void test_attributeparsers()
  	 	CHECK( kAqua    == parse("Aqua").convert() );
 
         // Ensure some invalid cases do in fact fail
-        CHECK( parse("bla ck").isString() == true);
-        CHECK( parse("blakc").isString() == true);
-        CHECK( parse("WhiteBlack").isString() == true);
+        CHECK( parse("bla ck").is_string() == true);
+        CHECK( parse("blakc").is_string() == true);
+        CHECK( parse("WhiteBlack").is_string() == true);
 
         // Check hex notation
         CHECK( kWhite             == parse("#fff").convert() );
@@ -124,8 +124,8 @@ void test_attributeparsers()
         CHECK( color3f(133/255.0f,150/255.0f,167/255.0f) == parse("#8596A7").convert() );
 
         // Check some malformed hex
-        CHECK( parse("000").isInt() );
-        CHECK( parse("#00112").isString() );
+        CHECK( parse("000").is_int() );
+        CHECK( parse("#00112").is_string() );
 
 
         // Check rgb notation

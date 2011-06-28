@@ -162,29 +162,29 @@ namespace lx0
                     auto_cast2      convert         (void)                  { return auto_cast2(*this); }
                     
                     template <typename T>
-                    T               convert         (const T& t)            { return isUndefined() ? t : (T)auto_cast2(*this); }
+                    T               convert         (const T& t)            { return is_undefined() ? t : (T)auto_cast2(*this); }
 
-                    bool            equal           (int i) const           { return (isInt() && as<int>() == i); } //!< Is strictly equal: same type and same value
-                    bool            equal           (std::string s) const   { return (isString() && as<std::string>() == s);}
+                    bool            equal           (int i) const           { return (is_int() && as<int>() == i); } //!< Is strictly equal: same type and same value
+                    bool            equal           (std::string s) const   { return (is_string() && as<std::string>() == s);}
 
                     bool            equiv           (const char* s) const;  //!< Is equal, or is equal after a type conversion
 
-                    int             query           (int def) const         { return isInt() ? as<int>() : def; }
-                    std::string     query           (std::string def) const { return isString() ? as<std::string>() : def; }
-                    float           query           (float def) const       { return isFloat() ? as<float>() : (isInt() ? as<int>() : def); }
+                    int             query           (int def) const         { return is_int() ? as<int>() : def; }
+                    std::string     query           (std::string def) const { return is_string() ? as<std::string>() : def; }
+                    float           query           (float def) const       { return is_float() ? as<float>() : (is_int() ? as<int>() : def); }
                     std::string     query           (std::string path, std::string def);
                     int             query           (std::string path, int def);
 
 
                     //@name Type checks
                     //@{
-                    bool            isDefined       (void) const            { return !isUndefined(); }
-                    bool            isUndefined     (void) const;
-                    bool            isInt           (void) const;
-                    bool            isFloat         (void) const;
-                    bool            isString        (void) const;
-                    bool            isArray         (void) const;
-                    bool            isMap           (void) const;
+                    bool            is_defined       (void) const            { return !is_undefined(); }
+                    bool            is_undefined     (void) const;
+                    bool            is_int           (void) const;
+                    bool            is_float         (void) const;
+                    bool            is_string        (void) const;
+                    bool            is_array         (void) const;
+                    bool            is_map           (void) const;
         
                     bool            isHandle        (void) const;
                     std::string     handleType      (void) const;
@@ -209,7 +209,8 @@ namespace lx0
                     lxvar           find            (const std::string& s) const;
                     void            insert          (const char* key, const lxvar& value);
 
-                    void            add             (const char* key, lx0::uint32 flags, ValidateFunction validate);
+                    void            add             (const char* key, lx0::uint32 flags, ValidateFunction validate, lxvar def = lxvar());
+                    lx0::uint32     flags           (const char* key);
 
   
                     template <typename T>
@@ -310,6 +311,7 @@ namespace lx0
                     virtual void        insert      (const char* key, lxvar& value) { _invalid(); }
 
                     virtual void        add         (const char* key, lx0::uint32 flags, ValidateFunction validate) { _invalid(); }
+                    virtual lx0::uint32 flags       (const char* key)           { _invalid(); return 0; }
 
                     virtual lxvar::iterator begin  (void)                       { _invalid(); return lxvar::iterator(); }
                     virtual lxvar::iterator end    (void)                       { _invalid(); return lxvar::iterator(); }
@@ -341,11 +343,13 @@ namespace lx0
             void        insert          (detail::lxvar& v, const char* path, detail::lxvar value);
             std::string format_tabbed   (detail::lxvar& v);
 
+            using detail::lxvar;
+            using detail::ValidateFunction;
+
         }   // end namespace lxvar
 
     }   // end namespace core
 
-    using lx0::core::lxvar_ns::detail::lxvar;
     using namespace lx0::core::lxvar_ns;
 
 } // end namespace lx0

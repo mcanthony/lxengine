@@ -453,7 +453,7 @@ namespace lx0 { namespace core { namespace detail {
         if (mSource)
         {
             int state;
-            if (value.isString())
+            if (value.is_string())
             {
                 std::string s = value;
                 if (s == "playing")

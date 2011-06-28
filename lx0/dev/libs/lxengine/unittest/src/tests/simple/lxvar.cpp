@@ -55,8 +55,8 @@ testset_lxvar(TestSet& set)
     set.push("ctor", [] (TestRun& r) {
         lxvar v;
 
-        CHECK(r, v.isDefined() == false);
-        CHECK(r, v.isUndefined() == true);
+        CHECK(r, v.is_defined() == false);
+        CHECK(r, v.is_undefined() == true);
     });
 
     set.push("basics", [] (TestRun& r) {
@@ -189,7 +189,7 @@ testset_lxvar(TestSet& set)
             lxvar v = lxvar::decorated_map();
 
             v.add("percent", 0, [] (lxvar v, lxvar& out) -> bool {
-                if (v.isInt())
+                if (v.is_int())
                 {
                     auto i = v.as<int>();
                     if (i < 0)
@@ -214,7 +214,7 @@ testset_lxvar(TestSet& set)
             CHECK(r, v["percent"] == 100);
 
             v.add("percent", 0, [] (lxvar v, lxvar& out) -> bool {
-                if (v.isInt())
+                if (v.is_int())
                 {
                     auto i = v.as<int>();
                     if (i >= 0 && i <= 100)

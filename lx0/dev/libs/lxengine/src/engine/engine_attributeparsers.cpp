@@ -63,7 +63,7 @@ namespace lx0 { namespace engine { namespace dom_ns {
             for (auto jt = group.begin(); jt != group.end(); ++jt)
             {
                 lxvar parsed = (*jt)(value);
-                if (parsed.isDefined())
+                if (parsed.is_defined())
                     return parsed;
             }
         }

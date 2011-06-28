@@ -97,6 +97,7 @@ namespace lx0 { namespace engine { namespace dom_ns {
 
 
     Engine::Engine()
+        : mGlobals (lxvar::decorated_map())
     {
         lx_init();
         lx_log("lx::core::Engine ctor");
@@ -221,7 +222,7 @@ namespace lx0 { namespace engine { namespace dom_ns {
     Engine::getSystemInfo (void)
     {
         // Cache the system info the first time it is computed
-        if (!mSystemInfo.isDefined())
+        if (!mSystemInfo.is_defined())
         {
             auto& info = mSystemInfo;
             info = lxvar::ordered_map();
@@ -367,7 +368,7 @@ namespace lx0 { namespace engine { namespace dom_ns {
                     {
                         std::string language = spElem->attr("language").as<std::string>();
                         std::string content;
-                        if (spElem->value().isDefined())
+                        if (spElem->value().is_defined())
                         {
                             content = spElem->value().as<std::string>();
                         }

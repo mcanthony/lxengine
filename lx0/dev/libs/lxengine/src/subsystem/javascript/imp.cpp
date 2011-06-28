@@ -756,7 +756,7 @@ namespace lx0 { namespace subsystem { namespace javascript_ns { namespace detail
             auto        pThis    = _nativeThis<lxvar>(info); 
 
             v8::Local<v8::Array> arr;
-            if (pThis->isArray())
+            if (pThis->is_array())
             {
                 arr = v8::Array::New(pThis->size());
                 for (int i = 0; i < pThis->size(); ++i)
@@ -777,7 +777,7 @@ namespace lx0 { namespace subsystem { namespace javascript_ns { namespace detail
 
             v8::Local<v8::Array> arr;
 
-            if (pThis->isMap())
+            if (pThis->is_map())
             {
                 uint32_t index = 0;
                 arr = v8::Array::New(pThis->size());
@@ -965,7 +965,7 @@ namespace lx0 { namespace subsystem { namespace javascript_ns { namespace detail
             std::string name = _marshal(args[0]);
             lxvar value = _marshal(args[1]);
                 
-            if (value.isString())
+            if (value.is_string())
                 value = Engine::acquire()->parseAttribute(name, value.as<std::string>());
 
             pThis->attr(name, value);

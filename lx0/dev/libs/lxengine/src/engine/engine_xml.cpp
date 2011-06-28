@@ -133,7 +133,7 @@ namespace lx0 { namespace engine { namespace dom_ns {
                 bool bSet = false;
                 lxvar elemValue;
                 lxvar srcAttr = spElem->attr("src");
-                if (srcAttr.isDefined() && (tagName == "Mesh" || tagName == "Camera"))
+                if (srcAttr.is_defined() && (tagName == "Mesh" || tagName == "Camera"))
                 {
                     ///@todo should the src tag always be assigned a special proxy lxvar that, on first use
                     /// invokes the Element-specific loader to get the data?

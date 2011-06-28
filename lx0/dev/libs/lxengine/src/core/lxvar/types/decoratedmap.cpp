@@ -101,6 +101,14 @@ public:
         mMap.erase(key);
         mMap.insert(std::make_pair(key, v));
     }
+    virtual lx0::uint32 flags       (const char* key)
+    {
+        auto it = mMap.find(key);
+        if (it != mMap.end())
+            return it->second.mFlags;
+        else
+            return 0;
+    }
 
     Map     mMap;
 };

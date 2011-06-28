@@ -344,41 +344,44 @@ namespace lx0 { namespace core { namespace lxvar_ns {
     void
     lxvar::push (const lxvar& v)
     {
+        if (is_undefined())
+            *this = array();
+
         mValue->push(v);
     }
 
     bool
-    lxvar::isUndefined (void) const
+    lxvar::is_undefined (void) const
     {
         return mValue->is_undefined();
     }
 
     bool
-    lxvar::isInt (void) const
+    lxvar::is_int (void) const
     {
         return mValue->is_int();
     }
 
     bool
-    lxvar::isFloat (void) const
+    lxvar::is_float (void) const
     {
         return mValue->is_float();
     }
 
     bool
-    lxvar::isString (void) const
+    lxvar::is_string (void) const
     {
         return mValue->is_string();
     }
 
     bool
-    lxvar::isArray (void) const
+    lxvar::is_array (void) const
     {
         return mValue->is_array();
     }
 
     bool
-    lxvar::isMap (void) const
+    lxvar::is_map (void) const
     {
         return mValue->is_map();
     }
@@ -424,7 +427,7 @@ namespace lx0 { namespace core { namespace lxvar_ns {
     lxvar&
     lxvar::operator[] (int i)
     {
-        if (!isDefined()) 
+        if (!is_defined()) 
             *this = array();
 
         return *mValue->at(i);
@@ -433,7 +436,7 @@ namespace lx0 { namespace core { namespace lxvar_ns {
     lxvar&
     lxvar::operator[] (const char* s)
     {
-        if (!isDefined()) 
+        if (!is_defined()) 
             *this = map();
 
         auto p = mValue->find(s);
@@ -461,14 +464,14 @@ namespace lx0 { namespace core { namespace lxvar_ns {
     bool
     lxvar::operator== (const lxvar& that) const
     {
-        if (!isDefined())
-            return !that.isDefined();
-        if (isInt())
-            return that.isInt() && as<int>() == that.as<int>();
-        if (isFloat())
-            return that.isFloat() && as<float>() == that.as<float>();
-        if (isString())
-            return that.isString() && as<std::string>() == that.as<std::string>();
+        if (!is_defined())
+            return !that.is_defined();
+        if (is_int())
+            return that.is_int() && as<int>() == that.as<int>();
+        if (is_float())
+            return that.is_float() && as<float>() == that.as<float>();
+        if (is_string())
+            return that.is_string() && as<std::string>() == that.as<std::string>();
         
         lx_error("Not yet support type!");
         return false;
@@ -494,11 +497,11 @@ namespace lx0 { namespace core { namespace lxvar_ns {
         // Walk the path
         for (auto it = keys.begin(); it != keys.end(); ++it)
         {
-            if (v.isMap())
+            if (v.is_map())
             {
                 v = v.find(*it);
             }
-            else if (v.isArray())
+            else if (v.is_array())
             {
                 int index;
                 std::istringstream iss (*it);
@@ -531,19 +534,26 @@ namespace lx0 { namespace core { namespace lxvar_ns {
     void 
     lxvar::insert (const char* key, const lxvar& value)
     {
-        if (!isDefined())
+        if (!is_defined())
             *this = map();
 
         mValue->insert(key, const_cast<lxvar&>(value));
     }
 
     void
-    lxvar::add (const char* key, lx0::uint32 flags, ValidateFunction validate)
+    lxvar::add (const char* key, lx0::uint32 flags, ValidateFunction validate, lxvar def)
     {
-        if (!isDefined())
+        if (!is_defined())
             *this = decorated_map();
 
         mValue->add(key, flags, validate);
+        mValue->insert(key, def);
+    }
+
+    lx0::uint32
+    lxvar::flags (const char* key)
+    {
+        return mValue->flags(key);
     }
 
     lxvar    

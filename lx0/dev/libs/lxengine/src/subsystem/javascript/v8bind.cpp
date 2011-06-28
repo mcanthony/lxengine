@@ -38,15 +38,15 @@ namespace lx0 { namespace core { namespace v8bind
 
     _marshal::_marshal (lxvar v)
     {
-        if (v.isUndefined())
+        if (v.is_undefined())
             mValue = v8::Undefined();
-        else if (v.isString())
+        else if (v.is_string())
             *this = _marshal(v.as<std::string>());
-        else if (v.isFloat())
+        else if (v.is_float())
             *this = _marshal(v.as<float>());
-        else if (v.isInt())
+        else if (v.is_int())
             *this = _marshal(v.as<int>());
-        else if (v.isArray())
+        else if (v.is_array())
         {
             Handle<Array> arr = Array::New(v.size());
             for (int i = 0; i < v.size(); i++)

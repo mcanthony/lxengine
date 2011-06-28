@@ -42,6 +42,13 @@ using namespace lx0;
 
 //===========================================================================//
 
+    enum
+    {
+        ACCEPTS_INT     = (1 << 0),
+        ACCEPTS_FLOAT   = (1 << 1),
+        ACCEPTS_STRING  = (1 << 2)
+    };
+
 static bool 
 parse_options (EnginePtr spEngine, int argc, char** argv, boost::program_options::variables_map& vars)
 {
@@ -57,9 +64,19 @@ parse_options (EnginePtr spEngine, int argc, char** argv, boost::program_options
     desc.add_options()
         ("help", "Print usage information and exit.")
         ("file", value<std::string>()->default_value("media2/appdata/sm_raytracer/current.xml"), "Scene file to display.")
-        ("view_width", value<int>())
-        ("view_height", value<int>())
+     //   ("view_width", value<int>())
+       // ("view_height", value<int>())
         ;
+
+    auto& adder = desc.add_options();
+    for (auto it = spEngine->globals().begin(); it != spEngine->globals().end(); ++it)
+    {
+        auto key = it.key();
+        auto flags = spEngine->globals().flags(key.c_str());
+
+        if (flags & ACCEPTS_INT)
+            adder((std::string("D") + key).c_str(), value<int>());
+    }
 
     positional_options_description pos;
     pos.add("file", -1);
@@ -91,8 +108,8 @@ parse_options (EnginePtr spEngine, int argc, char** argv, boost::program_options
     }
     
     auto check_int = [&spEngine, &vars] (const char* name) {
-        if (vars.count(name))
-            spEngine->globals().insert(name, vars[name].as<int>());
+        if (vars.count(std::string("D") + name))
+            spEngine->globals().insert(name, vars[std::string("D") + name].as<int>());
     };
     check_int("view_width");
     check_int("view_height");
@@ -123,6 +140,18 @@ validate_options (EnginePtr spEngine, int argc, char** argv)
 //   E N T R Y - P O I N T
 //===========================================================================//
 
+lx0::ValidateFunction validate_range_int (int min, int max)
+{
+    return [min,max](lxvar v, lxvar& o) -> bool {
+        if (v.is_int() && v.as<int>() >= min && v.as<int>() <= max)
+        {
+            o = v;
+            return true;
+        }
+        return false;
+    };
+}
+
 int 
 main (int argc, char** argv)
 {
@@ -131,8 +160,8 @@ main (int argc, char** argv)
     {
         EnginePtr spEngine = Engine::acquire();
         spEngine->globals().insert("input_filename", lxvar::undefined());       // No default
-        spEngine->globals().insert("view_width",     512);
-        spEngine->globals().insert("view_height",    512);
+        spEngine->globals().add("view_width",  ACCEPTS_INT, validate_range_int(32, 4096), 512);
+        spEngine->globals().add("view_height", ACCEPTS_INT, validate_range_int(32, 4096), 512);
 
         if (validate_options(spEngine, argc, argv))
         {

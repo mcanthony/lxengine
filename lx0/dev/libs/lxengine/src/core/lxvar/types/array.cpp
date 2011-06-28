@@ -63,6 +63,8 @@ namespace lx0
             virtual bool        sharedType  (void) const { return true; }
             virtual lxvalue*    clone       (void) const;
 
+            virtual bool        is_array    (void) const            { return true; }
+
             virtual int         size        (void) const { return int( mValue.size() ); }
             virtual lxvar*      at          (int i);
             virtual void        at          (int index, lxvar value);

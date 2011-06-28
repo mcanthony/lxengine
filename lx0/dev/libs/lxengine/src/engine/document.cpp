@@ -186,7 +186,7 @@ namespace lx0 { namespace engine { namespace dom_ns {
         ElementPtr spMatch;
         _walkElements([&](ElementPtr spElem) -> bool {
             lxvar v = spElem->attr("id");
-            if (v.isString())
+            if (v.is_string())
             {
                 std::string elemId = v.as<std::string>();
                 if (elemId == id)

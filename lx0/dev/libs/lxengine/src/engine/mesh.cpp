@@ -83,7 +83,7 @@ namespace lx0 { namespace engine { namespace dom_ns {
     float               
     Mesh::maxExtentScale (lxvar value) const
     {
-        if (value.isFloat() || value.isInt())
+        if (value.is_float() || value.is_int())
         {
             float maxExtent = value;
             if (maxExtent > 0.0f)
@@ -97,7 +97,7 @@ namespace lx0 { namespace engine { namespace dom_ns {
         }
     
         // Empty value means use the original scale
-        lx_check_error( value.isUndefined() );
+        lx_check_error( value.is_undefined() );
         return 1.0f;
     }
 

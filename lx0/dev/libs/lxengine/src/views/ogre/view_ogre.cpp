@@ -144,14 +144,14 @@ namespace {
 
         void _setTranslation (lxvar& v)
         {
-            if (v.isDefined())
+            if (v.is_defined())
                 _node()->setPosition(v.convert());
         }
 
         void _setMaterial(ElementPtr spElem)
         {
             lxvar varMaterial = spElem->attr("material");
-            if (varMaterial.isArray() && varMaterial.size() == 2)
+            if (varMaterial.is_array() && varMaterial.size() == 2)
             {
                 std::string base = varMaterial.at(0).as<std::string>();
                 lxvar       params = varMaterial.at(1);
@@ -164,15 +164,15 @@ namespace {
                     float             shininess = 32.0f;
                     float             opacity = 1.0f;
 
-                    if (params.find("ambient").isDefined()) 
+                    if (params.find("ambient").is_defined()) 
                         ambient = params.find("ambient").convert();
-                    if (params.find("diffuse").isDefined()) 
+                    if (params.find("diffuse").is_defined()) 
                         diffuse = params.find("diffuse").convert();
-                    if (params.find("specular").isDefined()) 
+                    if (params.find("specular").is_defined()) 
                         specular = params.find("specular").convert();
-                    if (params.find("shininess").isDefined()) 
+                    if (params.find("shininess").is_defined()) 
                         shininess = params.find("shininess").convert();
-                    if (params.find("opacity").isDefined()) 
+                    if (params.find("opacity").is_defined()) 
                         opacity = params.find("opacity").convert();
 
                     Ogre::MaterialPtr spMat =  Ogre::MaterialManager::getSingleton().getByName("Material/PhongChecker_GLSL");
@@ -199,11 +199,11 @@ namespace {
                 lxvar elemSpecular = spElem->attr("specular");
                 lxvar elemShininess = spElem->attr("shininess");
 
-                if (elemDiffuse.isDefined())
+                if (elemDiffuse.is_defined())
                     diffuse = (Ogre::Vector3)elemDiffuse.convert();
-                if (elemSpecular.isDefined())
+                if (elemSpecular.is_defined())
                     specular = (Ogre::Vector3)elemSpecular.convert();
-                if (elemShininess.isDefined())
+                if (elemShininess.is_defined())
                     shininess = elemShininess;
 
                 if (material == "solid")
@@ -271,9 +271,9 @@ namespace {
         void _warnOnIncorrectAttributes(ElementPtr spElem)
         {
 #ifdef _DEBUG
-            if (spElem->attr("translate").isDefined())
+            if (spElem->attr("translate").is_defined())
                 lx_warn_once("Found 'translate' attribute: was 'translation' intended?");
-            if (spElem->attr("position").isDefined())
+            if (spElem->attr("position").is_defined())
                 lx_warn_once("Found 'position' attribute: was 'translation' intended?");
 #endif
         }

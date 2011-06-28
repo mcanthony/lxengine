@@ -264,19 +264,19 @@ namespace lx0 { namespace core { namespace detail {
             auto windDirection = spElem->attr("wind_direction");
             auto gravity = spElem->attr("gravity");
 
-            if (windVelocity.isDefined())
+            if (windVelocity.is_defined())
             {
                 float velocity = windVelocity.query(0.0f);
                 mpDocPhysics->setWindVelocity(velocity);
             }
-            if (windDirection.isDefined())
+            if (windDirection.is_defined())
             {
-                lx_check_error(windDirection.isArray());
+                lx_check_error(windDirection.is_array());
 
                 glgeom::vector3f dir(windDirection.at(0).query(0.0f), windDirection.at(1).query(0.0f), windDirection.at(2).query(0.0f) );
                 mpDocPhysics->setWindDirection(dir);
             }
-            if (gravity.isDefined())
+            if (gravity.is_defined())
             {
                 glgeom::vector3f val = gravity.convert();
                 mpDocPhysics->mspDynamicsWorld->setGravity(btVector3(val.x, val.y, val.z));
@@ -316,7 +316,7 @@ namespace lx0 { namespace core { namespace detail {
             std::string    ref      = spElem->attr("ref").query("");
             const btScalar kfMass   = spElem->attr("mass").query(0.0f);   
             auto posAttr            = spElem->attr("translation");
-            glgeom::point3f pos     = posAttr.isDefined() ? glgeom::point3f(posAttr.convert()) : glgeom::point3f(0, 0, 0);
+            glgeom::point3f pos     = posAttr.is_defined() ? glgeom::point3f(posAttr.convert()) : glgeom::point3f(0, 0, 0);
             lxvar maxExtent         = spElem->attr("max_extent");
 
 
@@ -366,7 +366,7 @@ namespace lx0 { namespace core { namespace detail {
 
         void _setVelocity (lxvar value)
         {
-            glgeom::vector3f vel = value.isDefined() ? glgeom::vector3f(value.convert()) : glgeom::vector3f(0, 0, 0);
+            glgeom::vector3f vel = value.is_defined() ? glgeom::vector3f(value.convert()) : glgeom::vector3f(0, 0, 0);
             mspRigidBody->setLinearVelocity( btVector3(vel.x, vel.y, vel.z) );
         }
 
