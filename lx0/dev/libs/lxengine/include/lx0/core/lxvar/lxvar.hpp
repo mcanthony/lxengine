@@ -52,10 +52,13 @@ namespace lx0
                 class lxstring;
                 class lxarray;
                 class lxstringmap;
+                class lxorderedmap;
             
                 using lx0::lxshared_ptr;
         
                 /*!
+                    \ingroup lx0_core_lxvar
+
                     Dev Notes:
 
                     A major design decision, that requires consistency across the class is
@@ -132,6 +135,7 @@ namespace lx0
 
                     static lxvar    undefined       (void);                 //!< Return an undefined lxvar
                     static lxvar    map             (void);                 //!< Return an empty map
+                    static lxvar    ordered_map     (void);                 //!< Return an empty ordered map
                     static lxvar    array           (void);                 //!< Return an empty array
 
                     static lxvar    parse           (const char* s);
@@ -206,8 +210,8 @@ namespace lx0
                     const lxvar&    operator=       (const lxvar& that);
 
                     lxvar           operator[]      (int i) { return at(i); }
-                    lxvar           operator[]      (const char* s) { return find(s); }
-                    lxvar           operator[]      (const std::string& s) { return find(s.c_str()); }
+                    lxvar           operator[]      (const char* s);
+                    lxvar           operator[]      (const std::string& s) { return (*this)[s.c_str()]; }
 
                 protected:
                     template <typename T>   bool    _isType (void) const;
@@ -261,6 +265,8 @@ namespace lx0
                     virtual std::string handleType  (void) const    { _invalid(); return ""; }
                     virtual void*       unwrap      (void)          { return nullptr; }
 
+                    virtual bool        is_map      (void) const    { return false; }
+
                     virtual void        as          (bool&) const { _invalid(); }
                     virtual void        as          (int&) const { _invalid(); }
                     virtual void        as          (float&) const { _invalid(); }
@@ -272,6 +278,7 @@ namespace lx0
                     virtual void        at          (int index, lxvar value)    { _invalid(); }
 
                     virtual lxvar       find        (const char* key) const     { _invalid(); return lxvar::undefined(); }
+                    virtual void        insert      (const char* key, lxvar& value) { _invalid(); }
 
                     virtual lxvar::iterator begin  (void)                       { _invalid(); return lxvar::iterator(); }
                     virtual lxvar::iterator end    (void)                       { _invalid(); return lxvar::iterator(); }
@@ -420,16 +427,20 @@ namespace lx0
                     virtual bool        sharedType  (void) const { return true; }
                     virtual lxvalue*    clone       (void) const;
 
+                    virtual bool        is_map      (void) const    { return true; }
+
                     virtual int         size        (void) const { return int( mValue.size() ); }
 
                     lxvar::iterator     begin           (void) { return lxvar::iterator(new iterator_imp(mValue.begin())); }
                     lxvar::iterator     end             (void) { return lxvar::iterator(new iterator_imp(mValue.end())); }
 
                     virtual lxvar       find        (const char* key) const;
+                    virtual void        insert      (const char* key, lxvar& value);
 
                     typedef std::map<std::string, lxvar> Map;
                     Map mValue;
                 };
+
             }
     
             namespace detail
@@ -441,10 +452,14 @@ namespace lx0
                 inline void    _convert    (lxvar& v, std::string& s)  { s = v.as<std::string>(); }
             }
 
+            void        insert          (detail::lxvar& v, const char* path, detail::lxvar value);
+            std::string format_tabbed   (detail::lxvar& v);
+
         }   // end namespace lxvar
 
     }   // end namespace core
 
     using lx0::core::lxvar_ns::detail::lxvar;
+    using namespace lx0::core::lxvar_ns;
 
 } // end namespace lx0

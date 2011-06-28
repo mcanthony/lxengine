@@ -224,7 +224,7 @@ namespace lx0
                 GLuint      _createShader    (const char* filename, GLuint type);
                 void        _linkProgram     (GLuint prog);
 
-                std::auto_ptr<GLInterface>      gl;
+                std::unique_ptr<GLInterface>      gl;
 
                 std::map<std::string, GLuint>   mCachePrograms;
                 std::list<ResourcePtr>          mResources;

@@ -39,6 +39,8 @@
 #include <lx0/engine/element.hpp>
 #include <lx0/util/misc/util.hpp>
 
+#include <boost/format.hpp>
+
 using namespace lx0::util;
 
 //===========================================================================//
@@ -99,25 +101,10 @@ namespace lx0 { namespace engine { namespace dom_ns {
         lx_init();
         lx_log("lx::core::Engine ctor");
 
-        {
-            lx_debug("    current time: %s", lx_ctime().c_str());
-            lx_debug("    version %d.%d", versionMajor(), versionMinor());
-            lx_debug("    build date:  %s %s", __DATE__, __TIME__);
-            lx_debug("    _MSC_VER = 0x%04x", _MSC_VER);
-            lx_debug("    sizeof(char) = %u bytes", sizeof(char));
-            lx_debug("    sizeof(int) = %u bytes", sizeof(int));
-            lx_debug("    sizeof(long) = %u bytes", sizeof(long));
-            lx_debug("    sizeof(float) = %u bytes", sizeof(float));
-            lx_debug("    sizeof(void*) = %u bytes", sizeof(void*));
-            lx_debug("    sizeof(std::unique_ptr<int>) = %u bytes", sizeof(std::unique_ptr<int>));
-            lx_debug("    sizeof(std::shared_ptr<int>) = %u bytes", sizeof(std::shared_ptr<int>));
-            lx_debug("    sizeof(std::weak_ptr<int>) = %u bytes", sizeof(std::weak_ptr<int>));
-            lx_debug("    sizeof(std::string) = %u bytes", sizeof(std::string));
-            lx_debug("    sizeof(Engine) = %u bytes", sizeof(Engine));
-            lx_debug("    sizeof(Document) = %u bytes", sizeof(Document));
-            lx_debug("    sizeof(Element) = %u bytes", sizeof(Element));
-        }
+        lxvar info = getSystemInfo();
+        lx_debug("%s", lx0::format_tabbed(info).c_str());
 
+        ///@todo These should not be included by default
         _attachSound();
         _attachJavascript();
     }
@@ -228,6 +215,65 @@ namespace lx0 { namespace engine { namespace dom_ns {
         lx_break_if_debugging();
 
         m_postponedExceptions.push_back(e);
+    }
+
+    lxvar
+    Engine::getSystemInfo (void)
+    {
+        // Cache the system info the first time it is computed
+        if (!mSystemInfo.isDefined())
+        {
+            auto& info = mSystemInfo;
+            info = lxvar::ordered_map();
+
+            {
+                lxvar v = lxvar::ordered_map();
+                v.insert("char",            (int)sizeof(char));
+                v.insert("short",           (int)sizeof(short));
+                v.insert("int",             (int)sizeof(int));
+                v.insert("long",            (int)sizeof(long));
+                v.insert("float",           (int)sizeof(long));
+                v.insert("double",          (int)sizeof(long));
+                v.insert("pointer",         (int)sizeof(void*));
+                v.insert("std::unique_ptr", (int)sizeof(std::shared_ptr<int>));
+                v.insert("std::shared_ptr", (int)sizeof(std::shared_ptr<int>));
+                v.insert("std::weak_ptr",   (int)sizeof(std::weak_ptr<int>));
+                v.insert("std::string",     (int)sizeof(std::string));
+                v.insert("Document",        (int)sizeof(Document));
+                v.insert("Element",         (int)sizeof(Element));
+                info.insert("sizes", v);
+            }       
+            {
+                lxvar v = lxvar::ordered_map();
+                v.insert("current_time", lx_ctime());
+
+                // Credit to the Quake 2 source code (Swap_Init) for this test
+                {
+                    lx0::uint8 bytes[2] = { 1, 0 };
+                    v.insert("endian", (*(short*)bytes == 1) ? "little" : "big");
+                }
+
+                {
+                    lxvar os = lxvar::ordered_map();
+                    lx_operating_system_info(os);
+                    v.insert("operating_system", os);
+                }
+
+                info.insert("system", v);
+            }
+            {
+                lxvar v = lxvar::ordered_map();
+                v.insert("version", boost::str( boost::format("%d.%d.%d") % versionMajor() % versionMinor() % versionRevision() ) ); 
+                info.insert("lxengine", v);
+            }
+            {
+                lxvar v = lxvar::ordered_map();
+                v.insert("date", boost::str( boost::format("%s %s") % __DATE__ % __TIME__ ) ); 
+                v.insert("compiler_version", boost::str( boost::format("0x%04x") % _MSC_VER ) ); 
+                info.insert("build", v);
+            }
+        }
+        return mSystemInfo.clone();
     }
 
     void

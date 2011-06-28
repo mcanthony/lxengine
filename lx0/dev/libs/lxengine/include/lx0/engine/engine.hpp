@@ -135,6 +135,8 @@ namespace lx0
                 int                 versionMinor        (void) const                { return lx0::LXENGINE_VERSION_MINOR; }
                 int                 versionRevision     (void) const                { return lx0::LXENGINE_VERSION_REVISION; }
 
+                lxvar               getSystemInfo       (void);
+
                 Environment&        environment         (void)                      { return mEnvironment; }
 
                 DocumentPtr         createDocument      (void);
@@ -203,6 +205,8 @@ namespace lx0
 
                 void        _throwPostponedException (void);
                 bool        _handlePlatformMessages  (void);
+
+                lxvar                       mSystemInfo;
 
                 Environment                 mEnvironment;
                 std::vector<DocumentPtr>    mDocuments;

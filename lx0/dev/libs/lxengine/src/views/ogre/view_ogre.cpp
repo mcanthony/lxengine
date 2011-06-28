@@ -350,7 +350,7 @@ namespace {
         void        _processMesh        (std::string name, MeshPtr spMesh);
 
         View*                       mpHostView;
-        std::auto_ptr<Ogre::Root>   mspRoot;
+        std::unique_ptr<Ogre::Root>   mspRoot;
         Ogre::SceneManager*         mpSceneMgr;     //! Non-owning pointer.  OGRE owns this pointer
         Ogre::RenderWindow*         mpRenderWindow; //! Non-owning pointer.  OGRE owns this pointer.
         Ogre::Camera*               mpCamera;

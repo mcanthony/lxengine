@@ -1,6 +1,7 @@
 #include"main.hpp"
 #include <lx0/lxengine.hpp>
 
+
 using lx0::lxvar;
 using namespace glgeom;
 
@@ -94,6 +95,52 @@ testset_lxvar(TestSet& set)
         CHECK(r, q.isSharedType() == false);
         CHECK(r, q.isShared() == false);
         CHECK(r, q.as<std::string>() == "alpha");
+    });
+
+    auto test_maps = [] (TestRun& r, lxvar& v) {
+        
+        CHECK(r, v.isSharedType() == true);
+
+        v.insert("test", 7);
+        CHECK(r, v.find("test").as<int>() == 7);
+        CHECK(r, v.size() == 1);
+
+        v.insert("test2", 8);
+        CHECK(r, v.size() == 2);
+        CHECK(r, v.find("test").as<int>() == 7);
+        CHECK(r, v.find("test2").as<int>() == 8);
+
+        v.insert("test", 9);
+        CHECK(r, v.size() == 2);
+        CHECK(r, v.find("test").as<int>() == 9);
+        CHECK(r, v.find("test2").as<int>() == 8);
+
+        v.insert("test3", "alpha");
+        CHECK(r, v.size() == 3);
+        CHECK(r, v.find("test").as<int>() == 9);
+        CHECK(r, v.find("test2").as<int>() == 8);
+        CHECK(r, v.find("test3").as<std::string>() == "alpha");
+    };
+
+    set.push("map", [&test_maps] (TestRun& r) {
+        test_maps(r, lxvar::map());
+    });
+
+    set.push("ordered_map", [&test_maps] (TestRun& r) {
+        test_maps(r, lxvar::ordered_map());
+
+        lxvar m = lxvar::ordered_map();
+        m.insert("b", "one");
+        m.insert("a", "two");
+        m.insert("0", "three");
+
+        auto it = m.begin();
+        CHECK(r, (*it).as<std::string>() == "one");
+        ++it;
+        CHECK(r, (*it).as<std::string>() == "two");
+        ++it;
+        CHECK(r, (*it).as<std::string>() == "three");
+        ++it;
     });
 
     set.push("custom object", [] (TestRun& r) {

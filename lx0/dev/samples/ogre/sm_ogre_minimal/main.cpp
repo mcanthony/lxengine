@@ -15,11 +15,11 @@ int main (int argc, char** argv)
     try
     {
         // Use default arguments to Root
-        std::auto_ptr<Ogre::Root> spRoot( new Ogre::Root );   
+        std::unique_ptr<Ogre::Root> spRoot( new Ogre::Root );   
 
         if (spRoot->showConfigDialog())
         {
-            std::auto_ptr<LxWindowEventListener> spWindowEventListener(new LxWindowEventListener);
+            std::unique_ptr<LxWindowEventListener> spWindowEventListener(new LxWindowEventListener);
 
             Ogre::RenderWindow* pRenderWindow = spRoot->initialise(true, "OGRE Example" );
             Ogre::WindowEventUtilities::addWindowEventListener(pRenderWindow, spWindowEventListener.get());

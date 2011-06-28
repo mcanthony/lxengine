@@ -27,6 +27,7 @@
 //===========================================================================//
 
 #include <lx0/util/misc/util.hpp>
+#include <boost/format.hpp>
 
 #include <windows.h>
 
@@ -103,6 +104,23 @@ namespace lx0 { namespace util { namespace misc {
         LARGE_INTEGER li;
         QueryPerformanceFrequency(&li);
         return li.QuadPart;
+    }
+
+    void 
+    lx_operating_system_info (lxvar& map)
+    {
+        // See the OSVERSIONINFOEX MSDN page if you want to make this function more detailed
+        OSVERSIONINFOEX	info;
+        ZeroMemory(&info, sizeof(OSVERSIONINFOEX));
+        info.dwOSVersionInfoSize = sizeof(info);
+
+        ::GetVersionEx((OSVERSIONINFO*)&info);
+        map.insert("version", boost::str( boost::format("%u.%u build %u SP %u.%u") 
+            % info.dwMajorVersion 
+            % info.dwMinorVersion
+            % info.dwBuildNumber 
+            % info.wServicePackMajor
+            % info.wServicePackMinor) );
     }
 
 }}}

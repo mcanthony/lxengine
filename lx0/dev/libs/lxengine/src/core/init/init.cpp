@@ -82,6 +82,7 @@ namespace lx0 { namespace core { namespace init_ns {
                 << "  <style>"
                 << "  body { font-family: sans-serif; font-size: 9pt; }" << std:: endl
                 << "  li { white-space: pre; font-family: monospace; }" << std::endl
+                << "  .multiline { white-space: pre; font-family: monospace; margin-left: 48px; padding: 4px; padding-bottom: 8px }" << std::endl
                 << "  .prefix { font-size: 85%; font-variant: small-caps; float: left; width: 48px; padding-left: 26px; }" << std::endl
                 << "  .debug { color: gray; font-size: 70%; } " << std::endl
                 << "  .log { color: black; } " << std::endl
@@ -101,6 +102,7 @@ namespace lx0 { namespace core { namespace init_ns {
                 return [css, prefix](const char* s) {
                     
                     // Quick and ugly HTML escaping
+                    bool multiline = false;
                     size_t len = strlen(s);
                     std::string t;
                     t.reserve(len);
@@ -110,12 +112,18 @@ namespace lx0 { namespace core { namespace init_ns {
                         {
                         case '<':   t += "&lt;";    break;
                         case '>':   t += "&gt;";    break;
+                        case '\n':  t += "<br />";  multiline = true; break;
                         default:
                             t += s[i];
                         }
                     }
+                    if (multiline)
+                        s_log << "<li class='" << css << "'><span class='prefix'>" << prefix << "</span></li>" 
+                            << "<div class='multiline " << css << "'>"<< t << "</div>"  
+                            << std::endl; 
+                    else
+                        s_log << "<li class='" << css << "'><span class='prefix'>" << prefix << "</span>"<< t << "</li>" << std::endl;
 
-                    s_log << "<li class='" << css << "'><span class='prefix'>" << prefix << "</span>"<< t << "</li>" << std::endl; 
                     if (s_log_count++ == 100)
                     {
                         s_log_count = 0;

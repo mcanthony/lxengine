@@ -41,7 +41,7 @@ namespace lx0
         {
 
             //===========================================================================//
-            //! Less flexible alternative to std::shared_ptr<> (use for performance reasons)
+            //! Less flexible, more efficient alternative to std::shared_ptr<> (use for performance reasons)
             /*!
                 \ingroup lx0_core_lxsharedptr
 

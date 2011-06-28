@@ -9,6 +9,7 @@ testset_engine(TestSet& set)
     set.push("acquire", [] (TestRun& r) {
         EnginePtr spEngine = Engine::acquire();
         CHECK(r, spEngine.get() != nullptr);
+        CHECK(r, spEngine.get() == Engine::acquire().get());
 
         spEngine->shutdown();
         CHECK(r, spEngine.get() != nullptr);

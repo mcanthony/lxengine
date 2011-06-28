@@ -76,7 +76,7 @@ namespace lx0
                     }
 
                 protected:
-                    std::auto_ptr<Data> mpData;
+                    std::unique_ptr<Data> mpData;
                 };
             }
 

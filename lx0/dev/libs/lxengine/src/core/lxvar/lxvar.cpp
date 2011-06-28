@@ -33,6 +33,7 @@
 #include <lx0/lxengine.hpp>
 #include <lx0/core/lxvar/lxvar.hpp>
 #include <glgeom/glgeom.hpp>
+#include <boost/format.hpp>
 
 #include "lxvar_parser.hpp"
 
@@ -86,6 +87,106 @@ namespace lx0 { namespace core { namespace lxvar_ns {
             else
                 return lxvar();
         }
+
+        void 
+        lxstringmap::insert (const char* key, lxvar& value) 
+        {
+            mValue.erase(key);
+            mValue.insert(std::make_pair(key, value));
+        }
+
+        //===========================================================================//
+
+        class lxorderedmap : public lxvalue
+        {
+        public:
+            typedef std::map<std::string, lxvar> ValueMap;
+            typedef std::map<size_t, std::string> OrderMap;
+
+            class iterator_imp : public lxvalue_iterator
+            {
+            public:
+                iterator_imp (lxorderedmap* pMap, OrderMap::iterator it) : mpMap(pMap), mIter(it) {}
+                virtual lxvalue_iterator* clone     (void)                         { return new iterator_imp(mpMap, mIter); }
+
+                virtual bool    equal               (const lxvalue_iterator& that) { return mIter == dynamic_cast<const iterator_imp&>(that).mIter; }
+                virtual void    inc                 (void)                         { mIter++; }
+                virtual std::string key             (void)                         { return mIter->second; }
+                virtual lxvar   dereference         (void)                         { return mpMap->mValues.find(key())->second; }
+
+            protected:
+                lxorderedmap*       mpMap;
+                OrderMap::iterator  mIter;
+            };
+
+            lxorderedmap();
+
+
+            virtual bool        sharedType  (void) const { return true; }
+            virtual lxvalue*    clone       (void) const;
+
+            virtual bool        is_map      (void) const    { return true; }
+
+            virtual int         size        (void) const { return int( mValues.size() ); }
+
+            lxvar::iterator     begin           (void) { return lxvar::iterator(new iterator_imp(this, mOrder.begin())); }
+            lxvar::iterator     end             (void) { return lxvar::iterator(new iterator_imp(this, mOrder.end())); }
+
+            virtual lxvar       find        (const char* key) const;
+            virtual void        insert      (const char* key, lxvar& value);
+
+            OrderMap     mOrder;
+            ValueMap     mValues;
+            size_t       mCount;
+        };
+
+        lxorderedmap::lxorderedmap()
+            : mCount (0)
+        {
+        }
+
+        lxvalue*    
+        lxorderedmap::clone (void) const
+        {
+            auto* pClone = new lxorderedmap;
+            pClone->mCount = 0;
+            for (auto it = mOrder.begin(); it != mOrder.end(); ++it)
+            {
+                auto& value = mValues.find(it->second);
+                pClone->mOrder.insert(std::make_pair(pClone->mCount++, it->second));
+                pClone->mValues.insert(std::make_pair(it->second, value->second));
+            }
+            return pClone;
+        }
+
+        lxvar
+        lxorderedmap::find (const char* key) const
+        {
+            auto it = mValues.find(key);
+            if (it != mValues.end())
+                return it->second;
+            else
+                return lxvar();
+        }
+
+        void 
+        lxorderedmap::insert (const char* key, lxvar& value) 
+        {
+            auto it = mValues.find(key);
+            if (it == mValues.end())
+            {
+                mOrder.insert(std::make_pair(mCount++, key));
+                mValues.insert(std::make_pair(key, value));
+            }
+            else
+            {
+                // Retain the original ordering on replace operations
+                mValues.erase(it);
+                mValues.insert(std::make_pair(key, value));
+            }
+        }
+
+        //===========================================================================//
 
         void
         lxvalue::_invalid (void) const
@@ -271,6 +372,19 @@ namespace lx0 { namespace core { namespace lxvar_ns {
         return v;
     }
 
+    /*!
+        Creates a map that retains the original insertion order upon iteration of the map.
+
+        This implementation requires overhead than an unordered map.  
+     */
+    lxvar
+    lxvar::ordered_map (void)
+    {
+        lxvar v;
+        v._castTo<lxorderedmap>();
+        return v;
+    }
+
     lxvar
     lxvar::array (void)
     {
@@ -373,7 +487,7 @@ namespace lx0 { namespace core { namespace lxvar_ns {
     bool
     lxvar::isMap (void) const
     {
-        return _isType<lxstringmap>();
+        return mValue->is_map();
     }
 
     /*!
@@ -422,6 +536,15 @@ namespace lx0 { namespace core { namespace lxvar_ns {
     {
          auto map = _castTo<lxstringmap>()->mValue;
          return map.find(key) != map.end();
+    }
+
+    lxvar
+    lxvar::operator[] (const char* s)
+    {
+        if (!isDefined()) 
+            *this = map();
+
+        return find(s);
     }
 
     lxvar
@@ -492,9 +615,10 @@ namespace lx0 { namespace core { namespace lxvar_ns {
     void 
     lxvar::insert (const char* key, const lxvar& value)
     {
-        auto imp = _castTo<lxstringmap>();
-        imp->mValue.erase(key);
-        imp->mValue.insert(std::make_pair(key, value));
+        if (!isDefined())
+            *this = map();
+
+        mValue->insert(key, const_cast<lxvar&>(value));
     }
 
     lxvar    
@@ -502,6 +626,59 @@ namespace lx0 { namespace core { namespace lxvar_ns {
     {
         lx0::core::detail::LxsonParser parser;
         return parser.parse(s);
+    }
+
+
+    void 
+    insert (lxvar& v, const char* path, lxvar value)
+    {
+        lx_error("Not yet implemented!");
+    }
+
+    /*!
+        A pretty-print function that prints the lxvar as name value pairs in a tabbed
+        fashion.
+     */
+    std::string 
+    format_tabbed (detail::lxvar& v)
+    {
+        std::string buffer;
+        std::function<void (lxvar, std::string)> fmt = [&fmt, &buffer](lxvar v, std::string indent) 
+        {
+            if (v.isArray())
+            {
+                for (auto it = v.begin(); it != v.end(); ++it)
+                {
+                    fmt(*it, indent);
+                }
+            }
+            else if (v.isMap())
+            {
+                for (auto it = v.begin(); it != v.end(); ++it)
+                {
+                    buffer += boost::str( boost::format("%s%s : ") % indent % it.key() );
+                    if ((*it).isArray() || (*it).isMap())
+                    {
+                        buffer += "\n" + indent;
+                        fmt(*it, indent + "    ");
+                    }
+                    else
+                        fmt(*it, indent);
+                        
+                }
+            }
+            else if (v.isInt())
+                buffer += boost::str( boost::format("%d\n") % v.as<int>() );
+            else if (v.isFloat())
+                buffer += boost::str( boost::format("%f\n") % v.as<float>() );
+            else if (v.isString())
+                buffer += boost::str( boost::format("%s\n") % v.as<std::string>().c_str() );
+            else
+                buffer += "<unknown>";
+        };
+        fmt(v, "");
+
+        return buffer;
     }
 
 }}}

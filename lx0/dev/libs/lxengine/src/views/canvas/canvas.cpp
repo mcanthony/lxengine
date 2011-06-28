@@ -55,7 +55,7 @@ public:
 
 protected:
     lx0::View*                  mpHostView;
-    std::auto_ptr<CanvasGL>     mspWin;
+    std::unique_ptr<CanvasGL>     mspWin;
     CanvasHost                  mHost;
    
     std::vector<std::shared_ptr<lx0::UIBinding>> mControllers;

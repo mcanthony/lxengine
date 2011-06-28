@@ -49,6 +49,8 @@ namespace lx0 { namespace util { namespace misc {
 
             void                _lx_reposition_console  (void);
 
+            void                lx_operating_system_info (lxvar& map);
+
 
             class Timer
             {
