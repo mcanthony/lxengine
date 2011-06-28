@@ -48,13 +48,14 @@ namespace lx0
                 class lxvalue;
                 class lxvalue_iterator;
         
-                class lxundefined;
+                lxvalue* create_lxundefined     (void);
                 lxvalue* create_lxbool          (bool b);
                 lxvalue* create_lxint           (int i);
                 lxvalue* create_lxstring        (const char* s);
                 lxvalue* create_lxstring        (const std::string& s);
                 lxvalue* create_lxfloat         (float f);
                 lxvalue* create_lxdouble        (double d);
+                lxvalue* create_lxarray         (void);
                 lxvalue* create_lxstringmap     (void);
                 lxvalue* create_lxorderedmap    (void);
                 lxvalue* create_lxdecoratedmap  (void);
@@ -196,9 +197,6 @@ namespace lx0
                     template <typename T>
                     T               as              (void) const;
 
-                    void            toArray         (void);
-                    void            toMap           (void);
-
                     iterator        begin           (void);
                     iterator        end             (void);
 
@@ -303,8 +301,10 @@ namespace lx0
                     virtual void        as          (std::string&) const        { _invalid(); }
 
                     virtual int         size        (void) const                { _invalid(); return 0; }
+
                     virtual lxvar*      at          (int i)                     { _invalid(); return nullptr; }
                     virtual void        at          (int index, lxvar value)    { _invalid(); }
+                    virtual void        push        (lxvar value)               { _invalid(); }
 
                     virtual bool        has         (const char* key) const     { _invalid(); return false; }
                     virtual lxvar*      find        (const char* key) const     { _invalid(); return nullptr; }

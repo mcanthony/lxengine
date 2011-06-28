@@ -26,6 +26,7 @@
 */
 //===========================================================================//
 
+#include <lx0/core/log/log.hpp>
 #include <lx0/core/lxvar/lxvar.hpp>
 
 namespace lx0 
@@ -37,6 +38,68 @@ namespace lx0
             namespace detail
             {
 
+        //===========================================================================//
+        /*!
+            Implementation for a generic array of lxvars.
+            */
+        class lxarray : public lxvalue
+        {
+        public:
+            class iterator_imp : public lxvalue_iterator
+            {
+            public:
+                iterator_imp (std::vector<lxvar>::iterator it) : mIter(it) {}
+                virtual lxvalue_iterator* clone     (void)                         { return new iterator_imp(mIter); }
+
+                virtual bool    equal               (const lxvalue_iterator& that) { return mIter == dynamic_cast<const iterator_imp&>(that).mIter; }
+                virtual void    inc                 (void)                         { mIter++; }
+                virtual lxvar   dereference         (void)                         { return *mIter; }
+
+            protected:
+                std::vector<lxvar>::iterator    mIter;
+
+            };
+
+            virtual bool        sharedType  (void) const { return true; }
+            virtual lxvalue*    clone       (void) const;
+
+            virtual int         size        (void) const { return int( mValue.size() ); }
+            virtual lxvar*      at          (int i);
+            virtual void        at          (int index, lxvar value);
+
+            virtual void        push        (lxvar value) { mValue.push_back(value); }
+
+            lxvar::iterator     begin           (void) { return lxvar::iterator(new iterator_imp(mValue.begin())); }
+            lxvar::iterator     end             (void) { return lxvar::iterator(new iterator_imp(mValue.end())); }
+
+            std::vector<lxvar> mValue;
+        };
+
+        lxvalue*    
+        lxarray::clone (void) const
+        {
+            lxarray* pClone = new lxarray;
+            pClone->mValue.reserve(mValue.size());
+            for (auto it = mValue.begin(); it != mValue.end(); ++it)
+                pClone->mValue.push_back(it->clone());
+            return pClone;
+        }
+
+        lxvar*
+        lxarray::at (int i)      
+        {
+            lx_check_error(i >= 0 && i < int(mValue.size()));
+            return &mValue[i]; 
+        }
+
+        void 
+        lxarray::at (int i, lxvar value)      
+        {
+            lx_check_error(i >= 0 && i < int(mValue.size()));
+            mValue[i] = value;; 
+        }
+
+        lxvalue* create_lxarray() { return new lxarray; }
 
             }
         }

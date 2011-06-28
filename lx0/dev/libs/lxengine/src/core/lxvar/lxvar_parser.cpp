@@ -254,8 +254,7 @@ namespace lx0 { namespace core {
     lxvar 
     LxsonParser::_readArray (void)
     {
-        lxvar obj;
-        obj.toArray();
+        lxvar obj = lxvar::array();
 
         _skipWhitespace();
         _consume('[');
@@ -289,8 +288,7 @@ namespace lx0 { namespace core {
     lxvar 
     LxsonParser::_readObject (void)
     {
-        lxvar obj;
-        obj.toMap();
+        lxvar obj = lxvar::map();
     
         _skipWhitespace();
         _consume('{');

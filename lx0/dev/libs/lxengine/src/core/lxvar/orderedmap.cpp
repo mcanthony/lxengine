@@ -38,6 +38,100 @@ namespace lx0
             {
 
 
+        //===========================================================================//
+
+        class lxorderedmap : public lxvalue
+        {
+        public:
+            typedef std::map<std::string, lxvar> ValueMap;
+            typedef std::map<size_t, std::string> OrderMap;
+
+            class iterator_imp : public lxvalue_iterator
+            {
+            public:
+                iterator_imp (lxorderedmap* pMap, OrderMap::iterator it) : mpMap(pMap), mIter(it) {}
+                virtual lxvalue_iterator* clone     (void)                         { return new iterator_imp(mpMap, mIter); }
+
+                virtual bool    equal               (const lxvalue_iterator& that) { return mIter == dynamic_cast<const iterator_imp&>(that).mIter; }
+                virtual void    inc                 (void)                         { mIter++; }
+                virtual std::string key             (void)                         { return mIter->second; }
+                virtual lxvar   dereference         (void)                         { return mpMap->mValues.find(key())->second; }
+
+            protected:
+                lxorderedmap*       mpMap;
+                OrderMap::iterator  mIter;
+            };
+
+            lxorderedmap();
+
+
+            virtual bool        sharedType  (void) const { return true; }
+            virtual lxvalue*    clone       (void) const;
+
+            virtual bool        is_map      (void) const    { return true; }
+
+            virtual int         size        (void) const { return int( mValues.size() ); }
+
+            lxvar::iterator     begin           (void) { return lxvar::iterator(new iterator_imp(this, mOrder.begin())); }
+            lxvar::iterator     end             (void) { return lxvar::iterator(new iterator_imp(this, mOrder.end())); }
+
+            virtual bool        has         (const char* key) const { return mValues.find(key) != mValues.end(); }
+            virtual lxvar*      find        (const char* key) const;
+            virtual void        insert      (const char* key, lxvar& value);
+
+            OrderMap     mOrder;
+            ValueMap     mValues;
+            size_t       mCount;
+        };
+
+        lxorderedmap::lxorderedmap()
+            : mCount (0)
+        {
+        }
+
+        lxvalue*    
+        lxorderedmap::clone (void) const
+        {
+            auto* pClone = new lxorderedmap;
+            pClone->mCount = 0;
+            for (auto it = mOrder.begin(); it != mOrder.end(); ++it)
+            {
+                auto& value = mValues.find(it->second);
+                pClone->mOrder.insert(std::make_pair(pClone->mCount++, it->second));
+                pClone->mValues.insert(std::make_pair(it->second, value->second));
+            }
+            return pClone;
+        }
+
+        lxvar*
+        lxorderedmap::find (const char* key) const
+        {
+            auto it = mValues.find(key);
+            if (it != mValues.end())
+                return const_cast<lxvar*>(&it->second);
+            else
+                return nullptr;
+        }
+
+        void 
+        lxorderedmap::insert (const char* key, lxvar& value) 
+        {
+            auto it = mValues.find(key);
+            if (it == mValues.end())
+            {
+                mOrder.insert(std::make_pair(mCount++, key));
+                mValues.insert(std::make_pair(key, value));
+            }
+            else
+            {
+                // Retain the original ordering on replace operations
+                mValues.erase(it);
+                mValues.insert(std::make_pair(key, value));
+            }
+        }
+
+        lxvalue* create_lxorderedmap    (void) { return new lxorderedmap; }
+
             }
         }
     }
