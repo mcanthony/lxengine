@@ -32,20 +32,18 @@
 
 #include <iostream>
 #include <boost/program_options.hpp>
+#include <boost/format.hpp>
 #include <lx0/lxengine.hpp>
 #include <lx0/subsystem/javascript.hpp>
 #include <lx0/views/canvas.hpp>
 #include "renderer.hpp"
 
+using namespace lx0;
+
 //===========================================================================//
 
-struct Options
-{
-    std::string filename;
-};
-
 static bool 
-parse_options (int argc, char** argv, boost::program_options::variables_map& vars)
+parse_options (EnginePtr spEngine, int argc, char** argv, boost::program_options::variables_map& vars)
 {
     // See http://www.boost.org/doc/libs/1_44_0/doc/html/program_options/tutorial.html
     using namespace boost::program_options;
@@ -54,20 +52,27 @@ parse_options (int argc, char** argv, boost::program_options::variables_map& var
     // Build the description of the expected argument format and have
     // Boost parse the command line args.
     //
-    std::string caption ("Syntax: %1 [options] <file>.\nOptions");
-    size_t p = caption.find("%1");
-    caption = caption.substr(0, p) + argv[0] + caption.substr(p + 2);
-
+    std::string caption = boost::str( boost::format("Syntax: %1% [options] <file>.\nOptions") % argv[0] );
     options_description desc (caption);
     desc.add_options()
         ("help", "Print usage information and exit.")
         ("file", value<std::string>()->default_value("media2/appdata/sm_raytracer/current.xml"), "Scene file to display.")
+        ("view_width", value<int>())
+        ("view_height", value<int>())
         ;
 
     positional_options_description pos;
     pos.add("file", -1);
 
-    store(command_line_parser(argc, argv).options(desc).positional(pos).run(), vars);
+    try
+    {
+        store(command_line_parser(argc, argv).options(desc).positional(pos).run(), vars);
+    }
+    catch (std::exception& e)
+    {
+        std::cout << desc << std::endl;
+        return false;
+    }
 
     //
     // Now check the options for anything that might prevent execution 
@@ -84,23 +89,30 @@ parse_options (int argc, char** argv, boost::program_options::variables_map& var
         std::cout << desc << std::endl;
         return false;
     }
-
+    
+    auto check_int = [&spEngine, &vars] (const char* name) {
+        if (vars.count(name))
+            spEngine->globals().insert(name, vars[name].as<int>());
+    };
+    check_int("view_width");
+    check_int("view_height");
 
     return true;
 }
 
 static bool
-validate_options (Options& options, int argc, char** argv)
+validate_options (EnginePtr spEngine, int argc, char** argv)
 {
     boost::program_options::variables_map vars;
-    if (!parse_options(argc, argv, vars))
+    if (!parse_options(spEngine, argc, argv, vars))
         return false;
      
-    options.filename = vars["file"].as<std::string>();
+    auto filename = vars["file"].as<std::string>();
+    spEngine->globals().insert("input_filename", filename);
 
-    if (!lx0::lx_file_exists(options.filename))
+    if (!lx0::lx_file_exists(filename))
     {
-        std::cout << "Error: file '" << options.filename << "' could not be found." << std::endl << std::endl;
+        std::cout << "Error: file '" << filename << "' could not be found." << std::endl << std::endl;
         return false;
     }
 
@@ -114,19 +126,21 @@ validate_options (Options& options, int argc, char** argv)
 int 
 main (int argc, char** argv)
 {
-    using namespace lx0;
-
     int exitCode = -1;
-    Options options;
     try
     {
-        if (validate_options(options, argc, argv))
+        EnginePtr spEngine = Engine::acquire();
+        spEngine->globals().insert("input_filename", lxvar::undefined());       // No default
+        spEngine->globals().insert("view_width",     512);
+        spEngine->globals().insert("view_height",    512);
+
+        if (validate_options(spEngine, argc, argv))
         {
-            EnginePtr   spEngine   = Engine::acquire();
+
             spEngine->attachComponent("Javascript", new JavascriptPlugin);
             spEngine->addViewPlugin("Canvas", [] (View* pView) { return lx0::createCanvasViewImp(); });
         
-            DocumentPtr spDocument = spEngine->loadDocument(options.filename);
+            DocumentPtr spDocument = spEngine->loadDocument(spEngine->globals().find("input_filename"));
             spDocument->addController( create_controller(spDocument) );
 
             ViewPtr spView = spDocument->createView("Canvas", "view", create_renderer() );
@@ -134,13 +148,13 @@ main (int argc, char** argv)
 
             lxvar options;
             options.insert("title", "LxEngine Rasterizer Sample");
-            options.insert("width", 512);
-            options.insert("height", 512);
+            options.insert("width",     spEngine->globals().find("view_width"));
+            options.insert("height",    spEngine->globals().find("view_height"));
             spView->show(options);
 
             exitCode = spEngine->run();
-            spEngine->shutdown();
         }
+        spEngine->shutdown();
     }
     catch (lx0::error_exception& e)
     {

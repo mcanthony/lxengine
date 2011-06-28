@@ -148,6 +148,8 @@ namespace lx0
                 void                sendEvent           (const char* evt);
                 int	                run                 (void);
 
+                lxvar&              globals             (void) { return mGlobals; }
+
                 ///@name Attribute Parsing
                 ///@{
                 void                addAttributeParser  (std::string attr, std::function<lxvar(std::string)> parser);
@@ -206,7 +208,12 @@ namespace lx0
                 void        _throwPostponedException (void);
                 bool        _handlePlatformMessages  (void);
 
+                
                 lxvar                       mSystemInfo;
+                
+                typedef std::map<std::string,std::function<void(lx0::lxvar)>> FunctionMap;
+                lxvar                       mGlobals;
+                FunctionMap                 mFunctions;
 
                 Environment                 mEnvironment;
                 std::vector<DocumentPtr>    mDocuments;
