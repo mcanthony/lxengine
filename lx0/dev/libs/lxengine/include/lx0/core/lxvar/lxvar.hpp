@@ -56,6 +56,7 @@ namespace lx0
             
                 using lx0::lxshared_ptr;
         
+                //===========================================================================//
                 /*!
                     \ingroup lx0_core_lxvar
 
@@ -301,149 +302,7 @@ namespace lx0
                     return t; 
                 }
 
-                class lxundefined : public lxvalue
-                {
-                public:
-                    static lxvalue*     acquire() { return &s_singleton; }
 
-                    virtual bool        sharedType() const { return true; }
-                    virtual lxvalue*    clone() const { return const_cast<lxundefined*>(this); }
-
-                private:
-                    lxundefined() { _incRef(); }
-                    ~lxundefined() {}
-                    static lxundefined s_singleton;
-                };
-
-                template <typename Derived, typename T>
-                class lxvalue_basic : public lxvalue
-                {
-                public:
-                    typedef lxvalue_basic<Derived, T>   Base;
-                    lxvalue_basic() {}
-                    lxvalue_basic(T v) : mValue (v) {}
-                    virtual bool sharedType (void) const { return false; }
-                    virtual lxvalue* clone (void) const { return new Derived(mValue); }
-
-                    virtual void as(T& v) const { v = mValue; }
-                    T mValue;
-                };
-
-                class lxbool : public lxvalue_basic<lxbool, bool>
-                {
-                public:
-                    lxbool(bool b) : Base (b) {}
-                };
-
-                class lxint : public lxvalue_basic<lxint, int>
-                {
-                public:
-                    lxint() : Base (0) {}
-                    lxint(int i) : Base (i) {}
-
-                    //@name Implicit up-casts
-                    //@{
-                    virtual void as (float& v)  const { v = float(mValue); }
-                    virtual void as (double& v) const { v = double(mValue); }
-                    //@}
-                };
-
-                class lxfloat : public lxvalue_basic<lxfloat, float>
-                {
-                public:
-                    lxfloat() : Base (0.0f) {}
-                    lxfloat(float f) : Base(f) {}
-
-                    //@name Implicit up-casts
-                    //@{
-                    virtual void as (double& v) const { v = mValue; }
-                    //@}
-                };
-
-                class lxdouble : public lxvalue_basic<lxdouble, double>
-                {
-                public:
-                    lxdouble() : Base (0.0) {}
-                    lxdouble(double f) : Base(f) {}
-                };
-
-                class lxstring : public lxvalue_basic<lxstring, std::string>
-                {
-                public:
-                    lxstring() {}
-                    lxstring(std::string s) : Base(s) {}
-                    lxstring(const char* s) : Base(s) {}
-                };
-
-                /*!
-                    Implementation for a generic array of lxvars.
-                    */
-                class lxarray : public lxvalue
-                {
-                public:
-                    class iterator_imp : public lxvalue_iterator
-                    {
-                    public:
-                        iterator_imp (std::vector<lxvar>::iterator it) : mIter(it) {}
-                        virtual lxvalue_iterator* clone     (void)                         { return new iterator_imp(mIter); }
-
-                        virtual bool    equal               (const lxvalue_iterator& that) { return mIter == dynamic_cast<const iterator_imp&>(that).mIter; }
-                        virtual void    inc                 (void)                         { mIter++; }
-                        virtual lxvar   dereference         (void)                         { return *mIter; }
-
-                    protected:
-                        std::vector<lxvar>::iterator    mIter;
-
-                    };
-
-                    virtual bool        sharedType  (void) const { return true; }
-                    virtual lxvalue*    clone       (void) const;
-
-                    virtual int         size        (void) const { return int( mValue.size() ); }
-                    virtual lxvar*      at          (int i);
-                    virtual void        at          (int index, lxvar value);
-
-                    lxvar::iterator     begin           (void) { return lxvar::iterator(new iterator_imp(mValue.begin())); }
-                    lxvar::iterator     end             (void) { return lxvar::iterator(new iterator_imp(mValue.end())); }
-
-                    std::vector<lxvar> mValue;
-                };
-
-                class lxstringmap : public lxvalue
-                {
-                public:
-                    class iterator_imp : public lxvalue_iterator
-                    {
-                    public:
-                        iterator_imp (std::map<std::string, lxvar>::iterator it) : mIter(it) {}
-                        virtual lxvalue_iterator* clone     (void)                         { return new iterator_imp(mIter); }
-
-                        virtual bool    equal               (const lxvalue_iterator& that) { return mIter == dynamic_cast<const iterator_imp&>(that).mIter; }
-                        virtual void    inc                 (void)                         { mIter++; }
-                        virtual std::string key             (void)                         { return mIter->first; }
-                        virtual lxvar   dereference         (void)                         { return mIter->second; }
-
-                    protected:
-                        std::map<std::string, lxvar>::iterator    mIter;
-                    };
-
-
-                    virtual bool        sharedType  (void) const { return true; }
-                    virtual lxvalue*    clone       (void) const;
-
-                    virtual bool        is_map      (void) const    { return true; }
-
-                    virtual int         size        (void) const { return int( mValue.size() ); }
-
-                    lxvar::iterator     begin           (void) { return lxvar::iterator(new iterator_imp(mValue.begin())); }
-                    lxvar::iterator     end             (void) { return lxvar::iterator(new iterator_imp(mValue.end())); }
-
-                    virtual lxvar*      find        (const char* key) const;
-                    virtual void        insert      (const char* key, lxvar& value);
-
-                    typedef std::map<std::string, lxvar> Map;
-                    Map mValue;
-                };
 
             }
     

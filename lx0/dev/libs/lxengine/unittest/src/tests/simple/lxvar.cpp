@@ -46,8 +46,6 @@ testset_lxvar(TestSet& set)
         v = 1.0f;
         //v = 1.0;
         v = "one";
-
-
     });
 
     set.push("ctor", [] (TestRun& r) {
