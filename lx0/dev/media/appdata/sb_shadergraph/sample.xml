@@ -1,0 +1,24 @@
+<Document>
+  <Library>
+    <Material id="solid_blue">
+      {
+        graph : {
+          _type : "solid",
+          color : [ 0, 0, .7 ],
+        },
+      }
+    </Material>
+    <Material id="checker_redblue">
+      {
+        graph : {
+          _type : "solid",
+          color : {
+            _type : "checker",
+            color0 : [ 1, 0, 0 ],
+            color1 : [ 0, 0, 1 ],
+          },
+        }
+      }
+    </Material>
+  </Library>
+</Document>

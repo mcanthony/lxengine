@@ -101,9 +101,45 @@ namespace lx0 { namespace core {  namespace lxvar_ns {
         {
             if (v.is_array())
             {
-                for (auto it = v.begin(); it != v.end(); ++it)
+                bool bInline = (v.size() <= 8);
+                if (bInline)
                 {
-                    fmt(*it, indent);
+                    for (auto it = v.begin(); it != v.end(); ++it)
+                    {
+                        if (!((*it).is_int() || (*it).is_float()))
+                        {
+                            bInline = false;
+                            break;
+                        }
+                    }
+                }
+
+                if (bInline)
+                {
+                    buffer += "    ";
+                    for (auto i = 0; i < v.size(); ++i)
+                    {
+                        if (v[i].is_int())
+                            buffer += boost::str( boost::format("%d") % v[i].as<int>() );
+                        else if (v[i].is_float())
+                            buffer += boost::str( boost::format("%f") % v[i].as<float>() );
+                        else if (v[i].is_string())
+                            buffer += boost::str( boost::format("%s") % v[i].as<std::string>().c_str() );
+                        else
+                            buffer += "<unknown>";
+
+                        if (i == v.size() -1)
+                            buffer += "\n";
+                        else
+                            buffer += ", ";
+                    }
+                }
+                else
+                {
+                    for (auto it = v.begin(); it != v.end(); ++it)
+                    {
+                        fmt(*it, indent);
+                    }
                 }
             }
             else if (v.is_map())

@@ -34,6 +34,7 @@
 #include <iostream>
 #include <string>
 #include <sstream>
+#include <boost/format.hpp>
 
 // Lx0 headers
 #include <lx0/lxengine.hpp>
@@ -168,6 +169,61 @@ ShaderGraphRuntime::compile (lxvar desc)
     return source;
 }
 
+//===========================================================================//
+
+class MaterialProcessor : public Document::Component
+{
+public:
+    virtual void onAttached (DocumentPtr spDocument) 
+    {
+        _loadNode("solid");
+        _loadNode("checker");
+
+        auto vMats = spDocument->getElementsByTagName("Material");
+        for (auto it = vMats.begin(); it != vMats.end(); ++it)
+            _processMaterial(*it);
+    }
+
+protected:
+    void _loadNode (const char* name)
+    {
+        std::string path = "media2/appdata/sb_shadergraph/";
+        std::string filename = path + name + ".node";
+
+        std::cout << boost::format("* Adding node '%s'\n") % filename;
+
+        lxvar value = lx_file_to_json(filename.c_str());
+        mNodes.insert(std::make_pair(name, value));
+    }
+
+    void _processMaterial (ElementPtr spElem)
+    {
+        std::cout << "-----------------------------------------------------------------------\n";
+        std::cout << boost::format("Processing '%1%'\n") % spElem->attr("id").as<std::string>();
+
+        lxvar value = spElem->value();
+        lx_check_error( value.is_map() && value.size() == 1 && value.find("graph").is_defined() );
+
+        lxvar graph = value.find("graph");
+        std::cout << format_tabbed(graph);
+
+        std::string type = graph.find("_type").as<std::string>();
+
+        std::cout << "-----------------------------------------------------------------------\n";
+        std::stringstream ss;
+        ss  << "#version 150\n"
+            << "\n"
+            << "void main()\n"
+            << "{\n"
+            << "    out_color = " << "()" << ";\n"
+            << "}\n";
+        std::cout << ss.str();
+        std::cout << "\n";
+    }
+
+    std::map<std::string, lxvar> mNodes;
+};
+
 
 //===========================================================================//
 //   E N T R Y - P O I N T
@@ -179,12 +235,21 @@ main (int argc, char** argv)
     int exitCode = -1;
     try
     {
-        ShaderGraphRuntime runtime;
+        EnginePtr spEngine = Engine::acquire();
+        {
+            auto spDocument = spEngine->loadDocument("media2/appdata/sb_shadergraph/sample.xml");
+            spDocument->attachComponent("material_processor", new MaterialProcessor);
 
-        lxvar frag = lxvar::parse( lx0::lx_file_to_string("data/sandbox_shadergraph/phong.lxfrag").c_str() );
-        runtime.registerFragment(frag);
-        std::string src = runtime.compile(lxvar::parse("phong { }"));
-        std::cout << src << std::endl;
+            // For each material, process the graph and produce an output by it's name
+
+            ShaderGraphRuntime runtime;
+
+            lxvar frag = lxvar::parse( lx0::lx_file_to_string("data/sandbox_shadergraph/phong.lxfrag").c_str() );
+            runtime.registerFragment(frag);
+            std::string src = runtime.compile(lxvar::parse("phong { }"));
+            //std::cout << src << std::endl;
+        }
+        spEngine->shutdown();
     }
     catch (std::exception& e)
     {

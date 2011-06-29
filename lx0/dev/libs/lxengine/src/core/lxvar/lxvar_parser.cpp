@@ -241,7 +241,7 @@ namespace lx0 { namespace core {
     {
         std::string t;
 
-        lx_check_error(isalpha(_peek()) != 0);
+        lx_check_error(isalpha(_peek()) != 0 || _peek() == '_');
 
         while (isalnum(_peek()) || _peek() == '_') 
         {
@@ -279,7 +279,8 @@ namespace lx0 { namespace core {
     std::string
     LxsonParser::_readKey (void)
     {
-        if (isalpha(_peek()))
+        auto next = _peek();
+        if (isalpha(next) || next == '_')
             return _readUnquotedString();
         else
             return _readString();

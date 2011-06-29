@@ -216,7 +216,6 @@ Renderer::initialize (lx0::ViewPtr spView)
     spLightSet = mRasterizer.createLightSet();
 } 
 
-
 void 
 Renderer::handleEvent (std::string evt, lx0::lxvar params)
 {

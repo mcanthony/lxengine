@@ -1,0 +1,9 @@
+{
+    output : "vec4",
+    input  : {
+        color : [ "vec3",   [ .5, .5, .5 ],     "color" ],
+    },
+    sources : {
+        glsl_1_5 : "return vec4(color.x, color.y, color.z, 1);",
+    },
+}
