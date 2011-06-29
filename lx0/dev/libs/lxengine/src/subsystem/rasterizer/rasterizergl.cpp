@@ -741,7 +741,7 @@ RasterizerGL::refreshTextures (void)
 }
 
 void 
-RasterizerGL::beginScene (RenderAlgorithm& algorithm)
+RasterizerGL::beginFrame (RenderAlgorithm& algorithm)
 {
     mStats.tmScene.start();
 
@@ -754,7 +754,7 @@ RasterizerGL::beginScene (RenderAlgorithm& algorithm)
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 }
 
-void RasterizerGL::endScene()
+void RasterizerGL::endFrame()
 {
     lx_check_error( glGetError() == GL_NO_ERROR );
     mStats.tmScene.stop();

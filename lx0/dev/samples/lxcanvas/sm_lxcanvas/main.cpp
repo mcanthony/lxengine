@@ -64,8 +64,8 @@ public:
 
         // Create the shader program
         //
-        GLuint vs = createShader("media/shaders/glsl/vertex/transform_only.vert", GL_VERTEX_SHADER);
-        GLuint fs = createShader("media/shaders/glsl/fragment/minimal.frag", GL_FRAGMENT_SHADER);
+        GLuint vs = createShader("media2/shaders/glsl/vertex/transform_only.vert", GL_VERTEX_SHADER);
+        GLuint fs = createShader("media2/shaders/glsl/fragment/minimal.frag", GL_FRAGMENT_SHADER);
 
         GLuint prog = glCreateProgram();
         {

@@ -169,13 +169,6 @@ namespace lx0
 
                     bool            equiv           (const char* s) const;  //!< Is equal, or is equal after a type conversion
 
-                    int             query           (int def) const         { return is_int() ? as<int>() : def; }
-                    std::string     query           (std::string def) const { return is_string() ? as<std::string>() : def; }
-                    float           query           (float def) const       { return is_float() ? as<float>() : (is_int() ? as<int>() : def); }
-                    std::string     query           (std::string path, std::string def);
-                    int             query           (std::string path, int def);
-
-
                     //@name Type checks
                     //@{
                     bool            is_defined       (void) const            { return !is_undefined(); }
@@ -344,8 +337,44 @@ namespace lx0
             using detail::lxvar;
             using detail::ValidateFunction;
 
+            lxvar       find            (lxvar& v, const char* path);
             void        insert          (lxvar& v, const char* path, lxvar value);
-            std::string format_tabbed   (lxvar& v);
+            
+            /*!
+             */
+            template <typename T>
+            T           query           (lxvar& v, const T& def)
+            {
+                return v.is_defined() ? static_cast<T>(v) : def;
+            }
+
+            inline
+            std::string query           (lxvar& v, const char* def)
+            {
+                return v.is_string() ? v.as<std::string>() : std::string(def);
+            }
+
+            /*!
+                Searchs a map along a given path; if a value exists at that path
+                then it is returned as the queried type, otherwise the specified
+                default value is returned.
+             */
+            template <typename T>
+            T           query_path           (lxvar& v, const char* path, const T& def)
+            {
+                lxvar u = find(v, path);
+                return query(u, def);
+            }
+
+            inline
+            std::string query_path           (lxvar& v, const char* path, const char* def)
+            {
+                lxvar u = find(v, path);
+                return query(u, def);
+            }
+                    
+
+            std::string         format_tabbed       (lxvar& v);
 
             ValidateFunction    validate_readonly   (void);
             ValidateFunction    validate_bool       (void);

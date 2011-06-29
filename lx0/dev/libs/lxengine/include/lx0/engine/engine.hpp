@@ -205,8 +205,6 @@ namespace lx0
                 void        _notifyDocumentCreated  (DocumentPtr spDocument);
  
                 void        _registerBuiltInPlugins (void);
-                void        _attachSound            (void);
-                void        _attachPhysics          (DocumentPtr spDocument);
                 void        _attachJavascript       (void);
                 void        _runJavascript          (DocumentPtr spDocument, std::string source);
         

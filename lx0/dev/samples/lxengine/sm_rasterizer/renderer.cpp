@@ -83,14 +83,14 @@ public:
         for (auto it = mGeometry.begin(); it != mGeometry.end(); ++it)
             items.push_back(0, *it);
 
-        mspRasterizer->beginScene(algorithm);
+        mspRasterizer->beginFrame(algorithm);
 
         for (auto it = items.begin(); it != items.end(); ++it)
         {
             mspRasterizer->rasterizeList(algorithm, it->second.list);
         }
 
-        mspRasterizer->endScene();
+        mspRasterizer->endFrame();
     }
 
     virtual void onElementAdded (DocumentPtr spDocument, ElementPtr spElem) 
@@ -102,7 +102,7 @@ public:
 protected:
     MaterialPtr _findMaterial(ElementPtr spElem)
     {
-        auto it = mMaterials.find(spElem->attr("material").query(""));
+        auto it = mMaterials.find(query(spElem->attr("material"), ""));
         if (it != mMaterials.end())
             return it->second;
         else
@@ -123,7 +123,7 @@ protected:
             phong.specular = spElem->value().find("specular").convert(color3f(0, 0, 0));
             phong.specular_n = spElem->value().find("specular_n").convert(8.0f);
 
-            std::string name = spElem->attr("id").query("");
+            std::string name = query(spElem->attr("id"), "");
             auto spMat = mspRasterizer->createPhongMaterial(phong);
 
             mMaterials.insert(std::make_pair(name, spMat));

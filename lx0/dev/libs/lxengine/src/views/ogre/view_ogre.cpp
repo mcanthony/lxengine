@@ -4,7 +4,7 @@
 
     LICENSE
 
-    Copyright (c) 2010 athile@athile.net (http://www.athile.net)
+    Copyright (c) 2010-2011 athile@athile.net (http://www.athile.net)
 
     Permission is hereby granted, free of charge, to any person obtaining a 
     copy of this software and associated documentation files (the "Software"), 
@@ -194,7 +194,7 @@ namespace {
                 Ogre::Vector3 specular (0, 0, 0);
                 float shininess = 1;
 
-                std::string material = spElem->attr("material").query("standard");
+                std::string material = query(spElem->attr("material"), "standard");
                 lxvar elemDiffuse = spElem->attr("color");
                 lxvar elemSpecular = spElem->attr("specular");
                 lxvar elemShininess = spElem->attr("shininess");
@@ -491,10 +491,10 @@ namespace {
         {
             Ogre::ResourceGroupManager::getSingleton().addResourceLocation("data/sm_lx_cube_rain", "FileSystem");
 
-            Ogre::ResourceGroupManager::getSingleton().addResourceLocation("media/shaders/glsl/fragment", "FileSystem");
-            Ogre::ResourceGroupManager::getSingleton().addResourceLocation("media/shaders/glsl/geometry", "FileSystem");
-            Ogre::ResourceGroupManager::getSingleton().addResourceLocation("media/shaders/glsl/vertex", "FileSystem");
-            Ogre::ResourceGroupManager::getSingleton().addResourceLocation("media/shaders/ogre", "FileSystem");
+            Ogre::ResourceGroupManager::getSingleton().addResourceLocation("media2/shaders/glsl/fragment", "FileSystem");
+            Ogre::ResourceGroupManager::getSingleton().addResourceLocation("media2/shaders/glsl/geometry", "FileSystem");
+            Ogre::ResourceGroupManager::getSingleton().addResourceLocation("media2/shaders/glsl/vertex", "FileSystem");
+            Ogre::ResourceGroupManager::getSingleton().addResourceLocation("media2/shaders/ogre", "FileSystem");
             Ogre::ResourceGroupManager::getSingleton().initialiseAllResourceGroups();
         }
     }
@@ -768,7 +768,7 @@ namespace {
     void
     SceneElem::_reset (ElementPtr spElem)
     {
-        float fade = spElem->attr("fade").query(0.0f);
+        float fade = query(spElem->attr("fade"), 0.0f);
 
         if (fade < 0.01f)
         {
@@ -807,8 +807,8 @@ namespace {
 
         Ogre::Vector3 pos = val.find("position").convert();
         Ogre::Vector3 lookAt = val.find("lookAt").convert();
-        float nearDist = val.find("near").query(0.1f);
-        float farDist = val.find("far").query(100.f);
+        float nearDist = query(val.find("near"), 0.1f);
+        float farDist = query(val.find("far"), 100.f);
 
         mpCamera->setPosition(pos);
         mpCamera->lookAt(lookAt);
@@ -821,11 +821,8 @@ namespace {
 // 
 //===========================================================================//
 
-namespace lx0 { namespace engine { namespace dom_ns {
-
-    ViewImp* 
-    View::_createViewImpOgre  (View* pView)
-    {
-        return new OgreImp(pView);
-    }
-}}}
+ViewImp* 
+_hidden_createViewImpOgre  (View* pView)
+{
+    return new OgreImp(pView);
+}

@@ -483,60 +483,6 @@ namespace lx0 { namespace core { namespace lxvar_ns {
         return false;
     }
 
-
-    static lxvar
-    _query_path (lxvar v, std::string path)
-    {
-        // Split the path into components
-        std::vector<std::string> keys;
-        size_t s = 0;
-        size_t i = 0;
-        while (i < path.size())
-        {
-            while (i < path.size() && path[i] != '/')
-                i++;
-
-            keys.push_back( path.substr(s, i - s) );
-            s = i + 1;
-        }
-
-        // Walk the path
-        for (auto it = keys.begin(); it != keys.end(); ++it)
-        {
-            if (v.is_map())
-            {
-                v = v.find(*it);
-            }
-            else if (v.is_array())
-            {
-                int index;
-                std::istringstream iss (*it);
-                iss >> index;
-                if (!iss.eof())
-                    v = lxvar();
-                else
-                    v = v.at(index);
-            }
-            else
-            {
-                v = lxvar();
-                break;
-            }
-        }
-
-        return v;
-    }
-
-    std::string lxvar::query (std::string path, std::string def)
-    {
-        return _query_path(*this, path).query(def);
-    }
-
-    int lxvar::query (std::string path, int def)
-    {
-        return _query_path(*this, path).query(def);
-    }
-
     void 
     lxvar::insert (const char* key, const lxvar& value)
     {

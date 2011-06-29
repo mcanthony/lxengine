@@ -133,7 +133,7 @@ public:
     {
         spCamera->viewMatrix = view_matrix(gCamera);
 
-        mRasterizer.beginScene(algorithm);
+        mRasterizer.beginFrame(algorithm);
 
         _generateItems(items);
         for (auto it = items.begin(); it != items.end(); ++it)
@@ -141,7 +141,7 @@ public:
             mRasterizer.rasterizeList(algorithm, it->second.list);
         }
 
-        mRasterizer.endScene();
+        mRasterizer.endFrame();
     }
 
     void 

@@ -66,9 +66,9 @@ LxCanvasImp::createWindow (View* pHostView, size_t& handle, unsigned int& width,
 {
     mpHostView = pHostView;
 
-    std::string title = options.query("title", "LxEngine Canvas");
-    width = options.query("width", 512);
-    height = options.query("height", 512);
+    std::string title = query_path(options, "title", "LxEngine Canvas");
+    width = query_path(options, "width", 512);
+    height = query_path(options, "height", 512);
 
     mspWin.reset( new CanvasGL(title.c_str(), 16, 16, width, height, false) );
     handle = mspWin->handle();

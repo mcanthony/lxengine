@@ -1211,8 +1211,8 @@ namespace lx0 { namespace engine { namespace dom_ns {
          auto pContext = new JsEngineContext(this);
          this->attachComponent("engineJs", pContext);
 
-         pContext->runFile("media/scripts/engine/attribute_parsers/color.js");
-         pContext->runFile("media/scripts/engine/attribute_parsers/gravity.js");
+         pContext->runFile("media2/scripts/engine/attribute_parsers/color.js");
+         pContext->runFile("media2/scripts/engine/attribute_parsers/gravity.js");
      }
 
     /*!

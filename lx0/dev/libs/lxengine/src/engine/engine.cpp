@@ -106,6 +106,8 @@ namespace lx0 { namespace engine { namespace dom_ns {
         mGlobals["load_builtins"].add("sound",      0, validate_bool(), true);
         mGlobals["load_builtins"].add("javascript", 0, validate_bool(), true);
         mGlobals["load_builtins"].add("Canvas",     0, validate_bool(), true);
+        mGlobals["load_builtins"].add("Ogre",       0, validate_bool(), true);
+        mGlobals["load_builtins"].add("Physics",    0, validate_bool(), true);
 
         lxvar info = getSystemInfo();
         lx_debug("%s", lx0::format_tabbed(info).c_str());
@@ -120,15 +122,25 @@ namespace lx0 { namespace engine { namespace dom_ns {
     void
     Engine::_registerBuiltInPlugins (void)
     {
-        if (mGlobals["load_builtins"]["sound"].as<bool>())
-            _attachSound();
-        if (mGlobals["load_builtins"]["javascript"].as<bool>())
+        // Forward declarations inlined here to avoid pulling in 
+        // complex headers that don't really belong in engine.cpp
+        //
+        // Obviously, this needs future clean-up...
+        //
+        lx0::Engine::Component* _hidden_createSound           (void);
+        lx0::ViewImp*           _hidden_createCanvasViewImp   (lx0::View* pView);
+        lx0::ViewImp*           _hidden_createViewImpOgre     (lx0::View* pView);
+
+        auto& var = mGlobals["load_builtins"];
+
+        if (var["sound"].as<bool>())
+            attachComponent("soundBootstrap", _hidden_createSound() );
+        if (var["javascript"].as<bool>())
             _attachJavascript();
-        if (mGlobals["load_builtins"]["Canvas"].as<bool>())
-        {
-            lx0::ViewImp* _hidden_createCanvasViewImp(lx0::View* pView);
+        if (var["Canvas"].as<bool>())
             addViewPlugin("Canvas", _hidden_createCanvasViewImp);
-        }
+        if (var["Ogre"])
+            addViewPlugin("OGRE", _hidden_createViewImpOgre);
     }
 
     void 
@@ -345,7 +357,13 @@ namespace lx0 { namespace engine { namespace dom_ns {
         }
 
         _notifyDocumentCreated(spDocument);
-        _attachPhysics(spDocument);
+        
+        ///@todo Should not be automatically adding physics to every document
+        if (mGlobals["load_builtins"]["Physics"])
+        {
+            lx0::Document::Component* _hidden_createPhysics();
+            spDocument->attachComponent("physicsSystem", _hidden_createPhysics());
+        }
 
         ElementPtr spRoot;
         if (!bCreate)

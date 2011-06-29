@@ -126,12 +126,12 @@ public:
         lx0::RenderList items;
         items.push_back(0, mspItem);
 
-        mspRasterizer->beginScene(algorithm);
+        mspRasterizer->beginFrame(algorithm);
         for (auto it = items.begin(); it != items.end(); ++it)
         {
             mspRasterizer->rasterizeList(algorithm, it->second.list);
         }
-        mspRasterizer->endScene();
+        mspRasterizer->endFrame();
     }
 
     virtual void update (lx0::ViewPtr spView) 

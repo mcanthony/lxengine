@@ -4,7 +4,7 @@
 
     LICENSE
 
-    Copyright (c) 2010 athile@athile.net (http://www.athile.net)
+    Copyright (c) 2010-2011 athile@athile.net (http://www.athile.net)
 
     Permission is hereby granted, free of charge, to any person obtaining a 
     copy of this software and associated documentation files (the "Software"), 
@@ -51,10 +51,6 @@
 
 // Lx
 #include <lx0/lxengine.hpp>
-#include <lx0/engine/engine.hpp>
-#include <lx0/engine/document.hpp>
-#include <lx0/engine/element.hpp>
-#include <lx0/engine/mesh.hpp>
 #include <lx0/util/misc/util.hpp>
 
 using namespace lx0::core;
@@ -335,8 +331,8 @@ namespace lx0 { namespace core { namespace detail {
     {
         _releaseBuffer();
 
-        std::string filename = spElem->attr("src").query("");
-        std::string type = spElem->attr("type").query("");
+        std::string filename = query(spElem->attr("src"), "");
+        std::string type = query(spElem->attr("type"), "");
 
         if (!filename.empty())
         {
@@ -412,7 +408,7 @@ namespace lx0 { namespace core { namespace detail {
 
         ALuint buffer = 0;
 
-        std::string ref = spElem->attr("ref").query("");
+        std::string ref = query(spElem->attr("ref"), "");
         if (!ref.empty())
         {
             ElementPtr spSource = spElem->document()->getElementById(ref);
@@ -423,10 +419,10 @@ namespace lx0 { namespace core { namespace detail {
             }
         }
 
-        std::string state = spElem->attr("state").query("stopped");
+        std::string state = query(spElem->attr("state"), "stopped");
 
-        float volume = spElem->attr("volume").query(1.0f);
-        bool  bLoop = spElem->attr("loop").query(0) ? true : false;
+        float volume = query(spElem->attr("volume"), 1.0f);
+        bool  bLoop = query(spElem->attr("loop"), 0) ? true : false;
 
         if (buffer)
         {
@@ -485,13 +481,7 @@ namespace lx0 { namespace core { namespace detail {
 
 }}}
 
-namespace lx0 { namespace engine { namespace dom_ns { 
-    
-    using namespace lx0::core::detail;
-
-    void        
-    Engine::_attachSound (void)
-    {
-        attachComponent("soundBootstrap", new SoundEngineBootstrap);
-    }
-}}}
+lx0::Engine::Component* _hidden_createSound()
+{
+    return new lx0::core::detail::SoundEngineBootstrap;
+}

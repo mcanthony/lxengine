@@ -356,7 +356,7 @@ public:
             pGeom->geom.normal = spElem->value().find("normal").convert();
             pGeom->geom.d      = spElem->value().find("d").convert();
             
-            pGeom->setMaterial(spElem, spElem->attr("material").query(""));
+            pGeom->setMaterial(spElem, query(spElem->attr("material"), ""));
 
             std::shared_ptr<Plane> spComp(pGeom);
             mGeometry.push_back(spComp);
@@ -368,7 +368,7 @@ public:
             pGeom->geom.center = spElem->value().find("center").convert();
             pGeom->geom.radius = spElem->value().find("radius").convert(.5f);
 
-            pGeom->setMaterial(spElem, spElem->attr("material").query(""));
+            pGeom->setMaterial(spElem, query(spElem->attr("material"), ""));
             
             std::shared_ptr<Sphere> spComp(pGeom);
             mGeometry.push_back(spComp);
@@ -380,7 +380,7 @@ public:
             pGeom->geom.base = spElem->value().find("base").convert();
             pGeom->geom.radius = spElem->value().find("radius").convert();
             pGeom->geom.axis = spElem->value().find("axis").convert();
-            pGeom->setMaterial(spElem, spElem->attr("material").query(""));
+            pGeom->setMaterial(spElem, query(spElem->attr("material"), ""));
 
             std::shared_ptr<Cone> spComp(pGeom);
             mGeometry.push_back(spComp);
@@ -392,7 +392,7 @@ public:
             pGeom->geom.base = spElem->value().find("base").convert();
             pGeom->geom.radius = spElem->value().find("radius").convert();
             pGeom->geom.axis = spElem->value().find("axis").convert();
-            pGeom->setMaterial(spElem, spElem->attr("material").query(""));
+            pGeom->setMaterial(spElem, query(spElem->attr("material"), ""));
 
             std::shared_ptr<Cylinder> spComp(pGeom);
             mGeometry.push_back(spComp);
@@ -404,7 +404,7 @@ public:
             pGeom->geom.center = spElem->value().find("center").convert(point3f(0, 0, 0));
             pGeom->geom.scale  = spElem->value().find("scale").convert(vector3f(1, 1, 1));
                 
-            pGeom->setMaterial(spElem, spElem->attr("material").query(""));
+            pGeom->setMaterial(spElem, query(spElem->attr("material"), ""));
                 
             std::shared_ptr<Cube> spComp(pGeom);
             mGeometry.push_back(spComp);
@@ -455,7 +455,7 @@ public:
         }));
 
         mHandlers.insert(std::make_pair("Environment", [&](ElementPtr spElem) {
-            mspEnvironment->shadows = spElem->value().find("shadows").query(true);
+            mspEnvironment->shadows = query(spElem->value().find("shadows"), true);
         }));
     }
 

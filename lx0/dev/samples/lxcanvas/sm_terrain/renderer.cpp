@@ -185,7 +185,7 @@ public:
 
         lxvar px = spElement->attr("position");
         glgeom::point3f pos(px.at(0).as<float>(), px.at(1).as<float>(), px.size() == 3 ? px.at(2).as<float>() : 0.0f); 
-        float scale = spElement->attr("scale").query(1.0f);
+        float scale = query( spElement->attr("scale"), 1.0f);
         mspItem->spTransform = rasterizer.createTransformBillboardXYS(pos.x, pos.y, pos.z, scale, scale, scale);
 
         list.push_back(1, mspItem);
@@ -225,7 +225,7 @@ Renderer::handleEvent (std::string evt, lx0::lxvar params)
         auto& spItem = select( params.at(0).as<int>(), params.at(1).as<int>() );
         auto spElement = spItem->getData<ElementPtr>();
         std::string name = spElement
-            ? spElement->attr("image").query("unknown").c_str()
+            ? query(spElement->attr("image"), "unknown").c_str()
             : "no associated element";
         printf("Select: %s (%s)\n", spItem->spMaterial->mShaderFilename.c_str(), name.c_str());
     }

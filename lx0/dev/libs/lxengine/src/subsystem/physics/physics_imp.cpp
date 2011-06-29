@@ -266,14 +266,14 @@ namespace lx0 { namespace core { namespace detail {
 
             if (windVelocity.is_defined())
             {
-                float velocity = windVelocity.query(0.0f);
+                float velocity = query(windVelocity, 0.0f);
                 mpDocPhysics->setWindVelocity(velocity);
             }
             if (windDirection.is_defined())
             {
                 lx_check_error(windDirection.is_array());
 
-                glgeom::vector3f dir(windDirection.at(0).query(0.0f), windDirection.at(1).query(0.0f), windDirection.at(2).query(0.0f) );
+                glgeom::vector3f dir(query(windDirection.at(0), 0.0f), query(windDirection.at(1), 0.0f), query(windDirection.at(2), 0.0f) );
                 mpDocPhysics->setWindDirection(dir);
             }
             if (gravity.is_defined())
@@ -313,8 +313,8 @@ namespace lx0 { namespace core { namespace detail {
 
             // Prepare the relevant variables that will be used
             //
-            std::string    ref      = spElem->attr("ref").query("");
-            const btScalar kfMass   = spElem->attr("mass").query(0.0f);   
+            std::string    ref      = query(spElem->attr("ref"), "");
+            const btScalar kfMass   = query(spElem->attr("mass"), 0.0f);   
             auto posAttr            = spElem->attr("translation");
             glgeom::point3f pos     = posAttr.is_defined() ? glgeom::point3f(posAttr.convert()) : glgeom::point3f(0, 0, 0);
             lxvar maxExtent         = spElem->attr("max_extent");
@@ -332,7 +332,7 @@ namespace lx0 { namespace core { namespace detail {
                       
             // Determine and acquire the collision shape to use
             //
-            if (spElem->attr("bounds_type").query("box") == "box")
+            if (query(spElem->attr("bounds_type"), "box") == "box")
                 mspShape = pPhysics->_acquireBoxShape( spMesh->boundingVector() * scale );
             else
                 mspShape =  pPhysics->_acquireSphereShape( spMesh->boundingRadius() * scale );
@@ -373,23 +373,23 @@ namespace lx0 { namespace core { namespace detail {
         void _setLinearDamping (lxvar value) 
         {
             const btScalar angDamp = mspRigidBody->getAngularDamping();
-            mspRigidBody->setDamping( value.query(0.0f), angDamp );
+            mspRigidBody->setDamping( query(value, 0.0f), angDamp );
         }
 
         void _setAngularDamping (lxvar value) 
         {
             const btScalar linDamp = mspRigidBody->getLinearDamping();
-            mspRigidBody->setDamping( linDamp, value.query(0.0f) );
+            mspRigidBody->setDamping( linDamp, query(value, 0.0f) );
         }
 
         void _setFriction (lxvar value)
         {
-            mspRigidBody->setFriction( value.query(0.5f) );
+            mspRigidBody->setFriction( query(value, 0.5f) );
         }
 
         void _setRestitution (lxvar value)
         {
-            mspRigidBody->setRestitution( value.query(0.1f) );
+            mspRigidBody->setRestitution( query(value, 0.1f) );
         }
 
         void _addImpulseFunc (ElementPtr spElem, std::vector<lxvar>& args) 
@@ -699,14 +699,7 @@ namespace lx0 { namespace core { namespace detail {
 
 }}}
 
-namespace lx0 { namespace engine { namespace dom_ns {
-    
-    using namespace lx0::core::detail;
-
-    void
-    Engine::_attachPhysics (DocumentPtr spDocument)
-    {
-        spDocument->attachComponent("physicsSystem", new PhysicsDoc);
-    }
-
-}}}
+lx0::Document::Component* _hidden_createPhysics()
+{
+    return new lx0::core::detail::PhysicsDoc;
+}

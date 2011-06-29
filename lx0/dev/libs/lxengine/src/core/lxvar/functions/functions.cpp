@@ -26,12 +26,62 @@
 */
 //===========================================================================//
 
+#include <sstream>
+
 #include <lx0/core/lxvar/lxvar.hpp>
 #include <lx0/core/log/log.hpp>
 #include <boost/format.hpp>
 
 namespace lx0 { namespace core {  namespace lxvar_ns {
 
+    static lxvar
+    _query_path (lxvar v, std::string path)
+    {
+        // Split the path into components
+        std::vector<std::string> keys;
+        size_t s = 0;
+        size_t i = 0;
+        while (i < path.size())
+        {
+            while (i < path.size() && path[i] != '/')
+                i++;
+
+            keys.push_back( path.substr(s, i - s) );
+            s = i + 1;
+        }
+
+        // Walk the path
+        for (auto it = keys.begin(); it != keys.end(); ++it)
+        {
+            if (v.is_map())
+            {
+                v = v.find(*it);
+            }
+            else if (v.is_array())
+            {
+                int index;
+                std::istringstream iss (*it);
+                iss >> index;
+                if (!iss.eof())
+                    v = lxvar();
+                else
+                    v = v.at(index);
+            }
+            else
+            {
+                v = lxvar();
+                break;
+            }
+        }
+
+        return v;
+    }
+
+    lxvar
+    find (lxvar& v, const char* path)
+    {
+        return _query_path(v, path);
+    }
      
     void 
     insert (lxvar& v, const char* path, lxvar value)
@@ -84,35 +134,5 @@ namespace lx0 { namespace core {  namespace lxvar_ns {
 
         return buffer;
     }           
-
-    ValidateFunction validate_readonly (void)
-    {
-        return [] (lxvar, lxvar&) -> bool { return false; };
-    }
-
-    ValidateFunction validate_bool (void)
-    {
-        return [] (lxvar v, lxvar& o) -> bool {
-            if (v.is_bool())
-            {
-                o = v;
-                return true;
-            }
-            else
-                return false;
-        };
-    }
-
-    ValidateFunction validate_int_range (int min, int max)
-    {
-        return [min,max](lxvar v, lxvar& o) -> bool {
-            if (v.is_int() && v.as<int>() >= min && v.as<int>() <= max)
-            {
-                o = v;
-                return true;
-            }
-            return false;
-        };
-    }
 
 }}}

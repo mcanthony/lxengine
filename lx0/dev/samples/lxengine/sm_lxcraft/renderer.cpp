@@ -366,12 +366,12 @@ public:
         for (auto it = mRenderables.begin(); it != mRenderables.end(); ++it)
             (*it)->generate(mspRasterizer.get(), mspMeshCache, mspCamera, items);
 
-        mspRasterizer->beginScene(algorithm);
+        mspRasterizer->beginFrame(algorithm);
         for (auto it = items.begin(); it != items.end(); ++it)
         {
             mspRasterizer->rasterizeList(algorithm, it->second.list);
         }
-        mspRasterizer->endScene();
+        mspRasterizer->endFrame();
     }
 
     virtual void onElementAdded (DocumentPtr spDocument, ElementPtr spElem) 

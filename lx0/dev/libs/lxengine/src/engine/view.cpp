@@ -58,12 +58,6 @@ namespace lx0 { namespace engine { namespace dom_ns {
         // Create the view implementation object
         //
         EnginePtr spEngine = Engine::acquire();
-        static bool once = false;
-        if (!once) 
-        {
-            once = true;
-            spEngine->addViewPlugin("OGRE", [&](View* pView) { return _createViewImpOgre(pView); } );
-        }
         ViewImp* pImp = spEngine->_createViewImp(impType, this);
         mspImp.reset( pImp );
 

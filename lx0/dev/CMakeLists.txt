@@ -167,14 +167,6 @@ macro(recurse_subdirectories BASEDIR)
 endmacro(recurse_subdirectories BASEDIR)
 
 #
-# Media
-#
-copy_media_directory( media/scripts/base )
-copy_media_directory( media/scripts/engine/attribute_parsers )
-copy_media_directory( media/shaders/ogre )
-copy_media_directory( media/models )
-
-#
 # Sub-projects
 #
 

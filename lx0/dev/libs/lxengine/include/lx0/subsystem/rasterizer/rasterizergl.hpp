@@ -181,8 +181,8 @@ namespace lx0
 
                 void            refreshTextures (void);
 
-                void            beginScene      (RenderAlgorithm& algorithm);
-                void            endScene        (void);
+                void            beginFrame      (RenderAlgorithm& algorithm);
+                void            endFrame        (void);
 
                 void            rasterizeList   (RenderAlgorithm& algorithm, std::vector<std::shared_ptr<Item>>& list);
                 void            rasterizeItem   (GlobalPass& pass, std::shared_ptr<Item> spItem);
