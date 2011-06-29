@@ -31,7 +31,6 @@
 
 // Lx0 headers
 #include <lx0/lxengine.hpp>
-#include <lx0/subsystem/canvas.hpp>
 #include <lx0/prototype/control_structures.hpp>
 #include <glgeom/prototype/image.hpp>
 

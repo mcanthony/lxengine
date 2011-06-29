@@ -59,6 +59,7 @@ Material::activate (RasterizerGL* pRasterizer, GlobalPass& pass)
     //
     // Set up lights
     //
+    if (pRasterizer->mContext.spLightSet)
     {
         auto& spLightSet = pRasterizer->mContext.spLightSet;
         int lightCount = (int)spLightSet->mLights.size();

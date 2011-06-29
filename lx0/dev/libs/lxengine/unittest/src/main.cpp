@@ -40,6 +40,7 @@ main (int argc, char** argv)
         ADD_TESTSET(group, empty);
         ADD_TESTSET(group, lxvar);
         ADD_TESTSET(group, engine);
+        ADD_TESTSET(group, misc);
 
         module.mGroups.push_back(group);
     }

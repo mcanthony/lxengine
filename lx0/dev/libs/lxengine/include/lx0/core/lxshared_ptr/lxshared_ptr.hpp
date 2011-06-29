@@ -32,18 +32,13 @@ namespace lx0
 {
     namespace core
     {
-        /*!
-            \defgroup lx0_core_lxsharedptr lxshared_ptr
-            \ingroup Core
-
-         */
         namespace lxshared_ptr_ns
         {
 
             //===========================================================================//
             //! Less flexible, more efficient alternative to std::shared_ptr<> (use for performance reasons)
             /*!
-                \ingroup lx0_core_lxsharedptr
+                \ingroup lx0_core_types
 
                 This is effectively a boost::intrusive_ptr<>.   The fact that it
                 (a) does not support weak pointers and (b) stores the reference
@@ -52,7 +47,7 @@ namespace lx0
                 small, performance sensitive object like lxvar, using a custom
                 class is warranted.
 
-                In all other cases, use a std::shared_ptr.  Keep it simple and
+                In all other cases, use a std::shared_ptr.  Keep it simple, standard, and
                 recognizable to other developers.
              */
             template <typename T>

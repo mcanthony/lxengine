@@ -111,8 +111,8 @@ LxCanvasImp::updateFrame (DocumentPtr spDocument)
     for (auto it = mControllers.begin(); it != mControllers.end(); ++it)
         (*it)->updateFrame( mpHostView->shared_from_this(), mspWin->keyboard() );
 
-    mpHostView->foreachComponent([](View::ComponentPtr spComp) {
-        spComp->update();
+    mpHostView->foreachComponent([this](View::ComponentPtr spComp) {
+        spComp->update(mpHostView->shared_from_this());
     });
 }
 
@@ -144,6 +144,11 @@ namespace lx0
             }
         }
     }
+}
+
+lx0::ViewImp* _hidden_createCanvasViewImp(lx0::View* pView)
+{
+    return lx0::createCanvasViewImp();
 }
 
 

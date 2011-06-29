@@ -51,7 +51,6 @@
 #include <lx0/lxengine.hpp>
 #include <lx0/subsystem/rasterizer.hpp>
 #include <lx0/prototype/misc.hpp>
-#include <lx0/views/canvas.hpp>
 
 #include "main.hpp"
 #include "terrain.hpp"
@@ -77,7 +76,6 @@ main (int argc, char** argv)
     try
     {
         EnginePtr   spEngine   = Engine::acquire();
-        spEngine->addViewPlugin("Canvas", [] (View* pView) { return lx0::createCanvasViewImp(); });
 
         spEngine->addDocumentComponent("physics2", [] () { return new PhysicsSubsystem; } );
 

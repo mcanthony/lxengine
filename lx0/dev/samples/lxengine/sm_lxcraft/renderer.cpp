@@ -70,8 +70,8 @@ typedef std::shared_ptr<RdCamera> RdCameraPtr;
 
 static float computeHeight (const point3f& p)
 {
-    auto sparse0 = 4 * lx0::core::noise3d_perlin(p.x / 20.0f, p.y / 16.0f, .5f);
-    auto sparse1 = lx0::core::noise3d_perlin(p.x / 60.0f, p.y / 68.0f, .25f);
+    auto sparse0 = 4 * lx0::noise3d_perlin(p.x / 20.0f, p.y / 16.0f, .5f);
+    auto sparse1 = lx0::noise3d_perlin(p.x / 60.0f, p.y / 68.0f, .25f);
     auto h = powf(sparse0, 2.0f);
     return h;
 }

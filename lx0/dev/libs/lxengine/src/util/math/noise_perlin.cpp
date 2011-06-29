@@ -292,7 +292,7 @@ namespace {
   
 }
 
-namespace lx0 { namespace core {
+namespace lx0 { namespace util { namespace math_ns {
 
     /*!
         Note: consider using GLM's noise functions instead, as they have a faster
@@ -305,4 +305,4 @@ namespace lx0 { namespace core {
         // 0 to 1.
         return (perlin_noise_imp(x, y, z) + 1.0f) / 2.0f;
     }
-}}
+}}}

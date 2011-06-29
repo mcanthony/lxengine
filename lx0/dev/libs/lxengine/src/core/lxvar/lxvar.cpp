@@ -357,6 +357,12 @@ namespace lx0 { namespace core { namespace lxvar_ns {
     }
 
     bool
+    lxvar::is_bool (void) const
+    {
+        return mValue->is_bool();
+    }
+
+    bool
     lxvar::is_int (void) const
     {
         return mValue->is_int();

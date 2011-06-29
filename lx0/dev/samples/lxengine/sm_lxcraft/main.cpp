@@ -33,7 +33,6 @@
 #include <iostream>
 #include <boost/program_options.hpp>
 #include <lx0/lxengine.hpp>
-#include <lx0/views/canvas.hpp>
 
 //===========================================================================//
 //   E N T R Y - P O I N T
@@ -52,7 +51,6 @@ main (int argc, char** argv)
     try
     {
         EnginePtr   spEngine   = Engine::acquire();
-        spEngine->addViewPlugin("Canvas", [] (View* pView) { return lx0::createCanvasViewImp(); });
         
         DocumentPtr spDocument = spEngine->loadDocument("media2/appdata/sm_lxcraft/scene-000.xml");
         spDocument->addController( create_controller(spDocument) );

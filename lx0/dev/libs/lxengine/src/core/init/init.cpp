@@ -58,6 +58,7 @@ namespace lx0 { namespace core { namespace init_ns {
         return s_lx_init_called;
     }
 
+    //---------------------------------------------------------------------------//
     //! Base initialization (automatically called by Engine constructor)
     /*!
         \ingroup lx0_core_init
@@ -65,7 +66,9 @@ namespace lx0 { namespace core { namespace init_ns {
         Initializes the LxEngine code.  This is a small, low-cost function.  It can be
         safely called multiple times.
 
-        This function should only be called if the Engine class is not being used.
+        This function should only be called if the Engine class is not being used
+        but other LxEngine based services are being used.  This will ensure basic 
+        features like the logging system are initialized.
      */
     void 
     lx_init()

@@ -95,7 +95,7 @@ namespace lx0 { namespace core { namespace log_ns {
         _lx_check_init();
 
         if (!condition)
-            *(char*)(void*)(0x0) = 'a';
+            lx_break_if_debugging();
     }
 
     /*!
@@ -114,7 +114,7 @@ namespace lx0 { namespace core { namespace log_ns {
             va_start(args, format);
             vsnprintf_s(buffer, sizeof(buffer), _TRUNCATE, format, args);
 
-            *(char*)(void*)(0x0) = 'a';
+            lx_break_if_debugging();
         }
     }
 

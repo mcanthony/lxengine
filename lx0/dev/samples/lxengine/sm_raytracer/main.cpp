@@ -34,7 +34,6 @@
 #include <boost/program_options.hpp>
 #include <glgeom/prototype/image.hpp>
 #include <lx0/lxengine.hpp>
-#include <lx0/views/canvas.hpp>
 #include <lx0/subsystem/javascript.hpp>
 #include <lx0/prototype/misc.hpp>
 
@@ -132,7 +131,6 @@ main (int argc, char** argv)
         {
             EnginePtr   spEngine   = Engine::acquire();
             spEngine->attachComponent("Scripting", new lx0::JavascriptPlugin);
-            spEngine->addViewPlugin("Canvas", [] (View* pView) { return lx0::createCanvasViewImp(); });
         
             DocumentPtr spDocument = spEngine->loadDocument(options.filename);
             spDocument->attachComponent("ray", create_raytracer() );

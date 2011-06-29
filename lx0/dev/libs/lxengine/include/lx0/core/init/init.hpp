@@ -36,7 +36,6 @@ namespace lx0
     {
         namespace init_ns
         {
-            //
             void    lx_init();
 
             bool    _lx_init_called();

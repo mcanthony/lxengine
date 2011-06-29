@@ -131,9 +131,13 @@ namespace lx0
         
                 void                shutdown            (void);
 
+
+                ///@name Version
+                ///@{
                 int                 versionMajor        (void) const                { return lx0::LXENGINE_VERSION_MAJOR; }
                 int                 versionMinor        (void) const                { return lx0::LXENGINE_VERSION_MINOR; }
                 int                 versionRevision     (void) const                { return lx0::LXENGINE_VERSION_REVISION; }
+                ///@}
 
                 lxvar               getSystemInfo       (void);
 
@@ -175,11 +179,13 @@ namespace lx0
 
                 void                notifyAttached      (ComponentPtr spComponent) { /*! \todo */ } 
 
-                // Stats
+                ///@name Counters and Statistics
+                ///@{
                 void                incObjectCount          (std::string name);
                 void                decObjectCount          (std::string name);
                 const detail::ObjectCount& objectCount      (std::string name) { return m_objectCounts[name]; }
                 void                incPerformanceCounter   (std::string name, lx0::uint64 t);
+                ///@}
 
                 void                postponeException       (lx0::error_exception& e);
 
@@ -198,6 +204,7 @@ namespace lx0
 
                 void        _notifyDocumentCreated  (DocumentPtr spDocument);
  
+                void        _registerBuiltInPlugins (void);
                 void        _attachSound            (void);
                 void        _attachPhysics          (DocumentPtr spDocument);
                 void        _attachJavascript       (void);
@@ -218,6 +225,9 @@ namespace lx0
                 Environment                 mEnvironment;
                 std::vector<DocumentPtr>    mDocuments;
                 std::deque<std::string>     m_messageQueue;
+
+                lx0::uint32                 mFrameNum;
+                lx0::uint32                 mFrameStartMs;
 
                 std::deque<lx0::error_exception>            m_postponedExceptions;
                 std::map<std::string, detail::ObjectCount>  m_objectCounts;

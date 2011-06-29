@@ -486,11 +486,17 @@ namespace lx0 { namespace core { namespace detail {
 
     PhysicsDoc::~PhysicsDoc()
     {
+        lx_debug("PhysicsDoc destructor");
+
         // The shared_ptr objects will deallocate everything on destruction, but the rigid
         // body objects need to be removed from the world to ensure the destruction order
         // is handled correctly.
         //
         mspDynamicsWorld->removeRigidBody(mspGroundRigidBody.get());
+
+        // Explicitly release the objects to ensure destruction order is correct
+        mspDynamicsWorld.reset();
+        mspBroadphase.reset();
 
         Engine::acquire()->decObjectCount("Physics");
     }

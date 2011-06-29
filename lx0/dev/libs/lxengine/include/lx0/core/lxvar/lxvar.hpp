@@ -180,6 +180,7 @@ namespace lx0
                     //@{
                     bool            is_defined       (void) const            { return !is_undefined(); }
                     bool            is_undefined     (void) const;
+                    bool            is_bool          (void) const;
                     bool            is_int           (void) const;
                     bool            is_float         (void) const;
                     bool            is_string        (void) const;
@@ -340,11 +341,15 @@ namespace lx0
                 inline void    _convert    (lxvar& v, std::string& s)  { s = v.as<std::string>(); }
             }
 
-            void        insert          (detail::lxvar& v, const char* path, detail::lxvar value);
-            std::string format_tabbed   (detail::lxvar& v);
-
             using detail::lxvar;
             using detail::ValidateFunction;
+
+            void        insert          (lxvar& v, const char* path, lxvar value);
+            std::string format_tabbed   (lxvar& v);
+
+            ValidateFunction    validate_readonly   (void);
+            ValidateFunction    validate_bool       (void);
+            ValidateFunction    validate_int_range  (int imin, int imax);
 
         }   // end namespace lxvar
 

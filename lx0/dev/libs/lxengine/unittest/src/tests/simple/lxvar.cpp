@@ -126,6 +126,21 @@ testset_lxvar(TestSet& set)
         CHECK(r, it.key() == "short");
         CHECK(r, *it == (int)sizeof(short));
 
+        {
+            lxvar a = 9;
+            lxvar b = a;
+            a = 7;
+
+            CHECK(r, a.as<int>() == 7 );
+            CHECK(r, b.as<int>() == 9 );
+
+            a = lxvar::parse("[ 0 ] ");
+            b = a;
+            b.at(0, 1);
+            CHECK(r, a.at(0).as<int>() == 1);
+            CHECK(r, b.at(0).as<int>() == 1);
+        }
+
     });
 
     auto test_maps = [] (TestRun& r, lxvar& v) {
@@ -236,6 +251,122 @@ testset_lxvar(TestSet& set)
             v.insert("percent", "test");
             CHECK(r, v["percent"] == 42);
         }
+    });
+
+    set.push("parse simple", [] (TestRun& r) {
+        lxvar v;
+
+        v = lxvar::parse("0.8");
+        CHECK(r, v.is_float());
+
+        v = lxvar::parse(" 0.8");
+        CHECK(r, v.is_float());
+
+        v = lxvar::parse("{}");
+        CHECK(r, v.is_map());
+        CHECK(r, v.size() == 0);
+
+        v = lxvar::parse(" { } ");
+        CHECK(r, v.is_map());
+        CHECK(r, v.size() == 0);
+
+        v = lxvar::parse("{ \"alpha\" : 1, \"beta\" : \"two\" }");
+        CHECK(r, v.find("alpha").as<int>() == 1);
+        CHECK(r, v.find("beta").as<std::string>() == "two");
+        CHECK(r, v.size() == 2);
+
+        // Trailing comma should be ok.
+        v = lxvar::parse("{ \"alpha\" : 1, \"beta\" : \"two\", }");
+        CHECK(r, v.find("alpha").as<int>() == 1);
+        CHECK(r, v.find("beta").as<std::string>() == "two");
+        CHECK(r, v.size() == 2);
+
+        // Single quotes should be ok.
+        v = lxvar::parse("{ 'alpha' : 1, 'beta' : 'two', }");
+        CHECK(r, v.find("alpha").as<int>() == 1);
+        CHECK(r, v.find("beta").as<std::string>() == "two");
+        CHECK(r, v.size() == 2);
+
+        v = lxvar::parse("{ 'al pha' : 1, \"beta \" :  ' two', }");
+        CHECK(r, v.find("al pha").as<int>() == 1);
+        CHECK(r, v.find("beta ").as<std::string>() == " two");
+        CHECK(r, v.size() == 2);
+
+        // Unquoted associative array keys should be okay
+        v = lxvar::parse("{ alpha : 1, beta:' two', }");
+        CHECK(r, v.find("alpha").as<int>() == 1);
+        CHECK(r, v.find("beta").as<std::string>() == " two");
+        CHECK(r, v.size() == 2);
+        //CHECK_EXCEPTION({ lxvar::parse("{ al pha : 1, beta:' two', }"); });
+        //CHECK_EXCEPTION({ lxvar::parse("{ alpha : 1, beta:two, }"); });
+    });
+
+    set.push("parse non-standard", [] (TestRun& r) {
+        lxvar v;
+
+        v = lxvar::parse("0");
+        CHECK(r, v.is_int() && v.as<int>() == 0);
+
+        v = lxvar::parse("123");
+        CHECK(r, v.is_int() && v.as<int>() == 123);
+
+        v = lxvar::parse("1.1");
+        CHECK(r, v.is_float() && v.as<float>() == 1.1f);
+
+        v = lxvar::parse("\"This is a string.\"");
+        CHECK(r, v.is_string());
+        CHECK(r, v.as<std::string>() == "This is a string.");
+    });
+
+    set.push("invalid ops", [](TestRun& r) {
+        lxvar v = lxvar::parse("{}");
+
+        try { v.push(3); CHECK(r, false); } catch (...) { CHECK(r, true); }
+        try { v.size();  CHECK(r, true);  } catch (...) { CHECK(r, false); }
+    });
+
+    set.push("iterators", [](TestRun& r) {
+        lxvar v = lxvar::parse("[ 0, 1, 2, 3, 4, 5 ]");
+
+        try
+        {
+            int i = 0;
+            auto et = v.end();
+            for (auto it = v.begin(); it != v.end(); ++it)
+            {
+                bool b = ((*it).as<int>() == i);
+                CHECK(r, b);
+                i++;
+            }
+            CHECK(r, i == v.size()); 
+            CHECK(r, true);
+        } 
+        catch (...)
+        {
+            CHECK(r, false);
+        }
+
+
+        v = lxvar::parse("{ a:0, b:1, c:2, d:3, e:4, f:5 }");
+
+        try
+        {
+            int i = 0;
+            auto et = v.end();
+            for (auto it = v.begin(); it != v.end(); ++it)
+            {
+                bool b = ((*it).as<int>() == i);
+                CHECK(r, b);
+                i++;
+            }
+            CHECK(r, i == v.size()); 
+            CHECK(r, true);
+        } 
+        catch (...)
+        {
+            CHECK(r, false);
+        }
+
     });
 
 }

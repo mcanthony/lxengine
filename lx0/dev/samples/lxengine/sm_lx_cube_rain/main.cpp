@@ -123,9 +123,8 @@ main (int argc, char** argv)
             spView->show();
   
             exitCode = spEngine->run();
-
-            spEngine->shutdown();
         }
+        spEngine->shutdown();
     }
     catch (std::exception& e)
     {

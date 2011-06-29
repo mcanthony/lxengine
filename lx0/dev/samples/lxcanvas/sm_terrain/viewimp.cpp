@@ -26,7 +26,6 @@
 */
 //===========================================================================//
 
-#include <lx0/subsystem/canvas.hpp>
 #include <lx0/prototype/misc.hpp>
 #include "viewimp.hpp"
 #include "rasterizer_ext.hpp"

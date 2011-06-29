@@ -202,7 +202,7 @@ namespace lx0 { namespace engine { namespace dom_ns {
         virtual void shutdown   (View* pView) {}
 
         virtual void render     (void) {}
-        virtual void update     (void) {}
+        virtual void update     (ViewPtr spView) {}
 
         virtual void handleEvent (std::string evt, lx0::lxvar params) {}
     };

@@ -57,6 +57,10 @@
     \ingroup Core
  */
 /*!
+    \defgroup lx0_core_types types
+    \ingroup Core
+ */
+/*!
     \defgroup lx0_core_log logging
     \ingroup Core
  */

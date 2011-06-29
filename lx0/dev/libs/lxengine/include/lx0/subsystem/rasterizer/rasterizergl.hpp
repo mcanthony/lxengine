@@ -134,6 +134,9 @@ namespace lx0
 
             //===========================================================================//
             //! \ingroup lx0_subsystem_rasterizer
+            /*!
+                Immediate-mode rasterization system.
+             */
             class RasterizerGL
             {
             public:
@@ -164,11 +167,13 @@ namespace lx0
 
                 GeometryPtr     createQuadList  (std::vector<glgeom::point3f>& positions, 
                                                  std::vector<glgeom::color3f>& colors);
-                GeometryPtr     createQuadList  (std::vector<unsigned short>& indices, 
+                GeometryPtr     createQuadList  (std::vector<lx0::uint16>& indices,
+                                                 std::vector<glgeom::point3f>& positions);
+                GeometryPtr     createQuadList  (std::vector<lx0::uint16>& indices, 
                                                  std::vector<glgeom::point3f>& positions, 
                                                  std::vector<glgeom::vector3f>& normals,
                                                  std::vector<glgeom::color3f>& colors);
-                GeometryPtr     createQuadList  (std::vector<unsigned short>& indices,
+                GeometryPtr     createQuadList  (std::vector<lx0::uint16>& indices,
                                                  std::vector<lx0::uint8>& faceFlags,
                                                  std::vector<glgeom::point3f>& positions, 
                                                  std::vector<glgeom::vector3f>& normals,

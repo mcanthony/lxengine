@@ -71,15 +71,15 @@
 
 namespace lx0
 {
-    typedef glm::detail::int8   int8;
-    typedef glm::detail::int16  int16;
-    typedef glm::detail::int32  int32;
-    typedef glm::detail::int64  int64;
+    typedef glm::detail::int8   int8;       //!<  \ingroup lx0_core_types
+    typedef glm::detail::int16  int16;      //!<  \ingroup lx0_core_types
+    typedef glm::detail::int32  int32;      //!<  \ingroup lx0_core_types
+    typedef glm::detail::int64  int64;      //!<  \ingroup lx0_core_types
 
-    typedef glm::detail::uint8   uint8;
-    typedef glm::detail::uint16  uint16;
-    typedef glm::detail::uint32  uint32;
-    typedef glm::detail::uint64  uint64;
+    typedef glm::detail::uint8   uint8;     //!<  \ingroup lx0_core_types
+    typedef glm::detail::uint16  uint16;    //!<  \ingroup lx0_core_types
+    typedef glm::detail::uint32  uint32;    //!<  \ingroup lx0_core_types
+    typedef glm::detail::uint64  uint64;    //!<  \ingroup lx0_core_types
 }
 
 namespace lx0

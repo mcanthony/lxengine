@@ -35,7 +35,6 @@
 #include <boost/format.hpp>
 #include <lx0/lxengine.hpp>
 #include <lx0/subsystem/javascript.hpp>
-#include <lx0/views/canvas.hpp>
 #include "renderer.hpp"
 
 using namespace lx0;
@@ -44,9 +43,14 @@ using namespace lx0;
 
     enum
     {
-        ACCEPTS_INT     = (1 << 0),
-        ACCEPTS_FLOAT   = (1 << 1),
-        ACCEPTS_STRING  = (1 << 2)
+        ACCEPTS_BOOL    = (1 << 0),
+        ACCEPTS_INT     = (1 << 1),
+        ACCEPTS_FLOAT   = (1 << 2),
+        ACCEPTS_STRING  = (1 << 3),
+        ACCEPTS_ARRAY   = (1 << 4),
+        ACCEPTS_MAP     = (1 << 5),
+
+        PERSISTENT      = (1 << 6),
     };
 
 static bool 
@@ -140,18 +144,6 @@ validate_options (EnginePtr spEngine, int argc, char** argv)
 //   E N T R Y - P O I N T
 //===========================================================================//
 
-lx0::ValidateFunction validate_range_int (int min, int max)
-{
-    return [min,max](lxvar v, lxvar& o) -> bool {
-        if (v.is_int() && v.as<int>() >= min && v.as<int>() <= max)
-        {
-            o = v;
-            return true;
-        }
-        return false;
-    };
-}
-
 int 
 main (int argc, char** argv)
 {
@@ -160,14 +152,12 @@ main (int argc, char** argv)
     {
         EnginePtr spEngine = Engine::acquire();
         spEngine->globals().insert("input_filename", lxvar::undefined());       // No default
-        spEngine->globals().add("view_width",  ACCEPTS_INT, validate_range_int(32, 4096), 512);
-        spEngine->globals().add("view_height", ACCEPTS_INT, validate_range_int(32, 4096), 512);
+        spEngine->globals().add("view_width",  ACCEPTS_INT, lx0::validate_int_range(32, 4096), 512);
+        spEngine->globals().add("view_height", ACCEPTS_INT, lx0::validate_int_range(32, 4096), 512);
 
         if (validate_options(spEngine, argc, argv))
         {
-
             spEngine->attachComponent("Javascript", new JavascriptPlugin);
-            spEngine->addViewPlugin("Canvas", [] (View* pView) { return lx0::createCanvasViewImp(); });
         
             DocumentPtr spDocument = spEngine->loadDocument(spEngine->globals().find("input_filename"));
             spDocument->addController( create_controller(spDocument) );

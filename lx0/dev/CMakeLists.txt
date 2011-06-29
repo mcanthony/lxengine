@@ -211,6 +211,7 @@ SET_PROPERTY(TARGET sm_ogre_minimal         PROPERTY FOLDER "Samples/ThirdPartyL
 SET_PROPERTY(TARGET sm_v8_basic             PROPERTY FOLDER "Samples/ThirdPartyLibs")
 SET_PROPERTY(TARGET cpp_smartptr            PROPERTY FOLDER "Samples/Cpp")
 SET_PROPERTY(TARGET tutorial_01             PROPERTY FOLDER "Samples/Tutorial")
+SET_PROPERTY(TARGET tutorial_02             PROPERTY FOLDER "Samples/Tutorial")
 
 SET_PROPERTY(TARGET bm_lxvar                PROPERTY FOLDER "Benchmarks")
 SET_PROPERTY(TARGET blendload               PROPERTY FOLDER "Sandbox")
@@ -219,6 +220,3 @@ SET_PROPERTY(TARGET elm_function            PROPERTY FOLDER "Sandbox")
 SET_PROPERTY(TARGET sandbox_shadergraph     PROPERTY FOLDER "Sandbox")
 SET_PROPERTY(TARGET sb_fixedpoint           PROPERTY FOLDER "Sandbox")
 SET_PROPERTY(TARGET unittest_lxengine       PROPERTY FOLDER "UnitTest")
-SET_PROPERTY(TARGET ut_jsonparser           PROPERTY FOLDER "UnitTest")
-SET_PROPERTY(TARGET ut_lx_vector            PROPERTY FOLDER "UnitTest")
-

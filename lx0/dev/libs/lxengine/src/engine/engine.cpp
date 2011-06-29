@@ -102,12 +102,33 @@ namespace lx0 { namespace engine { namespace dom_ns {
         lx_init();
         lx_log("lx::core::Engine ctor");
 
+        mGlobals.add("load_builtins", 0, validate_readonly(), lxvar::decorated_map());
+        mGlobals["load_builtins"].add("sound",      0, validate_bool(), true);
+        mGlobals["load_builtins"].add("javascript", 0, validate_bool(), true);
+        mGlobals["load_builtins"].add("Canvas",     0, validate_bool(), true);
+
         lxvar info = getSystemInfo();
         lx_debug("%s", lx0::format_tabbed(info).c_str());
 
         ///@todo These should not be included by default
-        _attachSound();
-        _attachJavascript();
+        _registerBuiltInPlugins();
+    }
+
+    /*!
+        
+     */
+    void
+    Engine::_registerBuiltInPlugins (void)
+    {
+        if (mGlobals["load_builtins"]["sound"].as<bool>())
+            _attachSound();
+        if (mGlobals["load_builtins"]["javascript"].as<bool>())
+            _attachJavascript();
+        if (mGlobals["load_builtins"]["Canvas"].as<bool>())
+        {
+            lx0::ViewImp* _hidden_createCanvasViewImp(lx0::View* pView);
+            addViewPlugin("Canvas", _hidden_createCanvasViewImp);
+        }
     }
 
     void 
@@ -143,6 +164,9 @@ namespace lx0 { namespace engine { namespace dom_ns {
             
         // Explicitly free all references to shared objects so that memory leak checks will work
         mDocuments.clear();
+
+        // All Documents should be gone by shutdown...
+        lx_assert( objectCount("Document").current() == 0 );
     }
 
     Engine::~Engine()
@@ -410,16 +434,21 @@ namespace lx0 { namespace engine { namespace dom_ns {
 	Engine::run()
 	{
         const lx0::uint64 start = lx0::lx_milliseconds();
+        mFrameNum = 0;
 
         _lx_reposition_console();
 
+        //
+        // Signal to the Document components that the main loop is about
+        // to begin
+        //
         for(auto it = mDocuments.begin(); it != mDocuments.end(); ++it)
             (*it)->beginRun();
 
         bool bDone = false;
         do
         {
-            const auto startLoop = lx0::lx_milliseconds();
+            mFrameStartMs = lx0::lx_milliseconds();
 
             _throwPostponedException();
 
@@ -449,7 +478,14 @@ namespace lx0 { namespace engine { namespace dom_ns {
                 incPerformanceCounter("Engine>run>doc update", lx0::lx_milliseconds() - startLoop);
             }
 
-            incPerformanceCounter("Engine>run>loop", lx0::lx_milliseconds() - startLoop);
+            incPerformanceCounter("Engine>run>loop", lx0::lx_milliseconds() - mFrameStartMs);
+
+            //
+            // Engine's notion of a frame is one full cycle through the main loop.
+            // Views may have different notions is there is not a 1:1 on the redraw
+            // and main loop.
+            //
+            mFrameNum++;
 
         } while (!bDone);
 

@@ -31,7 +31,6 @@
 //===========================================================================//
 
 #include <lx0/lxengine.hpp>
-#include <lx0/views/canvas.hpp>
 
 #ifdef _MSC_VER
     #include <windows.h>
@@ -84,8 +83,6 @@ main (int argc, char** argv)
     try
     {
         lx0::EnginePtr spEngine = lx0::Engine::acquire();
-        spEngine->addViewPlugin("Canvas", [] (lx0::View* pView) { return lx0::createCanvasViewImp(); });
-        
         lx0::DocumentPtr spDocument = spEngine->createDocument();
 
         lx0::ViewPtr spView = spDocument->createView("Canvas", "view", new Renderer );

@@ -34,7 +34,7 @@ namespace lx0
     { 
         /*!
             \defgroup lx0_prototype_controlstructures
-            \ingroup Core
+            \ingroup Prototype
          */
         namespace control_structures_ns 
         {

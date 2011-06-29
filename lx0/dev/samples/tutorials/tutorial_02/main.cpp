@@ -31,11 +31,7 @@
 //===========================================================================//
 
 #include <lx0/lxengine.hpp>
-
-#ifdef _MSC_VER
-    #include <windows.h>
-#endif
-#include <gl/gl.h>
+#include <lx0/subsystem/rasterizer.hpp>
 
 //===========================================================================//
 //   U I - B I N D I N G
@@ -62,14 +58,95 @@ class Renderer : public lx0::View::Component
 public:
     virtual void initialize(lx0::ViewPtr spView)
     {
-        glClearColor(0.1f, 0.3f, 0.8f, 1.0f);
+        //
+        // Initialize the rasterizer subsystem as soon as the OpenGL context is
+        // available.
+        //
+        mspRasterizer.reset( new lx0::RasterizerGL );
+        mspRasterizer->initialize();
+
+        //
+        // Create a camera
+        // 
+        glm::mat4 viewMatrix = glm::lookAt(glm::vec3(1, -2, 1.5f), glm::vec3(0, 0, 0), glm::vec3(0, 0, 1));
+        mspCamera = mspRasterizer->createCamera(60.0f, 0.01f, 1000.0f, viewMatrix);
+
+        //
+        // Build the cube geometry
+        //
+        std::vector<glgeom::point3f> positions(8);
+        positions[0] = glgeom::point3f(-.5f,-.5f,-.5f);
+        positions[1] = glgeom::point3f( .5f,-.5f,-.5f);
+        positions[2] = glgeom::point3f(-.5f, .5f,-.5f);
+        positions[3] = glgeom::point3f( .5f, .5f,-.5f);
+        positions[4] = glgeom::point3f(-.5f,-.5f, .5f);
+        positions[5] = glgeom::point3f( .5f,-.5f, .5f);
+        positions[6] = glgeom::point3f(-.5f, .5f, .5f);
+        positions[7] = glgeom::point3f( .5f, .5f, .5f);
+        
+        std::vector<lx0::uint16> indices;
+        indices.reserve(4 * 6);
+        auto push_face = [&indices](lx0::uint8 i0, lx0::uint8 i1, lx0::uint8 i2, lx0::uint8 i3) {
+            indices.push_back(i0);
+            indices.push_back(i1);
+            indices.push_back(i2);
+            indices.push_back(i3);
+        };
+        push_face(0, 2, 3, 1);      // -Z face
+        push_face(4, 5, 7, 6);      // +Z face
+        push_face(0, 4, 6, 2);      // -X face
+        push_face(1, 3, 7, 5);      // +X face
+        push_face(0, 1, 5, 4);      // -Y face
+        push_face(2, 6, 7, 3);      // +Y face
+
+        //
+        // Create indexed geometry
+        // Channels such as normals, per-vertex color, uv coordinates, etc. are optional
+        //
+        lx0::GeometryPtr spCube = mspRasterizer->createQuadList(indices, positions);
+
+        //
+        // Build the cube renderable
+        //
+        mspItem.reset(new lx0::Item);
+        mspItem->spTransform = mspRasterizer->createTransform(mRotation);
+        mspItem->spMaterial = mspRasterizer->createMaterial("media2/shaders/glsl/fragment/normal.frag");
+        mspItem->spGeometry = spCube;
     }
 
     virtual void render (void)	
     {
-        glClear(GL_COLOR_BUFFER_BIT);
+        lx0::RenderAlgorithm algorithm;
+        algorithm.mClearColor = glgeom::color4f(0.1f, 0.3f, 0.8f, 1.0f);
+        
+        lx0::GlobalPass pass;
+        pass.spCamera = mspCamera;
+        algorithm.mPasses.push_back(pass);
+
+        lx0::RenderList items;
+        items.push_back(0, mspItem);
+
+        mspRasterizer->beginScene(algorithm);
+        for (auto it = items.begin(); it != items.end(); ++it)
+        {
+            mspRasterizer->rasterizeList(algorithm, it->second.list);
+        }
+        mspRasterizer->endScene();
     }
 
+    virtual void update (lx0::ViewPtr spView) 
+    {
+        mRotation = glm::rotate(mRotation, 1.0f, glm::vec3(0, 0, 1));
+        mspItem->spTransform = mspRasterizer->createTransform(mRotation);
+
+        spView->sendEvent("redraw");
+    }
+
+protected:
+    lx0::RasterizerGLPtr mspRasterizer;
+    lx0::CameraPtr       mspCamera;
+    lx0::ItemPtr         mspItem;
+    glm::mat4            mRotation;
 };
 
 //===========================================================================//
@@ -89,7 +166,7 @@ main (int argc, char** argv)
         spView->addUIBinding( new UIBindingImp );
 
         lx0::lxvar options;
-        options.insert("title", "Tutorial 01");
+        options.insert("title", "Tutorial 02");
         options.insert("width", 640);
         options.insert("height", 480);
         spView->show(options);

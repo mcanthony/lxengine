@@ -390,6 +390,73 @@ RasterizerGL::createQuadList (std::vector<glgeom::point3f>& quadPositions,
     return GeometryPtr(pGeom);
 }
 
+//
+// OpenGL 3.2 Core Profile does not support GL_QUADS, so convert the indices to a triangle list
+//
+static void
+createTriangleIndices (std::vector<lx0::uint16>& quadIndices, std::vector<lx0::uint16>& triIndices)
+{
+    lx_check_error(quadIndices.size() % 4 == 0);
+    lx_check_error(!quadIndices.empty());
+
+    triIndices.resize( (quadIndices.size() * 3) / 2);
+    
+    lx0::uint16* pDst = &triIndices[0];
+    lx0::uint16* pSrc = &quadIndices[0];
+    for (size_t i = 0; i < quadIndices.size(); i += 4)
+    {
+        pDst[0] = pSrc[0];  // Triangle 1
+        pDst[1] = pSrc[1];
+        pDst[2] = pSrc[2];
+        pDst[3] = pSrc[0];  // Triangle 2
+        pDst[4] = pSrc[2];
+        pDst[5] = pSrc[3];
+
+        pDst += 6;
+        pSrc  += 4;
+    }
+}
+
+GeometryPtr
+RasterizerGL::createQuadList (std::vector<lx0::uint16>&     quadIndices,
+                              std::vector<glgeom::point3f>& positions)
+{
+    std::vector<lx0::uint16> triIndices;
+    createTriangleIndices(quadIndices, triIndices);
+
+    check_glerror();
+
+    // Create a vertex array to store the vertex data
+    //
+    GLuint vao;
+    glGenVertexArrays(1, &vao);
+    glBindVertexArray(vao);
+
+    GLuint vio;
+    glGenBuffers(1, &vio);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, vio);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, triIndices.size() * sizeof(triIndices[0]), &triIndices[0], GL_STATIC_DRAW);
+
+    GLuint vboPositions;
+    glGenBuffers(1, &vboPositions);
+    glBindBuffer(GL_ARRAY_BUFFER, vboPositions);
+    glBufferData(GL_ARRAY_BUFFER, positions.size() * sizeof(positions[0]), &positions[0], GL_STATIC_DRAW);
+    
+    check_glerror();
+
+    // Create the cache to encapsulate the created OGL resources
+    //
+    auto pGeom = new GeomImp;
+    pGeom->mtbFlatShading = true;
+    pGeom->mType          = GL_TRIANGLES;
+    pGeom->mVao           = vao;
+    pGeom->mVboIndices    = vio;
+    pGeom->mCount         = triIndices.size();
+    pGeom->mVboPosition   = vboPositions;
+    return GeometryPtr(pGeom);
+
+}
+
 GeometryPtr
 RasterizerGL::createQuadList (std::vector<unsigned short>& indices, 
                               std::vector<glgeom::point3f>& positions, 
@@ -422,27 +489,8 @@ RasterizerGL::createQuadList (std::vector<unsigned short>& quadIndices,
     glBindVertexArray(vao);
 
     // Create the index array
-    //
-    // OpenGL 3.2 Core Profile does not support GL_QUADS, so convert the indices to a triangle list
-    //
-    std::vector<lx0::uint16> triIndices( (quadIndices.size() * 3) / 2);
-    {
-        lx0::uint16* pDst = &triIndices[0];
-        lx0::uint16* pSrc = &quadIndices[0];
-
-        for (size_t i = 0; i < quadIndices.size(); i += 4)
-        {
-            pDst[0] = pSrc[0];  // Triangle 1
-            pDst[1] = pSrc[1];
-            pDst[2] = pSrc[2];
-            pDst[3] = pSrc[0];  // Triangle 2
-            pDst[4] = pSrc[2];
-            pDst[5] = pSrc[3];
-
-            pDst += 6;
-            pSrc  += 4;
-        }
-    }
+    std::vector<lx0::uint16> triIndices;
+    createTriangleIndices(quadIndices, triIndices);
 
     GLuint vio;
     glGenBuffers(1, &vio);
@@ -813,12 +861,25 @@ RasterizerGL::rasterizeItem (GlobalPass& pass, std::shared_ptr<Item> spItem)
         ? pass.tbFlatShading
         : spItem->spGeometry->mtbFlatShading;
 
+    //
+    // Error checking
+    //
+    {
+        if (!mContext.spCamera)
+            lx_error("No camera set! Set a camera either on the ItemPtr or the GlobalPass.");
+    }
+
+    //
     // Activate the item
+    //
     {
         check_glerror();
 
         mContext.spCamera->activate(this);
-        mContext.spLightSet->activate();
+
+        // Lights are optional; not all rendering algorithms require explicitly defined lights
+        if (mContext.spLightSet)
+            mContext.spLightSet->activate();
         
         mStats.tmMaterialActivate.start();
         mContext.spMaterial->activate(this, pass);

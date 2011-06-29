@@ -85,4 +85,34 @@ namespace lx0 { namespace core {  namespace lxvar_ns {
         return buffer;
     }           
 
+    ValidateFunction validate_readonly (void)
+    {
+        return [] (lxvar, lxvar&) -> bool { return false; };
+    }
+
+    ValidateFunction validate_bool (void)
+    {
+        return [] (lxvar v, lxvar& o) -> bool {
+            if (v.is_bool())
+            {
+                o = v;
+                return true;
+            }
+            else
+                return false;
+        };
+    }
+
+    ValidateFunction validate_int_range (int min, int max)
+    {
+        return [min,max](lxvar v, lxvar& o) -> bool {
+            if (v.is_int() && v.as<int>() >= min && v.as<int>() <= max)
+            {
+                o = v;
+                return true;
+            }
+            return false;
+        };
+    }
+
 }}}

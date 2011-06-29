@@ -29,8 +29,14 @@
 
 #pragma once
 
-namespace lx0 { namespace core {
-
-    float   noise3d_perlin      (float x, float y, float z);
-
-}}
+namespace lx0 
+{ 
+    namespace util 
+    { 
+        namespace math_ns 
+        {
+            float   noise3d_perlin      (float x, float y, float z);
+        }
+    }
+    using namespace lx0::util::math_ns;
+}
