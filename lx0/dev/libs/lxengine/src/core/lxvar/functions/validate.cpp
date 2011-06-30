@@ -38,9 +38,9 @@ namespace lx0 { namespace core {  namespace lxvar_ns {
         Returns a validation function that always fails, effectively
         making the variable read-only and unassignable.
      */
-    ValidateFunction validate_readonly (void)
+    ModifyCallback validate_readonly (void)
     {
-        return [] (lxvar, lxvar&) -> bool { return false; };
+        return [] (lxvar&) -> bool { return false; };
     }
 
     /*!
@@ -49,17 +49,9 @@ namespace lx0 { namespace core {  namespace lxvar_ns {
         Returns a validation function that will only succeed if the
         input variable is of boolean type.
      */
-    ValidateFunction validate_bool (void)
+    ModifyCallback validate_bool (void)
     {
-        return [] (lxvar v, lxvar& o) -> bool {
-            if (v.is_bool())
-            {
-                o = v;
-                return true;
-            }
-            else
-                return false;
-        };
+        return [] (lxvar& v) -> bool { return v.is_bool(); };
     }
 
     /*!
@@ -68,17 +60,9 @@ namespace lx0 { namespace core {  namespace lxvar_ns {
         Returns a validation function that will only succeed if the
         input variable is of string type.
      */
-    ValidateFunction validate_string (void)
+    ModifyCallback validate_string (void)
     {
-        return [] (lxvar v, lxvar& o) -> bool {
-            if (v.is_string())
-            {
-                o = v;
-                return true;
-            }
-            else
-                return false;
-        };
+        return [] (lxvar& v) -> bool { return v.is_string(); };
     }
 
     /*!
@@ -88,15 +72,13 @@ namespace lx0 { namespace core {  namespace lxvar_ns {
         input variable is of integer type and within the given range
         (inclusive).
      */
-    ValidateFunction validate_int_range (int min, int max)
+    ModifyCallback validate_int_range (int min, int max)
     {
-        return [min,max](lxvar v, lxvar& o) -> bool {
+        return [min,max](lxvar& v) -> bool {
             if (v.is_int() && v.as<int>() >= min && v.as<int>() <= max)
-            {
-                o = v;
                 return true;
-            }
-            return false;
+            else
+                return false;
         };
     }
 

@@ -493,12 +493,12 @@ namespace lx0 { namespace core { namespace lxvar_ns {
     }
 
     void
-    lxvar::add (const char* key, lx0::uint32 flags, ValidateFunction validate, lxvar def)
+    lxvar::add (const char* key, lx0::uint32 flags, ModifyCallback callback, lxvar def)
     {
         if (!is_defined())
             *this = decorated_map();
 
-        mValue->add(key, flags, validate);
+        mValue->add(key, flags, callback);
         mValue->insert(key, def);
     }
 

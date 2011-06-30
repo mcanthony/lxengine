@@ -60,10 +60,10 @@ namespace lx0
                 lxvalue* create_lxorderedmap    (void);
                 lxvalue* create_lxdecoratedmap  (void);
 
-                typedef std::function<bool (lxvar, lxvar&)> ValidateFunction;
+                typedef std::function<bool (lxvar&)> ModifyCallback;
             
                 using lx0::lxshared_ptr;
-        
+       
                 //===========================================================================//
                 /*!
                     \ingroup lx0_core_lxvar
@@ -204,8 +204,9 @@ namespace lx0
                     lxvar           find            (const std::string& s) const;
                     void            insert          (const char* key, const lxvar& value);
 
-                    void            add             (const char* key, lx0::uint32 flags, ValidateFunction validate, lxvar def = lxvar());
+                    void            add             (const char* key, lx0::uint32 flags, ModifyCallback callback, lxvar def = lxvar());
                     lx0::uint32     flags           (const char* key);
+                    lx0::uint32     flags           (const std::string& s) { return flags(s.c_str()); }
 
   
                     template <typename T>
@@ -307,7 +308,7 @@ namespace lx0
                     virtual lxvar*      find        (const char* key) const     { _invalid(); return nullptr; }
                     virtual void        insert      (const char* key, lxvar& value) { _invalid(); }
 
-                    virtual void        add         (const char* key, lx0::uint32 flags, ValidateFunction validate) { _invalid(); }
+                    virtual void        add         (const char* key, lx0::uint32 flags, ModifyCallback cb) { _invalid(); }
                     virtual lx0::uint32 flags       (const char* key)           { _invalid(); return 0; }
 
                     virtual lxvar::iterator begin  (void)                       { _invalid(); return lxvar::iterator(); }
@@ -338,7 +339,14 @@ namespace lx0
             }
 
             using detail::lxvar;
-            using detail::ValidateFunction;
+            using detail::ModifyCallback;
+
+            enum Flags
+            {
+                eAcceptsInt    = (1 << 0),
+                eAcceptsFloat  = (1 << 1),
+                eAcceptsString = (1 << 2)
+            };
 
             lxvar       find            (lxvar& v, const char* path);
             void        insert          (lxvar& v, const char* path, lxvar value);
@@ -379,10 +387,10 @@ namespace lx0
 
             std::string         format_tabbed       (lxvar& v);
 
-            ValidateFunction    validate_readonly   (void);
-            ValidateFunction    validate_bool       (void);
-            ValidateFunction    validate_string     (void);
-            ValidateFunction    validate_int_range  (int imin, int imax);
+            ModifyCallback      validate_readonly   (void);
+            ModifyCallback      validate_bool       (void);
+            ModifyCallback      validate_string     (void);
+            ModifyCallback      validate_int_range  (int imin, int imax);
 
         }   // end namespace lxvar
 

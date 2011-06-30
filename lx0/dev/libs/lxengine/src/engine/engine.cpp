@@ -32,14 +32,14 @@
 
 #include <iostream>
 #include <string>
+#include <boost/program_options.hpp>
+#include <boost/format.hpp>
 
 #include <lx0/lxengine.hpp>
 #include <lx0/engine/engine.hpp>
 #include <lx0/engine/document.hpp>
 #include <lx0/engine/element.hpp>
 #include <lx0/util/misc/util.hpp>
-
-#include <boost/format.hpp>
 
 using namespace lx0::util;
 
@@ -298,6 +298,78 @@ namespace lx0 { namespace engine { namespace dom_ns {
             info["build"]["compiler_version"] = boost::str( boost::format("0x%04x") % _MSC_VER ); 
         }
         return mSystemInfo.clone();
+    }
+
+
+    /*!
+        Populates the command-line with all the Engine globals.
+     */
+    bool 
+    Engine::parseCommandLine (int argc, char** argv)
+    {
+        //
+        // See http://www.boost.org/doc/libs/1_44_0/doc/html/program_options/tutorial.html
+        //
+        using namespace boost::program_options;
+
+        //
+        // Set up the command-line options data structure
+        //  
+        std::string caption = boost::str( boost::format("Syntax: %1% [options] <file>.\nOptions") % argv[0] );
+        options_description desc (caption);
+    
+        auto& adder = desc.add_options();
+        adder("help", "Print usage information and exit.");
+    
+        for (auto it = mGlobals.begin(); it != mGlobals.end(); ++it)
+        {
+            std::string name = it.key();
+            const lx0::uint32 flags = mGlobals.flags(name.c_str());
+
+            if (flags & eAcceptsString)
+                adder(name.c_str(), value<std::string>());
+            else if (flags & eAcceptsInt)
+                adder(name.c_str(), value<int>());
+        }
+
+        //
+        // Parse the options
+        //
+        bool bFailed = false;
+        variables_map vars;
+        try
+        {
+            store(command_line_parser(argc, argv).options(desc).run(), vars);
+        }
+        catch (...)
+        {
+            bFailed = true;
+        }
+
+        //
+        // Now check and set the options
+        //
+        if (bFailed || vars.count("help"))
+        {
+            std::cout << desc << std::endl;
+            return false;
+        }
+
+        for (auto it = mGlobals.begin(); it != mGlobals.end(); ++it)
+        {
+            std::string name = it.key();
+            const lx0::uint32 flags = mGlobals.flags(name.c_str());
+
+            if (vars.count(name.c_str()) > 0)
+            {
+                if (flags & eAcceptsString)
+                    mGlobals[name.c_str()] = vars[name.c_str()].as<std::string>();
+                else if (flags & eAcceptsInt)
+                    mGlobals[name.c_str()] = vars[name.c_str()].as<int>();
+            }
+        }
+
+        return true;
     }
 
     void

@@ -48,15 +48,15 @@ public:
     {
     public:
         Value() : mFlags(0) {}
-        Value (lx0::uint32 f, ValidateFunction vf, lxvar& v)
+        Value (lx0::uint32 f, ModifyCallback vf, lxvar& v)
             : mFlags(f)
             , mValue (v)
-            , mValidate(vf)
+            , mCallback (vf)
         {
         }
         lx0::uint32         mFlags;
         lxvar               mValue;
-        ValidateFunction    mValidate;
+        ModifyCallback      mCallback;
     };
 
     typedef std::map<std::string, Value> Map;
@@ -91,11 +91,11 @@ public:
     virtual lxvar*      find        (const char* key) const;
     virtual void        insert      (const char* key, lxvar& value);
 
-    virtual void        add         (const char* key, lx0::uint32 flags, ValidateFunction validate)
+    virtual void        add         (const char* key, lx0::uint32 flags, ModifyCallback callback)
     {
         Value v;
         v.mFlags = flags;
-        v.mValidate = validate;
+        v.mCallback = callback;
         v.mValue = lxvar::undefined();
 
         mMap.erase(key);
@@ -139,17 +139,20 @@ lxdecoratedmap::insert (const char* key, lxvar& value)
     
     if (it != mMap.end())
     {
-        if (it->second.mValidate)
+        if (it->second.mCallback)
         {
-            lxvar newvalue;
-            if (it->second.mValidate(value, newvalue))
+            // Make a copy as the callback is allowed to modify the contents
+            // (e.g. parse a string into an int, clamp a range, etc.)
+            lxvar newvalue = value.clone();
+            
+            if (it->second.mCallback(newvalue))
                 it->second.mValue = newvalue;
         }
         else
             it->second.mValue = value;
     }
     else
-        mMap.insert(std::make_pair(key, Value(0, ValidateFunction(), value)));
+        mMap.insert(std::make_pair(key, Value(0, ModifyCallback(), value)));
 }
 
 
