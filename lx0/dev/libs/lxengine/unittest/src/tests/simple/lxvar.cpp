@@ -203,16 +203,14 @@ testset_lxvar(TestSet& set)
         {
             lxvar v = lxvar::decorated_map();
 
-            v.add("percent", 0, [] (lxvar v, lxvar& out) -> bool {
+            v.add("percent", 0, [] (lxvar& v) -> bool {
                 if (v.is_int())
                 {
                     auto i = v.as<int>();
                     if (i < 0)
-                        out = 0;
+                        v = 0;
                     else if (i > 100)
-                        out = 100;
-                    else
-                        out = v;
+                        v = 100;
                     return true;
                 }
                 else
@@ -228,15 +226,12 @@ testset_lxvar(TestSet& set)
             v.insert("percent", "test");
             CHECK(r, v["percent"] == 100);
 
-            v.add("percent", 0, [] (lxvar v, lxvar& out) -> bool {
+            v.add("percent", 0, [] (lxvar& v) -> bool {
                 if (v.is_int())
                 {
                     auto i = v.as<int>();
                     if (i >= 0 && i <= 100)
-                    {
-                        out = v;
                         return true;
-                    }
                 }
                 return false;
             });

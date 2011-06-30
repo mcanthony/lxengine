@@ -33,8 +33,14 @@
 
 using namespace lx0;
 
+lx0::GeometryPtr    
+lx0::util::blendload_ns::geometry_from_blendfile (lx0::RasterizerGLPtr spRasterizer, const char* filename, glgeom::abbox3f& bbox)
+{
+    return lx0::quadlist_from_blendfile(*spRasterizer.get(), filename, 1.0f, &bbox);
+}
+
 lx0::GeometryPtr
-lx0::util::blendload_ns::quadlist_from_blendfile (RasterizerGL& rasterizer, const char* filename, float scale)
+lx0::util::blendload_ns::quadlist_from_blendfile (RasterizerGL& rasterizer, const char* filename, float scale, glgeom::abbox3f* pBounds)
 {
     lx0::BlendReader reader;
     reader.open(filename);
@@ -121,6 +127,14 @@ lx0::util::blendload_ns::quadlist_from_blendfile (RasterizerGL& rasterizer, cons
         }
 
         lx_debug("Loaded '%s'.  %u vertices, %u faces.", filename, positions.size(), indicies.size() / 4);
+
+        // Compute the bounds
+        if (pBounds)
+        {
+            *pBounds = glgeom::abbox3f();
+            for (auto it = positions.begin(); it != positions.end(); ++it)
+                pBounds->merge(*it);
+        }
 
         return rasterizer.createQuadList(indicies, flags, positions, normals, colors);
     }

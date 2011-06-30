@@ -32,6 +32,7 @@
 
 #include <lx0/lxengine.hpp>
 #include <lx0/subsystem/rasterizer.hpp>
+#include <lx0/util/blendload.hpp>
 
 //===========================================================================//
 //   U I - B I N D I N G
@@ -58,6 +59,8 @@ class Renderer : public lx0::View::Component
 public:
     virtual void initialize(lx0::ViewPtr spView)
     {
+        lx0::EnginePtr spEngine = lx0::Engine::acquire();
+
         //
         // Initialize the rasterizer subsystem as soon as the OpenGL context is
         // available.
@@ -66,50 +69,26 @@ public:
         mspRasterizer->initialize();
 
         //
+        // Create geometry
+        //
+        std::string modelFilename = spEngine->globals().find("model_filename").as<std::string>();
+        glgeom::abbox3f bbox;
+        lx0::GeometryPtr spModel = lx0::geometry_from_blendfile(mspRasterizer, modelFilename.c_str(), bbox);
+
+        //
         // Create a camera
         // 
-        glm::mat4 viewMatrix = glm::lookAt(glm::vec3(1, -2, 1.5f), glm::vec3(0, 0, 0), glm::vec3(0, 0, 1));
+        glgeom::vector3f viewDirection(-1, 2, -1.5f);
+        float viewDistance = bbox.diagonal() * 1.5f;
+        glgeom::point3f viewPoint = glgeom::point3f(0, 0, 0) - glgeom::normalize(viewDirection) * viewDistance; 
+        glm::mat4 viewMatrix = glm::lookAt(viewPoint.vec, glm::vec3(0, 0, 0), glm::vec3(0, 0, 1));
         mspCamera = mspRasterizer->createCamera(60.0f, 0.01f, 1000.0f, viewMatrix);
-
-        //
-        // Build the cube geometry
-        //
-        std::vector<glgeom::point3f> positions(8);
-        positions[0] = glgeom::point3f(-.5f,-.5f,-.5f);
-        positions[1] = glgeom::point3f( .5f,-.5f,-.5f);
-        positions[2] = glgeom::point3f(-.5f, .5f,-.5f);
-        positions[3] = glgeom::point3f( .5f, .5f,-.5f);
-        positions[4] = glgeom::point3f(-.5f,-.5f, .5f);
-        positions[5] = glgeom::point3f( .5f,-.5f, .5f);
-        positions[6] = glgeom::point3f(-.5f, .5f, .5f);
-        positions[7] = glgeom::point3f( .5f, .5f, .5f);
-        
-        std::vector<lx0::uint16> indices;
-        indices.reserve(4 * 6);
-        auto push_face = [&indices](lx0::uint8 i0, lx0::uint8 i1, lx0::uint8 i2, lx0::uint8 i3) {
-            indices.push_back(i0);
-            indices.push_back(i1);
-            indices.push_back(i2);
-            indices.push_back(i3);
-        };
-        push_face(0, 2, 3, 1);      // -Z face
-        push_face(4, 5, 7, 6);      // +Z face
-        push_face(0, 4, 6, 2);      // -X face
-        push_face(1, 3, 7, 5);      // +X face
-        push_face(0, 1, 5, 4);      // -Y face
-        push_face(2, 6, 7, 3);      // +Y face
-
-        //
-        // Create indexed geometry
-        // Channels such as normals, per-vertex color, uv coordinates, etc. are optional
-        //
-        lx0::GeometryPtr spCube = mspRasterizer->createQuadList(indices, positions);
 
         //
         // Create the material
         //
-        std::string filename = lx0::Engine::acquire()->globals().find("shader_filename").as<std::string>();
-        lx0::MaterialPtr spMaterial = mspRasterizer->createMaterial(filename.c_str());
+        std::string shaderFilename = spEngine->globals().find("shader_filename").as<std::string>();
+        lx0::MaterialPtr spMaterial = mspRasterizer->createMaterial(shaderFilename.c_str());
 
         //
         // Build the cube renderable
@@ -117,7 +96,7 @@ public:
         mspItem.reset(new lx0::Item);
         mspItem->spTransform = mspRasterizer->createTransform(mRotation);
         mspItem->spMaterial = spMaterial;
-        mspItem->spGeometry = spCube;
+        mspItem->spGeometry = spModel;
     }
 
     virtual void render (void)	
@@ -167,6 +146,7 @@ main (int argc, char** argv)
     {
         lx0::EnginePtr spEngine = lx0::Engine::acquire();
         spEngine->globals().add("shader_filename",  lx0::eAcceptsString, lx0::validate_string(),             "media2/shaders/glsl/fragment/normal.frag");
+        spEngine->globals().add("model_filename",   lx0::eAcceptsString, lx0::validate_string(),             "media2/models/unit_cube-000.blend");
         spEngine->globals().add("view_width",       lx0::eAcceptsInt,    lx0::validate_int_range(32, 4096),  512);
         spEngine->globals().add("view_height",      lx0::eAcceptsInt,    lx0::validate_int_range(32, 4096),  512);
 
