@@ -28,6 +28,7 @@
 
 #include <lx0/core/lxvar/lxvar.hpp>
 #include <lx0/core/log/log.hpp>
+#include <lx0/util/misc/util.hpp>
 #include <boost/format.hpp>
 
 namespace lx0 { namespace core {  namespace lxvar_ns {      
@@ -63,6 +64,18 @@ namespace lx0 { namespace core {  namespace lxvar_ns {
     ModifyCallback validate_string (void)
     {
         return [] (lxvar& v) -> bool { return v.is_string(); };
+    }
+
+    ModifyCallback validate_filename (void)
+    {
+        return [] (lxvar& v) -> bool { 
+            if (v.is_string())
+            {
+                if (lx0::lx_file_exists(v))
+                    return true;
+            }
+            return false;
+        };
     }
 
     /*!

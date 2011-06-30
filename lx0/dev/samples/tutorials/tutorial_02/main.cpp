@@ -79,7 +79,7 @@ public:
         // Create a camera
         // 
         glgeom::vector3f viewDirection(-1, 2, -1.5f);
-        float viewDistance = bbox.diagonal() * 1.5f;
+        float viewDistance = bbox.diagonal() * .9f;
         glgeom::point3f viewPoint = glgeom::point3f(0, 0, 0) - glgeom::normalize(viewDirection) * viewDistance; 
         glm::mat4 viewMatrix = glm::lookAt(viewPoint.vec, glm::vec3(0, 0, 0), glm::vec3(0, 0, 1));
         mspCamera = mspRasterizer->createCamera(60.0f, 0.01f, 1000.0f, viewMatrix);
@@ -145,8 +145,8 @@ main (int argc, char** argv)
     try
     {
         lx0::EnginePtr spEngine = lx0::Engine::acquire();
-        spEngine->globals().add("shader_filename",  lx0::eAcceptsString, lx0::validate_string(),             "media2/shaders/glsl/fragment/normal.frag");
-        spEngine->globals().add("model_filename",   lx0::eAcceptsString, lx0::validate_string(),             "media2/models/unit_cube-000.blend");
+        spEngine->globals().add("shader_filename",  lx0::eAcceptsString, lx0::validate_filename(),           "media2/shaders/glsl/fragment/normal.frag");
+        spEngine->globals().add("model_filename",   lx0::eAcceptsString, lx0::validate_filename(),           "media2/models/standard/stanford_bunny/bunny-000.blend");
         spEngine->globals().add("view_width",       lx0::eAcceptsInt,    lx0::validate_int_range(32, 4096),  512);
         spEngine->globals().add("view_height",      lx0::eAcceptsInt,    lx0::validate_int_range(32, 4096),  512);
 

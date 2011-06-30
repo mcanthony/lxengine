@@ -390,6 +390,7 @@ namespace lx0
             ModifyCallback      validate_readonly   (void);
             ModifyCallback      validate_bool       (void);
             ModifyCallback      validate_string     (void);
+            ModifyCallback      validate_filename   (void);
             ModifyCallback      validate_int_range  (int imin, int imax);
 
         }   // end namespace lxvar
