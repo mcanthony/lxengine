@@ -66,6 +66,25 @@ namespace lx0 { namespace core {  namespace lxvar_ns {
         \ingroup lx0_core_lxvar
 
         Returns a validation function that will only succeed if the
+        input variable is of string type.
+     */
+    ValidateFunction validate_string (void)
+    {
+        return [] (lxvar v, lxvar& o) -> bool {
+            if (v.is_string())
+            {
+                o = v;
+                return true;
+            }
+            else
+                return false;
+        };
+    }
+
+    /*!
+        \ingroup lx0_core_lxvar
+
+        Returns a validation function that will only succeed if the
         input variable is of integer type and within the given range
         (inclusive).
      */

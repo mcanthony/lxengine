@@ -199,6 +199,7 @@ namespace lx0
                     void            push            (const lxvar& e);
 
                     bool            has             (const char* key) const;
+                    bool            has             (const std::string& s) const { return has(s.c_str()); }
                     lxvar           find            (const char* key) const;
                     lxvar           find            (const std::string& s) const;
                     void            insert          (const char* key, const lxvar& value);
@@ -209,6 +210,8 @@ namespace lx0
   
                     template <typename T>
                     operator T () { T t; _convert(*this, t); return t; }
+
+                    operator std::string () const { return as<std::string>(); }
 
                     const lxvar&    operator=       (const lxvar& that);
 
@@ -378,6 +381,7 @@ namespace lx0
 
             ValidateFunction    validate_readonly   (void);
             ValidateFunction    validate_bool       (void);
+            ValidateFunction    validate_string     (void);
             ValidateFunction    validate_int_range  (int imin, int imax);
 
         }   // end namespace lxvar

@@ -5,8 +5,7 @@
         color1 : [ "vec3",   [ 0, 0, 0 ],     "secondaryColor" ],
         uv     : [ "vec2",   [ 0, 0 ],        "uvMapper" ],
     },
-    sources : {
-        glsl_1_5 : "
+    source : "
         vec2 t = abs( fract(uv) );
         ivec2 s = ivec2(trunc(2 * t));
       
@@ -14,6 +13,5 @@
             return color0;
         else
             return color1;        
-        ",
-    },
+    ",
 }

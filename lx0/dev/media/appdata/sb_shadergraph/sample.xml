@@ -8,6 +8,13 @@
         },
       }
     </Material>
+    <Material id="solid_default">
+      {
+        graph : {
+          _type : "solid",
+        },
+      }
+    </Material>
     <Material id="checker_redblue">
       {
         graph : {
@@ -16,9 +23,51 @@
             _type : "checker",
             color0 : [ 1, 0, 0 ],
             color1 : [ 0, 0, 1 ],
+            uv : { _type : "spherical" },
           },
         }
       }
     </Material>
+    <Material id="checker_scaled">
+      {
+        graph : {
+          _type : "solid",
+          color : {
+            _type : "checker",
+            color0 : [ 1, 1, 0.6 ],
+            color1 : [ 0, .7, 1 ],
+            uv : { 
+              _type : "spherical",
+              scale : [ 16, 16 ],
+            },
+          },
+        }
+      }
+    </Material> 
+    <Material id="checker_nested">
+      {
+        graph : {
+          _type : "solid",
+          color : {
+            _type : "checker",
+            color0 : {
+              _type : "checker",
+              color0 : [ 1, 0, 0 ],
+              color1 : [ 0, 0, 0 ],
+              uv : { 
+                _type : "spherical",
+                scale : [ 8, 8 ],
+              },
+            },
+            color1 : [ 1, 1, .8 ],
+            uv : { 
+              _type : "spherical",
+              scale : [ 2, 2 ],
+            },
+          },
+        }
+      }
+    </Material>     
+    
   </Library>
 </Document>

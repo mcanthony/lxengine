@@ -30,6 +30,10 @@
 //   H E A D E R S   &   D E C L A R A T I O N S 
 //===========================================================================//
 
+#include <iostream>
+#include <boost/program_options.hpp>
+#include <boost/format.hpp>
+
 #include <lx0/lxengine.hpp>
 #include <lx0/subsystem/rasterizer.hpp>
 
@@ -106,11 +110,17 @@ public:
         lx0::GeometryPtr spCube = mspRasterizer->createQuadList(indices, positions);
 
         //
+        // Create the material
+        //
+        std::string filename = lx0::Engine::acquire()->globals().find("shader_filename").as<std::string>();
+        lx0::MaterialPtr spMaterial = mspRasterizer->createMaterial(filename.c_str());
+
+        //
         // Build the cube renderable
         //
         mspItem.reset(new lx0::Item);
         mspItem->spTransform = mspRasterizer->createTransform(mRotation);
-        mspItem->spMaterial = mspRasterizer->createMaterial("media2/shaders/glsl/fragment/normal.frag");
+        mspItem->spMaterial = spMaterial;
         mspItem->spGeometry = spCube;
     }
 
@@ -150,6 +160,48 @@ protected:
 };
 
 //===========================================================================//
+
+//
+// See http://www.boost.org/doc/libs/1_44_0/doc/html/program_options/tutorial.html
+//
+static bool 
+parse_options (lx0::EnginePtr spEngine, int argc, char** argv)
+{
+    //
+    // Set up the command-line options data structure
+    //
+    using namespace boost::program_options;
+    
+
+    std::string caption = boost::str( boost::format("Syntax: %1% [options] <file>.\nOptions") % argv[0] );
+    options_description desc (caption);
+    desc.add_options()
+        ("help", "Print usage information and exit.")
+        ("shader_filename", value<std::string>(), "Fragment shader to use for the cube.")
+        ;
+
+    //
+    // Parse the options
+    //
+    variables_map vars;
+    store(command_line_parser(argc, argv).options(desc).run(), vars);
+
+    //
+    // Now check the options for anything that might prevent execution 
+    //
+    if (vars.count("help"))
+    {
+        std::cout << desc << std::endl;
+        return false;
+    }
+    
+    if (vars.count("shader_filename") == 1)
+        spEngine->globals()["shader_filename"] = vars["shader_filename"].as<std::string>();
+
+    return true;
+}
+
+//===========================================================================//
 //   E N T R Y - P O I N T
 //===========================================================================//
 
@@ -160,18 +212,23 @@ main (int argc, char** argv)
     try
     {
         lx0::EnginePtr spEngine = lx0::Engine::acquire();
-        lx0::DocumentPtr spDocument = spEngine->createDocument();
+        spEngine->globals().add("shader_filename", 0, lx0::validate_string(), "media2/shaders/glsl/fragment/normal.frag");
 
-        lx0::ViewPtr spView = spDocument->createView("Canvas", "view", new Renderer );
-        spView->addUIBinding( new UIBindingImp );
+        if (parse_options(spEngine, argc, argv))
+        {
+            lx0::DocumentPtr spDocument = spEngine->createDocument();
 
-        lx0::lxvar options;
-        options.insert("title", "Tutorial 02");
-        options.insert("width", 640);
-        options.insert("height", 480);
-        spView->show(options);
+            lx0::ViewPtr spView = spDocument->createView("Canvas", "view", new Renderer );
+            spView->addUIBinding( new UIBindingImp );
 
-        exitCode = spEngine->run();
+            lx0::lxvar options;
+            options.insert("title", "Tutorial 02");
+            options.insert("width", 640);
+            options.insert("height", 480);
+            spView->show(options);
+
+            exitCode = spEngine->run();
+        }
         spEngine->shutdown();
     }
     catch (std::exception& e)
