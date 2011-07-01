@@ -82,6 +82,11 @@ namespace lx0
             /*!
                 \ingroup lx0_core_log
              */
+            void lx_debug  (const std::string& s);
+            
+            /*!
+                \ingroup lx0_core_log
+             */
             #define lx_warn_once(FORMAT,...) \
                 do { static bool once = false;  if(!once) { lx_warn(FORMAT,__VA_ARGS__); once = true; } } while (0)
     

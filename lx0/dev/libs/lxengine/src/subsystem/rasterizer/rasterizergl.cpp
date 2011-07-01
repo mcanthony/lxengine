@@ -267,6 +267,11 @@ RasterizerGL::_createProgram   (std::string uniqueId, std::string& source)
 GLuint 
 RasterizerGL::_createProgram2  (std::string fragmentSource)
 {
+    //
+    // An empty shader is definitely not valid.  A problem has occurred upstream in the code.
+    // 
+    lx_check_error(!fragmentSource.empty());
+
     check_glerror();
 
     // Create the shader program
@@ -287,14 +292,14 @@ RasterizerGL::_createProgram2  (std::string fragmentSource)
     }
     check_glerror();
 
-    _linkProgram(prog);
+    _linkProgram(prog, fragmentSource.c_str());
     glUseProgram(prog);
 
     return prog;
 }
 
 void 
-RasterizerGL::_linkProgram (GLuint prog)
+RasterizerGL::_linkProgram (GLuint prog, const char* pszSource)
 {
     check_glerror();
 
@@ -314,8 +319,33 @@ RasterizerGL::_linkProgram (GLuint prog)
         glGetProgramInfoLog(prog, maxSize, &size, &log[0]);
         log[size] = '\0';
 
+        //
+        // If the source was passed in, then output it to the log file to
+        // help diagnose the error.
+        //
+        if (pszSource)
+        {
+            const char* p = pszSource;
+            std::string source;
+            int line = 1;
+            
+            source += boost::str(boost::format("%04u: ") % line);
+            
+            while (*p)
+            {
+                while (*p && *p != '\n')
+                    source += *p++;
+                if (*p == '\n')
+                {
+                    source += boost::str(boost::format("\n%04u: ") % ++line);
+                    p++;
+                }
+            }
+            lx_debug(boost::str(boost::format("%s") % source));
+        }
+
         const char* text = &log[0];
-        lx_error("Shader compilation error: '%s'", text);            
+        lx_error("Shader compilation error: '%s'", &log[0]);            
     }
 }
 
@@ -339,7 +369,6 @@ RasterizerGL::_createShader2 (std::string& shaderText, GLuint type)
 
         const GLchar* text = shaderText.c_str();
         glShaderSource(shaderHandle, 1, &text, 0);
-        shaderText.swap(std::string());
 
         glCompileShader(shaderHandle);
     }

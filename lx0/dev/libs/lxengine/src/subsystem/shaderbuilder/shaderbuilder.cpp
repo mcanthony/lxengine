@@ -100,6 +100,10 @@ void ShaderBuilder::loadNode (std::string filename)
 
     lx_debug("Loading shader builder node '%s'", filename.c_str());
 
+    //
+    // Create the node identifier (i.e. name) from the filename without
+    // the extension.
+    //
     bfs::path path(filename);
     std::string id = path.filename();
     id = id.substr(0, id.length() - path.extension().length());
@@ -132,7 +136,7 @@ void ShaderBuilder::buildShader (Material& material, lxvar graph)
     //
     // Start processing at the root and recurse through the nodes
     //
-    _processNode(shader, context, parameters, graph);
+    _processNode(shader, context, parameters, graph, "vec4");
 
     //
     // Copy  the results (and discard all the intermediate data)
@@ -143,17 +147,20 @@ void ShaderBuilder::buildShader (Material& material, lxvar graph)
 }
 
 
-int ShaderBuilder::_processNode (Shader& shader, Context& context, lxvar& parameters, lxvar desc)
+int 
+ShaderBuilder::_processNode (Shader& shader, Context& context, lxvar& parameters, lxvar graph, std::string requiredOutputType)
 {
-    lx_check_error(desc.find("_type").is_defined());
+    lx_check_error(graph.find("_type").is_defined());
 
     const int         id       = context.mNodeCount++;
-    const std::string nodeType = desc["_type"].as<std::string>();
+    const std::string nodeType = graph["_type"].as<std::string>();
 
     auto it = mNodes.find(nodeType);
     if (it == mNodes.end())
-        lx_error("Node of type '%s' not loaded.", desc["_type"].as<std::string>().c_str());
+        lx_error("Node of type '%s' not loaded.", nodeType.c_str());
 
+    // Build up a unique name for this shader.  Do this for caching purposes so 
+    // that duplicate names indicate a shader can be reused.
     shader.mName += boost::str( boost::format("%s[") % nodeType );
 
     lxvar node = mNodes[nodeType];
@@ -199,13 +206,14 @@ int ShaderBuilder::_processNode (Shader& shader, Context& context, lxvar& parame
 
             ss << type << " n" << id << "_" << argName << " = ";
 
-            if (desc.find(argName).is_map())
+            if (graph.find(argName).is_map())
             {
                 context.mArgumentStack.push_back(argName);
-                auto childId = _processNode(shader, context, parameters, desc[argName]);
+                auto childId = _processNode(shader, context, parameters, graph[argName], type);
                 context.mArgumentStack.pop_back();
 
-                ss << "n" << childId << "_ret";
+                const auto returnValueName = boost::str( boost::format("n%1%_ret") % childId ); 
+                ss << returnValueName;
             }
             else
             {
@@ -220,7 +228,7 @@ int ShaderBuilder::_processNode (Shader& shader, Context& context, lxvar& parame
                     argUniformName += boost::join(context.mArgumentStack, "_") + "_";
                 argUniformName += argName;
 
-                lxvar userValue = desc.find(argName);
+                lxvar userValue = graph.find(argName);
                 lxvar value = userValue.is_defined() ? userValue : defaultValue;
 
                 // Store the value in the parameter table
@@ -251,7 +259,24 @@ int ShaderBuilder::_processNode (Shader& shader, Context& context, lxvar& parame
     // Generate the node function call
     {
         std::stringstream ss;
-        ss << node["output"].as<std::string>() << " n" << id << "_ret = " << funcName << "(";
+        
+
+        std::string convertPrefix;
+        std::string convertPostfix;
+        if (requiredOutputType != outputType)
+        {
+            if (requiredOutputType == "vec4" && outputType == "vec3")
+            {
+                convertPrefix = "vec4( ";
+                convertPostfix = ", 1.0)";
+            }
+            else
+                lx_warn("Implicit conversion between different types!");
+        }
+
+        ss << requiredOutputType << " n" << id << "_ret = ";
+        ss << convertPrefix;
+        ss << funcName << "(";
         int i = 0;
         for (auto it = node["input"].begin(); it != node["input"].end(); ++it)
         {
@@ -262,7 +287,9 @@ int ShaderBuilder::_processNode (Shader& shader, Context& context, lxvar& parame
                 ss << ", ";
             ++i;
         }
-        ss << ");\n\n";
+        ss << ")";
+        ss << convertPostfix;
+        ss << ";\n\n";
         shader.mSource.push_back(ss.str());
     }
 

@@ -230,7 +230,7 @@ namespace lx0
                 GLuint      _createProgram2         (std::string source);
                 GLuint      _createShader           (const char* filename, GLuint type);
                 GLuint      _createShader2          (std::string& source, GLuint type);
-                void        _linkProgram            (GLuint prog);
+                void        _linkProgram            (GLuint prog, const char* pszSource = nullptr);
 
                 std::unique_ptr<GLInterface>      gl;
 

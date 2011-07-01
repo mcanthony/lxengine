@@ -4,14 +4,22 @@
     <Geometry src="media2/models/unit_cube-000.blend" />
     <Geometry src="media2/models/unit_hemisphere-000.blend" />
     <Geometry src="media2/models/unit_sphere-000.blend" />
-    <Geometry src="media2/models/space-ship-ship_00/ship_00-001.blend" />
+    <Geometry src="media2/models/space-ship-ship_00/ship_00-nomodifiers.blend" />
+    <Geometry src="media2/models/standard/suzanne/suzanne_subdivided.blend" />
     <Geometry src="media2/models/standard/stanford_bunny/bunny-000.blend" />
     <Geometry src="media2/models/unit_geometry/unit_cone-000.blend" />
     <Geometry src="media2/models/unit_geometry/unit_cylinder-000.blend" />
     <Geometry src="media2/models/unit_geometry/unit_cylinder-001.blend" />
     <Geometry src="media2/models/unit_geometry/teapot/teapot-000.blend" />
 
-    <!-- Materials -->    
+    <!-- Materials -->
+    <Material id="solid_default">
+      {
+        graph : {
+          _type : "solid",
+        },
+      }
+    </Material> 
     <Material id="solid_blue">
       {
         graph : {
@@ -28,120 +36,111 @@
         },
       }
     </Material>   
-    <Material id="solid_default">
-      {
-        graph : {
-          _type : "solid",
-        },
-      }
-    </Material>
     <Material id="checker_redblue">
       {
         graph : {
-          _type : "solid",
-          color : {
-            _type : "checker",
-            color0 : [ 1, 0, 0 ],
-            color1 : [ 0, 0, 1 ],
-            uv : { _type : "spherical" },
-          },
-        }
+          _type : "checker",
+          color0 : [ 1, 0, 0 ],
+          color1 : [ 0, 0, 1 ],
+          uv : { _type : "spherical" },
+        },
       }
     </Material>
+     <Material id="checker_redblack">
+      {
+        graph : {
+          _type : "checker",
+          color0 : [ 1, 0, 0 ],
+          color1 : [ 0, 0, 0 ],
+          uv : { 
+            _type : "spherical",
+            scale : [ 9, 14 ],
+          },
+        },
+      }
+    </Material>   
     <Material id="checker_scaled">
       {
         graph : {
-          _type : "solid",
-          color : {
-            _type : "checker",
-            color0 : [ 1, 1, 0.6 ],
-            color1 : [ 0, .7, 1 ],
-            uv : { 
-              _type : "spherical",
-              scale : [ 16, 16 ],
-            },
+          _type : "checker",
+          color0 : [ 1, 1, 0.6 ],
+          color1 : [ 0, .7, 1 ],
+          uv : { 
+            _type : "spherical",
+            scale : [ 16, 16 ],
           },
-        }
+        },
       }
     </Material> 
     <Material id="checker_nested">
       {
         graph : {
-          _type : "solid",
-          color : {
+          _type : "checker",
+          color0 : {
             _type : "checker",
-            color0 : {
-              _type : "checker",
-              color0 : [ 1, 0, 0 ],
-              color1 : [ 0, 0, 0 ],
-              uv : { 
-                _type : "spherical",
-                scale : [ 8, 8 ],
-              },
-            },
-            color1 : [ 1, 1, .8 ],
-            uv : { 
-              _type : "spherical",
-              scale : [ 2, 2 ],
-            },
-          },
-        }
-      }
-    </Material>     
-    <Material id="checker_weave">
-      {
-        graph : {
-          _type : "solid",
-          color : {
-            _type : "weave",
-            color0 : {
-              _type : "checker",
-              color0 : [ 1, 0, 0 ],
-              color1 : [ 1.0, 0.5, 0 ],
-              uv : { 
-                _type : "spherical",
-                scale : [ 16, 16 ],
-              },
-            },
+            color0 : [ 1, 0, 0 ],
             color1 : [ 0, 0, 0 ],
             uv : { 
               _type : "spherical",
               scale : [ 8, 8 ],
             },
           },
-        }
+          color1 : [ 1, 1, .8 ],
+          uv : { 
+            _type : "spherical",
+            scale : [ 2, 2 ],
+          },
+        },
+      }
+    </Material>     
+    <Material id="checker_weave">
+      {
+        graph : {
+          _type : "weave",
+          color0 : {
+            _type : "checker",
+            color0 : [ 1, 0, 0 ],
+            color1 : [ 1.0, 0.5, 0 ],
+            uv : { 
+              _type : "spherical",
+              scale : [ 16, 16 ],
+            },
+          },
+          color1 : [ 0, 0, 0 ],
+          uv : { 
+            _type : "spherical",
+            scale : [ 8, 8 ],
+          },
+        },
       }
     </Material>   
     <Material id="checker_weave_cube">
       {
         graph : {
-          _type : "solid",
-          color : {
-            _type : "weave",
-            color0 : {
-              _type : "checker",
-              color0 : [ 0, 0.4, 0.6 ],
-              color1 : [ 0.2, 0.6, 0.4 ],
-              uv : { 
-                _type : "cube",
-                scale : [ 12, 12 ],
-              },
-            },
-            color1 : {
-              _type : "checker",
-              color0 : [ 1, 0, 0],
-              color1 : [ 1, 1, 0],
-              uv : { 
-                _type : "cube",
-                scale : [ 3, 3 ],
-              },
-            },
+          _type : "weave",
+          color0 : {
+            _type : "checker",
+            color0 : [ 0, 0.4, 0.6 ],
+            color1 : [ 0.2, 0.6, 0.4 ],
             uv : { 
               _type : "cube",
-              scale : [ 6, 6 ],
+              scale : [ 12, 12 ],
             },
           },
-        }
+          color1 : {
+            _type : "checker",
+            color0 : [ 1, 0, 0],
+            color1 : [ 1, 1, 0],
+            uv : { 
+              _type : "cube",
+              scale : [ 3, 3 ],
+            },
+          },
+          uv : { 
+            _type : "cube",
+            scale : [ 6, 6 ],
+          },
+        },
       }
     </Material>     
   </Library>

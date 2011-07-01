@@ -86,7 +86,7 @@ namespace lx0
 
                 void            _loadBuiltinNodes   (void);
 
-                int             _processNode        (Shader& shader, Context& context, lxvar& parameters, lxvar desc);
+                int             _processNode        (Shader& shader, Context& context, lxvar& parameters, lxvar desc, std::string requiredOutputType);
                 std::string     _valueToStr         (lxvar type, lxvar value);
                 std::string     _formatSource       (Shader& shader);
 

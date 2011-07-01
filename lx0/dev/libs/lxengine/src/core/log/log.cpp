@@ -258,9 +258,9 @@ namespace lx0 { namespace core { namespace log_ns {
     void 
     lx_debug (const char* format, ...)
     {
+#ifndef NDEBUG
         _lx_check_init();
 
-#ifndef NDEBUG
         char buffer[512] = "";
         va_list args;
         va_start(args, format);
@@ -268,6 +268,11 @@ namespace lx0 { namespace core { namespace log_ns {
 
         slotDebug(buffer);
 #endif
+    }
+
+    void lx_debug  (const std::string& s)
+    {
+        slotDebug(s.c_str());
     }
 
 }}}

@@ -73,8 +73,8 @@ class Renderer : public lx0::View::Component
 {
 public:
     Renderer()
-        : mCurrentMaterial (0)
-        , mCurrentGeometry (0)
+        : mCurrentMaterial    (0)
+        , mCurrentGeometry    (0)
     {
     }
 
@@ -134,6 +134,9 @@ public:
 
     virtual void update (lx0::ViewPtr spView) 
     {
+        //
+        // Always rotate the model on every update
+        //
         mRotation = glm::rotate(mRotation, 1.0f, glm::vec3(0, 0, 1));
         mspItem->spTransform = mspRasterizer->createTransform(mRotation);
 
@@ -144,13 +147,13 @@ public:
     {
         if (evt == "switch_geometry")
         {
-            mCurrentGeometry = (mCurrentGeometry + 1) % mGeometry.size();
+            mCurrentGeometry    = (mCurrentGeometry + 1) % mGeometry.size();
             mspItem->spGeometry = mGeometry[mCurrentGeometry];
             mspCamera           = _createCamera(mspItem->spGeometry->mBBox);
         }
         else if (evt == "switch_material")
         {
-            mCurrentMaterial = (mCurrentMaterial + 1) % mMaterials.size();
+            mCurrentMaterial    = (mCurrentMaterial + 1) % mMaterials.size();
             mspItem->spMaterial = mMaterials[mCurrentMaterial];
         }
     }
@@ -261,6 +264,7 @@ protected:
     lx0::RasterizerGLPtr          mspRasterizer;
     lx0::CameraPtr                mspCamera;
     lx0::ItemPtr                  mspItem;
+
     glm::mat4                     mRotation;
 
     size_t                        mCurrentMaterial;
@@ -284,7 +288,7 @@ main (int argc, char** argv)
         lx0::EnginePtr spEngine = lx0::Engine::acquire();
         spEngine->globals().add("shader_filename",  lx0::eAcceptsString, lx0::validate_filename(),           "media2/shaders/glsl/fragment/normal.frag");
         spEngine->globals().add("params_filename",  lx0::eAcceptsString, lx0::validate_filename(),           lx0::lxvar::undefined());
-        spEngine->globals().add("model_filename",   lx0::eAcceptsString, lx0::validate_filename(),           "media2/models/standard/stanford_bunny/bunny-000.blend");
+        spEngine->globals().add("model_filename",   lx0::eAcceptsString, lx0::validate_filename(),           "media2/models/standard/suzanne/suzanne_subdivided.blend");
         spEngine->globals().add("view_width",       lx0::eAcceptsInt,    lx0::validate_int_range(32, 4096),  512);
         spEngine->globals().add("view_height",      lx0::eAcceptsInt,    lx0::validate_int_range(32, 4096),  512);
 

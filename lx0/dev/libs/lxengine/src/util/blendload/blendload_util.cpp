@@ -46,6 +46,8 @@ lx0::util::blendload_ns::geometry_from_blendfile (lx0::RasterizerGLPtr spRasteri
 lx0::GeometryPtr
 lx0::util::blendload_ns::quadlist_from_blendfile (RasterizerGL& rasterizer, const char* filename, float scale, glgeom::abbox3f* pBounds)
 {
+    lx_check_error( lx0::lx_file_exists(filename) );
+
     lx0::BlendReader reader;
     reader.open(filename);
             
