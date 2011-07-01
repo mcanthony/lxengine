@@ -1,0 +1,43 @@
+{
+    output : "vec3",
+    input  : {
+        color0 : [ "vec3",   [ 1, 1, 1 ],     "color" ],
+        color1 : [ "vec3",   [ 0, 0, 0 ],     "secondaryColor" ],
+        uv     : [ "vec2",   [ 0, 0 ],        "uvMapper" ],
+    },
+    source : "
+
+    //
+    // Compute the the distance from the center of the tile
+    // as well as the x,y of the tile itself.
+    //
+    vec2  f = abs(.5 - fract(uv));
+    ivec2 i = ivec2(trunc(uv));
+
+    //
+    // Use the distance from the center to determine the
+    // color strength at that point.
+    //
+    vec2 d = .5 + .5 * pow(cos(PI * f), vec2(.75, .75));
+
+    //
+    // Now look at the tile index and swap which color strip
+    // goes 'on top' every other tile.
+    //
+    if ((i.x + i.y) % 2 == 0) 
+    {
+        f.xy = f.yx;
+        d.xy = d.yx;
+    }
+
+    // Invert the gradiation of the bottom strip
+    d.x = 1 - d.x;
+
+    if (f.x < .4)
+        return mix(color1, color0, d.y);
+    else if (f.y < .4)
+        return mix(color1, color0, d.x);
+    return 
+        color1;
+    ",
+}

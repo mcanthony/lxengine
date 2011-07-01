@@ -436,6 +436,9 @@ namespace lx0 { namespace core { namespace lxvar_ns {
         if (!is_defined()) 
             *this = array();
 
+        if (i == mValue->size())
+            mValue->push(lxvar::undefined());
+
         return *mValue->at(i);
     }
 

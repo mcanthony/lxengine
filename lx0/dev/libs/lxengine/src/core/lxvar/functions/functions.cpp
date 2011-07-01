@@ -31,6 +31,7 @@
 #include <lx0/core/lxvar/lxvar.hpp>
 #include <lx0/core/log/log.hpp>
 #include <boost/format.hpp>
+#include <boost/algorithm/string.hpp>
 
 namespace lx0 { namespace core {  namespace lxvar_ns {
 
@@ -169,6 +170,52 @@ namespace lx0 { namespace core {  namespace lxvar_ns {
         fmt(v, "");
 
         return buffer;
-    }           
+    }         
+
+    static void
+    _format_json_imp (std::stringstream& ss, lxvar& v, std::string indent)
+    {
+        if (v.is_int())
+            ss << v.as<int>();
+        else if (v.is_float())
+            ss << v.as<float>();
+        else if (v.is_string())
+            ss << "\"" << v.as<std::string>() << "\"";
+        else if (v.is_array())
+        {
+            ss << " [ ";
+            int i = 0;
+            for (auto it = v.begin(); it != v.end(); ++it)
+            {
+                _format_json_imp(ss, *it, indent + "    ");
+                if (++i < v.size())
+                    ss << ", ";
+            }
+            ss << " ] ";
+        }
+        else if (v.is_map())
+        {
+            ss << "{\n";
+            int i = 0;
+            for (auto it = v.begin(); it != v.end(); ++it)
+            {
+                ss << "    " << indent << "\"" << it.key() << "\" : ";
+                _format_json_imp(ss, *it, indent + "    ");
+                if (++i < v.size())
+                    ss << ",";
+                ss << "\n";
+            }
+            ss << indent << "} ";
+        }
+    }
+    
+
+    std::string
+    format_json (lxvar& v)
+    {
+        std::stringstream ss;
+        _format_json_imp(ss, v, "");
+        return ss.str();
+    }
 
 }}}

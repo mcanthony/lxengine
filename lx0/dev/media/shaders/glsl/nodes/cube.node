@@ -1,0 +1,24 @@
+{
+    output : "vec2",
+    input : { 
+        scale : [ "vec2",   [1, 1],     "uvScale"   ],
+    },
+    source : "
+// The cube projection is based off a theoretical unit cube
+// centered at 0,0,0.  However, the face mapping should range
+// from [0,1), not [-.5,.5).  Offset accordingly.
+//
+vec2 offset = vec2(0.5, 0.5);
+
+vec3 q = abs( normalize(fragNormalOc) );
+vec2 uv;
+if (q.z > q.y && q.z > q.x)
+    uv = fragVertexOc.xy + offset;
+else if (q.y > q.z && q.y > q.x)
+    uv = fragVertexOc.xz + offset;
+else 
+    uv = fragVertexOc.yz + offset;
+
+return scale * uv;
+    ",
+}

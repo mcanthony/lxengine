@@ -200,6 +200,8 @@ namespace lx0
 
                     bool            has             (const char* key) const;
                     bool            has             (const std::string& s) const { return has(s.c_str()); }
+                    bool            has_key         (const char* key) const      { return has(key); }
+                    bool            has_key         (const std::string& s) const { return has_key(s.c_str()); }
                     lxvar           find            (const char* key) const;
                     lxvar           find            (const std::string& s) const;
                     void            insert          (const char* key, const lxvar& value);
@@ -385,6 +387,7 @@ namespace lx0
             }
                     
 
+            std::string         format_json         (lxvar& v);
             std::string         format_tabbed       (lxvar& v);
 
             ModifyCallback      validate_readonly   (void);
