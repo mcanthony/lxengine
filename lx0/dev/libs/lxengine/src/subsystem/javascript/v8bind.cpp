@@ -163,7 +163,7 @@ namespace lx0 { namespace core { namespace v8bind
 
         try
         {
-            std::string text = lx0::lx_file_to_string(filename);
+            std::string text = lx0::string_from_file(filename);
         
             Context::Scope context_scope(context);
         

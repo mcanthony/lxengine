@@ -64,13 +64,13 @@ namespace lx0 { namespace util { namespace misc {
         Inefficient, but simple and convenient.
      */
     std::string 
-    lx_file_to_string (std::string filename)
+    string_from_file (std::string filename)
     {
         std::string s;
         FILE* fp;
         fopen_s(&fp, filename.c_str(), "r");
 
-        lx_check_error(fp != nullptr, "lx_file_to_string: file '%s' not found!", filename.c_str());
+        lx_check_error(fp != nullptr, "string_from_file: file '%s' not found!", filename.c_str());
 
         char szString[4096];
         while (fgets(szString, 4096, fp) != NULL) {
@@ -82,9 +82,9 @@ namespace lx0 { namespace util { namespace misc {
     }
 
     lx0::lxvar 
-    lx_file_to_json (const char* pszFilename)
+    lxvar_from_file (const char* pszFilename)
     {
-        std::string s = lx_file_to_string(pszFilename);
+        std::string s = string_from_file(pszFilename);
 
         const char* p = s.c_str();
         return lxvar::parse(p);

@@ -38,8 +38,8 @@ namespace lx0 { namespace util { namespace misc {
 
             bool                lx_file_exists          (std::string filename);
             bool                lx_file_is_open         (std::string filename);
-            std::string         lx_file_to_string       (std::string filename);
-            lx0::lxvar    lx_file_to_json         (const char* pszFilename);
+            std::string         string_from_file       (std::string filename);
+            lx0::lxvar          lxvar_from_file         (const char* pszFilename);
 
             std::string         lx_itoa                 (size_t i);
             std::string         lx_ctime                (void);

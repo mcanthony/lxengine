@@ -489,7 +489,7 @@ namespace lx0 { namespace engine { namespace dom_ns {
                         else
                         {
                             std::string filename = spElem->attr("src").as<std::string>();
-                            content = lx0::lx_file_to_string(filename);
+                            content = lx0::string_from_file(filename);
                         }
 
                         lx_check_error(language.empty() || language == "javascript");

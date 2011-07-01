@@ -130,7 +130,7 @@ protected:
     {
         GLuint shaderHandle = 0; 
 
-        std::string shaderText = lx0::lx_file_to_string(filename);
+        std::string shaderText = lx0::string_from_file(filename);
         if (!shaderText.empty())
         {
             shaderHandle = glCreateShader(type);

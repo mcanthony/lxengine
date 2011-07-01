@@ -182,16 +182,28 @@ RasterizerGL::createTexture (const char* filename)
 MaterialPtr 
 RasterizerGL::createMaterial (std::string fragShader)
 {
-    GLuint prog = _createProgram(fragShader);
+    GLuint prog = _createProgramFromFile(fragShader);
     MaterialPtr spMat(new Material(prog));
     spMat->mShaderFilename = fragShader;
     return spMat;
 }
 
+MaterialPtr 
+RasterizerGL::createMaterial (std::string name, std::string fragmentSource, lx0::lxvar parameters)
+{
+    GLuint prog = _createProgram(name, fragmentSource);
+    
+    auto pMat = new GenericMaterial(prog);
+    pMat->mShaderFilename = name;
+    pMat->mParameters = parameters.clone();
+ 
+    return MaterialPtr(pMat);
+}
+
 MaterialPtr     
 RasterizerGL::createSolidColorMaterial (const color3f& rgb)
 {
-    GLuint prog = _createProgram("media2/shaders/glsl/fragment/solid.frag");
+    GLuint prog = _createProgramFromFile("media2/shaders/glsl/fragment/solid.frag");
 
     auto pMat = new SolidColorMaterial(prog);
     pMat->mShaderFilename = "media2/shaders/glsl/fragment/solid.frag";
@@ -203,7 +215,7 @@ RasterizerGL::createSolidColorMaterial (const color3f& rgb)
 MaterialPtr
 RasterizerGL::createVertexColorMaterial (void)
 {
-    GLuint prog = _createProgram("media2/shaders/glsl/fragment/vertexColor.frag");
+    GLuint prog = _createProgramFromFile("media2/shaders/glsl/fragment/vertexColor.frag");
 
     auto pMat = new VertexColorMaterial(prog);
     pMat->mShaderFilename = "media2/shaders/glsl/fragment/vertexColor.frag";
@@ -214,7 +226,7 @@ RasterizerGL::createVertexColorMaterial (void)
 MaterialPtr 
 RasterizerGL::createPhongMaterial (const glgeom::material_phong_f& mat)
 {
-    GLuint prog = _createProgram("media2/shaders/glsl/fragment/phong2.frag");
+    GLuint prog = _createProgramFromFile("media2/shaders/glsl/fragment/phong2.frag");
 
     auto pMat = new PhongMaterial(prog);
     pMat->mShaderFilename = "media2/shaders/glsl/fragment/phong2.frag";
@@ -224,33 +236,39 @@ RasterizerGL::createPhongMaterial (const glgeom::material_phong_f& mat)
 }
 
 GLuint 
-RasterizerGL::_createProgram   (std::string fragShader)
+RasterizerGL::_createProgramFromFile  (std::string filename)
 {
-    auto it = mCachePrograms.find(fragShader);
+    return _createProgram(filename, lx0::string_from_file(filename));
+}
+
+GLuint 
+RasterizerGL::_createProgram   (std::string uniqueId, std::string& source)
+{
+    auto it = mCachePrograms.find(uniqueId);
     if (it != mCachePrograms.end())
     {
         return it->second;
     }
     else
     {
-        GLuint id = _createProgram2(fragShader);
-        mCachePrograms.insert(std::make_pair(fragShader, id));
+        lx_debug("Creating program for shader '%s'", uniqueId.c_str());
+
+        GLuint id = _createProgram2(source);
+        mCachePrograms.insert(std::make_pair(uniqueId, id));
         return id;
     }
 }
 
 GLuint 
-RasterizerGL::_createProgram2  (std::string fragShader)
+RasterizerGL::_createProgram2  (std::string fragmentSource)
 {
     check_glerror();
-
-    lx_debug("Creating program for shader '%s'", fragShader.c_str());
 
     // Create the shader program
     //
     GLuint vs = _createShader("media2/shaders/glsl/vertex/basic_01.vert", GL_VERTEX_SHADER);
     GLuint gs = _createShader("media2/shaders/glsl/geometry/basic_01.geom", GL_GEOMETRY_SHADER);
-    GLuint fs = _createShader(fragShader.c_str(), GL_FRAGMENT_SHADER);
+    GLuint fs = _createShader2(fragmentSource, GL_FRAGMENT_SHADER);
 
     GLuint prog = glCreateProgram();
     {
@@ -299,9 +317,17 @@ RasterizerGL::_linkProgram (GLuint prog)
 GLuint 
 RasterizerGL::_createShader(const char* filename, GLuint type)
 {
-    GLuint shaderHandle = 0; 
+    std::string shaderText = lx0::string_from_file(filename);
+    if (shaderText.empty())
+        lx_error("Could not load shader '%s' (file exists = %s)", filename, lx0::lx_file_exists(filename) ? "true" : "false");
+   
+    return _createShader2(shaderText, type);
+}
 
-    std::string shaderText = lx0::lx_file_to_string(filename);
+GLuint 
+RasterizerGL::_createShader2 (std::string& shaderText, GLuint type)
+{
+    GLuint shaderHandle = 0; 
     if (!shaderText.empty())
     {
         shaderHandle = glCreateShader(type);
@@ -313,7 +339,7 @@ RasterizerGL::_createShader(const char* filename, GLuint type)
         glCompileShader(shaderHandle);
     }
     else
-        lx_error("Could not load shader '%s' (file exists = %s)", filename, lx0::lx_file_exists(filename) ? "true" : "false");
+        lx_error("Shader source empty!");
 
     return shaderHandle;
 }

@@ -149,7 +149,7 @@ namespace lx0 { namespace engine { namespace dom_ns {
                         bSet = true;
                     }
                     else
-                        elemValue = lx0::lx_file_to_json(srcAttr.as<std::string>().c_str());
+                        elemValue = lx0::lxvar_from_file(srcAttr.as<std::string>().c_str());
                 }
                 else if (!elemText.empty())
                 {

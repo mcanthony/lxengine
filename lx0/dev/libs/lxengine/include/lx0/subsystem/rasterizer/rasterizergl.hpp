@@ -152,6 +152,7 @@ namespace lx0
                 LightSetPtr     createLightSet  (void);
 
                 MaterialPtr     createMaterial              (std::string fragShader);
+                MaterialPtr     createMaterial              (std::string name, std::string fragmentSource, lxvar parameters);
                 MaterialPtr     createSolidColorMaterial    (const glgeom::color3f& rgb);
                 MaterialPtr     createVertexColorMaterial   (void);
                 MaterialPtr     createPhongMaterial         (const glgeom::material_phong_f& mat);
@@ -224,10 +225,12 @@ namespace lx0
                 } mContext;
 
             protected:
-                GLuint      _createProgram   (std::string fragShader);
-                GLuint      _createProgram2  (std::string fragShader);
-                GLuint      _createShader    (const char* filename, GLuint type);
-                void        _linkProgram     (GLuint prog);
+                GLuint      _createProgramFromFile  (std::string filename);
+                GLuint      _createProgram          (std::string uniqueId, std::string& source);
+                GLuint      _createProgram2         (std::string source);
+                GLuint      _createShader           (const char* filename, GLuint type);
+                GLuint      _createShader2          (std::string& source, GLuint type);
+                void        _linkProgram            (GLuint prog);
 
                 std::unique_ptr<GLInterface>      gl;
 

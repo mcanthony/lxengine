@@ -5,7 +5,7 @@
 
 
 std::string
-file_to_string  (const char* filename)
+string_from_file  (const char* filename)
 {
     FILE* fp = fopen(filename, "r");
     if (fp)
@@ -54,7 +54,7 @@ main (int argc, char** argv)
 {
     const int kMax = 30;
 
-    std::string script = file_to_string("data/fibonacci_basic.elm");
+    std::string script = string_from_file("data/fibonacci_basic.elm");
 
     std::cout << "Computing Fibonacci Numbers" << std::endl;
     for (int i = 0; i <= kMax; i+= 5)

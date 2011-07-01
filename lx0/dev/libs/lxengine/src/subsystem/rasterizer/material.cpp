@@ -312,3 +312,41 @@ PhongMaterial::activate (RasterizerGL* pRasterizer, GlobalPass& pass)
             glUniform1f(idx, mPhong.specular_n);
     }
 }
+
+
+GenericMaterial::GenericMaterial (GLuint id)
+    : Material (id)
+{
+}
+
+void
+GenericMaterial::activate (RasterizerGL* pRasterizer, GlobalPass& pass)
+{
+
+    Material::activate(pRasterizer, pass);
+
+
+    //
+    // The parameters lxvar can be internally "compiled" into index locations
+    // and function calls.  For now, the slow lxvar conversions are done every
+    // time to keep the code simple and flexible.
+    //
+    auto params = mParameters.find("parameters");
+    for (auto it = params.begin(); it != params.end(); ++it)
+    {
+        const std::string uniformName = it.key();
+        const std::string type        = (*it)[0];
+        lxvar&            value       = (*it)[1];
+
+        GLint index = glGetUniformLocation(mId, uniformName.c_str());
+        if (index != -1)
+        {
+            if (type == "vec2")
+                glUniform2f(index, value[0].as<float>(), value[1].as<float>());
+            else if (type == "vec3")
+                glUniform3f(index, value[0].as<float>(), value[1].as<float>(), value[2].as<float>());
+            else if (type == "vec4")
+                glUniform4f(index, value[0].as<float>(), value[1].as<float>(), value[2].as<float>(), value[3].as<float>());
+        }
+    }
+}

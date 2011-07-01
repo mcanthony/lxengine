@@ -93,6 +93,18 @@ namespace lx0
                 glgeom::material_phong_f    mPhong;
             };
 
+            //===========================================================================//
+            //! \ingroup lx0_subsystem_rasterizer
+            class GenericMaterial : public Material
+            {
+            public:
+                        GenericMaterial(GLuint id);
+
+                virtual void activate   (RasterizerGL*, GlobalPass& pass);
+
+                lxvar   mParameters;
+            };
+
         }
     }
 }

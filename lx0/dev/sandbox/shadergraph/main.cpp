@@ -81,7 +81,7 @@ public:
         std::string path = "media2/shaders/glsl/nodes/";
         std::string filename = path + name + ".node";
 
-        lxvar value = lx_file_to_json(filename.c_str());
+        lxvar value = lxvar_from_file(filename.c_str());
         mNodes.insert(std::make_pair(name, value));
     }
 

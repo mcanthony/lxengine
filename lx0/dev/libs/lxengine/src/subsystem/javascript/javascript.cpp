@@ -80,7 +80,7 @@ namespace lx0 { namespace subsystem { namespace javascript_ns {
             {
                 std::string source;
                 if (spElem->attr("src").is_string())
-                    source = lx0::lx_file_to_string(spElem->attr("src").as<std::string>());
+                    source = lx0::string_from_file(spElem->attr("src").as<std::string>());
                 else
                     source = spElem->value().as<std::string>();
 

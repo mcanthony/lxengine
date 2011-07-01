@@ -88,7 +88,17 @@ public:
         // Create the material
         //
         std::string shaderFilename = spEngine->globals().find("shader_filename").as<std::string>();
-        lx0::MaterialPtr spMaterial = mspRasterizer->createMaterial(shaderFilename.c_str());
+        lx0::lxvar  paramsFilename = spEngine->globals().find("params_filename");
+        
+        lx0::MaterialPtr spMaterial;
+        if (paramsFilename.is_undefined())
+            spMaterial = mspRasterizer->createMaterial(shaderFilename.c_str());
+        else
+        {
+            std::string shaderSource = lx0::string_from_file(shaderFilename);
+            lx0::lxvar  parameters   = lx0::lxvar_from_file(paramsFilename.as<std::string>().c_str());
+            spMaterial = mspRasterizer->createMaterial(std::string(), shaderSource, parameters);
+        }
 
         //
         // Build the cube renderable
@@ -146,6 +156,7 @@ main (int argc, char** argv)
     {
         lx0::EnginePtr spEngine = lx0::Engine::acquire();
         spEngine->globals().add("shader_filename",  lx0::eAcceptsString, lx0::validate_filename(),           "media2/shaders/glsl/fragment/normal.frag");
+        spEngine->globals().add("params_filename",  lx0::eAcceptsString, lx0::validate_filename(),           lx0::lxvar::undefined());
         spEngine->globals().add("model_filename",   lx0::eAcceptsString, lx0::validate_filename(),           "media2/models/standard/stanford_bunny/bunny-000.blend");
         spEngine->globals().add("view_width",       lx0::eAcceptsInt,    lx0::validate_int_range(32, 4096),  512);
         spEngine->globals().add("view_height",      lx0::eAcceptsInt,    lx0::validate_int_range(32, 4096),  512);

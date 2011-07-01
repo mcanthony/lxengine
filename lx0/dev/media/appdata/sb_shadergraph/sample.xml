@@ -8,6 +8,14 @@
         },
       }
     </Material>
+    <Material id="solid_red">
+      {
+        graph : {
+          _type : "solid",
+          color : [ .7, 0, 0 ],
+        },
+      }
+    </Material>    
     <Material id="solid_default">
       {
         graph : {
