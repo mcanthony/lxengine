@@ -1,0 +1,21 @@
+{
+    output      : "vec3",
+    input  : 
+    {
+        uv          : [ "vec2",     [0, 0],             "uvMapper"       ],
+        color0      : [ "vec3",     [1,1,1],            "primaryColor"   ],
+        color1      : [ "vec3",     [0,0,0],            "secondaryColor" ],
+        width       : [ "float",    .4                                   ],
+    },
+    source : "
+        vec2 t = abs(fract(uv));
+        
+        t.x += width * sin(2 * t.y * PI);
+        t.x = abs(.5 - t.x);
+
+        if (t.x < width)
+           return color0;
+        else
+           return color1;
+    ",
+}

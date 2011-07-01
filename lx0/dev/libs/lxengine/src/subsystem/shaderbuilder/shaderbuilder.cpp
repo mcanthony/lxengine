@@ -109,7 +109,13 @@ void ShaderBuilder::loadNode (std::string filename)
     id = id.substr(0, id.length() - path.extension().length());
 
     lxvar value = lxvar_from_file(filename);
-    mNodes.insert(std::make_pair(id, value));
+
+    if (value["output"].is_undefined())
+        lx_error("'output' not defined for node '%s'", filename.c_str());
+    else if (value["input"].is_undefined())
+        lx_error("'input' not defined for node '%s'", filename.c_str());
+    else
+        mNodes.insert(std::make_pair(id, value));
 }
 
 void ShaderBuilder::buildShader (Material& material, lxvar graph)
@@ -299,7 +305,9 @@ ShaderBuilder::_processNode (Shader& shader, Context& context, lxvar& parameters
 std::string ShaderBuilder::_valueToStr (lxvar type, lxvar value)
 {
     boost::format fmt;
-    if (type == "vec2")
+    if (type == "float")
+        fmt = boost::format("%f") % value.as<float>();
+    else if (type == "vec2")
         fmt = boost::format("vec2(%f, %f)") % value[0].as<float>() % value[1].as<float>();
     else if (type == "vec3")
         fmt = boost::format("vec3(%f, %f, %f)") % value[0].as<float>() % value[1].as<float>() % value[2].as<float>();

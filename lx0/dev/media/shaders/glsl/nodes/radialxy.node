@@ -1,0 +1,9 @@
+{
+    output : "vec2",
+    input : { 
+        scale : [ "vec2", [1, 1] ],
+    },
+    source : "
+        return scale * (fragVertexOc.xy / length (fragVertexOc));
+    ",
+}
