@@ -1,5 +1,17 @@
 <Document>
   <Library>
+    <!-- Geomtrey -->
+    <Geometry src="media2/models/unit_cube-000.blend" />
+    <Geometry src="media2/models/unit_hemisphere-000.blend" />
+    <Geometry src="media2/models/unit_sphere-000.blend" />
+    <Geometry src="media2/models/space-ship-ship_00/ship_00-001.blend" />
+    <Geometry src="media2/models/standard/stanford_bunny/bunny-000.blend" />
+    <Geometry src="media2/models/unit_geometry/unit_cone-000.blend" />
+    <Geometry src="media2/models/unit_geometry/unit_cylinder-000.blend" />
+    <Geometry src="media2/models/unit_geometry/unit_cylinder-001.blend" />
+    <Geometry src="media2/models/unit_geometry/teapot/teapot-000.blend" />
+
+    <!-- Materials -->    
     <Material id="solid_blue">
       {
         graph : {

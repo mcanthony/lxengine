@@ -33,6 +33,7 @@
 #include <map>
 
 #include <boost/filesystem.hpp>
+#include <boost/format.hpp>
 
 #include <lx0/prototype/misc.hpp>
 #include <lx0/util/misc/util.hpp>
@@ -244,6 +245,10 @@ RasterizerGL::_createProgramFromFile  (std::string filename)
 GLuint 
 RasterizerGL::_createProgram   (std::string uniqueId, std::string& source)
 {
+    static int s_anonymousId = 0;
+    if (uniqueId.empty())
+        uniqueId = boost::str( boost::format("_anonymous%04d") % s_anonymousId );
+
     auto it = mCachePrograms.find(uniqueId);
     if (it != mCachePrograms.end())
     {

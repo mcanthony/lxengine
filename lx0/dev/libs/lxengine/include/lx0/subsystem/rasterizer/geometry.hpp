@@ -47,6 +47,7 @@ namespace lx0
                 
                 virtual void activate(RasterizerGL*, GlobalPass& pass) = 0;
 
+                glgeom::abbox3f mBBox;
                 boost::tribool  mtbFlatShading;
             };
 

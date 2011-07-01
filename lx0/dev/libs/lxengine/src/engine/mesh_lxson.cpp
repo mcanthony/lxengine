@@ -50,9 +50,9 @@ namespace lx0 { namespace engine { namespace dom_ns {
         // if src.type() == Mesh, set *this to a clone
 
         lx_check_error(v.is_map());
-        lx_check_error(v.has("type"));
-        lx_check_error(v.has("vertices"));
-        lx_check_error(v.has("faces"));
+        lx_check_error(v.has_key("type"));
+        lx_check_error(v.has_key("vertices"));
+        lx_check_error(v.has_key("faces"));
 
         // Deserialize the vertices list
         {

@@ -34,9 +34,13 @@
 using namespace lx0;
 
 lx0::GeometryPtr    
-lx0::util::blendload_ns::geometry_from_blendfile (lx0::RasterizerGLPtr spRasterizer, const char* filename, glgeom::abbox3f& bbox)
+lx0::util::blendload_ns::geometry_from_blendfile (lx0::RasterizerGLPtr spRasterizer, const char* filename)
 {
-    return lx0::quadlist_from_blendfile(*spRasterizer.get(), filename, 1.0f, &bbox);
+    glgeom::abbox3f bbox;
+    auto spGeometry = lx0::quadlist_from_blendfile(*spRasterizer.get(), filename, 1.0f, &bbox);
+    spGeometry->mBBox = bbox;
+
+    return spGeometry;
 }
 
 lx0::GeometryPtr

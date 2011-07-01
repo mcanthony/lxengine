@@ -28,6 +28,7 @@
 
 #include <boost/format.hpp>
 #include <boost/algorithm/string.hpp>
+#include <boost/filesystem.hpp>
 
 #include <lx0/core/init/version.hpp>
 #include <lx0/core/log/log.hpp>
@@ -65,14 +66,46 @@ namespace {
 
 //===========================================================================//
 
-
-void ShaderBuilder::loadNode (const char* name)
+ShaderBuilder::ShaderBuilder()
 {
-    std::string path = "media2/shaders/glsl/nodes/";
-    std::string filename = path + name + ".node";
+    _loadBuiltinNodes();
+}
 
-    lxvar value = lxvar_from_file(filename.c_str());
-    mNodes.insert(std::make_pair(name, value));
+void
+ShaderBuilder::_loadBuiltinNodes ()
+{
+    using namespace boost::filesystem;
+
+    std::vector<std::string> nodes;
+    for (directory_iterator dit("media2/shaders/glsl/nodes/"); dit != directory_iterator(); ++dit)
+    {
+        if (is_regular_file(dit->status()))
+        {
+            std::string filename = dit->path().filename();
+            if (boost::ends_with(filename, std::string(".node")))
+            {
+                std::string path = dit->path().string();
+                nodes.push_back(path);
+            }
+        }
+    }
+
+    for (auto it = nodes.begin(); it != nodes.end(); ++it)
+        loadNode(*it);
+}
+
+void ShaderBuilder::loadNode (std::string filename)
+{
+    namespace bfs = boost::filesystem;
+
+    lx_debug("Loading shader builder node '%s'", filename.c_str());
+
+    bfs::path path(filename);
+    std::string id = path.filename();
+    id = id.substr(0, id.length() - path.extension().length());
+
+    lxvar value = lxvar_from_file(filename);
+    mNodes.insert(std::make_pair(id, value));
 }
 
 void ShaderBuilder::buildShader (Material& material, lxvar graph)
@@ -106,8 +139,7 @@ void ShaderBuilder::buildShader (Material& material, lxvar graph)
     //
     material.uniqueName = shader.mName;
     material.source     = _formatSource(shader);
-    material.parameters["shaderUniqueName"] = shader.mName;
-    material.parameters["parameters"] = parameters;
+    material.parameters = parameters;
 }
 
 

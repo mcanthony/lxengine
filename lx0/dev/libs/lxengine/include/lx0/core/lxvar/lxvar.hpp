@@ -198,9 +198,7 @@ namespace lx0
                     void            at              (int index, lxvar value);
                     void            push            (const lxvar& e);
 
-                    bool            has             (const char* key) const;
-                    bool            has             (const std::string& s) const { return has(s.c_str()); }
-                    bool            has_key         (const char* key) const      { return has(key); }
+                    bool            has_key         (const char* key) const;
                     bool            has_key         (const std::string& s) const { return has_key(s.c_str()); }
                     lxvar           find            (const char* key) const;
                     lxvar           find            (const std::string& s) const;

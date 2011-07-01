@@ -390,6 +390,8 @@ namespace lx0 { namespace engine { namespace dom_ns {
     DocumentPtr
     Engine::loadDocument (std::string filename)
     {
+        lx_log("Loading document '%s'", filename.c_str());
+
         return _loadDocument(false, filename);
     }
 

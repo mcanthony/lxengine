@@ -82,9 +82,9 @@ namespace lx0 { namespace util { namespace misc {
     }
 
     lx0::lxvar 
-    lxvar_from_file (const char* pszFilename)
+    lxvar_from_file (std::string filename)
     {
-        std::string s = string_from_file(pszFilename);
+        std::string s = string_from_file(filename);
 
         const char* p = s.c_str();
         return lxvar::parse(p);

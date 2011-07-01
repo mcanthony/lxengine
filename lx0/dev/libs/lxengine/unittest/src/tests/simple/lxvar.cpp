@@ -169,7 +169,7 @@ testset_lxvar(TestSet& set)
 
         v.insert("test4", lxvar::undefined());
         CHECK(r, v.size() == 4);
-        CHECK(r, v.has("test4") == true);
+        CHECK(r, v.has_key("test4") == true);
         CHECK(r, v.find("test4") == lxvar::undefined());
     };
 

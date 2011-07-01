@@ -30,6 +30,8 @@
 //   H E A D E R S   &   D E C L A R A T I O N S 
 //===========================================================================//
 
+#include <iostream>
+
 #include <lx0/lxengine.hpp>
 #include <lx0/subsystem/rasterizer.hpp>
 #include <lx0/subsystem/shaderbuilder.hpp>
@@ -39,11 +41,17 @@
 //   U I - B I N D I N G
 //===========================================================================//
 
+//
+// The UIBinding is not intended to do much processing itself.  It should
+// map device-events into high-level application events.
+//
 class UIBindingImp : public lx0::UIBinding
 {
 public:
     virtual void onKeyDown (lx0::ViewPtr spView, int keyCode) 
     { 
+        if (keyCode == lx0::KC_G)
+            spView->sendEvent("switch_geometry");
         if (keyCode == lx0::KC_M)
             spView->sendEvent("switch_material");
     }
@@ -66,13 +74,12 @@ class Renderer : public lx0::View::Component
 public:
     Renderer()
         : mCurrentMaterial (0)
+        , mCurrentGeometry (0)
     {
     }
 
     virtual void initialize(lx0::ViewPtr spView)
     {
-        lx0::EnginePtr spEngine = lx0::Engine::acquire();
-
         //
         // Initialize the rasterizer subsystem as soon as the OpenGL context is
         // available.
@@ -81,45 +88,28 @@ public:
         mspRasterizer->initialize();
 
         //
-        // Create geometry
-        //
-        std::string modelFilename = spEngine->globals().find("model_filename").as<std::string>();
-        glgeom::abbox3f bbox;
-        lx0::GeometryPtr spModel = lx0::geometry_from_blendfile(mspRasterizer, modelFilename.c_str(), bbox);
-
-        //
-        // Create a camera
+        // Process the data in the document being viewed
         // 
-        glgeom::vector3f viewDirection(-1, 2, -1.5f);
-        float viewDistance = bbox.diagonal() * .9f;
-        glgeom::point3f viewPoint = glgeom::point3f(0, 0, 0) - glgeom::normalize(viewDirection) * viewDistance; 
-        glm::mat4 viewMatrix = glm::lookAt(viewPoint.vec, glm::vec3(0, 0, 0), glm::vec3(0, 0, 1));
-        mspCamera = mspRasterizer->createCamera(60.0f, 0.01f, 1000.0f, viewMatrix);
-
-        //
-        // Create the material
-        //
-        std::string shaderFilename = spEngine->globals().find("shader_filename").as<std::string>();
-        lx0::lxvar  paramsFilename = spEngine->globals().find("params_filename");
+        _processConfiguration();
+        _processDocument( spView->document() );
         
-        lx0::MaterialPtr spMaterial;
-        if (paramsFilename.is_undefined())
-            spMaterial = mspRasterizer->createMaterial(shaderFilename.c_str());
-        else
-        {
-            std::string shaderSource = lx0::string_from_file(shaderFilename);
-            lx0::lxvar  parameters   = lx0::lxvar_from_file(paramsFilename.as<std::string>().c_str());
-            spMaterial = mspRasterizer->createMaterial(std::string(), shaderSource, parameters);
-        }
-        mMaterials.push_back(spMaterial);
+        lx_check_error( !mMaterials.empty() );
+        lx_check_error( !mGeometry.empty() );
 
         //
         // Build the cube renderable
         //
         mspItem.reset(new lx0::Item);
         mspItem->spTransform = mspRasterizer->createTransform(mRotation);
-        mspItem->spMaterial = spMaterial;
-        mspItem->spGeometry = spModel;
+        mspItem->spMaterial = mMaterials[mCurrentMaterial];
+        mspItem->spGeometry = mGeometry[mCurrentGeometry];
+
+        //
+        // Create the camera last since it is dependent on the bounds of the geometry
+        // being viewed.  Therefore, it needs to be created after the geometry is 
+        // loaded.
+        // 
+        mspCamera = _createCamera(mGeometry[mCurrentGeometry]->mBBox);
     }
 
     virtual void render (void)	
@@ -152,10 +142,11 @@ public:
 
     virtual void handleEvent (std::string evt, lx0::lxvar params) 
     {
-        if (evt == "add_material")
+        if (evt == "switch_geometry")
         {
-            lx0::MaterialPtr spMaterial = mspRasterizer->createMaterial(params["uniqueName"], params["source"], params["parameters"]);
-            mMaterials.push_back(spMaterial);
+            mCurrentGeometry = (mCurrentGeometry + 1) % mGeometry.size();
+            mspItem->spGeometry = mGeometry[mCurrentGeometry];
+            mspCamera           = _createCamera(mspItem->spGeometry->mBBox);
         }
         else if (evt == "switch_material")
         {
@@ -165,39 +156,48 @@ public:
     }
 
 protected:
-    lx0::RasterizerGLPtr          mspRasterizer;
-    lx0::CameraPtr                mspCamera;
-    lx0::ItemPtr                  mspItem;
-    glm::mat4                     mRotation;
-
-    size_t                        mCurrentMaterial;
-    std::vector<lx0::MaterialPtr> mMaterials;
-};
-
-//===========================================================================//
-
-class DocumentComp : public lx0::Document::Component
-{
-public:
-    virtual void onAttached (lx0::DocumentPtr spDocument) 
+    void _processConfiguration (void)
     {
-        ///@todo This should happen automatically
-        mBuilder.loadNode("solid");
-        mBuilder.loadNode("checker");
-        mBuilder.loadNode("weave");
-        mBuilder.loadNode("spherical");
-        mBuilder.loadNode("cube");
-
         //
+        // Check the global configuration
+        //
+        lx0::lxvar config = lx0::Engine::acquire()->globals();
+
+        if (config.find("model_filename").is_defined())
+        {
+            _addGeometry(config["model_filename"]);
+        }
+
+        if (config.find("shader_filename").is_defined())
+        {
+            std::string source     = lx0::string_from_file(config["shader_filename"]);
+            lx0::lxvar  parameters = config.find("params_filename").is_defined() 
+                ? lx0::lxvar_from_file( config["params_filename"] )
+                : lx0::lxvar::undefined();
+
+            _addMaterial("", source, parameters);
+        }
+    }
+
+    void _processDocument (lx0::DocumentPtr spDocument)
+    {
+        //
+        // Check the input Document
+        //
+
         // Find all the <Material> elements in the document and translate
         // them into runtime materials.
         //
-        auto vMats = spDocument->getElementsByTagName("Material");
-        for (auto it = vMats.begin(); it != vMats.end(); ++it)
+        auto vMaterials = spDocument->getElementsByTagName("Material");
+        for (auto it = vMaterials.begin(); it != vMaterials.end(); ++it)
             _processMaterial(*it);
-    }
 
-protected:
+        // Do the same for <Geometry> elements
+        //
+        auto vGeometry = spDocument->getElementsByTagName("Geometry");
+        for (auto it = vGeometry.begin(); it != vGeometry.end(); ++it)
+            _processGeometry(*it);
+    }
 
     void _processMaterial (lx0::ElementPtr spElem)
     {
@@ -212,22 +212,64 @@ protected:
         // (i.e. unique id, shader source code, and set of parameters)
         //
         lx0::ShaderBuilder::Material material;
-        mBuilder.buildShader(material, desc);
+        mShaderBuilder.buildShader(material, desc);
 
-        //
-        // Document events are forwarded to all the views of the document
-        // for processing.
-        //
-        lx0::lxvar params;
-        params["uniqueName"] = material.uniqueName;
-        params["source"] = material.source;
-        params["parameters"] = material.parameters;
-
-        spElem->document()->sendEvent("add_material", params);
+        _addMaterial(material.uniqueName, material.source, material.parameters);
     }
 
-    lx0::ShaderBuilder mBuilder;
+    void _processGeometry (lx0::ElementPtr spElem)
+    {
+        //
+        // Extract the data from the DOM
+        //
+        std::string sourceFilename = spElem->attr("src").as<std::string>();
+        _addGeometry(sourceFilename);
+    }
+
+
+    //
+    // Creates a camera with fixed view direction and a view distance determined by
+    // the visibility bounds.
+    //
+    lx0::CameraPtr _createCamera (const glgeom::abbox3f& bbox)
+    {
+        const glgeom::vector3f viewDirection(-1, 2, -1.5f);
+        const float            viewDistance (bbox.diagonal() * .9f);
+
+        glgeom::point3f viewPoint  = glgeom::point3f(0, 0, 0) - glgeom::normalize(viewDirection) * viewDistance; 
+        glm::mat4       viewMatrix = glm::lookAt(viewPoint.vec, glm::vec3(0, 0, 0), glm::vec3(0, 0, 1));
+            
+        return mspRasterizer->createCamera(60.0f, 0.01f, 1000.0f, viewMatrix);
+    }
+
+    void _addMaterial (std::string uniqueName, std::string source, lx0::lxvar parameters)
+    {
+        lx0::MaterialPtr spMaterial = mspRasterizer->createMaterial(uniqueName, source, parameters);
+        mMaterials.push_back(spMaterial);
+    }
+
+    void _addGeometry (const std::string& modelFilename)
+    {
+        std::cout << "Loading '" << modelFilename << "'" << std::endl;            
+        glgeom::abbox3f bbox;
+        lx0::GeometryPtr spModel = lx0::geometry_from_blendfile(mspRasterizer, modelFilename.c_str());
+
+        mGeometry.push_back(spModel);
+    }
+
+    lx0::ShaderBuilder            mShaderBuilder;
+    lx0::RasterizerGLPtr          mspRasterizer;
+    lx0::CameraPtr                mspCamera;
+    lx0::ItemPtr                  mspItem;
+    glm::mat4                     mRotation;
+
+    size_t                        mCurrentMaterial;
+    std::vector<lx0::MaterialPtr> mMaterials;
+
+    size_t                        mCurrentGeometry;
+    std::vector<lx0::GeometryPtr> mGeometry;
 };
+
 
 //===========================================================================//
 //   E N T R Y - P O I N T
@@ -258,8 +300,6 @@ main (int argc, char** argv)
             options.insert("width", spEngine->globals()["view_width"]);
             options.insert("height", spEngine->globals()["view_height"]);
             spView->show(options);
-
-            spDocument->attachComponent("document_comp", new DocumentComp);
 
             exitCode = spEngine->run();
         }

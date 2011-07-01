@@ -57,8 +57,9 @@ namespace lx0
                     std::string     source;
                     lx0::lxvar      parameters;
                 };
+                            ShaderBuilder();
 
-                void        loadNode        (const char* name);
+                void        loadNode        (std::string path);
                 void        buildShader     (Material& material, lxvar graph);
 
             protected:
@@ -83,9 +84,11 @@ namespace lx0
                     std::vector<std::string>    mArgumentStack;
                 };
 
-                int             _processNode    (Shader& shader, Context& context, lxvar& parameters, lxvar desc);
-                std::string     _valueToStr     (lxvar type, lxvar value);
-                std::string     _formatSource   (Shader& shader);
+                void            _loadBuiltinNodes   (void);
+
+                int             _processNode        (Shader& shader, Context& context, lxvar& parameters, lxvar desc);
+                std::string     _valueToStr         (lxvar type, lxvar value);
+                std::string     _formatSource       (Shader& shader);
 
                 std::map<std::string, lxvar> mNodes;
             };

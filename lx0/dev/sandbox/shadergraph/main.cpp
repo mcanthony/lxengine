@@ -51,12 +51,6 @@ class MaterialProcessor : public Document::Component
 public:
     virtual void onAttached (DocumentPtr spDocument) 
     {
-        mBuilder.loadNode("solid");
-        mBuilder.loadNode("checker");
-        mBuilder.loadNode("weave");
-        mBuilder.loadNode("spherical");
-        mBuilder.loadNode("cube");
-
         auto vMats = spDocument->getElementsByTagName("Material");
         for (auto it = vMats.begin(); it != vMats.end(); ++it)
             _processMaterial(*it);

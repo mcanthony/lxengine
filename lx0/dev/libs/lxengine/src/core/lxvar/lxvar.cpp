@@ -425,7 +425,7 @@ namespace lx0 { namespace core { namespace lxvar_ns {
     }
 
     bool
-    lxvar::has (const char* key) const
+    lxvar::has_key (const char* key) const
     {
         return mValue->has(key);
     }
