@@ -300,7 +300,7 @@ namespace lx0 { namespace subsystem { namespace canvas_ns { namespace detail {
                     pWin->mKeyboard.bDown[s_winToLxKey(keyCode)] = true;
 
                     if (pWin->impKeyDown(keyCode))
-                        pWin->slotKeyDown(keyCode);
+                        pWin->slotKeyDown(s_winToLxKey(keyCode));
                 }
                 break;
         

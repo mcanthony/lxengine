@@ -51,14 +51,16 @@ public:
 
     virtual     void        handleEvent     (std::string evt, lx0::lxvar params);
 
-    virtual void            addUIBinding       (lx0::UIBinding* pController) { mControllers.push_back(std::shared_ptr<lx0::UIBinding>(pController)); }
+    virtual void            addUIBinding       (lx0::UIBinding* pController) { mBindings.push_back(std::shared_ptr<lx0::UIBinding>(pController)); }
 
 protected:
+    void                    _onKeyDown      (unsigned int keyCode);
+
     lx0::View*                  mpHostView;
-    std::unique_ptr<CanvasGL>     mspWin;
+    std::unique_ptr<CanvasGL>   mspWin;
     CanvasHost                  mHost;
    
-    std::vector<std::shared_ptr<lx0::UIBinding>> mControllers;
+    std::vector<std::shared_ptr<lx0::UIBinding>> mBindings;
 };
 
 void 
@@ -81,7 +83,7 @@ LxCanvasImp::createWindow (View* pHostView, size_t& handle, unsigned int& width,
         mspWin->slotRedraw += [spComp]() { spComp->render(); };
     });
 
-    for (auto it = mControllers.begin(); it != mControllers.end(); ++it)
+    for (auto it = mBindings.begin(); it != mBindings.end(); ++it)
     {
         auto spController = *it;
         mspWin->slotLMouseClick += [spController, this](const MouseState& ms, const ButtonState& bs, KeyModifiers km) { 
@@ -91,6 +93,8 @@ LxCanvasImp::createWindow (View* pHostView, size_t& handle, unsigned int& width,
             spController->onLDrag(mpHostView->shared_from_this(), ms, bs, km);
         };
     };
+
+    mspWin->slotKeyDown += [this](unsigned int keyCode) { _onKeyDown(keyCode); };
 }
 
 void
@@ -108,7 +112,7 @@ LxCanvasImp::show (View* pHostView, Document* pDocument)
 void 
 LxCanvasImp::updateFrame (DocumentPtr spDocument) 
 {
-    for (auto it = mControllers.begin(); it != mControllers.end(); ++it)
+    for (auto it = mBindings.begin(); it != mBindings.end(); ++it)
         (*it)->updateFrame( mpHostView->shared_from_this(), mspWin->keyboard() );
 
     mpHostView->foreachComponent([this](View::ComponentPtr spComp) {
@@ -126,6 +130,15 @@ LxCanvasImp::handleEvent (std::string evt, lx0::lxvar params)
         mpHostView->foreachComponent([&](View::ComponentPtr spComp) {
             spComp->handleEvent(evt, params);
         });
+    }
+}
+
+void        
+LxCanvasImp::_onKeyDown (unsigned int keyCode)
+{
+    for (auto it = mBindings.begin(); it != mBindings.end(); ++it)
+    {
+        (*it)->onKeyDown(mpHostView->shared_from_this(), (int)keyCode);
     }
 }
 

@@ -32,6 +32,7 @@
 
 #include <lx0/lxengine.hpp>
 #include <lx0/subsystem/rasterizer.hpp>
+#include <lx0/subsystem/shaderbuilder.hpp>
 #include <lx0/util/blendload.hpp>
 
 //===========================================================================//
@@ -41,6 +42,12 @@
 class UIBindingImp : public lx0::UIBinding
 {
 public:
+    virtual void onKeyDown (lx0::ViewPtr spView, int keyCode) 
+    { 
+        if (keyCode == lx0::KC_M)
+            spView->sendEvent("switch_material");
+    }
+
     virtual void updateFrame (lx0::ViewPtr spView, const lx0::KeyboardState& keyboard)
     {
         if (keyboard.bDown[lx0::KC_ESCAPE])
@@ -57,6 +64,11 @@ public:
 class Renderer : public lx0::View::Component
 {
 public:
+    Renderer()
+        : mCurrentMaterial (0)
+    {
+    }
+
     virtual void initialize(lx0::ViewPtr spView)
     {
         lx0::EnginePtr spEngine = lx0::Engine::acquire();
@@ -99,6 +111,7 @@ public:
             lx0::lxvar  parameters   = lx0::lxvar_from_file(paramsFilename.as<std::string>().c_str());
             spMaterial = mspRasterizer->createMaterial(std::string(), shaderSource, parameters);
         }
+        mMaterials.push_back(spMaterial);
 
         //
         // Build the cube renderable
@@ -137,11 +150,83 @@ public:
         spView->sendEvent("redraw");
     }
 
+    virtual void handleEvent (std::string evt, lx0::lxvar params) 
+    {
+        if (evt == "add_material")
+        {
+            lx0::MaterialPtr spMaterial = mspRasterizer->createMaterial(params["uniqueName"], params["source"], params["parameters"]);
+            mMaterials.push_back(spMaterial);
+        }
+        else if (evt == "switch_material")
+        {
+            mCurrentMaterial = (mCurrentMaterial + 1) % mMaterials.size();
+            mspItem->spMaterial = mMaterials[mCurrentMaterial];
+        }
+    }
+
 protected:
-    lx0::RasterizerGLPtr mspRasterizer;
-    lx0::CameraPtr       mspCamera;
-    lx0::ItemPtr         mspItem;
-    glm::mat4            mRotation;
+    lx0::RasterizerGLPtr          mspRasterizer;
+    lx0::CameraPtr                mspCamera;
+    lx0::ItemPtr                  mspItem;
+    glm::mat4                     mRotation;
+
+    size_t                        mCurrentMaterial;
+    std::vector<lx0::MaterialPtr> mMaterials;
+};
+
+//===========================================================================//
+
+class DocumentComp : public lx0::Document::Component
+{
+public:
+    virtual void onAttached (lx0::DocumentPtr spDocument) 
+    {
+        ///@todo This should happen automatically
+        mBuilder.loadNode("solid");
+        mBuilder.loadNode("checker");
+        mBuilder.loadNode("weave");
+        mBuilder.loadNode("spherical");
+        mBuilder.loadNode("cube");
+
+        //
+        // Find all the <Material> elements in the document and translate
+        // them into runtime materials.
+        //
+        auto vMats = spDocument->getElementsByTagName("Material");
+        for (auto it = vMats.begin(); it != vMats.end(); ++it)
+            _processMaterial(*it);
+    }
+
+protected:
+
+    void _processMaterial (lx0::ElementPtr spElem)
+    {
+        //
+        // Extract the data from the DOM
+        //
+        std::string name = spElem->attr("id").as<std::string>();
+        lx0::lxvar desc = spElem->value().find("graph");
+
+        //
+        // Use the Shader Builder subsystem to construct a material
+        // (i.e. unique id, shader source code, and set of parameters)
+        //
+        lx0::ShaderBuilder::Material material;
+        mBuilder.buildShader(material, desc);
+
+        //
+        // Document events are forwarded to all the views of the document
+        // for processing.
+        //
+        lx0::lxvar params;
+        params["uniqueName"] = material.uniqueName;
+        params["source"] = material.source;
+        params["parameters"] = material.parameters;
+
+        spElem->document()->sendEvent("add_material", params);
+    }
+
+    lx0::ShaderBuilder mBuilder;
 };
 
 //===========================================================================//
@@ -163,7 +248,7 @@ main (int argc, char** argv)
 
         if (spEngine->parseCommandLine(argc, argv))
         {
-            lx0::DocumentPtr spDocument = spEngine->createDocument();
+            lx0::DocumentPtr spDocument = spEngine->loadDocument("media2/appdata/tutorial_03/document.xml");
 
             lx0::ViewPtr spView = spDocument->createView("Canvas", "view", new Renderer );
             spView->addUIBinding( new UIBindingImp );
@@ -173,6 +258,8 @@ main (int argc, char** argv)
             options.insert("width", spEngine->globals()["view_width"]);
             options.insert("height", spEngine->globals()["view_height"]);
             spView->show(options);
+
+            spDocument->attachComponent("document_comp", new DocumentComp);
 
             exitCode = spEngine->run();
         }

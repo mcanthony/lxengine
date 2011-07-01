@@ -58,6 +58,9 @@ namespace lx0
 
                 virtual     void        onLClick        (ViewPtr spView, const MouseState&, const ButtonState&, KeyModifiers) {}
                 virtual     void        onLDrag         (ViewPtr spView, const MouseState& ms, const ButtonState& bs, KeyModifiers km) {}
+
+                virtual     void        onKeyDown       (ViewPtr spView, int keyCode) {}
+
                 virtual     void        updateFrame     (ViewPtr spView, const KeyboardState& keyboard) {}
             };
 

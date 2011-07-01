@@ -312,6 +312,9 @@ namespace lx0 { namespace engine { namespace dom_ns {
     {
         for (auto it = mControllers.begin(); it != mControllers.end(); ++it)
             (*it)->handleEvent(evt, params);
+
+        for (auto it = m_views.begin(); it != m_views.end(); ++it)
+            (*it).second->sendEvent(evt, params);
     }
 
     void        
