@@ -200,6 +200,9 @@ ShaderBuilder::_processNode (Shader& shader, Context& context, lxvar& parameters
         shader.mFunctions.push_back(ss.str());
     }
 
+    // Generate the required external uniforms
+    _processUniforms(shader, context, node);
+
     // Generate the node inputs
     {
         std::stringstream ss;
@@ -302,7 +305,36 @@ ShaderBuilder::_processNode (Shader& shader, Context& context, lxvar& parameters
     return id;
 }
 
-std::string ShaderBuilder::_valueToStr (lxvar type, lxvar value)
+void 
+ShaderBuilder::_processUniforms (Shader& shader, Context& context, lxvar& node)
+{
+    auto uniforms = node.find("uniforms");
+
+    if (uniforms.is_defined())
+    {
+        for (auto it = uniforms.begin(); it != uniforms.end(); ++it)
+        {
+            Declaration declaration;
+            declaration.name  = it.key();
+            declaration.type  = (*it)[0].as<std::string>();
+            declaration.count = "";
+
+            // Split out the array count, if present
+            size_t index = declaration.type.find('[');
+            if (index != std::string::npos)
+            {
+                declaration.count = declaration.type.substr(index);
+                declaration.type = declaration.type.substr(0, index);
+            }
+
+            if (context.mFunctionsBuilt.insert(declaration.name).second)
+                shader.mNodeUniforms.push_back(declaration);
+        }
+    }
+}
+
+std::string 
+ShaderBuilder::_valueToStr (lxvar type, lxvar value)
 {
     boost::format fmt;
     if (type == "float")
@@ -342,6 +374,12 @@ std::string ShaderBuilder::_formatSource (Shader& shader)
     for (auto it = shader.mShaderOutputs.begin(); it != shader.mShaderOutputs.end(); ++it)
         ss << *it << "\n";
     ss << "\n";
+    ss  << "//\n"
+        << "// Required External Uniforms\n"
+        << "//\n";
+    for (auto it = shader.mNodeUniforms.begin(); it != shader.mNodeUniforms.end(); ++it)
+        ss << boost::format("uniform %-6s %s%s;\n") % it->type % it->name % it->count;
+    ss  << "\n";
     ss  << "//\n"
         << "// Generated Uniforms\n"
         << "//\n";

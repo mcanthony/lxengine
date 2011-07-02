@@ -32,7 +32,7 @@ void main(void)
     //
     geomVertexOc = gl_Vertex;
     vec4 vertexEc = unifViewMatrix * gl_Vertex;
-    geomVertexEc = vertexEc.xyz;
+    geomVertexEc = vertexEc.xyz / vertexEc.w;
     
     // The Projection matrix
     gl_Position = unifProjMatrix * vertexEc;

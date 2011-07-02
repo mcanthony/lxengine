@@ -63,6 +63,13 @@ namespace lx0
                 void        buildShader     (Material& material, lxvar graph);
 
             protected:
+                struct Declaration
+                {
+                    std::string     type;
+                    std::string     count;
+                    std::string     name;
+                };
+
                 struct Shader
                 {
                     std::string                 mName;
@@ -71,6 +78,7 @@ namespace lx0
                     std::vector<std::string>    mShaderInputs;
                     std::vector<std::string>    mShaderOutputs;
                     std::vector<std::string>    mUniforms;
+                    std::vector<Declaration>    mNodeUniforms;
                     std::vector<std::string>    mFunctions;
                     std::vector<std::string>    mSource;
                 };
@@ -81,12 +89,16 @@ namespace lx0
 
                     int                         mNodeCount;
                     std::set<std::string>       mFunctionsBuilt;
+                    std::set<std::string>       mNodeUniforms;
                     std::vector<std::string>    mArgumentStack;
                 };
 
                 void            _loadBuiltinNodes   (void);
 
                 int             _processNode        (Shader& shader, Context& context, lxvar& parameters, lxvar desc, std::string requiredOutputType);
+                void            _processUniforms    (Shader& shader, Context& context, lxvar& graph);
+
+
                 std::string     _valueToStr         (lxvar type, lxvar value);
                 std::string     _formatSource       (Shader& shader);
 

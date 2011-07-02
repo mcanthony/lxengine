@@ -1,5 +1,12 @@
 <Document>
   <Library>
+    <Material id="phong_simple">
+      {
+      graph : {
+        _type : "phong",
+        },
+      }
+    </Material>
     <Material id="solid_blue">
       {
         graph : {

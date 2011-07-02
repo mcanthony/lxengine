@@ -59,6 +59,8 @@ Material::activate (RasterizerGL* pRasterizer, GlobalPass& pass)
     //
     // Set up lights
     //
+    ///@todo Why isn't this in LightSet activate?
+    //
     if (pRasterizer->mContext.spLightSet)
     {
         auto& spLightSet = pRasterizer->mContext.spLightSet;

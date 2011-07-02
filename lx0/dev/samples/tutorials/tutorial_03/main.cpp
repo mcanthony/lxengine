@@ -51,9 +51,13 @@ public:
     virtual void onKeyDown (lx0::ViewPtr spView, int keyCode) 
     { 
         if (keyCode == lx0::KC_G)
-            spView->sendEvent("switch_geometry");
+            spView->sendEvent("change_geometry", "next");
+        if (keyCode == lx0::KC_F)
+            spView->sendEvent("change_geometry", "prev");
         if (keyCode == lx0::KC_M)
-            spView->sendEvent("switch_material");
+            spView->sendEvent("next_material");
+        if (keyCode == lx0::KC_N)
+            spView->sendEvent("prev_material");
     }
 
     virtual void updateFrame (lx0::ViewPtr spView, const lx0::KeyboardState& keyboard)
@@ -97,6 +101,21 @@ public:
         lx_check_error( !mGeometry.empty() );
 
         //
+        // Create a set of lights
+        // 
+        lx0::LightPtr spLight0 = mspRasterizer->createLight();
+        spLight0->position = glgeom::point3f(10, -10, 10);
+        spLight0->color    = glgeom::color3f(1, 1, 1);
+        
+        lx0::LightPtr spLight1 = mspRasterizer->createLight();
+        spLight0->position = glgeom::point3f(10, 10, 10);
+        spLight0->color    = glgeom::color3f(.6f, .6f, 1);
+        
+        mspLightSet = mspRasterizer->createLightSet();
+        mspLightSet->mLights.push_back(spLight0);
+        mspLightSet->mLights.push_back(spLight1);
+
+        //
         // Build the cube renderable
         //
         mspItem.reset(new lx0::Item);
@@ -118,7 +137,8 @@ public:
         algorithm.mClearColor = glgeom::color4f(0.1f, 0.3f, 0.8f, 1.0f);
         
         lx0::GlobalPass pass;
-        pass.spCamera = mspCamera;
+        pass.spCamera   = mspCamera;
+        pass.spLightSet = mspLightSet;
         algorithm.mPasses.push_back(pass);
 
         lx0::RenderList items;
@@ -145,15 +165,23 @@ public:
 
     virtual void handleEvent (std::string evt, lx0::lxvar params) 
     {
-        if (evt == "switch_geometry")
+        if (evt == "change_geometry")
         {
-            mCurrentGeometry    = (mCurrentGeometry + 1) % mGeometry.size();
+            mCurrentGeometry = (params == "next") 
+                ? (mCurrentGeometry + 1)
+                : (mCurrentGeometry + mGeometry.size() - 1);
+            mCurrentGeometry %= mGeometry.size();
+            
             mspItem->spGeometry = mGeometry[mCurrentGeometry];
             mspCamera           = _createCamera(mspItem->spGeometry->mBBox);
         }
-        else if (evt == "switch_material")
+        else if (evt == "next_material" || evt == "prev_material")
         {
-            mCurrentMaterial    = (mCurrentMaterial + 1) % mMaterials.size();
+            mCurrentMaterial = (evt == "next_material")
+                ? (mCurrentMaterial + 1)
+                : (mCurrentMaterial + mMaterials.size() - 1);
+            mCurrentMaterial %= mMaterials.size();
+
             mspItem->spMaterial = mMaterials[mCurrentMaterial];
         }
     }
@@ -263,6 +291,7 @@ protected:
     lx0::ShaderBuilder            mShaderBuilder;
     lx0::RasterizerGLPtr          mspRasterizer;
     lx0::CameraPtr                mspCamera;
+    lx0::LightSetPtr              mspLightSet;
     lx0::ItemPtr                  mspItem;
 
     glm::mat4                     mRotation;
