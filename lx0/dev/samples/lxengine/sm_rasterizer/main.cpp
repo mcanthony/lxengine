@@ -89,7 +89,7 @@ parse_options (EnginePtr spEngine, int argc, char** argv, boost::program_options
     {
         store(command_line_parser(argc, argv).options(desc).positional(pos).run(), vars);
     }
-    catch (std::exception& e)
+    catch (std::exception&)
     {
         std::cout << desc << std::endl;
         return false;

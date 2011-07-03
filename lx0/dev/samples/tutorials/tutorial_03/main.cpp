@@ -116,7 +116,7 @@ public:
         mspLightSet->mLights.push_back(spLight1);
 
         //
-        // Build the cube renderable
+        // Build the renderable
         //
         mspItem.reset(new lx0::Item);
         mspItem->spTransform = mspRasterizer->createTransform(mRotation);
@@ -173,6 +173,11 @@ public:
             mCurrentGeometry %= mGeometry.size();
             
             mspItem->spGeometry = mGeometry[mCurrentGeometry];
+            
+            //
+            // Recreate the camera after geometry changes since the camera position
+            // is based on the bounds of the geometry being viewed.
+            //
             mspCamera           = _createCamera(mspItem->spGeometry->mBBox);
         }
         else if (evt == "next_material" || evt == "prev_material")
@@ -212,10 +217,6 @@ protected:
 
     void _processDocument (lx0::DocumentPtr spDocument)
     {
-        //
-        // Check the input Document
-        //
-
         // Find all the <Material> elements in the document and translate
         // them into runtime materials.
         //
@@ -232,18 +233,15 @@ protected:
 
     void _processMaterial (lx0::ElementPtr spElem)
     {
-        //
-        // Extract the data from the DOM
-        //
-        std::string name = spElem->attr("id").as<std::string>();
-        lx0::lxvar desc = spElem->value().find("graph");
+        std::string name  = spElem->attr("id").as<std::string>();
+        lx0::lxvar  graph = spElem->value().find("graph");
 
         //
         // Use the Shader Builder subsystem to construct a material
         // (i.e. unique id, shader source code, and set of parameters)
         //
         lx0::ShaderBuilder::Material material;
-        mShaderBuilder.buildShader(material, desc);
+        mShaderBuilder.buildShader(material, graph);
 
         _addMaterial(material.uniqueName, material.source, material.parameters);
     }
@@ -282,9 +280,7 @@ protected:
     void _addGeometry (const std::string& modelFilename)
     {
         std::cout << "Loading '" << modelFilename << "'" << std::endl;            
-        glgeom::abbox3f bbox;
         lx0::GeometryPtr spModel = lx0::geometry_from_blendfile(mspRasterizer, modelFilename.c_str());
-
         mGeometry.push_back(spModel);
     }
 
@@ -315,12 +311,21 @@ main (int argc, char** argv)
     try
     {
         lx0::EnginePtr spEngine = lx0::Engine::acquire();
+
+        //
+        // Add several global configuration variables.  These will be exported as 
+        // command-line options.
+        //
         spEngine->globals().add("shader_filename",  lx0::eAcceptsString, lx0::validate_filename(),           "media2/shaders/glsl/fragment/normal.frag");
         spEngine->globals().add("params_filename",  lx0::eAcceptsString, lx0::validate_filename(),           lx0::lxvar::undefined());
         spEngine->globals().add("model_filename",   lx0::eAcceptsString, lx0::validate_filename(),           "media2/models/standard/suzanne/suzanne_subdivided.blend");
         spEngine->globals().add("view_width",       lx0::eAcceptsInt,    lx0::validate_int_range(32, 4096),  512);
         spEngine->globals().add("view_height",      lx0::eAcceptsInt,    lx0::validate_int_range(32, 4096),  512);
 
+        //
+        // Have the Engine parse the command-line, checking if any configuration options 
+        // have been set.
+        //
         if (spEngine->parseCommandLine(argc, argv))
         {
             lx0::DocumentPtr spDocument = spEngine->loadDocument("media2/appdata/tutorial_03/document.xml");
