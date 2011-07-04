@@ -345,7 +345,9 @@ namespace lx0
             {
                 eAcceptsInt    = (1 << 0),
                 eAcceptsFloat  = (1 << 1),
-                eAcceptsString = (1 << 2)
+                eAcceptsString = (1 << 2),
+
+                ePersistent    = (1 << 8),
             };
 
             lxvar       find            (lxvar& v, const char* path);

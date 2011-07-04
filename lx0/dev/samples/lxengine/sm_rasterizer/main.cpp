@@ -31,114 +31,12 @@
 //===========================================================================//
 
 #include <iostream>
-#include <boost/program_options.hpp>
 #include <boost/format.hpp>
 #include <lx0/lxengine.hpp>
 #include <lx0/subsystem/javascript.hpp>
 #include "renderer.hpp"
 
 using namespace lx0;
-
-//===========================================================================//
-
-    enum
-    {
-        ACCEPTS_BOOL    = (1 << 0),
-        ACCEPTS_INT     = (1 << 1),
-        ACCEPTS_FLOAT   = (1 << 2),
-        ACCEPTS_STRING  = (1 << 3),
-        ACCEPTS_ARRAY   = (1 << 4),
-        ACCEPTS_MAP     = (1 << 5),
-
-        PERSISTENT      = (1 << 6),
-    };
-
-static bool 
-parse_options (EnginePtr spEngine, int argc, char** argv, boost::program_options::variables_map& vars)
-{
-    // See http://www.boost.org/doc/libs/1_44_0/doc/html/program_options/tutorial.html
-    using namespace boost::program_options;
-
-    // 
-    // Build the description of the expected argument format and have
-    // Boost parse the command line args.
-    //
-    std::string caption = boost::str( boost::format("Syntax: %1% [options] <file>.\nOptions") % argv[0] );
-    options_description desc (caption);
-    desc.add_options()
-        ("help", "Print usage information and exit.")
-        ("file", value<std::string>()->default_value("media2/appdata/sm_raytracer/current.xml"), "Scene file to display.")
-     //   ("view_width", value<int>())
-       // ("view_height", value<int>())
-        ;
-
-    auto& adder = desc.add_options();
-    for (auto it = spEngine->globals().begin(); it != spEngine->globals().end(); ++it)
-    {
-        auto key = it.key();
-        auto flags = spEngine->globals().flags(key.c_str());
-
-        if (flags & ACCEPTS_INT)
-            adder((std::string("D") + key).c_str(), value<int>());
-    }
-
-    positional_options_description pos;
-    pos.add("file", -1);
-
-    try
-    {
-        store(command_line_parser(argc, argv).options(desc).positional(pos).run(), vars);
-    }
-    catch (std::exception&)
-    {
-        std::cout << desc << std::endl;
-        return false;
-    }
-
-    //
-    // Now check the options for anything that might prevent execution 
-    //
-
-    if (vars.count("help"))
-    {
-        std::cout << desc << std::endl;
-        return false;
-    }
-    if (vars.count("file") != 1)
-    {
-        std::cout << "Error: expected exactly one scene file to be specified." << std::endl << std::endl;
-        std::cout << desc << std::endl;
-        return false;
-    }
-    
-    auto check_int = [&spEngine, &vars] (const char* name) {
-        if (vars.count(std::string("D") + name))
-            spEngine->globals().insert(name, vars[std::string("D") + name].as<int>());
-    };
-    check_int("view_width");
-    check_int("view_height");
-
-    return true;
-}
-
-static bool
-validate_options (EnginePtr spEngine, int argc, char** argv)
-{
-    boost::program_options::variables_map vars;
-    if (!parse_options(spEngine, argc, argv, vars))
-        return false;
-     
-    auto filename = vars["file"].as<std::string>();
-    spEngine->globals().insert("input_filename", filename);
-
-    if (!lx0::lx_file_exists(filename))
-    {
-        std::cout << "Error: file '" << filename << "' could not be found." << std::endl << std::endl;
-        return false;
-    }
-
-    return true;
-}
 
 //===========================================================================//
 //   E N T R Y - P O I N T
@@ -151,15 +49,16 @@ main (int argc, char** argv)
     try
     {
         EnginePtr spEngine = Engine::acquire();
-        spEngine->globals().insert("input_filename", lxvar::undefined());       // No default
-        spEngine->globals().add("view_width",  ACCEPTS_INT, lx0::validate_int_range(32, 4096), 512);
-        spEngine->globals().add("view_height", ACCEPTS_INT, lx0::validate_int_range(32, 4096), 512);
+        
+        spEngine->globals().add("file",           lx0::eAcceptsString,  lx0::validate_filename());
+        spEngine->globals().add("view_width",     lx0::eAcceptsInt,     lx0::validate_int_range(32, 4096), 512);
+        spEngine->globals().add("view_height",    lx0::eAcceptsInt,     lx0::validate_int_range(32, 4096), 512);
 
-        if (validate_options(spEngine, argc, argv))
+        if (spEngine->parseCommandLine(argc, argv, "file"))
         {
             spEngine->attachComponent("Javascript", new JavascriptPlugin);
         
-            DocumentPtr spDocument = spEngine->loadDocument(spEngine->globals().find("input_filename"));
+            DocumentPtr spDocument = spEngine->loadDocument(spEngine->globals().find("file"));
             spDocument->addController( create_controller(spDocument) );
 
             ViewPtr spView = spDocument->createView("Canvas", "view", create_renderer() );

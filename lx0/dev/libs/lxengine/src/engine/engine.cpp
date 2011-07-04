@@ -305,7 +305,7 @@ namespace lx0 { namespace engine { namespace dom_ns {
         Populates the command-line with all the Engine globals.
      */
     bool 
-    Engine::parseCommandLine (int argc, char** argv)
+    Engine::parseCommandLine (int argc, char** argv, const char* defaultArgument)
     {
         //
         // See http://www.boost.org/doc/libs/1_44_0/doc/html/program_options/tutorial.html
@@ -333,13 +333,24 @@ namespace lx0 { namespace engine { namespace dom_ns {
         }
 
         //
+        // Support for a default argument, e.g.:
+        //
+        // ./myapp --filename=somefile.txt
+        //
+        // ./myapp somefile.txt
+        //
+        positional_options_description pos;
+        if (defaultArgument)
+            pos.add(defaultArgument, -1);
+
+        //
         // Parse the options
         //
         bool bFailed = false;
         variables_map vars;
         try
         {
-            store(command_line_parser(argc, argv).options(desc).run(), vars);
+            store(command_line_parser(argc, argv).options(desc).positional(pos).run(), vars);
         }
         catch (...)
         {

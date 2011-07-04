@@ -140,7 +140,7 @@ namespace lx0
                 ///@}
 
                 lxvar               getSystemInfo       (void);
-                bool                parseCommandLine    (int argc, char** argv);
+                bool                parseCommandLine    (int argc, char** argv, const char* defArgumentName = nullptr);
 
                 Environment&        environment         (void)                      { return mEnvironment; }
 
