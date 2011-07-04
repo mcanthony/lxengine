@@ -233,7 +233,6 @@ protected:
 
     void _processMaterial (lx0::ElementPtr spElem)
     {
-        std::string name  = spElem->attr("id").as<std::string>();
         lx0::lxvar  graph = spElem->value().find("graph");
 
         //
@@ -243,6 +242,10 @@ protected:
         lx0::ShaderBuilder::Material material;
         mShaderBuilder.buildShader(material, graph);
 
+        //
+        // Pass on the generated material data which the rasterizer
+        // will use to compile a shader plus a parameter set.
+        //
         _addMaterial(material.uniqueName, material.source, material.parameters);
     }
 
@@ -316,9 +319,9 @@ main (int argc, char** argv)
         // Add several global configuration variables.  These will be exported as 
         // command-line options.
         //
-        spEngine->globals().add("shader_filename",  lx0::eAcceptsString, lx0::validate_filename(),           "media2/shaders/glsl/fragment/normal.frag");
+        spEngine->globals().add("shader_filename",  lx0::eAcceptsString, lx0::validate_filename(),           lx0::lxvar::undefined());
         spEngine->globals().add("params_filename",  lx0::eAcceptsString, lx0::validate_filename(),           lx0::lxvar::undefined());
-        spEngine->globals().add("model_filename",   lx0::eAcceptsString, lx0::validate_filename(),           "media2/models/standard/suzanne/suzanne_subdivided.blend");
+        spEngine->globals().add("model_filename",   lx0::eAcceptsString, lx0::validate_filename(),           lx0::lxvar::undefined());
         spEngine->globals().add("view_width",       lx0::eAcceptsInt,    lx0::validate_int_range(32, 4096),  512);
         spEngine->globals().add("view_height",      lx0::eAcceptsInt,    lx0::validate_int_range(32, 4096),  512);
 

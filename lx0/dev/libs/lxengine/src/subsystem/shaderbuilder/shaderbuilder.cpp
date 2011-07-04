@@ -71,34 +71,52 @@ ShaderBuilder::ShaderBuilder()
     _loadBuiltinNodes();
 }
 
-void
-ShaderBuilder::_loadBuiltinNodes ()
+static
+void 
+find_files_in_directory (std::vector<std::string>& files, const char* path, const char* extension)
 {
     using namespace boost::filesystem;
 
-    std::vector<std::string> nodes;
-    for (directory_iterator dit("media2/shaders/glsl/nodes/"); dit != directory_iterator(); ++dit)
+    std::string ext = boost::str( boost::format(".%1%") % extension );
+
+    for (directory_iterator dit(path); dit != directory_iterator(); ++dit)
     {
         if (is_regular_file(dit->status()))
         {
             std::string filename = dit->path().filename();
-            if (boost::ends_with(filename, std::string(".node")))
+            if (boost::ends_with(filename, ext))
             {
                 std::string path = dit->path().string();
-                nodes.push_back(path);
+                files.push_back(path);
             }
         }
     }
+}
 
-    for (auto it = nodes.begin(); it != nodes.end(); ++it)
-        loadNode(*it);
+void
+ShaderBuilder::_loadBuiltinNodes ()
+{
+    try
+    {
+        std::vector<std::string> nodes;
+        find_files_in_directory(nodes, "media2/shaders/shaderbuilder/shading",  "node");
+        find_files_in_directory(nodes, "media2/shaders/shaderbuilder/patterns", "node");
+        find_files_in_directory(nodes, "media2/shaders/shaderbuilder/mappers",  "node");
+
+        for (auto it = nodes.begin(); it != nodes.end(); ++it)
+            loadNode(*it);
+    }
+    catch (boost::system::system_error&)
+    {
+        lx_error("Error reading ShaderBuilder node files");
+    }
 }
 
 void ShaderBuilder::loadNode (std::string filename)
 {
     namespace bfs = boost::filesystem;
 
-    lx_debug("Loading shader builder node '%s'", filename.c_str());
+    lx_log("Loading shader builder node '%s'", filename.c_str());
 
     //
     // Create the node identifier (i.e. name) from the filename without
@@ -181,6 +199,17 @@ ShaderBuilder::_processNode (Shader& shader, Context& context, lxvar& parameters
     //
     if (context.mFunctionsBuilt.insert(nodeType).second)
     {
+        std::string source;
+        if (node["source"].is_string())
+            source = node["source"].as<std::string>();
+        else
+        {
+            ///@todo Would be nice to modify lxvar such that boost::join could
+            /// be used here.
+            for (auto it = node["source"].begin(); it != node["source"].end(); ++it)
+                source += (*it).as<std::string>() + "\n";
+        }
+
         std::stringstream ss;
         ss << boost::format("%2% %1% (") % funcName % outputType;
         int i = 0;
@@ -194,7 +223,7 @@ ShaderBuilder::_processNode (Shader& shader, Context& context, lxvar& parameters
         }
         ss << ")\n"
             << "{\n"
-            << _refine(node["source"].as<std::string>(), "    ") << "\n"
+            << _refine(source, "    ") << "\n"
             << "}\n";
 
         shader.mFunctions.push_back(ss.str());
@@ -215,10 +244,13 @@ ShaderBuilder::_processNode (Shader& shader, Context& context, lxvar& parameters
 
             ss << type << " n" << id << "_" << argName << " = ";
 
-            if (graph.find(argName).is_map())
+            const auto userValue = graph.find(argName);
+            const auto value = userValue.is_defined() ? userValue : defaultValue;
+
+            if (value.is_map())
             {
                 context.mArgumentStack.push_back(argName);
-                auto childId = _processNode(shader, context, parameters, graph[argName], type);
+                auto childId = _processNode(shader, context, parameters, value, type);
                 context.mArgumentStack.pop_back();
 
                 const auto returnValueName = boost::str( boost::format("n%1%_ret") % childId ); 
@@ -229,16 +261,13 @@ ShaderBuilder::_processNode (Shader& shader, Context& context, lxvar& parameters
                 shader.mName += "U";
 
                 //
-                // Either a default value or a user-specified value; in either case,
+                // Whether a default value or a user-specified value,
                 // this becomes a uniform.
                 //
                 std::string argUniformName = "unif_";
                 if (!context.mArgumentStack.empty())
                     argUniformName += boost::join(context.mArgumentStack, "_") + "_";
                 argUniformName += argName;
-
-                lxvar userValue = graph.find(argName);
-                lxvar value = userValue.is_defined() ? userValue : defaultValue;
 
                 // Store the value in the parameter table
                 parameters[argUniformName][0] = type;

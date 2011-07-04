@@ -17,7 +17,7 @@
     <Material id="solid_default">
       {
         graph : {
-          _type : "solid",
+          _type : "spot",
         },
       }
     </Material> 
