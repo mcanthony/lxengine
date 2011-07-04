@@ -2,16 +2,16 @@
     output      : "vec3",
     input  : 
     {
-        uv          : [ "vec2",     [0, 0],             "uvMapper"       ],
+        uv          : [ "vec2",     { _type : "cube" },             "uvMapper"       ],
         color0      : [ "vec3",     [1,1,1],            "primaryColor"   ],
         color1      : [ "vec3",     [0,0,0],            "secondaryColor" ],
         width       : [ "float",    .5                                   ],
     },
-    source : "
-        vec2 t = abs(fract(uv) - vec2(0.5, 0.5));
-        if (t.x >= width || t.y >= width)
-           return color1;
-        else
-           return color0;
-    ",
+    source : [
+        "vec2 t = abs(fract(uv) - vec2(0.5, 0.5));                                           ",                                                       
+        "if (t.x >= width || t.y >= width)                                                   ",                                               
+        "   return color1;                                                                   ",                               
+        "else                                                                                ",                   
+        "   return color0;                                                                   ",                               
+    ],
 }

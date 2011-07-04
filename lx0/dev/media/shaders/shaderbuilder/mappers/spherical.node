@@ -3,17 +3,17 @@
     input : { 
         scale : [ "vec2",   [1, 1],     "uvScale"   ],
     },
-    source : "
-// Convert to spherical coordinates.  Note in this definition
-// theta runs along the z axis and phi is in the xy plane.
-float r = length(fragVertexOc);
-float phi = atan(fragVertexOc.y, fragVertexOc.x);
-float theta = acos(fragVertexOc.z / r);
-
-// Normalize to [0-1) range
-vec2 uv = vec2(1, 1);
-uv.x = (phi + PI) / (2 * PI);
-uv.y = theta / PI;
-return scale * uv;
-    ",
+    source : [
+        "// Convert to spherical coordinates.  Note in this definition                       ",                                                                           
+        "// theta runs along the z axis and phi is in the xy plane.                          ",                                                                       
+        "float r = length(fragVertexOc);                                                     ",                                               
+        "float phi = atan(fragVertexOc.y, fragVertexOc.x);                                   ",                                                               
+        "float theta = acos(fragVertexOc.z / r);                                             ",                                                       
+        "                                                                                    ",               
+        "// Normalize to [0-1) range                                                         ",                                           
+        "vec2 uv = vec2(1, 1);                                                               ",                                   
+        "uv.x = (phi + PI) / (2 * PI);                                                       ",                                           
+        "uv.y = theta / PI;                                                                  ",                               
+        "return scale * uv;                                                                  ",                               
+    ],
 }

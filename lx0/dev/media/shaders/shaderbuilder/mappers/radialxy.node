@@ -3,7 +3,7 @@
     input : { 
         scale : [ "vec2", [1, 1] ],
     },
-    source : "
-        return scale * (fragVertexOc.xy / length (fragVertexOc));
-    ",
+    source : [
+        "return scale * (fragVertexOc.xy / length (fragVertexOc));                           ",                                                                       
+    ],
 }

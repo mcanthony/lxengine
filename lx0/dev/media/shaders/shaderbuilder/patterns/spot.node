@@ -6,11 +6,11 @@
         color1      : [ "vec3",     [0,0,0],            "secondaryColor" ],
         radius      : [ "float",    .45                                  ],
     },
-    source : "
-        vec2 t = abs(fract(uv)) - vec2(0.5, 0.5);
-        if (dot(t, t) <= (radius * radius))
-           return color0;
-        else
-           return color1;
-    ",
+    source : [
+        "vec2 t = abs(fract(uv)) - vec2(0.5, 0.5);  ",
+        "if (dot(t, t) <= (radius * radius))        ",
+        "   return color0;                          ",
+        "else                                       ",
+        "   return color1;                          ",
+    ],
 }
