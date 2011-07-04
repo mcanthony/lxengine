@@ -539,6 +539,18 @@ public:
         mUpdateQueue.push_back([=]() { return passMedium->done() ? true : (passMedium->next(), false); });
         mUpdateQueue.push_back([=]() { return passHigh->done() ? true : (passHigh->next(), false); });
         mUpdateQueue.push_back([&]() { return std::cout << "Done (" << lx0::lx_milliseconds() - mRenderTime << " ms)." << std::endl, true; });
+        
+        auto varOutputFile = Engine::acquire()->globals().find("output");
+        if (varOutputFile.is_defined())
+        {
+            mUpdateQueue.push_back([varOutputFile]() -> bool { 
+                std::cout << "Saving image...";
+                lx0::save_png(img, varOutputFile.as<std::string>().c_str());
+                std::cout << "done.\n";
+                Engine::acquire()->sendEvent("quit");
+                return true;
+            });
+        }
     }
 
     bool _shadowTerm (const point_light_f& light, const intersection3f& intersection)

@@ -78,6 +78,31 @@ namespace lx0 { namespace prototype { namespace misc_ns {
 
     }
 
+    void
+    save_png (const glgeom::image3f& image, const char* filename)
+    {
+        // Transcode to a 8-bit RGBA image
+        std::vector<lx0::uint8> rgba(image.width() * image.height() * 4);
+        {
+            lx0::uint8* p = &rgba[0];
+            for (int y = 0; y < image.height(); ++y)
+            {
+                for (int x = 0; x < image.width(); ++x)
+                {
+                    *p++ = static_cast<lx0::uint8>( glm::clamp(image.get(x, y).r * 255.0f, 0.0f, 255.0f) );
+                    *p++ = static_cast<lx0::uint8>( glm::clamp(image.get(x, y).g * 255.0f, 0.0f, 255.0f) );
+                    *p++ = static_cast<lx0::uint8>( glm::clamp(image.get(x, y).b * 255.0f, 0.0f, 255.0f) );
+                    *p++ = 255;
+                }
+            }
+        }
+
+        LodePNG::Encoder encoder;
+        std::vector<lx0::uint8> buffer;
+        encoder.encode(buffer, &rgba[0], image.width(), image.height());
+        LodePNG::saveFile(buffer, filename);
+    }
+
     void 
     load_png (Image4b& image, const char* filename)
     {

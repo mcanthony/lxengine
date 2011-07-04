@@ -54,6 +54,7 @@ namespace lx0
 
             void    load_png (Image4b& image, const char* filename);
             void    load_png (glgeom::image3f& image, const char* filename);
+            void    save_png (const glgeom::image3f& image, const char* filename);
 
 
             struct Camera2

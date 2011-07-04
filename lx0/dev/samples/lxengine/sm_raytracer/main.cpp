@@ -59,6 +59,7 @@ main (int argc, char** argv)
         EnginePtr   spEngine   = Engine::acquire();
         
         spEngine->globals().add("file",     eAcceptsString, lx0::validate_filename());
+        spEngine->globals().add("output",   eAcceptsString, lx0::validate_string());
         spEngine->globals().add("width",    eAcceptsInt,    lx0::validate_int_range(1, 16 * 1024), 512);
         spEngine->globals().add("height",   eAcceptsInt,    lx0::validate_int_range(1, 16 * 1024), 512);
 
