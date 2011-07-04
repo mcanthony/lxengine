@@ -41,7 +41,7 @@
 
 //===========================================================================//
 
-glgeom::image3f img(512, 512);
+glgeom::image3f img;
 
 //===========================================================================//
 //   E N T R Y - P O I N T
@@ -58,10 +58,15 @@ main (int argc, char** argv)
     {
         EnginePtr   spEngine   = Engine::acquire();
         
-        spEngine->globals().add("file", eAcceptsString, lx0::validate_filename());
-        
+        spEngine->globals().add("file",     eAcceptsString, lx0::validate_filename());
+        spEngine->globals().add("width",    eAcceptsInt,    lx0::validate_int_range(1, 16 * 1024), 512);
+        spEngine->globals().add("height",   eAcceptsInt,    lx0::validate_int_range(1, 16 * 1024), 512);
+
         if (spEngine->parseCommandLine(argc, argv, "file"))
         {
+            // Resize the image to the requested size
+            img = glgeom::image3f( spEngine->globals().find("width"), spEngine->globals().find("height") );
+
             spEngine->attachComponent("Scripting", new lx0::JavascriptPlugin);
         
             DocumentPtr spDocument = spEngine->loadDocument(spEngine->globals().find("file"));
@@ -71,9 +76,9 @@ main (int argc, char** argv)
             spView->addUIBinding( create_uibinding() );
 
             lxvar options;
-            options.insert("title", "LxEngine Raytracer Sample");
-            options.insert("width", 512);
-            options.insert("height", 512);
+            options.insert("title",  "LxEngine Raytracer Sample");
+            options.insert("width",  img.width());
+            options.insert("height", img.height());
             spView->show(options);
 
             exitCode = spEngine->run();
