@@ -42,7 +42,8 @@ Camera::activate(RasterizerGL* pRasterizer)
     glGetIntegerv(GL_VIEWPORT, vp);
     GLfloat aspectRatio = (GLfloat)vp[2]/(GLfloat)vp[3];
 
-    auto projMatrix = glm::perspective(fov, aspectRatio, nearDist, farDist);
+    float fovDegrees = glgeom::degrees(fov).value;
+    auto projMatrix = glm::perspective(fovDegrees, aspectRatio, nearDist, farDist);
     
     pRasterizer->mContext.uniforms.spProjMatrix.reset(new glm::mat4(projMatrix));
     pRasterizer->mContext.uniforms.spViewMatrix.reset(new glm::mat4(viewMatrix));

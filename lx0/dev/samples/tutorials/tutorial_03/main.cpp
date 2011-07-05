@@ -271,7 +271,7 @@ protected:
         glgeom::point3f viewPoint  = glgeom::point3f(0, 0, 0) - glgeom::normalize(viewDirection) * viewDistance; 
         glm::mat4       viewMatrix = glm::lookAt(viewPoint.vec, glm::vec3(0, 0, 0), glm::vec3(0, 0, 1));
             
-        return mspRasterizer->createCamera(60.0f, 0.01f, 1000.0f, viewMatrix);
+        return mspRasterizer->createCamera(glgeom::pi() / 3.0f, 0.01f, 1000.0f, viewMatrix);
     }
 
     void _addMaterial (std::string uniqueName, std::string source, lx0::lxvar parameters)

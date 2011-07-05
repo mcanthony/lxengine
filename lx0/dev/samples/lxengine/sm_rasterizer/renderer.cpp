@@ -266,7 +266,7 @@ protected:
             glgeom::point3f target = spElem->value().find("look_at").convert();
 
             auto view = glm::lookAt(position.vec, target.vec, glm::vec3(0, 0, 1));
-            mspCamera = mspRasterizer->createCamera(60.0f, 0.1f, 2000.0f, view);
+            mspCamera = mspRasterizer->createCamera(glgeom::pi() / 3.0f, 0.1f, 2000.0f, view);
 
             spElem->attachComponent("rasterizer", new CameraComp(mspCamera));
         }

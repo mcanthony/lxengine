@@ -69,7 +69,7 @@ public:
         // Create a camera
         // 
         glm::mat4 viewMatrix = glm::lookAt(glm::vec3(1, -2, 1.5f), glm::vec3(0, 0, 0), glm::vec3(0, 0, 1));
-        mspCamera = mspRasterizer->createCamera(60.0f, 0.01f, 1000.0f, viewMatrix);
+        mspCamera = mspRasterizer->createCamera(glgeom::pi() / 3.0f, 0.01f, 1000.0f, viewMatrix);
 
         //
         // Build the cube geometry

@@ -148,7 +148,7 @@ namespace lx0
                 void            initialize      (void);
                 void            shutdown        (void);
 
-                CameraPtr       createCamera    (float fov, float nearDist, float farDist, glm::mat4& viewMatrix);
+                CameraPtr       createCamera    (glgeom::radians fov, float nearDist, float farDist, glm::mat4& viewMatrix);
                 
                 LightPtr        createLight     (void);
                 LightSetPtr     createLightSet  (void);

@@ -99,7 +99,7 @@ namespace glgeom
                 const auto right   = camera_right_vector(cam);
                 const auto up      = camera_up_vector(cam);
     
-                const auto width   = cam.near_plane * tan(cam.field_of_view);
+                const auto width   = T(2) * cam.near_plane * tan(cam.field_of_view / T(2));
                 const auto height  = width / cam.aspect_ratio;
 
                 frustum3t<T> frustum;

@@ -44,10 +44,11 @@ public:
         : mPosition (1, 1, 1)
         , mTarget   (0, 0, 0)
     {
-        mspCamera = pRasterizer->createCamera(60.0f, 0.01f, 8000.0f, glm::lookAt(mPosition.vec, mTarget.vec, glm::vec3(0, 0, 1)));
+        glgeom::radians fov(glgeom::degrees(60.0f));
+        mspCamera = pRasterizer->createCamera(fov, 0.01f, 8000.0f, glm::lookAt(mPosition.vec, mTarget.vec, glm::vec3(0, 0, 1)));
     }
 
-    virtual void    onValueChange       (ElementPtr spElem, lxvar value)
+    virtual void onValueChange (ElementPtr spElem, lxvar value)
     {
         resetViewDirection(spElem, value);
     }

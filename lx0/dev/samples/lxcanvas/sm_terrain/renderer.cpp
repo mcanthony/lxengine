@@ -212,7 +212,8 @@ Renderer::initialize (lx0::ViewPtr spView)
 
     mRasterizer.initialize();
 
-    spCamera = mRasterizer.createCamera(gCamera.mFov, gCamera.mNear, gCamera.mFar, view_matrix(gCamera));
+    glgeom::radians fov( glgeom::degrees(gCamera.mFov) );
+    spCamera = mRasterizer.createCamera(fov, gCamera.mNear, gCamera.mFar, view_matrix(gCamera));
     spLightSet = mRasterizer.createLightSet();
 } 
 

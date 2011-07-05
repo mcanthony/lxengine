@@ -48,10 +48,10 @@ namespace lx0
 
                 virtual void activate(RasterizerGL* pRasterizer);
                 
-                float   fov;
-                float   nearDist;
-                float   farDist;
-                glm::mat4 viewMatrix;
+                glgeom::radians   fov;
+                float             nearDist;
+                float             farDist;
+                glm::mat4         viewMatrix;
             };
 
         }

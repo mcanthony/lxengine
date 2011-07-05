@@ -108,7 +108,7 @@ void RasterizerGL::shutdown()
 }
 
 CameraPtr       
-RasterizerGL::createCamera (float fov, float nearDist, float farDist, glm::mat4& viewMatrix)
+RasterizerGL::createCamera (glgeom::radians fov, float nearDist, float farDist, glm::mat4& viewMatrix)
 {
     CameraPtr spCamera (new Camera);
     spCamera->fov = fov;
