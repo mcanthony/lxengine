@@ -995,6 +995,36 @@ RasterizerGL::readPixel (int x, int y)
     return id;
 }
 
+void
+RasterizerGL::readBackBuffer(glgeom::image3f& img)
+{
+    // Flip y since window coordinates differ from OpenGL's 0 at the bottom convention 
+    GLint viewport[4];
+	glGetIntegerv(GL_VIEWPORT,viewport);
+	
+    img = glgeom::image3f(viewport[2], viewport[3]);
+
+    // Read the pixel
+    glReadBuffer(GL_BACK);
+    std::vector<GLubyte> pixel(4 * img.width() * img.height());
+    glReadPixels(0, 0, img.width(), img.height(), GL_RGBA, GL_UNSIGNED_BYTE, (void *)&pixel[0]);
+
+    GLubyte* p = &pixel[0];
+    for (int y = 0; y < img.height(); ++y)
+    {
+        for (int x = 0; x < img.width(); ++x)
+        {
+            // Invert the y-coord since the GL indexing is y = 0 = bottom
+            glgeom::color3f color;
+            color.r = (*p++) / 255.0f;
+            color.g = (*p++) / 255.0f;
+            color.b = (*p++) / 255.0f;
+            img.set(x, img.height() - y - 1,  color);
+            p++;
+        }
+    }
+}
+
 //===========================================================================//
 
 void

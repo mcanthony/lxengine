@@ -1,0 +1,63 @@
+<html>
+  <head>
+   <script type="text/javascript" src="../media/scripts/standard/jquery-1.6.2.min.js"></script>
+ <script type="text/javascript"> 
+ 
+    function make_image (image)
+    {
+        var tagImg2 = $("<td/>");
+        var tagLink = $("<a/>");
+        tagLink.attr("href", image);
+    
+        var tagImg = $("<img/>");
+        tagImg.css("height", "100px");
+        tagImg.css("border", "solid 1px black");
+        tagImg.attr("src", image);
+    
+    
+        tagLink.append(tagImg);
+        tagImg2.append(tagLink);
+        
+        return tagImg2;    
+    }
+                                         
+   $(function() {
+   
+    var results = $.getJSON("../../build/results.json", function(data) {
+    
+        var table = $("<table/>");
+        for (var i = 0; i < data.length; ++i)
+        {
+            var test = data[i];
+            
+            var tagDiv = $("<tr/>");
+            
+            var elemTitle = $("<td/>");
+            elemTitle.text(test.name);
+            tagDiv.append(elemTitle);
+            
+            if (test.image.length > 0 )
+            {
+                tagDiv.append( make_image("../../build/" + test.image) );
+                tagDiv.append( make_image("../media/unittest/baseline/" + test.image) );
+                tagDiv.append( make_image("../../build/" + "difference_" + test.image) );
+            }
+            else
+                tagDiv.append( $("<span/>").text("<no image>") );
+            
+            tagDiv.append("<td>stdout<br/>stderr</br>log</td>");
+            
+            
+            table.append(tagDiv);      
+           
+        }  
+        $("#detail").append(table);
+      }); 
+   });
+ </script>  
+  
+  </head>
+  <body>
+    <div id="detail"></div>
+  </body>
+</html>

@@ -488,6 +488,7 @@ public:
         if (!mCamera)
         {
             lx_warn("No camera defined.  Nothing to render.");
+            Engine::acquire()->sendEvent("quit");
             return;
         }
 
@@ -535,8 +536,10 @@ public:
         }));
 
         mUpdateQueue.push_back([&]() { return mRenderTime = lx0::lx_milliseconds(), true; });
-        mUpdateQueue.push_back([=]() { return passQuick->done() ? true : (passQuick->next(), false); });
-        mUpdateQueue.push_back([=]() { return passMedium->done() ? true : (passMedium->next(), false); });
+        if (img.width() > 96 || img.height() > 96)
+            mUpdateQueue.push_back([=]() { return passQuick->done() ? true : (passQuick->next(), false); });
+        if (img.width() > 256 || img.height() > 256)
+            mUpdateQueue.push_back([=]() { return passMedium->done() ? true : (passMedium->next(), false); });
         mUpdateQueue.push_back([=]() { return passHigh->done() ? true : (passHigh->next(), false); });
         mUpdateQueue.push_back([&]() { return std::cout << "Done (" << lx0::lx_milliseconds() - mRenderTime << " ms)." << std::endl, true; });
         

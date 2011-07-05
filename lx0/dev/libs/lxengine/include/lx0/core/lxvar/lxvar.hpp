@@ -136,6 +136,10 @@ namespace lx0
                                     lxvar           (const char* s);
                                     lxvar           (std::string s);
 
+                                    lxvar           (const std::vector<int>& v);
+                                    lxvar           (const std::vector<float>& v);
+                                    lxvar           (const std::vector<std::string>& v);
+
                                     /*template <typename T>
                                     lxvar           (const T& t)
                                     {

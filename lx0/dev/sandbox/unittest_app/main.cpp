@@ -1,0 +1,145 @@
+//===========================================================================//
+/*
+                                   LxEngine
+
+    LICENSE
+
+    Copyright (c) 2011 athile@athile.net (http://www.athile.net)
+
+    Permission is hereby granted, free of charge, to any person obtaining a 
+    copy of this software and associated documentation files (the "Software"), 
+    to deal in the Software without restriction, including without limitation 
+    the rights to use, copy, modify, merge, publish, distribute, sublicense, 
+    and/or sell copies of the Software, and to permit persons to whom the 
+    Software is furnished to do so, subject to the following conditions:
+
+    The above copyright notice and this permission notice shall be included in
+    all copies or substantial portions of the Software.
+
+    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+    AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+    LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
+    FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS 
+    IN THE SOFTWARE.
+*/
+//===========================================================================//
+
+//===========================================================================//
+//   H E A D E R S
+//===========================================================================//
+
+// Standard headers
+#include <iostream>
+#include <string>
+#include <sstream>
+#include <fstream>
+#include <boost/format.hpp>
+#include <boost/algorithm/string.hpp>
+#include <boost/filesystem.hpp>
+
+// Lx0 headers
+#include <lx0/lxengine.hpp>
+
+using namespace lx0;
+
+//===========================================================================//
+
+class Processor : public Document::Component
+{
+public:
+    virtual void onAttached (DocumentPtr spDocument) 
+    {
+        auto vMats = spDocument->getElementsByTagName("Material");
+        /*for (auto it = vMats.begin(); it != vMats.end(); ++it)
+            _processMaterial(*it);*/
+    }
+
+protected:
+
+};
+
+
+//===========================================================================//
+//   E N T R Y - P O I N T
+//===========================================================================//
+
+static void runTest (lxvar& results, std::string testname, std::string filename)
+{
+    std::string imageName = boost::str( boost::format("%1%.png") % testname );
+    std::string cmd = boost::str( boost::format(
+        "Release\\sm_raytracer.exe --file=\"%1%\" --width=256 --height=256 --output=%2% 2>stderr.txt 1>stdout.txt")
+        % filename
+        % imageName
+        );
+
+    std::cout << "\n";
+    std::cout << "=============================================================================\n";
+    std::cout << cmd << "\n";
+    std::cout << "=============================================================================\n";
+
+    system(cmd.c_str());
+    
+    std::string baseline = (boost::format("media2\\unittest\\baseline\\%1%")% imageName).str();
+    std::string compareCmd = (boost::format("compare \"%1%\" \"%2%\" -compose Src \"difference_%1%") % imageName % baseline).str();
+    system((boost::format("erase \"difference_%1%\"") % imageName).str().c_str());
+    system(compareCmd.c_str());
+
+    std::vector<std::string> stdoutLines;
+    std::vector<std::string> stderrLines;
+    boost::split(stdoutLines, lx0::string_from_file("stdout.txt"), boost::is_any_of("\n"));
+    boost::split(stderrLines, lx0::string_from_file("stderr.txt"), boost::is_any_of("\n"));
+
+    lxvar test;
+    test["name"]   = testname;
+    test["image"]  = imageName;
+    test["stdout"] = stdoutLines;
+    test["stderr"] = stderrLines;
+    results.push(test);
+}
+
+static void runTestSet()
+{
+    lxvar results;
+
+    std::vector<std::string> files;
+    lx0::find_files_in_directory(files, "media2/appdata/sm_raytracer", "xml");
+
+    for (auto it = files.begin(); it != files.end(); ++it)
+    {
+        boost::filesystem::path path(*it);
+        std::string filename = path.string();
+        std::string testName = path.filename().substr(0, path.filename().length() - path.extension().length());
+
+        runTest(results, testName, filename);
+    }
+
+    std::ofstream file;
+    file.open("results.json");
+    file << lx0::format_json(results) << std::endl;
+    file.close();
+}
+
+int 
+main (int argc, char** argv)
+{
+    int exitCode = -1;
+    try
+    {
+        EnginePtr spEngine = Engine::acquire();
+        {
+            auto spDocument = spEngine->loadDocument("media2/appdata/sb_unittest_app/unittests.xml");
+            spDocument->attachComponent("processor", new Processor);
+
+            runTestSet();
+        }
+        spEngine->shutdown();
+    }
+    catch (std::exception& e)
+    {
+        lx_fatal("Fatal: unhandled exception.\nException: %s\n", e.what());
+    }
+
+    return exitCode;
+}

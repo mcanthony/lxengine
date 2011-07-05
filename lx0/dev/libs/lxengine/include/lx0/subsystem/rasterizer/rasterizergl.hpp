@@ -28,6 +28,8 @@
 
 #pragma once
 
+#include <glgeom/prototype/image.hpp>
+
 namespace lx0 
 {
     namespace subsystem
@@ -187,7 +189,9 @@ namespace lx0
 
                 void            rasterizeList   (RenderAlgorithm& algorithm, std::vector<std::shared_ptr<Item>>& list);
                 void            rasterizeItem   (GlobalPass& pass, std::shared_ptr<Item> spItem);
+                
                 unsigned int    readPixel       (int x, int y);
+                void            readBackBuffer  (glgeom::image3f& img);
 
                 struct Context
                 {

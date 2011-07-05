@@ -99,6 +99,20 @@ public:
         _onElementAddRemove(spElem, true); 
     }
 
+    virtual void handleEvent (std::string evt, lxvar params)
+    {
+        if (evt == "screenshot")
+        {
+            std::string filename = params.is_defined() ? params.as<std::string>() : "screenshot.png";
+
+            glgeom::image3f img;
+            render();
+            mspRasterizer->readBackBuffer(img);
+
+            lx0::save_png(img, filename.c_str());
+        }
+    }
+
 protected:
     MaterialPtr _findMaterial(ElementPtr spElem)
     {
@@ -298,6 +312,12 @@ public:
         // _sendDocEventOnKeyDown(KC_R, "redraw", lxvar());
     }
 
+    virtual void onKeyDown (lx0::ViewPtr spView, int keyCode) 
+    { 
+        if (keyCode == lx0::KC_P)
+            spView->sendEvent("screenshot");
+    }
+
     virtual     void        updateFrame     (ViewPtr spView,
                                              const KeyboardState& keyboard)
     {
@@ -439,7 +459,6 @@ public:
 
             spElem->value(val);
         }
-
     }
 
     lx0::Document* mpDocument;

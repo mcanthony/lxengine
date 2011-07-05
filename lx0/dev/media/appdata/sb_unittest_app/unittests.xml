@@ -1,0 +1,20 @@
+<Document>
+  <TestSet>
+    <Common>
+      {
+        exec : "Release\sm_raytracer.exe",
+        args : 
+        {
+          "width" : "256",
+          "height" : "256",
+          "output" : "result.png",
+        }
+      }
+    </Common>
+    <Image>
+      {
+      args : { "file" : "media2\appdata\sm_raytracer\basic_single_cone.xml" }
+      }
+    </Image>
+  </TestSet>
+</Document>

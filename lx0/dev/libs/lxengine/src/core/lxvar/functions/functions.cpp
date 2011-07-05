@@ -176,20 +176,26 @@ namespace lx0 { namespace core {  namespace lxvar_ns {
     _format_json_imp (std::stringstream& ss, lxvar& v, std::string indent)
     {
         if (v.is_int())
-            ss << v.as<int>();
+            ss << indent << v.as<int>();
         else if (v.is_float())
-            ss << v.as<float>();
+            ss << indent << v.as<float>();
         else if (v.is_string())
-            ss << "\"" << v.as<std::string>() << "\"";
+            ss << indent << "\"" << v.as<std::string>() << "\"";
         else if (v.is_array())
         {
+            bool bInline = v.size() <= 4;
+
             ss << " [ ";
+            if (!bInline) ss << "\n";
+
             int i = 0;
             for (auto it = v.begin(); it != v.end(); ++it)
             {
-                _format_json_imp(ss, *it, indent + "    ");
+                _format_json_imp(ss, *it, bInline ? "" : indent + "    ");
                 if (++i < v.size())
                     ss << ", ";
+                if (!bInline)
+                    ss << "\n";
             }
             ss << " ] ";
         }
@@ -200,7 +206,8 @@ namespace lx0 { namespace core {  namespace lxvar_ns {
             for (auto it = v.begin(); it != v.end(); ++it)
             {
                 ss << "    " << indent << "\"" << it.key() << "\" : ";
-                _format_json_imp(ss, *it, indent + "    ");
+                bool bInline = (*it).is_int() || (*it).is_float() || (*it).is_bool() || (*it).is_string();
+                _format_json_imp(ss, *it, bInline ? "" : indent + "    ");
                 if (++i < v.size())
                     ss << ",";
                 ss << "\n";

@@ -71,37 +71,15 @@ ShaderBuilder::ShaderBuilder()
     _loadBuiltinNodes();
 }
 
-static
-void 
-find_files_in_directory (std::vector<std::string>& files, const char* path, const char* extension)
-{
-    using namespace boost::filesystem;
-
-    std::string ext = boost::str( boost::format(".%1%") % extension );
-
-    for (directory_iterator dit(path); dit != directory_iterator(); ++dit)
-    {
-        if (is_regular_file(dit->status()))
-        {
-            std::string filename = dit->path().filename();
-            if (boost::ends_with(filename, ext))
-            {
-                std::string path = dit->path().string();
-                files.push_back(path);
-            }
-        }
-    }
-}
-
 void
 ShaderBuilder::_loadBuiltinNodes ()
 {
     try
     {
         std::vector<std::string> nodes;
-        find_files_in_directory(nodes, "media2/shaders/shaderbuilder/shading",  "node");
-        find_files_in_directory(nodes, "media2/shaders/shaderbuilder/patterns", "node");
-        find_files_in_directory(nodes, "media2/shaders/shaderbuilder/mappers",  "node");
+        lx0::find_files_in_directory(nodes, "media2/shaders/shaderbuilder/shading",  "node");
+        lx0::find_files_in_directory(nodes, "media2/shaders/shaderbuilder/patterns", "node");
+        lx0::find_files_in_directory(nodes, "media2/shaders/shaderbuilder/mappers",  "node");
 
         for (auto it = nodes.begin(); it != nodes.end(); ++it)
             loadNode(*it);

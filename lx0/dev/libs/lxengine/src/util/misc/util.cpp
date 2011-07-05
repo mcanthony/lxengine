@@ -32,6 +32,10 @@
 #include <sstream>
 #include <ctime>
 
+#include <boost/format.hpp>
+#include <boost/algorithm/string.hpp>
+#include <boost/filesystem.hpp>
+
 #include <lx0/lxengine.hpp>
 
 using namespace lx0::core;
@@ -57,6 +61,27 @@ namespace lx0 { namespace util { namespace misc {
         {
             fclose(fp);
             return true;
+        }
+    }
+
+    void 
+    find_files_in_directory (std::vector<std::string>& files, const char* path, const char* extension)
+    {
+        using namespace boost::filesystem;
+
+        std::string ext = boost::str( boost::format(".%1%") % extension );
+
+        for (directory_iterator dit(path); dit != directory_iterator(); ++dit)
+        {
+            if (is_regular_file(dit->status()))
+            {
+                std::string filename = dit->path().filename();
+                if (boost::ends_with(filename, ext))
+                {
+                    std::string path = dit->path().string();
+                    files.push_back(path);
+                }
+            }
         }
     }
 

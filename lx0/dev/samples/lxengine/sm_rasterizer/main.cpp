@@ -31,7 +31,6 @@
 //===========================================================================//
 
 #include <iostream>
-#include <boost/format.hpp>
 #include <lx0/lxengine.hpp>
 #include <lx0/subsystem/javascript.hpp>
 #include "renderer.hpp"
@@ -50,9 +49,10 @@ main (int argc, char** argv)
     {
         EnginePtr spEngine = Engine::acquire();
         
-        spEngine->globals().add("file",           lx0::eAcceptsString,  lx0::validate_filename());
-        spEngine->globals().add("view_width",     lx0::eAcceptsInt,     lx0::validate_int_range(32, 4096), 512);
-        spEngine->globals().add("view_height",    lx0::eAcceptsInt,     lx0::validate_int_range(32, 4096), 512);
+        spEngine->globals().add("file",      lx0::eAcceptsString,  lx0::validate_filename());
+        spEngine->globals().add("output",    lx0::eAcceptsString,  lx0::validate_string());
+        spEngine->globals().add("width",     lx0::eAcceptsInt,     lx0::validate_int_range(32, 4096), 512);
+        spEngine->globals().add("height",    lx0::eAcceptsInt,     lx0::validate_int_range(32, 4096), 512);
 
         if (spEngine->parseCommandLine(argc, argv, "file"))
         {
@@ -65,10 +65,17 @@ main (int argc, char** argv)
             spView->addUIBinding( create_uibinding() );
 
             lxvar options;
-            options.insert("title", "LxEngine Rasterizer Sample");
-            options.insert("width",     spEngine->globals().find("view_width"));
-            options.insert("height",    spEngine->globals().find("view_height"));
+            options.insert("title",  "LxEngine Rasterizer Sample");
+            options.insert("width",  spEngine->globals().find("width"));
+            options.insert("height", spEngine->globals().find("height"));
             spView->show(options);
+
+            lxvar outputVar = spEngine->globals().find("output");
+            if (outputVar.is_defined())
+            {
+                spView->sendEvent("screenshot", outputVar);
+                spEngine->sendEvent("quit");
+            }
 
             exitCode = spEngine->run();
         }
@@ -76,13 +83,14 @@ main (int argc, char** argv)
     }
     catch (lx0::error_exception& e)
     {
-        std::cout << "Error: " << e.details().c_str() << std::endl
+        std::cerr << "Error: " << e.details().c_str() << std::endl
                     << "Code: " << e.type() << std::endl
                     << std::endl;
     }
     catch (std::exception& e)
     {
-        lx_fatal("Fatal: unhandled std::exception.\nException: %s\n", e.what());
+        std::cerr << "Fatal: unhandled std::exception.\n"
+            << "Exception: " << e.what();
     }
 
     return exitCode;

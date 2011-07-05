@@ -1,11 +1,11 @@
 <Document>
     <Library>
-        <Camera id="camera">
+      <Camera id="camera">
         {
-            position : [ .5, 1.75, 1.25 ],
-            look_at  : [ .5, .5, .5 ]
+          position : [ 1.25, 1.25, 1.25 ],
+          look_at  : [ .5, .5, .5 ]
         }
-        </Camera>
+      </Camera>
       <View id="view">
         {
             camera : "camera"
@@ -64,27 +64,9 @@
             </Plane>
         </Group>
         <Group id="geometry">
-          <Sphere>
+          <Cube material="white">
             {
-            center : [ .5, .5, .5],
-            radius : .6
-            }
-          </Sphere>
-          <Sphere>
-            {
-            center : [ 1.5, .5, .5],
-            radius : .6
-            }
-          </Sphere>
-          <Cube material="red">
-            {
-            scale : [ 1, .5, 1 ],
-            center : [ 1.5, .5, .5 ]
-            }
-          </Cube>
-          <Cube material="blue">
-            {
-            scale : [ .5, 1, 1 ],
+            scale : [ 1, 1, 1 ],
             center : [ .5, .5, .5 ]
             }
           </Cube>

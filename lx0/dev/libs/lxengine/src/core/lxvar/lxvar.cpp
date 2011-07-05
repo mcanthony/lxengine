@@ -220,6 +220,27 @@ namespace lx0 { namespace core { namespace lxvar_ns {
     {   
     }
 
+    lxvar::lxvar (const std::vector<int>& v)
+        : mValue (create_lxarray())
+    {
+        for (auto it = v.begin(); it != v.end(); ++it)
+            mValue->push(*it);
+    }
+
+    lxvar::lxvar (const std::vector<float>& v)
+        : mValue (create_lxarray())
+    {
+        for (auto it = v.begin(); it != v.end(); ++it)
+            mValue->push(*it);
+    }
+    
+    lxvar::lxvar (const std::vector<std::string>& v)
+        : mValue (create_lxarray())
+    {
+        for (auto it = v.begin(); it != v.end(); ++it)
+            mValue->push(*it);
+    }
+
     lxvar
     lxvar::undefined (void)
     {

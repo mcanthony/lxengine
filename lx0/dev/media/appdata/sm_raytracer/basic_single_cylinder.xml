@@ -43,14 +43,8 @@
       <Group id="light_group">
         <Light>
           {
-            position : [ 2, 2.2, 4 ],
-            color    : [ 1, 1, 1 ]
-          }
-        </Light>
-        <Light>
-          {
-          position : [ 3, 3, .25 ],
-          color    : [ .6, .6, .2 ]
+          position : [ 2, 3, 4 ],
+          color    : [ 1, 1, 1 ]
           }
         </Light>
       </Group>
@@ -75,11 +69,11 @@
             </Plane>
         </Group>
         <Group id="geometry">
-          <Cylinder material="custom">
+          <Cylinder material="white">
             {
-              base : [ 0, .75, .75 ],
+              base : [ .5, .5, 0 ],
               radius : .5,
-              axis : [ 1, 0, 0 ]
+              axis : [ 0, 0, 1 ]
             }
           </Cylinder>
         </Group>

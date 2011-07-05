@@ -38,6 +38,8 @@ namespace lx0 { namespace util { namespace misc {
 
             bool                lx_file_exists          (std::string filename);
             bool                lx_file_is_open         (std::string filename);
+            void                find_files_in_directory (std::vector<std::string>& files, const char* path, const char* extension);
+
             std::string         string_from_file        (std::string filename);
             lx0::lxvar          lxvar_from_file         (std::string filename);
 
