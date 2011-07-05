@@ -1,6 +1,6 @@
 <html>
   <head>
-   <script type="text/javascript" src="../media/scripts/standard/jquery-1.6.2.min.js"></script>
+   <script type="text/javascript" src="media2/scripts/standard/jquery-1.6.2.min.js"></script>
  <script type="text/javascript"> 
  
     function make_image (image)
@@ -20,40 +20,45 @@
         
         return tagImg2;    
     }
-                                         
-   $(function() {
-   
-    var results = $.getJSON("../../build/results.json", function(data) {
-    
-        var table = $("<table/>");
-        for (var i = 0; i < data.length; ++i)
-        {
-            var test = data[i];
-            
-            var tagDiv = $("<tr/>");
-            
-            var elemTitle = $("<td/>");
-            elemTitle.text(test.name);
-            tagDiv.append(elemTitle);
-            
-            if (test.image.length > 0 )
-            {
-                tagDiv.append( make_image("../../build/" + test.image) );
-                tagDiv.append( make_image("../media/unittest/baseline/" + test.image) );
-                tagDiv.append( make_image("../../build/" + "difference_" + test.image) );
-            }
-            else
-                tagDiv.append( $("<span/>").text("<no image>") );
-            
-            tagDiv.append("<td>stdout<br/>stderr</br>log</td>");
-            
-            
-            table.append(tagDiv);      
-           
-        }  
-        $("#detail").append(table);
+
+    $(function () {
+      $(document).ajaxError(function (e, xhr, settings, exception) {
+        alert('error in: ' + settings.url + ' \n' + 'error:\n' + xhr.responseText);
       }); 
-   });
+
+      $("#detail").append($("<h1/>").text("Results"));
+
+      var results = $.getJSON("results.json", function (data) {
+
+        $("#detail").append($("<h2/>").text(data.date));
+
+        var table = $("<table/>");
+        for (var i = 0; i < data.tests.length; ++i) {
+          var test = data.tests[i];
+
+          var tagDiv = $("<tr/>");
+
+          var elemTitle = $("<td/>");
+          elemTitle.text(test.name);
+          tagDiv.append(elemTitle);
+
+          if (test.image.length > 0) {
+            tagDiv.append(make_image(test.image));
+            tagDiv.append(make_image(test.baseline));
+            tagDiv.append(make_image(test.diff));
+          }
+          else
+            tagDiv.append($("<span/>").text("<no image>"));
+
+          tagDiv.append("<td>stdout<br/>stderr</br>log</td>");
+
+
+          table.append(tagDiv);
+
+        }
+        $("#detail").append(table);
+      });
+    });
  </script>  
   
   </head>

@@ -1,6 +1,6 @@
 <Document>
     <Library>
-      <IncludeDocument src="media2/appdata/sm_raytracer/library_basic_materials.xml" />
+      <IncludeDocument src="media2/appshared/materials/basic.xml" />
       <Camera id="camera">
         {
             position : [ 4.25, 5.25, 3.25 ],

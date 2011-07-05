@@ -172,6 +172,29 @@ namespace lx0 { namespace core {  namespace lxvar_ns {
         return buffer;
     }         
 
+    static std::string
+    _escape_string (const std::string& s)
+    {
+        std::string t;
+        t.reserve(s.size());
+        for (size_t i = 0; i < s.length(); ++i)
+        {
+            switch (s[i])
+            {
+            case '\"':      t += "\\\"";    break;
+            case '\\':      t += "\\\\";    break;
+            case '/':       t += "\\/";     break;
+            case '\b':      t += "\\b";     break;
+            case '\f':      t += "\\f";     break;
+            case '\n':      t += "\\n";     break;
+            case '\r':      t += "\\r";     break;
+            case '\t':      t += "\\t";     break;
+            default:        t += s[i];      break;
+            }
+        }
+        return t;
+    }
+
     static void
     _format_json_imp (std::stringstream& ss, lxvar& v, std::string indent)
     {
@@ -180,7 +203,7 @@ namespace lx0 { namespace core {  namespace lxvar_ns {
         else if (v.is_float())
             ss << indent << v.as<float>();
         else if (v.is_string())
-            ss << indent << "\"" << v.as<std::string>() << "\"";
+            ss << indent << "\"" << _escape_string(v) << "\"";
         else if (v.is_array())
         {
             bool bInline = v.size() <= 4;

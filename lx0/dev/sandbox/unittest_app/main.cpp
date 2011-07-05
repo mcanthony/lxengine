@@ -65,13 +65,17 @@ protected:
 //   E N T R Y - P O I N T
 //===========================================================================//
 
-static void runTest (lxvar& results, std::string testname, std::string filename)
+static void runImageTest (lxvar& results, std::string execName, std::string groupName, std::string testname, std::string filename)
 {
-    std::string imageName = boost::str( boost::format("%1%.png") % testname );
+    std::string imageName = boost::str( boost::format("unittest_results\\%1%\\%2%.png") % groupName % testname );
+    std::string diffName = boost::str( boost::format("unittest_results\\%1%\\%2%.diff.png") % groupName % testname );
+    std::string baseline =  boost::str( boost::format("media2\\unittest_baselines\\%1%\\%2%.png") % groupName % testname);
+
     std::string cmd = boost::str( boost::format(
-        "Release\\sm_raytracer.exe --file=\"%1%\" --width=256 --height=256 --output=%2% 2>stderr.txt 1>stdout.txt")
+        "%3% --file=\"%1%\" --width=256 --height=256 --output=%2% 2>stderr.txt 1>stdout.txt")
         % filename
         % imageName
+        % execName
         );
 
     std::cout << "\n";
@@ -81,9 +85,8 @@ static void runTest (lxvar& results, std::string testname, std::string filename)
 
     system(cmd.c_str());
     
-    std::string baseline = (boost::format("media2\\unittest\\baseline\\%1%")% imageName).str();
-    std::string compareCmd = (boost::format("compare \"%1%\" \"%2%\" -compose Src \"difference_%1%") % imageName % baseline).str();
-    system((boost::format("erase \"difference_%1%\"") % imageName).str().c_str());
+    
+    std::string compareCmd = (boost::format("compare \"%1%\" \"%2%\" -compose Src \"%3%") % imageName % baseline % diffName).str();
     system(compareCmd.c_str());
 
     std::vector<std::string> stdoutLines;
@@ -92,16 +95,29 @@ static void runTest (lxvar& results, std::string testname, std::string filename)
     boost::split(stderrLines, lx0::string_from_file("stderr.txt"), boost::is_any_of("\n"));
 
     lxvar test;
-    test["name"]   = testname;
-    test["image"]  = imageName;
-    test["stdout"] = stdoutLines;
-    test["stderr"] = stderrLines;
+    test["name"]     = testname;
+    test["image"]    = imageName;
+    test["baseline"] = baseline;
+    test["diff"]     = diffName;
+    test["stdout"]   = stdoutLines;
+    test["stderr"]   = stderrLines;
     results.push(test);
+}
+
+static void runTest (lxvar& results, std::string testname, std::string filename)
+{
+    runImageTest(results, "Release\\sm_raytracer.exe", "raytracer", testname, filename);
+    runImageTest(results, "Release\\sm_rasterizer.exe", "rasterizer", testname, filename);
 }
 
 static void runTestSet()
 {
+    system("mkdir unittest_results");
+    system("mkdir unittest_results\\raytracer");
+    system("mkdir unittest_results\\rasterizer");
+
     lxvar results;
+    results["date"] = lx0::lx_ctime();
 
     std::vector<std::string> files;
     lx0::find_files_in_directory(files, "media2/appdata/sm_raytracer", "xml");
@@ -112,13 +128,16 @@ static void runTestSet()
         std::string filename = path.string();
         std::string testName = path.filename().substr(0, path.filename().length() - path.extension().length());
 
-        runTest(results, testName, filename);
+        runTest(results["tests"], testName, filename);
     }
 
     std::ofstream file;
     file.open("results.json");
     file << lx0::format_json(results) << std::endl;
     file.close();
+
+    system("copy ..\\dev\\tools\\view_results.html .");
+    system("view_results.html");
 }
 
 int 
