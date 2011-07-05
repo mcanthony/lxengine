@@ -1,6 +1,7 @@
 <Document>
     <Library>
-        <Camera id="camera">
+      <IncludeDocument src="media2/appdata/sm_raytracer/library_basic_materials.xml" />  
+      <Camera id="camera">
         {
             position : [ 9, 9, 6 ],
             look_at  : [ 5, 5, .5 ]

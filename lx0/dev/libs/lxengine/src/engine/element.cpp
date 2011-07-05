@@ -161,6 +161,31 @@ namespace lx0 { namespace engine { namespace dom_ns {
         return ElementPtr(pClone);
     }
 
+    ElementPtr
+    Element::cloneDeep (void) const
+    {
+        Element* pClone = new Element;
+        ElementPtr spClone(pClone);
+        
+        pClone->mTagName = mTagName;
+        pClone->mpDocument = nullptr;
+        pClone->mspParent = nullptr;    // Create a detached clone
+        
+        for (auto it = mAttributes.begin(); it != mAttributes.end(); ++it)
+            pClone->mAttributes.insert( std::make_pair(it->first, it->second.clone()) );
+        
+        pClone->mValue = mValue.clone();
+        
+        for (auto it = mChildren.begin(); it != mChildren.end(); ++it)
+        {
+            auto spChild = (*it)->cloneDeep();
+            spChild->mspParent = spClone;
+            pClone->mChildren.push_back(spChild);
+        }
+        
+        return spClone;
+    }
+
     void
     Element::attr(std::string name, lxvar value)
     {

@@ -66,6 +66,8 @@ public:
 
         mspLightSet = mspRasterizer->createLightSet();
 
+        lx0::processIncludeDocument(spView->document());
+
         spView->document()->iterateElements([&](ElementPtr spElem) -> bool { 
             _onElementAddRemove(spElem, true); 
             return false; 

@@ -1,6 +1,7 @@
 <Document>
     <Library>
-        <Camera id="camera">
+      <IncludeDocument src="media2/appdata/sm_raytracer/library_basic_materials.xml" />
+      <Camera id="camera">
         {
             position : [ 2.45, 1.15, 2.1 ],
             look_at  : [ 1.15, .95, .5 ]
@@ -12,21 +13,6 @@
         }
       </View>
       <Group id="material_group">
-        <Material id="red">
-          {
-          diffuse : [ 1, 0, 0],
-          }
-        </Material>
-        <Material id="green">
-          {
-          diffuse : [ 0, 1, 0]
-          }
-        </Material>
-        <Material id="blue">
-          {
-          diffuse : [ 0, 0, 1]
-          }
-        </Material>
         <Material id="mat1">
           {
           diffuse : [ 1, 1, 0]

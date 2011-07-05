@@ -27,56 +27,23 @@
 */
 //===========================================================================//
 
-#ifndef LX0_LXENGINE_HPP
-#define LX0_LXENGINE_HPP
+#pragma once
 
-//
-// Standard headers
-//
-#define NOMINMAX
-#include <deque>
-#include <vector>
-#include <map>
-#include <string>
-#include <memory> 
-#include <functional>
+//===========================================================================//
+//   H E A D E R S   &   D E C L A R A T I O N S 
+//===========================================================================//
 
-// 
-// Support libraries
-//
-#include <glm/glm.hpp>
-#include <glgeom/glgeom.hpp>
+// Lx headers
+#include <lx0/_detail/forward_decls.hpp>
 
-//
-// Doxygen documentation
-//
-#include "lxengine_dox.hpp"
-
-//
-// LxEngine headers
-//
-#include <lx0/core/init/version.hpp>
-#include <lx0/core/init/init.hpp>
-#include <lx0/core/log/log.hpp>
-#include <lx0/core/slot/slot.hpp>
-#include <lx0/core/lxvar/lxvar.hpp>
-
-#include <lx0/util/misc/util.hpp>
-
-#include <lx0/engine/engine.hpp>
-#include <lx0/engine/document.hpp>
-#include <lx0/engine/element.hpp>
-#include <lx0/engine/view.hpp>
-#include <lx0/engine/controller.hpp>
-#include <lx0/engine/transaction.hpp>
-
-#include <lx0/elements/core.hpp>
-
-#include <lx0/util/math/noise.hpp>
-#include <lx0/util/math/smooth_functions.hpp>
-#include <lx0/util/misc/util.hpp>
-
-using namespace lx0::core::log_ns;
-
-#endif
-
+namespace lx0
+{
+    namespace elements
+    {
+        namespace core_ns
+        {
+            void processIncludeDocument (DocumentPtr spMaster);
+        }
+    }
+    using namespace lx0::elements::core_ns;
+}

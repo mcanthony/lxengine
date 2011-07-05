@@ -411,7 +411,7 @@ namespace lx0 { namespace engine { namespace dom_ns {
             when the Engine is released?
      */
     void
-    Engine::closeDocument (DocumentPtr spDocument)
+    Engine::closeDocument (DocumentPtr& spDocument)
     {
         // Find the document and remove it from the internal list
         auto it = mDocuments.begin();
@@ -426,6 +426,10 @@ namespace lx0 { namespace engine { namespace dom_ns {
             mDocuments.erase(it);
         else
             lx_error("Document being closed but not in Engine Document list! Was this Document already closed?");
+
+        // Free the incoming pointer
+        auto count = spDocument.use_count();
+        spDocument.reset();
     }
 
     DocumentPtr

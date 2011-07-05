@@ -461,6 +461,8 @@ public:
 
     virtual void onAttached (DocumentPtr spDocument) 
     {
+        lx0::processIncludeDocument(spDocument);
+
         spDocument->iterateElements([&](ElementPtr spElem) -> bool { 
             _onElementAddRemove(spElem, true); 
             return false; 

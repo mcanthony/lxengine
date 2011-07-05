@@ -146,7 +146,7 @@ namespace lx0
 
                 DocumentPtr         createDocument      (void);
                 DocumentPtr         loadDocument        (std::string filename);
-                void                closeDocument       (DocumentPtr spDocument);
+                void                closeDocument       (DocumentPtr& spDocument);
         
                 const std::vector<DocumentPtr>& documents (void) { return mDocuments; }
 

@@ -27,56 +27,34 @@
 */
 //===========================================================================//
 
-#ifndef LX0_LXENGINE_HPP
-#define LX0_LXENGINE_HPP
+//===========================================================================//
+//   H E A D E R S   &   D E C L A R A T I O N S 
+//===========================================================================//
 
-//
-// Standard headers
-//
-#define NOMINMAX
-#include <deque>
-#include <vector>
-#include <map>
-#include <string>
-#include <memory> 
-#include <functional>
-
-// 
-// Support libraries
-//
-#include <glm/glm.hpp>
-#include <glgeom/glgeom.hpp>
-
-//
-// Doxygen documentation
-//
-#include "lxengine_dox.hpp"
-
-//
-// LxEngine headers
-//
-#include <lx0/core/init/version.hpp>
-#include <lx0/core/init/init.hpp>
-#include <lx0/core/log/log.hpp>
-#include <lx0/core/slot/slot.hpp>
-#include <lx0/core/lxvar/lxvar.hpp>
-
-#include <lx0/util/misc/util.hpp>
-
-#include <lx0/engine/engine.hpp>
-#include <lx0/engine/document.hpp>
-#include <lx0/engine/element.hpp>
-#include <lx0/engine/view.hpp>
-#include <lx0/engine/controller.hpp>
-#include <lx0/engine/transaction.hpp>
-
+#include <lx0/lxengine.hpp>
 #include <lx0/elements/core.hpp>
 
-#include <lx0/util/math/noise.hpp>
-#include <lx0/util/math/smooth_functions.hpp>
-#include <lx0/util/misc/util.hpp>
+using namespace lx0;
 
-using namespace lx0::core::log_ns;
+namespace lec = lx0::elements::core_ns;
 
-#endif
+void lec::processIncludeDocument (DocumentPtr spDocument)
+{
+    EnginePtr spEngine = Engine::acquire();
+
+    auto includes = spDocument->getElementsByTagName("IncludeDocument");
+    for (auto it = includes.begin(); it != includes.end(); ++it)
+    {
+        std::string filename = (*it)->attr("src").as<std::string>();
+        auto spParent = (*it)->parent();
+
+        auto spDoc2 = spEngine->loadDocument(filename);
+        spDoc2->iterateElements([&](ElementPtr spElem) -> bool {
+            spParent->append( spElem->cloneDeep() );
+            return false;
+        });
+        spEngine->closeDocument(spDoc2);
+    }
+}
+
 

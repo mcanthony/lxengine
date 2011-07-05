@@ -1,5 +1,6 @@
 <Document>
     <Library>
+      <IncludeDocument src="media2/appdata/sm_raytracer/library_basic_materials.xml" />
         <Camera id="camera">
         {
             position : [ 1.25, 1.25, 1.25 ],
@@ -16,21 +17,6 @@
           diffuse : [ 1, 1, 1 ],
           specular : [ 1, 1, 1 ],
           specular_n : 512
-        }
-      </Material>
-      <Material id="red">
-        {
-          diffuse : [ 1, 0, 0],
-        }
-      </Material>
-      <Material id="green">
-        {
-          diffuse : [ 0, 1, 0]
-        }
-      </Material>
-      <Material id="blue">
-        {
-          diffuse : [ 0, 0, 1]
         }
       </Material>
     </Library>
