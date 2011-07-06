@@ -35,6 +35,8 @@
 #include <lx0/subsystem/shaderbuilder.hpp>
 #include <lx0/util/misc.hpp>
 
+#include "lambdabuilder.hpp"
+
 using namespace lx0::subsystem::shaderbuilder_ns;
 using namespace lx0;
 
@@ -68,21 +70,47 @@ namespace {
 
 ShaderBuilder::ShaderBuilder()
 {
-    _loadBuiltinNodes();
+    mpLambdaBuilder = new detail::LambdaBuilder(mNodes);
+
+    _loadBuiltinNodes();    
+}
+
+ShaderBuilder::~ShaderBuilder()
+{
+    // Not using a std::unique_ptr<> so that lambdabuilder.hpp doesn't have to be included
+    // outside this file.
+    delete mpLambdaBuilder;
 }
 
 void
 ShaderBuilder::_loadBuiltinNodes ()
 {
+    // This method should only be called once
+    lx_assert(mNodeDirectories.empty());
+
+    mNodeDirectories.push_back("media2/shaders/shaderbuilder/shading");
+    mNodeDirectories.push_back("media2/shaders/shaderbuilder/patterns");
+    mNodeDirectories.push_back("media2/shaders/shaderbuilder/mappers");
+
+    _refreshNodes();
+}
+
+void 
+ShaderBuilder::_refreshNodes (void)
+{
     try
     {
-        std::vector<std::string> nodes;
-        lx0::find_files_in_directory(nodes, "media2/shaders/shaderbuilder/shading",  "node");
-        lx0::find_files_in_directory(nodes, "media2/shaders/shaderbuilder/patterns", "node");
-        lx0::find_files_in_directory(nodes, "media2/shaders/shaderbuilder/mappers",  "node");
+        std::vector<std::string> nodeFiles = mNodeFilenames;
 
-        for (auto it = nodes.begin(); it != nodes.end(); ++it)
-            loadNode(*it);
+        for (auto it = mNodeDirectories.begin(); it != mNodeDirectories.end(); ++it)
+            lx0::find_files_in_directory(nodeFiles, it->c_str(),  "node");
+
+        lx0::find_files_in_directory(nodeFiles, "media2/shaders/shaderbuilder/shading",  "node");
+        lx0::find_files_in_directory(nodeFiles, "media2/shaders/shaderbuilder/patterns", "node");
+        lx0::find_files_in_directory(nodeFiles, "media2/shaders/shaderbuilder/mappers",  "node");
+
+        for (auto it = nodeFiles.begin(); it != nodeFiles.end(); ++it)
+            _loadNodeImp(*it);
     }
     catch (boost::system::system_error&)
     {
@@ -90,7 +118,14 @@ ShaderBuilder::_loadBuiltinNodes ()
     }
 }
 
+
 void ShaderBuilder::loadNode (std::string filename)
+{
+    mNodeFilenames.push_back(filename);
+    _loadNodeImp(filename);
+}
+
+void ShaderBuilder::_loadNodeImp (std::string filename)
 {
     namespace bfs = boost::filesystem;
 
@@ -114,7 +149,7 @@ void ShaderBuilder::loadNode (std::string filename)
         mNodes.insert(std::make_pair(id, value));
 }
 
-void ShaderBuilder::buildShader (Material& material, lxvar graph)
+void ShaderBuilder::buildShaderGLSL (Material& material, lxvar graph)
 {
     Shader          shader;
     lxvar           parameters;
@@ -410,5 +445,34 @@ std::string ShaderBuilder::_formatSource (Shader& shader)
     ss  << "    out_color = n0_ret;\n"
         << "}\n";
     return ss.str();
+}
+
+void 
+ShaderBuilder::x_buildShaderNative (lxvar graph)
+{
+    /*
+        The idea for this method is as follows:
+
+        - Construct C/C++ source using a means similar to the GLSL shader generation
+        - Call an external compiler to generate a DLL
+        - Hook into generated native code and call that
+
+        For performance, *all* shaders should end up in the same DLL.  Meaning:
+        - Don't compile the DLL until a shader is used (then compile all known shaders)
+        - On shader calls, quickly check if the DLL needs to be recompiled due a shader(s) being added
+     */
+    lx_error("Not yet implemented!");
+}
+
+/*!
+    Return a dynamically created lambda function for the shader graph.
+    
+    Warning: lamdba functions have a noticable amount of overhead.  This approach
+    is flexible, but not very efficient given the inner loop usage of shaders.
+ */
+ShaderBuilder::ShadeFunction 
+ShaderBuilder::buildShaderLambda (lxvar graph)
+{
+    return mpLambdaBuilder->buildShader(graph);
 }
 

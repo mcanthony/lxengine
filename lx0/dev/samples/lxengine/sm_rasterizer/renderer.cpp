@@ -31,6 +31,7 @@
 #include <lx0/util/blendload.hpp>
 #include <lx0/prototype/misc.hpp>
 #include <glgeom/prototype/camera.hpp>
+#include <lx0/subsystem/shaderbuilder.hpp>
 #include "renderer.hpp"
 
 using namespace lx0;
@@ -142,6 +143,17 @@ protected:
             std::string name = query(spElem->attr("id"), "");
             auto spMat = mspRasterizer->createPhongMaterial(phong);
 
+            mMaterials.insert(std::make_pair(name, spMat));
+        }
+        else if (tag == "Material2")
+        {
+            lx0::lxvar  graph = spElem->value().find("graph");
+            
+            lx0::ShaderBuilder::Material material;
+            mShaderBuilder.buildShaderGLSL(material, graph);
+
+            std::string name = query(spElem->attr("id"), "");
+            auto spMat = mspRasterizer->createMaterial(material.uniqueName, material.source, material.parameters);
             mMaterials.insert(std::make_pair(name, spMat));
         }
         else if (tag == "Sphere")
@@ -293,6 +305,7 @@ protected:
 
 
     std::shared_ptr<RasterizerGL> mspRasterizer;
+    lx0::ShaderBuilder            mShaderBuilder;
 
     lx0::CameraPtr       mspCamera;       // Camera shared by all items
     lx0::LightSetPtr     mspLightSet;

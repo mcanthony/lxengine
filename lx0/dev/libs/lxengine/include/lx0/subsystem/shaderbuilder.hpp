@@ -43,6 +43,10 @@ namespace lx0
          */
         namespace shaderbuilder_ns
         {
+            namespace detail
+            {
+                class LambdaBuilder;
+            }
             
             //===========================================================================//
             //!
@@ -57,10 +61,22 @@ namespace lx0
                     std::string     source;
                     lx0::lxvar      parameters;
                 };
-                            ShaderBuilder();
 
-                void        loadNode        (std::string path);
-                void        buildShader     (Material& material, lxvar graph);
+                struct ShaderContext
+                {
+                    glm::vec3   fragVertexOc;
+                };
+                typedef std::function<glm::vec3 (const ShaderContext&)> ShadeFunction;
+
+                                ShaderBuilder();
+                                ~ShaderBuilder();
+
+                void            loadNode            (std::string path);
+                void            buildShaderGLSL     (Material& material, lxvar graph);
+
+                ShadeFunction   buildShaderLambda   (lxvar graph);
+
+                void            x_buildShaderNative (lxvar graph);
 
             protected:
                 struct Declaration
@@ -93,7 +109,12 @@ namespace lx0
                     std::vector<std::string>    mArgumentStack;
                 };
 
+                typedef std::map<std::string, lxvar> NodeMap;
+
                 void            _loadBuiltinNodes   (void);
+                void            _refreshNodes       (void);
+
+                void            _loadNodeImp        (std::string filename);
 
                 int             _processNode        (Shader& shader, Context& context, lxvar& parameters, lxvar desc, std::string requiredOutputType);
                 void            _processUniforms    (Shader& shader, Context& context, lxvar& graph);
@@ -102,7 +123,11 @@ namespace lx0
                 std::string     _valueToStr         (lxvar type, lxvar value);
                 std::string     _formatSource       (Shader& shader);
 
-                std::map<std::string, lxvar> mNodes;
+                std::vector<std::string>    mNodeDirectories;
+                std::vector<std::string>    mNodeFilenames;
+                NodeMap                     mNodes;
+
+                detail::LambdaBuilder*      mpLambdaBuilder;
             };
 
         }

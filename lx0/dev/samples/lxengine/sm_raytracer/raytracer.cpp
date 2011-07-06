@@ -34,6 +34,7 @@
 
 // Lx0 headers
 #include <lx0/lxengine.hpp>
+#include <lx0/subsystem/shaderbuilder.hpp>
 #include <lx0/util/misc/lxvar_convert.hpp>
 #include <lx0/prototype/misc.hpp>
 
@@ -93,6 +94,61 @@ public:
     virtual     color3f     shadeLight     (const point_light_f& light, const vector3f& viewDirection, const intersection3f& intersection) const { return color3f(0, 0, 0); }
 };
 
+static glm::vec2   spherical(const glm::vec3& positionOc, glm::vec2 scale)
+{
+    // Convert to spherical coordinates.  Note in this definition                       
+    // theta runs along the z axis and phi is in the xy plane.                          
+    float r = glm::length(positionOc);                                                     
+    float phi = atan2(positionOc.y, positionOc.x);                                   
+    float theta = acos(positionOc.z / r);                                             
+                                                                                            
+    // Normalize to [0-1) range                                                         
+    glm::vec2 uv;                                                              
+    uv.x = (phi + glgeom::pi().value) / (2 * glgeom::pi().value);                                                       
+    uv.y = theta / glgeom::pi().value;                                                                  
+    return uv * scale;      
+}
+
+static glm::vec3   checker (
+    const glm::vec3& color0, 
+    const glm::vec3& color1, 
+    const glm::vec2& uv) 
+{
+    glm::vec2 t = glm::abs( glm::fract(uv) );                                                        
+    glm::ivec2 s = glm::ivec2(glm::trunc(glm::vec2(2,2) * t));                                                    
+                                                                                        
+    if ((s.x + s.y) % 2 == 0)                                                         
+        return color0;                                                              
+    else                                                                            
+        return color1;    
+}
+
+
+class GenericMaterial 
+    : public Material
+{
+public:
+    GenericMaterial(ShaderBuilder::ShadeFunction shader)
+    {
+        mShader = shader;
+    }
+
+    virtual     color3f     shadeAmbient   (const color3f& ambient, const intersection3f& intersection) const 
+    { 
+        ShaderBuilder::ShaderContext ctx;
+        ctx.fragVertexOc = intersection.positionOc.vec;
+        return glgeom::color3f( mShader(ctx) );
+    }
+
+    virtual     color3f     shadeLight     (const point_light_f& light, const vector3f& viewDirection, const intersection3f& intersection) const 
+    { 
+        return color3f(0, 0, 0); 
+    }
+
+protected:
+    ShaderBuilder::ShadeFunction mShader;
+};
+
 class PhongMaterial
     : public Material
     , public material_phong_f           // Multiple inheritance of classes without virtual methods is ok
@@ -137,7 +193,7 @@ public:
         //     vector pointing in the opposite direction of L.
         // N = surface normal at the point of intersection
         //
-        const vector3f  L     (normalize(light.position - intersection.position));
+        const vector3f  L     (normalize(light.position - intersection.positionWc));
         const vector3f& N     (intersection.normal);
         const float     NdotL ( dot(N, L) );
                 
@@ -424,6 +480,16 @@ public:
             spElem->attachComponent("raytrace", pMat);
         }));
 
+        mHandlers.insert(std::make_pair("Material2", [&](ElementPtr spElem) {
+            lx0::lxvar  graph = spElem->value().find("graph");
+            //auto pMat = new GenericMaterial(graph);
+            
+            auto shader = mShaderBuilder.buildShaderLambda(graph);
+            auto pMat = new GenericMaterial(shader);
+
+            spElem->attachComponent("raytrace", pMat);
+        }));
+
         mHandlers.insert(std::make_pair("NormalMaterial", [&](ElementPtr spElem) {
             auto pMat = new NormalMaterial;
             spElem->attachComponent("raytrace", pMat);
@@ -565,10 +631,10 @@ public:
     {
         if (mspEnvironment->shadows)
         {
-            const vector3f L     (light.position - intersection.position);
+            const vector3f L     (light.position - intersection.positionWc);
             const float    distL (length(L));
             const vector3f Ln    (L / distL);
-            const ray3f    ray   (intersection.position + 1e-3f * Ln, Ln);
+            const ray3f    ray   (intersection.positionWc + 1e-3f * Ln, Ln);
                 
             for (auto it = mGeometry.begin(); it != mGeometry.end(); ++it)
             {
@@ -615,7 +681,7 @@ public:
                 }
             }
             const intersection3f& intersection = *pIntersection;
-            const vector3f viewDirection = glgeom::normalize(intersection.position - mCamera->camera.position);
+            const vector3f viewDirection = glgeom::normalize(intersection.positionWc - mCamera->camera.position);
             const Material* pMat ( spGeom->mspMaterial ? spGeom->mspMaterial.get() : mspContext->mspMaterial.get());
 
             c = pMat->shadeAmbient(env.ambient, intersection);
@@ -646,6 +712,8 @@ protected:
     std::map<std::string, std::function<void (ElementPtr spElem)>> mHandlers;
 
     std::deque<std::function<bool (void)>>  mUpdateQueue;
+
+    lx0::ShaderBuilder                      mShaderBuilder;
 
     unsigned int                            mRenderTime;
     std::shared_ptr<Context>                mspContext;

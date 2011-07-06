@@ -71,7 +71,7 @@ protected:
         lxvar desc = spElem->value().find("graph");
 
         ShaderBuilder::Material material;
-        mBuilder.buildShader(material, desc);
+        mBuilder.buildShaderGLSL(material, desc);
 
         std::string shaderFile = boost::str(boost::format("lxshader_%1%.frag") % material.uniqueName);
         std::string paramFile = boost::str(boost::format("lxparams_%1%.params") % name);

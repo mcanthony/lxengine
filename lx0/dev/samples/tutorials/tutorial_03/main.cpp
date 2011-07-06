@@ -240,7 +240,7 @@ protected:
         // (i.e. unique id, shader source code, and set of parameters)
         //
         lx0::ShaderBuilder::Material material;
-        mShaderBuilder.buildShader(material, graph);
+        mShaderBuilder.buildShaderGLSL(material, graph);
 
         //
         // Pass on the generated material data which the rasterizer
