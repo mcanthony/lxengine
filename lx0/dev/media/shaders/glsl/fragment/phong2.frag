@@ -12,6 +12,8 @@ uniform vec3    unifMaterialDiffuse;
 uniform vec3    unifMaterialSpecular;
 uniform float   unifMaterialSpecularEx;
 
+uniform mat4    unifViewMatrix;
+
 in vec3         fragVertexOc;
 in vec3         fragVertexEc;
 in vec3         fragNormalOc;
@@ -24,24 +26,23 @@ vec3 phong(vec3 ambient, vec3 diffuse, vec3 specular, float specularEx)
     // the vertex position in eye coordinates are equivalent.
     //
     vec3 N = normalize(fragNormalEc);
-    vec3 V = normalize(fragVertexEc);
-    vec3 R = reflect(V, N);
+    vec3 V = -normalize(fragVertexEc);
        
     vec3 c = ambient;                        // ambient term
     
     for (int i = 0; i < unifLightCount; ++i)
     {
-        vec3 lightPosEc = unifLightPosition[i].xyz;
-
-        vec3 L = lightPosEc - fragVertexEc;
+        vec3 L = unifLightPosition[i].xyz - fragVertexEc;
         float d = length(L);
         L = normalize(L);
     
         float atten = 1;    // / (unifLightAtten[i].x + unifLightAtten[i].y * d  + unifLightAtten[i].x * d * d);
         vec3 lc = unifLightColor[i].rgb * atten;
     
-        c += diffuse * lc * max(dot(N,L), 0.0);                   // diffuse term
-        c += lc * specular * pow(max(dot(R,L),0.0), specularEx);  // specular term
+        c += lc * diffuse * max(dot(N,L), 0.0);                   // diffuse term
+        
+        vec3 H = normalize(L + V);
+        c += lc * specular * pow(max(dot(N,H),0.0), specularEx);  // specular term
     }
                
     return c;

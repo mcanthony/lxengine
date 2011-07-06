@@ -92,8 +92,13 @@ Material::activate (RasterizerGL* pRasterizer, GlobalPass& pass)
                     std::vector<point3f> positions;
                     positions.reserve(lightCount);
 
+                    const auto& viewMatrix = (*pRasterizer->mContext.uniforms.spViewMatrix);
                     for (int i = 0; i < lightCount; ++i)
-                        positions.push_back( spLightSet->mLights[i]->position );
+                    {
+                        const auto& posWc = spLightSet->mLights[i]->position.vec;
+                        glm::vec4 posEc = glm::vec4(posWc, 1.0f) * viewMatrix;
+                        positions.push_back( point3f(posEc.x, posEc.y, posEc.z) );
+                    }
 
                     glUniform3fv(idx, lightCount, &positions[0].x);
                 }

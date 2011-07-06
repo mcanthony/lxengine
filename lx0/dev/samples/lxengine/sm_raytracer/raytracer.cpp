@@ -90,7 +90,7 @@ class Material : public Element::Component
 public:
     virtual     bool        allowShadow    (void) const { return true; }
     virtual     color3f     shadeAmbient   (const color3f& ambient, const intersection3f& intersection) const { return color3f(0, 0, 0); }
-    virtual     color3f     shadeLight     (const point_light_f& light, const intersection3f& intersection) const { return color3f(0, 0, 0); }
+    virtual     color3f     shadeLight     (const point_light_f& light, const vector3f& viewDirection, const intersection3f& intersection) const { return color3f(0, 0, 0); }
 };
 
 class PhongMaterial
@@ -99,7 +99,10 @@ class PhongMaterial
 {
 public:
     virtual     color3f     shadeAmbient   (const color3f& ambient, const intersection3f& intersection) const { return shade_ambient(ambient, *this); }
-    virtual     color3f     shadeLight     (const point_light_f& light, const intersection3f& intersection) const { return glgeom::shade_light(light, *this, intersection); }
+    virtual     color3f     shadeLight     (const point_light_f& light, const vector3f& viewDirection, const intersection3f& intersection) const 
+    { 
+        return glgeom::shade_light(light, *this, -viewDirection, intersection); 
+    }
 };
 
 class NormalMaterial
@@ -110,7 +113,7 @@ public:
     { 
         return color3f( abs(intersection.normal).vec );
     }
-    virtual     color3f     shadeLight     (const point_light_f& light, const intersection3f& intersection) const 
+    virtual     color3f     shadeLight     (const point_light_f& light, const vector3f& viewDirection, const intersection3f& intersection) const 
     { 
         return color3f(0, 0, 0); 
     }
@@ -127,7 +130,7 @@ public:
     { 
         return color3f(0, 0, 0);
     }
-    virtual     color3f     shadeLight     (const point_light_f& light, const intersection3f& intersection) const 
+    virtual     color3f     shadeLight     (const point_light_f& light, const vector3f& viewDirection, const intersection3f& intersection) const 
     { 
         // 
         // L = unit vector from light to intersection point; the "incidence vector" I is the
@@ -612,13 +615,14 @@ public:
                 }
             }
             const intersection3f& intersection = *pIntersection;
+            const vector3f viewDirection = glgeom::normalize(intersection.position - mCamera->camera.position);
             const Material* pMat ( spGeom->mspMaterial ? spGeom->mspMaterial.get() : mspContext->mspMaterial.get());
 
             c = pMat->shadeAmbient(env.ambient, intersection);
             for (auto it = mLights.begin(); it != mLights.end(); ++it)
             {
                 if (!pMat->allowShadow() || !_shadowTerm(*(*it), intersection))
-                    c += pMat->shadeLight(*(*it), intersection);
+                    c += pMat->shadeLight(*(*it), ray.direction, intersection);
             }
         }
         else

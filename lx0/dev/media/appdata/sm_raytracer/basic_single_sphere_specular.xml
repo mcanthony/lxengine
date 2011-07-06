@@ -1,0 +1,61 @@
+<Document>
+    <Library>
+      <IncludeDocument src="media2/appshared/materials/basic.xml" />
+        <Camera id="camera">
+        {
+            position : [ 1.25, 1.25, 1.25 ],
+            look_at  : [ .5, .5, .5 ]
+        }
+        </Camera>
+      <View id="view">
+        {
+            camera : "camera"
+        }
+      </View>
+      <Material id="test">
+        {
+          diffuse  : [ .25, .25, 1 ],
+          specular : [ .5, 1, 0 ],
+          specular_n : 128,
+        }
+      </Material>
+    </Library>
+    <Scene view="view">
+      <Group id="light_group">
+        <Light>
+          {
+            position : [ 3, 2, 3 ],
+            color    : [ 1, 1, 1 ]
+          }
+        </Light>
+      </Group>
+        <Group id="plane_group">
+            <Plane id="x_axis_plane" material="red">
+            {
+                normal : [ 1, 0, 0 ],
+                d      : 0
+            }
+            </Plane>
+            <Plane id="y_axis_plane" material="blue">
+            {
+                normal : [ 0, 1, 0 ],
+                d      : 0
+            }
+            </Plane>
+            <Plane id="z_axis_plane" material="green">
+            {
+                normal : [ 0, 0, 1 ],
+                d      : 0
+            }
+            </Plane>
+        </Group>
+        <Group id="sphere_group">
+            <Sphere material="test">
+            {
+                center : [ .5, .5, .5 ],
+                radius : .5
+            }
+            </Sphere>
+        </Group>
+    </Scene>
+</Document>
