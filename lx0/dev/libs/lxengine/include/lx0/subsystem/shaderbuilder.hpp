@@ -45,7 +45,9 @@ namespace lx0
         {
             namespace detail
             {
+                class GLSLBuilder;
                 class LambdaBuilder;
+                class NativeBuilder;
             }
             
             //===========================================================================//
@@ -68,47 +70,17 @@ namespace lx0
                 };
                 typedef std::function<glm::vec3 (const ShaderContext&)> ShadeFunction;
 
+
                                 ShaderBuilder();
                                 ~ShaderBuilder();
 
                 void            loadNode            (std::string path);
+
                 void            buildShaderGLSL     (Material& material, lxvar graph);
-
                 ShadeFunction   buildShaderLambda   (lxvar graph);
-
                 void            x_buildShaderNative (lxvar graph);
 
             protected:
-                struct Declaration
-                {
-                    std::string     type;
-                    std::string     count;
-                    std::string     name;
-                };
-
-                struct Shader
-                {
-                    std::string                 mName;
-                    std::string                 mVersion;
-                    std::vector<std::string>    mConstants;
-                    std::vector<std::string>    mShaderInputs;
-                    std::vector<std::string>    mShaderOutputs;
-                    std::vector<std::string>    mUniforms;
-                    std::vector<Declaration>    mNodeUniforms;
-                    std::vector<std::string>    mFunctions;
-                    std::vector<std::string>    mSource;
-                };
-
-                struct Context
-                {
-                    Context() : mNodeCount (0) {}
-
-                    int                         mNodeCount;
-                    std::set<std::string>       mFunctionsBuilt;
-                    std::set<std::string>       mNodeUniforms;
-                    std::vector<std::string>    mArgumentStack;
-                };
-
                 typedef std::map<std::string, lxvar> NodeMap;
 
                 void            _loadBuiltinNodes   (void);
@@ -116,18 +88,13 @@ namespace lx0
 
                 void            _loadNodeImp        (std::string filename);
 
-                int             _processNode        (Shader& shader, Context& context, lxvar& parameters, lxvar desc, std::string requiredOutputType);
-                void            _processUniforms    (Shader& shader, Context& context, lxvar& graph);
-
-
-                std::string     _valueToStr         (lxvar type, lxvar value);
-                std::string     _formatSource       (Shader& shader);
+                detail::GLSLBuilder*        mpGLSLBuilder;
+                detail::LambdaBuilder*      mpLambdaBuilder;
+                detail::NativeBuilder*      mpNativeBuilder;
 
                 std::vector<std::string>    mNodeDirectories;
                 std::vector<std::string>    mNodeFilenames;
                 NodeMap                     mNodes;
-
-                detail::LambdaBuilder*      mpLambdaBuilder;
             };
 
         }
