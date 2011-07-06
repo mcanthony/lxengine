@@ -55,6 +55,11 @@ namespace lx0
                     ShadeFunction   buildShader (lx0::lxvar graph);
 
                 protected:
+                    FunctionFloat   _buildFloat (lxvar param);
+                    FunctionVec2    _buildVec2  (lxvar param);
+                    FunctionVec3    _buildVec3  (lxvar param);
+
+
                     NodeMap& mNodes;
                 };
             }

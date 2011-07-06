@@ -66,7 +66,14 @@ namespace lx0
 
                 struct ShaderContext
                 {
-                    glm::vec3   fragVertexOc;
+                    int                     unifLightCount;
+                    std::vector<glm::vec3>  unifLightPosition;
+                    std::vector<glm::vec3>  unifLightColor;
+
+                    glm::vec3               fragVertexOc;
+                    glm::vec3               fragNormalOc;
+                    glm::vec3               fragVertexEc;
+                    glm::vec3               fragNormalEc;
                 };
                 typedef std::function<glm::vec3 (const ShaderContext&)> ShadeFunction;
 

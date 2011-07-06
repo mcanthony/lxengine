@@ -44,6 +44,8 @@
 #include <glgeom/prototype/material_phong.hpp>
 #include <glgeom/prototype/image.hpp>
 
+#include <glm/gtc/matrix_inverse.hpp>
+
 #include "raytracer.hpp"
 #include "glgeom_ext.hpp"
 
@@ -67,7 +69,9 @@ color3t<T> shade_ambient (const color3t<T>& env_ambient,
 class Camera : public Element::Component
 {
 public:
-    camera3f camera;
+    camera3f    camera;
+    glm::mat4   viewMatrix;
+    glm::mat4   projMatrix;
 };
 
 //===========================================================================//
@@ -90,7 +94,7 @@ class Material : public Element::Component
 {
 public:
     virtual     bool        allowShadow    (void) const { return true; }
-    virtual     color3f     shadeAmbient   (const color3f& ambient, const intersection3f& intersection) const { return color3f(0, 0, 0); }
+    virtual     color3f     shadeAmbient   (ShaderBuilder::ShaderContext& ctx, const color3f& ambient, const intersection3f& intersection) const { return color3f(0, 0, 0); }
     virtual     color3f     shadeLight     (const point_light_f& light, const vector3f& viewDirection, const intersection3f& intersection) const { return color3f(0, 0, 0); }
 };
 
@@ -133,10 +137,8 @@ public:
         mShader = shader;
     }
 
-    virtual     color3f     shadeAmbient   (const color3f& ambient, const intersection3f& intersection) const 
+    virtual     color3f     shadeAmbient   (ShaderBuilder::ShaderContext& ctx, const color3f& ambient, const intersection3f& intersection) const 
     { 
-        ShaderBuilder::ShaderContext ctx;
-        ctx.fragVertexOc = intersection.positionOc.vec;
         return glgeom::color3f( mShader(ctx) );
     }
 
@@ -154,7 +156,7 @@ class PhongMaterial
     , public material_phong_f           // Multiple inheritance of classes without virtual methods is ok
 {
 public:
-    virtual     color3f     shadeAmbient   (const color3f& ambient, const intersection3f& intersection) const { return shade_ambient(ambient, *this); }
+    virtual     color3f     shadeAmbient   (ShaderBuilder::ShaderContext& ctx, const color3f& ambient, const intersection3f& intersection) const { return shade_ambient(ambient, *this); }
     virtual     color3f     shadeLight     (const point_light_f& light, const vector3f& viewDirection, const intersection3f& intersection) const 
     { 
         return glgeom::shade_light(light, *this, -viewDirection, intersection); 
@@ -165,7 +167,7 @@ class NormalMaterial
     : public Material
 {
 public:
-    virtual     color3f     shadeAmbient   (const color3f& ambient, const intersection3f& intersection) const 
+    virtual     color3f     shadeAmbient   (ShaderBuilder::ShaderContext& ctx, const color3f& ambient, const intersection3f& intersection) const 
     { 
         return color3f( abs(intersection.normal).vec );
     }
@@ -182,7 +184,7 @@ class LightGradientMaterial
 public:
     virtual     bool        allowShadow    (void) const { return false; }
 
-    virtual     color3f     shadeAmbient   (const color3f& ambient, const intersection3f& intersection) const 
+    virtual     color3f     shadeAmbient   (ShaderBuilder::ShaderContext& ctx, const color3f& ambient, const intersection3f& intersection) const 
     { 
         return color3f(0, 0, 0);
     }
@@ -518,7 +520,11 @@ public:
                 pCam->camera.near_plane = sqrtf(2);
                 pCam->camera.position = spElem->value().find("position").convert();
                 point3f target = spElem->value().find("look_at").convert();
+                
                 pCam->camera.orientation = orientation_from_to_up(pCam->camera.position, target, vector3f(0, 0, 1));
+                pCam->viewMatrix = glm::lookAt(pCam->camera.position.vec, target.vec, glm::vec3(0, 0, 1));
+                pCam->projMatrix = glm::perspective(60.0f, 1.0f, 0.1f, 1000.0f);
+
                 mCamera = std::shared_ptr<::Camera>(pCam);
             }
         }));
@@ -684,7 +690,26 @@ public:
             const vector3f viewDirection = glgeom::normalize(intersection.positionWc - mCamera->camera.position);
             const Material* pMat ( spGeom->mspMaterial ? spGeom->mspMaterial.get() : mspContext->mspMaterial.get());
 
-            c = pMat->shadeAmbient(env.ambient, intersection);
+
+            glm::mat3 normalMatrix = glm::mat3(glm::gtx::matrix_inverse::inverseTranspose(mCamera->viewMatrix));
+
+            ShaderBuilder::ShaderContext ctx;
+            ctx.unifLightCount = 0;
+            for (auto it = mLights.begin(); it != mLights.end(); ++it)
+            {
+                if (!pMat->allowShadow() || !_shadowTerm(*(*it), intersection))
+                {
+                    ctx.unifLightPosition.push_back( (*it)->position.vec );
+                    ctx.unifLightColor.push_back( (*it)->color.vec );
+                    ctx.unifLightCount ++;
+                }
+            }
+            ctx.fragVertexOc = intersection.positionOc.vec;
+            ctx.fragNormalOc = intersection.normal.vec;
+            ctx.fragNormalEc = normalMatrix * ctx.fragNormalOc;
+            ctx.fragVertexEc = glm::vec3(mCamera->viewMatrix * glm::vec4(ctx.fragVertexOc, 1));
+
+            c = pMat->shadeAmbient(ctx, env.ambient, intersection);
             for (auto it = mLights.begin(); it != mLights.end(); ++it)
             {
                 if (!pMat->allowShadow() || !_shadowTerm(*(*it), intersection))
