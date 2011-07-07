@@ -12,13 +12,32 @@
             camera : "camera"
         }
       </View>
-      <Material id="white">
+      <Material2 id="white">
         {
-          diffuse : [ 1, 1, 1 ],
-          specular : [ 1, 1, 1 ],
-          specular_n : 512
+        graph : {
+        _type : "phong",
+        diffuse : [ .75, .5, .5 ],
+        specular : [ 1, 1, .5 ],
+        specularEx : 512
         }
-      </Material>
+        }
+      </Material2>
+      <Material2 id="checker">
+        {
+          graph : {
+            _type : "phong",
+            diffuse : {
+              _type : "checker",
+              uv : {
+                _type : "spherical",
+                scale : [ 8, 8 ],
+              },
+            },
+            specular : [ 2, 1.7, 0 ],
+            specularEx : 512
+          }
+        }
+      </Material2>      
     </Library>
     <Scene view="view">
       <Group id="light_group">
@@ -30,7 +49,7 @@
         </Light>
         <Light>
           {
-          position : [ .1, 2, .1 ],
+          position : [ 1.1, 2, .1 ],
           color    : [ 0, 0, .5 ]
           }
         </Light>
@@ -75,14 +94,14 @@
             }
           </Sphere>
 
-          <Sphere >
+          <Sphere>
             {
             center : [ 0.25, 1.25, .25 ],
             radius : .25
             }
           </Sphere>
 
-          <Sphere material="white">
+          <Sphere material="checker">
             {
             center : [ 0.75, 1.25, .25 ],
             radius : .25

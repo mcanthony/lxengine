@@ -132,20 +132,7 @@ protected:
 
         const std::string tag = spElem->tagName();
 
-        if (tag == "Material")
-        {
-            glgeom::material_phong_f phong;
-            phong.emmissive = spElem->value().find("emmissive").convert(color3f(0, 0, 0));
-            phong.diffuse = spElem->value().find("diffuse").convert(color3f(1, 1, 1));
-            phong.specular = spElem->value().find("specular").convert(color3f(0, 0, 0));
-            phong.specular_n = spElem->value().find("specular_n").convert(8.0f);
-
-            std::string name = query(spElem->attr("id"), "");
-            auto spMat = mspRasterizer->createPhongMaterial(phong);
-
-            mMaterials.insert(std::make_pair(name, spMat));
-        }
-        else if (tag == "Material2")
+        if (tag == "Material2")
         {
             lx0::lxvar  graph = spElem->value().find("graph");
             

@@ -3,7 +3,7 @@
       <IncludeDocument src="media2/appshared/materials/basic.xml" />
         <Camera id="camera">
         {
-            position : [  2, .5, .5 ],
+            position : [  1.5, 1.5, 1.5 ],
             look_at  : [ .5, .5, .5 ]
         }
         </Camera>
@@ -21,8 +21,13 @@
         {
           graph : {
             _type : "phong",
-            diffuse : [1, 1, 1],
-            specular : [0, 0, 0],
+            diffuse : {
+              _type : "checker",
+              uv : {
+                _type : "cube",
+                scale : [ 8, 8 ],
+              },
+            }
           },
         }
       </Material2>
@@ -31,22 +36,10 @@
       <Group id="light_group">
         <Light>
           {
-            position : [ 1.5, .5, .5 ],
-            color    : [ 1, 0, 0 ]
+            position : [ 1.5, 1.2, 2 ],
+            color    : [ 1.1, 1, 1 ]
           }
-        </Light>
-        <Light>
-          {
-            position : [ .5, 1.5, .5 ],
-            color    : [ 0, 1, 0 ]
-          }
-        </Light>
-        <Light>
-          {
-            position : [ .5, .5, 1.5 ],
-            color    : [ 0, 0, 1 ]
-          }
-        </Light>        
+        </Light>    
       </Group>
         <Group id="plane_group">
             <Plane id="x_axis_plane" material="red">
@@ -55,13 +48,13 @@
                 d      : 0
             }
             </Plane>
-            <Plane id="y_axis_plane" material="blue">
+            <Plane id="y_axis_plane" material="green">
             {
                 normal : [ 0, 1, 0 ],
                 d      : 0
             }
             </Plane>
-            <Plane id="z_axis_plane" material="green">
+            <Plane id="z_axis_plane" material="blue">
             {
                 normal : [ 0, 0, 1 ],
                 d      : 0

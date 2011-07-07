@@ -66,6 +66,8 @@ namespace lx0
 
                 struct ShaderContext
                 {
+                    glm::mat4               unifViewMatrix;
+
                     int                     unifLightCount;
                     std::vector<glm::vec3>  unifLightPosition;
                     std::vector<glm::vec3>  unifLightColor;

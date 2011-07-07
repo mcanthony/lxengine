@@ -12,13 +12,16 @@
             camera : "camera"
         }
       </View>
-      <Material id="test">
+      <Material2 id="test">
         {
+        graph : {
+        _type : "phong",
           diffuse  : [ .25, .25, 1 ],
           specular : [ .5, 1, 0 ],
           specular_n : 128,
         }
-      </Material>
+        }
+      </Material2>
     </Library>
     <Scene view="view">
       <Group id="light_group">

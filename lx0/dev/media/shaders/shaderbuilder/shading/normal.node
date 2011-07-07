@@ -1,0 +1,14 @@
+{
+    output : "vec4",
+    uniforms    : 
+    {
+        unifViewMatrix      : [ "mat4" ],
+    },
+    input  : {
+    },
+    source: [
+        "vec4 normalWc = vec4(fragNormalEc, 1.0) * unifViewMatrix;",    	
+        "vec3 N = abs(normalize(normalWc.xyz));",    	
+        "return vec4(N.x, N.y, N.z, 1.0);",    	
+    ],
+}

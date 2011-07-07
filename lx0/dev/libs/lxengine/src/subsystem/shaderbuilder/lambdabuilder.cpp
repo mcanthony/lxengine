@@ -27,6 +27,7 @@
 //===========================================================================//
 
 #include <glgeom/glgeom.hpp>
+#include <glgeom/ext/mappers.hpp>
 #include <lx0/core/log/log.hpp>
 #include "lambdabuilder.hpp"
 
@@ -40,44 +41,7 @@ using namespace lx0::subsystem::shaderbuilder_ns::detail;
 // (move these to glgeom once complete!)
 //===========================================================================//
 
-static glm::vec2 mapper_spherical(const glm::vec3& positionOc, glm::vec2 scale)
-{
-    // Convert to spherical coordinates.  Note in this definition                       
-    // theta runs along the z axis and phi is in the xy plane.                          
-    float r = glm::length(positionOc);                                                     
-    float phi = atan2(positionOc.y, positionOc.x);                                   
-    float theta = acos(positionOc.z / r);                                             
-                                                                                            
-    // Normalize to [0-1) range                                                         
-    glm::vec2 uv;                                                              
-    uv.x = (phi + glgeom::pi().value) / (2 * glgeom::pi().value);                                                       
-    uv.y = theta / glgeom::pi().value;                                                                  
-    return uv * scale;      
-}
-
-static glm::vec2 mapper_cube(const glm::vec3& fragVertexOc, const glm::vec3& fragNormalOc, glm::vec2 scale)
-{
-    using namespace glm;
-
-    // The cube projection is based off a theoretical unit cube                         
-    // centered at 0,0,0.  However, the face mapping should range                       
-    // from [0,1), not [-.5,.5).  Offset accordingly.                                   
-    //                                                                                  
-    vec2 offset = vec2(0.5, 0.5);                                                       
-                                                                                        
-    vec3 q = abs( normalize(fragNormalOc) );                                            
-    vec2 uv;                                                                            
-    if (q.z > q.y && q.z > q.x)                                                         
-        uv = glm::vec2(fragVertexOc.x, fragVertexOc.y) + offset;                                                  
-    else if (q.y > q.z && q.y > q.x)                                                    
-        uv = glm::vec2(fragVertexOc.x, fragVertexOc.z) + offset;                                                  
-    else                                                                                
-        uv = glm::vec2(fragVertexOc.y, fragVertexOc.z) + offset;                                                  
-                                                                                        
-    return scale * uv;                                                                  
-}
-
-static glm::vec3 shade_checker (
+static glm::vec3 pattern_checker (
     const glm::vec3& color0, 
     const glm::vec3& color1, 
     const glm::vec2& uv) 
@@ -89,6 +53,36 @@ static glm::vec3 shade_checker (
         return color0;                                                              
     else                                                                            
         return color1;    
+}
+
+static glm::vec3 pattern_wave (
+    const glm::vec3& color0, 
+    const glm::vec3& color1,
+    float            width,
+    const glm::vec2& uv) 
+{
+    using namespace glm;
+
+    vec2 t = abs(fract(uv));                                                            
+                                                                                        
+    t.x += width * sin(2.0f * t.y * glgeom::pi().value);                                                   
+    t.x = fabs(.5f - t.x);                                                                
+                                                                                        
+    if (t.x < width)                                                                    
+       return color0;                                                                   
+    else                                                                                
+       return color1;                                                                   
+}
+
+static glm::vec3 shade_normal (
+    const glm::mat4& unifViewMatrix,
+    const glm::vec3& fragNormalEc)
+{
+    using namespace glm;
+
+    vec4 normalWc = vec4(fragNormalEc, 1.0) * unifViewMatrix;	
+    vec3 N = abs(normalize(vec3(normalWc)));    	
+    return N;
 }
 
 static glm::vec3 shade_phong (
@@ -174,14 +168,14 @@ LambdaBuilder::_buildVec2 (lxvar param)
         {
             auto scale = _buildVec2(_value(param, node, "scale"));
             return [scale](const Context& i) { 
-                return mapper_spherical(i.fragVertexOc, scale(i)); 
+                return glgeom::mapper_spherical(i.fragVertexOc, scale(i)); 
             };
         }
         else if (type == "cube")
         {
             auto scale = _buildVec2(_value(param, node, "scale"));
             return [scale](const Context& i) { 
-                return mapper_cube(i.fragVertexOc, i.fragNormalOc, scale(i)); 
+                return glgeom::mapper_cube(i.fragVertexOc, i.fragNormalOc, scale(i)); 
             };
         }
         else
@@ -213,7 +207,23 @@ LambdaBuilder::_buildVec3 (lxvar param)
             auto color1 = _buildVec3(_value(param, node, "color1"));
             auto uv = _buildVec2(_value(param, node, "uv"));
             return [color0, color1, uv] (const Context& i) -> glm::vec3 {
-                return shade_checker(color0(i), color1(i), uv(i));
+                return pattern_checker(color0(i), color1(i), uv(i));
+            };
+        }
+        else if (type == "wave")
+        {
+            auto color0 = _buildVec3(_value(param, node, "color0"));
+            auto color1 = _buildVec3(_value(param, node, "color1"));
+            auto width = _buildFloat(_value(param, node, "width"));
+            auto uv = _buildVec2(_value(param, node, "uv"));   
+            return [color0, color1, width, uv] (const Context& i) {
+                return pattern_wave(color0(i), color1(i), width(i), uv(i));
+            };
+        }
+        else if (type == "normal")
+        {
+            return [](const Context& i) {
+                return shade_normal (i.unifViewMatrix, i.fragNormalEc);
             };
         }
         else if (type == "phong")

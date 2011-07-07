@@ -1,0 +1,12 @@
+{
+    output : "vec2",
+    uniforms : {
+        unifViewMatrix : [ "mat4" ],
+    },
+    input : { 
+        scale : [ "vec2",   [1, 1],     "uvScale"   ],
+    },
+    source : "
+        return fragVertexOc.xz * scale;
+    ",
+}

@@ -12,13 +12,6 @@
             camera : "camera"
         }
       </View>
-      <Material id="white">
-        {
-        diffuse : [ 1, 1, 1 ],
-        specular : [ 1, 1, 1 ],
-        specular_n : 96
-        }
-      </Material>  
     </Library>
     <Scene view="view">
       <Group id="light_group">

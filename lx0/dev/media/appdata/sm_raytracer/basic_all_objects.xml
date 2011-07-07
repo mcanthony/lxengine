@@ -12,13 +12,43 @@
             camera : "camera"
         }
       </View>
-      <Material id="white">
+      <Material2 id="white">
         {
-          diffuse : [ 1, 1, 1 ],
-          specular : [ 1, 1, 1 ],
-          specular_n : 512
+          graph : {
+            _type : "phong",
+            diffuse : [ 1, 1, 1 ],
+            specular : [ 1, 1, 1 ],
+            specularEx : 512
+          }
         }
-      </Material>
+      </Material2>
+      <Material2 id="wavy">
+        {
+          graph : {
+            _type : "wave",
+            color0 : {
+              _type : "phong",
+              diffuse : [ .6, 1.7, 1.2 ],
+              specular : [ 1, 1, 1 ],
+              specularEx : 32,
+            },
+            color1 : {
+              _type : "checker",
+              color0 : [ .2, .2, .4 ],
+              color1 : [ .3, .3, .4 ],
+              uv : {
+                _type : "spherical",
+                scale : [ 16, 16 ],
+              },
+            },
+            uv : {
+              _type : "spherical",
+              scale : [ 4, 4 ],
+            },
+            width : .25,
+          }
+        }
+      </Material2>
      
     </Library>
     <Scene view="view">
@@ -63,7 +93,7 @@
                 radius : .5
             }
             </Sphere>
-          <Cube>
+          <Cube material="wavy">
             {
               center : [ .6, 1.8, .6 ],
               scale : [ 1, 1, 1 ]

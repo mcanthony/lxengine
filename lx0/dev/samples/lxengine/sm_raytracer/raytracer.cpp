@@ -61,7 +61,7 @@ template <typename T>
 color3t<T> shade_ambient (const color3t<T>& env_ambient, 
                           const material_phong_t<T>& mat) 
 {
-    return mat.emmissive + env_ambient * mat.ambient;
+    return mat.emissive + env_ambient * mat.ambient;
 }
 
 //===========================================================================//
@@ -98,41 +98,11 @@ public:
     virtual     color3f     shadeLight     (const point_light_f& light, const vector3f& viewDirection, const intersection3f& intersection) const { return color3f(0, 0, 0); }
 };
 
-static glm::vec2   spherical(const glm::vec3& positionOc, glm::vec2 scale)
-{
-    // Convert to spherical coordinates.  Note in this definition                       
-    // theta runs along the z axis and phi is in the xy plane.                          
-    float r = glm::length(positionOc);                                                     
-    float phi = atan2(positionOc.y, positionOc.x);                                   
-    float theta = acos(positionOc.z / r);                                             
-                                                                                            
-    // Normalize to [0-1) range                                                         
-    glm::vec2 uv;                                                              
-    uv.x = (phi + glgeom::pi().value) / (2 * glgeom::pi().value);                                                       
-    uv.y = theta / glgeom::pi().value;                                                                  
-    return uv * scale;      
-}
-
-static glm::vec3   checker (
-    const glm::vec3& color0, 
-    const glm::vec3& color1, 
-    const glm::vec2& uv) 
-{
-    glm::vec2 t = glm::abs( glm::fract(uv) );                                                        
-    glm::ivec2 s = glm::ivec2(glm::trunc(glm::vec2(2,2) * t));                                                    
-                                                                                        
-    if ((s.x + s.y) % 2 == 0)                                                         
-        return color0;                                                              
-    else                                                                            
-        return color1;    
-}
-
-
 class GenericMaterial 
     : public Material
 {
 public:
-    GenericMaterial(ShaderBuilder::ShadeFunction shader)
+    GenericMaterial (ShaderBuilder::ShadeFunction shader)
     {
         mShader = shader;
     }
@@ -150,33 +120,6 @@ public:
 protected:
     ShaderBuilder::ShadeFunction mShader;
 };
-
-class PhongMaterial
-    : public Material
-    , public material_phong_f           // Multiple inheritance of classes without virtual methods is ok
-{
-public:
-    virtual     color3f     shadeAmbient   (ShaderBuilder::ShaderContext& ctx, const color3f& ambient, const intersection3f& intersection) const { return shade_ambient(ambient, *this); }
-    virtual     color3f     shadeLight     (const point_light_f& light, const vector3f& viewDirection, const intersection3f& intersection) const 
-    { 
-        return glgeom::shade_light(light, *this, -viewDirection, intersection); 
-    }
-};
-
-class NormalMaterial
-    : public Material
-{
-public:
-    virtual     color3f     shadeAmbient   (ShaderBuilder::ShaderContext& ctx, const color3f& ambient, const intersection3f& intersection) const 
-    { 
-        return color3f( abs(intersection.normal).vec );
-    }
-    virtual     color3f     shadeLight     (const point_light_f& light, const vector3f& viewDirection, const intersection3f& intersection) const 
-    { 
-        return color3f(0, 0, 0); 
-    }
-};
-
 
 class LightGradientMaterial
     : public Material
@@ -342,8 +285,8 @@ typedef std::shared_ptr<Light> LightPtr;
 class Context
 {
 public:
-    Context()
-        : mspMaterial( new PhongMaterial )
+    Context(std::shared_ptr<Material> spDefaultMaterial)
+        : mspMaterial( spDefaultMaterial )
     {
     }
 
@@ -407,8 +350,12 @@ class RayTracer : public Document::Component
 public: 
     RayTracer()
     {
+        lxvar graph;
+        graph["_type"] = "phong";
+        std::shared_ptr<Material>  spDefaultMaterial( new GenericMaterial(mShaderBuilder.buildShaderLambda(graph)) );
+
         mspEnvironment.reset(new Environment);
-        mspContext.reset(new Context);
+        mspContext.reset(new Context(spDefaultMaterial));
 
         mUpdateQueue.push_back([&]() { return _init(), true; });
 
@@ -473,27 +420,25 @@ public:
         }));
 
         mHandlers.insert(std::make_pair("Material", [&](ElementPtr spElem) {
-            auto pMat = new PhongMaterial;
-            pMat->emmissive = spElem->value().find("emmissive").convert(color3f(0, 0, 0));
-            pMat->diffuse = spElem->value().find("diffuse").convert(color3f(1, 1, 1));
-            pMat->specular = spElem->value().find("specular").convert(color3f(0, 0, 0));
-            pMat->specular_n = spElem->value().find("specular_n").convert(8.0f);
+            lxvar graph;
+            graph["_type"] = "phong";
+            graph["emissive"] = spElem->value().find("emissive");
+            graph["diffuse"] = spElem->value().find("diffuse");
+            graph["specular"] = spElem->value().find("specular");
+            graph["specularEx"] = spElem->value().find("specular_n");
 
-            spElem->attachComponent("raytrace", pMat);
-        }));
-
-        mHandlers.insert(std::make_pair("Material2", [&](ElementPtr spElem) {
-            lx0::lxvar  graph = spElem->value().find("graph");
-            //auto pMat = new GenericMaterial(graph);
-            
             auto shader = mShaderBuilder.buildShaderLambda(graph);
             auto pMat = new GenericMaterial(shader);
 
             spElem->attachComponent("raytrace", pMat);
         }));
 
-        mHandlers.insert(std::make_pair("NormalMaterial", [&](ElementPtr spElem) {
-            auto pMat = new NormalMaterial;
+        mHandlers.insert(std::make_pair("Material2", [&](ElementPtr spElem) {
+            lx0::lxvar  graph = spElem->value().find("graph");
+            
+            auto shader = mShaderBuilder.buildShaderLambda(graph);
+            auto pMat = new GenericMaterial(shader);
+
             spElem->attachComponent("raytrace", pMat);
         }));
 
@@ -694,12 +639,15 @@ public:
             glm::mat3 normalMatrix = glm::mat3(glm::gtx::matrix_inverse::inverseTranspose(mCamera->viewMatrix));
 
             ShaderBuilder::ShaderContext ctx;
+            ctx.unifViewMatrix = mCamera->viewMatrix;
+
             ctx.unifLightCount = 0;
             for (auto it = mLights.begin(); it != mLights.end(); ++it)
             {
                 if (!pMat->allowShadow() || !_shadowTerm(*(*it), intersection))
                 {
-                    ctx.unifLightPosition.push_back( (*it)->position.vec );
+                    glm::vec3 lightPosEc = glm::vec3(mCamera->viewMatrix * glm::vec4((*it)->position.vec, 1.0f));
+                    ctx.unifLightPosition.push_back(lightPosEc);
                     ctx.unifLightColor.push_back( (*it)->color.vec );
                     ctx.unifLightCount ++;
                 }
@@ -713,7 +661,7 @@ public:
             for (auto it = mLights.begin(); it != mLights.end(); ++it)
             {
                 if (!pMat->allowShadow() || !_shadowTerm(*(*it), intersection))
-                    c += pMat->shadeLight(*(*it), ray.direction, intersection);
+                    c += pMat->shadeLight(*(*it), viewDirection, intersection);
             }
         }
         else

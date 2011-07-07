@@ -11,14 +11,7 @@
         {
             camera : "camera"
         }
-      </View>
-      <Material id="white">
-        {
-        diffuse : [ 1, 1, 1 ],
-        specular : [ 1, 1, 1 ],
-        specular_n : 96
-        }
-      </Material>   
+      </View>  
     </Library>
     <Scene view="view">
       <Group id="light_group">
@@ -50,7 +43,7 @@
             </Plane>
         </Group>
         <Group id="geometry">
-          <Cube material="white">
+          <Cube material="white_spec96">
             {
             scale : [ 1, 1, 1 ],
             center : [ .5, .5, .5 ]

@@ -12,13 +12,16 @@
             camera : "camera"
         }
       </View>
-      <Material id="custom">
+      <Material2 id="custom">
         {
+        graph : {
+        _type : "phong",
         diffuse : [ 1, 1, .9 ],
         specular : [ .5, .5, 1 ],
         specular_n : 512
         }
-      </Material>     
+        }
+      </Material2>     
     </Library>
     <Scene view="view">
       <Environment>

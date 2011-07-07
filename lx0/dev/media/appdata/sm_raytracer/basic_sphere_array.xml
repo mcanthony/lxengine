@@ -66,13 +66,16 @@
             var mat_id = "mat" + (i++);
             var s = (y - .5) / 4;
           
-            var m = $("<Material/>");
+            var m = $("<Material2/>");
             m.attr("id", mat_id);
             m.value(
             {
+            graph : {
+              _type : "phong",
               diffuse: [ 1, (x - .5) / 10.0, (x - .5) / 10.0 ],
               specular : [ s, s, s ],
-              specular_n : 32
+              specularEx : 32,
+            }
             });
             mats.append(m);
             

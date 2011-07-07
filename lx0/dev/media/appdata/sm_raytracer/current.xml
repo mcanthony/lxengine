@@ -13,15 +13,14 @@
         }
       </View>
       <Group id="material_group">
-        <Material id="mat1">
+        <Material2 id="mat1">
           {
+          graph : {
+          _type : "phong",
           diffuse : [ 1, 1, 0]
           }
-        </Material>
-        <NormalMaterial id="mat2">
-          {
           }
-        </NormalMaterial>
+        </Material2>
         <LightGradientMaterial id="mat3">
           {
             texture : "media2/textures/gradients/1d/light_gradient-00.png"
@@ -76,7 +75,7 @@
               radius : .5
             }
           </Sphere>
-          <Sphere material="mat2">
+          <Sphere material="normal_shader">
             {
             center : [ .5, 1.5, .5 ],
             radius : .5
