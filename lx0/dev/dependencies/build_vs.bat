@@ -174,7 +174,7 @@ call:ensure_directory audiere_1_9_4
 call:ensure_directory boost_1_44_0
 call:ensure_directory bullet_2_76
 call:ensure_directory freetype_2_4_2
-call:ensure_directory glm-0.9.1
+call:ensure_directory glm-0.9.2.3
 call:ensure_directory libogg-1.2.1
 call:ensure_directory libvorbis-1.3.2
 call:ensure_directory ogre_1_7_1
@@ -496,7 +496,7 @@ REM Copy GLM
 REM ===========================================================================
 
 set PROJECT=GLM
-set ROOTDIR=glm-0.9.1
+set ROOTDIR=glm-0.9.2.3
 set TESTFILE=glm\glm.hpp
 
 echo pushd .>_t.bat

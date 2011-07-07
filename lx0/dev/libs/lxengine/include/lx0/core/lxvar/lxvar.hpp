@@ -225,8 +225,7 @@ namespace lx0
                     lxvar&          operator[]      (const std::string& s) { return (*this)[s.c_str()]; }
 
                     bool            operator==      (const lxvar& that) const;
-                    bool            operator==      (int i) const { return equal(i); }
-                    
+                    bool            operator==      (int i) const { return equal(i); }                   
 
                 protected:
                     template <typename T>   bool    _isType (void) const;

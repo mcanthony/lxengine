@@ -882,7 +882,7 @@ RasterizerGL::Context::Uniforms::activate ()
         }
 
         // The gl_NormalMatrix is the upper 3x3 of the inverse transpose of the model view matrix
-        glm::mat3 normalMatrix = glm::mat3(glm::gtx::matrix_inverse::inverseTranspose(*spViewMatrix));
+        glm::mat3 normalMatrix = glm::mat3(glm::inverseTranspose(*spViewMatrix));
         {
             GLint idx = glGetUniformLocation(progId, "unifNormalMatrix");
             if (idx != -1)
