@@ -10,7 +10,7 @@
     source : [
         "vec2 t = abs(fract(uv));                                                            ",                                       
         "                                                                                    ",               
-        "t.x += width * sin(2 * t.y * PI);                                                   ",                                               
+        "t.x += 0.25 * width * sin(2 * t.y * PI);                                            ",                                               
         "t.x = abs(.5 - t.x);                                                                ",                                   
         "                                                                                    ",               
         "if (t.x < width)                                                                    ",                               

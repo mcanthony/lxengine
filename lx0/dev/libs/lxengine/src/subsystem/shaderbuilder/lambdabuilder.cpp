@@ -28,7 +28,10 @@
 
 #include <glgeom/glgeom.hpp>
 #include <glgeom/ext/mappers.hpp>
+#include <glgeom/ext/patterns.hpp>
+
 #include <lx0/core/log/log.hpp>
+
 #include "lambdabuilder.hpp"
 
 using namespace lx0;
@@ -40,39 +43,6 @@ using namespace lx0::subsystem::shaderbuilder_ns::detail;
 //
 // (move these to glgeom once complete!)
 //===========================================================================//
-
-static glm::vec3 pattern_checker (
-    const glm::vec3& color0, 
-    const glm::vec3& color1, 
-    const glm::vec2& uv) 
-{
-    glm::vec2 t = glm::abs( glm::fract(uv) );                                                        
-    glm::ivec2 s = glm::ivec2(glm::trunc(glm::vec2(2,2) * t));                                                    
-                                                                                        
-    if ((s.x + s.y) % 2 == 0)                                                         
-        return color0;                                                              
-    else                                                                            
-        return color1;    
-}
-
-static glm::vec3 pattern_wave (
-    const glm::vec3& color0, 
-    const glm::vec3& color1,
-    float            width,
-    const glm::vec2& uv) 
-{
-    using namespace glm;
-
-    vec2 t = abs(fract(uv));                                                            
-                                                                                        
-    t.x += width * sin(2.0f * t.y * glgeom::pi().value);                                                   
-    t.x = fabs(.5f - t.x);                                                                
-                                                                                        
-    if (t.x < width)                                                                    
-       return color0;                                                                   
-    else                                                                                
-       return color1;                                                                   
-}
 
 static glm::vec3 shade_normal (
     const glm::mat4& unifViewMatrix,
@@ -207,7 +177,7 @@ LambdaBuilder::_buildVec3 (lxvar param)
             auto color1 = _buildVec3(_value(param, node, "color1"));
             auto uv = _buildVec2(_value(param, node, "uv"));
             return [color0, color1, uv] (const Context& i) -> glm::vec3 {
-                return pattern_checker(color0(i), color1(i), uv(i));
+                return glgeom::pattern_checker(color0(i), color1(i), uv(i));
             };
         }
         else if (type == "wave")
@@ -217,7 +187,17 @@ LambdaBuilder::_buildVec3 (lxvar param)
             auto width = _buildFloat(_value(param, node, "width"));
             auto uv = _buildVec2(_value(param, node, "uv"));   
             return [color0, color1, width, uv] (const Context& i) {
-                return pattern_wave(color0(i), color1(i), width(i), uv(i));
+                return glgeom::pattern_wave(color0(i), color1(i), width(i), uv(i));
+            };
+        }
+        else if (type == "spot")
+        {
+            auto color0 = _buildVec3(_value(param, node, "color0"));
+            auto color1 = _buildVec3(_value(param, node, "color1"));
+            auto radius = _buildFloat(_value(param, node, "radius"));
+            auto uv = _buildVec2(_value(param, node, "uv"));   
+            return [color0, color1, radius, uv] (const Context& i) {
+                return glgeom::pattern_spot(color0(i), color1(i), radius(i), uv(i));
             };
         }
         else if (type == "normal")
