@@ -40,6 +40,7 @@
 #include <lx0/engine/document.hpp>
 #include <lx0/engine/element.hpp>
 #include <lx0/util/misc/util.hpp>
+#include <lx0/elements/core.hpp>
 
 using namespace lx0::util;
 
@@ -382,16 +383,7 @@ namespace lx0 { namespace engine { namespace dom_ns {
 
         return true;
     }
-
-    void
-    Engine::_notifyDocumentCreated (DocumentPtr spDocument)
-    {
-        _foreach([&] (ComponentPtr spComponent) {
-            spComponent->onDocumentCreated(shared_from_this(), spDocument);
-        });
-    }
-
-    
+   
     DocumentPtr
     Engine::createDocument (void)
     {
@@ -435,8 +427,17 @@ namespace lx0 { namespace engine { namespace dom_ns {
     DocumentPtr
     Engine::_loadDocument (bool bCreate, std::string filename)
     {
+        //
+        // Create the empty document and send out notification to all Engine Components
+        //
         DocumentPtr spDocument(new Document);
+        mDocuments.push_back(spDocument);
 
+        _foreach([&] (ComponentPtr spComponent) {
+            spComponent->onDocumentCreated(shared_from_this(), spDocument);
+        });
+
+        //
         // Attach all registered per-document Components
         //
         for (auto it = mDocumentComponents.begin(); it != mDocumentComponents.end(); ++it)
@@ -445,8 +446,6 @@ namespace lx0 { namespace engine { namespace dom_ns {
             spDocument->attachComponent(it->first, pComponent);
         }
 
-        _notifyDocumentCreated(spDocument);
-        
         ///@todo Should not be automatically adding physics to every document
         if (mGlobals["load_builtins"]["Physics"])
         {
@@ -454,6 +453,9 @@ namespace lx0 { namespace engine { namespace dom_ns {
             spDocument->attachComponent("physicsSystem", _hidden_createPhysics());
         }
 
+        //
+        // Load the document data
+        //
         ElementPtr spRoot;
         if (!bCreate)
         {
@@ -464,20 +466,15 @@ namespace lx0 { namespace engine { namespace dom_ns {
             }
         }
         else
-        {
             spRoot = spDocument->createElement("Document");
-        }
 
         spDocument->root(spRoot);
 
-
-        mDocuments.push_back(spDocument);
-
-        // This is probably not the exactly right place for the scripts to be run.
+        // This is not the exactly right place for the scripts to be run.
         // If nothing else, this is likely not consistent with HTML which runs
         // scripts as the document is being loaded.  Should the HTML behavior be
         // emulated or is this approach cleaner?
-        _processDocumentHeader(spDocument);
+        lx0::processHeaderScript(spDocument);
 
         return spDocument;
     }
@@ -485,36 +482,7 @@ namespace lx0 { namespace engine { namespace dom_ns {
     void
     Engine::_processDocumentHeader (DocumentPtr spDocument)
     {
-        std::vector<std::string> scripts;
-        ElementPtr spRoot = spDocument->root();
-        for (int i = 0; i < spRoot->childCount(); ++i)
-        {
-            ElementCPtr spChild = spRoot->child(i);
-            if (spChild->tagName() == "Header")
-            {
-                for (int j = 0; j < spChild->childCount(); ++j)
-                {
-                    ElementCPtr spElem = spChild->child(j);
-                    if (spElem->tagName() == "Script")
-                    {
-                        std::string language = spElem->attr("language").as<std::string>();
-                        std::string content;
-                        if (spElem->value().is_defined())
-                        {
-                            content = spElem->value().as<std::string>();
-                        }
-                        else
-                        {
-                            std::string filename = spElem->attr("src").as<std::string>();
-                            content = lx0::string_from_file(filename);
-                        }
 
-                        lx_check_error(language.empty() || language == "javascript");
-                        _runJavascript(spDocument, content);
-                    }
-                }
-            }
-        }
     }
 
 	void   

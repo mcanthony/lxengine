@@ -58,7 +58,7 @@ namespace lx0 { namespace util { namespace misc {
     }
 
     bool
-    lx_file_is_open (std::string filename)
+    file_is_open (std::string filename)
     {
         OFSTRUCT fileStruct;
         HFILE hFile = ::OpenFile(filename.c_str(), &fileStruct, OF_SHARE_EXCLUSIVE);

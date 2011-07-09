@@ -69,7 +69,7 @@ parseOptions (int argc, char** argv, lxvar& options)
     options_description desc (caption);
     desc.add_options()
         ("help", "Print usage information and exit.")
-        ("file", value<std::string>()->default_value("data/sm_lx_cube_rain/scene_000.xml"), "Scene file to display.")
+        ("file", value<std::string>()->default_value("media2/appdata/sm_cube_rain/scene_000.xml"), "Scene file to display.")
         ;
 
     positional_options_description pos;

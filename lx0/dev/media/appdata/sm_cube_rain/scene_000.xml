@@ -1,0 +1,20 @@
+<Root>
+    <Header>
+        <Script language="javascript" src="media2/appdata/sm_cube_rain/lxquery.js" />
+        <Script language="javascript" src="media2/appdata/sm_cube_rain/lxquery_wind.js" />
+        <Script language="javascript" src="media2/appdata/sm_cube_rain/cube_rain.js" />
+    </Header>
+    <Library>
+        <Mesh id="unit_cube" src="media2/appdata/sm_cube_rain/unit_cube.json" />
+        <Mesh id="unit_sphere" src="media2/appdata/sm_cube_rain/unit_sphere.json" />
+        <Mesh id="small_sphere"  src="media2/appdata/sm_cube_rain/small_sphere.json" />
+        <Mesh id="unit_sphere2" src="media2/models/unit_sphere_s3.lxson" />
+        <SoundBuffer id="snd_background_music" type="ogg" src="media2/appdata/sm_cube_rain/germanic_peace_3.ogg" />
+        <SoundBuffer id="snd_bounce" src="media2/appdata/sm_cube_rain/bounce.wav" />
+    </Library>
+    <Scene wind_velocity="none" fade="1" gravity="on">
+      <SoundSource id="bounce" ref="snd_bounce" />
+      <SoundSource id="background_music" ref="snd_background_music" volume="0.6" loop="1" sound_state="stopped" />
+      <Group id="grid" />
+    </Scene>
+</Root>

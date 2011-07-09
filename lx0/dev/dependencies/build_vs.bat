@@ -166,6 +166,20 @@ IF NOT EXIST boost_1_44_0 (
     echo Found boost_1_44_0 subdirectory.  Assuming dependencies extracted.
 )
 
+IF NOT EXIST source\glm-0.9.2.3 (
+    pushd .
+    cd source
+    call:auto_download_source glm-0.9.2.3.zip
+    ..\7za.exe x glm-0.9.2.3.zip
+    popd
+) ELSE (
+    echo Found source directory 'glm-0.9.2.3'
+)
+IF NOT EXIST source\glm-0.9.2.3 (
+    echo ERROR: Could not find source directory 'glm-0.9.2.3'.
+    set FAILURE=1
+)
+
 REM ===========================================================================
 REM Check the dependency source is installed properly
 REM ===========================================================================
@@ -174,7 +188,6 @@ call:ensure_directory audiere_1_9_4
 call:ensure_directory boost_1_44_0
 call:ensure_directory bullet_2_76
 call:ensure_directory freetype_2_4_2
-call:ensure_directory glm-0.9.2.3
 call:ensure_directory libogg-1.2.1
 call:ensure_directory libvorbis-1.3.2
 call:ensure_directory ogre_1_7_1
@@ -496,7 +509,7 @@ REM Copy GLM
 REM ===========================================================================
 
 set PROJECT=GLM
-set ROOTDIR=glm-0.9.2.3
+set ROOTDIR=source\glm-0.9.2.3
 set TESTFILE=glm\glm.hpp
 
 echo pushd .>_t.bat
@@ -553,6 +566,27 @@ REM
     )
 goto:EOF
 
+:auto_download_source
+
+    IF NOT EXIST source\%1 ( 
+        wget %DOWNLOAD_SITE%/extern/%1 
+    ) ELSE (
+        echo Found %1.  Skipping download.
+    )
+    
+    IF NOT EXIST source\%1 (
+        echo.
+        echo ERROR: Failed to download dependent file:
+        echo    %1
+        echo.
+        echo This may be due to an inaccessible internet connection or the
+        echo download site may be down.  Please attempt to extract the
+        echo dependencies manually then rerun the script to continue the build
+        echo and install process.
+        echo.
+        set FAILURE=1
+    )
+goto:EOF
 
 REM ensure_directory
 REM

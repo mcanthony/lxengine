@@ -30,15 +30,17 @@
 #pragma once
 
 #include <string>
+#include <functional>
 #include <lx0/core/lxvar/lxvar.hpp>
 
 namespace lx0 { namespace util { namespace misc {
 
             void                lx_break_if_debugging   (void);
 
-            bool                lx_file_exists          (std::string filename);
-            bool                lx_file_is_open         (std::string filename);
+            bool                file_exists             (std::string filename);
+            bool                file_is_open            (std::string filename);
             void                find_files_in_directory (std::vector<std::string>& files, const char* path, const char* extension);
+            void                for_files_in_directory  (const char* path, const char* extension, std::function<void (std::string)>);
 
             std::string         string_from_file        (std::string filename);
             lx0::lxvar          lxvar_from_file         (std::string filename);

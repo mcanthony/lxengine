@@ -209,7 +209,7 @@ namespace lx0 { namespace core { namespace log_ns {
         lx0::lx_message_box("LxEngine Error", buffer);
         *(int*)0 = 0;
 #endif
-
+            
         std::string err("lx_error (re-throw if error is non-recoverable).\n");
         throw lx0::error_exception("Generic", (err + buffer).c_str());
     }

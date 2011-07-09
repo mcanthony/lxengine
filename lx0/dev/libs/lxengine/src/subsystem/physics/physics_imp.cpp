@@ -4,7 +4,7 @@
 
     LICENSE
 
-    Copyright (c) 2010 athile@athile.net (http://www.athile.net)
+    Copyright (c) 2010-2011 athile@athile.net (http://www.athile.net)
 
     Permission is hereby granted, free of charge, to any person obtaining a 
     copy of this software and associated documentation files (the "Software"), 
@@ -53,8 +53,7 @@
 
 using namespace lx0::core;
 
-typedef std::shared_ptr<btCollisionShape>   btCollisionShapePtr;
-typedef std::weak_ptr<btCollisionShape>     btCollisionShapeWPtr;
+_LX_FORWARD_DECL_PTRS(btCollisionShape);
 
 //===========================================================================//
 //   I M P L E M E N T A T I O N 
@@ -101,12 +100,21 @@ namespace lx0 { namespace core { namespace detail {
     {
         BoxKey (const glgeom::vector3f& halfBounds)
         {
+            // Create an integer-based key.  This rounds similar decimal 
+            // values such that they will generate the same integer key - and 
+            // thus reuse the same collision shape.
+            //
             for (int i = 0; i < 3; ++i)
                 xyz[i] = int( ceil(halfBounds[i] / granularity() ) );
         }
 
         btCollisionShape* createShape() const
         {
+            // Multiply back rather than using the original halfBounds so that
+            // the same key always generates the same collision same.  Otherwise,
+            // the collision shape size might vary slightly depending on which
+            // object first generated the key.
+            //
             btVector3 bulletVec;
             bulletVec.setX( xyz[0] * granularity() );
             bulletVec.setY( xyz[1] * granularity() );
@@ -476,8 +484,8 @@ namespace lx0 { namespace core { namespace detail {
         mspGroundMotionState.reset( new btDefaultMotionState(btTransform(btQuaternion(0,0,0,1), btVector3(0, 0, 0))) );
 
         const float fGroundMass = 0.0f;   // Infinite, immovable object
-        const btVector3 groundIntertia(0, 0, 0);
-        btRigidBody::btRigidBodyConstructionInfo groundRigidBodyCI(fGroundMass, mspGroundMotionState.get(), mspGroundShape.get(), groundIntertia);
+        const btVector3 groundInertia(0, 0, 0);
+        btRigidBody::btRigidBodyConstructionInfo groundRigidBodyCI(fGroundMass, mspGroundMotionState.get(), mspGroundShape.get(), groundInertia);
         mspGroundRigidBody.reset( new btRigidBody(groundRigidBodyCI) );
         mspGroundRigidBody->setRestitution(0.1f);
         mspGroundRigidBody->setFriction(0.5f);
@@ -512,9 +520,9 @@ namespace lx0 { namespace core { namespace detail {
     {
         mLastUpdate = lx0::lx_milliseconds();
     }
-
-
-    void PhysicsDoc::onElementAdded(DocumentPtr spDocument, ElementPtr spElem)
+    
+    void 
+    PhysicsDoc::onElementAdded (DocumentPtr spDocument, ElementPtr spElem)
     {
         if (spElem->tagName() == "Ref")
         {
@@ -529,7 +537,8 @@ namespace lx0 { namespace core { namespace detail {
             spElem->attachComponent("physics", new SceneElem(spDocument, spElem, this) );
     }
 
-    void PhysicsDoc::onElementRemoved(Document* pDocument, ElementPtr spElem)
+    void 
+    PhysicsDoc::onElementRemoved (Document* pDocument, ElementPtr spElem)
     {
         if (spElem->tagName() == "Ref")
         {
@@ -566,6 +575,8 @@ namespace lx0 { namespace core { namespace detail {
 
                 // Velocity * density * surface area = amount of mass per second hitting the area
                 // " * time * velocity = momentum of that mass over that period of time
+                //
+                // ...which is a measure of impulse, which Bullet understands.
                 //
                 btVector3 impulse = (airVelocity * airDensity * surfaceArea * timeStep) * airVelocity;
                 pRigidBody->applyCentralImpulse(impulse);

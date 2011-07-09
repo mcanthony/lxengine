@@ -43,6 +43,7 @@ namespace lx0
         namespace core_ns
         {
             void processIncludeDocument (DocumentPtr spMaster);
+            void processHeaderScript    (DocumentPtr spDocument);
         }
     }
     using namespace lx0::elements::core_ns;

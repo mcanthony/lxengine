@@ -57,12 +57,13 @@ main (int argc, char** argv)
     try
     {
         EnginePtr   spEngine   = Engine::acquire();
-        DocumentPtr spDocument = spEngine->loadDocument("data/sm_lx_cube_asteriods/level00.xml");
-        ViewPtr     spView     = spDocument->createView("OGRE", "view");
-        spView->show();
+        {
+            DocumentPtr spDocument = spEngine->loadDocument("data/sm_lx_cube_asteriods/level00.xml");
+            ViewPtr     spView     = spDocument->createView("OGRE", "view");
+            spView->show();
   
-        exitCode = spEngine->run();
-
+            exitCode = spEngine->run();
+        }
         spEngine->shutdown();
     }
     catch (std::exception& e)

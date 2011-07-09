@@ -49,7 +49,7 @@ namespace lx0 { namespace util { namespace misc {
         needs be clarified via a renaming of this method.
      */
     bool
-    lx_file_exists (std::string filename)
+    file_exists (std::string filename)
     {
         std::string s;
         FILE* fp;
@@ -65,23 +65,33 @@ namespace lx0 { namespace util { namespace misc {
     }
 
     void 
-    find_files_in_directory (std::vector<std::string>& files, const char* path, const char* extension)
+    find_files_in_directory (std::vector<std::string>& files, const char* directory, const char* extension)
     {
         using namespace boost::filesystem;
 
         std::string ext = boost::str( boost::format(".%1%") % extension );
 
-        for (directory_iterator dit(path); dit != directory_iterator(); ++dit)
+        for (directory_iterator dit(directory); dit != directory_iterator(); ++dit)
         {
             if (is_regular_file(dit->status()))
             {
-                std::string filename = dit->path().filename();
-                if (boost::ends_with(filename, ext))
+                path filepath = dit->path();
+                if (boost::ends_with(filepath.filename(), ext))
                 {
-                    std::string path = dit->path().string();
-                    files.push_back(path);
+                    files.push_back( filepath.normalize().string() );
                 }
             }
+        }
+    }
+
+    void 
+    for_files_in_directory  (const char* path, const char* extension, std::function<void (std::string)> callback)
+    {
+        std::vector<std::string> files;
+        find_files_in_directory(files, path, extension);
+        for (auto it = files.begin(); it != files.end(); ++it)
+        {
+            callback( *it );
         }
     }
 

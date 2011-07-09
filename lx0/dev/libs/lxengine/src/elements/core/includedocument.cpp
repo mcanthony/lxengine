@@ -57,4 +57,40 @@ void lec::processIncludeDocument (DocumentPtr spDocument)
     }
 }
 
+void 
+lec::processHeaderScript (DocumentPtr spDocument)
+{
+    std::vector<std::string> scripts;
+    ElementPtr spRoot = spDocument->root();
+    for (int i = 0; i < spRoot->childCount(); ++i)
+    {
+        ElementCPtr spChild = spRoot->child(i);
+        if (spChild->tagName() == "Header")
+        {
+            for (int j = 0; j < spChild->childCount(); ++j)
+            {
+                ElementCPtr spElem = spChild->child(j);
+                if (spElem->tagName() == "Script")
+                {
+                    std::string language = spElem->attr("language").as<std::string>();
+                    std::string content;
+                    if (spElem->value().is_defined())
+                    {
+                        content = spElem->value().as<std::string>();
+                    }
+                    else
+                    {
+                        std::string filename = spElem->attr("src").as<std::string>();
+                        content = lx0::string_from_file(filename);
+                    }
+
+                    lx_check_error(language.empty() || language == "javascript");
+
+                    Engine::acquire()->workaround_runJavascript(spDocument, content);
+                }
+            }
+        }
+    }
+}
+
 

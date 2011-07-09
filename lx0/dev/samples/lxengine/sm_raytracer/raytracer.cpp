@@ -636,7 +636,7 @@ public:
             const Material* pMat ( spGeom->mspMaterial ? spGeom->mspMaterial.get() : mspContext->mspMaterial.get());
 
 
-            glm::mat3 normalMatrix = glm::mat3(glm::gtx::matrix_inverse::inverseTranspose(mCamera->viewMatrix));
+            glm::mat3 normalMatrix = glm::mat3(glm::inverseTranspose(mCamera->viewMatrix));
 
             ShaderBuilder::ShaderContext ctx;
             ctx.unifViewMatrix = mCamera->viewMatrix;

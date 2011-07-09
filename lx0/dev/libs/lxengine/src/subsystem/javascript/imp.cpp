@@ -1208,11 +1208,12 @@ namespace lx0 { namespace engine { namespace dom_ns {
      void
      Engine::_attachJavascript (void)
      {
-         auto pContext = new JsEngineContext(this);
-         this->attachComponent("engineJs", pContext);
-
-         pContext->runFile("media2/scripts/engine/attribute_parsers/color.js");
-         pContext->runFile("media2/scripts/engine/attribute_parsers/gravity.js");
+        auto pContext = new JsEngineContext(this);
+        this->attachComponent("engineJs", pContext);
+         
+        lx0::for_files_in_directory("media2/scripts/engine/attribute_parsers", "js", [pContext] (std::string path) {
+            pContext->runFile(path.c_str());
+         });
      }
 
     /*!

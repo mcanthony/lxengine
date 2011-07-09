@@ -5,7 +5,7 @@
     LICENSE
     * MIT License (http://www.opensource.org/licenses/mit-license.php)
 
-    Copyright (c) 2010 athile@athile.net (http://www.athile.net)
+    Copyright (c) 2010-2011 athile@athile.net (http://www.athile.net)
 
     Permission is hereby granted, free of charge, to any person obtaining a 
     copy of this software and associated documentation files (the "Software"), 
@@ -36,81 +36,41 @@
 #include <lx0/lxengine.hpp>
 #include <lx0/engine/mesh.hpp>
 #include <lx0/subsystem/blendreader.hpp>
+#include <lx0/util/blendload.hpp>
 
 using namespace lx0;
 using namespace lx0::core;
-
-namespace {
-    float normalizeShort (short s)
-    {
-        return float (s) / float(std::numeric_limits<short>::max());
-    }
-}
 
 namespace lx0 { namespace engine { namespace dom_ns {
 
     Mesh*
     load_blend (std::string filename)
     {
-        BlendReader reader;
-        if ( reader.open(filename) )
+        glgeom::primitive_buffer primitive;
+        lx0::primitive_buffer_from_blendfile(primitive, filename.c_str());
+
+        Mesh* pMesh = new Mesh;
+        pMesh->mFlags.mVertexNormals = true;
+
+        for (size_t i = 0; i < primitive.vertex.positions.size(); ++i)
         {
-            Mesh* pMesh = new Mesh;
-
-            auto meshBlocks = reader.getBlocksByType("Mesh");
-
-            if (meshBlocks.size() != 1)
-            {
-                lx_warn("More than one mesh found in .blend file.  Processing only the "
-                        "first one that is found.");
-            }
-
-            auto spObj = reader.readObject(meshBlocks[0]->address);
-            auto numVerts = spObj->field<int>("totvert");
-            auto numFaces = spObj->field<int>("totface");
-
-            pMesh->mVertices.reserve(numVerts);
-            pMesh->mFaces.reserve(numFaces);
-
-            pMesh->mFlags.mVertexNormals = true;
-
-            auto spVerts = reader.readObject(spObj->field<unsigned __int64>("mvert"));
-            for (int i = 0; i < numVerts; ++i)
-            {
-                Mesh::Vertex v;
-                v.position = spVerts->field<glgeom::point3f>("co", 0);
-
-                // Normals are encoded as shorts
-                v.normal.x = normalizeShort( spVerts->field<short>("no", 0) );
-                v.normal.y = normalizeShort( spVerts->field<short>("no", 1) );
-                v.normal.z = normalizeShort( spVerts->field<short>("no", 2) );
-
-                pMesh->mVertices.push_back(v);
-                spVerts->next();
-            }
-            spVerts.reset();
-
-            auto spFaces = reader.readObject(spObj->field<unsigned __int64>("mface"));
-            for (int i = 0; i < numFaces; ++i)
-            {
-                Mesh::Quad q;
-                q.index[0] = spFaces->field<int>("v1");
-                q.index[1] = spFaces->field<int>("v2");
-                q.index[2] = spFaces->field<int>("v3");
-                q.index[3] = spFaces->field<int>("v4");
-
-                pMesh->mFaces.push_back(q);
-                spFaces->next();
-            }
-            spFaces.reset();
-
-            return pMesh;
+            Mesh::Vertex v;
+            v.position = primitive.vertex.positions[i];
+            v.normal   = primitive.vertex.normals[i];
+            pMesh->mVertices.push_back(v);
         }
-        else
+
+        for (auto it = primitive.indices.begin(); it != primitive.indices.end(); /* */)
         {
-            lx_error("Could not open file '%s'", filename.c_str());
-            return nullptr;
+            Mesh::Quad q;
+            q.index[0] = *it++;
+            q.index[1] = *it++;
+            q.index[2] = *it++;
+            q.index[3] = *it++;
+            pMesh->mFaces.push_back(q);
         }
+
+        return pMesh;
     }
 
 }}}

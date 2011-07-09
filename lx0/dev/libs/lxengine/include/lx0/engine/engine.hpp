@@ -203,8 +203,6 @@ namespace lx0
                 DocumentPtr _loadDocument           (bool bCreate, std::string filename);
                 ElementPtr  _loadDocumentRoot       (DocumentPtr spDocument, std::string filename);
 
-                void        _notifyDocumentCreated  (DocumentPtr spDocument);
- 
                 void        _registerBuiltInPlugins (void);
                 void        _attachJavascript       (void);
                 void        _runJavascript          (DocumentPtr spDocument, std::string source);
