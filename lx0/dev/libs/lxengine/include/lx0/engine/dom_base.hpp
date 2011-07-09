@@ -47,7 +47,7 @@ namespace lx0 { namespace engine {  namespace dom_ns { namespace detail {
     public:
         virtual ~_ComponentBase() {}
 
-        virtual const char*     name() const = 0;
+        virtual const char*     name() const { return nullptr; }
     };
 
     /*!
@@ -82,6 +82,14 @@ namespace lx0 { namespace engine {  namespace dom_ns { namespace detail {
         ComponentPtr attachComponent (ComponentPtr spValue) 
         { 
             const char* slotName = spValue->name();
+
+            //
+            // If no name is assigned to the component, it will never be accessible
+            // (which is fine in many cases), but still an random name is generated
+            // to avoid map collisions.
+            //
+            if (slotName == nullptr)
+                slotName = _generateUniqueSlotName();
 
             if (!mComponents.insert( std::make_pair(slotName, spValue) ).second)
             {
@@ -166,6 +174,28 @@ namespace lx0 { namespace engine {  namespace dom_ns { namespace detail {
         }
 
         Map mComponents;
+
+    private:
+        const char* _generateUniqueSlotName ()
+        {
+            static unsigned int count = 0;
+            static char buffer[32];
+
+            unsigned int num = ++count;
+            int i = 0;
+            buffer[i++] = '_';
+            buffer[i++] = '_';
+            buffer[i++] = '_';
+            while (num > 0)
+            {
+                buffer[i++] = '0' + num % 10;
+                num /= 10;
+            }
+            buffer[i++] = '_';
+            buffer[i++] = '_';
+            buffer[i++] = '_';
+            return buffer;
+        }
     };
    
 }}}}

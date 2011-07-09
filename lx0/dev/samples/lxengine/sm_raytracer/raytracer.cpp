@@ -358,8 +358,6 @@ protected:
 class RayTracer : public Document::Component
 {
 public: 
-    virtual const char* name() const { return "raytracer"; }
-
     RayTracer()
     {
         lxvar graph;

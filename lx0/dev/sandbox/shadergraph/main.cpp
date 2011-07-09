@@ -49,8 +49,6 @@ using namespace lx0;
 class MaterialProcessor : public Document::Component
 {
 public:
-    virtual const char* name() const { return "materialprocessor"; }
-
     virtual void onAttached (DocumentPtr spDocument) 
     {
         auto vMats = spDocument->getElementsByTagName("Material");

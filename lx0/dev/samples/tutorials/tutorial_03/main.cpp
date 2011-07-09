@@ -76,8 +76,6 @@ public:
 class Renderer : public lx0::View::Component
 {
 public:
-    virtual const char* name() const { return "renderer"; }
-
     Renderer()
         : mCurrentMaterial    (0)
         , mCurrentGeometry    (0)

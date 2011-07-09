@@ -56,8 +56,6 @@ public:
 class Renderer : public lx0::View::Component
 {
 public:
-    virtual const char* name () const { return "Renderer"; }
-
     virtual void initialize(lx0::ViewPtr spView)
     {
         //

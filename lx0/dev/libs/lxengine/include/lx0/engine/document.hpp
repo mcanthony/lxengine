@@ -70,8 +70,6 @@ namespace lx0
     public:
         virtual         ~DocumentComponent() {}
 
-        virtual const char* name            (void) const = 0;
-
         /*!
             Called immediatedly after the Component is attached to the Document
          */
