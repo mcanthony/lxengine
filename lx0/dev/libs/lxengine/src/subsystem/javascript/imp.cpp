@@ -41,18 +41,20 @@
 #include <lx0/engine/mesh.hpp>
 #include <lx0/util/misc/util.hpp>
 #include <lx0/util/misc/lxvar_convert.hpp>
+#include <lx0/subsystem/javascript.hpp>
 #include "v8bind.hpp"
 
 using namespace v8;
 using namespace lx0::core;
 using namespace lx0::core::v8bind;
 using namespace lx0::util;
+using namespace lx0;
 
 //===========================================================================//
 //   I M P L E M E N T A T I O N 
 //===========================================================================//
 
-namespace lx0 { namespace subsystem { namespace javascript_ns { namespace detail {
+namespace {
 
     using v8::Object;
 
@@ -190,20 +192,6 @@ namespace lx0 { namespace subsystem { namespace javascript_ns { namespace detail
         void        _addEngine  ();
     };
 
-    JsEngineContext::JsEngineContext (Engine* pEngine)
-        : mpEngine (pEngine)
-    {
-        _addEngine();
-    }
-
-    void
-    JsEngineContext::onDocumentCreated (EnginePtr spEngine, DocumentPtr spDocument)
-    {
-        lx0::for_files_in_directory("media2/scripts/engine/attribute_parsers", "js", [&] (std::string path) {
-            this->runFile(path.c_str());
-        });
-    }
-
     namespace wrappers_engine
     {
         static v8::Handle<v8::Value> 
@@ -294,16 +282,17 @@ namespace lx0 { namespace subsystem { namespace javascript_ns { namespace detail
     // Document Component
     //===========================================================================//
 
-    class JavascriptDoc : public Document::Component
+    class JavascriptDoc : public lx0::IJavascriptDoc
     {
     public:
-        virtual const char* name() const { return "javascript"; }
-
                         JavascriptDoc   (DocumentPtr spDocument);
         virtual         ~JavascriptDoc  (void);
 
         virtual void    onElementAdded      (DocumentPtr spDocument, ElementPtr spElem);
         virtual void    onUpdate            (DocumentPtr spDocument);
+
+
+        virtual void    run (const std::string& source) { run (mpDocument->shared_from_this(), source); }
 
         void            run (DocumentPtr spDocument, std::string source);
         
@@ -333,6 +322,24 @@ namespace lx0 { namespace subsystem { namespace javascript_ns { namespace detail
         Persistent<Function>            mWindowOnKeyDown;
         std::vector<std::pair<int, Persistent<Function>>> mTimeoutQueue;
     };
+
+    //=======================================================================//
+
+    JsEngineContext::JsEngineContext (Engine* pEngine)
+        : mpEngine (pEngine)
+    {
+        _addEngine();
+    }
+
+    void
+    JsEngineContext::onDocumentCreated (EnginePtr spEngine, DocumentPtr spDocument)
+    {
+        spDocument->attachComponent(new JavascriptDoc(spDocument));
+
+        lx0::for_files_in_directory("media2/scripts/engine/attribute_parsers", "js", [&] (std::string path) {
+            this->runFile(path.c_str());
+        });
+    }
 
     //=======================================================================//
 
@@ -1201,46 +1208,7 @@ namespace lx0 { namespace subsystem { namespace javascript_ns { namespace detail
         obj->SetInternalField(0, External::New(new Math));
         mContext->Global()->Set(String::New("Math"), obj);
     }
-
-}}}}
-
-//===========================================================================//
-//   Engine class
-//===========================================================================//
-
-namespace lx0 { namespace engine { namespace dom_ns { 
-
-    using namespace lx0::subsystem::javascript_ns::detail;
-
-     void
-     Engine::workaround_runJavascript(DocumentPtr spDoc, const std::string& source) 
-     {
-         lx_warn("workaround_runJavascript() called.  Try to avoid using this method as it will be removed.");
-
-         _runJavascript(spDoc, source); 
-     }
-
-    /*!
-        Run a set of Javascript source files together in the same execution context.
-
-        Dev Notes:
-
-        This needs to be refactored so that the Javascript Subsystem is not part
-        of LxEngine directly.
-
-        #include <lxengine/subsystem/javascript.hpp>
-
-        spDocument->getComponent<JavascriptDoc>("_js")->runJavascript(source);
-     */
-    void
-    Engine::_runJavascript (DocumentPtr spDocument, std::string source)
-    {
-        auto ctor = [=]() { return new JavascriptDoc(spDocument); };
-        auto spComponent = spDocument->ensureComponent<JavascriptDoc>("javascript", ctor);
-        spComponent->run(spDocument, source);
-    }
-
-}}}
+}
 
 namespace lx0
 {

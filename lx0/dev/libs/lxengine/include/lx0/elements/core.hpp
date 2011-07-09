@@ -45,7 +45,8 @@ namespace lx0
             void processIncludeDocument (DocumentPtr spMaster);
             void processHeaderScript    (DocumentPtr spDocument);
 
-            Engine::Component* createProcessScriptElement (void);
+            Engine::Component*  createScriptHandler         (void);
+            Engine::Component*  createProcessScriptElement  (void);
 
         }
     }

@@ -32,7 +32,9 @@
 //===========================================================================//
 
 #include <lx0/lxengine.hpp>
+#include <lx0/subsystem/javascript.hpp>
 #include <lx0/elements/core.hpp>
+
 
 using namespace lx0;
 
@@ -77,7 +79,7 @@ _runIfScriptElement (ElementPtr spElem)
 
         lx_check_error(language.empty() || language == "javascript");
 
-        Engine::acquire()->workaround_runJavascript(spElem->document(), content);
+        spElem->document()->getComponent<lx0::IJavascriptDoc>()->run(content);
     }
 }
 
@@ -127,4 +129,60 @@ lec::createProcessScriptElement (void)
     };
 
     return new EngComp;
+}
+
+
+
+//===========================================================================//
+/*!
+    */
+class Scripting : public Document::Component
+{
+public: 
+    virtual const char* name() const { return "scriptHandler2"; }
+
+    virtual void onAttached (DocumentPtr spDocument) 
+    {
+        spDocument->iterateElements([&](ElementPtr spElem) -> bool { 
+            _onElementAddRemove(spElem, true); return false; 
+        });
+    }
+
+    virtual void onElementAdded (DocumentPtr spDocument, ElementPtr spElem) 
+    {
+        _onElementAddRemove(spElem, true);
+    }
+
+protected:
+    void _onElementAddRemove (ElementPtr spElem, bool bAdd)
+    {
+        if (spElem->tagName() == "Script") 
+        {
+            std::string source;
+            if (spElem->attr("src").is_string())
+                source = lx0::string_from_file(spElem->attr("src").as<std::string>());
+            else
+                source = spElem->value().as<std::string>();
+
+            spElem->document()->getComponent<lx0::IJavascriptDoc>()->run(source);
+        }
+    }
+};
+
+class JavascriptPlugin : public Engine::Component
+{
+public:
+    virtual const char* name() const { return "scriptHandler"; }
+    virtual void    onDocumentCreated   (EnginePtr spEngine, DocumentPtr spDocument);
+};
+
+void JavascriptPlugin::onDocumentCreated (EnginePtr spEngine, DocumentPtr spDocument)
+{
+    lx_log("Attaching <Script/> component");
+    spDocument->attachComponent(new Scripting);
+}
+
+Engine::Component* lec::createScriptHandler()
+{
+    return new JavascriptPlugin;
 }

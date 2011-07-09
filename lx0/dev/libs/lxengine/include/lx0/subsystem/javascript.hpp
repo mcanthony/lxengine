@@ -40,15 +40,16 @@ namespace lx0
          */
         namespace javascript_ns
         {
-            class IJavascript : public lx0::Document::Component
+            class IJavascriptDoc : public lx0::Document::Component
             {
             public:
+                static  const char* s_name  (void)       { return "javascript"; }
+                virtual const char* name    (void) const { return s_name(); }
+
                 virtual void run (const std::string& source) = 0;
             };
 
-
             Engine::Component* createJavascriptSubsystem();
-            Engine::Component* createScriptHandler();
         }
     }
 

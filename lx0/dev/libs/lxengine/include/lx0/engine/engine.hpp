@@ -191,9 +191,6 @@ namespace lx0
 
                 void                postponeException       (lx0::error_exception& e);
 
-                // Development Scaffolding Methods
-                void                workaround_runJavascript(DocumentPtr spDoc, const std::string& source);
-
             protected:
                 template <typename T> friend std::shared_ptr<T> lx0::detail::acquireSingleton (std::weak_ptr<T>&);
                 static std::weak_ptr<Engine> s_wpEngine;
@@ -205,7 +202,6 @@ namespace lx0
                 ElementPtr  _loadDocumentRoot       (DocumentPtr spDocument, std::string filename);
 
                 void        _registerBuiltInPlugins (void);
-                void        _runJavascript          (DocumentPtr spDocument, std::string source);
         
                 void        _throwPostponedException (void);
                 bool        _handlePlatformMessages  (void);

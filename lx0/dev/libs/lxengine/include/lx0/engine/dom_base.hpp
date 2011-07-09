@@ -109,6 +109,12 @@ namespace lx0 { namespace engine {  namespace dom_ns { namespace detail {
                 return std::shared_ptr<T>();
         }
 
+        template <typename T>
+        std::shared_ptr<T>  getComponent    (void)                   
+        { 
+            return getComponent<T>( T::s_name() );
+        }
+
         void removeComponent (std::string name)
         {
             auto it = mComponents.find(name);
