@@ -64,6 +64,6 @@
         return false;
     }
     
-    engine.addPsuedoAttribute("wind", wind);
+    //engine.addPsuedoAttribute("wind", wind);
 
 })();

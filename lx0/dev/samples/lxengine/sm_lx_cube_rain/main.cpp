@@ -44,6 +44,7 @@
 
 // Lx0 headers
 #include <lx0/lxengine.hpp>
+#include <lx0/subsystem/physics.hpp>
 
 using namespace lx0;
 
@@ -117,6 +118,8 @@ main (int argc, char** argv)
         if ( parseOptions(argc, argv, options) )
         {    
             spEngine->environment().setTimeScale(1.1f);
+            spEngine->attachComponent("scriptheader",   lx0::createProcessScriptElement());
+            spEngine->attachComponent("physics",        lx0::createPhysicsSubsystem());
 
             DocumentPtr spDocument = spEngine->loadDocument(options.find("file"));
             ViewPtr spView( spDocument->createView("OGRE", "view") );

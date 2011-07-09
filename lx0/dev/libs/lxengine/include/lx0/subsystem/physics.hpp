@@ -27,3 +27,17 @@
 //===========================================================================//
 
 #pragma once
+
+#include <lx0/_detail/forward_decls.hpp>
+
+namespace lx0
+{
+    namespace subsystem
+    {
+        namespace physics_ns
+        {
+            lx0::Engine::Component* createPhysicsSubsystem();
+        }
+    }
+    using namespace lx0::subsystem::physics_ns;
+}

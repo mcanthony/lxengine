@@ -103,12 +103,16 @@ namespace lx0 { namespace engine { namespace dom_ns {
         lx_init();
         lx_log("lx::core::Engine ctor");
 
+        //
+        // This seems like a reasonable idea - eventually.  A configuration file should be
+        // able to determine what subsystems are loaded (and their order) and the globals
+        // table may be the way to communicate that information.
+        //
         mGlobals.add("load_builtins", 0, validate_readonly(), lxvar::decorated_map());
         mGlobals["load_builtins"].add("sound",      0, validate_bool(), true);
         mGlobals["load_builtins"].add("javascript", 0, validate_bool(), true);
         mGlobals["load_builtins"].add("Canvas",     0, validate_bool(), true);
         mGlobals["load_builtins"].add("Ogre",       0, validate_bool(), true);
-        mGlobals["load_builtins"].add("Physics",    0, validate_bool(), true);
 
         lxvar info = getSystemInfo();
         lx_debug("%s", lx0::format_tabbed(info).c_str());
@@ -446,13 +450,6 @@ namespace lx0 { namespace engine { namespace dom_ns {
             spDocument->attachComponent(it->first, pComponent);
         }
 
-        ///@todo Should not be automatically adding physics to every document
-        if (mGlobals["load_builtins"]["Physics"])
-        {
-            lx0::Document::Component* _hidden_createPhysics();
-            spDocument->attachComponent("physicsSystem", _hidden_createPhysics());
-        }
-
         //
         // Load the document data
         //
@@ -470,19 +467,7 @@ namespace lx0 { namespace engine { namespace dom_ns {
 
         spDocument->root(spRoot);
 
-        // This is not the exactly right place for the scripts to be run.
-        // If nothing else, this is likely not consistent with HTML which runs
-        // scripts as the document is being loaded.  Should the HTML behavior be
-        // emulated or is this approach cleaner?
-        lx0::processHeaderScript(spDocument);
-
         return spDocument;
-    }
-
-    void
-    Engine::_processDocumentHeader (DocumentPtr spDocument)
-    {
-
     }
 
 	void   

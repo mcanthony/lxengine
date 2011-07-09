@@ -126,18 +126,17 @@ namespace lx0
                 };
 
 
-                //! Acquire the Singleton for the Engine
-                static EnginePtr    acquire             (void) { return lx0::detail::acquireSingleton<Engine>(s_wpEngine); }
-        
-                void                shutdown            (void);
-
-
                 ///@name Version
                 ///@{
                 int                 versionMajor        (void) const                { return lx0::LXENGINE_VERSION_MAJOR; }
                 int                 versionMinor        (void) const                { return lx0::LXENGINE_VERSION_MINOR; }
                 int                 versionRevision     (void) const                { return lx0::LXENGINE_VERSION_REVISION; }
                 ///@}
+
+                //! Acquire the Singleton for the Engine
+                static EnginePtr    acquire             (void) { return lx0::detail::acquireSingleton<Engine>(s_wpEngine); }
+        
+                void                shutdown            (void);
 
                 lxvar               getSystemInfo       (void);
                 bool                parseCommandLine    (int argc, char** argv, const char* defArgumentName = nullptr);
@@ -191,7 +190,7 @@ namespace lx0
                 void                postponeException       (lx0::error_exception& e);
 
                 // Development Scaffolding Methods
-                void                workaround_runJavascript(DocumentPtr spDoc, const std::string& source) { _runJavascript(spDoc, source); }
+                void                workaround_runJavascript(DocumentPtr spDoc, const std::string& source);
 
             protected:
                 template <typename T> friend std::shared_ptr<T> lx0::detail::acquireSingleton (std::weak_ptr<T>&);
@@ -207,8 +206,6 @@ namespace lx0
                 void        _attachJavascript       (void);
                 void        _runJavascript          (DocumentPtr spDocument, std::string source);
         
-                void        _processDocumentHeader  (DocumentPtr spDocument);
-
                 void        _throwPostponedException (void);
                 bool        _handlePlatformMessages  (void);
 

@@ -708,9 +708,27 @@ namespace lx0 { namespace core { namespace detail {
         return mBoxShapeCache.acquire(BoxKey (halfBounds));
     }
 
+
+    class PhysicsEngine : public Engine::Component
+    {
+    public:
+        virtual void onDocumentCreated   (EnginePtr spEngine, DocumentPtr spDocument) 
+        {
+            spDocument->attachComponent("physicsSystem", new PhysicsDoc);
+        }
+    };
 }}}
 
-lx0::Document::Component* _hidden_createPhysics()
+namespace lx0
 {
-    return new lx0::core::detail::PhysicsDoc;
+    namespace subsystem
+    {
+        namespace physics_ns
+        {
+            lx0::Engine::Component* createPhysicsSubsystem()
+            {
+                return new lx0::core::detail::PhysicsEngine;
+            }
+        }
+    }
 }

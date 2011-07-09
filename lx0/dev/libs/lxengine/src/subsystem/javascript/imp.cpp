@@ -513,6 +513,8 @@ namespace lx0 { namespace subsystem { namespace javascript_ns { namespace detail
                 if (args.Length() == 1)
                 {
                     std::string text = _marshal(args[0]->ToString());
+                    
+                    lx_log("JS alert: '%s'", text.c_str());
                     lx0::lx_message_box("Alert", text);
                 }
                 else
@@ -1214,6 +1216,14 @@ namespace lx0 { namespace engine { namespace dom_ns {
         lx0::for_files_in_directory("media2/scripts/engine/attribute_parsers", "js", [pContext] (std::string path) {
             pContext->runFile(path.c_str());
          });
+     }
+
+     void
+     Engine::workaround_runJavascript(DocumentPtr spDoc, const std::string& source) 
+     {
+         lx_warn("workaround_runJavascript() called.  Try to avoid using this method as it will be removed.");
+
+         _runJavascript(spDoc, source); 
      }
 
     /*!

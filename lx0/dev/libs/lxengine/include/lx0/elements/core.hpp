@@ -44,6 +44,9 @@ namespace lx0
         {
             void processIncludeDocument (DocumentPtr spMaster);
             void processHeaderScript    (DocumentPtr spDocument);
+
+            Engine::Component* createProcessScriptElement (void);
+
         }
     }
     using namespace lx0::elements::core_ns;
