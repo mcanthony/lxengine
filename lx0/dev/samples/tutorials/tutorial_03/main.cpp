@@ -76,6 +76,8 @@ public:
 class Renderer : public lx0::View::Component
 {
 public:
+    virtual const char* name() const { return "renderer"; }
+
     Renderer()
         : mCurrentMaterial    (0)
         , mCurrentGeometry    (0)
@@ -118,10 +120,10 @@ public:
         //
         // Build the renderable
         //
-        mspItem.reset(new lx0::Item);
-        mspItem->spTransform = mspRasterizer->createTransform(mRotation);
-        mspItem->spMaterial = mMaterials[mCurrentMaterial];
-        mspItem->spGeometry = mGeometry[mCurrentGeometry];
+        mspInstance.reset(new lx0::Instance);
+        mspInstance->spTransform = mspRasterizer->createTransform(mRotation);
+        mspInstance->spMaterial = mMaterials[mCurrentMaterial];
+        mspInstance->spGeometry = mGeometry[mCurrentGeometry];
 
         //
         // Create the camera last since it is dependent on the bounds of the geometry
@@ -141,11 +143,11 @@ public:
         pass.spLightSet = mspLightSet;
         algorithm.mPasses.push_back(pass);
 
-        lx0::RenderList items;
-        items.push_back(0, mspItem);
+        lx0::RenderList instances;
+        instances.push_back(0, mspInstance);
 
         mspRasterizer->beginFrame(algorithm);
-        for (auto it = items.begin(); it != items.end(); ++it)
+        for (auto it = instances.begin(); it != instances.end(); ++it)
         {
             mspRasterizer->rasterizeList(algorithm, it->second.list);
         }
@@ -158,7 +160,7 @@ public:
         // Always rotate the model on every update
         //
         mRotation = glm::rotate(mRotation, 1.0f, glm::vec3(0, 0, 1));
-        mspItem->spTransform = mspRasterizer->createTransform(mRotation);
+        mspInstance->spTransform = mspRasterizer->createTransform(mRotation);
 
         spView->sendEvent("redraw");
     }
@@ -172,13 +174,13 @@ public:
                 : (mCurrentGeometry + mGeometry.size() - 1);
             mCurrentGeometry %= mGeometry.size();
             
-            mspItem->spGeometry = mGeometry[mCurrentGeometry];
+            mspInstance->spGeometry = mGeometry[mCurrentGeometry];
             
             //
             // Recreate the camera after geometry changes since the camera position
             // is based on the bounds of the geometry being viewed.
             //
-            mspCamera           = _createCamera(mspItem->spGeometry->mBBox);
+            mspCamera           = _createCamera(mspInstance->spGeometry->mBBox);
         }
         else if (evt == "next_material" || evt == "prev_material")
         {
@@ -187,7 +189,7 @@ public:
                 : (mCurrentMaterial + mMaterials.size() - 1);
             mCurrentMaterial %= mMaterials.size();
 
-            mspItem->spMaterial = mMaterials[mCurrentMaterial];
+            mspInstance->spMaterial = mMaterials[mCurrentMaterial];
         }
     }
 
@@ -291,7 +293,7 @@ protected:
     lx0::RasterizerGLPtr          mspRasterizer;
     lx0::CameraPtr                mspCamera;
     lx0::LightSetPtr              mspLightSet;
-    lx0::ItemPtr                  mspItem;
+    lx0::InstancePtr                  mspInstance;
 
     glm::mat4                     mRotation;
 

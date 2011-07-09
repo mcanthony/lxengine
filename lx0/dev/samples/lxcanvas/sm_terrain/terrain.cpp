@@ -151,7 +151,7 @@ namespace Terrain
 
             for (auto it = buildList.begin(); it != buildList.end(); ++it)
             {
-                ItemPtr spTile;
+                InstancePtr spTile;
                 spTile = _buildTile(spElement, rasterizer, spCamera, spLightSet, it->first, it->second);
                 mMap.insert(std::make_pair(*it, spTile));
 
@@ -270,19 +270,19 @@ namespace Terrain
             return mwpMaterial.lock();
     }
 
-    ItemPtr Render::_buildTile (ElementPtr spElement, 
+    InstancePtr Render::_buildTile (ElementPtr spElement, 
                                         RasterizerGL& rasterizer, 
                                         CameraPtr spCamera, 
                                         LightSetPtr spLightSet, 
                                         int regionX, int regionY)
     {
-        auto pItem = new Item;
-        pItem->spCamera   = spCamera;
-        pItem->spLightSet = spLightSet;
-        pItem->spMaterial = _ensureMaterial(rasterizer);
-        pItem->spTransform = rasterizer.createTransform(regionX * 100.0f, regionY * 100.0f, 0.0f);
-        pItem->spGeometry = _buildTileGeom2(spElement, rasterizer, regionX, regionY);
-        return ItemPtr(pItem);
+        auto pInstance = new Instance;
+        pInstance->spCamera   = spCamera;
+        pInstance->spLightSet = spLightSet;
+        pInstance->spMaterial = _ensureMaterial(rasterizer);
+        pInstance->spTransform = rasterizer.createTransform(regionX * 100.0f, regionY * 100.0f, 0.0f);
+        pInstance->spGeometry = _buildTileGeom2(spElement, rasterizer, regionX, regionY);
+        return InstancePtr(pInstance);
     }
 }
 

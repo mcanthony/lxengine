@@ -821,7 +821,7 @@ void RasterizerGL::endFrame()
 }
 
 void 
-RasterizerGL::rasterizeList (RenderAlgorithm& algorithm, std::vector<std::shared_ptr<Item>>& list)
+RasterizerGL::rasterizeList (RenderAlgorithm& algorithm, std::vector<std::shared_ptr<Instance>>& list)
 {
     mStats.tmRasterizeList.start();
 
@@ -832,14 +832,14 @@ RasterizerGL::rasterizeList (RenderAlgorithm& algorithm, std::vector<std::shared
 
         for (auto it = list.begin(); it != list.end(); ++it)
         {
-            auto spItem = *it;
-            if (spItem)
+            auto spInstance = *it;
+            if (spInstance)
             {
                 rasterizeItem(*pass, *it);
             }
             else
             {
-                lx_error("Null Item in rasterization list");
+                lx_error("Null Instance in rasterization list");
             }
             mContext.itemId ++;
         }
@@ -895,38 +895,38 @@ RasterizerGL::Context::Uniforms::activate ()
 }
 
 void 
-RasterizerGL::rasterizeItem (GlobalPass& pass, std::shared_ptr<Item> spItem)
+RasterizerGL::rasterizeItem (GlobalPass& pass, std::shared_ptr<Instance> spInstance)
 {
     mStats.tmRasterizeItem.start();
 
-    lx_check_error(spItem.get() != nullptr);
+    lx_check_error(spInstance.get() != nullptr);
 
     // Set up the context variables that have changed
-    mContext.spItem = spItem;
+    mContext.spInstance = spInstance;
     mContext.textureUnit = 0;
     mContext.uniforms.reset();
 
     // Fill in any unspecified or overridden item variables via the current context
-    mContext.spCamera = (spItem->spCamera) 
-        ? spItem->spCamera
+    mContext.spCamera = (spInstance->spCamera) 
+        ? spInstance->spCamera
         : pass.spCamera;
-    mContext.spLightSet = (spItem->spLightSet)
-        ? spItem->spLightSet
+    mContext.spLightSet = (spInstance->spLightSet)
+        ? spInstance->spLightSet
         : pass.spLightSet;
     mContext.spMaterial = (pass.bOverrideMaterial) 
         ? pass.spMaterial
-        : spItem->spMaterial;
+        : spInstance->spMaterial;
 
-    mContext.tbFlatShading = boost::indeterminate(spItem->spGeometry->mtbFlatShading) 
+    mContext.tbFlatShading = boost::indeterminate(spInstance->spGeometry->mtbFlatShading) 
         ? pass.tbFlatShading
-        : spItem->spGeometry->mtbFlatShading;
+        : spInstance->spGeometry->mtbFlatShading;
 
     //
     // Error checking
     //
     {
         if (!mContext.spCamera)
-            lx_error("No camera set! Set a camera either on the ItemPtr or the GlobalPass.");
+            lx_error("No camera set! Set a camera either on the InstancePtr or the GlobalPass.");
     }
 
     //
@@ -945,12 +945,12 @@ RasterizerGL::rasterizeItem (GlobalPass& pass, std::shared_ptr<Item> spItem)
         mContext.spMaterial->activate(this, pass);
         mStats.tmMaterialActivate.stop();
         
-        spItem->spTransform->activate(this, spItem->spCamera);
+        spInstance->spTransform->activate(this, spInstance->spCamera);
 
         mContext.uniforms.activate();
         
         mStats.tmGeometryActivate.start();
-        spItem->spGeometry->activate(this, pass);
+        spInstance->spGeometry->activate(this, pass);
         mStats.tmGeometryActivate.stop();
     
         check_glerror();
@@ -959,7 +959,7 @@ RasterizerGL::rasterizeItem (GlobalPass& pass, std::shared_ptr<Item> spItem)
     mContext.spCamera = nullptr;
     mContext.spLightSet = nullptr;
     mContext.spMaterial = nullptr;
-    mContext.spItem = nullptr;
+    mContext.spInstance = nullptr;
 
     mStats.tmRasterizeItem.stop();
 }
@@ -1028,13 +1028,13 @@ RasterizerGL::readBackBuffer(glgeom::image3f& img)
 //===========================================================================//
 
 void
-RenderList::push_back (int layer, ItemPtr spItem)
+RenderList::push_back (int layer, InstancePtr spInstance)
 {
-    mLayers[layer].list.push_back(spItem);
+    mLayers[layer].list.push_back(spInstance);
 }
 
-ItemPtr 
-RenderList::getItem (unsigned int id)
+InstancePtr 
+RenderList::getInstance (unsigned int id)
 {
     auto it = mLayers.begin();
 

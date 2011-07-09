@@ -112,7 +112,7 @@ public:
                 }
             }
         }
-        mspItem = _createItem(pRasterizer, offset);
+        mspInstance = _createItem(pRasterizer, offset);
     }
 
     virtual void onValueChange (ElementPtr spElem, lxvar value)
@@ -121,12 +121,12 @@ public:
 
     virtual void generate (RasterizerGL* pRasterizer, MeshCachePtr spMeshCache, RdCameraPtr spCamera, RenderList& list)
     {
-        if (mspItem)
-            list.push_back(0, mspItem);
+        if (mspInstance)
+            list.push_back(0, mspInstance);
     }
 
 protected:
-    ItemPtr _createItem (RasterizerGL* pRasterizer, const vector3f& offset)
+    InstancePtr _createItem (RasterizerGL* pRasterizer, const vector3f& offset)
     {
         std::vector<point3f> position;
         std::vector<color3f> colors;
@@ -218,14 +218,14 @@ protected:
 
         if (!position.empty())
         {
-            ItemPtr spItem(new Item);
-            spItem->spMaterial = pRasterizer->createVertexColorMaterial();
-            spItem->spTransform = pRasterizer->createTransform(glgeom::vector3f(1, 1, 1), offset + glgeom::point3f(.5f, .5f, .5f));
-            spItem->spGeometry = pRasterizer->createQuadList(position, colors);
-            return spItem;
+            InstancePtr spInstance(new Instance);
+            spInstance->spMaterial = pRasterizer->createVertexColorMaterial();
+            spInstance->spTransform = pRasterizer->createTransform(glgeom::vector3f(1, 1, 1), offset + glgeom::point3f(.5f, .5f, .5f));
+            spInstance->spGeometry = pRasterizer->createQuadList(position, colors);
+            return spInstance;
         }
         else 
-            return ItemPtr();
+            return InstancePtr();
     }
 
 
@@ -250,7 +250,7 @@ protected:
     }
 
     bool    mExists[16 * 16 * 4];
-    ItemPtr mspItem;
+    InstancePtr mspInstance;
 };
 
 typedef std::shared_ptr<RdVoxelCell> RdVoxelCellPtr;
@@ -331,6 +331,8 @@ protected:
 class Renderer : public View::Component
 {
 public:
+    virtual const char* name() const { return "lxcraft"; }
+
     ~Renderer()
     {
         lx_log("Renderer dtor");
@@ -367,12 +369,12 @@ public:
         pass[0].spLightSet = mspLightSet;
         algorithm.mPasses.push_back(pass[0]);
 
-        RenderList items;
+        RenderList instances;
         for (auto it = mRenderables.begin(); it != mRenderables.end(); ++it)
-            (*it)->generate(mspRasterizer.get(), mspMeshCache, mspCamera, items);
+            (*it)->generate(mspRasterizer.get(), mspMeshCache, mspCamera, instances);
 
         mspRasterizer->beginFrame(algorithm);
-        for (auto it = items.begin(); it != items.end(); ++it)
+        for (auto it = instances.begin(); it != instances.end(); ++it)
         {
             mspRasterizer->rasterizeList(algorithm, it->second.list);
         }

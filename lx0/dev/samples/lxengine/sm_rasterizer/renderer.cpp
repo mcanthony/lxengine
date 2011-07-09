@@ -62,6 +62,8 @@ public:
 class Renderer : public View::Component
 {
 public:
+    virtual const char* name () const { return "Renderer"; }
+
     virtual void initialize(ViewPtr spView)
     {
         mspRasterizer.reset( new RasterizerGL );
@@ -84,13 +86,13 @@ public:
         GlobalPass pass[4];
         algorithm.mPasses.push_back(pass[0]);
 
-        RenderList items;
+        RenderList instances;
         for (auto it = mGeometry.begin(); it != mGeometry.end(); ++it)
-            items.push_back(0, *it);
+            instances.push_back(0, *it);
 
         mspRasterizer->beginFrame(algorithm);
 
-        for (auto it = items.begin(); it != items.end(); ++it)
+        for (auto it = instances.begin(); it != instances.end(); ++it)
         {
             mspRasterizer->rasterizeList(algorithm, it->second.list);
         }
@@ -151,28 +153,28 @@ protected:
             float radius = spElem->value().find("radius").convert(.5f);
             glgeom::vector3f scale(radius / .5f, radius / .5f, radius / .5f);
 
-            auto pItem = new Item;
-            pItem->spCamera   = mspCamera;
-            pItem->spLightSet = mspLightSet;
-            pItem->spMaterial = _findMaterial(spElem);
-            pItem->spTransform = mspRasterizer->createTransform(scale, center);
-            pItem->spGeometry = _loadMesh("media2/models/unit_sphere-000.blend");
+            auto pInstance = new Instance;
+            pInstance->spCamera   = mspCamera;
+            pInstance->spLightSet = mspLightSet;
+            pInstance->spMaterial = _findMaterial(spElem);
+            pInstance->spTransform = mspRasterizer->createTransform(scale, center);
+            pInstance->spGeometry = _loadMesh("media2/models/unit_sphere-000.blend");
 
-            mGeometry.push_back(ItemPtr(pItem));
+            mGeometry.push_back(InstancePtr(pInstance));
         }
         else if (tag == "Cube")
         {
             glgeom::point3f center = spElem->value().find("center").convert();
             glgeom::vector3f scale = spElem->value().find("scale").convert();
 
-            auto pItem = new Item;
-            pItem->spCamera   = mspCamera;
-            pItem->spLightSet = mspLightSet;
-            pItem->spMaterial = _findMaterial(spElem);
-            pItem->spTransform = mspRasterizer->createTransform(scale, center);
-            pItem->spGeometry = _loadMesh("media2/models/unit_cube-000.blend");
+            auto pInstance = new Instance;
+            pInstance->spCamera   = mspCamera;
+            pInstance->spLightSet = mspLightSet;
+            pInstance->spMaterial = _findMaterial(spElem);
+            pInstance->spTransform = mspRasterizer->createTransform(scale, center);
+            pInstance->spGeometry = _loadMesh("media2/models/unit_cube-000.blend");
             
-            mGeometry.push_back(ItemPtr(pItem));
+            mGeometry.push_back(InstancePtr(pInstance));
         }
         else if (tag == "Cylinder")
         {
@@ -181,14 +183,14 @@ protected:
             float radius = spElem->value().find("radius").convert();
             glgeom::vector3f scale(radius / .5f, radius / .5f, radius / .5f);
 
-            auto pItem = new Item;
-            pItem->spCamera   = mspCamera;
-            pItem->spLightSet = mspLightSet;
-            pItem->spMaterial = _findMaterial(spElem);
-            pItem->spTransform = mspRasterizer->createTransform(scale, center);
-            pItem->spGeometry = _loadMesh("media2/models/unit_geometry/unit_cylinder-001.blend");
+            auto pInstance = new Instance;
+            pInstance->spCamera   = mspCamera;
+            pInstance->spLightSet = mspLightSet;
+            pInstance->spMaterial = _findMaterial(spElem);
+            pInstance->spTransform = mspRasterizer->createTransform(scale, center);
+            pInstance->spGeometry = _loadMesh("media2/models/unit_geometry/unit_cylinder-001.blend");
             
-            mGeometry.push_back(ItemPtr(pItem));
+            mGeometry.push_back(InstancePtr(pInstance));
         }
         else if (tag == "Cone")
         {
@@ -197,14 +199,14 @@ protected:
             float radius = spElem->value().find("radius").convert();
             glgeom::vector3f scale(radius / .5f, radius / .5f, radius / .5f);
 
-            auto pItem = new Item;
-            pItem->spCamera   = mspCamera;
-            pItem->spLightSet = mspLightSet;
-            pItem->spMaterial = _findMaterial(spElem);
-            pItem->spTransform = mspRasterizer->createTransform(scale, center);
-            pItem->spGeometry = _loadMesh("media2/models/unit_geometry/unit_cone-000.blend");
+            auto pInstance = new Instance;
+            pInstance->spCamera   = mspCamera;
+            pInstance->spLightSet = mspLightSet;
+            pInstance->spMaterial = _findMaterial(spElem);
+            pInstance->spTransform = mspRasterizer->createTransform(scale, center);
+            pInstance->spGeometry = _loadMesh("media2/models/unit_geometry/unit_cone-000.blend");
             
-            mGeometry.push_back(ItemPtr(pItem));
+            mGeometry.push_back(InstancePtr(pInstance));
         }
         else if (tag == "Plane")
         {
@@ -244,14 +246,14 @@ protected:
             }
 
 
-            auto pItem = new Item;
-            pItem->spCamera   = mspCamera;
-            pItem->spLightSet = mspLightSet;
-            pItem->spMaterial = _findMaterial(spElem);
-            pItem->spTransform = mspRasterizer->createTransform(glm::mat4(mat));
-            pItem->spGeometry = _loadMesh("media2/models/plane_1k-000.blend");
+            auto pInstance = new Instance;
+            pInstance->spCamera   = mspCamera;
+            pInstance->spLightSet = mspLightSet;
+            pInstance->spMaterial = _findMaterial(spElem);
+            pInstance->spTransform = mspRasterizer->createTransform(glm::mat4(mat));
+            pInstance->spGeometry = _loadMesh("media2/models/plane_1k-000.blend");
             
-            mGeometry.push_back(ItemPtr(pItem));
+            mGeometry.push_back(InstancePtr(pInstance));
         }
         else if (tag == "Light")
         {
@@ -296,11 +298,11 @@ protected:
     std::shared_ptr<RasterizerGL> mspRasterizer;
     lx0::ShaderBuilder            mShaderBuilder;
 
-    lx0::CameraPtr       mspCamera;       // Camera shared by all items
+    lx0::CameraPtr       mspCamera;       // Camera shared by all instances
     lx0::LightSetPtr     mspLightSet;
 
     std::map<std::string,GeometryPtr>   mMeshes;
-    std::vector<ItemPtr>                mGeometry;
+    std::vector<InstancePtr>                mGeometry;
     std::map<std::string,MaterialPtr>   mMaterials;
 };
 

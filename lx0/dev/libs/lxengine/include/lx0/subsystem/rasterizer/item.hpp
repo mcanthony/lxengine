@@ -82,11 +82,11 @@ namespace lx0
 
             //===========================================================================//
             //! \ingroup lx0_subsystem_rasterizer
-            class Item
+            class Instance
                 : public detail::WithUserData
             {
             public:
-                Item() {}
+                Instance() {}
         
                 //weak_ptr<Target> wpTarget;  - probably should be a member of the RenderList layer or RenderAlgorithm?
                 CameraPtr    spCamera;

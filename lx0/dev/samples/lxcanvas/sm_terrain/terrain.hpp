@@ -66,7 +66,7 @@ namespace Terrain
 
     protected:
         MaterialPtr       _ensureMaterial (RasterizerGL& rasterizer);
-        ItemPtr           _buildTile (ElementPtr spElement, 
+        InstancePtr           _buildTile (ElementPtr spElement, 
                                             RasterizerGL& rasterizer, 
                                             CameraPtr spCamera, 
                                             LightSetPtr spLightSet, 
@@ -75,6 +75,6 @@ namespace Terrain
 
         std::shared_ptr<Terrain::Runtime>                        mspTerrain;
         MaterialWPtr                               mwpMaterial;
-        std::map<std::pair<short, short>, ItemPtr> mMap;
+        std::map<std::pair<short, short>, InstancePtr> mMap;
     };
 }

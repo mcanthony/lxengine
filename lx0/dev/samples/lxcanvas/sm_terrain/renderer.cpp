@@ -56,7 +56,7 @@ public:
                       LightSetPtr spLightSet, 
                       RenderList& list)
     {
-        if (!mspItem)
+        if (!mspInstance)
         {               
             mPosition = glgeom::point3f ( 0.0f, 0.0f, 0.0f);
 
@@ -69,24 +69,24 @@ public:
             spMat->mZWrite = false;
             spMat->mTextures[0] = rasterizer.createTexture("media2/textures/skymaps/polar/bluesky_grayclouds.png");
 
-            auto pItem = new Item;
-            pItem->spCamera   = spCamera;
-            pItem->spLightSet = spLightSet;
-            pItem->spMaterial = spMat;
-            pItem->spTransform = rasterizer.createTransformEye(mPosition.x, mPosition.y, mPosition.z, glgeom::radians(0.0f));
-            pItem->spGeometry = spGeom;
+            auto pInstance = new Instance;
+            pInstance->spCamera   = spCamera;
+            pInstance->spLightSet = spLightSet;
+            pInstance->spMaterial = spMat;
+            pInstance->spTransform = rasterizer.createTransformEye(mPosition.x, mPosition.y, mPosition.z, glgeom::radians(0.0f));
+            pInstance->spGeometry = spGeom;
             
-            mspItem.reset(pItem);
+            mspInstance.reset(pInstance);
         }
 
-        mspItem->spTransform = rasterizer.createTransformEye(mPosition.x, mPosition.y, mPosition.z, mRotation);
-        list.push_back(0, mspItem);
+        mspInstance->spTransform = rasterizer.createTransformEye(mPosition.x, mPosition.y, mPosition.z, mRotation);
+        list.push_back(0, mspInstance);
     }
 
 protected:
     glgeom::point3f   mPosition;
     glgeom::radians   mRotation;
-    ItemPtr           mspItem;
+    InstancePtr           mspInstance;
 };
 
 //===========================================================================//
@@ -169,30 +169,30 @@ public:
                       LightSetPtr spLightSet, 
                       RenderList& list)
     {
-        if (!mspItem)
+        if (!mspInstance)
         {
             std::string image = spElement->attr("image").as<std::string>();
 
-            auto pItem = new Item;
-            pItem->setData<ElementPtr>(spElement);
-            pItem->spCamera   = spCamera;
-            pItem->spLightSet = spLightSet;
-            pItem->spMaterial = SpriteShared::acquire()->_ensureMaterial(rasterizer, image);
-            pItem->spGeometry = SpriteShared::acquire()->_ensureGeom(rasterizer);
+            auto pInstance = new Instance;
+            pInstance->setData<ElementPtr>(spElement);
+            pInstance->spCamera   = spCamera;
+            pInstance->spLightSet = spLightSet;
+            pInstance->spMaterial = SpriteShared::acquire()->_ensureMaterial(rasterizer, image);
+            pInstance->spGeometry = SpriteShared::acquire()->_ensureGeom(rasterizer);
             
-            mspItem.reset(pItem);
+            mspInstance.reset(pInstance);
         }
 
         lxvar px = spElement->attr("position");
         glgeom::point3f pos(px.at(0).as<float>(), px.at(1).as<float>(), px.size() == 3 ? px.at(2).as<float>() : 0.0f); 
         float scale = query( spElement->attr("scale"), 1.0f);
-        mspItem->spTransform = rasterizer.createTransformBillboardXYS(pos.x, pos.y, pos.z, scale, scale, scale);
+        mspInstance->spTransform = rasterizer.createTransformBillboardXYS(pos.x, pos.y, pos.z, scale, scale, scale);
 
-        list.push_back(1, mspItem);
+        list.push_back(1, mspInstance);
     }
 
 protected:
-    ItemPtr           mspItem;
+    InstancePtr           mspInstance;
 };
 
 //===========================================================================//
@@ -222,12 +222,12 @@ Renderer::handleEvent (std::string evt, lx0::lxvar params)
 {
     if (evt == "select_object")
     {
-        auto& spItem = select( params.at(0).as<int>(), params.at(1).as<int>() );
-        auto spElement = spItem->getData<ElementPtr>();
+        auto& spInstance = select( params.at(0).as<int>(), params.at(1).as<int>() );
+        auto spElement = spInstance->getData<ElementPtr>();
         std::string name = spElement
             ? query(spElement->attr("image"), "unknown").c_str()
             : "no associated element";
-        printf("Select: %s (%s)\n", spItem->spMaterial->mShaderFilename.c_str(), name.c_str());
+        printf("Select: %s (%s)\n", spInstance->spMaterial->mShaderFilename.c_str(), name.c_str());
     }
     else if (evt == "cycle_viewmode")
         cycleViewMode();

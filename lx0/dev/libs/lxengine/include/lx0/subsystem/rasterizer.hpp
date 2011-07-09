@@ -64,7 +64,7 @@ namespace lx0
             _LX_FORWARD_DECL_PTRS(Material);
             _LX_FORWARD_DECL_PTRS(Texture);
 
-            _LX_FORWARD_DECL_PTRS(Item);
+            _LX_FORWARD_DECL_PTRS(Instance);
 
             _LX_FORWARD_DECL_PTRS(RasterizerGL);
 

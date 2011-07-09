@@ -66,6 +66,8 @@ public:
     {
     }
 
+    virtual const char* name() const { return "renderer"; }
+
     virtual void initialize (lx0::ViewPtr spView);
 
     void 
@@ -90,7 +92,7 @@ public:
     }
 
     void 
-    _generateItems (RenderList& items)
+    _generateItems (RenderList& instances)
     {
         std::vector<lx0::ElementPtr> elems;
         elems.swap( mspDocument->getElements() );
@@ -101,7 +103,7 @@ public:
             auto spRenderable = (*it)->getComponent<Renderable>("renderable");
             if (spRenderable)
             {
-                spRenderable->generate(*it, mRasterizer, gCamera, spCamera, spLightSet, items);
+                spRenderable->generate(*it, mRasterizer, gCamera, spCamera, spLightSet, instances);
             }
             count ++;
         }
@@ -131,14 +133,14 @@ public:
     }
 
     void
-    _renderImp (lx0::RenderAlgorithm& algorithm, RenderList& items)
+    _renderImp (lx0::RenderAlgorithm& algorithm, RenderList& instances)
     {
         spCamera->viewMatrix = view_matrix(gCamera);
 
         mRasterizer.beginFrame(algorithm);
 
-        _generateItems(items);
-        for (auto it = items.begin(); it != items.end(); ++it)
+        _generateItems(instances);
+        for (auto it = instances.begin(); it != instances.end(); ++it)
         {
             mRasterizer.rasterizeList(algorithm, it->second.list);
         }
@@ -150,25 +152,25 @@ public:
     render (void)	
     {
         RenderAlgorithm algorithm;
-        RenderList items;
+        RenderList instances;
 
         _generateRenderAlgorithm(algorithm);
-        _renderImp(algorithm, items);
+        _renderImp(algorithm, instances);
 
         mRasterizer.refreshTextures();
     }
 
-    lx0::ItemPtr
+    lx0::InstancePtr
     select (int x, int y)
     {
         RenderAlgorithm algorithm;
         _generateSelectAlgorithm(algorithm);
 
         // Draw to the backbuffer
-        RenderList items;
-        _renderImp(algorithm, items);
+        RenderList instances;
+        _renderImp(algorithm, instances);
         unsigned int id = mRasterizer.readPixel(x, y);
-        return items.getItem(id);
+        return instances.getInstance(id);
     }
 
     virtual void handleEvent (std::string evt, lx0::lxvar params);
@@ -176,7 +178,7 @@ public:
     lx0::DocumentPtr                 mspDocument;
 
 protected:
-    lx0::CameraPtr      spCamera;       // Camera shared by all items
+    lx0::CameraPtr      spCamera;       // Camera shared by all instances
     lx0::LightSetPtr    spLightSet;
     lx0::RasterizerGL   mRasterizer;
     int                 mViewMode;

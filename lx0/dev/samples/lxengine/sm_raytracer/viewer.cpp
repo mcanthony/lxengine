@@ -67,6 +67,8 @@ public:
 class Renderer : public View::Component
 {
 public:
+    virtual const char* name () const { return "Renderer"; }
+
     virtual void initialize(ViewPtr spView)
     {
         GLuint id;

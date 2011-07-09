@@ -104,9 +104,9 @@ namespace BuiltIns
             // Currently, always clone the contents of an array
             // This is temporary, as it does not make sense in all
             // cases
-            Object* pItem = (*it)->clone();
-            pItem->incRef();
-            pClone->mData.push_back(pItem);
+            Object* pInstance = (*it)->clone();
+            pInstance->incRef();
+            pClone->mData.push_back(pInstance);
         }
         return pClone;
     }

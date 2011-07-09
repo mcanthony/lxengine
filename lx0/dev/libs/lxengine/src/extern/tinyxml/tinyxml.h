@@ -93,7 +93,7 @@ const int TIXML_MAJOR_VERSION = 2;
 const int TIXML_MINOR_VERSION = 6;
 const int TIXML_PATCH_VERSION = 1;
 
-/*	Internal structure for tracking location of items 
+/*	Internal structure for tracking location of instances 
 	in the XML file.
 */
 struct TiXmlCursor

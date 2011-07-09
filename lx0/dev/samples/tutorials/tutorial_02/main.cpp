@@ -56,6 +56,8 @@ public:
 class Renderer : public lx0::View::Component
 {
 public:
+    virtual const char* name () const { return "Renderer"; }
+
     virtual void initialize(lx0::ViewPtr spView)
     {
         //
@@ -108,10 +110,10 @@ public:
         //
         // Build the cube renderable
         //
-        mspItem.reset(new lx0::Item);
-        mspItem->spTransform = mspRasterizer->createTransform(mRotation);
-        mspItem->spMaterial = mspRasterizer->createMaterial("media2/shaders/glsl/fragment/normal.frag");
-        mspItem->spGeometry = spCube;
+        mspInstance.reset(new lx0::Instance);
+        mspInstance->spTransform = mspRasterizer->createTransform(mRotation);
+        mspInstance->spMaterial = mspRasterizer->createMaterial("media2/shaders/glsl/fragment/normal.frag");
+        mspInstance->spGeometry = spCube;
     }
 
     virtual void render (void)	
@@ -123,11 +125,11 @@ public:
         pass.spCamera = mspCamera;
         algorithm.mPasses.push_back(pass);
 
-        lx0::RenderList items;
-        items.push_back(0, mspItem);
+        lx0::RenderList instances;
+        instances.push_back(0, mspInstance);
 
         mspRasterizer->beginFrame(algorithm);
-        for (auto it = items.begin(); it != items.end(); ++it)
+        for (auto it = instances.begin(); it != instances.end(); ++it)
         {
             mspRasterizer->rasterizeList(algorithm, it->second.list);
         }
@@ -137,7 +139,7 @@ public:
     virtual void update (lx0::ViewPtr spView) 
     {
         mRotation = glm::rotate(mRotation, 1.0f, glm::vec3(0, 0, 1));
-        mspItem->spTransform = mspRasterizer->createTransform(mRotation);
+        mspInstance->spTransform = mspRasterizer->createTransform(mRotation);
 
         spView->sendEvent("redraw");
     }
@@ -145,7 +147,7 @@ public:
 protected:
     lx0::RasterizerGLPtr mspRasterizer;
     lx0::CameraPtr       mspCamera;
-    lx0::ItemPtr         mspItem;
+    lx0::InstancePtr         mspInstance;
     glm::mat4            mRotation;
 };
 

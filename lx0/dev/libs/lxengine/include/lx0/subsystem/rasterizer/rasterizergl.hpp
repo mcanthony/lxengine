@@ -101,16 +101,16 @@ namespace lx0
             /*!
                 \ingroup lx0_subsystem_rasterizer
                 
-                Represents all the items to render for a particular frame.  The items are organized
-                into a set of layers, each with an ordered list of items.  Each layer has its own
+                Represents all the instances to render for a particular frame.  The instances are organized
+                into a set of layers, each with an ordered list of instances.  Each layer has its own
                 set of settings which may control the optimization, re-ordering, etc. of the list
                 for that layer.
              */
             class RenderList
             {
             public:
-                typedef lx0::subsystem::rasterizer_ns::ItemPtr ItemPtr;
-                typedef std::vector<ItemPtr>                ItemList;
+                typedef lx0::subsystem::rasterizer_ns::InstancePtr InstancePtr;
+                typedef std::vector<InstancePtr>                ItemList;
 
                 struct Layer
                 {
@@ -122,12 +122,12 @@ namespace lx0
 
 
 
-                void                    push_back   (int layer, ItemPtr spItem);
+                void                    push_back   (int layer, InstancePtr spInstance);
 
                 LayerMap::iterator      begin       (void)      { return mLayers.begin(); }
                 LayerMap::iterator      end         (void)      { return mLayers.end(); }
 
-                ItemPtr                 getItem     (unsigned int id);
+                InstancePtr                 getInstance     (unsigned int id);
 
             protected:
                 LayerMap    mLayers;
@@ -187,8 +187,8 @@ namespace lx0
                 void            beginFrame      (RenderAlgorithm& algorithm);
                 void            endFrame        (void);
 
-                void            rasterizeList   (RenderAlgorithm& algorithm, std::vector<std::shared_ptr<Item>>& list);
-                void            rasterizeItem   (GlobalPass& pass, std::shared_ptr<Item> spItem);
+                void            rasterizeList   (RenderAlgorithm& algorithm, std::vector<std::shared_ptr<Instance>>& list);
+                void            rasterizeItem   (GlobalPass& pass, std::shared_ptr<Instance> spInstance);
                 
                 unsigned int    readPixel       (int x, int y);
                 void            readBackBuffer  (glgeom::image3f& img);
@@ -200,7 +200,7 @@ namespace lx0
                     {}
 
                     GlobalPass*     pGlobalPass;
-                    ItemPtr         spItem;
+                    InstancePtr         spInstance;
                     unsigned int    itemId;
 
                     LightSetPtr     spLightSet;
