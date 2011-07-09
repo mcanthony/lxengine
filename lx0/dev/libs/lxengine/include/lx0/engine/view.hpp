@@ -264,6 +264,7 @@ namespace lx0 { namespace engine { namespace dom_ns {
         public:
             DocForwarder (View* pView) : mpView (pView) {}
 
+            virtual const char* name() const { return "_docForwarder"; }
             virtual void    onAttached          (DocumentPtr spDocument);
 
             virtual void    onUpdate            (DocumentPtr spDocument);

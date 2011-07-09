@@ -49,6 +49,8 @@ using namespace lx0;
 class MaterialProcessor : public Document::Component
 {
 public:
+    virtual const char* name() const { return "materialprocessor"; }
+
     virtual void onAttached (DocumentPtr spDocument) 
     {
         auto vMats = spDocument->getElementsByTagName("Material");
@@ -99,7 +101,7 @@ main (int argc, char** argv)
         EnginePtr spEngine = Engine::acquire();
         {
             auto spDocument = spEngine->loadDocument("media2/appdata/sb_shadergraph/sample.xml");
-            spDocument->attachComponent("material_processor", new MaterialProcessor);
+            spDocument->attachComponent(new MaterialProcessor);
         }
         spEngine->shutdown();
     }

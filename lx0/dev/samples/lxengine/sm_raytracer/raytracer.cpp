@@ -69,6 +69,8 @@ color3t<T> shade_ambient (const color3t<T>& env_ambient,
 class Camera : public Element::Component
 {
 public:
+    virtual     const char* name() const { return "raytracer"; }
+
     camera3f    camera;
     glm::mat4   viewMatrix;
     glm::mat4   projMatrix;
@@ -79,6 +81,8 @@ public:
 class Environment : public Element::Component
 {
 public:
+    virtual     const char* name() const { return "raytracer"; }
+
     Environment() 
         : ambient (0.0f, 0.005f, 0.02f) 
         , shadows (true) 
@@ -93,6 +97,8 @@ public:
 class Material : public Element::Component
 {
 public:
+    virtual     const char* name() const { return "raytracer"; }
+
     virtual     bool        allowShadow    (void) const { return true; }
     virtual     color3f     shadeAmbient   (ShaderBuilder::ShaderContext& ctx, const color3f& ambient, const intersection3f& intersection) const { return color3f(0, 0, 0); }
     virtual     color3f     shadeLight     (const point_light_f& light, const vector3f& viewDirection, const intersection3f& intersection) const { return color3f(0, 0, 0); }
@@ -162,6 +168,8 @@ protected:
 class Geometry : public Element::Component
 {
 public:
+    virtual     const char* name() const { return "raytracer"; }
+
     virtual ~Geometry(){}
 
     bool intersect (const ray3f& ray, intersection3f& isect) 
@@ -272,6 +280,8 @@ class Light
     , public point_light_f
 {
 public:
+    virtual     const char* name() const { return "raytracer"; }
+
     ~Light()
     {
         lx_log("Light dtor");
@@ -368,7 +378,7 @@ public:
 
             std::shared_ptr<Plane> spComp(pGeom);
             mGeometry.push_back(spComp);
-            spElem->attachComponent("raytrace", spComp);
+            spElem->attachComponent(spComp);
         }));
 
         mHandlers.insert(std::make_pair("Sphere", [&](ElementPtr spElem) {
@@ -380,7 +390,7 @@ public:
             
             std::shared_ptr<Sphere> spComp(pGeom);
             mGeometry.push_back(spComp);
-            spElem->attachComponent("raytrace", spComp);
+            spElem->attachComponent(spComp);
         }));
 
         mHandlers.insert(std::make_pair("Cone", [&](ElementPtr spElem) {
@@ -392,7 +402,7 @@ public:
 
             std::shared_ptr<Cone> spComp(pGeom);
             mGeometry.push_back(spComp);
-            spElem->attachComponent("raytrace", spComp);
+            spElem->attachComponent(spComp);
         }));
 
         mHandlers.insert(std::make_pair("Cylinder", [&](ElementPtr spElem) {
@@ -404,7 +414,7 @@ public:
 
             std::shared_ptr<Cylinder> spComp(pGeom);
             mGeometry.push_back(spComp);
-            spElem->attachComponent("raytrace", spComp);
+            spElem->attachComponent(spComp);
         }));
 
         mHandlers.insert(std::make_pair("Cube", [&](ElementPtr spElem) {
@@ -416,7 +426,7 @@ public:
                 
             std::shared_ptr<Cube> spComp(pGeom);
             mGeometry.push_back(spComp);
-            spElem->attachComponent("raytrace", spComp);
+            spElem->attachComponent(spComp);
         }));
 
         mHandlers.insert(std::make_pair("Material", [&](ElementPtr spElem) {
@@ -430,7 +440,7 @@ public:
             auto shader = mShaderBuilder.buildShaderLambda(graph);
             auto pMat = new GenericMaterial(shader);
 
-            spElem->attachComponent("raytrace", pMat);
+            spElem->attachComponent(pMat);
         }));
 
         mHandlers.insert(std::make_pair("Material2", [&](ElementPtr spElem) {
@@ -439,13 +449,13 @@ public:
             auto shader = mShaderBuilder.buildShaderLambda(graph);
             auto pMat = new GenericMaterial(shader);
 
-            spElem->attachComponent("raytrace", pMat);
+            spElem->attachComponent(pMat);
         }));
 
         mHandlers.insert(std::make_pair("LightGradientMaterial", [&](ElementPtr spElem) {
             auto pMat = new LightGradientMaterial;
             pMat->setTexture( spElem->value().find("texture").as<std::string>() );
-            spElem->attachComponent("raytrace", pMat);
+            spElem->attachComponent(pMat);
         }));
 
         mHandlers.insert(std::make_pair("Light", [&](ElementPtr spElem) {
@@ -454,7 +464,7 @@ public:
             pLight->color    = spElem->value().find("color").convert();
             
             LightPtr spLight(pLight);
-            spElem->attachComponent("raytrace", spLight);
+            spElem->attachComponent(spLight);
             mLights.push_back(spLight);
         }));
 

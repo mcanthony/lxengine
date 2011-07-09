@@ -144,7 +144,7 @@ namespace lx0 { namespace engine { namespace dom_ns {
         auto& var = mGlobals["load_builtins"];
 
         if (var["sound"].as<bool>())
-            attachComponent("soundBootstrap", _hidden_createSound() );
+            attachComponent(_hidden_createSound() );
         if (var["Canvas"].as<bool>())
             addViewPlugin("Canvas", _hidden_createCanvasViewImp);
         if (var["Ogre"])
@@ -461,7 +461,7 @@ namespace lx0 { namespace engine { namespace dom_ns {
         for (auto it = mDocumentComponents.begin(); it != mDocumentComponents.end(); ++it)
         {
             auto pComponent = (it->second)();
-            spDocument->attachComponent(it->first, pComponent);
+            spDocument->attachComponent(pComponent);
         }
 
         //

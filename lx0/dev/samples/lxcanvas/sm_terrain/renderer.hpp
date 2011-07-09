@@ -41,6 +41,8 @@ using namespace lx0::subsystem::rasterizer_ns;
 class Renderable : public lx0::Element::Component
 {
 public:
+    virtual const char* name() const { return "renderable"; }
+
     virtual void update(lx0::ElementPtr spElement) {}
 
     virtual void generate(lx0::ElementPtr spElement,

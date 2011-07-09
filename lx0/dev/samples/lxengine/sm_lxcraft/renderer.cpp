@@ -40,6 +40,8 @@ using namespace glgeom;
 class RdCamera : public Element::Component
 {
 public:
+    virtual const char* name() const { return "lxcraft"; }
+
     RdCamera (RasterizerGL* pRasterizer)
         : mPosition (1, 1, 1)
         , mTarget   (0, 0, 0)
@@ -82,6 +84,8 @@ static float computeHeight (const point3f& p)
 class Renderable : public Element::Component
 {
 public:
+    virtual const char* name() const { return "rendererable"; }
+
     virtual void    generate (RasterizerGL* pRasterizer, MeshCachePtr spMeshCache, RdCameraPtr spCamera, RenderList& list) = 0;
 };
 
@@ -401,7 +405,7 @@ protected:
         else if (tag == "Camera")
         {
             mspCamera->resetViewDirection(spElem, spElem->value());
-            spElem->attachComponent("rasterizer", mspCamera);
+            spElem->attachComponent(mspCamera);
         }
         else 
         { 

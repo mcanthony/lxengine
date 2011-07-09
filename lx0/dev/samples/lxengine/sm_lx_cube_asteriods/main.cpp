@@ -61,9 +61,9 @@ main (int argc, char** argv)
     {
         EnginePtr   spEngine   = Engine::acquire();
         {
-            spEngine->attachComponent("jsengine",       lx0::createJavascriptSubsystem());
-            spEngine->attachComponent("scriptheader",   lx0::createProcessScriptElement());
-            spEngine->attachComponent("physics",        lx0::createPhysicsSubsystem());
+            spEngine->attachComponent( lx0::createJavascriptSubsystem());
+            spEngine->attachComponent( lx0::createProcessScriptElement());
+            spEngine->attachComponent( lx0::createPhysicsSubsystem());
 
             DocumentPtr spDocument = spEngine->loadDocument("data/sm_lx_cube_asteriods/level00.xml");
             ViewPtr     spView     = spDocument->createView("OGRE", "view");

@@ -65,14 +65,14 @@ main (int argc, char** argv)
 
         if (spEngine->parseCommandLine(argc, argv, "file"))
         {
-            spEngine->attachComponent("jsengine",   lx0::createJavascriptSubsystem());
-            spEngine->attachComponent("Scripting",  createScriptHandler());
+            spEngine->attachComponent(lx0::createJavascriptSubsystem());
+            spEngine->attachComponent(createScriptHandler());
 
             // Resize the image to the requested size
             img = glgeom::image3f( spEngine->globals().find("width"), spEngine->globals().find("height") );
 
             DocumentPtr spDocument = spEngine->loadDocument(spEngine->globals().find("file"));
-            spDocument->attachComponent("ray", create_raytracer() );
+            spDocument->attachComponent(create_raytracer() );
 
             ViewPtr spView = spDocument->createView("Canvas", "view", create_renderer() );
             spView->addUIBinding( create_uibinding() );

@@ -209,6 +209,8 @@ namespace lx0 { namespace core { namespace detail {
     class PhysicsDoc : public Document::Component
     {
     public:
+        virtual const char* name() const { return "physics"; }
+
                         PhysicsDoc();
                         ~PhysicsDoc();
 
@@ -254,6 +256,8 @@ namespace lx0 { namespace core { namespace detail {
     class SceneElem : public Element::Component
     {
     public:
+        virtual const char* name() const { return "physics"; }
+
         SceneElem (DocumentPtr spDocument, ElementPtr spElem, PhysicsDoc* pPhysics)
             : mpDocPhysics (pPhysics)
         {
@@ -298,6 +302,8 @@ namespace lx0 { namespace core { namespace detail {
     class PhysicsElem : public Element::Component
     {
     public:
+        virtual const char* name() const { return "physics"; }
+
         PhysicsElem (DocumentPtr spDocument, ElementPtr spElem, PhysicsDoc* pPhysics)
             : mpDocPhysics (pPhysics)
         {
@@ -527,10 +533,10 @@ namespace lx0 { namespace core { namespace detail {
             //
             lx_check_error( spElem->getComponent<PhysicsElem>("physics").get() == nullptr );
 
-            spElem->attachComponent("physics", new PhysicsElem(spDocument, spElem, this) );
+            spElem->attachComponent(new PhysicsElem(spDocument, spElem, this) );
         }
         else if (spElem->tagName() == "Scene")
-            spElem->attachComponent("physics", new SceneElem(spDocument, spElem, this) );
+            spElem->attachComponent(new SceneElem(spDocument, spElem, this) );
     }
 
     void 
@@ -710,6 +716,8 @@ namespace lx0 { namespace core { namespace detail {
     class PhysicsEngine : public Engine::Component
     {
     public:
+        virtual const char* name() const { return "physics"; }
+
         virtual void onAttached (EnginePtr spEngine) 
         {
             Element::addFunction("addImpulse", [](ElementPtr spElem, std::vector<lxvar>& args) {
@@ -720,7 +728,7 @@ namespace lx0 { namespace core { namespace detail {
         virtual void onDocumentCreated   (EnginePtr spEngine, DocumentPtr spDocument) 
         {
 
-            spDocument->attachComponent("physicsSystem", new PhysicsDoc);
+            spDocument->attachComponent(new PhysicsDoc);
         }
     };
 }}}

@@ -65,7 +65,7 @@ namespace lx0 { namespace engine { namespace dom_ns {
         // Hook into Document events
         //
         mpDocForwarder = new DocForwarder(this);
-        pDocument->attachComponent("_docforwarder", mpDocForwarder);
+        pDocument->attachComponent(mpDocForwarder);
 
         mOnElementRemovedId = (mpDocument->slotElementRemoved += [&](ElementPtr spElem) { _onElementRemoved(spElem); }); 
         mOnElementAddedId = (mpDocument->slotElementAdded += [&](ElementPtr spElem) { _onElementAdded(spElem); });

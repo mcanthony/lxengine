@@ -108,6 +108,8 @@ lec::createProcessScriptElement (void)
     class DocComp : public Document::Component
     {
     public:
+        virtual const char* name() const { return "ScriptHandler"; }
+
         virtual void    onElementAdded (DocumentPtr spDocument, ElementPtr spElem) 
         {
             _runIfScriptElement(spElem);
@@ -117,9 +119,10 @@ lec::createProcessScriptElement (void)
     class EngComp : public Engine::Component
     {
     public:
+        virtual const char* name() const { return "ScriptHandler"; }
         virtual void onDocumentCreated (EnginePtr spEngine, DocumentPtr spDocument)
         {
-            spDocument->attachComponent("runscriptelem", new DocComp);
+            spDocument->attachComponent(new DocComp);
         }
     };
 

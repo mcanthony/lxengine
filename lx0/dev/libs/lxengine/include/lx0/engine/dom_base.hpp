@@ -34,6 +34,7 @@
 //===========================================================================//
 
 // Standard headers
+#include <cassert>
 #include <map>
 #include <memory>
 #include <string>
@@ -45,6 +46,8 @@ namespace lx0 { namespace engine {  namespace dom_ns { namespace detail {
     {
     public:
         virtual ~_ComponentBase() {}
+
+        virtual const char*     name() const = 0;
     };
 
     /*!
@@ -70,15 +73,23 @@ namespace lx0 { namespace engine {  namespace dom_ns { namespace detail {
         typedef std::shared_ptr<Component>          ComponentPtr;
         typedef std::map<std::string, ComponentPtr> Map;
 
-        ComponentPtr attachComponent (std::string name, Component* pComponent) 
+        ComponentPtr attachComponent (Component* pComponent) 
         { 
             ComponentPtr spValue(pComponent);
-            return attachComponent(name, spValue);
+            return attachComponent(spValue);
         }
 
-        ComponentPtr attachComponent (std::string name, ComponentPtr spValue) 
+        ComponentPtr attachComponent (ComponentPtr spValue) 
         { 
-            mComponents.insert( std::make_pair(name, spValue) );
+            const char* slotName = spValue->name();
+
+            if (!mComponents.insert( std::make_pair(slotName, spValue) ).second)
+            {
+#ifndef NDEBUG
+                auto spExisting = mComponents.find(slotName);
+                assert(!"Existing component already in the slot by that name");
+#endif
+            }
 
             // Have the host object send out notification that the Component
             // was attached
@@ -113,7 +124,12 @@ namespace lx0 { namespace engine {  namespace dom_ns { namespace detail {
             ComponentPtr spComponent = getComponent<Component>(name);
             if (!spComponent)
             {
-                spComponent = attachComponent(name, ctor());
+                // Ensure the constructor is actually creating an object for the slot being
+                // tested
+                auto pValue = ctor();
+                assert(name == pValue->name());
+
+                spComponent = attachComponent(pValue);
             }
             return std::dynamic_pointer_cast<T>(spComponent);
         }

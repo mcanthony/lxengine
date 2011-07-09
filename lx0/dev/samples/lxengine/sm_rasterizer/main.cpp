@@ -56,8 +56,8 @@ main (int argc, char** argv)
 
         if (spEngine->parseCommandLine(argc, argv, "file"))
         {
-            spEngine->attachComponent("jsengine",   lx0::createJavascriptSubsystem());
-            spEngine->attachComponent("Javascript", createScriptHandler());
+            spEngine->attachComponent(lx0::createJavascriptSubsystem());
+            spEngine->attachComponent(createScriptHandler());
         
             DocumentPtr spDocument = spEngine->loadDocument(spEngine->globals().find("file"));
             spDocument->addController( create_controller(spDocument) );

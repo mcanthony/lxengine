@@ -37,6 +37,8 @@ namespace lx0 { namespace subsystem { namespace javascript_ns {
     class DocImp : public IJavascript
     {
     public:
+        virtual const char* name() const { return ""; }
+
         virtual void    onAttached          (DocumentPtr spDocument) 
         {
             mpDocument = spDocument.get();
@@ -61,6 +63,8 @@ namespace lx0 { namespace subsystem { namespace javascript_ns {
     class Scripting : public Document::Component
     {
     public: 
+        virtual const char* name() const { return "scriptHandler2"; }
+
         virtual void onAttached (DocumentPtr spDocument) 
         {
             spDocument->iterateElements([&](ElementPtr spElem) -> bool { 
@@ -92,6 +96,7 @@ namespace lx0 { namespace subsystem { namespace javascript_ns {
     class JavascriptPlugin : public Engine::Component
     {
     public:
+        virtual const char* name() const { return "scriptHandler"; }
         virtual void    onDocumentCreated   (EnginePtr spEngine, DocumentPtr spDocument);
     };
 
@@ -100,8 +105,8 @@ namespace lx0 { namespace subsystem { namespace javascript_ns {
         lx_log("Attaching Javascript components");
         lx_log("Attaching <Script/> component");
 
-        spDocument->attachComponent("javascript", new DocImp);
-        spDocument->attachComponent("scripting", new Scripting);
+        spDocument->attachComponent(new DocImp);
+        spDocument->attachComponent(new Scripting);
     }
 
     Engine::Component* createScriptHandler()

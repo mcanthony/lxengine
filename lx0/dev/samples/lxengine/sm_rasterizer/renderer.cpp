@@ -41,6 +41,8 @@ using namespace lx0;
 class CameraComp : public Element::Component
 {
 public:
+    virtual     const char* name() const { return "rasterizer"; }
+
     CameraComp (lx0::CameraPtr spCam) : mspCamera (spCam) {}
 
     virtual void    onValueChange       (ElementPtr spElem, lxvar value)
@@ -267,7 +269,7 @@ protected:
             auto view = glm::lookAt(position.vec, target.vec, glm::vec3(0, 0, 1));
             mspCamera = mspRasterizer->createCamera(glgeom::pi() / 3.0f, 0.1f, 2000.0f, view);
 
-            spElem->attachComponent("rasterizer", new CameraComp(mspCamera));
+            spElem->attachComponent(new CameraComp(mspCamera));
         }
         else 
         { 

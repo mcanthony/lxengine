@@ -77,6 +77,8 @@ namespace {
     class SceneElem : public Element::Component
     {
     public:
+        virtual const char* name() const { return "ogre"; }
+
         SceneElem   (ElementPtr spElem);
 
         virtual void onAttributeChange(ElementPtr spElem, std::string name, lxvar value);
@@ -95,6 +97,8 @@ namespace {
     class CameraElem : public Element::Component
     {
     public:
+        virtual const char* name() const { return "ogre"; }
+
         CameraElem   (ElementPtr spElem, Ogre::Camera* pCamera);
 
         virtual void onValueChange(ElementPtr spElem, lxvar value);
@@ -113,6 +117,8 @@ namespace {
     class RefElem : public Element::Component
     {
     public:
+        virtual const char* name() const { return "ogre"; }
+
         RefElem (Ogre::SceneManager* mpSceneMgr, ElementPtr spElem) 
             : mpEntity(nullptr) 
         {
@@ -545,7 +551,7 @@ namespace {
     void
     OgreImp::_processScene (ElementPtr spElem)
     {
-        spElem->attachComponent("OgreSceneElem", new SceneElem(spElem));
+        spElem->attachComponent(new SceneElem(spElem));
     }
 
     void        
@@ -556,9 +562,9 @@ namespace {
             ElementPtr spChild = spParent->child(j);
 
             if (spChild->tagName() == "Ref")
-                spChild->attachComponent("OgreRefElem", new RefElem(mpSceneMgr, spChild));
+                spChild->attachComponent(new RefElem(mpSceneMgr, spChild));
             else if (spChild->tagName() == "Camera")
-                spChild->attachComponent("OgreCameraElem", new CameraElem(spChild, mpCamera));
+                spChild->attachComponent(new CameraElem(spChild, mpCamera));
             else if (spChild->tagName() == "Group")
             {
                 _processGroup(spChild);
@@ -680,7 +686,7 @@ namespace {
     OgreImp::_onElementAdded (ElementPtr spElem)
     {
         if (spElem->tagName() == "Ref")
-            spElem->attachComponent("OgreRefElem", new RefElem(mpSceneMgr, spElem));
+            spElem->attachComponent(new RefElem(mpSceneMgr, spElem));
         else if (spElem->tagName() == "Scene")
             _processScene(spElem);
     }
@@ -689,7 +695,7 @@ namespace {
     OgreImp::_onElementRemoved (ElementPtr spElem)
     {
         if (spElem->tagName() == "Ref")
-            spElem->removeComponent("OgreRefElem");
+            spElem->removeComponent("ogre");
     }
 
     void

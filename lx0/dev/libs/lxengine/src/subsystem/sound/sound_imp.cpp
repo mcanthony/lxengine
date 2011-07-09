@@ -68,6 +68,7 @@ namespace lx0 { namespace core { namespace detail {
     class SoundEngineBootstrap : public Engine::Component
     {
     public:
+        virtual const char* name () const { return "soundBootstrap"; }
         virtual void        onDocumentCreated   (EnginePtr spEngine, DocumentPtr spDocument);
     };
 
@@ -81,6 +82,7 @@ namespace lx0 { namespace core { namespace detail {
         SoundEngine();
         ~SoundEngine();
 
+        virtual const char* name () const { return "sound"; }
         virtual void        onDocumentCreated   (EnginePtr spEngine, DocumentPtr spDocument);
 
     protected:
@@ -96,6 +98,7 @@ namespace lx0 { namespace core { namespace detail {
     class SoundDoc : public Document::Component
     {
     public:
+        virtual const char* name () const { return "sound"; }
         virtual void    onElementAdded      (DocumentPtr spDocument, ElementPtr spElem);
     };
 
@@ -108,6 +111,8 @@ namespace lx0 { namespace core { namespace detail {
     public:
                 SoundBufferElem(ElementPtr spElem);
                 ~SoundBufferElem();
+
+        virtual const char* name () const { return "sound"; }
 
         virtual void    onAttributeChange   (ElementPtr spElem, std::string name, lxvar value);
 
@@ -131,6 +136,8 @@ namespace lx0 { namespace core { namespace detail {
     public:
                 SoundSourceElem(ElementPtr spElem);
                 ~SoundSourceElem();
+
+        virtual const char* name () const { return "sound"; }
 
         virtual void    onAttributeChange   (ElementPtr spElem, std::string name, lxvar value);
 
@@ -158,7 +165,7 @@ namespace lx0 { namespace core { namespace detail {
         spEngine->removeComponent("soundBootstrap");
 
         auto pSound = new SoundEngine;
-        spEngine->attachComponent("sound", pSound);
+        spEngine->attachComponent(pSound);
         pSound->onDocumentCreated(spEngine, spDocument);
     }
 
@@ -202,7 +209,7 @@ namespace lx0 { namespace core { namespace detail {
     void 
     SoundEngine::onDocumentCreated (EnginePtr spEngine, DocumentPtr spDocument)
     {
-        spDocument->attachComponent("sound", new SoundDoc);
+        spDocument->attachComponent(new SoundDoc);
     }
 
     //===========================================================================//
@@ -215,9 +222,9 @@ namespace lx0 { namespace core { namespace detail {
         std::string tag = spElem->tagName();
 
         if (tag == "SoundBuffer")
-            spElem->attachComponent("SoundBuffer", new SoundBufferElem(spElem));
+            spElem->attachComponent(new SoundBufferElem(spElem));
         else if (tag == "SoundSource")
-            spElem->attachComponent("SoundSource", new SoundSourceElem(spElem));
+            spElem->attachComponent(new SoundSourceElem(spElem));
     }
 
     //===========================================================================//
@@ -414,7 +421,7 @@ namespace lx0 { namespace core { namespace detail {
             ElementPtr spSource = spElem->document()->getElementById(ref);
             if (spSource.get())
             {
-                auto spBuffer = spSource->getComponent<SoundBufferElem>("SoundBuffer");
+                auto spBuffer = spSource->getComponent<SoundBufferElem>("sound");
                 buffer = spBuffer->buffer();
             }
         }

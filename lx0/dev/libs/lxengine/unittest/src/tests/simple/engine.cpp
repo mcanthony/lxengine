@@ -40,10 +40,8 @@ testset_engine(TestSet& set)
 
         spEngine->closeDocument(spDoc2);
         CHECK(r, spEngine->documents().size() == 1);
-        CHECK(r, spEngine->objectCount("Document").current() == 2);
-
-        spDoc2.reset();
         CHECK(r, spEngine->objectCount("Document").current() == 1);
+        CHECK(r, spDoc2.get() == nullptr);
 
         // Orphan a document so the Engine has the only reference...
         CHECK(r, spEngine->documents().size() == 1);

@@ -43,6 +43,8 @@ namespace Terrain
     class Runtime : public Element::Component
     {
     public:
+        virtual     const char* name() const { return "terrain"; }
+
                     Runtime (ElementPtr spElem);
 
         glgeom::color3f      calcColor(float s, float t);

@@ -45,23 +45,6 @@
 using namespace lx0;
 
 //===========================================================================//
-
-class Processor : public Document::Component
-{
-public:
-    virtual void onAttached (DocumentPtr spDocument) 
-    {
-        auto vMats = spDocument->getElementsByTagName("Material");
-        /*for (auto it = vMats.begin(); it != vMats.end(); ++it)
-            _processMaterial(*it);*/
-    }
-
-protected:
-
-};
-
-
-//===========================================================================//
 //   E N T R Y - P O I N T
 //===========================================================================//
 
@@ -149,8 +132,6 @@ main (int argc, char** argv)
         EnginePtr spEngine = Engine::acquire();
         {
             auto spDocument = spEngine->loadDocument("media2/appdata/sb_unittest_app/unittests.xml");
-            spDocument->attachComponent("processor", new Processor);
-
             runTestSet();
         }
         spEngine->shutdown();

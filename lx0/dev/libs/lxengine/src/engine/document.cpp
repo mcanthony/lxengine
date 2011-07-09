@@ -86,7 +86,7 @@ namespace lx0 { namespace engine { namespace dom_ns {
     Document::createView (std::string type, std::string name, lx0::View::Component* pRenderer)
     {
         auto spView = createView(type, name);
-        spView->attachComponent("renderer", pRenderer);
+        spView->attachComponent(pRenderer);
         return spView;
     }
     
@@ -286,7 +286,7 @@ namespace lx0 { namespace engine { namespace dom_ns {
                 auto& ctor = it->second;
                 if (spElem->getComponent<Element::Component>(name).get() == nullptr)
                 {
-                    spElem->attachComponent(name, (ctor)(spElem));
+                    spElem->attachComponent((ctor)(spElem));
                 }
             }
         }

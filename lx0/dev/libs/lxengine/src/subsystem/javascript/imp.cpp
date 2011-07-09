@@ -182,6 +182,7 @@ namespace lx0 { namespace subsystem { namespace javascript_ns { namespace detail
     public:
                     JsEngineContext (Engine* pEngine);
 
+        virtual const char* name() const { return "javascript"; }
         virtual void        onDocumentCreated   (EnginePtr spEngine, DocumentPtr spDocument);
 
         Engine*     mpEngine;
@@ -281,6 +282,7 @@ namespace lx0 { namespace subsystem { namespace javascript_ns { namespace detail
     public:
                         ~JavascriptElem();
 
+        virtual const char* name() const { return "javascript"; }
         virtual void    onUpdate            (ElementPtr spElem);
 
         Persistent<Function>            mOnUpdate;
@@ -295,6 +297,8 @@ namespace lx0 { namespace subsystem { namespace javascript_ns { namespace detail
     class JavascriptDoc : public Document::Component
     {
     public:
+        virtual const char* name() const { return "javascript"; }
+
                         JavascriptDoc   (DocumentPtr spDocument);
         virtual         ~JavascriptDoc  (void);
 
@@ -344,7 +348,7 @@ namespace lx0 { namespace subsystem { namespace javascript_ns { namespace detail
         // Call the onUpdate() JS function if one has been attached to that event
         if (!mOnUpdate.IsEmpty())
         {
-            auto spJsDoc = spElem->document()->getComponent<JavascriptDoc>("_js");
+            auto spJsDoc = spElem->document()->getComponent<JavascriptDoc>("javascript");
             Context::Scope context_scope(spJsDoc->mContext);
 
             //\todo Need to set the "this" ponter to the JS Element wrapper
@@ -378,20 +382,6 @@ namespace lx0 { namespace subsystem { namespace javascript_ns { namespace detail
         mKeyEventCtor   = _addKeyEvent();
         mLxVarCtor      = _addLxVar();
         _addMath();
-
-        //
-        // Local helper function to recursively call onElementAdded on each Element
-        //
-        struct addRecursive
-        {
-            static void recurse (JavascriptDoc* pThis, DocumentPtr spDocument, ElementPtr spElem)
-            {
-                pThis->onElementAdded(spDocument, spElem);
-                for (int i = 0; i < spElem->childCount(); ++i)
-                    recurse(pThis, spDocument, spElem->child(i));
-            }
-        };
-        addRecursive::recurse( this, spDocument, spDocument->root() );
 
         spDocument->slotKeyDown += [&](KeyEvent& e) {
 
@@ -460,9 +450,14 @@ namespace lx0 { namespace subsystem { namespace javascript_ns { namespace detail
     void
     JavascriptDoc::onElementAdded (DocumentPtr spDocument, ElementPtr spElem)
     {
+        static std::set<Element*> sVisited;
+
+        if (!sVisited.insert(spElem.get()).second)
+            assert(0);
+
         // Whenever a new Element is added to the Document, ensure the JS Element
         // Component is added to that Element.
-        spElem->attachComponent("_js", new JavascriptElem);
+        spElem->attachComponent(new JavascriptElem);
     }
 
     void
@@ -857,7 +852,7 @@ namespace lx0 { namespace subsystem { namespace javascript_ns { namespace detail
             auto     pContext = _nativeData<JavascriptDoc>(info);
             Element* pThis    = _nativeThis<Element>(info);
 
-            return pThis->getComponent<JavascriptElem>("_js")->mOnUpdate;
+            return pThis->getComponent<JavascriptElem>("javascript")->mOnUpdate;
         }
 
         static void
@@ -999,15 +994,15 @@ namespace lx0 { namespace subsystem { namespace javascript_ns { namespace detail
                 
             Persistent<Function> mFunc = Persistent<Function>::New(func);
 
-            auto spJElem = pThis->getComponent<JavascriptElem>("_js");
+            auto spJElem = pThis->getComponent<JavascriptElem>("javascript");
             spJElem->mCallbacks.insert(std::make_pair(name, mFunc));
 
             Element::Function wrapper = [=] (ElementPtr spElem, std::vector<lxvar>& args) {
                 DocumentPtr spDoc = spElem->document();
                 if (spDoc.get())
                 {
-                    auto spJDoc = spDoc->getComponent<JavascriptDoc>("_js");
-                    auto spJElem = spElem->getComponent<JavascriptElem>("_js");
+                    auto spJDoc = spDoc->getComponent<JavascriptDoc>("javascript");
+                    auto spJElem = spElem->getComponent<JavascriptElem>("javascript");
 
                     if (!mFunc.IsEmpty())
                     {
@@ -1241,7 +1236,7 @@ namespace lx0 { namespace engine { namespace dom_ns {
     Engine::_runJavascript (DocumentPtr spDocument, std::string source)
     {
         auto ctor = [=]() { return new JavascriptDoc(spDocument); };
-        auto spComponent = spDocument->ensureComponent<JavascriptDoc>("_js", ctor);
+        auto spComponent = spDocument->ensureComponent<JavascriptDoc>("javascript", ctor);
         spComponent->run(spDocument, source);
     }
 

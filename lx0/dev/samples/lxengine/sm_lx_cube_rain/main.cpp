@@ -119,9 +119,9 @@ main (int argc, char** argv)
         if ( parseOptions(argc, argv, options) )
         {    
             spEngine->environment().setTimeScale(1.1f);
-            spEngine->attachComponent("jsengine",       lx0::createJavascriptSubsystem());
-            spEngine->attachComponent("scriptheader",   lx0::createProcessScriptElement());
-            spEngine->attachComponent("physics",        lx0::createPhysicsSubsystem());
+            spEngine->attachComponent( lx0::createJavascriptSubsystem());
+            spEngine->attachComponent( lx0::createProcessScriptElement());
+            spEngine->attachComponent( lx0::createPhysicsSubsystem());
 
             DocumentPtr spDocument = spEngine->loadDocument(options.find("file"));
             ViewPtr spView( spDocument->createView("OGRE", "view") );
