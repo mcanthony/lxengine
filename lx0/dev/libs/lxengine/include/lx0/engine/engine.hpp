@@ -98,6 +98,8 @@ namespace lx0
                 class EngineComponent : public detail::_ComponentBase
                 {
                 public:
+                    virtual void        onAttached          (EnginePtr spEngine) {}
+
                     virtual void        onDocumentCreated   (EnginePtr spEngine, DocumentPtr spDocument) {}
                 };
 
@@ -177,7 +179,7 @@ namespace lx0
                 const ElementComponentMap&  elementComponents       (void) const  { return mElementComponents; }
                 ///@}
 
-                void                notifyAttached      (ComponentPtr spComponent) { /*! \todo */ } 
+                void                notifyAttached      (ComponentPtr spComponent);
 
                 ///@name Counters and Statistics
                 ///@{
@@ -203,12 +205,12 @@ namespace lx0
                 ElementPtr  _loadDocumentRoot       (DocumentPtr spDocument, std::string filename);
 
                 void        _registerBuiltInPlugins (void);
-                void        _attachJavascript       (void);
                 void        _runJavascript          (DocumentPtr spDocument, std::string source);
         
                 void        _throwPostponedException (void);
                 bool        _handlePlatformMessages  (void);
 
+                bool                        mWorkaround_disableNotifyAttached;
                 
                 lxvar                       mSystemInfo;
                 

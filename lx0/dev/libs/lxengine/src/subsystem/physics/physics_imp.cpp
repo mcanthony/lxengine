@@ -308,10 +308,6 @@ namespace lx0 { namespace core { namespace detail {
             //
             if (s_attrHandlers.empty())
             {
-                Element::addFunction("addImpulse", [](ElementPtr spElem, std::vector<lxvar>& args) {
-                    spElem->getComponent<PhysicsElem>("physics")->_addImpulseFunc(spElem, args);
-                });
-
                 s_attrHandlers["velocity"] = &PhysicsElem::_setVelocity;
                 s_attrHandlers["friction"] = &PhysicsElem::_setFriction;
                 s_attrHandlers["restitution"] = &PhysicsElem::_setRestitution;
@@ -686,9 +682,11 @@ namespace lx0 { namespace core { namespace detail {
         {
             const int kMaxSubSteps = 10;
             const float kStep = Engine::acquire()->environment().timeScale() * kFrameDurationMs / 1000.0f;
-            mspDynamicsWorld->stepSimulation(kStep, kMaxSubSteps);
 
             _applyWind(kStep);
+
+            mspDynamicsWorld->stepSimulation(kStep, kMaxSubSteps);
+
             _updateElements(spDocument);
             _applyCollisonActions(spDocument);
 
@@ -712,8 +710,16 @@ namespace lx0 { namespace core { namespace detail {
     class PhysicsEngine : public Engine::Component
     {
     public:
+        virtual void onAttached (EnginePtr spEngine) 
+        {
+            Element::addFunction("addImpulse", [](ElementPtr spElem, std::vector<lxvar>& args) {
+                spElem->getComponent<PhysicsElem>("physics")->_addImpulseFunc(spElem, args);
+            });
+        }
+
         virtual void onDocumentCreated   (EnginePtr spEngine, DocumentPtr spDocument) 
         {
+
             spDocument->attachComponent("physicsSystem", new PhysicsDoc);
         }
     };

@@ -99,6 +99,7 @@ namespace lx0 { namespace engine { namespace dom_ns {
 
     Engine::Engine()
         : mGlobals (lxvar::decorated_map())
+        , mWorkaround_disableNotifyAttached (true)
     {
         lx_init();
         lx_log("lx::core::Engine ctor");
@@ -118,7 +119,11 @@ namespace lx0 { namespace engine { namespace dom_ns {
         lx_debug("%s", lx0::format_tabbed(info).c_str());
 
         ///@todo These should not be included by default
+        // Secondly, the notify mechanism crashes since it's called in the ctor before
+        // the Engine shared_ptr<> is created (i.e. shared_from_this() will crash).
+        mWorkaround_disableNotifyAttached = true;
         _registerBuiltInPlugins();
+        mWorkaround_disableNotifyAttached = false;
     }
 
     /*!
@@ -140,12 +145,17 @@ namespace lx0 { namespace engine { namespace dom_ns {
 
         if (var["sound"].as<bool>())
             attachComponent("soundBootstrap", _hidden_createSound() );
-        if (var["javascript"].as<bool>())
-            _attachJavascript();
         if (var["Canvas"].as<bool>())
             addViewPlugin("Canvas", _hidden_createCanvasViewImp);
         if (var["Ogre"])
             addViewPlugin("OGRE", _hidden_createViewImpOgre);
+    }
+
+    void
+    Engine::notifyAttached (ComponentPtr spComponent) 
+    { 
+        if (!mWorkaround_disableNotifyAttached)
+            spComponent->onAttached(shared_from_this()); 
     }
 
     void 
@@ -189,6 +199,8 @@ namespace lx0 { namespace engine { namespace dom_ns {
     Engine::~Engine()
     {
        lx_log("lx::core::Engine dtor");
+
+       lx_check_error( mDocuments.empty() );
 
        // Check for memory leaks of Engine-related objects
        bool bLeaksFound = false;
@@ -391,6 +403,8 @@ namespace lx0 { namespace engine { namespace dom_ns {
     DocumentPtr
     Engine::createDocument (void)
     {
+        lx_log("Creating new document.");
+
         return _loadDocument(true, std::string());
     }
 
@@ -456,7 +470,18 @@ namespace lx0 { namespace engine { namespace dom_ns {
         ElementPtr spRoot;
         if (!bCreate)
         {
-            spRoot = _loadDocumentRoot(spDocument, filename);
+            try 
+            {
+                spRoot = _loadDocumentRoot(spDocument, filename);
+            } 
+            catch (lx0::error_exception& e)
+            {
+                // Clean-up the local changes, then pass the exception along
+                mDocuments.erase( std::find(mDocuments.begin(), mDocuments.end(), spDocument) );
+                spDocument.reset();
+                throw e;
+            }
+
             if (!spRoot)
             {
                 lx_error("Could not load document.  Does file '%s' exist?", filename.c_str());

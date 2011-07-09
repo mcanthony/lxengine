@@ -89,6 +89,12 @@ namespace lx0 { namespace subsystem { namespace javascript_ns {
         }
     };
 
+    class JavascriptPlugin : public Engine::Component
+    {
+    public:
+        virtual void    onDocumentCreated   (EnginePtr spEngine, DocumentPtr spDocument);
+    };
+
     void JavascriptPlugin::onDocumentCreated (EnginePtr spEngine, DocumentPtr spDocument)
     {
         lx_log("Attaching Javascript components");
@@ -96,6 +102,11 @@ namespace lx0 { namespace subsystem { namespace javascript_ns {
 
         spDocument->attachComponent("javascript", new DocImp);
         spDocument->attachComponent("scripting", new Scripting);
+    }
+
+    Engine::Component* createScriptHandler()
+    {
+        return new JavascriptPlugin;
     }
 
 }}}

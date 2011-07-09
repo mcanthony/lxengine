@@ -46,19 +46,9 @@ namespace lx0
                 virtual void run (const std::string& source) = 0;
             };
 
-            IJavascript* createIJavascript();
 
-            class Plugin
-            {
-            public:
-                virtual ~Plugin() {}
-            };
-
-            class JavascriptPlugin : public Engine::Component
-            {
-            public:
-                virtual void    onDocumentCreated   (EnginePtr spEngine, DocumentPtr spDocument);
-            };
+            Engine::Component* createJavascriptSubsystem();
+            Engine::Component* createScriptHandler();
         }
     }
 

@@ -45,6 +45,7 @@
 // Lx0 headers
 #include <lx0/lxengine.hpp>
 #include <lx0/subsystem/physics.hpp>
+#include <lx0/subsystem/javascript.hpp>
 
 using namespace lx0;
 
@@ -60,7 +61,9 @@ main (int argc, char** argv)
     {
         EnginePtr   spEngine   = Engine::acquire();
         {
-            spEngine->attachComponent("physics", lx0::createPhysicsSubsystem());
+            spEngine->attachComponent("jsengine",       lx0::createJavascriptSubsystem());
+            spEngine->attachComponent("scriptheader",   lx0::createProcessScriptElement());
+            spEngine->attachComponent("physics",        lx0::createPhysicsSubsystem());
 
             DocumentPtr spDocument = spEngine->loadDocument("data/sm_lx_cube_asteriods/level00.xml");
             ViewPtr     spView     = spDocument->createView("OGRE", "view");

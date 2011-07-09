@@ -182,6 +182,8 @@ namespace lx0 { namespace subsystem { namespace javascript_ns { namespace detail
     public:
                     JsEngineContext (Engine* pEngine);
 
+        virtual void        onDocumentCreated   (EnginePtr spEngine, DocumentPtr spDocument);
+
         Engine*     mpEngine;
     protected:
         void        _addEngine  ();
@@ -191,6 +193,14 @@ namespace lx0 { namespace subsystem { namespace javascript_ns { namespace detail
         : mpEngine (pEngine)
     {
         _addEngine();
+    }
+
+    void
+    JsEngineContext::onDocumentCreated (EnginePtr spEngine, DocumentPtr spDocument)
+    {
+        lx0::for_files_in_directory("media2/scripts/engine/attribute_parsers", "js", [&] (std::string path) {
+            this->runFile(path.c_str());
+        });
     }
 
     namespace wrappers_engine
@@ -1208,17 +1218,6 @@ namespace lx0 { namespace engine { namespace dom_ns {
     using namespace lx0::subsystem::javascript_ns::detail;
 
      void
-     Engine::_attachJavascript (void)
-     {
-        auto pContext = new JsEngineContext(this);
-        this->attachComponent("engineJs", pContext);
-         
-        lx0::for_files_in_directory("media2/scripts/engine/attribute_parsers", "js", [pContext] (std::string path) {
-            pContext->runFile(path.c_str());
-         });
-     }
-
-     void
      Engine::workaround_runJavascript(DocumentPtr spDoc, const std::string& source) 
      {
          lx_warn("workaround_runJavascript() called.  Try to avoid using this method as it will be removed.");
@@ -1247,3 +1246,17 @@ namespace lx0 { namespace engine { namespace dom_ns {
     }
 
 }}}
+
+namespace lx0
+{
+    namespace subsystem
+    {
+        namespace javascript_ns
+        {
+            Engine::Component* createJavascriptSubsystem()
+            {
+                return new JsEngineContext(Engine::acquire().get());
+            }
+        }
+    }
+}

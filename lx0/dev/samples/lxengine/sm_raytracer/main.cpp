@@ -65,11 +65,12 @@ main (int argc, char** argv)
 
         if (spEngine->parseCommandLine(argc, argv, "file"))
         {
+            spEngine->attachComponent("jsengine",   lx0::createJavascriptSubsystem());
+            spEngine->attachComponent("Scripting",  createScriptHandler());
+
             // Resize the image to the requested size
             img = glgeom::image3f( spEngine->globals().find("width"), spEngine->globals().find("height") );
 
-            spEngine->attachComponent("Scripting", new lx0::JavascriptPlugin);
-        
             DocumentPtr spDocument = spEngine->loadDocument(spEngine->globals().find("file"));
             spDocument->attachComponent("ray", create_raytracer() );
 
