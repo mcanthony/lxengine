@@ -1,3 +1,3 @@
-set(APPNAME sm_lxcraft)
+set(APPNAME lxcraft)
 
 simple_executable( ${APPNAME} )
