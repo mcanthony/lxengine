@@ -66,6 +66,8 @@ main (int argc, char** argv)
         spView->show(options);
 
         exitCode = spEngine->run();
+
+        spEngine->closeDocument(spDocument);
         spEngine->shutdown();
     }
     catch (lx0::error_exception& e)

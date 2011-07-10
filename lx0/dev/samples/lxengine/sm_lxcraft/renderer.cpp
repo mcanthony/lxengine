@@ -413,9 +413,7 @@ protected:
 
     RdCameraPtr                         mspCamera;
     lx0::LightSetPtr                    mspLightSet;
-    std::vector<RenderablePtr>          mRenderables;
-    
-    std::map<std::string,MaterialPtr>   mMaterials;
+    std::vector<RenderablePtr>          mRenderables;  
 };
 
 
