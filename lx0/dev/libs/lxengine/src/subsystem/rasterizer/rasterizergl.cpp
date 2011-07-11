@@ -83,12 +83,15 @@ void RasterizerGL::initialize()
 
 static void log_timer(const char* name, const lx0::Timer& timer, const lx0::Timer& base)
 {
-    lx_log("\t%-24s %-6u ms  %-9.2lf avg  %6.2lf%%  (%u)", 
-        name, 
-        timer.totalMs(), timer.averageMs(), 
-        100.0 * double(timer.totalMs()) / double(base.totalMs()),
-        timer.count()
-        );
+    if (timer.totalMs() > 0)
+    {
+        lx_log("\t%-24s %-6u ms  %-9.2lf avg  %6.2lf%%  (%u)", 
+            name, 
+            timer.totalMs(), timer.averageMs(), 
+            100.0 * double(timer.totalMs()) / double(base.totalMs()),
+            timer.count()
+            );
+    }
 }
 
 void RasterizerGL::shutdown()
