@@ -134,13 +134,8 @@ macro(simple_executable EXENAME)
 
    set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR} )
    
-   file(GLOB_RECURSE SRCFILES *.cpp)
-   file(GLOB_RECURSE HDRFILES *.h)
-   file(GLOB_RECURSE HPPFILES *.hpp)
-   
-   set(SOURCES ${SRCFILES} ${HDRFILES} ${HPPFILES})
-   source_group("Sources" FILES ${SOURCES})
-   
+   lx_glob_sources(".")
+      
    add_executable(${EXENAME} ${SOURCES})
    target_link_libraries(${EXENAME} ${LX_ALL_LIBS}) 
 
