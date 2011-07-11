@@ -1,0 +1,1 @@
+simple_executable(cpp_remove_duplicates)

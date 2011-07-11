@@ -209,6 +209,7 @@ SET_PROPERTY(TARGET tutorial_03             PROPERTY FOLDER "Samples/Tutorials")
 SET_PROPERTY(TARGET sm_ogre_minimal         PROPERTY FOLDER "Samples/Misc")
 SET_PROPERTY(TARGET sm_v8_basic             PROPERTY FOLDER "Samples/Misc")
 SET_PROPERTY(TARGET cpp_smartptr            PROPERTY FOLDER "Samples/Misc")
+SET_PROPERTY(TARGET cpp_remove_duplicates   PROPERTY FOLDER "Samples/Misc")
 
 SET_PROPERTY(TARGET bm_lxvar                PROPERTY FOLDER "Benchmarks")
 SET_PROPERTY(TARGET blendload               PROPERTY FOLDER "Sandbox")
