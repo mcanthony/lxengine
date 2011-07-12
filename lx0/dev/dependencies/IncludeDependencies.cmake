@@ -81,6 +81,17 @@ install_debrel("libvorbis/bin" "libvorbis.dll")
 install_debrel("libvorbis/bin" "libvorbisfile.dll")
 
 #
+# NifLib
+#
+include_directories("${DEPS_SDK}/niflib/include")
+link_directories("${DEPS_SDK}/niflib/lib")
+set(NIFLIB_LIBS
+    niflib.lib)
+install_debrel("niflib/bin" "niflib.dll")
+install_debrel("niflib/bin" "niflib.dll") 
+
+
+#
 # GLM (OpenGL Mathematics)
 #
 include_directories("${DEPS_SDK}/glm/include")

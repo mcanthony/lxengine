@@ -35,6 +35,9 @@
 #include <boost/algorithm/string.hpp>
 #include <lx0/lxengine.hpp>
 
+#include <niflib/niflib.h>
+#include <niflib/obj/NiObject.h>
+
 #include "tes3io.hpp"
 #include "esmiterator.hpp"
 
@@ -310,7 +313,12 @@ BsaCollection::getModel (std::string type, std::string name)
                 stream.seekg(kt->second.offset);
                 
                 spPrimitive.reset(new glgeom::primitive_buffer);
+                lx0::uint32 pos = stream.tellg();
                 loadNif(stream.stream(), *spPrimitive);
+                stream.seekg(pos);
+                
+                Niflib::NifInfo info;
+                auto spNifRoot = Niflib::ReadNifTree(stream.stream(), &info);
 
                 stream.close();
 
