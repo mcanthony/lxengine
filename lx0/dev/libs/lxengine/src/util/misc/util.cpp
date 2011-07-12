@@ -76,7 +76,7 @@ namespace lx0 { namespace util { namespace misc {
             if (is_regular_file(dit->status()))
             {
                 path filepath = dit->path();
-                if (boost::ends_with(filepath.filename(), ext))
+                if (boost::ends_with(filepath.filename().string(), ext))
                 {
                     files.push_back( filepath.normalize().string() );
                 }

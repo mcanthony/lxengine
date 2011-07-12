@@ -113,8 +113,8 @@ void ShaderBuilder::_loadNodeImp (std::string filename)
     // the extension.
     //
     bfs::path path(filename);
-    std::string id = path.filename();
-    id = id.substr(0, id.length() - path.extension().length());
+    std::string id = path.filename().string();
+    id = id.substr(0, id.length() - path.extension().string().length());
 
     lxvar value = lxvar_from_file(filename);
 

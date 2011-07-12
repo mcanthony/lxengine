@@ -12,8 +12,8 @@ REM - Build the dependencies
 REM - Copy the built files to a standard layout
 REM - Provide a CMake include file to use the built files in LxEngine projects
 REM
-REM Currently only Visual Studio 2010 and Debug builds are supported.  This is
-REM due to development time constraints, not inherent technical limitations.
+REM Currently only Visual Studio 2010 is supported.  This is due to development 
+REM time constraints, not inherent technical limitations.
 REM
 REM Notes:
 REM [1] An attempt was made to implement this script directly in the CMake
@@ -25,13 +25,12 @@ REM TODO
 REM - Copy resulting binaries to uniform sdk layout
 REM - Move source into a root "packages" directory
 REM - Test Release build support
-REM - Test VS2008 support
 REM - Test x64 support
 REM
 REM LICENSE 
 REM (http://www.opensource.org/licenses/mit-license.php)
 REM
-REM Copyright (c) 2010 athile@athile.net (http://www.athile.net)
+REM Copyright (c) 2010-2011 athile@athile.net (http://www.athile.net)
 REM
 REM Permission is hereby granted, free of charge, to any person obtaining a 
 REM copy of this software and associated documentation files (the "Software"), 
@@ -66,6 +65,7 @@ REM ===========================================================================
 REM Beginning of script
 REM ===========================================================================
 
+echo.
 echo.
 echo --------------------------------------------------------------------------
 echo LxEngine Automated Windows Dependency Builder
@@ -135,7 +135,7 @@ echo.
 echo Ensuring dependency source is available...
 echo.
 
-IF NOT EXIST boost_1_44_0 (
+IF NOT EXIST 7za.exe (
     echo.
     echo ======================= IMPORTANT NOTE ===============================
     echo.
@@ -163,30 +163,27 @@ IF NOT EXIST boost_1_44_0 (
       
     7za x dependencies.7z   
 ) ELSE (
-    echo Found boost_1_44_0 subdirectory.  Assuming dependencies extracted.
+    echo Found 7za.exe.
 )
 
-IF NOT EXIST source\glm-0.9.2.3 (
-    pushd .
-    cd source
-    call:auto_download_source glm-0.9.2.3.zip
-    ..\7za.exe x glm-0.9.2.3.zip
-    popd
-) ELSE (
-    echo Found source directory 'glm-0.9.2.3'
+call:auto_extract_source boost_1_46_1 boost_1_46_1.7z
+call:auto_extract_source glm-0.9.2.3  glm-0.9.2.3.zip
+call:auto_extract_source bullet-2.78 bullet-2.78.zip
+
+if %FAILURE%==1 ( 
+    echo.
+    echo ERROR: It appears at least one dependency did not download and extract correctly.
+    echo You may wish to extract them manually and rerun the script.
+    echo.
+    goto:EOF 
 )
-IF NOT EXIST source\glm-0.9.2.3 (
-    echo ERROR: Could not find source directory 'glm-0.9.2.3'.
-    set FAILURE=1
-)
+
 
 REM ===========================================================================
 REM Check the dependency source is installed properly
 REM ===========================================================================
 
 call:ensure_directory audiere_1_9_4
-call:ensure_directory boost_1_44_0
-call:ensure_directory bullet_2_76
 call:ensure_directory freetype_2_4_2
 call:ensure_directory libogg-1.2.1
 call:ensure_directory libvorbis-1.3.2
@@ -209,7 +206,6 @@ REM ===========================================================================
 
 echo.
 echo Searching for required tools...
-echo.
 
 set PYTHONEXE_PATH=%SystemDrive%\Python27
 IF EXIST "%PYTHONEXE_PATH%\python.exe" ( goto PYTHONFOUND )
@@ -227,6 +223,8 @@ IF NOT EXIST "%PYTHONEXE_PATH%\Scripts\scons.bat" (
     echo ERROR: Could not find scons installed within %PYTHONPATH%
     echo.
     goto:EOF
+) ELSE (
+    echo Found Python at "%PYTHONEXE_PATH%"
 )
 
 IF "%DXSDK_DIR%"=="" (
@@ -253,19 +251,20 @@ REM Build Boost
 REM ===========================================================================
 
 set PROJECT=Boost
-set TESTFILE=stage\lib\libboost_iostreams-vc100-mt-gd-1_44.lib 
-set ROOTDIR=boost_1_44_0\boost_1_44_0
+set TESTFILE=stage\lib\libboost_iostreams-vc100-mt-gd-1_46_1.lib 
+set ROOTDIR=source\boost_1_46_1
 echo call bootstrap.bat >_t.bat
 echo bjam.exe >>_t.bat
-echo bjam.exe install --prefix=..\..\sdk\boost >>_t.bat
 
 call:build_project %PROJECT% %ROOTDIR% %TESTFILE%
 call:test_file_or_fail %ROOTDIR%\boost\any.hpp
 IF %FAILURE%==1 (goto:EOF)
 
-REM This needs to be fixed
-call:copy_directory sdk\boost\include\boost-1_44\boost %PSDK%\boost\include\boost
-call:copy_directory sdk\boost\lib %PSDK%\boost\lib
+REM
+REM This needs to be fixed.  Why is boost not building to the correct location?
+REM
+call:copy_directory source\boost_1_46_1\boost %PSDK%\boost\include\boost
+call:copy_directory source\boost_1_46_1\stage\lib %PSDK%\boost\lib
 
 call:test_file_or_fail %PSDK%\boost\include\boost\any.hpp
 call:test_file_or_fail %PSDK%\boost\lib\libboost_filesystem-vc100-mt-gd.lib
@@ -331,18 +330,21 @@ REM Build Bullet
 REM ===========================================================================
 
 set PROJECT=Bullet
-set ROOTDIR=bullet_2_76\bullet_build
+set ROOTDIR=source\bullet-2.78
 set TESTFILE=lib\Debug\BulletCollision.lib
 
-echo cmake ..\bullet_src >_t.bat
+mkdir %ROOTDIR%
+echo mkdir ..\bullet_build>_t.bat
+echo cd ..\bullet_build>>_t.bat
+echo cmake ..\bullet-2.78>>_t.bat
 echo msbuild ALL_BUILD.vcxproj /p:Configuration=Debug >>_t.bat
 echo msbuild ALL_BUILD.vcxproj /p:Configuration=Release >>_t.bat
 
 call:build_project %PROJECT% %ROOTDIR% %TESTFILE%
 IF %FAILURE%==1 (goto:EOF)   
 
-call:copy_files %ROOTDIR%\..\bullet_src\src\*.h %PSDK%\bullet\include\bullet
-call:copy_directory %ROOTDIR%\lib %PSDK%\bullet\lib
+call:copy_files %ROOTDIR%\src\*.h %PSDK%\bullet\include\bullet
+call:copy_directory %ROOTDIR%\..\bullet_build\lib %PSDK%\bullet\lib
 
 REM ===========================================================================
 REM Build Google V8
@@ -566,15 +568,34 @@ REM
     )
 goto:EOF
 
+:auto_extract_source
+
+    IF %FAILURE%==1 (
+        echo WARNING: Prior failure detected.  Skipping extraction of '%1'.
+    ) ELSE (
+        IF NOT EXIST source\%1 (
+            pushd .
+            cd source
+            call:auto_download_source %2
+            ..\7za.exe x %2
+            popd
+        ) ELSE (
+            echo Found source directory '%1'
+        )
+    )
+
+goto:EOF
+
+
 :auto_download_source
 
-    IF NOT EXIST source\%1 ( 
-        wget %DOWNLOAD_SITE%/extern/%1 
+    IF NOT EXIST %1 ( 
+        ..\wget %DOWNLOAD_SITE%/extern/%1 
     ) ELSE (
         echo Found %1.  Skipping download.
     )
     
-    IF NOT EXIST source\%1 (
+    IF NOT EXIST %1 (
         echo.
         echo ERROR: Failed to download dependent file:
         echo    %1
