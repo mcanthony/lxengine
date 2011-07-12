@@ -40,11 +40,11 @@
 #include <boost/filesystem.hpp>
 #include "tes3io/tes3io.hpp"
 
+#include "lxextensions/lxvar_wrap.hpp"
 
 lx0::View::Component*   create_renderer();
 
 //===========================================================================//
-
 
 //===========================================================================//
 //   E N T R Y - P O I N T
@@ -67,6 +67,17 @@ main (int argc, char** argv)
         scene_group group;
         loader.cell("Beshara", group);
 
+        ElementPtr spGroup = spDocument->createElement("Group");
+        for (auto it = group.instances.begin(); it != group.instances.end(); ++it)
+        {
+            ElementPtr spElement = spDocument->createElement("Instance");
+            lxvar value = spElement->value();
+            value["transform"] = lxvar_wrap(it->transform);
+            value["primitive"] = lxvar_wrap(it->primitive);
+            spElement->value(value);
+            spGroup->append(spElement);
+        }
+        spDocument->root()->append(spGroup);
         
         ViewPtr spView = spDocument->createView("Canvas", "view", create_renderer() );
 
@@ -76,7 +87,6 @@ main (int argc, char** argv)
         options.insert("height", 400);
         spView->show(options);
 
-        spEngine->sendEvent("quit");
         exitCode = spEngine->run();
 
         spView.reset();

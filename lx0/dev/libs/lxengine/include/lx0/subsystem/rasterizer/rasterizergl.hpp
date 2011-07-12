@@ -29,6 +29,7 @@
 #pragma once
 
 #include <glgeom/prototype/image.hpp>
+#include <glgeom/ext/primitive_buffer.hpp>
 
 namespace lx0 
 {
@@ -168,6 +169,7 @@ namespace lx0
                 TransformPtr    createTransformBillboardXYS (float tx, float ty, float tz, float sx, float sy, float sz);
                 TransformPtr    createTransformEye          (float tx, float ty, float tz, glgeom::radians z_angle);
 
+                GeometryPtr     createGeometry  (glgeom::primitive_buffer& primitive);
                 GeometryPtr     createQuadList  (std::vector<glgeom::point3f>& positions, 
                                                  std::vector<glgeom::color3f>& colors);
                 GeometryPtr     createQuadList  (std::vector<lx0::uint16>& indices,

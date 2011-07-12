@@ -137,6 +137,19 @@ namespace lx0 { namespace engine { namespace dom_ns {
         return spElem;
     }
 
+    static void _iterateElements2Imp (ElementPtr spElem, std::function<void (ElementPtr)> f)
+    {
+        f(spElem);
+        for (int i = 0; i < spElem->childCount(); ++i)
+            _iterateElements2Imp(spElem->child(i), f);
+    }
+
+    void          
+    Document::iterateElements2     (std::function<void (ElementPtr)> f)
+    {
+        _iterateElements2Imp(root(), f);
+    }
+
     /*!
         Helper method that traverses the Elements in the Document from root down
         (depth-first) and calls the function f on each Element.  The traversal

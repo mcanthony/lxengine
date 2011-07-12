@@ -26,7 +26,10 @@
 */
 //===========================================================================//
 
+#include <iostream>
 #include <lx0/subsystem/rasterizer.hpp>
+#include <glgeom/ext/primitive_buffer.hpp>
+#include "lxextensions/lxvar_wrap.hpp"
 
 using namespace lx0;
 using namespace glgeom;
@@ -45,6 +48,35 @@ public:
         mspRasterizer.reset( new RasterizerGL );
         mspRasterizer->initialize();
 
+        //
+        // Process the data in the document being viewed
+        // 
+        spView->document()->iterateElements2([&](lx0::ElementPtr spElement) {
+            onElementAdded(spView->document(), spElement);
+        });
+
+        //
+        // Create a set of lights
+        // 
+        lx0::LightPtr spLight0 = mspRasterizer->createLight();
+        spLight0->position = glgeom::point3f(10, -10, 10);
+        spLight0->color    = glgeom::color3f(1, 1, 1);
+        
+        lx0::LightPtr spLight1 = mspRasterizer->createLight();
+        spLight0->position = glgeom::point3f(10, 10, 10);
+        spLight0->color    = glgeom::color3f(.6f, .6f, 1);
+        
+        mspLightSet = mspRasterizer->createLightSet();
+        mspLightSet->mLights.push_back(spLight0);
+        mspLightSet->mLights.push_back(spLight1);
+
+        //
+        // Create the camera last since it is dependent on the bounds of the geometry
+        // being viewed.  Therefore, it needs to be created after the geometry is 
+        // loaded.
+        // 
+        auto viewMatrix = glm::lookAt(glm::vec3(2000, 2000, 2000), glm::vec3(0, 0, 0), glm::vec3(0, 0, 1));
+        mspCamera = mspRasterizer->createCamera(glgeom::radians(glgeom::degrees(60)), 0.1f, 10000.0f, viewMatrix);
     }
 
     virtual void shutdown   (View* pView)
@@ -54,14 +86,49 @@ public:
 
     virtual void render (void)	
     {
+        lx0::RenderAlgorithm algorithm;
+        algorithm.mClearColor = glgeom::color4f(0.1f, 0.3f, 0.8f, 1.0f);
+        
+        lx0::GlobalPass pass;
+        pass.spCamera   = mspCamera;
+        pass.spLightSet = mspLightSet;
+        algorithm.mPasses.push_back(pass);
+
+        lx0::RenderList instances;
+        for (auto it = mInstances.begin(); it != mInstances.end(); ++it)
+            instances.push_back(0, *it);
+
+        mspRasterizer->beginFrame(algorithm);
+        for (auto it = instances.begin(); it != instances.end(); ++it)
+        {
+            mspRasterizer->rasterizeList(algorithm, it->second.list);
+        }
+        mspRasterizer->endFrame();
     }
+
 
     virtual void onElementAdded (DocumentPtr spDocument, ElementPtr spElem) 
     {
+        if (spElem->tagName() == "Instance")
+        {
+            auto& primitive = lxvar_unwrap<glgeom::primitive_buffer>(spElem->value()["primitive"]);
+            auto& transform = lxvar_unwrap<glgeom::mat4f>(spElem->value()["transform"]);
+
+            std::cout << spElem->tagName() << " " << primitive.vertex.positions.size() << std::endl;
+
+            auto pInstance = new lx0::Instance;
+            pInstance->spTransform = mspRasterizer->createTransform(transform);
+            pInstance->spMaterial = mspRasterizer->createMaterial("media2/shaders/glsl/fragment/diffuse_gray.frag");
+            pInstance->spGeometry = mspRasterizer->createGeometry(primitive);
+            mInstances.push_back(InstancePtr(pInstance));
+        }
     }
 
 protected:
-    std::shared_ptr<RasterizerGL>       mspRasterizer;
+    std::shared_ptr<RasterizerGL>   mspRasterizer;
+    lx0::CameraPtr                  mspCamera;
+    lx0::LightSetPtr                mspLightSet;
+    std::vector<lx0::InstancePtr>   mInstances;
 };
 
 lx0::View::Component*   create_renderer()       { return new Renderer; }

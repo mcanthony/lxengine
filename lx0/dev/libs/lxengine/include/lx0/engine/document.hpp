@@ -114,6 +114,7 @@ namespace lx0
         std::vector<ElementPtr> getElements             (void);
 
         void                    iterateElements     (std::function<bool (ElementPtr)> f) { _walkElements(f); }
+        void                    iterateElements2    (std::function<void (ElementPtr)> f);
 
         void                    beginRun        (void);
         void                    updateRun       (void);

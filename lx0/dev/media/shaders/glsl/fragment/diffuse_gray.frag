@@ -19,7 +19,7 @@ void main()
     vec3 c = vec3(.05, .05, .05);           // ambient term
 
     vec3 L = normalize(vec3(1, 1, 1));
-    float d = max(dot(N,L), 0.0);           // diffuse term
+    float d = max(abs(dot(N,L)), 0.0);           // diffuse term
     c += vec3(d, d, d);
                
     outColor = vec4(c.x, c.y, c.z, 1.0);    	

@@ -50,9 +50,8 @@ void lec::processIncludeDocument (DocumentPtr spDocument)
         auto spParent = (*it)->parent();
 
         auto spDoc2 = spEngine->loadDocument(filename);
-        spDoc2->iterateElements([&](ElementPtr spElem) -> bool {
+        spDoc2->iterateElements2([&](ElementPtr spElem) {
             spParent->append( spElem->cloneDeep() );
-            return false;
         });
         spEngine->closeDocument(spDoc2);
     }

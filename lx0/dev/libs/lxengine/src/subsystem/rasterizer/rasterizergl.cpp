@@ -521,6 +521,41 @@ RasterizerGL::createQuadList (std::vector<lx0::uint16>&     quadIndices,
 }
 
 GeometryPtr
+RasterizerGL::createGeometry (glgeom::primitive_buffer& primitive)
+{
+    check_glerror();
+
+    // Create a vertex array to store the vertex data
+    //
+    GLuint vao;
+    glGenVertexArrays(1, &vao);
+    glBindVertexArray(vao);
+
+    GLuint vio;
+    glGenBuffers(1, &vio);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, vio);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, primitive.indices.size() * sizeof(primitive.indices[0]), &primitive.indices[0], GL_STATIC_DRAW);
+
+    GLuint vboPositions;
+    glGenBuffers(1, &vboPositions);
+    glBindBuffer(GL_ARRAY_BUFFER, vboPositions);
+    glBufferData(GL_ARRAY_BUFFER, primitive.vertex.positions.size() * sizeof(primitive.vertex.positions[0]), &primitive.vertex.positions[0], GL_STATIC_DRAW);
+    
+    check_glerror();
+
+    // Create the cache to encapsulate the created OGL resources
+    //
+    auto pGeom = new GeomImp;
+    pGeom->mtbFlatShading = true;
+    pGeom->mType          = GL_TRIANGLES;
+    pGeom->mVao           = vao;
+    pGeom->mVboIndices    = vio;
+    pGeom->mCount         = primitive.indices.size();
+    pGeom->mVboPosition   = vboPositions;
+    return GeometryPtr(pGeom);
+}
+
+GeometryPtr
 RasterizerGL::createQuadList (std::vector<unsigned short>& indices, 
                               std::vector<glgeom::point3f>& positions, 
                               std::vector<glgeom::vector3f>& normals,

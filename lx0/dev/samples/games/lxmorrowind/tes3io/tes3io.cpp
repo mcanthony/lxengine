@@ -683,5 +683,5 @@ void Tes3Io::initialize  (const char* path)
 void Tes3Io::cell (const char* id, scene_group& group)
 {
     mpImp->cell(id, group);
-    std::cout << "Cell loaded.\n";
+    std::cout << boost::format("Loaded cell '%s'.\n") % id;
 }

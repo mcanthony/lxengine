@@ -291,7 +291,7 @@ protected:
     lx0::RasterizerGLPtr          mspRasterizer;
     lx0::CameraPtr                mspCamera;
     lx0::LightSetPtr              mspLightSet;
-    lx0::InstancePtr                  mspInstance;
+    lx0::InstancePtr              mspInstance;
 
     glm::mat4                     mRotation;
 
