@@ -121,6 +121,12 @@ void readShape (Stream& stream, glgeom::primitive_buffer& primitive)
         unused.resize( uvCount * numVertices * 2);
         stream.read(&unused[0], unused.size());
     }
+
+    //
+    // Build a bounding box for the shape
+    //
+    for (auto it = primitive.vertex.positions.begin(); it != primitive.vertex.positions.end(); ++it)
+        primitive.bbox.merge(*it);
 }
 
 void readNiTriShapeData (Stream& stream, glgeom::primitive_buffer& primitive)

@@ -42,7 +42,9 @@
 
 #include "lxextensions/lxvar_wrap.hpp"
 
+lx0::UIBinding*         create_uibinding();
 lx0::View::Component*   create_renderer();
+lx0::Controller*        create_controller(lx0::DocumentPtr spDoc);
 
 //===========================================================================//
 
@@ -61,6 +63,13 @@ main (int argc, char** argv)
         EnginePtr   spEngine   = Engine::acquire();
         
         DocumentPtr spDocument = spEngine->createDocument();
+        spDocument->addController( create_controller(spDocument) );
+
+        ElementPtr spPlayer = spDocument->createElement("Player");
+        spPlayer->value()["position"] = lxvar_wrap(glgeom::point3f(2000, 2000, 2000));
+        spPlayer->value()["target"] = lxvar_wrap(glgeom::point3f(0, 0, 0));
+        spDocument->root()->append(spPlayer);
+
         Tes3Io loader;
         loader.initialize("mwdata");
 
@@ -80,6 +89,7 @@ main (int argc, char** argv)
         spDocument->root()->append(spGroup);
         
         ViewPtr spView = spDocument->createView("Canvas", "view", create_renderer() );
+        spView->addUIBinding( create_uibinding() );
 
         lxvar options;
         options.insert("title", "LxMorrowind");

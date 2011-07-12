@@ -63,7 +63,7 @@ namespace lx0 { namespace engine { namespace dom_ns {
     {
     public:
         virtual void    onAttributeChange   (ElementPtr spElem, std::string name, lxvar value) {}
-        virtual void    onValueChange       (ElementPtr spElem, lxvar value) {}
+        virtual void    onValueChange       (ElementPtr spElem) {}
         virtual void    onAdded             (void) {}
         virtual void    onRemoved           (void) {}
         virtual void    onUpdate            (ElementPtr spElem) {}
@@ -113,9 +113,12 @@ namespace lx0 { namespace engine { namespace dom_ns {
         int             childCount      (void) const;
         void            removeChild     (ElementPtr spElem);
 
-        lxvar           value           (void) const    { return mValue; }
-        lxvar           value           (void)          { return mValue; }
-        void            value           (lxvar v);
+        lxvar&          value               (void) const    { return mValue; }
+        lxvar&          value               (void)          { return mValue; }
+        void            value               (lxvar v);
+        void            notifyValueChanged  (void);
+        void            notifyValueChanged  (const char* path);
+
 
         void            prepend         (ElementPtr spElem);
         void            append          (ElementPtr spElem);

@@ -101,7 +101,7 @@ namespace {
 
         CameraElem   (ElementPtr spElem, Ogre::Camera* pCamera);
 
-        virtual void onValueChange(ElementPtr spElem, lxvar value);
+        virtual void onValueChange(ElementPtr spElem);
 
     protected:
         void    _reset  (ElementPtr spElem);
@@ -801,7 +801,7 @@ namespace {
     }
 
     void 
-    CameraElem::onValueChange(ElementPtr spElem, lxvar value)
+    CameraElem::onValueChange(ElementPtr spElem)
     {
         _reset(spElem);
     }

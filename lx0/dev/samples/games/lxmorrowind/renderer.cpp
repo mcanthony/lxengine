@@ -36,6 +36,26 @@ using namespace glgeom;
 
 //===========================================================================//
 
+class ValueChangeListener : public Element::Component
+{
+public:
+    ValueChangeListener (std::function<void (ElementPtr)> func) : mFunc (func) {}
+    virtual void onValueChange (ElementPtr spElem) 
+    {
+        mFunc(spElem);
+    }
+protected:
+    std::function<void (ElementPtr)> mFunc;
+};
+
+void addValueChangeListener (ElementPtr spElem, std::function<void (ElementPtr)> func)
+{
+    spElem->attachComponent(new ValueChangeListener(func));
+    func(spElem);
+}
+
+//===========================================================================//
+
 class Renderer : public View::Component
 {
 public:
@@ -69,14 +89,6 @@ public:
         mspLightSet = mspRasterizer->createLightSet();
         mspLightSet->mLights.push_back(spLight0);
         mspLightSet->mLights.push_back(spLight1);
-
-        //
-        // Create the camera last since it is dependent on the bounds of the geometry
-        // being viewed.  Therefore, it needs to be created after the geometry is 
-        // loaded.
-        // 
-        auto viewMatrix = glm::lookAt(glm::vec3(2000, 2000, 2000), glm::vec3(0, 0, 0), glm::vec3(0, 0, 1));
-        mspCamera = mspRasterizer->createCamera(glgeom::radians(glgeom::degrees(60)), 0.1f, 10000.0f, viewMatrix);
     }
 
     virtual void shutdown   (View* pView)
@@ -114,13 +126,23 @@ public:
             auto& primitive = lxvar_unwrap<glgeom::primitive_buffer>(spElem->value()["primitive"]);
             auto& transform = lxvar_unwrap<glgeom::mat4f>(spElem->value()["transform"]);
 
-            std::cout << spElem->tagName() << " " << primitive.vertex.positions.size() << std::endl;
-
             auto pInstance = new lx0::Instance;
             pInstance->spTransform = mspRasterizer->createTransform(transform);
             pInstance->spMaterial = mspRasterizer->createMaterial("media2/shaders/glsl/fragment/diffuse_gray.frag");
             pInstance->spGeometry = mspRasterizer->createGeometry(primitive);
             mInstances.push_back(InstancePtr(pInstance));
+
+            mBounds.merge(primitive.bbox);
+        }
+        else if (spElem->tagName() == "Player")
+        {
+            addValueChangeListener(spElem, [this](ElementPtr spElem) {
+                auto position = lxvar_unwrap<glgeom::point3f>(spElem->value()["position"]);
+                auto target   = lxvar_unwrap<glgeom::point3f>(spElem->value()["target"]);
+                auto viewMatrix = glm::lookAt(position.vec, target.vec, glm::vec3(0, 0, 1));
+                mspCamera = mspRasterizer->createCamera(glgeom::radians(glgeom::degrees(60)), 0.1f, 10000.0f, viewMatrix);
+                spElem->document()->view(0)->sendEvent("redraw");
+            });
         }
     }
 
@@ -129,6 +151,7 @@ protected:
     lx0::CameraPtr                  mspCamera;
     lx0::LightSetPtr                mspLightSet;
     std::vector<lx0::InstancePtr>   mInstances;
+    glgeom::abbox3f                 mBounds;
 };
 
 lx0::View::Component*   create_renderer()       { return new Renderer; }

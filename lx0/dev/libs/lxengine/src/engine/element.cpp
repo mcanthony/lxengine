@@ -213,11 +213,34 @@ namespace lx0 { namespace engine { namespace dom_ns {
     void
     Element::value(lxvar value)
     {
-        _foreach([&](ComponentPtr it) {
-            it->onValueChange(shared_from_this(), value);
-        });
+        notifyValueChanged();
 
         mValue = value;
+    }
+
+    void
+    Element::notifyValueChanged (void)
+    {
+        _foreach([&](ComponentPtr it) {
+            it->onValueChange(shared_from_this());
+        });
+    }
+    
+    void
+    Element::notifyValueChanged (const char* selector)
+    {
+        ///@todo Implement notifyValueChanged(selector)
+        /*
+            Provide a finer grain notification of what about the value has changed.
+            The value is likely a map of some sort, therefore this should describe
+            which key or keys has changed.   
+
+            A good, consistent, but easy to parse selector syntax should be chosen.
+
+            pElem->value()["position"] = lxvar::wrap(glgeom::point3f(1, 2, 3));
+            pElem->notifyValueChanged("position");
+         */
+        lx_error("Not implemented");
     }
 
     void
