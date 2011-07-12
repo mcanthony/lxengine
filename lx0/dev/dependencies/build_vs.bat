@@ -65,6 +65,7 @@ REM ===========================================================================
 REM Beginning of script
 REM ===========================================================================
 
+title LxEngine Automated Dependency Builder
 echo.
 echo.
 echo --------------------------------------------------------------------------
@@ -131,6 +132,7 @@ REM - Download the dependencies zip
 REM - Extract the zip
 REM ===========================================================================
 
+title Downloading and extracting dependency sources
 echo.
 echo Ensuring dependency source is available...
 echo.
@@ -169,6 +171,7 @@ IF NOT EXIST 7za.exe (
 call:auto_extract_source boost_1_46_1 boost_1_46_1.7z
 call:auto_extract_source glm-0.9.2.3  glm-0.9.2.3.zip
 call:auto_extract_source bullet-2.78 bullet-2.78.zip
+call:auto_extract_source niflib niflib-6cbe9f4d0141b75c951cd05dcbfb3e230d70ea2b.7z
 
 if %FAILURE%==1 ( 
     echo.
@@ -203,6 +206,8 @@ if %FAILURE%==1 (
 REM ===========================================================================
 REM Find Python & Scons for the Google V8 build
 REM ===========================================================================
+
+title Checking for required tools...
 
 echo.
 echo Searching for required tools...
@@ -260,13 +265,13 @@ call:build_project %PROJECT% %ROOTDIR% %TESTFILE%
 call:test_file_or_fail %ROOTDIR%\boost\any.hpp
 IF %FAILURE%==1 (goto:EOF)
 
-REM
-REM This needs to be fixed.  Why is boost not building to the correct location?
-REM
-call:copy_directory source\boost_1_46_1\boost %PSDK%\boost\include\boost
-call:copy_directory source\boost_1_46_1\stage\lib %PSDK%\boost\lib
 
-call:test_file_or_fail %PSDK%\boost\include\boost\any.hpp
+set TESTFILE2=%PSDK%\boost\include\boost\any.hpp
+IF NOT EXIST %TESTFILE2% (
+    call:copy_directory source\boost_1_46_1\boost %PSDK%\boost\include\boost
+    call:copy_directory source\boost_1_46_1\stage\lib %PSDK%\boost\lib
+)
+call:test_file_or_fail %TESTFILE2%
 call:test_file_or_fail %PSDK%\boost\lib\libboost_filesystem-vc100-mt-gd.lib
 IF %FAILURE%==1 (goto:EOF)
 
@@ -331,9 +336,8 @@ REM ===========================================================================
 
 set PROJECT=Bullet
 set ROOTDIR=source\bullet-2.78
-set TESTFILE=lib\Debug\BulletCollision.lib
+set TESTFILE=..\bullet_build\lib\Debug\BulletCollision.lib
 
-mkdir %ROOTDIR%
 echo mkdir ..\bullet_build>_t.bat
 echo cd ..\bullet_build>>_t.bat
 echo cmake ..\bullet-2.78>>_t.bat
@@ -522,11 +526,47 @@ IF %FAILURE%==1 (goto:EOF)
 
 call:copy_directory %ROOTDIR%\glm %PSDK%\glm\include\glm
 
+REM ===========================================================================
+REM Build NifLib
+REM ===========================================================================
+
+REM
+REM Disable building the unit tests.  Simply can't get them to find Boost and
+REM build properly.
+REM
+move source\niflib\test\CMakeLists.txt source\niflib\test\CMakeLists.txt.orig
+echo.
+echo cmake_minimum_required(VERSION 2.8)>source\niflib\test\CMakeLists.txt
+
+set PROJECT=NifLib
+set ROOTDIR=source\niflib
+set TESTFILE=..\niflib_build\Debug\niflib.lib
+
+echo pushd .>_t.bat
+echo mkdir ..\niflib_build>>_t.bat
+echo cd ..\niflib_build>>_t.bat
+echo cmake ..\niflib>>_t.bat
+echo msbuild niflib.vcxproj /p:Configuration=Debug>>_t.bat
+echo msbuild niflib.vcxproj /p:Configuration=Release>>_t.bat
+echo popd >>_t.bat
+
+call:build_project %PROJECT% %ROOTDIR% %TESTFILE%
+IF %FAILURE%==1 (goto:EOF)
+
+set BUILDDIR=%ROOTDIR%\..\niflib_build
+call:copy_directory %ROOTDIR%\include %PSDK%\niflib\include\niflib
+call:copy_files %BUILDDIR%\Debug\*.lib %PSDK%\niflib\lib\Debug
+call:copy_files %BUILDDIR%\Release\*.lib %PSDK%\niflib\lib\Release
+call:copy_files %BUILDDIR%\Debug\*.dll %PSDK%\niflib\bin\Debug
+call:copy_files %BUILDDIR%\Release\*.dll %PSDK%\niflib\bin\Release
+
 
 REM ===========================================================================
 REM Build process complete
 REM ===========================================================================
 
+title Build complete.
+echo.
 echo.
 echo Build process appears to have succeeded.
 echo.
@@ -672,6 +712,8 @@ REM
     set ROOTDIR=%2
     set TESTFILE=%3
     
+    title Building %PROJECT%...
+    echo.
     echo * Building %PROJECT% from %ROOTDIR%
 
     REM The caller is supposed to generate a file called _t.bat containing
