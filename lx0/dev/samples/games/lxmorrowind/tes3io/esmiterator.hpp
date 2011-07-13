@@ -39,7 +39,7 @@ struct SubRecordHeader
         stream.read(&size);
     }
 
-    int         offset; 
+    lx0::uint64 offset; 
     char        name[5];
     lx0::uint32 size;
 };
@@ -99,8 +99,8 @@ struct ESMIterator
     //
     bool                eof         (void)                                  { return mStream.eof(); }
     bool                good        (void) const                            { return mStream.good(); }
-    lx0::uint32         tellg       (void)                                  { return mStream.tellg(); }
-    void                seekg       (lx0::uint32 pos)                       { mStream.seekg(pos); }
+    lx0::uint64         tellg       (void)                                  { return mStream.tellg(); }
+    void                seekg       (lx0::uint64 pos)                       { mStream.seekg(pos); }
     void                skip    (   size_t bytes)                           { mStream.skip(bytes); }
     
     void                read        (char* data, size_t count)              { mStream.read(data, count); }

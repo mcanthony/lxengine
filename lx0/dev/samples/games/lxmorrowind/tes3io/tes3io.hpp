@@ -41,8 +41,18 @@ public:
 class scene_group
 {
 public:
+    void merge(scene_group& that);
+
     std::vector<instance> instances;
 };
+
+inline void
+scene_group::merge (scene_group& that)
+{
+    instances.reserve(instances.size() + that.instances.size());
+    for (size_t i = 0; i < that.instances.size(); ++i)
+        instances.push_back(that.instances[i]);
+}
 
 class Tes3Imp;
 

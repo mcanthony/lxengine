@@ -531,10 +531,13 @@ RasterizerGL::createGeometry (glgeom::primitive_buffer& primitive)
     glGenVertexArrays(1, &vao);
     glBindVertexArray(vao);
 
-    GLuint vio;
-    glGenBuffers(1, &vio);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, vio);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, primitive.indices.size() * sizeof(primitive.indices[0]), &primitive.indices[0], GL_STATIC_DRAW);
+    GLuint vio = 0;
+    if (!primitive.indices.empty())
+    {
+        glGenBuffers(1, &vio);
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, vio);
+        glBufferData(GL_ELEMENT_ARRAY_BUFFER, primitive.indices.size() * sizeof(primitive.indices[0]), &primitive.indices[0], GL_STATIC_DRAW);
+    }
 
     GLuint vboPositions;
     glGenBuffers(1, &vboPositions);

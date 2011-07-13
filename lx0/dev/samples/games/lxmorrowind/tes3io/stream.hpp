@@ -52,8 +52,8 @@ public:
     void            close   (void)              { mFin.close(); }
     bool            eof     (void)              { return mFin.eof(); }
     bool            good    (void) const        { return mFin.good(); }
-    lx0::uint32     tellg   (void)              { return mFin.tellg(); }
-    void            seekg   (lx0::uint32 pos)   { mFin.seekg(pos); assert(!mFin.fail()); }
+    lx0::uint64     tellg   (void)              { return mFin.tellg(); }
+    void            seekg   (lx0::uint64 pos)   { mFin.seekg(pos); assert(!mFin.fail()); }
 
     void skip (size_t bytes)
     {

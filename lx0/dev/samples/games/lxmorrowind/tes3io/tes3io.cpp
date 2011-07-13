@@ -34,9 +34,14 @@
 #include <boost/filesystem.hpp>
 #include <boost/algorithm/string.hpp>
 #include <lx0/lxengine.hpp>
+#include <glm/gtx/euler_angles.hpp>
 
 #include <niflib/niflib.h>
 #include <niflib/obj/NiObject.h>
+#include <niflib/obj/NiNode.h>
+#include <niflib/obj/NiGeometry.h>
+#include <niflib/obj/NiTriShape.h>
+#include <niflib/obj/NiTriShapeData.h>
 
 #include "tes3io.hpp"
 #include "esmiterator.hpp"
@@ -264,6 +269,80 @@ void loadNif (std::ifstream& fin, glgeom::primitive_buffer& primitive)
     }
 }
 
+//===========================================================================//
+
+std::shared_ptr<scene_group>
+processNifObject (Niflib::NiObjectRef spObject)
+{
+    std::shared_ptr<scene_group> spGroup( new scene_group );
+
+    if (Niflib::NiNodeRef spNode = Niflib::DynamicCast<Niflib::NiNode>(spObject))
+    {
+        auto children = spNode->GetChildren();
+        for (auto it = children.begin(); it != children.end(); ++it)
+        {
+            if (Niflib::NiTriShapeRef spTriShape = Niflib::DynamicCast<Niflib::NiTriShape>(*it))
+            {
+                if (!spTriShape->GetVisibility())
+                    continue;
+
+                if (Niflib::NiTriBasedGeomDataRef spData = Niflib::DynamicCast<Niflib::NiTriBasedGeomData>(spTriShape->GetData()))
+                {
+                    spGroup->instances.resize( spGroup->instances.size() + 1 );
+                    auto& primitive = spGroup->instances.back().primitive;
+                    auto& transform = spGroup->instances.back().transform;
+                
+                    //
+                    // Let NifLib compute the full transform up to the parent
+                    //
+                    auto world = spTriShape->GetWorldTransform();
+                    for (int i = 0; i < 16; ++i)
+                        transform[i%4][i/4] = world[i%4][i/4];
+
+                    //
+                    // Copy the data from Niflib form to GLGeom form
+                    //
+                    auto indices = spData->GetTriangles();
+                    primitive.indices.reserve(indices.size() * 3);
+                    for (auto it = indices.begin(); it != indices.end(); ++it)
+                    {
+                        primitive.indices.push_back( it->v1 );
+                        primitive.indices.push_back( it->v2 );
+                        primitive.indices.push_back( it->v3 );
+                    }
+                
+                    auto vertices = spData->GetVertices();
+                    primitive.vertex.positions.reserve(vertices.size());
+                    for (auto it = vertices.begin(); it != vertices.end(); ++it)
+                    {
+                        glgeom::point3f p(it->x, it->y, it->z);
+                        primitive.vertex.positions.push_back(p);
+                        primitive.bbox.merge(p);
+                    }
+
+                    auto normals = spData->GetNormals();
+                    primitive.vertex.normals.reserve(vertices.size());
+                    for (auto it = normals.begin(); it != normals.end(); ++it)
+                        primitive.vertex.normals.push_back( glgeom::vector3f(it->x, it->y, it->z) );
+
+                    auto colors = spData->GetColors();
+                    primitive.vertex.colors.reserve(colors.size());
+                    for (auto it = colors.begin(); it != colors.end(); ++it)
+                    {
+                        // Ignore alpha for now
+                        primitive.vertex.colors.push_back( glgeom::color3f(it->r, it->g, it->b) );
+                    }
+
+                    auto center = spData->GetCenter();
+                    primitive.bsphere.center = glgeom::point3f(center.x, center.y, center.z);
+                    primitive.bsphere.radius = spData->GetRadius();
+                }
+            }
+        }
+    }
+    return spGroup;
+}
+
 
 //===========================================================================//
 
@@ -273,7 +352,7 @@ struct BsaFile
     {
         std::string     name;
         size_t          size;
-        lx0::uint32     offset;
+        lx0::uint64     offset;
     };
 
     std::string                  mFilename;
@@ -285,16 +364,18 @@ class BsaCollection
 public:
     void initialize(const char* path);
 
-    std::shared_ptr<glgeom::primitive_buffer> getModel (std::string type, std::string name);
+    std::shared_ptr<scene_group> getModel (std::string type, std::string name);
 
 protected:
     std::map< std::string, std::shared_ptr<glgeom::primitive_buffer> > mModelCache;
     std::vector<BsaFile> mBsas;
 };
 
-std::shared_ptr<glgeom::primitive_buffer>
+std::shared_ptr<scene_group>
 BsaCollection::getModel (std::string type, std::string name)
 {
+    std::shared_ptr<scene_group> spGroup(new scene_group);
+
     auto fullname = type + name;
     boost::to_lower(fullname);
 
@@ -311,24 +392,16 @@ BsaCollection::getModel (std::string type, std::string name)
                 Stream stream;
                 stream.open(jt->mFilename);
                 stream.seekg(kt->second.offset);
-                
-                spPrimitive.reset(new glgeom::primitive_buffer);
-                lx0::uint32 pos = stream.tellg();
-                loadNif(stream.stream(), *spPrimitive);
-                stream.seekg(pos);
-                
+
                 Niflib::NifInfo info;
                 auto spNifRoot = Niflib::ReadNifTree(stream.stream(), &info);
-
                 stream.close();
-
-                return spPrimitive;
+                
+                return processNifObject(spNifRoot);
             }
         }
-        return spPrimitive;
     }
-    else
-        return it->second;
+    return spGroup;
 }
 
 
@@ -365,7 +438,7 @@ void loadBsaFile (BsaFile& bsa, const std::string& filename)
         // Skip the hash table
         stream.skip(8 * fileCount);
 
-        lx0::uint32 dataOffset = stream.tellg();
+        lx0::uint64 dataOffset = stream.tellg();
 
         for (lx0::uint32 i = 0; i < fileCount; ++i)
         {
@@ -436,7 +509,8 @@ public:
             headers.push_back(iter.record_header());
 
             if (   iter.is_record("CELL")
-                || iter.is_record("STAT"))
+                || iter.is_record("STAT")
+                || iter.is_record("LIGH"))
             {
                 names.insert(std::make_pair(iter.read_string(), &headers.back()));
             }
@@ -666,14 +740,20 @@ public:
                     StaticModel model (ESMIterator(stream, *jt->second));
                     std::cout << "\t" << model.model << "\n";
                     
-                    auto spPrim = mBsaSet.getModel("meshes\\", model.model);
-                    if (!spPrim->vertex.positions.empty())
+                    auto subgroup = mBsaSet.getModel("meshes\\", model.model);
+                    for (auto kt = subgroup->instances.begin(); kt != subgroup->instances.end(); ++kt)
                     {
-                        instance inst;
-                        inst.primitive = *spPrim;
-                        inst.transform = glm::mat4();
-                        group.instances.push_back(inst);
+                        glm::mat4 mrot  = glm::gtx::euler_angles::eulerAngleYXZ(it->rotation.y, it->rotation.x, it->rotation.z);
+                        glm::mat4 mtran = glm::translate(glm::mat4(), it->position.vec);
+                        glm::mat4 mscal = glm::scale(glm::mat4(), glm::vec3(it->scale, it->scale, it->scale));
+                          
+                        kt->transform = mtran * mrot * mscal * kt->transform;
                     }
+                    group.merge(*subgroup);
+                }
+                else if (strncmp(jt->second->name, "LIGH", 4) == 0)
+                {
+                    std::cout << "Light" << std::endl;
                 }
             }
         }

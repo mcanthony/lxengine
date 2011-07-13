@@ -125,6 +125,9 @@ GeomImp::activate(RasterizerGL* pRasterizer, GlobalPass& pass)
 
     check_glerror();
 
+    //
+    // Is this an indexed primitive or a list of vertices?
+    //
     if (mVboIndices)
         glDrawElements(mType, mCount, GL_UNSIGNED_SHORT, 0);
     else
