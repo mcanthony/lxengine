@@ -984,14 +984,14 @@ RasterizerGL::rasterizeItem (GlobalPass& pass, std::shared_ptr<Instance> spInsta
         check_glerror();
 
         mContext.spCamera->activate(this);
-
-        // Lights are optional; not all rendering algorithms require explicitly defined lights
-        if (mContext.spLightSet)
-            mContext.spLightSet->activate();
         
         mStats.tmMaterialActivate.start();
         mContext.spMaterial->activate(this, pass);
         mStats.tmMaterialActivate.stop();
+
+        // Lights are optional; not all rendering algorithms require explicitly defined lights
+        if (mContext.spLightSet)
+            mContext.spLightSet->activate(this);
         
         spInstance->spTransform->activate(this, spInstance->spCamera);
 

@@ -39,8 +39,12 @@ struct SubRecordHeader
         stream.read(&size);
     }
 
-    lx0::uint64 offset; 
-    char        name[5];
+    lx0::uint64 offset;
+    union 
+    {
+        lx0::uint32 name_id;
+        char        name[5];
+    };
     lx0::uint32 size;
 };
 
@@ -72,6 +76,8 @@ struct ESMIterator
         , mStream                   (stream)
     {
         mStream.seekg( recordHeader.offset );
+        lx_check_error(mStream.good());
+
         new (&mCurrentRecordHeader) RecordHeader(mStream);
         new (&mCurrentSubRecordHeader) SubRecordHeader(mStream);
     }
@@ -84,7 +90,7 @@ struct ESMIterator
     void next_record()
     {
         lx_check_error(mStream.good());
-        mStream.seekg(mCurrentRecordHeader.offset + mCurrentRecordHeader.size + 16);
+        mStream.seekg(_offset_next_record());
         new (&mCurrentRecordHeader) RecordHeader(mStream);
         new (&mCurrentSubRecordHeader) SubRecordHeader(mStream);
     }
@@ -92,9 +98,11 @@ struct ESMIterator
     const RecordHeader& record_header () const { return mCurrentRecordHeader; }
 
 
-    bool        is_sub  (const char* s) { return strncmp(s, mCurrentSubRecordHeader.name, 4) == 0; }
-    lx0::uint32 sub_size() { return mCurrentSubRecordHeader.size; }
-    void next_sub() { mStream.seekg( mCurrentSubRecordHeader.offset + mCurrentSubRecordHeader.size + 8); new (&mCurrentSubRecordHeader) SubRecordHeader(mStream); }
+    bool                is_sub      (const char* s) { return strncmp(s, mCurrentSubRecordHeader.name, 4) == 0; }
+    lx0::uint32         sub_id      (void) { return mCurrentSubRecordHeader.name_id; }
+    lx0::uint32         sub_size    (void) { return mCurrentSubRecordHeader.size; }
+    void                next_sub    (void) { mStream.seekg(_offset_next_sub()); new (&mCurrentSubRecordHeader) SubRecordHeader(mStream); }
+    bool                sub_done    (void) { return mStream.tellg() >= _offset_next_record(); }
 
     //
     bool                eof         (void)                                  { return mStream.eof(); }
@@ -112,6 +120,9 @@ struct ESMIterator
     //
 
 protected:
+    lx0::uint64         _offset_next_sub() { return mCurrentSubRecordHeader.offset + mCurrentSubRecordHeader.size + 8; }
+    lx0::uint64         _offset_next_record() { return mCurrentRecordHeader.offset + mCurrentRecordHeader.size + 16; }
+
     RecordHeader    mCurrentRecordHeader;
     SubRecordHeader mCurrentSubRecordHeader;
     Stream&         mStream;

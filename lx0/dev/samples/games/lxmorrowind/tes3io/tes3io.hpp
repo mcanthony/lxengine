@@ -30,6 +30,7 @@
 
 #include <glgeom/glgeom.hpp>
 #include <glgeom/ext/primitive_buffer.hpp>
+#include <glgeom/prototype/std_lights.hpp>
 
 class instance
 {
@@ -43,15 +44,23 @@ class scene_group
 public:
     void merge(scene_group& that);
 
-    std::vector<instance> instances;
+    std::vector<glgeom::point_light_f>  lights;
+    std::vector<instance>       instances;
 };
+
+template <typename T>
+void append_to (std::vector<T>& dst, std::vector<T>& v)
+{
+    dst.reserve( dst.size() + v.size() );
+    for (auto it = v.begin(); it != v.end(); ++it)
+        dst.push_back(*it);
+}
 
 inline void
 scene_group::merge (scene_group& that)
 {
-    instances.reserve(instances.size() + that.instances.size());
-    for (size_t i = 0; i < that.instances.size(); ++i)
-        instances.push_back(that.instances[i]);
+    append_to(instances, that.instances);
+    append_to(lights, that.lights);
 }
 
 class Tes3Imp;

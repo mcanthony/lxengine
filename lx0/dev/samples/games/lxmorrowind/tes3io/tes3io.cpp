@@ -26,6 +26,10 @@
 */
 //===========================================================================//
 
+//===========================================================================//
+//   H E A D E R S   &   D E C L A R A T I O N S 
+//===========================================================================//
+
 #include <fstream>
 #include <iostream>
 #include <vector>
@@ -33,8 +37,10 @@
 #include <boost/format.hpp>
 #include <boost/filesystem.hpp>
 #include <boost/algorithm/string.hpp>
+
 #include <lx0/lxengine.hpp>
 #include <glm/gtx/euler_angles.hpp>
+#include <glgeom/prototype/std_lights.hpp>
 
 #include <niflib/niflib.h>
 #include <niflib/obj/NiObject.h>
@@ -47,6 +53,10 @@
 #include "esmiterator.hpp"
 
 namespace bfs = boost::filesystem;
+
+//===========================================================================//
+//   I M P L E M E N T A T I O N
+//===========================================================================//
 
 std::string readName (Stream& stream)
 {
@@ -536,6 +546,75 @@ struct StaticModel
     std::string model;
 };
 
+#define _MAKE_ID_A 'A'
+#define _MAKE_ID_B 'B'
+#define _MAKE_ID_C 'C'
+#define _MAKE_ID_D 'D'
+#define _MAKE_ID_E 'E'
+#define _MAKE_ID_F 'F'
+#define _MAKE_ID_G 'G'
+#define _MAKE_ID_H 'H'
+#define _MAKE_ID_I 'I'
+#define _MAKE_ID_J 'J'
+#define _MAKE_ID_K 'K'
+#define _MAKE_ID_L 'L'
+#define _MAKE_ID_M 'M'
+#define _MAKE_ID_N 'N'
+#define _MAKE_ID_O 'O'
+#define _MAKE_ID_P 'P'
+#define _MAKE_ID_Q 'Q'
+#define _MAKE_ID_R 'R'
+#define _MAKE_ID_S 'S'
+#define _MAKE_ID_T 'T'
+#define _MAKE_ID_U 'U'
+#define _MAKE_ID_V 'V'
+#define _MAKE_ID_W 'W'
+#define _MAKE_ID_X 'X'
+#define _MAKE_ID_Y 'Y'
+#define _MAKE_ID_Z 'Z'
+#define _MAKE_ID(a,b,c,d) \
+    kId_ ## a ## b ## c ## d = ( (_MAKE_ID_ ## d << 24) | (_MAKE_ID_ ## c << 16) | (_MAKE_ID_ ## b << 8) | (_MAKE_ID_ ## a) ) 
+enum
+{
+    _MAKE_ID(F,N,A,M),  // kId_FNAM
+    _MAKE_ID(L,H,D,T),  // etc.
+    _MAKE_ID(L,I,G,H),  
+    _MAKE_ID(N,A,M,E),
+    _MAKE_ID(S,T,A,T),
+};
+
+struct Light
+{
+    Light (ESMIterator& iter)
+    {
+        while (!iter.sub_done())
+        {
+            switch (iter.sub_id())
+            {
+            case kId_NAME:
+                name = iter.read_string();
+                break;
+            case kId_LHDT:
+                {
+                    float       weight  = iter.read();
+                    int         value   = iter.read();
+                    int         time    = iter.read();
+                    int         radius  = iter.read();
+                    lx0::uint32 packed  = iter.read();
+                    lx0::uint32 flags   = iter.read();
+
+                    color = glgeom::unpack_rgbx<float>(packed);
+                }
+                break;
+            }
+            iter.next_sub();
+        }
+    }
+
+    std::string     name;
+    glgeom::color3f color;
+};
+
 struct Reference
 {
     Reference()
@@ -710,6 +789,15 @@ void loadEsmFile (std::string filenameStr, Index& index)
     }
 }
 
+glm::mat4 _transform(Reference& ref)
+{
+    glm::mat4 mrot  = glm::gtx::euler_angles::eulerAngleYXZ(ref.rotation.y, ref.rotation.x, ref.rotation.z);
+    glm::mat4 mtran = glm::translate(glm::mat4(), ref.position.vec);
+    glm::mat4 mscal = glm::scale(glm::mat4(), glm::vec3(ref.scale, ref.scale, ref.scale));
+                          
+    return mtran * mrot * mscal;
+}
+
 class Tes3Imp
 {
 public:
@@ -735,25 +823,35 @@ public:
             auto jt = mEsmIndex.names.find(it->name);
             if (jt != mEsmIndex.names.end())
             {
-                if (strncmp(jt->second->name, "STAT", 4) == 0)
+                ESMIterator iter(stream, *jt->second);
+
+                switch (jt->second->name_id)
                 {
-                    StaticModel model (ESMIterator(stream, *jt->second));
-                    std::cout << "\t" << model.model << "\n";
-                    
-                    auto subgroup = mBsaSet.getModel("meshes\\", model.model);
-                    for (auto kt = subgroup->instances.begin(); kt != subgroup->instances.end(); ++kt)
+                    case kId_STAT:
                     {
-                        glm::mat4 mrot  = glm::gtx::euler_angles::eulerAngleYXZ(it->rotation.y, it->rotation.x, it->rotation.z);
-                        glm::mat4 mtran = glm::translate(glm::mat4(), it->position.vec);
-                        glm::mat4 mscal = glm::scale(glm::mat4(), glm::vec3(it->scale, it->scale, it->scale));
-                          
-                        kt->transform = mtran * mrot * mscal * kt->transform;
+                        StaticModel model (iter);
+                        std::cout << "\t" << model.model << "\n";
+                    
+                        auto subgroup = mBsaSet.getModel("meshes\\", model.model);
+                        auto transform = _transform(*it);
+                        for (auto kt = subgroup->instances.begin(); kt != subgroup->instances.end(); ++kt)
+                            kt->transform = transform * kt->transform;
+                        group.merge(*subgroup);
                     }
-                    group.merge(*subgroup);
-                }
-                else if (strncmp(jt->second->name, "LIGH", 4) == 0)
-                {
-                    std::cout << "Light" << std::endl;
+                    break;
+                
+                    case kId_LIGH:
+                    {
+                        Light esmLight (iter);
+                        auto transform = _transform(*it);
+                        
+                        glgeom::point_light_f light;
+                        light.position = transform * glgeom::point3f(0,0,0);
+                        light.color = esmLight.color;
+
+                        group.lights.push_back(light);
+                    }
+                    break;
                 }
             }
         }

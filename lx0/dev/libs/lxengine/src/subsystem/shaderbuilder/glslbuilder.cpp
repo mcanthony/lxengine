@@ -133,7 +133,10 @@ GLSLBuilder::_processNode (Shader& shader, Context& context, lxvar& parameters, 
     {
         std::string source;
         if (node["source"].is_string())
+        {
+            lx_warn("Source as a string is deprecated.");
             source = node["source"].as<std::string>();
+        }
         else
         {
             ///@todo Would be nice to modify lxvar such that boost::join could

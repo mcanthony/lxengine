@@ -82,10 +82,6 @@ ShaderBuilder::_refreshNodes (void)
         for (auto it = mNodeDirectories.begin(); it != mNodeDirectories.end(); ++it)
             lx0::find_files_in_directory(nodeFiles, it->c_str(),  "node");
 
-        lx0::find_files_in_directory(nodeFiles, "media2/shaders/shaderbuilder/shading",  "node");
-        lx0::find_files_in_directory(nodeFiles, "media2/shaders/shaderbuilder/patterns", "node");
-        lx0::find_files_in_directory(nodeFiles, "media2/shaders/shaderbuilder/mappers",  "node");
-
         for (auto it = nodeFiles.begin(); it != nodeFiles.end(); ++it)
             _loadNodeImp(*it);
     }
@@ -123,7 +119,11 @@ void ShaderBuilder::_loadNodeImp (std::string filename)
     else if (value["input"].is_undefined())
         lx_error("'input' not defined for node '%s'", filename.c_str());
     else
-        mNodes.insert(std::make_pair(id, value));
+    {
+        bool bExists = mNodes.insert(std::make_pair(id, value)).second;
+        if (!bExists)
+            lx_warn("ShaderBuilder node by name '%s' already exists in cache", id.c_str());
+    }
 }
 
 void ShaderBuilder::buildShaderGLSL (Material& material, lxvar graph)

@@ -49,7 +49,7 @@ namespace lx0
             class LightSet
             {
             public:
-                virtual void activate() {}
+                virtual void activate(RasterizerGL* pRasterizer);
 
                 std::vector<LightPtr> mLights;
             };

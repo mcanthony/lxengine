@@ -70,13 +70,13 @@ install_debrel("openal/bin" "alut.dll")
 # Ogg Vorbis
 #
 include_directories("${DEPS_SDK}/libogg/include")
-link_directories("${DEPS_SDK}/libogg/lib")
-INSTALL(FILES "${DEPS_SDK}/libogg/bin/Debug/libogg.dll" DESTINATION ${PROJECT_BINARY_DIR})
-
 include_directories("${DEPS_SDK}/libvorbis/include")
 link_directories("${DEPS_SDK}/libvorbis/lib")
+link_directories("${DEPS_SDK}/libogg/lib")
+
 set(VORBIS_LIBS libvorbis.lib libvorbisfile.lib libogg.lib)
 
+install_debrel("libogg/bin" "libogg.dll")
 install_debrel("libvorbis/bin" "libvorbis.dll")
 install_debrel("libvorbis/bin" "libvorbisfile.dll")
 

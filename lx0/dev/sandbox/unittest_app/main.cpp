@@ -109,7 +109,7 @@ static void runTestSet()
     {
         boost::filesystem::path path(*it);
         std::string filename = path.string();
-        std::string testName = path.filename().substr(0, path.filename().length() - path.extension().length());
+        std::string testName = path.filename().string().substr(0, path.filename().string().length() - path.extension().string().length());
 
         runTest(results["tests"], testName, filename);
     }

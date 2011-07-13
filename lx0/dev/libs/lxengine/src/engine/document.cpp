@@ -268,7 +268,8 @@ namespace lx0 { namespace engine { namespace dom_ns {
             it->onUpdate(shared_from_this());
 
             lx0::uint64 end = lx0::lx_milliseconds();
-            Engine::acquire()->incPerformanceCounter(std::string("update>") + std::string(it->name()), end - start);
+            std::string name = it->name() ? it->name() : "(anonymous)";
+            Engine::acquire()->incPerformanceCounter(std::string("update>") + name, end - start);
         });          
         
         slotUpdateRun();

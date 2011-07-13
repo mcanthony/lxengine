@@ -99,6 +99,12 @@ main (int argc, char** argv)
                 spElement->value(value);
                 spGroup->append(spElement);
             }
+            for (auto it = group.lights.begin(); it != group.lights.end(); ++it)
+            {
+                auto spElement = spDocument->createElement("Light");
+                spElement->value( lxvar_wrap(*it) );
+                spGroup->append(spElement);
+            }
             spDocument->root()->append(spGroup);
         
             ViewPtr spView = spDocument->createView("Canvas", "view", create_renderer() );

@@ -57,69 +57,6 @@ Material::activate (RasterizerGL* pRasterizer, GlobalPass& pass)
     glUseProgram(mId);
     
     //
-    // Set up lights
-    //
-    ///@todo Why isn't this in LightSet activate?
-    //
-    if (pRasterizer->mContext.spLightSet)
-    {
-        auto& spLightSet = pRasterizer->mContext.spLightSet;
-        int lightCount = (int)spLightSet->mLights.size();
-
-        {
-            GLint unifIndex = glGetUniformLocation(mId, "unifAmbient");
-            if (unifIndex != -1)
-            {
-                glUniform3f(unifIndex, 0.1f, 0.1f, 0.1f);
-            }
-        }
-
-        {
-            GLint unifIndex = glGetUniformLocation(mId, "unifLightCount");
-            if (unifIndex != -1)
-            {
-                glUniform1i(unifIndex, lightCount);
-            }
-        }
-
-
-        if (lightCount > 0)
-        {
-            {
-                GLint idx = glGetUniformLocation(mId, "unifLightPosition[0]");
-                if (idx != -1)
-                {
-                    std::vector<point3f> positions;
-                    positions.reserve(lightCount);
-
-                    const auto& viewMatrix = (*pRasterizer->mContext.uniforms.spViewMatrix);
-                    for (int i = 0; i < lightCount; ++i)
-                    {
-                        const auto& posWc = spLightSet->mLights[i]->position.vec;
-                        glm::vec4 posEc = glm::vec4(posWc, 1.0f) * viewMatrix;
-                        positions.push_back( point3f(posEc.x, posEc.y, posEc.z) );
-                    }
-
-                    glUniform3fv(idx, lightCount, &positions[0].x);
-                }
-            }
-            {
-                GLint idx = glGetUniformLocation(mId, "unifLightColor[0]");
-                if (idx != -1)
-                {
-                    std::vector<color3f> colors;
-                    colors.reserve(lightCount);
-
-                    for (int i = 0; i < lightCount; ++i)
-                        colors.push_back( spLightSet->mLights[i]->color );
-
-                    glUniform3fv(idx, lightCount, &colors[0].r);
-                }
-            }
-        }
-    }
-
-    //
     // Set up color
     //
     {

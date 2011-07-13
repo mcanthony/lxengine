@@ -55,6 +55,25 @@ static glm::vec3 shade_normal (
     return N;
 }
 
+static glm::vec3 shade_normal2 (
+    const glm::mat4& unifViewMatrix,
+    const glm::vec3& fragNormalEc)
+{
+    using namespace glm;
+
+    vec4 normalWc = vec4(fragNormalEc, 1.0) * unifViewMatrix;    	
+    vec3 N = normalize(vec3(normalWc.x, normalWc.y, normalWc.z));
+    vec3 A = abs(N);
+    
+    vec3 c = vec3(0,0,0);
+    vec3 F = ceil(N);
+    vec3 B = -floor(N);
+    c += A.x * (F.x * vec3(1,0,0) + B.x * vec3(0,1,1)); 
+    c += A.y * (F.y * vec3(0,1,0) + B.y * vec3(1,0,1)); 
+    c += A.z * (F.z * vec3(0,0,1) + B.z * vec3(1,1,0));
+    return c;
+}
+
 static glm::vec3 shade_phong (
     int              unifLightCount,
     const glm::vec3* unifLightPosition,
@@ -204,6 +223,12 @@ LambdaBuilder::_buildVec3 (lxvar param)
         {
             return [](const Context& i) {
                 return shade_normal (i.unifViewMatrix, i.fragNormalEc);
+            };
+        }
+        else if (type == "normal2")
+        {
+            return [](const Context& i) {
+                return shade_normal2 (i.unifViewMatrix, i.fragNormalEc);
             };
         }
         else if (type == "phong")

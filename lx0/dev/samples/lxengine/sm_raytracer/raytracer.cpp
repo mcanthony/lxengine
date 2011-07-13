@@ -108,6 +108,8 @@ class GenericMaterial
     : public Material
 {
 public:
+    virtual const char* name() const { return "raytracer"; }
+
     GenericMaterial (ShaderBuilder::ShadeFunction shader)
     {
         mShader = shader;
@@ -189,7 +191,7 @@ public:
         {
             auto spMatElem = spElem->document()->getElementById(matName);
             if (spMatElem)
-                mspMaterial = spMatElem->getComponent<Material>("raytrace");
+                mspMaterial = spMatElem->getComponent<Material>("raytracer");
             return true;
         }
         else
@@ -359,6 +361,7 @@ class RayTracer : public Document::Component
 {
 public: 
     RayTracer()
+        : mSuppressAddNotification (false)
     {
         lxvar graph;
         graph["_type"] = "phong";
@@ -491,7 +494,9 @@ public:
 
     virtual void onAttached (DocumentPtr spDocument) 
     {
+        mSuppressAddNotification = true;
         lx0::processIncludeDocument(spDocument);
+        mSuppressAddNotification = false;
 
         spDocument->iterateElements([&](ElementPtr spElem) -> bool { 
             _onElementAddRemove(spElem, true); 
@@ -500,8 +505,11 @@ public:
     }
     virtual void onElementAdded (DocumentPtr spDocument, ElementPtr spElem) 
     {
-        lx_debug("Element '%s' added", spElem->tagName().c_str());
-        _onElementAddRemove(spElem, true); 
+        if (!mSuppressAddNotification)
+        {
+            lx_debug("Element '%s' added", spElem->tagName().c_str());
+            _onElementAddRemove(spElem, true); 
+        }
     }
 
     virtual void onUpdate (DocumentPtr spDocument)
@@ -694,6 +702,7 @@ protected:
 
     std::map<std::string, std::function<void (ElementPtr spElem)>> mHandlers;
 
+    bool                                    mSuppressAddNotification;
     std::deque<std::function<bool (void)>>  mUpdateQueue;
 
     lx0::ShaderBuilder                      mShaderBuilder;

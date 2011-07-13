@@ -70,26 +70,16 @@ public:
         mspRasterizer->initialize();
 
         //
+        // Create an empty light set that will be populated by the Document
+        //
+        mspLightSet = mspRasterizer->createLightSet();
+
+        //
         // Process the data in the document being viewed
         // 
         spView->document()->iterateElements2([&](lx0::ElementPtr spElement) {
             onElementAdded(spView->document(), spElement);
         });
-
-        //
-        // Create a set of lights
-        // 
-        lx0::LightPtr spLight0 = mspRasterizer->createLight();
-        spLight0->position = glgeom::point3f(10, -10, 10);
-        spLight0->color    = glgeom::color3f(1, 1, 1);
-        
-        lx0::LightPtr spLight1 = mspRasterizer->createLight();
-        spLight0->position = glgeom::point3f(10, 10, 10);
-        spLight0->color    = glgeom::color3f(.6f, .6f, 1);
-        
-        mspLightSet = mspRasterizer->createLightSet();
-        mspLightSet->mLights.push_back(spLight0);
-        mspLightSet->mLights.push_back(spLight1);
     }
 
     virtual void shutdown   (View* pView)
@@ -129,7 +119,7 @@ public:
 
             auto pInstance = new lx0::Instance;
             pInstance->spTransform = mspRasterizer->createTransform(transform);
-            pInstance->spMaterial = mMaterials.find("normal2_shader")->second;
+            pInstance->spMaterial = mMaterials.find("white_spec96")->second;
             pInstance->spGeometry = mspRasterizer->createGeometry(primitive);
             mInstances.push_back(InstancePtr(pInstance));
 
@@ -152,6 +142,13 @@ public:
 
             std::string name = query(spElem->attr("id"), "");
             mMaterials.insert(std::make_pair(name, spMaterial));
+        }
+        else if (spElem->tagName() == "Light")
+        {
+            auto& light = lxvar_unwrap<glgeom::point_light_f>(spElem->value());
+            mspLightSet->mLights.push_back( mspRasterizer->createLight() );
+            mspLightSet->mLights.back()->position = light.position;
+            mspLightSet->mLights.back()->color = light.color;
         }
     }
 
