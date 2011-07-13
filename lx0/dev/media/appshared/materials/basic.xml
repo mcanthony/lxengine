@@ -8,6 +8,13 @@
       }
     }
   </Material2>
+  <Material2 id="normal2_shader">
+    {
+      graph : {
+        _type : "normal2",
+      }
+    }
+  </Material2> 
 
   <Material2 id="white_spec96">
     {

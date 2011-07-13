@@ -85,6 +85,7 @@ namespace lx0
 
                 void            loadNode            (std::string path);
 
+                Material        buildShaderGLSL     (lxvar graph)   { Material m; buildShaderGLSL(m, graph); return m; }
                 void            buildShaderGLSL     (Material& material, lxvar graph);
                 ShadeFunction   buildShaderLambda   (lxvar graph);
                 void            x_buildShaderNative (lxvar graph);

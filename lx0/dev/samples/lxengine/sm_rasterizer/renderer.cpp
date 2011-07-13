@@ -296,11 +296,11 @@ protected:
     std::shared_ptr<RasterizerGL> mspRasterizer;
     lx0::ShaderBuilder            mShaderBuilder;
 
-    lx0::CameraPtr       mspCamera;       // Camera shared by all instances
-    lx0::LightSetPtr     mspLightSet;
+    lx0::CameraPtr                      mspCamera;       // Camera shared by all instances
+    lx0::LightSetPtr                    mspLightSet;
 
     std::map<std::string,GeometryPtr>   mMeshes;
-    std::vector<InstancePtr>                mGeometry;
+    std::vector<InstancePtr>            mGeometry;
     std::map<std::string,MaterialPtr>   mMaterials;
 };
 

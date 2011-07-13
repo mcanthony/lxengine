@@ -30,6 +30,18 @@
 
 using namespace lx0;
 
+GeomImp::~GeomImp()
+{
+    if (mVao)
+        glDeleteVertexArrays(1, &mVao);
+    if (mVboPosition)
+        glDeleteBuffers(1, &mVboPosition);
+    if (mVboNormal)
+        glDeleteBuffers(1, &mVboNormal);
+    if (mVboColors)
+        glDeleteBuffers(1, &mVboColors);
+}
+
 /*!
     This method takes the entire set of geometry properties (e.g. the list of vertices,
     the indices, the vertex attributes like normals, colors, etc.) and searches for

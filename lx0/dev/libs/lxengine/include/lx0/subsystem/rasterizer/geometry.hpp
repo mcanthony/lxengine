@@ -72,6 +72,8 @@ namespace lx0
                     , mFaceCount (0)
                 {}
 
+                ~GeomImp();
+
                 virtual void activate(RasterizerGL*, GlobalPass& pass);
 
                 GLenum  mType;

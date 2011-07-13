@@ -1,0 +1,22 @@
+{
+    output : "vec4",
+    uniforms    : 
+    {
+        unifViewMatrix      : [ "mat4" ],
+    },
+    input  : {
+    },
+    source: [
+        "vec4 normalWc = vec4(fragNormalEc, 1.0) * unifViewMatrix;",    	
+        "vec3 N = normalize(normalWc.xyz);",
+        "vec3 A = abs(N);",
+        "",
+        "vec3 c = vec3(0,0,0);",
+        "vec3 F = ceil(N);",
+        "vec3 B = -floor(N);",
+        "c += A.x * (F.x * vec3(1,0,0) + B.x * vec3(0,1,1)); ",
+        "c += A.y * (F.y * vec3(0,1,0) + B.y * vec3(1,0,1)); ",
+        "c += A.z * (F.z * vec3(0,0,1) + B.z * vec3(1,1,0));",
+        "return vec4(c, 1.0);",
+    ],
+}

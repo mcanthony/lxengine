@@ -62,45 +62,59 @@ main (int argc, char** argv)
     {
         EnginePtr   spEngine   = Engine::acquire();
         
-        DocumentPtr spDocument = spEngine->createDocument();
-        spDocument->addController( create_controller(spDocument) );
+        spEngine->globals().add("startingCell", lx0::eAcceptsString, lx0::validate_string());
 
-        ElementPtr spPlayer = spDocument->createElement("Player");
-        spPlayer->value()["position"] = lxvar_wrap(glgeom::point3f(2000, 2000, 2000));
-        spPlayer->value()["target"] = lxvar_wrap(glgeom::point3f(0, 0, 0));
-        spDocument->root()->append(spPlayer);
-
-        Tes3Io loader;
-        loader.initialize("mwdata");
-
-        scene_group group;
-        loader.cell("Beshara", group);
-
-        ElementPtr spGroup = spDocument->createElement("Group");
-        for (auto it = group.instances.begin(); it != group.instances.end(); ++it)
+        if (spEngine->parseCommandLine(argc, argv, "startingCell"))
         {
-            ElementPtr spElement = spDocument->createElement("Instance");
-            lxvar value = spElement->value();
-            value["transform"] = lxvar_wrap(it->transform);
-            value["primitive"] = lxvar_wrap(it->primitive);
-            spElement->value(value);
-            spGroup->append(spElement);
-        }
-        spDocument->root()->append(spGroup);
+            DocumentPtr spDocument = spEngine->loadDocument("media2/appdata/lxmorrowind/lxmorrowind.xml");
+            spDocument->addController( create_controller(spDocument) );
+            lx0::processIncludeDocument(spDocument);
+
+            ElementPtr spPlayer = spDocument->createElement("Player");
+            spPlayer->value()["position"] = lxvar_wrap(glgeom::point3f(2000, 2000, 2000));
+            spPlayer->value()["target"] = lxvar_wrap(glgeom::point3f(0, 0, 0));
+            spDocument->root()->append(spPlayer);
+
+            Tes3Io loader;
+            loader.initialize("mwdata");
+
+            // Let the command-line override the document's starting cell, if desired
+            std::string startingCell = spDocument->getElementsByTagName("Scene")[0]->attr("startingCell").as<std::string>();
+            lxvar& startingCellVar = spEngine->globals().find("startingCell"); 
+            if (startingCellVar.is_string())
+                startingCell = startingCellVar.as<std::string>();
+            else
+                startingCellVar = startingCell;
+
+            scene_group group;
+            loader.cell(startingCell.c_str(), group);
+
+            ElementPtr spGroup = spDocument->createElement("Group");
+            for (auto it = group.instances.begin(); it != group.instances.end(); ++it)
+            {
+                ElementPtr spElement = spDocument->createElement("Instance");
+                lxvar value = spElement->value();
+                value["transform"] = lxvar_wrap(it->transform);
+                value["primitive"] = lxvar_wrap(it->primitive);
+                spElement->value(value);
+                spGroup->append(spElement);
+            }
+            spDocument->root()->append(spGroup);
         
-        ViewPtr spView = spDocument->createView("Canvas", "view", create_renderer() );
-        spView->addUIBinding( create_uibinding() );
+            ViewPtr spView = spDocument->createView("Canvas", "view", create_renderer() );
+            spView->addUIBinding( create_uibinding() );
 
-        lxvar options;
-        options.insert("title", "LxMorrowind");
-        options.insert("width", 800);
-        options.insert("height", 400);
-        spView->show(options);
+            lxvar options;
+            options.insert("title", "LxMorrowind");
+            options.insert("width", 800);
+            options.insert("height", 400);
+            spView->show(options);
 
-        exitCode = spEngine->run();
+            exitCode = spEngine->run();
 
-        spView.reset();
-        spEngine->closeDocument(spDocument);
+            spView.reset();
+            spEngine->closeDocument(spDocument);
+        }
         spEngine->shutdown();
     }
     catch (lx0::error_exception& e)

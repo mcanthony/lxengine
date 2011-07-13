@@ -28,6 +28,7 @@
 
 #include <iostream>
 #include <lx0/subsystem/rasterizer.hpp>
+#include <lx0/subsystem/shaderbuilder.hpp>
 #include <glgeom/ext/primitive_buffer.hpp>
 #include "lxextensions/lxvar_wrap.hpp"
 
@@ -99,7 +100,7 @@ public:
     virtual void render (void)	
     {
         lx0::RenderAlgorithm algorithm;
-        algorithm.mClearColor = glgeom::color4f(0.1f, 0.3f, 0.8f, 1.0f);
+        algorithm.mClearColor = glgeom::color4f(0.05f, 0.15f, 0.4f, 1.0f);
         
         lx0::GlobalPass pass;
         pass.spCamera   = mspCamera;
@@ -128,7 +129,7 @@ public:
 
             auto pInstance = new lx0::Instance;
             pInstance->spTransform = mspRasterizer->createTransform(transform);
-            pInstance->spMaterial = mspRasterizer->createMaterial("media2/shaders/glsl/fragment/diffuse_gray.frag");
+            pInstance->spMaterial = mMaterials.find("normal2_shader")->second;
             pInstance->spGeometry = mspRasterizer->createGeometry(primitive);
             mInstances.push_back(InstancePtr(pInstance));
 
@@ -144,14 +145,25 @@ public:
                 spElem->document()->view(0)->sendEvent("redraw");
             });
         }
+        else if (spElem->tagName() == "Material2")
+        {
+            auto material = mShaderBuilder.buildShaderGLSL( spElem->value().find("graph") );
+            auto spMaterial = mspRasterizer->createMaterial(material.uniqueName, material.source, material.parameters);
+
+            std::string name = query(spElem->attr("id"), "");
+            mMaterials.insert(std::make_pair(name, spMaterial));
+        }
     }
 
 protected:
     std::shared_ptr<RasterizerGL>   mspRasterizer;
-    lx0::CameraPtr                  mspCamera;
-    lx0::LightSetPtr                mspLightSet;
-    std::vector<lx0::InstancePtr>   mInstances;
-    glgeom::abbox3f                 mBounds;
+    lx0::ShaderBuilder              mShaderBuilder;
+
+    lx0::CameraPtr                          mspCamera;
+    lx0::LightSetPtr                        mspLightSet;
+    std::map<std::string, lx0::MaterialPtr> mMaterials;
+    std::vector<lx0::InstancePtr>           mInstances;
+    glgeom::abbox3f                         mBounds;
 };
 
 lx0::View::Component*   create_renderer()       { return new Renderer; }

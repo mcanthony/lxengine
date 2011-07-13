@@ -1,0 +1,7 @@
+<Document>
+    <Library>
+      <IncludeDocument src="media2/appshared/materials/basic.xml" />
+    </Library>
+    <Scene startingCell="Beshara">
+    </Scene>
+</Document>

@@ -520,6 +520,22 @@ RasterizerGL::createQuadList (std::vector<lx0::uint16>&     quadIndices,
 
 }
 
+template <typename T>
+static 
+GLuint 
+_genArrayBuffer (GLenum target, std::vector<T>& data)
+{
+    GLuint id = 0;
+    if (!data.empty())
+    {
+        glGenBuffers(1, &id);
+        glBindBuffer(target, id);
+        glBufferData(target, data.size() * sizeof(T), &data.front(), GL_STATIC_DRAW);
+    }
+    return id;
+}
+
+
 GeometryPtr
 RasterizerGL::createGeometry (glgeom::primitive_buffer& primitive)
 {
@@ -530,31 +546,22 @@ RasterizerGL::createGeometry (glgeom::primitive_buffer& primitive)
     GLuint vao;
     glGenVertexArrays(1, &vao);
     glBindVertexArray(vao);
-
-    GLuint vio = 0;
-    if (!primitive.indices.empty())
-    {
-        glGenBuffers(1, &vio);
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, vio);
-        glBufferData(GL_ELEMENT_ARRAY_BUFFER, primitive.indices.size() * sizeof(primitive.indices[0]), &primitive.indices[0], GL_STATIC_DRAW);
-    }
-
-    GLuint vboPositions;
-    glGenBuffers(1, &vboPositions);
-    glBindBuffer(GL_ARRAY_BUFFER, vboPositions);
-    glBufferData(GL_ARRAY_BUFFER, primitive.vertex.positions.size() * sizeof(primitive.vertex.positions[0]), &primitive.vertex.positions[0], GL_STATIC_DRAW);
     
     check_glerror();
 
     // Create the cache to encapsulate the created OGL resources
     //
     auto pGeom = new GeomImp;
-    pGeom->mtbFlatShading = true;
     pGeom->mType          = GL_TRIANGLES;
     pGeom->mVao           = vao;
-    pGeom->mVboIndices    = vio;
+    pGeom->mVboIndices    = _genArrayBuffer(GL_ELEMENT_ARRAY_BUFFER, primitive.indices);
     pGeom->mCount         = primitive.indices.size();
-    pGeom->mVboPosition   = vboPositions;
+    pGeom->mVboPosition   = _genArrayBuffer(GL_ARRAY_BUFFER, primitive.vertex.positions);
+    pGeom->mVboNormal     = _genArrayBuffer(GL_ARRAY_BUFFER, primitive.vertex.normals);
+    pGeom->mVboColors     = _genArrayBuffer(GL_ARRAY_BUFFER, primitive.vertex.colors);
+    pGeom->mtbFlatShading = (pGeom->mVboNormal == 0);
+    check_glerror();
+
     return GeometryPtr(pGeom);
 }
 
