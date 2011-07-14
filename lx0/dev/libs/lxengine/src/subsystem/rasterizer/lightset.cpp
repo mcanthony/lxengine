@@ -33,26 +33,20 @@
 using namespace lx0;
 using namespace glgeom;
 
-void LightSet::activate(RasterizerGL* pRasterizer)
+struct ActiveLights
 {
-    GLint mId;
-    glGetIntegerv(GL_CURRENT_PROGRAM, &mId);
-
-    
-
-
-    //
-    // This is a temporary bit of code to select only the four closest
-    // lights.  The number 4 is a hard-coded value based on the current
-    // phong shader implementation.  Obviously, this should be generalized.
-    //
-    size_t lightCount = (int)mLights.size();
     std::vector<glgeom::point3f> positionsEc;
     std::vector<glgeom::color3f> colors;
-    positionsEc.reserve(4);
-    colors.reserve(4);
-   
-    if (lightCount > 0)
+    std::vector<glm::vec3>       attenuation;
+};
+
+static 
+void
+_selectLights (std::vector<LightPtr>& all, ActiveLights& active, RasterizerGL* pRasterizer)
+{
+    const int kMaxActive = 4;
+
+    if (!all.empty())
     {
         struct Entry
         {
@@ -62,36 +56,78 @@ void LightSet::activate(RasterizerGL* pRasterizer)
         };
         std::list<Entry> closest;
 
-        for (size_t i = 0; i < lightCount; ++i)
-        {
-            Entry e;
-            e.index = i;
-            e.positionEc = pRasterizer->mContext.spCamera->viewMatrix * mLights[i]->position;
-            e.distance_squared = distance_to_origin_squared(e.positionEc);
+        const glm::mat4& viewMatrix = pRasterizer->mContext.spCamera->viewMatrix;
+        auto cameraPos = glm::inverse(viewMatrix) * glgeom::point3f(0,0,0);
 
-            size_t j = 0;
-            auto jt = closest.rbegin();
-            while (jt != closest.rend() && j < 4)
+        auto transformed = (viewMatrix * glgeom::point3f(1, 1, 1)).vec;
+        auto ratio = length( glm::vec3(1, 1, 1)) / length(transformed);
+
+        //
+        // Loop through all the lights and select the N closest.
+        //
+        for (size_t i = 0; i < all.size(); ++i)
+        {
+            //
+            // Is the camera out the light's area of influence?
+            //
+            float distanceWc2 = distance_squared(cameraPos, all[i]->position);            
+            if (all[i]->radius * all[i]->radius >= distanceWc2)
             {
-                if (e.distance_squared < jt->distance_squared)
-                    break;
-                 ++jt, ++j;
-            }
-            if (j  < 4)
-            {
-                closest.insert(jt.base(), e);
-                if (closest.size() > 4)
-                    closest.pop_front();
+                Entry e;
+                e.index = i;
+                e.positionEc = viewMatrix * all[i]->position;
+                e.distance_squared = distance_to_origin_squared(e.positionEc);
+
+                size_t j = 0;
+                auto jt = closest.rbegin();
+                while (jt != closest.rend() && j < kMaxActive)
+                {
+                    if (e.distance_squared < jt->distance_squared)
+                        break;
+                     ++jt, ++j;
+                }
+                if (j  < kMaxActive)
+                {
+                    closest.insert(jt.base(), e);
+                    if (closest.size() > kMaxActive)
+                        closest.pop_front();
+                }
             }
         }
 
+        //
+        // Now that the closest have been selected, push the light data into the
+        // active set arrays.
+        //
+        active.positionsEc.reserve(closest.size());
+        active.colors.reserve(closest.size());
         for (auto it = closest.begin(); it != closest.end(); ++it)
         {
-            positionsEc.push_back( it->positionEc );
-            colors.push_back( mLights[it->index]->color );
+            const auto& light = *all[it->index].get();
+
+            active.positionsEc.push_back( it->positionEc );
+            active.colors.push_back( light.color );
+            active.attenuation.push_back( light.attenuation * glm::vec3(1, ratio, ratio * ratio) );
         }
     }
 
+    assert(active.positionsEc.size() <= kMaxActive);
+}
+
+void LightSet::activate(RasterizerGL* pRasterizer)
+{
+    GLint mId;
+    glGetIntegerv(GL_CURRENT_PROGRAM, &mId);
+
+    //
+    // This is a temporary bit of code to select only the four closest
+    // lights.  The number 4 is a hard-coded value based on the current
+    // phong shader implementation.  Obviously, this should be generalized.
+    //
+    ActiveLights active;
+    _selectLights(mLights, active, pRasterizer);
+
+    size_t activeCount = active.positionsEc.size();
 
     {
         GLint unifIndex = glGetUniformLocation(mId, "unifAmbient");
@@ -105,21 +141,26 @@ void LightSet::activate(RasterizerGL* pRasterizer)
         GLint unifIndex = glGetUniformLocation(mId, "unifLightCount");
         if (unifIndex != -1)
         {
-            glUniform1i(unifIndex, (int)positionsEc.size());
+            glUniform1i(unifIndex, (int)activeCount);
         }
     }
 
-    if (lightCount > 0)
+    if (activeCount > 0)
     {
         {
             GLint idx = glGetUniformLocation(mId, "unifLightPosition[0]");
             if (idx != -1)
-                glUniform3fv(idx, lightCount, &positionsEc[0].x);
+                glUniform3fv(idx, activeCount, &active.positionsEc[0].x);
         }
         {
             GLint idx = glGetUniformLocation(mId, "unifLightColor[0]");
             if (idx != -1)
-                glUniform3fv(idx, lightCount, &colors[0].r);
+                glUniform3fv(idx, activeCount, &active.colors[0].r);
+        }
+        {
+            GLint idx = glGetUniformLocation(mId, "unifLightAttenuation[0]");
+            if (idx != -1)
+                glUniform3fv(idx, activeCount, &active.attenuation[0].x);
         }
     }
 }

@@ -152,6 +152,7 @@ namespace lx0
                 CameraPtr       createCamera    (glgeom::radians fov, float nearDist, float farDist, glm::mat4& viewMatrix);
                 
                 LightPtr        createLight     (void);
+                LightPtr        createLight     (const glgeom::point_light_f& light);
                 LightSetPtr     createLightSet  (void);
 
                 MaterialPtr     createMaterial              (std::string fragShader);

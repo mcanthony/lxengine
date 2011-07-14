@@ -2,6 +2,6 @@
     <Library>
       <IncludeDocument src="media2/appshared/materials/basic.xml" />
     </Library>
-    <Scene startingCell="Beshara">
+    <Scene startingCell="Ebonheart, Skyrim Mission">
     </Scene>
 </Document>

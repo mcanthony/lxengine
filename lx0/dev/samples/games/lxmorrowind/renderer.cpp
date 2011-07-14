@@ -146,9 +146,7 @@ public:
         else if (spElem->tagName() == "Light")
         {
             auto& light = lxvar_unwrap<glgeom::point_light_f>(spElem->value());
-            mspLightSet->mLights.push_back( mspRasterizer->createLight() );
-            mspLightSet->mLights.back()->position = light.position;
-            mspLightSet->mLights.back()->color = light.color;
+            mspLightSet->mLights.push_back( mspRasterizer->createLight(light) );
         }
     }
 

@@ -2,9 +2,10 @@
     output      : "vec3",
     uniforms    : 
     {
-        unifLightCount      : [ "int" ],
-        unifLightPosition   : [ "vec3[4]" ],
-        unifLightColor      : [ "vec3[4]" ],    
+        unifLightCount       : [ "int" ],
+        unifLightPosition    : [ "vec3[8]" ],
+        unifLightColor       : [ "vec3[8]" ],
+        unifLightAttenuation : [ "vec3[8]" ],
     },
     input  : 
     {
@@ -13,30 +14,5 @@
         specular    : [ "vec3",     [0.0, 0.0, 0.0],          ],
         specularEx  : [ "float",    64                        ],
     },
-    source : "
-    // Since the eye is at <0,0,0>, the direction vector to the vertex and 
-    // the vertex position in eye coordinates are equivalent.
-    //
-    vec3 N = normalize(fragNormalEc);
-    vec3 V = -normalize(fragVertexEc);
-       
-    vec3 c = ambient;                        // ambient term
-    
-    for (int i = 0; i < unifLightCount; ++i)
-    {
-        vec3 L = unifLightPosition[i].xyz - fragVertexEc;
-        float d = length(L);
-        L = normalize(L);
-    
-        float atten = 1;    // / (unifLightAtten[i].x + unifLightAtten[i].y * d  + unifLightAtten[i].x * d * d);
-        vec3 lc = unifLightColor[i].rgb * atten;
-    
-        c += diffuse * lc * max(dot(N,L), 0.0);                   // diffuse term
-
-        vec3 H = normalize(L + V);
-        c += lc * specular * pow(max(dot(N,H),0.0), specularEx);  // specular term
-    }
-               
-    return c;
-    ",
+    source : "phong.nfrag",
 }

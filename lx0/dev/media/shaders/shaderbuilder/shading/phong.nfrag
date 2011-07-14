@@ -1,0 +1,26 @@
+
+
+// Since the eye is at <0,0,0>, the direction vector to the vertex and 
+// the vertex position in eye coordinates are equivalent.
+//
+vec3 N = normalize(fragNormalEc);
+vec3 V = -normalize(fragVertexEc);
+       
+vec3 c = ambient;                        // ambient term
+    
+for (int i = 0; i < unifLightCount; ++i)
+{
+    vec3 L = unifLightPosition[i].xyz - fragVertexEc;
+    float d = length(L);
+    L /= d;
+    
+    float attenuation = 1 / dot(unifLightAttenuation[i], vec3(1, d, d*d));
+    vec3 lc = unifLightColor[i].rgb * attenuation;
+    
+    c += diffuse * lc * max(dot(N,L), 0.0);                   // diffuse term
+
+    vec3 H = normalize(L + V);
+    c += lc * specular * pow(max(dot(N,H),0.0), specularEx);  // specular term
+}
+               
+return c;

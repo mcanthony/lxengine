@@ -98,6 +98,31 @@ void ShaderBuilder::loadNode (std::string filename)
     _loadNodeImp(filename);
 }
 
+static
+void _loadSourceFileIfNecessary (lxvar& value, boost::filesystem::path& path)
+{
+    namespace bfs = boost::filesystem;
+
+    //
+    // Check if the source field is a reference to a file - in which case
+    // load it and swap it into the node definition.
+    //
+    if (value["source"].is_string())
+    {
+        std::string filename = value["source"].as<std::string>();
+        
+        if (boost::ends_with(filename, ".nfrag"))
+        {
+            bfs::path fragPath( path.parent_path().string() + "/" + filename );
+            std::string source = lx0::string_from_file(fragPath.string());
+            std::vector<std::string> lines;
+            boost::split(lines, source, boost::is_any_of("\n"));
+
+            value["source"] = lxvar(lines);
+        }
+    }
+}
+
 void ShaderBuilder::_loadNodeImp (std::string filename)
 {
     namespace bfs = boost::filesystem;
@@ -120,6 +145,8 @@ void ShaderBuilder::_loadNodeImp (std::string filename)
         lx_error("'input' not defined for node '%s'", filename.c_str());
     else
     {
+        _loadSourceFileIfNecessary(value, path);
+
         bool bExists = mNodes.insert(std::make_pair(id, value)).second;
         if (!bExists)
             lx_warn("ShaderBuilder node by name '%s' already exists in cache", id.c_str());

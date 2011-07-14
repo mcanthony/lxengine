@@ -35,6 +35,7 @@
 class instance
 {
 public:
+    std::string              material;      //<! name of associated material
     glgeom::primitive_buffer primitive;
     glgeom::mat4f            transform;
 };

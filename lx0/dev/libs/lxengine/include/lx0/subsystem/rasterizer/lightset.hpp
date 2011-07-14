@@ -28,6 +28,8 @@
 
 #pragma once
 
+#include <glgeom/prototype/std_lights.hpp>
+
 namespace lx0
 {
     namespace subsystem
@@ -38,10 +40,14 @@ namespace lx0
             //! \ingroup lx0_subsystem_rasterizer
 
             class Light
+                : public glgeom::point_light_f
             {
             public:
-                glgeom::point3f position;
-                glgeom::color3f color;
+                Light() {}
+                Light (const glgeom::point_light_f& light) 
+                    : glgeom::point_light_f(light)
+                {}
+                    
             };
 
             //===========================================================================//

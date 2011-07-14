@@ -48,6 +48,17 @@
 #include <niflib/obj/NiGeometry.h>
 #include <niflib/obj/NiTriShape.h>
 #include <niflib/obj/NiTriShapeData.h>
+#include <niflib/obj/NiMaterialProperty.h>
+#include <niflib/obj/NiTexture.h>
+#include <niflib/obj/NiTextureProperty.h>
+#include <niflib/obj/NiTexturingProperty.h>
+#include <niflib/obj/NiTextureModeProperty.h>
+#include <niflib/obj/NiImage.h>
+#include <niflib/obj/NiRawImageData.h>
+#include <niflib/gen/TexDesc.h>
+#include <niflib/gen/TexSource.h>
+#include <niflib/obj/NiPixelData.h>
+#include <niflib/obj/NiSourceTexture.h>
 
 #include "tes3io.hpp"
 #include "esmiterator.hpp"
@@ -296,11 +307,58 @@ processNifObject (Niflib::NiObjectRef spObject)
                 if (!spTriShape->GetVisibility())
                     continue;
 
+                int material = spTriShape->GetActiveMaterial();
+                std::string textureFilename;
+
+                auto properties = spTriShape->GetProperties();
+                for (auto jt = properties.begin(); jt != properties.end(); ++jt)
+                {
+                    if (Niflib::NiMaterialPropertyRef spMaterial = Niflib::DynamicCast<Niflib::NiMaterialProperty>(*jt))
+                    {
+                    }
+                    else if (Niflib::NiTexturingPropertyRef spInfo = Niflib::DynamicCast<Niflib::NiTexturingProperty>(*jt))
+                    {
+                        int count = spInfo->GetTextureCount();
+                        for (int i = 0; i < count; ++i)
+                        {
+                            Niflib::TexDesc desc = spInfo->GetTexture(0);
+                            Niflib::NiSourceTextureRef spSource = desc.source;
+
+                            if (!spSource->IsTextureExternal())
+                            {
+                                Niflib::NiPixelDataRef spData = spSource->GetPixelData();
+                                int width = spData->GetWidth();
+                                int height = spData->GetHeight();
+                                auto texels = spData->GetColors();
+                            }
+                            else
+                            {
+                                textureFilename = spSource->GetTextureFileName();
+                            }
+                        }
+                    }
+                    else if (Niflib::NiTexturePropertyRef spTexture = Niflib::DynamicCast<Niflib::NiTextureProperty>(*jt))
+                    {
+                        Niflib::NiImageRef spImage = spTexture->GetImage();
+                        bool bExternal = spImage->IsTextureExternal();
+                        if (!bExternal)
+                        {
+                            Niflib::NiRawImageDataRef spData = spImage->GetRawImageData();
+                            spData->GetIDString();
+                        }
+                    }
+                }
+                
                 if (Niflib::NiTriBasedGeomDataRef spData = Niflib::DynamicCast<Niflib::NiTriBasedGeomData>(spTriShape->GetData()))
                 {
                     spGroup->instances.resize( spGroup->instances.size() + 1 );
                     auto& primitive = spGroup->instances.back().primitive;
                     auto& transform = spGroup->instances.back().transform;
+
+                    //
+                    // A mesh is being processed, so record the texture filename found earlier.
+                    //
+                    spGroup->instances.back().material = textureFilename;
                 
                     //
                     // Let NifLib compute the full transform up to the parent
@@ -341,6 +399,16 @@ processNifObject (Niflib::NiObjectRef spObject)
                     {
                         // Ignore alpha for now
                         primitive.vertex.colors.push_back( glgeom::color3f(it->r, it->g, it->b) );
+                    }
+
+                    auto channels = spData->GetUVSetCount();
+                    primitive.vertex.uv.resize(channels);
+                    for (short i = 0; i < channels; ++i)
+                    {
+                        auto uv = spData->GetUVSet(i);
+                        primitive.vertex.uv[i].reserve(uv.size());
+                        for (auto it = uv.begin(); it != uv.end(); ++it)
+                            primitive.vertex.uv[i].push_back( glgeom::point2f(it->u, it->v) );
                     }
 
                     auto center = spData->GetCenter();
@@ -485,6 +553,54 @@ void BsaCollection::initialize (const char* path)
 
 //===========================================================================//
 
+#define _MAKE_ID_0 '0'
+#define _MAKE_ID_1 '1'
+#define _MAKE_ID_2 '2'
+#define _MAKE_ID_3 '3'
+#define _MAKE_ID_4 '4'
+#define _MAKE_ID_5 '5'
+#define _MAKE_ID_6 '6'
+#define _MAKE_ID_7 '7'
+#define _MAKE_ID_8 '8'
+#define _MAKE_ID_9 '9'
+#define _MAKE_ID_A 'A'
+#define _MAKE_ID_B 'B'
+#define _MAKE_ID_C 'C'
+#define _MAKE_ID_D 'D'
+#define _MAKE_ID_E 'E'
+#define _MAKE_ID_F 'F'
+#define _MAKE_ID_G 'G'
+#define _MAKE_ID_H 'H'
+#define _MAKE_ID_I 'I'
+#define _MAKE_ID_J 'J'
+#define _MAKE_ID_K 'K'
+#define _MAKE_ID_L 'L'
+#define _MAKE_ID_M 'M'
+#define _MAKE_ID_N 'N'
+#define _MAKE_ID_O 'O'
+#define _MAKE_ID_P 'P'
+#define _MAKE_ID_Q 'Q'
+#define _MAKE_ID_R 'R'
+#define _MAKE_ID_S 'S'
+#define _MAKE_ID_T 'T'
+#define _MAKE_ID_U 'U'
+#define _MAKE_ID_V 'V'
+#define _MAKE_ID_W 'W'
+#define _MAKE_ID_X 'X'
+#define _MAKE_ID_Y 'Y'
+#define _MAKE_ID_Z 'Z'
+#define _MAKE_ID(a,b,c,d) \
+    kId_ ## a ## b ## c ## d = ( (_MAKE_ID_ ## d << 24) | (_MAKE_ID_ ## c << 16) | (_MAKE_ID_ ## b << 8) | (_MAKE_ID_ ## a) ) 
+enum
+{
+    _MAKE_ID(F,N,A,M),  // kId_FNAM
+    _MAKE_ID(H,E,D,R),
+    _MAKE_ID(L,H,D,T),  // etc.
+    _MAKE_ID(L,I,G,H),  
+    _MAKE_ID(N,A,M,E),
+    _MAKE_ID(S,T,A,T),
+    _MAKE_ID(T,E,S,3),
+};
 
 struct Index
 {
@@ -501,9 +617,9 @@ public:
         lx0::uint32 recordCount;
 
         ESMIterator iter (stream);
-        assert(iter.is_record("TES3"));
+        assert(iter.is_record(kId_TES3));
 
-        if (iter.is_sub("HEDR"))
+        if (iter.is_sub(kId_HEDR))
         {
             float version = stream.read();
             iter.skip(4 + 32 + 256);
@@ -546,43 +662,6 @@ struct StaticModel
     std::string model;
 };
 
-#define _MAKE_ID_A 'A'
-#define _MAKE_ID_B 'B'
-#define _MAKE_ID_C 'C'
-#define _MAKE_ID_D 'D'
-#define _MAKE_ID_E 'E'
-#define _MAKE_ID_F 'F'
-#define _MAKE_ID_G 'G'
-#define _MAKE_ID_H 'H'
-#define _MAKE_ID_I 'I'
-#define _MAKE_ID_J 'J'
-#define _MAKE_ID_K 'K'
-#define _MAKE_ID_L 'L'
-#define _MAKE_ID_M 'M'
-#define _MAKE_ID_N 'N'
-#define _MAKE_ID_O 'O'
-#define _MAKE_ID_P 'P'
-#define _MAKE_ID_Q 'Q'
-#define _MAKE_ID_R 'R'
-#define _MAKE_ID_S 'S'
-#define _MAKE_ID_T 'T'
-#define _MAKE_ID_U 'U'
-#define _MAKE_ID_V 'V'
-#define _MAKE_ID_W 'W'
-#define _MAKE_ID_X 'X'
-#define _MAKE_ID_Y 'Y'
-#define _MAKE_ID_Z 'Z'
-#define _MAKE_ID(a,b,c,d) \
-    kId_ ## a ## b ## c ## d = ( (_MAKE_ID_ ## d << 24) | (_MAKE_ID_ ## c << 16) | (_MAKE_ID_ ## b << 8) | (_MAKE_ID_ ## a) ) 
-enum
-{
-    _MAKE_ID(F,N,A,M),  // kId_FNAM
-    _MAKE_ID(L,H,D,T),  // etc.
-    _MAKE_ID(L,I,G,H),  
-    _MAKE_ID(N,A,M,E),
-    _MAKE_ID(S,T,A,T),
-};
-
 struct Light
 {
     Light (ESMIterator& iter)
@@ -603,7 +682,10 @@ struct Light
                     lx0::uint32 packed  = iter.read();
                     lx0::uint32 flags   = iter.read();
 
-                    color = glgeom::unpack_rgbx<float>(packed);
+                    if (radius > 0)
+                        light.radius = float(radius);
+
+                    light.color = glgeom::unpack_rgbx<float>(packed);
                 }
                 break;
             }
@@ -611,8 +693,8 @@ struct Light
         }
     }
 
-    std::string     name;
-    glgeom::color3f color;
+    std::string             name;
+    glgeom::point_light_f   light;
 };
 
 struct Reference
@@ -791,7 +873,7 @@ void loadEsmFile (std::string filenameStr, Index& index)
 
 glm::mat4 _transform(Reference& ref)
 {
-    glm::mat4 mrot  = glm::gtx::euler_angles::eulerAngleYXZ(ref.rotation.y, ref.rotation.x, ref.rotation.z);
+    glm::mat4 mrot  = glm::gtx::euler_angles::eulerAngleYXZ(-ref.rotation.y, -ref.rotation.x, -ref.rotation.z);
     glm::mat4 mtran = glm::translate(glm::mat4(), ref.position.vec);
     glm::mat4 mscal = glm::scale(glm::mat4(), glm::vec3(ref.scale, ref.scale, ref.scale));
                           
@@ -815,11 +897,11 @@ public:
         stream.open(mEsmFilename);
         
         Cell cell;
-        loadCell(cell, stream, mEsmIndex, "Beshara");
+        loadCell(cell, stream, mEsmIndex, id);
+
+        std::cout << "References = " << cell.references.size() << std::endl;
         for (auto it = cell.references.begin(); it != cell.references.end(); ++it)
         {
-            std::cout << "* " << it->name << std::endl;
-
             auto jt = mEsmIndex.names.find(it->name);
             if (jt != mEsmIndex.names.end())
             {
@@ -827,16 +909,32 @@ public:
 
                 switch (jt->second->name_id)
                 {
+                    default:
+                        std::cout << "- " << it->name << " (type " << jt->second->name << " not handled)" << std::endl;
+                    break;
+
                     case kId_STAT:
                     {
                         StaticModel model (iter);
-                        std::cout << "\t" << model.model << "\n";
                     
                         auto subgroup = mBsaSet.getModel("meshes\\", model.model);
                         auto transform = _transform(*it);
                         for (auto kt = subgroup->instances.begin(); kt != subgroup->instances.end(); ++kt)
+                        {
+                            // Account for the cell reference transform in addition to the native transform in 
+                            // model itself.
                             kt->transform = transform * kt->transform;
+
+                            // Handle any textures referenced by the model
+                            if (!kt->material.empty())
+                            {
+                                std::cout << "Load material: '" << kt->material << "'\n";
+                            }
+                        }
+                        
                         group.merge(*subgroup);
+
+                        std::cout << "+ model " << model.model << "\n";
                     }
                     break;
                 
@@ -844,17 +942,28 @@ public:
                     {
                         Light esmLight (iter);
                         auto transform = _transform(*it);
-                        
-                        glgeom::point_light_f light;
-                        light.position = transform * glgeom::point3f(0,0,0);
-                        light.color = esmLight.color;
+                        esmLight.light.position = transform * glgeom::point3f(0,0,0);
 
-                        group.lights.push_back(light);
+                        //
+                        // These adjustments to the light values are more or less arbitrary guesses
+                        // since the actual mapping of NIF data to LxEngine parameters is not
+                        // exactly known.
+                        //
+                        esmLight.light.radius *= 8.0f;
+                        esmLight.light.attenuation = glm::vec3(0, 3, 0);
+                        
+                        group.lights.push_back(esmLight.light);
+
+                        std::cout << "+ light " << esmLight.name << "\n";
                     }
                     break;
+
                 }
             }
+            else
+                std::cout << "- " << it->name << " (not indexed)" << std::endl;
         }
+        
 
         stream.close();
     }
@@ -874,6 +983,6 @@ void Tes3Io::initialize  (const char* path)
 
 void Tes3Io::cell (const char* id, scene_group& group)
 {
+    std::cout << boost::format("Loading cell '%s'...\n") % id;
     mpImp->cell(id, group);
-    std::cout << boost::format("Loaded cell '%s'.\n") % id;
 }

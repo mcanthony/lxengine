@@ -686,6 +686,12 @@ RasterizerGL::createLight (void)
     return LightPtr(new Light);
 }
 
+LightPtr  
+RasterizerGL::createLight (const glgeom::point_light_f& light)
+{
+    return LightPtr(new Light(light));
+}
+
 LightSetPtr     
 RasterizerGL::createLightSet (void)
 {
