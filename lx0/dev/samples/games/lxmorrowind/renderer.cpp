@@ -32,6 +32,8 @@
 #include <glgeom/ext/primitive_buffer.hpp>
 #include "lxextensions/lxvar_wrap.hpp"
 
+#include "lxextensions\material_handle.hpp"
+
 using namespace lx0;
 using namespace glgeom;
 
@@ -116,10 +118,43 @@ public:
         {
             auto& primitive = lxvar_unwrap<glgeom::primitive_buffer>(spElem->value()["primitive"]);
             auto& transform = lxvar_unwrap<glgeom::mat4f>(spElem->value()["transform"]);
+            auto& material = lxvar_unwrap<material_handle>(spElem->value()["material"]);
+
+
 
             auto pInstance = new lx0::Instance;
             pInstance->spTransform = mspRasterizer->createTransform(transform);
-            pInstance->spMaterial = mMaterials.find("white_spec96")->second;
+            if (!material.handle.empty())
+            {
+                //
+                // First call the texture source callback to get a pointer to the data
+                // and create a texture and cache it away.
+                //
+                auto it = mTextures.find(material.handle);
+                if (it == mTextures.end())
+                {
+                    auto spStream = material.callback();
+                    auto spTex = mspRasterizer->createTextureDDS(*spStream);
+                    //spTex = mspRasterizer->createTexture("media2/textures/test/checker-00.png");
+                    mTextures.insert( std::make_pair(material.handle, spTex) );
+                }
+
+                //
+                // Now build a material that uses that texture
+                //
+                lx0::lxvar graph;
+                graph["_type"] = "phong";
+                graph["diffuse"]["_type"] = "texture2d";
+                graph["diffuse"]["source"] = material.handle;
+                graph["diffuse"]["uv"] = "fragUV";
+
+                auto desc = mShaderBuilder.buildShaderGLSL(graph);
+                pInstance->spMaterial = mspRasterizer->createMaterial(desc.uniqueName, desc.source, desc.parameters);
+                pInstance->spMaterial->mTextures[0] = mTextures.find(material.handle)->second;
+            }
+            else
+                pInstance->spMaterial = mMaterials.find("white_spec96")->second;
+
             pInstance->spGeometry = mspRasterizer->createGeometry(primitive);
             mInstances.push_back(InstancePtr(pInstance));
 
@@ -151,12 +186,13 @@ public:
     }
 
 protected:
-    std::shared_ptr<RasterizerGL>   mspRasterizer;
-    lx0::ShaderBuilder              mShaderBuilder;
+    std::shared_ptr<RasterizerGL>           mspRasterizer;
+    lx0::ShaderBuilder                      mShaderBuilder;
 
     lx0::CameraPtr                          mspCamera;
     lx0::LightSetPtr                        mspLightSet;
     std::map<std::string, lx0::MaterialPtr> mMaterials;
+    std::map<std::string, lx0::TexturePtr>  mTextures;
     std::vector<lx0::InstancePtr>           mInstances;
     glgeom::abbox3f                         mBounds;
 };

@@ -358,7 +358,7 @@ processNifObject (Niflib::NiObjectRef spObject)
                     //
                     // A mesh is being processed, so record the texture filename found earlier.
                     //
-                    spGroup->instances.back().material = textureFilename;
+                    spGroup->instances.back().material.handle = textureFilename;
                 
                     //
                     // Let NifLib compute the full transform up to the parent
@@ -442,7 +442,8 @@ class BsaCollection
 public:
     void initialize(const char* path);
 
-    std::shared_ptr<scene_group> getModel (std::string type, std::string name);
+    std::shared_ptr<scene_group>    getModel            (std::string type, std::string name);
+    std::shared_ptr<std::istream>   getTextureStream    (std::string name);
 
 protected:
     std::map< std::string, std::shared_ptr<glgeom::primitive_buffer> > mModelCache;
@@ -460,8 +461,6 @@ BsaCollection::getModel (std::string type, std::string name)
     auto it = mModelCache.find(fullname);
     if (it == mModelCache.end())
     {
-        std::shared_ptr<glgeom::primitive_buffer> spPrimitive;
-
         for (auto jt = mBsas.begin(); jt != mBsas.end(); ++jt)
         {
             auto kt = jt->mEntries.find(fullname);
@@ -480,6 +479,24 @@ BsaCollection::getModel (std::string type, std::string name)
         }
     }
     return spGroup;
+}
+
+std::shared_ptr<std::istream>   
+BsaCollection::getTextureStream (std::string name)
+{
+    for (auto jt = mBsas.begin(); jt != mBsas.end(); ++jt)
+    {
+        boost::to_lower(name);
+        auto kt = jt->mEntries.find(name);
+        if (kt != jt->mEntries.end())
+        {
+            std::shared_ptr<std::ifstream> spStream(new std::ifstream);
+            spStream->open(jt->mFilename, std::ios::binary);
+            spStream->seekg(kt->second.offset);
+            return spStream;
+        }
+    }
+    return std::shared_ptr<std::istream>();
 }
 
 
@@ -925,12 +942,23 @@ public:
                             // model itself.
                             kt->transform = transform * kt->transform;
 
-                            // Handle any textures referenced by the model
-                            if (!kt->material.empty())
+                            if (!kt->material.handle.empty())
                             {
-                                std::cout << "Load material: '" << kt->material << "'\n";
+                                // Apparently Bethesda's level designers/artists used full res TGAs in the editor
+                                // and the production system automatically mapped these files to compressed DDS equivalents
+                                if (boost::ends_with(kt->material.handle, ".tga"))
+                                    kt->material.handle = kt->material.handle.substr(0, kt->material.handle.length() - 4) + ".dds";
+
+                                kt->material.handle = std::string("textures\\") + kt->material.handle;
+                                kt->material.format = "DDS";
+                                
+                                std::string name = kt->material.handle;
+                                kt->material.callback = [this, name]() {
+                                    return mBsaSet.getTextureStream(name);
+                                };
                             }
                         }
+                        
                         
                         group.merge(*subgroup);
 
@@ -949,7 +977,7 @@ public:
                         // since the actual mapping of NIF data to LxEngine parameters is not
                         // exactly known.
                         //
-                        esmLight.light.radius *= 8.0f;
+                        esmLight.light.radius *= 16.0f;
                         esmLight.light.attenuation = glm::vec3(0, 3, 0);
                         
                         group.lights.push_back(esmLight.light);

@@ -89,6 +89,19 @@ GeomImp::activate(RasterizerGL* pRasterizer, GlobalPass& pass)
             glDisableVertexAttribArray(colorIndex);
     }
 
+    GLint uvIndex = glGetAttribLocation(shaderProgram, "vertUV");
+    if (uvIndex != -1)
+    {
+        if (mVboUVs[0])
+        {
+            glBindBuffer(GL_ARRAY_BUFFER, mVboUVs[0]);
+            glVertexAttribPointer(uvIndex, 2, GL_FLOAT, GL_FALSE, 0, 0);
+            glEnableVertexAttribArray(uvIndex);
+        }
+        else
+            glDisableVertexAttribArray(uvIndex);
+    }
+
     // Set per-primitive flags
     {
         bool texture1dUsed = false;

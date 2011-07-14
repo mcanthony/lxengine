@@ -183,6 +183,25 @@ RasterizerGL::createTexture (const char* filename)
     return spTex;
 }
 
+TexturePtr
+RasterizerGL::createTextureDDS (std::istream& stream)
+{
+    TexturePtr spTex(new Texture);
+    spTex->mFilename = "";
+    spTex->mId = 0;
+
+    GLuint _loadDDS(std::istream& stream);
+    spTex->mId = _loadDDS(stream);
+
+    if (spTex->mId == 0)
+        lx_error("Load of DDS stream failed");
+    
+    mResources.push_back(spTex);
+    mTextures.push_back(spTex);
+    return spTex;
+}
+
+
 MaterialPtr 
 RasterizerGL::createMaterial (std::string fragShader)
 {
@@ -559,6 +578,9 @@ RasterizerGL::createGeometry (glgeom::primitive_buffer& primitive)
     pGeom->mVboPosition   = _genArrayBuffer(GL_ARRAY_BUFFER, primitive.vertex.positions);
     pGeom->mVboNormal     = _genArrayBuffer(GL_ARRAY_BUFFER, primitive.vertex.normals);
     pGeom->mVboColors     = _genArrayBuffer(GL_ARRAY_BUFFER, primitive.vertex.colors);
+    for (int i = 0; i < 8 && i < primitive.vertex.uv.size(); ++i)
+        pGeom->mVboUVs[i] = _genArrayBuffer(GL_ARRAY_BUFFER, primitive.vertex.uv[i]);
+
     pGeom->mtbFlatShading = (pGeom->mVboNormal == 0);
     check_glerror();
 

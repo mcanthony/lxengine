@@ -15,6 +15,7 @@ in vec3             geomVertexEc[];
 in vec3             geomNormalOc[];
 in vec3             geomNormalEc[];
 in vec3             geomColor[];
+in vec2             geomUV[];
 
 out vec3            fragLightDirEc;
 
@@ -23,6 +24,7 @@ out vec3            fragVertexEc;
 out vec3            fragNormalOc;
 out vec3            fragNormalEc;
 out vec3            fragColor;
+out vec2            fragUV;
 
 vec3 computeNormal (vec3 v0, vec3 v1, vec3 v2)
 {
@@ -70,6 +72,7 @@ void main()
             fragNormalOc = geomNormalOc[i];
         }
         fragColor    = geomColor[i];
+        fragUV       = geomUV[i];
 
         EmitVertex();
     }

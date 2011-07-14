@@ -96,6 +96,7 @@ main (int argc, char** argv)
                 lxvar value = spElement->value();
                 value["transform"] = lxvar_wrap(it->transform);
                 value["primitive"] = lxvar_wrap(it->primitive);
+                value["material"] = lxvar_wrap(it->material);
                 spElement->value(value);
                 spGroup->append(spElement);
             }

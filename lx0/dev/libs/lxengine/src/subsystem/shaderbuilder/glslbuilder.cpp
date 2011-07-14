@@ -86,6 +86,7 @@ void GLSLBuilder::buildShader (Material& material, lxvar graph)
     shader.mShaderInputs.push_back("in vec3         fragNormalOc;");
     shader.mShaderInputs.push_back("in vec3         fragNormalEc;");
     shader.mShaderInputs.push_back("in vec3         fragColor;");
+    shader.mShaderInputs.push_back("in vec2         fragUV;");
 
     shader.mShaderOutputs.push_back("out vec4        out_color;");
 
@@ -190,6 +191,13 @@ GLSLBuilder::_processNode (Shader& shader, Context& context, lxvar& parameters, 
 
                 const auto returnValueName = boost::str( boost::format("n%1%_ret") % childId ); 
                 ss << returnValueName;
+            }
+            else if (value.is_string())
+            {
+                //
+                // Assume we're dealing with the name of a built-in variable
+                //
+                ss << value.as<std::string>();
             }
             else
             {
@@ -343,7 +351,7 @@ GLSLBuilder::_formatSource (Shader& shader)
         << "// Required External Uniforms\n"
         << "//\n";
     for (auto it = shader.mNodeUniforms.begin(); it != shader.mNodeUniforms.end(); ++it)
-        ss << boost::format("uniform %-6s %s%s;\n") % it->type % it->name % it->count;
+        ss << boost::format("uniform %-10s %s%s;\n") % it->type % it->name % it->count;
     ss  << "\n";
     ss  << "//\n"
         << "// Generated Uniforms\n"

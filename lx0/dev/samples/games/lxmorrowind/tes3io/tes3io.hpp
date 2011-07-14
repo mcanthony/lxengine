@@ -32,10 +32,12 @@
 #include <glgeom/ext/primitive_buffer.hpp>
 #include <glgeom/prototype/std_lights.hpp>
 
+#include "..\lxextensions\material_handle.hpp"
+
 class instance
 {
 public:
-    std::string              material;      //<! name of associated material
+    material_handle          material;      //<! name of associated material
     glgeom::primitive_buffer primitive;
     glgeom::mat4f            transform;
 };

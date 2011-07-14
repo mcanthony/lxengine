@@ -61,16 +61,19 @@ namespace lx0
             {
             public:
                 GeomImp() 
-                    : mType(0)
-                    , mVboIndices (0)
-                    , mVao(0)
-                    , mVboPosition(0)
-                    , mVboNormal(0)
-                    , mCount(0)
-                    , mVboColors(0)
-                    , mTexFlags (0) 
-                    , mFaceCount (0)
-                {}
+                    : mType         (0)
+                    , mVboIndices   (0)
+                    , mVao          (0)
+                    , mVboPosition  (0)
+                    , mVboNormal    (0)
+                    , mCount        (0)
+                    , mVboColors    (0)
+                    , mTexFlags     (0) 
+                    , mFaceCount    (0)
+                {
+                    for (int i = 0; i < 8; ++i)
+                        mVboUVs[i] = 0;
+                }
 
                 ~GeomImp();
 
@@ -83,6 +86,7 @@ namespace lx0
                 GLuint  mVboPosition;
                 GLuint  mVboNormal;
                 GLuint  mVboColors;
+                GLuint  mVboUVs[8];
 
                 GLuint  mVboIndices;
                 GLuint  mTexFlags;

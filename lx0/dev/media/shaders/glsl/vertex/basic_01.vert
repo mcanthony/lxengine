@@ -5,6 +5,7 @@ uniform mat3    unifNormalMatrix;
 
 in vec3 vertNormal;
 in vec3 vertColor;
+in vec2 vertUV;
 
 varying out vec3    geomLightDirEc;
 
@@ -13,6 +14,7 @@ varying out vec3    geomVertexEc;
 varying out vec3    geomNormalOc;
 varying out vec3    geomNormalEc;
 varying out vec3    geomColor;
+varying out vec2    geomUV;
 
 void main(void)
 {
@@ -40,6 +42,7 @@ void main(void)
     geomNormalOc = vertNormal;
     geomNormalEc = unifNormalMatrix * vertNormal;
     geomColor  = vertColor;
+    geomUV     = vertUV;
     
     geomLightDirEc = normalize(vec3(-1, 1, -1));
 }

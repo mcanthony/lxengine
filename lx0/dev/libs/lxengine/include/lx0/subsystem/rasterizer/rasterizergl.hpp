@@ -28,6 +28,7 @@
 
 #pragma once
 
+#include <iostream>
 #include <glgeom/prototype/image.hpp>
 #include <glgeom/ext/primitive_buffer.hpp>
 
@@ -162,6 +163,7 @@ namespace lx0
                 MaterialPtr     createPhongMaterial         (const glgeom::material_phong_f& mat);
 
                 TexturePtr      createTexture               (const char* filename);
+                TexturePtr      createTextureDDS            (std::istream& stream);
 
                 TransformPtr    createTransform             (glm::mat4& mat);
                 TransformPtr    createTransform             (float tx, float ty, float tz);
