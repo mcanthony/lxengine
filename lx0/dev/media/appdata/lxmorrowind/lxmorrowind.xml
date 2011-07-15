@@ -3,11 +3,16 @@
       <IncludeDocument src="media2/appshared/materials/basic.xml" />
     </Library>
     <Scene startingCell="Ebonheart, Skyrim Mission">
+      
+      <SoundBuffer id="music" src="mwdata/Music/Battle/MW battle1.mp3.ogg" />
+      <SoundSource ref="music" sound_state="playing"/>
+        
       <Player>
         {
           position : [ 1000, 1000, 1000],
           target   : [ 0, 0, 0],  
         }
       </Player>
+      
     </Scene>
 </Document>
