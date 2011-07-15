@@ -38,9 +38,9 @@
 #include <boost/filesystem.hpp>
 #include <boost/algorithm/string.hpp>
 
-#include <lx0/lxengine.hpp>
 #include <glm/gtx/euler_angles.hpp>
 #include <glgeom/prototype/std_lights.hpp>
+#include <lx0/lxengine.hpp>
 
 #include <niflib/niflib.h>
 #include <niflib/obj/NiObject.h>
@@ -60,236 +60,13 @@
 #include <niflib/obj/NiPixelData.h>
 #include <niflib/obj/NiSourceTexture.h>
 
-#include "tes3io.hpp"
+#include "../tes3loader.hpp"
 #include "esmiterator.hpp"
 
 namespace bfs = boost::filesystem;
 
 //===========================================================================//
 //   I M P L E M E N T A T I O N
-//===========================================================================//
-
-std::string readName (Stream& stream)
-{
-    // Read the length. Cap it in case something has gone wrong.
-    lx0::uint32 length = stream.read();
-    length = std::min(length, 1024u);
-
-    return stream.read_string2(length);
-}
-
-void readIndexList (Stream& stream)
-{
-    lx0::uint32 count = stream.read();
-    for (lx0::uint32 j = 0; j < count; ++j)
-    {
-        int index = stream.read();
-    }
-}
-
-void readNode (Stream& stream)
-{
-    std::string name = readName(stream);
-
-    lx0::uint32 index0 = stream.read();
-    lx0::uint32 index1 = stream.read();
-
-    lx0::uint16 flags = stream.read();
-
-    glm::vec3 position = stream.read();
-    glm::mat3 rotation = stream.read();
-    float     scale    = stream.read();
-    glm::vec3 velocity = stream.read();
-
-    readIndexList(stream);  // properties
-
-    lx0::uint32 bounds = stream.read();
-    if (bounds != 0)
-    {
-        lx0::uint32 unused   = stream.read();
-        glm::vec3 center     = stream.read();
-        glm::mat3 rotation   = stream.read();
-        glm::vec3 halfLength = stream.read();
-    }
-}
-
-void readShape (Stream& stream, glgeom::primitive_buffer& primitive)
-{
-    lx0::int16 numVertices = stream.read();
-
-    int hasPositionData = stream.read();
-    if (hasPositionData)
-    {
-        primitive.vertex.positions.resize(numVertices);
-        stream.read(&primitive.vertex.positions[0].x, numVertices* 3);
-    }
-
-    int hasNormalData = stream.read();
-    if (hasNormalData)
-    {
-        primitive.vertex.normals.resize(numVertices);
-        stream.read(&primitive.vertex.normals[0].x, numVertices* 3);
-    }
-
-    primitive.bsphere.center = stream.read();
-    primitive.bsphere.radius = stream.read();
-
-    if ((int)stream.read())
-    {
-        std::vector<glm::vec4> colors;
-        colors.resize(numVertices);
-        stream.read(&colors[0].r, numVertices * 4);
-    }
-
-    lx0::int16 uvCount = stream.read();
-    uvCount &= 0x3F;
-
-    if (int(stream.read()))
-    {
-        std::vector<float> unused;
-        unused.resize( uvCount * numVertices * 2);
-        stream.read(&unused[0], unused.size());
-    }
-
-    //
-    // Build a bounding box for the shape
-    //
-    for (auto it = primitive.vertex.positions.begin(); it != primitive.vertex.positions.end(); ++it)
-        primitive.bbox.merge(*it);
-}
-
-void readNiTriShapeData (Stream& stream, glgeom::primitive_buffer& primitive)
-{
-    readShape(stream, primitive);
-
-    //
-    // Read the triangles
-    //
-    lx0::uint16 triangleCount = stream.read();
-    lx0::uint32 indexCount = stream.read();
-    if (indexCount > 0)
-    {
-        primitive.indices.resize(indexCount);
-        stream.read(&primitive.indices[0], primitive.indices.size());
-    }
-
-    lx0::int16 unused = stream.read();
-    for (int i = 0; i < unused; ++i)
-    {
-        lx0::int16 count = stream.read();
-        stream.skip(count * 2);
-    }
-}
-
-/*
-    For now, load up the first mesh encountered.   Can add more properties
-    later.
- */
-void loadNif (std::ifstream& fin, glgeom::primitive_buffer& primitive)
-{
-    Stream stream(fin);
-
-    char headerName[40];
-    stream.read(headerName, 40);
-
-    lx0::uint32 version = stream.read();
-    lx0::uint32 records = stream.read();
-
-    bool done = false;
-    for (lx0::uint32 i = 0; i < records && !done; ++i)
-    {
-        std::string name = readName(stream);
-
-        if (name == "NiNode")
-        {
-            readNode(stream);
-            readIndexList(stream);  // children
-            readIndexList(stream);  // effects
-        }
-        else if (name == "NiTriShape")
-        {
-            readNode(stream);
-            int data = stream.read();
-            int skin = stream.read();
-        }
-        else if (name == "NiTriShapeData")
-        {
-            readNiTriShapeData(stream, primitive);
-            done = true;
-        }
-        else if (name == "NiTexturingProperty")
-        {
-            std::string name = readName(stream);
-            int         extra = stream.read();
-            int         control = stream.read();
-
-            lx0::uint16 flags = stream.read();
-            int         apply = stream.read();
-            int         count = stream.read();
-
-            for (int  i = 0; i < count; ++i)
-            {
-                int     use     = stream.read();
-                if (use)
-                {
-                    int texId   = stream.read();
-                    int clamp   = stream.read();
-                    int filter  = stream.read();
-                    int set     = stream.read();
-                    stream.skip(6);
-
-                    // Bump map special properties
-                    if (i == 5)
-                    {
-                        float     lumScale  = stream.read();
-                        float     lumOffset = stream.read();
-                        glm::vec4 lumVector = stream.read();
-                    }
-                }
-            }
-        }
-        else if (name == "NiSourceTexture")
-        {
-            std::string name = readName(stream);
-            int         extra = stream.read();
-            int         control = stream.read();
-
-            char        external = stream.read();
-            if (external)
-            {
-                std::string filename = readName(stream);
-            }
-            else
-            {
-                char unused = stream.read();
-                int  index = stream.read();     // internal data ptr
-            }
-
-            int pixel = stream.read();
-            int mipmap = stream.read();
-            int alpha = stream.read();
-            stream.skip(1);
-        }
-        else if (name == "NiMaterialProperty")
-        {
-            std::string name = readName(stream);
-            int         extra = stream.read();
-            int         control = stream.read();
-
-            lx0::uint16 flags = stream.read();
-
-            glm::vec3   ambient = stream.read();
-            glm::vec3   diffuse = stream.read();
-            glm::vec3   specular = stream.read();
-            glm::vec3   emissive = stream.read();
-            float       glossiness = stream.read();
-            float       alpha   = stream.read();
-        }
-        else
-            return;
-    }
-}
-
 //===========================================================================//
 
 std::shared_ptr<scene_group>
@@ -420,7 +197,6 @@ processNifObject (Niflib::NiObjectRef spObject)
     }
     return spGroup;
 }
-
 
 //===========================================================================//
 
@@ -610,11 +386,18 @@ void BsaCollection::initialize (const char* path)
     kId_ ## a ## b ## c ## d = ( (_MAKE_ID_ ## d << 24) | (_MAKE_ID_ ## c << 16) | (_MAKE_ID_ ## b << 8) | (_MAKE_ID_ ## a) ) 
 enum
 {
+    _MAKE_ID(A,M,B,I),
+    _MAKE_ID(C,E,L,L),
+    _MAKE_ID(D,A,T,A),
     _MAKE_ID(F,N,A,M),  // kId_FNAM
+    _MAKE_ID(F,R,M,R),
     _MAKE_ID(H,E,D,R),
     _MAKE_ID(L,H,D,T),  // etc.
     _MAKE_ID(L,I,G,H),  
     _MAKE_ID(N,A,M,E),
+    _MAKE_ID(N,A,M,5),
+    _MAKE_ID(R,E,G,N),
+    _MAKE_ID(R,G,N,N),
     _MAKE_ID(S,T,A,T),
     _MAKE_ID(T,E,S,3),
 };
@@ -651,11 +434,14 @@ public:
         {
             headers.push_back(iter.record_header());
 
-            if (   iter.is_record("CELL")
-                || iter.is_record("STAT")
-                || iter.is_record("LIGH"))
+            switch (iter.record_id())
             {
+            case kId_CELL:
+            case kId_LIGH:
+            case kId_REGN:
+            case kId_STAT:
                 names.insert(std::make_pair(iter.read_string(), &headers.back()));
+                break;
             }
             iter.next_record();
         }
@@ -733,12 +519,13 @@ public:
     std::string             name;
     lx0::uint32             flags;
     int                     grid[2];
+    std::string             region;
     std::vector<Reference>  references;
 };
 
 void loadObjectReferences (Cell& cell, ESMIterator& iter)
 {
-    while (iter.is_sub("FRMR"))
+    while (iter.is_sub(kId_FRMR))
     {
         Reference ref;
 
@@ -797,59 +584,39 @@ void loadObjectReferences (Cell& cell, ESMIterator& iter)
 
         cell.references.push_back(ref);
     }
+   
 }
 
 void loadCell (Cell& cell, Stream& stream, RecordHeader& recordHeader)
 {
     ESMIterator iter(stream, recordHeader);
 
-    if (iter.is_sub("NAME"))
-    {
-        cell.name = iter.read_string();
-        iter.next_sub();
-    }
-    if (iter.is_sub("DATA"))
-    {
-        cell.flags = iter.read();
-        cell.grid[0] = iter.read();
-        cell.grid[1] = iter.read();
-        iter.next_sub();
-    }
-
-    if (cell.flags & 0x01)   // Interior
-    {
-        if (iter.is_sub("INTV"))
-            iter.next_sub();
-        if (iter.is_sub("WHGT"))
+    bool done = false;
+    while (!done && !iter.sub_done()) 
+    { 
+        switch (iter.sub_id())
         {
-            lx0::uint32 waterHeight = iter.read();
-            iter.next_sub();
+        case kId_DATA:
+            cell.flags = iter.read();
+            cell.grid[0] = iter.read();
+            cell.grid[1] = iter.read();
+            break;
+        case kId_FRMR:
+            // Object reference list to follow
+            done = true;
+            break;
+        case kId_NAME:
+            cell.name = iter.read_string();
+            break;
+        case kId_RGNN:
+            cell.region = iter.read_string();
+            break;
+        default:
+            break;
         }
-        if (iter.is_sub("AMBI"))
-        {
-            lx0::uint32 ambientColor = iter.read();
-            lx0::uint32 sunlightColor = iter.read();
-            lx0::uint32 fogColor = iter.read();
-            float fogDensity = iter.read();
+        if (!done)
             iter.next_sub();
-        }
     }
-    else
-    {
-        if (iter.is_sub("NAM5"))
-        {
-            lx0::uint32 color = iter.read();
-            iter.next_sub();
-        }
-    }
-
-    if (iter.is_sub("NAME"))
-        iter.next_sub();
-
-    if (iter.is_sub("RGNN"))
-        iter.next_sub();
-    if (iter.is_sub("NAM0"))
-        iter.next_sub();
 
     loadObjectReferences(cell, iter);
 }

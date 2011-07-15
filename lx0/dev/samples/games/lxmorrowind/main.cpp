@@ -31,14 +31,14 @@
 //===========================================================================//
 
 #include <iostream>
-#include <algorithm>
-#include <lx0/lxengine.hpp>
-
 #include <fstream>
+#include <algorithm>
 #include <boost/format.hpp>
 #include <boost/algorithm/string.hpp>
 #include <boost/filesystem.hpp>
-#include "tes3io/tes3io.hpp"
+
+#include <lx0/lxengine.hpp>
+#include "tes3loader.hpp"
 
 lx0::UIBinding*         create_uibinding();
 lx0::View::Component*   create_renderer();
@@ -82,22 +82,25 @@ main (int argc, char** argv)
 
         if (spEngine->parseCommandLine(argc, argv, "startingCell"))
         {
+            //
+            // Load up the document and do the very initial processsing
+            //
             DocumentPtr spDocument = spEngine->loadDocument("media2/appdata/lxmorrowind/lxmorrowind.xml");
             spDocument->addController( create_controller(spDocument) );
             _processDocumentSettings(spEngine, spDocument);            
             lx0::processIncludeDocument(spDocument);
 
-            ElementPtr spPlayer = spDocument->createElement("Player");
-            spPlayer->value()["position"] = lxvar::wrap(glgeom::point3f(2000, 2000, 2000));
-            spPlayer->value()["target"] = lxvar::wrap(glgeom::point3f(0, 0, 0));
-            spDocument->root()->append(spPlayer);
-
+            //
+            // Create the TES3 loader and attach it to the Engine to ensure it has the same lifetime
+            // as the Engine (i.e. we can load data at any point during the run).
+            //
             spEngine->attachComponent( ITES3Loader::create() );
             spEngine->getComponent<ITES3Loader>()->initialize("mwdata");
 
-            // Let the command-line override the document's starting cell, if desired
-  
-
+            //
+            // Load the initial Morrowind cell
+            // ...then populate the Document with its data
+            //
             scene_group group;
             spEngine->getComponent<ITES3Loader>()->cell( spEngine->globals()["startingCell"].as<std::string>().c_str(), group);
 
@@ -120,6 +123,9 @@ main (int argc, char** argv)
             }
             spDocument->root()->append(spGroup);
         
+            //
+            // Create a view of the Document now that it has data
+            //
             ViewPtr spView = spDocument->createView("Canvas", "view", create_renderer() );
             spView->addUIBinding( create_uibinding() );
 
@@ -129,6 +135,9 @@ main (int argc, char** argv)
             options.insert("height", 400);
             spView->show(options);
 
+            //
+            // Run the main loop
+            //
             exitCode = spEngine->run();
 
             spView.reset();

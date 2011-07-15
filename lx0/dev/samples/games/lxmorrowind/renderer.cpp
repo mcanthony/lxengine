@@ -27,11 +27,12 @@
 //===========================================================================//
 
 #include <iostream>
+#include <glgeom/ext/primitive_buffer.hpp>
 #include <lx0/subsystem/rasterizer.hpp>
 #include <lx0/subsystem/shaderbuilder.hpp>
-#include <glgeom/ext/primitive_buffer.hpp>
+#include <lx0/util/misc.hpp>
 
-#include "lxextensions\material_handle.hpp"
+#include "lxextensions/material_handle.hpp"
 
 using namespace lx0;
 using namespace glgeom;
@@ -110,7 +111,6 @@ public:
         mspRasterizer->endFrame();
     }
 
-
     virtual void onElementAdded (DocumentPtr spDocument, ElementPtr spElem) 
     {
         if (spElem->tagName() == "Instance")
@@ -119,38 +119,11 @@ public:
             auto& transform = spElem->value()["transform"].unwrap<glgeom::mat4f>();
             auto& material = spElem->value()["material"].unwrap<material_handle>();
 
-
-
             auto pInstance = new lx0::Instance;
             pInstance->spTransform = mspRasterizer->createTransform(transform);
+
             if (!material.handle.empty())
-            {
-                //
-                // First call the texture source callback to get a pointer to the data
-                // and create a texture and cache it away.
-                //
-                auto it = mTextures.find(material.handle);
-                if (it == mTextures.end())
-                {
-                    auto spStream = material.callback();
-                    auto spTex = mspRasterizer->createTextureDDS(*spStream);
-                    //spTex = mspRasterizer->createTexture("media2/textures/test/checker-00.png");
-                    mTextures.insert( std::make_pair(material.handle, spTex) );
-                }
-
-                //
-                // Now build a material that uses that texture
-                //
-                lx0::lxvar graph;
-                graph["_type"] = "phong";
-                graph["diffuse"]["_type"] = "texture2d";
-                graph["diffuse"]["source"] = material.handle;
-                graph["diffuse"]["uv"] = "fragUV";
-
-                auto desc = mShaderBuilder.buildShaderGLSL(graph);
-                pInstance->spMaterial = mspRasterizer->createMaterial(desc.uniqueName, desc.source, desc.parameters);
-                pInstance->spMaterial->mTextures[0] = mTextures.find(material.handle)->second;
-            }
+                pInstance->spMaterial = _buildMaterial(material);
             else
                 pInstance->spMaterial = mMaterials.find("white_spec96")->second;
 
@@ -162,8 +135,8 @@ public:
         else if (spElem->tagName() == "Player")
         {
             addValueChangeListener(spElem, [this](ElementPtr spElem) {
-                auto position = spElem->value()["position"].unwrap<glgeom::point3f>();
-                auto target   = spElem->value()["target"].unwrap<glgeom::point3f>();
+                auto position = spElem->value()["position"].unwrap2<glgeom::point3f>();
+                auto target   = spElem->value()["target"].unwrap2<glgeom::point3f>();
                 auto viewMatrix = glm::lookAt(position.vec, target.vec, glm::vec3(0, 0, 1));
                 mspCamera = mspRasterizer->createCamera(glgeom::radians(glgeom::degrees(60)), 0.1f, 10000.0f, viewMatrix);
                 spElem->document()->view(0)->sendEvent("redraw");
@@ -182,6 +155,37 @@ public:
             auto& light = spElem->value().unwrap<glgeom::point_light_f>();
             mspLightSet->mLights.push_back( mspRasterizer->createLight(light) );
         }
+    }
+
+    lx0::MaterialPtr _buildMaterial (material_handle& material)
+    {
+        //
+        // First call the texture source callback to get a pointer to the data
+        // and create a texture and cache it away.
+        //
+        auto it = mTextures.find(material.handle);
+        if (it == mTextures.end())
+        {
+            auto spStream = material.callback();
+            auto spTex = mspRasterizer->createTextureDDS(*spStream);
+            //spTex = mspRasterizer->createTexture("media2/textures/test/checker-00.png");
+            mTextures.insert( std::make_pair(material.handle, spTex) );
+        }
+
+        //
+        // Now build a material that uses that texture
+        //
+        lx0::lxvar graph;
+        graph["_type"] = "phong";
+        graph["diffuse"]["_type"] = "texture2d";
+        graph["diffuse"]["source"] = material.handle;
+        graph["diffuse"]["uv"] = "fragUV";
+
+        auto desc = mShaderBuilder.buildShaderGLSL(graph);
+        auto spMaterial = mspRasterizer->createMaterial(desc.uniqueName, desc.source, desc.parameters);
+        spMaterial->mTextures[0] = mTextures.find(material.handle)->second;
+
+        return spMaterial;
     }
 
 protected:

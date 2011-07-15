@@ -158,6 +158,9 @@ namespace lx0
                     template <typename T>
                     T&              unwrap          (void);
 
+                    template <typename T>
+                    T&              unwrap2         (void);
+
 
                     static lxvar    parse           (const char* s);
 
@@ -308,6 +311,8 @@ namespace lx0
                     virtual void        as          (double&)      const        { _invalid(); }
                     virtual void        as          (std::string&) const        { _invalid(); }
 
+                    virtual void*       as2         (const type_info& type)     { return nullptr; }
+
                     virtual int         size        (void) const                { _invalid(); return 0; }
 
                     virtual lxvar*      at          (int i)                     { _invalid(); return nullptr; }
@@ -393,12 +398,45 @@ namespace lx0
                     auto pImp = new lxvar_wrapper_imp<T>(native);
                     return lx0::lxvar(pImp);
                 }
+                
+                /*!
+                    Returns a reference to the underlying native type, of type T.
 
+                    A dynamic_cast is used internally such that the address of the
+                    return value will be null on a type mismatch; however, the
+                    expecation is that this method is used only for efficency when 
+                    the type is known.
+                 */
                 template <typename T>
                 T& lxvar::unwrap (void)
                 {
-                    auto pImp = dynamic_cast<lxvar_wrapper*>( imp<lxvar_wrapper>().get() );
-                    return *reinterpret_cast<T*>(pImp->as2(typeid(T)));
+                    return *reinterpret_cast<T*>( mValue->as2(typeid(T)) );
+                }
+
+                //! Cast to a native type, or interally convert a generic to native type and then cast
+                /*!
+                    A variation on unwrap() that, if the type does not match, will
+                    call a _convert helper to convert a generic lxvar into that 
+                    native type.  This is useful as the data may be parsed in from
+                    a document in generic form but the application will want to use
+                    a native type instead.
+                 */
+                template <typename T>
+                T& lxvar::unwrap2 (void)
+                {
+                    // It seems like via C++ function template explicit specialization that
+                    // unwrap and unwrap2 could be combined; however, I haven't managed to
+                    // code it in a way that works with VS2010
+                    T* p = reinterpret_cast<T*>( mValue->as2(typeid(T)) );
+                    if (!p)
+                    {
+                        T t;
+                        _convert (*this, t);
+                        *this = wrap(t);
+                        return unwrap<T>();
+                    }
+                    else
+                        return *p;
                 }
 
             }

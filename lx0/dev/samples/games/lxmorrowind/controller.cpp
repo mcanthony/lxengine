@@ -37,7 +37,9 @@ using namespace lx0;
 class ControllerImp : public lx0::Controller
 {
 public:
-    ControllerImp (lx0::Document* pDoc) : mpDocument(pDoc) {}
+    ControllerImp (lx0::Document* pDoc) 
+        : mpDocument(pDoc) 
+    {}
 
     virtual void handleEvent (std::string evt, lx0::lxvar params)
     {
@@ -45,8 +47,8 @@ public:
         {
             float step = params;
             auto  spElem = mpDocument->getElementsByTagName("Player")[0];
-            auto& position = spElem->value()["position"].unwrap<glgeom::point3f>();
-            auto& target   = spElem->value()["target"].unwrap<glgeom::point3f>();
+            auto& position = spElem->value()["position"].unwrap2<glgeom::point3f>();
+            auto& target   = spElem->value()["target"].unwrap2<glgeom::point3f>();
 
             _handleMove(spElem, evt, step, position, target);
             spElem->notifyValueChanged();
@@ -92,6 +94,5 @@ protected:
 
     lx0::Document* mpDocument;
 };
-
 
 lx0::Controller*        create_controller(DocumentPtr spDoc)    { return new ControllerImp(spDoc.get()); }

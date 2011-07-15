@@ -32,7 +32,12 @@
 #include <glgeom/ext/primitive_buffer.hpp>
 #include <glgeom/prototype/std_lights.hpp>
 
-#include "..\lxextensions\material_handle.hpp"
+#include "lxextensions/material_handle.hpp"
+
+
+//===========================================================================//
+//    G L G E O M   E X T E N S I O N S 
+//===========================================================================//
 
 class instance
 {
@@ -66,6 +71,9 @@ scene_group::merge (scene_group& that)
     append_to(lights, that.lights);
 }
 
+//===========================================================================//
+//    C O M P O N E N T S
+//===========================================================================//
 
 class ITES3Loader : public lx0::Engine::Component
 {

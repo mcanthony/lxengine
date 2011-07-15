@@ -36,14 +36,7 @@ class UIBindingImp : public lx0::UIBinding
 {
 public:
 
-    UIBindingImp()
-    {
-        // _sendDocEventOnKeyIsDown(KC_W, "move_forward", lxvar(.1f));
-        // _sendDocEventOnKeyDown(KC_R, "redraw", lxvar());
-    }
-
-    virtual     void        updateFrame     (ViewPtr spView,
-                                             const KeyboardState& keyboard)
+    virtual void updateFrame (ViewPtr spView, const KeyboardState& keyboard)
     {
         const float step = 20.0f;
 
@@ -80,6 +73,5 @@ public:
         spView->sendEvent("redraw");
     }
 };
-
 
 lx0::UIBinding*         create_uibinding()      { return new UIBindingImp; }
