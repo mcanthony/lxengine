@@ -367,7 +367,7 @@ RasterizerGL::_linkProgram (GLuint prog, const char* pszSource)
         }
 
         const char* text = &log[0];
-        lx_error("Shader compilation error: '%s'", &log[0]);            
+        lx_error("Shader compilation error! See lxengine_log.html for details.  '%s'", &log[0]);            
     }
 }
 

@@ -393,7 +393,8 @@ enum
     _MAKE_ID(F,R,M,R),
     _MAKE_ID(H,E,D,R),
     _MAKE_ID(L,H,D,T),  // etc.
-    _MAKE_ID(L,I,G,H),  
+    _MAKE_ID(L,I,G,H),
+    _MAKE_ID(M,O,D,L), 
     _MAKE_ID(N,A,M,E),
     _MAKE_ID(N,A,M,5),
     _MAKE_ID(R,E,G,N),
@@ -491,12 +492,18 @@ struct Light
                     light.color = glgeom::unpack_rgbx<float>(packed);
                 }
                 break;
+            case kId_MODL:
+                {
+                    model = iter.read_string();
+                }
+                break;
             }
             iter.next_sub();
         }
     }
 
     std::string             name;
+    std::string             model;
     glgeom::point_light_f   light;
 };
 
@@ -674,6 +681,37 @@ public:
         loadEsmFile(mEsmFilename, mEsmIndex);
         mBsaSet.initialize(path);
     }
+
+    std::shared_ptr<scene_group> _getModel(Reference& ref, std::string modelName)
+    {
+        auto subgroup = mBsaSet.getModel("meshes\\", modelName);
+        
+        auto transform = _transform(ref);
+        for (auto kt = subgroup->instances.begin(); kt != subgroup->instances.end(); ++kt)
+        {
+            // Account for the cell reference transform in addition to the native transform in 
+            // model itself.
+            kt->transform = transform * kt->transform;
+
+            if (!kt->material.handle.empty())
+            {
+                // Apparently Bethesda's level designers/artists used full res TGAs in the editor
+                // and the production system automatically mapped these files to compressed DDS equivalents
+                if (boost::ends_with(kt->material.handle, ".tga"))
+                    kt->material.handle = kt->material.handle.substr(0, kt->material.handle.length() - 4) + ".dds";
+
+                kt->material.handle = std::string("textures\\") + kt->material.handle;
+                kt->material.format = "DDS";
+                                
+                std::string name = kt->material.handle;
+                kt->material.callback = [this, name]() {
+                    return mBsaSet.getTextureStream(name);
+                };
+            }
+        }
+
+        return subgroup;
+    }
     
     virtual void    cell        (const char* id, scene_group& group)
     {
@@ -702,35 +740,7 @@ public:
                     case kId_STAT:
                     {
                         StaticModel model (iter);
-                    
-                        auto subgroup = mBsaSet.getModel("meshes\\", model.model);
-                        auto transform = _transform(*it);
-                        for (auto kt = subgroup->instances.begin(); kt != subgroup->instances.end(); ++kt)
-                        {
-                            // Account for the cell reference transform in addition to the native transform in 
-                            // model itself.
-                            kt->transform = transform * kt->transform;
-
-                            if (!kt->material.handle.empty())
-                            {
-                                // Apparently Bethesda's level designers/artists used full res TGAs in the editor
-                                // and the production system automatically mapped these files to compressed DDS equivalents
-                                if (boost::ends_with(kt->material.handle, ".tga"))
-                                    kt->material.handle = kt->material.handle.substr(0, kt->material.handle.length() - 4) + ".dds";
-
-                                kt->material.handle = std::string("textures\\") + kt->material.handle;
-                                kt->material.format = "DDS";
-                                
-                                std::string name = kt->material.handle;
-                                kt->material.callback = [this, name]() {
-                                    return mBsaSet.getTextureStream(name);
-                                };
-                            }
-                        }
-                        
-                        
-                        group.merge(*subgroup);
-
+                        group.merge( *_getModel(*it, model.model) );
                         std::cout << "+ model " << model.model << "\n";
                     }
                     break;
@@ -748,8 +758,18 @@ public:
                         //
                         esmLight.light.radius *= 16.0f;
                         esmLight.light.attenuation = glm::vec3(0, 3, 0);
-                        
+
+                        //
+                        // Add a glow effect.  This is not native to Morrowind.
+                        //
+                        esmLight.light.glow.radius = 120.0f;
+                        esmLight.light.glow.multiplier = 0.5f;
+                        esmLight.light.glow.exponent = 32.0f;
+
                         group.lights.push_back(esmLight.light);
+
+                        if (!esmLight.model.empty())
+                            group.merge( *_getModel(*it, esmLight.model) );
 
                         std::cout << "+ light " << esmLight.name << "\n";
                     }

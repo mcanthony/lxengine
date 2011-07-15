@@ -2,10 +2,13 @@
     output      : "vec3",
     uniforms    : 
     {
-        unifLightCount       : [ "int" ],
-        unifLightPosition    : [ "vec3[8]" ],
-        unifLightColor       : [ "vec3[8]" ],
-        unifLightAttenuation : [ "vec3[8]" ],
+        unifLightCount          : [ "int" ],
+        unifLightPosition       : [ "vec3[8]" ],
+        unifLightColor          : [ "vec3[8]" ],
+        unifLightAttenuation    : [ "vec3[8]" ],
+        unifLightGlowRadius     : [ "float[8]" ],
+        unifLightGlowMultiplier : [ "float[8]" ],
+        unifLightGlowExponent   : [ "float[8]" ],
     },
     input  : 
     {

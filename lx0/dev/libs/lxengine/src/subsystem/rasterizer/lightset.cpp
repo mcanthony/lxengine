@@ -38,13 +38,17 @@ struct ActiveLights
     std::vector<glgeom::point3f> positionsEc;
     std::vector<glgeom::color3f> colors;
     std::vector<glm::vec3>       attenuation;
+
+    std::vector<float>           glowRadius;
+    std::vector<float>           glowMultiplier;
+    std::vector<float>           glowExponent;
 };
 
 static 
 void
 _selectLights (std::vector<LightPtr>& all, ActiveLights& active, RasterizerGL* pRasterizer)
 {
-    const int kMaxActive = 4;
+    const int kMaxActive = 8;
 
     if (!all.empty())
     {
@@ -108,6 +112,10 @@ _selectLights (std::vector<LightPtr>& all, ActiveLights& active, RasterizerGL* p
             active.positionsEc.push_back( it->positionEc );
             active.colors.push_back( light.color );
             active.attenuation.push_back( light.attenuation * glm::vec3(1, ratio, ratio * ratio) );
+
+            active.glowRadius.push_back( light.glow.radius );
+            active.glowMultiplier.push_back( light.glow.multiplier );
+            active.glowExponent.push_back( light.glow.exponent );
         }
     }
 
@@ -147,6 +155,9 @@ void LightSet::activate(RasterizerGL* pRasterizer)
 
     if (activeCount > 0)
     {
+        //
+        // Position, color, attenuation
+        //
         {
             GLint idx = glGetUniformLocation(mId, "unifLightPosition[0]");
             if (idx != -1)
@@ -161,6 +172,26 @@ void LightSet::activate(RasterizerGL* pRasterizer)
             GLint idx = glGetUniformLocation(mId, "unifLightAttenuation[0]");
             if (idx != -1)
                 glUniform3fv(idx, activeCount, &active.attenuation[0].x);
+        }
+
+
+        //
+        // Glow parameters
+        //
+        {
+            GLint idx = glGetUniformLocation(mId, "unifLightGlowRadius[0]");
+            if (idx != -1)
+                glUniform1fv(idx, activeCount, &active.glowRadius[0]);
+        }
+        {
+            GLint idx = glGetUniformLocation(mId, "unifLightGlowMultiplier[0]");
+            if (idx != -1)
+                glUniform1fv(idx, activeCount, &active.glowMultiplier[0]);
+        }
+        {
+            GLint idx = glGetUniformLocation(mId, "unifLightGlowExponent[0]");
+            if (idx != -1)
+                glUniform1fv(idx, activeCount, &active.glowExponent[0]);
         }
     }
 }

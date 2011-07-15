@@ -16,11 +16,28 @@ for (int i = 0; i < unifLightCount; ++i)
     
     float attenuation = 1 / dot(unifLightAttenuation[i], vec3(1, d, d*d));
     vec3 lc = unifLightColor[i].rgb * attenuation;
-    
+   
     c += diffuse * lc * max(dot(N,L), 0.0);                   // diffuse term
 
     vec3 H = normalize(L + V);
     c += lc * specular * pow(max(dot(N,H),0.0), specularEx);  // specular term
+
+    // 
+    // Light glow effect
+    //
+    vec3 VL = unifLightPosition[i].xyz;
+    float dotVLV = dot(VL,-V);
+    if (dotVLV > 0)
+    {
+        float R = unifLightGlowRadius[i];
+        float D2 = dot(VL,VL) - dotVLV * dotVLV;
+        float T = D2 / (R*R);
+        if (T < 1 && length(fragVertexEc) > length(VL) - R)
+        {
+            c += unifLightColor[i] * unifLightGlowMultiplier[i] * pow(1 - T, unifLightGlowExponent[i]); 
+        }
+    }
+
 }
                
 return c;
