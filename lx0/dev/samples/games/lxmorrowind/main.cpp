@@ -40,13 +40,29 @@
 #include <boost/filesystem.hpp>
 #include "tes3io/tes3io.hpp"
 
-#include "lxextensions/lxvar_wrap.hpp"
-
 lx0::UIBinding*         create_uibinding();
 lx0::View::Component*   create_renderer();
 lx0::Controller*        create_controller(lx0::DocumentPtr spDoc);
 
 //===========================================================================//
+
+/*
+    Push any global settings set by the document into Engine::globals() 
+    so the rest of the app can always rely on Engine::globals() containing
+    the appropriate value.
+ */ 
+static
+void _processDocumentSettings (lx0::EnginePtr spEngine, lx0::DocumentPtr spDocument)
+{
+    lx0::lxvar& startingCellVar   = spEngine->globals()["startingCell"]; 
+    if (!startingCellVar.is_string())
+    {     
+        std::string startingCell = spDocument->getElementsByTagName("Scene")[0]->attr("startingCell").as<std::string>();
+        startingCellVar = startingCell;
+
+        lx_warn("");
+    }
+}
 
 //===========================================================================//
 //   E N T R Y - P O I N T
@@ -68,42 +84,38 @@ main (int argc, char** argv)
         {
             DocumentPtr spDocument = spEngine->loadDocument("media2/appdata/lxmorrowind/lxmorrowind.xml");
             spDocument->addController( create_controller(spDocument) );
+            _processDocumentSettings(spEngine, spDocument);            
             lx0::processIncludeDocument(spDocument);
 
             ElementPtr spPlayer = spDocument->createElement("Player");
-            spPlayer->value()["position"] = lxvar_wrap(glgeom::point3f(2000, 2000, 2000));
-            spPlayer->value()["target"] = lxvar_wrap(glgeom::point3f(0, 0, 0));
+            spPlayer->value()["position"] = lxvar::wrap(glgeom::point3f(2000, 2000, 2000));
+            spPlayer->value()["target"] = lxvar::wrap(glgeom::point3f(0, 0, 0));
             spDocument->root()->append(spPlayer);
 
-            Tes3Io loader;
-            loader.initialize("mwdata");
+            spEngine->attachComponent( ITES3Loader::create() );
+            spEngine->getComponent<ITES3Loader>()->initialize("mwdata");
 
             // Let the command-line override the document's starting cell, if desired
-            std::string startingCell = spDocument->getElementsByTagName("Scene")[0]->attr("startingCell").as<std::string>();
-            lxvar& startingCellVar = spEngine->globals().find("startingCell"); 
-            if (startingCellVar.is_string())
-                startingCell = startingCellVar.as<std::string>();
-            else
-                startingCellVar = startingCell;
+  
 
             scene_group group;
-            loader.cell(startingCell.c_str(), group);
+            spEngine->getComponent<ITES3Loader>()->cell( spEngine->globals()["startingCell"].as<std::string>().c_str(), group);
 
             ElementPtr spGroup = spDocument->createElement("Group");
             for (auto it = group.instances.begin(); it != group.instances.end(); ++it)
             {
                 ElementPtr spElement = spDocument->createElement("Instance");
                 lxvar value = spElement->value();
-                value["transform"] = lxvar_wrap(it->transform);
-                value["primitive"] = lxvar_wrap(it->primitive);
-                value["material"] = lxvar_wrap(it->material);
+                value["transform"] = lxvar::wrap(it->transform);
+                value["primitive"] = lxvar::wrap(it->primitive);
+                value["material"] = lxvar::wrap(it->material);
                 spElement->value(value);
                 spGroup->append(spElement);
             }
             for (auto it = group.lights.begin(); it != group.lights.end(); ++it)
             {
                 auto spElement = spDocument->createElement("Light");
-                spElement->value( lxvar_wrap(*it) );
+                spElement->value( lxvar::wrap(*it) );
                 spGroup->append(spElement);
             }
             spDocument->root()->append(spGroup);

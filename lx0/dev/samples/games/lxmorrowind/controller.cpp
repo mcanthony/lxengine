@@ -29,7 +29,6 @@
 #include <boost/algorithm/string.hpp>
 #include <lx0/lxengine.hpp>
 #include <lx0/util/misc.hpp>
-#include "lxextensions/lxvar_wrap.hpp"
 
 using namespace lx0;
 
@@ -46,8 +45,8 @@ public:
         {
             float step = params;
             auto  spElem = mpDocument->getElementsByTagName("Player")[0];
-            auto& position = lxvar_unwrap<glgeom::point3f>(spElem->value()["position"]);
-            auto& target   = lxvar_unwrap<glgeom::point3f>(spElem->value()["target"]);
+            auto& position = spElem->value()["position"].unwrap<glgeom::point3f>();
+            auto& target   = spElem->value()["target"].unwrap<glgeom::point3f>();
 
             _handleMove(spElem, evt, step, position, target);
             spElem->notifyValueChanged();

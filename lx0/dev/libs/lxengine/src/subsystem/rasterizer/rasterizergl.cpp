@@ -578,7 +578,7 @@ RasterizerGL::createGeometry (glgeom::primitive_buffer& primitive)
     pGeom->mVboPosition   = _genArrayBuffer(GL_ARRAY_BUFFER, primitive.vertex.positions);
     pGeom->mVboNormal     = _genArrayBuffer(GL_ARRAY_BUFFER, primitive.vertex.normals);
     pGeom->mVboColors     = _genArrayBuffer(GL_ARRAY_BUFFER, primitive.vertex.colors);
-    for (int i = 0; i < 8 && i < primitive.vertex.uv.size(); ++i)
+    for (int i = 0; i < 8 && i < (int)primitive.vertex.uv.size(); ++i)
         pGeom->mVboUVs[i] = _genArrayBuffer(GL_ARRAY_BUFFER, primitive.vertex.uv[i]);
 
     pGeom->mtbFlatShading = (pGeom->mVboNormal == 0);

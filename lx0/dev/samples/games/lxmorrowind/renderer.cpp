@@ -30,7 +30,6 @@
 #include <lx0/subsystem/rasterizer.hpp>
 #include <lx0/subsystem/shaderbuilder.hpp>
 #include <glgeom/ext/primitive_buffer.hpp>
-#include "lxextensions/lxvar_wrap.hpp"
 
 #include "lxextensions\material_handle.hpp"
 
@@ -116,9 +115,9 @@ public:
     {
         if (spElem->tagName() == "Instance")
         {
-            auto& primitive = lxvar_unwrap<glgeom::primitive_buffer>(spElem->value()["primitive"]);
-            auto& transform = lxvar_unwrap<glgeom::mat4f>(spElem->value()["transform"]);
-            auto& material = lxvar_unwrap<material_handle>(spElem->value()["material"]);
+            auto& primitive = spElem->value()["primitive"].unwrap<glgeom::primitive_buffer>();
+            auto& transform = spElem->value()["transform"].unwrap<glgeom::mat4f>();
+            auto& material = spElem->value()["material"].unwrap<material_handle>();
 
 
 
@@ -163,8 +162,8 @@ public:
         else if (spElem->tagName() == "Player")
         {
             addValueChangeListener(spElem, [this](ElementPtr spElem) {
-                auto position = lxvar_unwrap<glgeom::point3f>(spElem->value()["position"]);
-                auto target   = lxvar_unwrap<glgeom::point3f>(spElem->value()["target"]);
+                auto position = spElem->value()["position"].unwrap<glgeom::point3f>();
+                auto target   = spElem->value()["target"].unwrap<glgeom::point3f>();
                 auto viewMatrix = glm::lookAt(position.vec, target.vec, glm::vec3(0, 0, 1));
                 mspCamera = mspRasterizer->createCamera(glgeom::radians(glgeom::degrees(60)), 0.1f, 10000.0f, viewMatrix);
                 spElem->document()->view(0)->sendEvent("redraw");
@@ -180,7 +179,7 @@ public:
         }
         else if (spElem->tagName() == "Light")
         {
-            auto& light = lxvar_unwrap<glgeom::point_light_f>(spElem->value());
+            auto& light = spElem->value().unwrap<glgeom::point_light_f>();
             mspLightSet->mLights.push_back( mspRasterizer->createLight(light) );
         }
     }

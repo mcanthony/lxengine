@@ -3,6 +3,7 @@
                                    LxEngine
 
     LICENSE
+    * MIT License (http://www.opensource.org/licenses/mit-license.php)
 
     Copyright (c) 2011 athile@athile.net (http://www.athile.net)
 
@@ -26,57 +27,30 @@
 */
 //===========================================================================//
 
-#pragma once
+#include <string>
 
-#include <glgeom/glgeom.hpp>
-#include <glgeom/ext/primitive_buffer.hpp>
-#include <glgeom/prototype/std_lights.hpp>
+namespace lx0 { namespace subsystem { namespace canvas_ns { namespace detail {
 
-#include "..\lxextensions\material_handle.hpp"
+    //===========================================================================//
+    //!
+    /*!
+     */
+    class Win32WindowClass
+    {
+    public:
+                        Win32WindowClass    (const char* name, WNDPROC wndProc);
+                        ~Win32WindowClass   (void);
 
-class instance
-{
-public:
-    material_handle          material;      //<! name of associated material
-    glgeom::primitive_buffer primitive;
-    glgeom::mat4f            transform;
-};
+        const char*     className           (void) const { return m_name.c_str(); }
+        void            registerClass       (void);
+        void            unregisterClass     (void);
+    
+    
+    protected:
+        int         m_refCount;
+        std::string m_name;
+        WNDPROC     m_wndProc;
+        WNDCLASSEX  m_wndClass;
+    };
 
-class scene_group
-{
-public:
-    void merge(scene_group& that);
-
-    std::vector<glgeom::point_light_f>  lights;
-    std::vector<instance>       instances;
-};
-
-template <typename T>
-void append_to (std::vector<T>& dst, std::vector<T>& v)
-{
-    dst.reserve( dst.size() + v.size() );
-    for (auto it = v.begin(); it != v.end(); ++it)
-        dst.push_back(*it);
-}
-
-inline void
-scene_group::merge (scene_group& that)
-{
-    append_to(instances, that.instances);
-    append_to(lights, that.lights);
-}
-
-
-class ITES3Loader : public lx0::Engine::Component
-{
-public:
-    static ITES3Loader*     create();
-    virtual const char*     name() const { return s_name(); }
-    static const char*      s_name() { return "ITES3Loader"; }
-
-    virtual         ~ITES3Loader    (void) {}
-
-    virtual void    initialize      (const char* path) = 0;
-    virtual void    cell            (const char* id, scene_group& group) = 0;
-
-};
+}}}}

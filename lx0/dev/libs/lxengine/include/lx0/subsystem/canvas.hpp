@@ -226,7 +226,6 @@ namespace lx0 {
 
 
                 private:
-                    unsigned int    _createTempWindow   (void);
                     void    _createWindow       (const char* pszTitle, int x, int y, int w, int h, bool bResizeable);
 
                     void    createGlContext     (void);

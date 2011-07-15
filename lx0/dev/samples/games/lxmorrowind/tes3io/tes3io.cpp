@@ -897,10 +897,10 @@ glm::mat4 _transform(Reference& ref)
     return mtran * mrot * mscal;
 }
 
-class Tes3Imp
+class TES3Loader : public ITES3Loader
 {
 public:
-    void    initialize  (const char* path)
+    virtual void    initialize  (const char* path)
     {
         mEsmFilename = std::string(path) + "/Morrowind.esm";
 
@@ -908,8 +908,10 @@ public:
         mBsaSet.initialize(path);
     }
     
-    void    cell        (const char* id, scene_group& group)
+    virtual void    cell        (const char* id, scene_group& group)
     {
+        std::cout << boost::format("Loading cell '%s'...\n") % id;
+
         Stream stream;
         stream.open(mEsmFilename);
         
@@ -1001,16 +1003,7 @@ public:
     BsaCollection   mBsaSet;
 };
 
-Tes3Io::Tes3Io() : mpImp(new Tes3Imp) {}
-Tes3Io::~Tes3Io() { delete mpImp; }
-
-void Tes3Io::initialize  (const char* path)
-{           
-    mpImp->initialize(path);
-}
-
-void Tes3Io::cell (const char* id, scene_group& group)
+ITES3Loader* ITES3Loader::create()
 {
-    std::cout << boost::format("Loading cell '%s'...\n") % id;
-    mpImp->cell(id, group);
+    return new TES3Loader;
 }

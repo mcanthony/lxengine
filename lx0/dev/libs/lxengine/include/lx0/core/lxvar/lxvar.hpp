@@ -151,6 +151,13 @@ namespace lx0
                     static lxvar    ordered_map     (void);                 //!< Return an empty ordered map
                     static lxvar    decorated_map   (void);                 //!< Return an empty decorated map
                     static lxvar    array           (void);                 //!< Return an empty array
+                    
+                    template <typename T>
+                    static lxvar    wrap            (const T& native);
+                    
+                    template <typename T>
+                    T&              unwrap          (void);
+
 
                     static lxvar    parse           (const char* s);
 
@@ -330,8 +337,76 @@ namespace lx0
                     mValue->as(t); 
                     return t; 
                 }
+
+                //=================================================================//
+
+                class lxvar_wrapper : public lxvalue
+                {
+                public:
+                    virtual bool        sharedType  (void) const    { return true; }
+                    virtual bool        isHandle    (void) const    { return true; }
+                    virtual void*       as2         (const type_info& type)          { return getData(type); }
+
+                protected:
+                    class Data
+                    {
+                    public:
+                        virtual ~Data() {}
+                    };
+
+                    virtual void* getData (const type_info& type) const = 0;
+                };
+
+                template <typename T>
+                class lxvar_wrapper_imp : public lxvar_wrapper
+                {
+                public:
+                                     lxvar_wrapper_imp (const T& t) : mpData( new DataT<T>(t) ) {}
+                    virtual lxvalue* clone             (void) const { return new lxvar_wrapper_imp<T>(*(T *)getData(typeid(T))); } 
+
+                protected:
+                    template <typename T>
+                    class DataT : public Data
+                    {
+                    public:
+                        DataT(const T& t) : data(t) {}
+                        T data;
+                    };
+
+                    virtual void* getData (const type_info& type) const
+                    {  
+                        if (typeid(T) == type)
+                        {
+                            DataT<T>* pData = dynamic_cast<DataT<T>*>(mpData.get());
+                            return &pData->data;
+                        }
+                        else
+                            return nullptr;
+                    }
+
+                    std::unique_ptr<Data> mpData;
+                };
+
+                template <typename T>
+                lxvar lxvar::wrap (const T& native)
+                {
+                    auto pImp = new lxvar_wrapper_imp<T>(native);
+                    return lx0::lxvar(pImp);
+                }
+
+                template <typename T>
+                T& lxvar::unwrap (void)
+                {
+                    auto pImp = dynamic_cast<lxvar_wrapper*>( imp<lxvar_wrapper>().get() );
+                    return *reinterpret_cast<T*>(pImp->as2(typeid(T)));
+                }
+
             }
-    
+
+
+
+            //=================================================================//
+
             namespace detail
             {
                 inline void    _convert    (lxvar& v, bool& b)         { b = v.as<bool>(); }
