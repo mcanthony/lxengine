@@ -394,6 +394,7 @@ enum
     _MAKE_ID(H,E,D,R),
     _MAKE_ID(L,H,D,T),  // etc.
     _MAKE_ID(L,I,G,H),
+    _MAKE_ID(M,I,S,C),
     _MAKE_ID(M,O,D,L), 
     _MAKE_ID(N,A,M,E),
     _MAKE_ID(N,A,M,5),
@@ -441,6 +442,7 @@ public:
             case kId_LIGH:
             case kId_REGN:
             case kId_STAT:
+            case kId_MISC:
                 names.insert(std::make_pair(iter.read_string(), &headers.back()));
                 break;
             }
@@ -462,6 +464,28 @@ struct StaticModel
         iter.next_sub();
     }
 
+    std::string name;
+    std::string model;
+};
+
+struct Miscellaneous
+{
+    Miscellaneous (ESMIterator& iter)
+    {
+        while (!iter.sub_done())
+        {
+            switch (iter.sub_id())
+            {
+            case kId_NAME:
+                name = iter.read_string();
+                break;
+            case kId_MODL:
+                model = iter.read_string();
+                break;
+            }
+            iter.next_sub();
+        }
+    }
     std::string name;
     std::string model;
 };
@@ -772,6 +796,14 @@ public:
                             group.merge( *_getModel(*it, esmLight.model) );
 
                         std::cout << "+ light " << esmLight.name << "\n";
+                    }
+                    break;
+
+                    case kId_MISC:
+                    {
+                        Miscellaneous misc(iter);
+                        group.merge( *_getModel(*it, misc.model) );
+                        std::cout << "+ misc " << misc.model << "\n";
                     }
                     break;
 
