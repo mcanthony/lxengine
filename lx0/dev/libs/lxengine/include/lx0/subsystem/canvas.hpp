@@ -226,11 +226,16 @@ namespace lx0 {
 
 
                 private:
+                    unsigned int    _createTempWindow   (void);
+                    void    _createWindow       (const char* pszTitle, int x, int y, int w, int h, bool bResizeable);
+
                     void    createGlContext     (void);
                     void    destroyGlContext    (void);
-    
+
+                    unsigned int mPixelFormat;
                     void*   m_opaque_hDC;   //!< Handle to Device Context
                     void*   m_opaque_hRC;   //!< Handle to OpenGL Rendering Context
+                    
 
                     bool    mRedrawActive;
                 };
