@@ -107,6 +107,7 @@ struct ESMIterator
     bool                is_sub      (const char* s) { return strncmp(s, mCurrentSubRecordHeader.name, 4) == 0; }
     bool                is_sub      (lx0::uint32 id) { return sub_id() == id; }
     lx0::uint32         sub_id      (void) { return mCurrentSubRecordHeader.name_id; }
+    std::string         sub_name    (void) { return mCurrentSubRecordHeader.name; }
     lx0::uint32         sub_size    (void) { return mCurrentSubRecordHeader.size; }
     void                next_sub    (void) { mStream.seekg(_offset_next_sub()); new (&mCurrentSubRecordHeader) SubRecordHeader(mStream); }
     bool                sub_done    (void) { return mStream.tellg() >= _offset_next_record(); }

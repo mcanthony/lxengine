@@ -104,6 +104,7 @@ main (int argc, char** argv)
             scene_group group;
             spEngine->getComponent<ITES3Loader>()->cell( spEngine->globals()["startingCell"].as<std::string>().c_str(), group);
 
+            glgeom::abbox3f sceneBounds;
             ElementPtr spGroup = spDocument->createElement("Group");
             for (auto it = group.instances.begin(); it != group.instances.end(); ++it)
             {
@@ -114,6 +115,11 @@ main (int argc, char** argv)
                 value["material"] = lxvar::wrap(it->material);
                 spElement->value(value);
                 spGroup->append(spElement);
+
+                auto p0 = it->transform * it->primitive.bbox.max;
+                auto p1 = it->transform * it->primitive.bbox.min;
+                sceneBounds.merge(p0);
+                sceneBounds.merge(p1);
             }
             for (auto it = group.lights.begin(); it != group.lights.end(); ++it)
             {
@@ -122,6 +128,14 @@ main (int argc, char** argv)
                 spGroup->append(spElement);
             }
             spDocument->root()->append(spGroup);
+
+            //
+            // Shift the player to a view of everything
+            //
+            ElementPtr spPlayer = spDocument->getElementsByTagName("Player")[0];
+            spPlayer->value()["target"] = lxvar::wrap(sceneBounds.center());
+            spPlayer->value()["position"] = lxvar::wrap( sceneBounds.center() + .6f * (sceneBounds.max - sceneBounds.min) );
+            spPlayer->notifyValueChanged();
         
             //
             // Create a view of the Document now that it has data

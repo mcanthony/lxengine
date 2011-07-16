@@ -392,6 +392,8 @@ enum
     _MAKE_ID(F,N,A,M),  // kId_FNAM
     _MAKE_ID(F,R,M,R),
     _MAKE_ID(H,E,D,R),
+    _MAKE_ID(I,N,T,V),
+    _MAKE_ID(L,A,N,D),
     _MAKE_ID(L,H,D,T),  // etc.
     _MAKE_ID(L,I,G,H),
     _MAKE_ID(M,I,S,C),
@@ -401,7 +403,8 @@ enum
     _MAKE_ID(R,E,G,N),
     _MAKE_ID(R,G,N,N),
     _MAKE_ID(S,T,A,T),
-    _MAKE_ID(T,E,S,3),
+    _MAKE_ID(T,E,S,3),  
+    _MAKE_ID(X,S,C,L),
 };
 
 struct Index
@@ -440,9 +443,9 @@ public:
             {
             case kId_CELL:
             case kId_LIGH:
+            case kId_MISC:
             case kId_REGN:
             case kId_STAT:
-            case kId_MISC:
                 names.insert(std::make_pair(iter.read_string(), &headers.back()));
                 break;
             }
@@ -547,6 +550,8 @@ struct Reference
 struct Cell
 {
 public:
+    bool                isInterior () { return !!(flags & 0x01); }
+
     std::string             name;
     lx0::uint32             flags;
     int                     grid[2];
@@ -563,59 +568,25 @@ void loadObjectReferences (Cell& cell, ESMIterator& iter)
         lx0::uint32 index = iter.read();
         iter.next_sub();
 
-        if (iter.is_sub("NAME"))
+        while (!iter.sub_done() && !iter.is_sub(kId_FRMR))
         {
-            ref.name = iter.read_string();
+            switch (iter.sub_id())
+            {
+            case kId_NAME:
+                ref.name = iter.read_string();
+                break;
+            case kId_XSCL:
+                ref.scale = iter.read();
+                break;
+            case kId_DATA:
+                ref.position = iter.read();
+                ref.rotation = iter.read();
+                break;
+            }
             iter.next_sub();
         }
-        if (iter.is_sub("XSCL"))
-        {
-            ref.scale = iter.read();
-            iter.next_sub();
-        }
-        if (iter.is_sub("FLTV"))
-            iter.next_sub();
-        if (iter.is_sub("ANAM"))
-            iter.next_sub();
-        if (iter.is_sub("BNAM"))
-            iter.next_sub();
-        if (iter.is_sub("XSOL"))
-            iter.next_sub();
-        if (iter.is_sub("CNAM"))
-            iter.next_sub();
-        if (iter.is_sub("INDX"))
-            iter.next_sub();
-        if (iter.is_sub("XCHG"))
-            iter.next_sub();
-        if (iter.is_sub("INTV"))
-            iter.next_sub();
-        if (iter.is_sub("NAM9"))
-            iter.next_sub();
-        if (iter.is_sub("KNAM"))   // Key NAMe
-            iter.next_sub();
-        if (iter.is_sub("TNAM"))   // Trap NAMe
-            iter.next_sub();
-        if (iter.is_sub("UNAM"))   
-            iter.next_sub();
-        if (iter.is_sub("FLTV"))   
-            iter.next_sub();
-        if (iter.is_sub("DODT"))
-            iter.next_sub();
-        if (iter.is_sub("DNAM"))
-            iter.next_sub();
-        if (iter.is_sub("DATA"))
-        {
-            ref.position = iter.read();
-            ref.rotation = iter.read();
-            iter.next_sub();
-        }
-
-        if (iter.is_sub("NAM0"))
-            iter.next_sub();
-
         cell.references.push_back(ref);
     }
-   
 }
 
 void loadCell (Cell& cell, Stream& stream, RecordHeader& recordHeader)
@@ -747,6 +718,8 @@ public:
         Cell cell;
         loadCell(cell, stream, mEsmIndex, id);
 
+        std::cout << "Interior = " << (cell.isInterior() ? "yes" : "no") << std::endl;
+        std::cout << boost::format("Grid = %d, %d\n") % cell.grid[0] % cell.grid[1];
         std::cout << "References = " << cell.references.size() << std::endl;
         for (auto it = cell.references.begin(); it != cell.references.end(); ++it)
         {

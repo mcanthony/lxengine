@@ -138,7 +138,10 @@ public:
                 auto position = spElem->value()["position"].unwrap2<glgeom::point3f>();
                 auto target   = spElem->value()["target"].unwrap2<glgeom::point3f>();
                 auto viewMatrix = glm::lookAt(position.vec, target.vec, glm::vec3(0, 0, 1));
-                mspCamera = mspRasterizer->createCamera(glgeom::radians(glgeom::degrees(60)), 0.1f, 10000.0f, viewMatrix);
+
+                float farDistance  = std::max( glgeom::distance(position, target) * 1.5f, 1000.0f );
+                float nearDistance = glm::clamp( farDistance / 1e6f, 0.05f, 10.0f );
+                mspCamera = mspRasterizer->createCamera(glgeom::radians(glgeom::degrees(60)), nearDistance, farDistance, viewMatrix);
                 spElem->document()->view(0)->sendEvent("redraw");
             });
         }
