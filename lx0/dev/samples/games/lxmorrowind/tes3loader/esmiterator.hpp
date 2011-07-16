@@ -83,6 +83,7 @@ struct ESMIterator
     }
 
     lx0::uint32 record_id() { return mCurrentRecordHeader.name_id; }
+    std::string record_name() { return mCurrentRecordHeader.name; }
     bool is_record (const char* s)
     {
         return strncmp(s, mCurrentRecordHeader.name, 4) == 0;

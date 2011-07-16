@@ -62,6 +62,7 @@
 
 #include "../tes3loader.hpp"
 #include "esmiterator.hpp"
+#include "esm_ids.hpp"
 
 namespace bfs = boost::filesystem;
 
@@ -209,14 +210,18 @@ struct BsaFile
         lx0::uint64     offset;
     };
 
-    std::string                  mFilename;
-    std::map<std::string, Entry> mEntries;
+    typedef std::map<std::string, Entry> EntryMap;
+
+    std::string     mFilename;
+    EntryMap        mEntries;
 };
 
 class BsaCollection
 {
 public:
     void initialize(const char* path);
+
+    std::pair<bool,BsaFile::EntryMap::iterator>     getEntry    (std::string name);
 
     std::shared_ptr<scene_group>    getModel            (std::string type, std::string name);
     std::shared_ptr<std::istream>   getTextureStream    (std::string name);
@@ -257,6 +262,22 @@ BsaCollection::getModel (std::string type, std::string name)
     return spGroup;
 }
 
+
+std::pair<bool,BsaFile::EntryMap::iterator>
+BsaCollection::getEntry (std::string name)
+{
+    for (auto jt = mBsas.begin(); jt != mBsas.end(); ++jt)
+    {
+        boost::to_lower(name);
+        auto kt = jt->mEntries.find(name);
+        if (kt != jt->mEntries.end())
+        {
+            return std::make_pair(true, kt);
+        }
+    }
+    return std::make_pair(false, BsaFile::EntryMap::iterator());
+}
+
 std::shared_ptr<std::istream>   
 BsaCollection::getTextureStream (std::string name)
 {
@@ -272,6 +293,7 @@ BsaCollection::getTextureStream (std::string name)
             return spStream;
         }
     }
+    lx_warn("Texture stream for '%s' not found", name.c_str());
     return std::shared_ptr<std::istream>();
 }
 
@@ -346,67 +368,6 @@ void BsaCollection::initialize (const char* path)
 
 //===========================================================================//
 
-#define _MAKE_ID_0 '0'
-#define _MAKE_ID_1 '1'
-#define _MAKE_ID_2 '2'
-#define _MAKE_ID_3 '3'
-#define _MAKE_ID_4 '4'
-#define _MAKE_ID_5 '5'
-#define _MAKE_ID_6 '6'
-#define _MAKE_ID_7 '7'
-#define _MAKE_ID_8 '8'
-#define _MAKE_ID_9 '9'
-#define _MAKE_ID_A 'A'
-#define _MAKE_ID_B 'B'
-#define _MAKE_ID_C 'C'
-#define _MAKE_ID_D 'D'
-#define _MAKE_ID_E 'E'
-#define _MAKE_ID_F 'F'
-#define _MAKE_ID_G 'G'
-#define _MAKE_ID_H 'H'
-#define _MAKE_ID_I 'I'
-#define _MAKE_ID_J 'J'
-#define _MAKE_ID_K 'K'
-#define _MAKE_ID_L 'L'
-#define _MAKE_ID_M 'M'
-#define _MAKE_ID_N 'N'
-#define _MAKE_ID_O 'O'
-#define _MAKE_ID_P 'P'
-#define _MAKE_ID_Q 'Q'
-#define _MAKE_ID_R 'R'
-#define _MAKE_ID_S 'S'
-#define _MAKE_ID_T 'T'
-#define _MAKE_ID_U 'U'
-#define _MAKE_ID_V 'V'
-#define _MAKE_ID_W 'W'
-#define _MAKE_ID_X 'X'
-#define _MAKE_ID_Y 'Y'
-#define _MAKE_ID_Z 'Z'
-#define _MAKE_ID(a,b,c,d) \
-    kId_ ## a ## b ## c ## d = ( (_MAKE_ID_ ## d << 24) | (_MAKE_ID_ ## c << 16) | (_MAKE_ID_ ## b << 8) | (_MAKE_ID_ ## a) ) 
-enum
-{
-    _MAKE_ID(A,M,B,I),
-    _MAKE_ID(C,E,L,L),
-    _MAKE_ID(D,A,T,A),
-    _MAKE_ID(F,N,A,M),  // kId_FNAM
-    _MAKE_ID(F,R,M,R),
-    _MAKE_ID(H,E,D,R),
-    _MAKE_ID(I,N,T,V),
-    _MAKE_ID(L,A,N,D),
-    _MAKE_ID(L,H,D,T),  // etc.
-    _MAKE_ID(L,I,G,H),
-    _MAKE_ID(M,I,S,C),
-    _MAKE_ID(M,O,D,L), 
-    _MAKE_ID(N,A,M,E),
-    _MAKE_ID(N,A,M,5),
-    _MAKE_ID(R,E,G,N),
-    _MAKE_ID(R,G,N,N),
-    _MAKE_ID(S,T,A,T),
-    _MAKE_ID(T,E,S,3),  
-    _MAKE_ID(X,S,C,L),
-};
-
 struct Index
 {
 public:
@@ -441,17 +402,68 @@ public:
 
             switch (iter.record_id())
             {
+            //
+            // Index the record types that start with a name field
+            //
+            case kId_ACTI:
+            case kId_APPA:
+            case kId_ARMO:
+            case kId_BOOK:
             case kId_CELL:
+            case kId_CLOT:
+            case kId_CONT:
+            case kId_CREA:
+            case kId_DOOR:
+            case kId_INGR:
+            case kId_LEVC:
+            case kId_LEVI:      
             case kId_LIGH:
+            case kId_LOCK:
             case kId_MISC:
+            case kId_NPC_:
+            case kId_PROB:
             case kId_REGN:
+            case kId_REPA:
+            case kId_SOUN:
             case kId_STAT:
+            case kId_WEAP:
                 names.insert(std::make_pair(iter.read_string(), &headers.back()));
+                break;
+
+            //
+            // Known but not indexed
+            //
+            case kId_ALCH:      // Alchemy?
+            case kId_BODY:      // Body-part?
+            case kId_BSGN:      // Birthsign
+            case kId_CLAS:      // Class definition
+            case kId_DIAL:      // Dialogue
+            case kId_ENCH:      // Enchantment
+            case kId_FACT:      // Faction
+            case kId_GLOB:      // ?
+            case kId_GMST:      // ?
+            case kId_INFO:      // Dialogue-related data?
+            case kId_LAND:      // ?
+            case kId_LTEX:      // ?
+            case kId_MGEF:      // Magic Effect
+            case kId_PGRD:      // Path Grid?
+            case kId_RACE:      // Race
+            case kId_SCPT:      // Script
+            case kId_SKIL:      // Skill
+            case kId_SNDG:      // Sound Generator?
+            case kId_SPEL:      // Spell
+                break;
+
+            //
+            // Unknown
+            //
+            default:
+                lx_error("Unrecognized record id '%s'", iter.record_name().c_str()); 
                 break;
             }
             iter.next_record();
         }
-    }
+    } 
 
     std::vector<RecordHeader>               headers;
     std::map<std::string, RecordHeader*>    names;
@@ -467,6 +479,72 @@ struct StaticModel
         iter.next_sub();
     }
 
+    std::string name;
+    std::string model;
+};
+
+struct Door
+{
+    Door (ESMIterator& iter)
+    {
+        while (!iter.sub_done())
+        {
+            switch (iter.sub_id())
+            {
+            case kId_NAME:
+                name = iter.read_string();
+                break;
+            case kId_MODL:
+                model = iter.read_string();
+                break;
+            }
+            iter.next_sub();
+        }
+    }
+    std::string name;
+    std::string model;
+};
+
+struct Armor
+{
+    Armor (ESMIterator& iter)
+    {
+        while (!iter.sub_done())
+        {
+            switch (iter.sub_id())
+            {
+            case kId_NAME:
+                name = iter.read_string();
+                break;
+            case kId_MODL:
+                model = iter.read_string();
+                break;
+            }
+            iter.next_sub();
+        }
+    }
+    std::string name;
+    std::string model;
+};
+
+struct Container
+{
+    Container (ESMIterator& iter)
+    {
+        while (!iter.sub_done())
+        {
+            switch (iter.sub_id())
+            {
+            case kId_NAME:
+                name = iter.read_string();
+                break;
+            case kId_MODL:
+                model = iter.read_string();
+                break;
+            }
+            iter.next_sub();
+        }
+    }
     std::string name;
     std::string model;
 };
@@ -614,6 +692,7 @@ void loadCell (Cell& cell, Stream& stream, RecordHeader& recordHeader)
             cell.region = iter.read_string();
             break;
         default:
+            std::cout << "cell skip: " << iter.sub_name() << std::endl;
             break;
         }
         if (!done)
@@ -691,17 +770,23 @@ public:
             if (!kt->material.handle.empty())
             {
                 // Apparently Bethesda's level designers/artists used full res TGAs in the editor
-                // and the production system automatically mapped these files to compressed DDS equivalents
-                if (boost::ends_with(kt->material.handle, ".tga"))
+                // and the production system automatically mapped these files to compressed DDS equivalents.
+                // And apparently a BMP or two as well...
+                if (boost::ends_with(kt->material.handle, ".tga") || boost::ends_with(kt->material.handle, ".bmp"))
                     kt->material.handle = kt->material.handle.substr(0, kt->material.handle.length() - 4) + ".dds";
 
                 kt->material.handle = std::string("textures\\") + kt->material.handle;
                 kt->material.format = "DDS";
                                 
                 std::string name = kt->material.handle;
-                kt->material.callback = [this, name]() {
-                    return mBsaSet.getTextureStream(name);
-                };
+                if (mBsaSet.getEntry(name).first)
+                {
+                    kt->material.callback = [this, name]() {
+                        return mBsaSet.getTextureStream(name);
+                    };
+                }
+                else
+                    lx_warn("Model references texture that doesn't exist '%s'", name.c_str());
             }
         }
 
@@ -739,6 +824,30 @@ public:
                         StaticModel model (iter);
                         group.merge( *_getModel(*it, model.model) );
                         std::cout << "+ model " << model.model << "\n";
+                    }
+                    break;
+
+                    case kId_ARMO:
+                    {
+                        Armor armor(iter);
+                        group.merge( *_getModel(*it, armor.model) );
+                        std::cout << "+ armor " << armor.model << "\n";
+                    }
+                    break;
+
+                    case kId_CONT:
+                    {
+                        Container container(iter);
+                        group.merge( *_getModel(*it, container.model) );
+                        std::cout << "+ container " << container.model << "\n";
+                    }
+                    break;
+
+                    case kId_DOOR:
+                    {
+                        Door door (iter);
+                        group.merge( *_getModel(*it, door.model) );
+                        std::cout << "+ door " << door.model << "\n";
                     }
                     break;
                 

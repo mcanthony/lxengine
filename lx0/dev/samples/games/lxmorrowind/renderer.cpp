@@ -166,13 +166,15 @@ public:
         // First call the texture source callback to get a pointer to the data
         // and create a texture and cache it away.
         //
+        TexturePtr spTexture;
         auto it = mTextures.find(material.handle);
-        if (it == mTextures.end())
+        if (it != mTextures.end())
+            spTexture = it->second;
+        else if (material.callback)
         {
             auto spStream = material.callback();
-            auto spTex = mspRasterizer->createTextureDDS(*spStream);
-            //spTex = mspRasterizer->createTexture("media2/textures/test/checker-00.png");
-            mTextures.insert( std::make_pair(material.handle, spTex) );
+            spTexture = mspRasterizer->createTextureDDS(*spStream);
+            mTextures.insert( std::make_pair(material.handle, spTexture) );
         }
 
         //
@@ -186,7 +188,7 @@ public:
 
         auto desc = mShaderBuilder.buildShaderGLSL(graph);
         auto spMaterial = mspRasterizer->createMaterial(desc.uniqueName, desc.source, desc.parameters);
-        spMaterial->mTextures[0] = mTextures.find(material.handle)->second;
+        spMaterial->mTextures[0] = spTexture;
 
         return spMaterial;
     }
