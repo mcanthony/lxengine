@@ -197,6 +197,7 @@ SET_PROPERTY(TARGET lxcraft                 PROPERTY FOLDER "Samples/Games")
 SET_PROPERTY(TARGET lxquake2                PROPERTY FOLDER "Samples/Games")
 SET_PROPERTY(TARGET lxmorrowind             PROPERTY FOLDER "Samples/Games")
 
+SET_PROPERTY(TARGET tutorial_00             PROPERTY FOLDER "Samples/Tutorials")
 SET_PROPERTY(TARGET tutorial_01             PROPERTY FOLDER "Samples/Tutorials")
 SET_PROPERTY(TARGET tutorial_02             PROPERTY FOLDER "Samples/Tutorials")
 SET_PROPERTY(TARGET tutorial_03             PROPERTY FOLDER "Samples/Tutorials")

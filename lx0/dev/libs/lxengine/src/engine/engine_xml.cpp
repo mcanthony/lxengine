@@ -67,6 +67,12 @@ namespace lx0 { namespace engine { namespace dom_ns {
     Engine::_loadDocumentRoot (DocumentPtr spDocument, std::string filename)
     {
         //
+        // Check prerequisites
+        //
+        if (!lx0::file_exists(filename))
+            lx_error2("Document.Load.FileDoesNotExist", "Can't find file '%s'", filename.c_str());
+
+        //
         // Define a local structure within which the recursive loading function can be set
         //
         struct L

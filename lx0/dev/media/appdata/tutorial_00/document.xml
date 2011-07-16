@@ -1,0 +1,8 @@
+<Document>
+  <Phrase id="my_phrase" repeat="4">
+    {
+      message   : "Hello",
+      recepient : "World",
+    }
+  </Phrase>
+</Document>

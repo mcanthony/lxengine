@@ -104,7 +104,8 @@ namespace lx0 { namespace engine { namespace dom_ns {
         void            tagName         (const std::string& s)  { tagName(s.c_str()); } //!< Set DOM tagName of the Element
 
         lxvar           attr            (std::string name) const;
-        void            attr            (std::string name, lxvar value);      
+        void            attr            (std::string name, lxvar value);
+        lxvar           getAttribute    (std::string name) const    { return attr(name); }
 
         ElementCPtr     parent          (void) const;
         ElementPtr      parent          (void);
