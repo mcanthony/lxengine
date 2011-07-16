@@ -97,7 +97,7 @@ enum
 	_MAKE_ID(I,N,D,X),
 	_MAKE_ID(I,N,F,O),
     _MAKE_ID(I,N,G,R),
-    _MAKE_ID(I,N,T,V),
+    _MAKE_ID(I,N,T,V),  // Integer Value
     _MAKE_ID(L,A,N,D),
 	_MAKE_ID(L,E,V,C),
 	_MAKE_ID(L,E,V,I),

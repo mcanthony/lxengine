@@ -419,6 +419,7 @@ public:
             case kId_LEVI:      
             case kId_LIGH:
             case kId_LOCK:
+            case kId_LTEX:
             case kId_MISC:
             case kId_NPC_:
             case kId_PROB:
@@ -428,6 +429,25 @@ public:
             case kId_STAT:
             case kId_WEAP:
                 names.insert(std::make_pair(iter.read_string(), &headers.back()));
+                break;
+
+            //
+            // Keep this code for debugging all the fields in a sub-record.  Swap 0xFFFFFFFF
+            // with a real record id.
+            //
+            case 0xFFFFFFFF:
+                {
+                    while (!iter.sub_done())
+                    {
+                        std::cout << boost::format("%s %d bytes\n") % iter.sub_name() % iter.sub_size();
+                        size_t size = iter.sub_size();
+                        std::string name = iter.sub_name();
+                        std::vector<char> buffer;
+                        buffer.resize(iter.sub_size());
+                        iter.read(&buffer[0], buffer.size());
+                        iter.next_sub();
+                    }
+                }
                 break;
 
             //
@@ -444,7 +464,6 @@ public:
             case kId_GMST:      // ?
             case kId_INFO:      // Dialogue-related data?
             case kId_LAND:      // ?
-            case kId_LTEX:      // ?
             case kId_MGEF:      // Magic Effect
             case kId_PGRD:      // Path Grid?
             case kId_RACE:      // Race
@@ -503,6 +522,34 @@ struct Door
     }
     std::string name;
     std::string model;
+};
+
+struct LandscapeTexture
+{
+    LandscapeTexture (ESMIterator& iter)
+    {
+        while (!iter.sub_done())
+        {
+            switch (iter.sub_id())
+            {
+            case kId_NAME:
+                name = iter.read_string();
+                break;
+            case kId_INTV:
+                value = iter.read();
+                break;
+            case kId_DATA:
+                texture.resize( iter.sub_size() );
+                iter.read(&texture[0], texture.size());
+                break;
+            }
+            iter.next_sub();
+        }
+    }
+
+    std::string name;
+    std::string texture;
+    int         value;      //?
 };
 
 struct Armor
@@ -634,6 +681,7 @@ public:
     lx0::uint32             flags;
     int                     grid[2];
     std::string             region;
+    std::vector<char>       nam5;           // ?
     std::vector<Reference>  references;
 };
 
@@ -690,6 +738,10 @@ void loadCell (Cell& cell, Stream& stream, RecordHeader& recordHeader)
             break;
         case kId_RGNN:
             cell.region = iter.read_string();
+            break;
+        case kId_NAM5:
+            cell.nam5.resize( iter.sub_size() );
+            iter.read(&cell.nam5[0], cell.nam5.size() );
             break;
         default:
             std::cout << "cell skip: " << iter.sub_name() << std::endl;
@@ -804,6 +856,7 @@ public:
         loadCell(cell, stream, mEsmIndex, id);
 
         std::cout << "Interior = " << (cell.isInterior() ? "yes" : "no") << std::endl;
+        std::cout << "Region = " << cell.region << std::endl;
         std::cout << boost::format("Grid = %d, %d\n") % cell.grid[0] % cell.grid[1];
         std::cout << "References = " << cell.references.size() << std::endl;
         for (auto it = cell.references.begin(); it != cell.references.end(); ++it)
