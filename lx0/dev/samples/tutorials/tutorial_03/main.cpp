@@ -36,6 +36,7 @@
 #include <lx0/subsystem/rasterizer.hpp>
 #include <lx0/subsystem/shaderbuilder.hpp>
 #include <lx0/util/blendload.hpp>
+#include <lx0/util/misc.hpp>
 
 //===========================================================================//
 //   U I - B I N D I N G
@@ -92,6 +93,11 @@ public:
         mspRasterizer->initialize();
 
         //
+        // Add an empty light set; the Document will populate it
+        // 
+        mspLightSet = mspRasterizer->createLightSet();
+
+        //
         // Process the data in the document being viewed
         // 
         _processConfiguration();
@@ -99,21 +105,6 @@ public:
         
         lx_check_error( !mMaterials.empty() );
         lx_check_error( !mGeometry.empty() );
-
-        //
-        // Create a set of lights
-        // 
-        lx0::LightPtr spLight0 = mspRasterizer->createLight();
-        spLight0->position = glgeom::point3f(10, -10, 10);
-        spLight0->color    = glgeom::color3f(1, 1, 1);
-        
-        lx0::LightPtr spLight1 = mspRasterizer->createLight();
-        spLight0->position = glgeom::point3f(10, 10, 10);
-        spLight0->color    = glgeom::color3f(.6f, .6f, 1);
-        
-        mspLightSet = mspRasterizer->createLightSet();
-        mspLightSet->mLights.push_back(spLight0);
-        mspLightSet->mLights.push_back(spLight1);
 
         //
         // Build the renderable
@@ -229,6 +220,12 @@ protected:
         auto vGeometry = spDocument->getElementsByTagName("Geometry");
         for (auto it = vGeometry.begin(); it != vGeometry.end(); ++it)
             _processGeometry(*it);
+
+        // And once more for <Light> elements
+        //
+        auto vLights = spDocument->getElementsByTagName("Light");
+        for (auto it = vLights.begin(); it != vLights.end(); ++it)
+            _processLight(*it);
     }
 
     void _processMaterial (lx0::ElementPtr spElem)
@@ -258,6 +255,16 @@ protected:
         _addGeometry(sourceFilename);
     }
 
+    void _processLight (lx0::ElementPtr spElem)
+    {
+        //
+        // Extrac the data from the DOM and push it to the light set
+        //
+        lx0::LightPtr spLight = mspRasterizer->createLight();
+        spLight->position  = spElem->value()["position"].convert();
+        spLight->color     = spElem->value()["color"].convert();
+        mspLightSet->mLights.push_back(spLight);
+    }
 
     //
     // Creates a camera with fixed view direction and a view distance determined by

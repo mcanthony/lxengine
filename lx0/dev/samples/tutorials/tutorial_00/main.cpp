@@ -64,7 +64,6 @@ main (int argc, char** argv)
             //
             for (int i = 0; i < repeat; ++i)
                 std::cout << message << ", " << recepient << "!" << std::endl;
-
         }
         spEngine->shutdown();
     }
