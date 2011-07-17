@@ -4,7 +4,7 @@
 
     LICENSE
 
-    Copyright (c) 2010-2011 athile@athile.net (http://www.athile.net)
+    Copyright (c) 2011 athile@athile.net (http://www.athile.net)
 
     Permission is hereby granted, free of charge, to any person obtaining a 
     copy of this software and associated documentation files (the "Software"), 
@@ -27,13 +27,35 @@
 //===========================================================================//
 
 #include <lx0/lxengine.hpp>
-#include <lx0/subsystem/physics.hpp>
 #include "physics_engine.hpp"
+#include "physics_document.hpp"
+#include "physics_element.hpp"
 
-lx0::Engine::Component* 
-lx0::subsystem::physics_ns::createPhysicsSubsystem()
+using namespace lx0::subsystem::physics_ns::detail;
+using namespace lx0;
+
+//===========================================================================//
+//
+//===========================================================================//
+
+const char* 
+PhysicsEngine::name() const 
+{ 
+    return "physics"; 
+}
+
+void 
+PhysicsEngine::onAttached (EnginePtr spEngine) 
 {
-    return new lx0::subsystem::physics_ns::detail::PhysicsEngine;
+    Element::addFunction("addImpulse", [](ElementPtr spElem, std::vector<lxvar>& args) {
+        spElem->getComponent<PhysicsElem>("physics")->_addImpulseFunc(spElem, args);
+    });
+}
+
+void 
+PhysicsEngine::onDocumentCreated   (EnginePtr spEngine, DocumentPtr spDocument) 
+{
+    spDocument->attachComponent(new PhysicsDoc);
 }
 
 

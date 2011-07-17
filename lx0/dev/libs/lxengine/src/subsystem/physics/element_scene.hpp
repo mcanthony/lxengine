@@ -4,7 +4,7 @@
 
     LICENSE
 
-    Copyright (c) 2010-2011 athile@athile.net (http://www.athile.net)
+    Copyright (c) 2011 athile@athile.net (http://www.athile.net)
 
     Permission is hereby granted, free of charge, to any person obtaining a 
     copy of this software and associated documentation files (the "Software"), 
@@ -26,14 +26,33 @@
 */
 //===========================================================================//
 
-#include <lx0/lxengine.hpp>
-#include <lx0/subsystem/physics.hpp>
-#include "physics_engine.hpp"
+#pragma once
 
-lx0::Engine::Component* 
-lx0::subsystem::physics_ns::createPhysicsSubsystem()
+#include <lx0/util/misc/lxvar_convert.hpp>
+
+namespace lx0
 {
-    return new lx0::subsystem::physics_ns::detail::PhysicsEngine;
+    namespace subsystem
+    {
+        namespace physics_ns
+        {
+            namespace detail
+            {
+                class PhysicsDoc;
+
+                class SceneElem : public Element::Component
+                {
+                public:
+                    virtual const char* name() const { return "physics"; }
+
+                                    SceneElem           (DocumentPtr spDocument, ElementPtr spElem, PhysicsDoc* pPhysics);
+                    virtual void    onAttributeChange   (ElementPtr spElem, std::string name, lxvar value);
+                    void            _reset              (ElementPtr spElem);
+
+                protected:
+                    PhysicsDoc*     mpDocPhysics;
+                };
+            }
+        }
+    }
 }
-
-
