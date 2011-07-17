@@ -55,7 +55,9 @@ namespace lx0 { namespace engine { namespace dom_ns {
         Engine::acquire()->decObjectCount("Document");
     }
 
-
+    //! Reserved for future use.  Do not use.
+    /*!
+     */
     TransactionPtr 
     Document::transaction ()
     {
@@ -102,6 +104,9 @@ namespace lx0 { namespace engine { namespace dom_ns {
             lx_error("Could name find view '%s' on document.", name.c_str());
     }
     
+    //---------------------------------------------------------------------------//
+    /*!
+     */
     ViewPtr
     Document::view (int index)
     {
@@ -112,7 +117,10 @@ namespace lx0 { namespace engine { namespace dom_ns {
         return it->second;
     }
 
-
+    //---------------------------------------------------------------------------//
+    //! Sets the root Element of the Document
+    /*!
+     */
     void
     Document::root (ElementPtr spRoot) 
     {
@@ -123,6 +131,10 @@ namespace lx0 { namespace engine { namespace dom_ns {
         m_spRoot->notifyAdded(this);
     }
 
+    //---------------------------------------------------------------------------//
+    //! Create a new Element that can be added to the Document
+    /*!
+     */
     ElementPtr     
     Document::createElement (std::string tagName)
     {
@@ -188,8 +200,8 @@ namespace lx0 { namespace engine { namespace dom_ns {
         return bFound;
     }
 
-    /*
-        This eventually needs to be cached, but for simplicity prior to v1.0,
+    /*!
+        @todo This eventually needs to be cached, but for simplicity prior to v1.0,
         just naively walk the whole document and return the first matching
         element.
      */

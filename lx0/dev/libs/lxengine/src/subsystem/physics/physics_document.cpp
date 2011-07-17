@@ -38,254 +38,254 @@ using namespace lx0;
 //
 //===========================================================================//
 
-    PhysicsDoc::PhysicsDoc()
-        : mfWindVelocity    (0.0f)
-        , mWindDirection    (-1, 0, 0)
-    {
-        Engine::acquire()->incObjectCount("Physics");
+PhysicsDoc::PhysicsDoc()
+    : mfWindVelocity    (0.0f)
+    , mWindDirection    (-1, 0, 0)
+{
+    Engine::acquire()->incObjectCount("Physics");
 
-        mspBroadphase.reset( new btDbvtBroadphase );
+    mspBroadphase.reset( new btDbvtBroadphase );
 
-        mspCollisionConfiguration.reset( new btDefaultCollisionConfiguration );
-        mspDispatcher.reset( new btCollisionDispatcher(mspCollisionConfiguration.get()) );
+    mspCollisionConfiguration.reset( new btDefaultCollisionConfiguration );
+    mspDispatcher.reset( new btCollisionDispatcher(mspCollisionConfiguration.get()) );
 
-        mspSolver.reset( new btSequentialImpulseConstraintSolver );
+    mspSolver.reset( new btSequentialImpulseConstraintSolver );
 
-        mspDynamicsWorld.reset( new btDiscreteDynamicsWorld(mspDispatcher.get(), 
-                                                            mspBroadphase.get(), 
-                                                            mspSolver.get(), 
-                                                            mspCollisionConfiguration.get()) );
-        mspDynamicsWorld->setGravity(btVector3(0, 0, 0));
+    mspDynamicsWorld.reset( new btDiscreteDynamicsWorld(mspDispatcher.get(), 
+                                                        mspBroadphase.get(), 
+                                                        mspSolver.get(), 
+                                                        mspCollisionConfiguration.get()) );
+    mspDynamicsWorld->setGravity(btVector3(0, 0, 0));
 
 
-        // Create a global ground plane
-        //
-        mspGroundShape.reset(new btStaticPlaneShape(btVector3(0,0,1), 0) );
-        mspGroundMotionState.reset( new btDefaultMotionState(btTransform(btQuaternion(0,0,0,1), btVector3(0, 0, 0))) );
+    // Create a global ground plane
+    //
+    mspGroundShape.reset(new btStaticPlaneShape(btVector3(0,0,1), 0) );
+    mspGroundMotionState.reset( new btDefaultMotionState(btTransform(btQuaternion(0,0,0,1), btVector3(0, 0, 0))) );
 
-        const float fGroundMass = 0.0f;   // Infinite, immovable object
-        const btVector3 groundInertia(0, 0, 0);
-        btRigidBody::btRigidBodyConstructionInfo groundRigidBodyCI(fGroundMass, mspGroundMotionState.get(), mspGroundShape.get(), groundInertia);
-        mspGroundRigidBody.reset( new btRigidBody(groundRigidBodyCI) );
-        mspGroundRigidBody->setRestitution(0.1f);
-        mspGroundRigidBody->setFriction(0.5f);
-        mspDynamicsWorld->addRigidBody(mspGroundRigidBody.get());
-    }
+    const float fGroundMass = 0.0f;   // Infinite, immovable object
+    const btVector3 groundInertia(0, 0, 0);
+    btRigidBody::btRigidBodyConstructionInfo groundRigidBodyCI(fGroundMass, mspGroundMotionState.get(), mspGroundShape.get(), groundInertia);
+    mspGroundRigidBody.reset( new btRigidBody(groundRigidBodyCI) );
+    mspGroundRigidBody->setRestitution(0.1f);
+    mspGroundRigidBody->setFriction(0.5f);
+    mspDynamicsWorld->addRigidBody(mspGroundRigidBody.get());
+}
 
-    PhysicsDoc::~PhysicsDoc()
-    {
-        lx_debug("PhysicsDoc destructor");
+PhysicsDoc::~PhysicsDoc()
+{
+    lx_debug("PhysicsDoc destructor");
 
-        // The shared_ptr objects will deallocate everything on destruction, but the rigid
-        // body objects need to be removed from the world to ensure the destruction order
-        // is handled correctly.
-        //
-        mspDynamicsWorld->removeRigidBody(mspGroundRigidBody.get());
+    // The shared_ptr objects will deallocate everything on destruction, but the rigid
+    // body objects need to be removed from the world to ensure the destruction order
+    // is handled correctly.
+    //
+    mspDynamicsWorld->removeRigidBody(mspGroundRigidBody.get());
 
-        // Explicitly release the objects to ensure destruction order is correct
-        mspDynamicsWorld.reset();
-        mspBroadphase.reset();
+    // Explicitly release the objects to ensure destruction order is correct
+    mspDynamicsWorld.reset();
+    mspBroadphase.reset();
 
-        Engine::acquire()->decObjectCount("Physics");
-    }
+    Engine::acquire()->decObjectCount("Physics");
+}
 
-    void 
-    PhysicsDoc::setWindDirection (const glgeom::vector3f& v)  
-    { 
-        mWindDirection = normalize(v); 
-    }
+void 
+PhysicsDoc::setWindDirection (const glgeom::vector3f& v)  
+{ 
+    mWindDirection = normalize(v); 
+}
     
-    void 
-    PhysicsDoc::onAttached (DocumentPtr spDocument)
-    {
-        mLastUpdate = lx0::lx_milliseconds();
-    }
+void 
+PhysicsDoc::onAttached (DocumentPtr spDocument)
+{
+    mLastUpdate = lx0::lx_milliseconds();
+}
     
-    void 
-    PhysicsDoc::onElementAdded (DocumentPtr spDocument, ElementPtr spElem)
+void 
+PhysicsDoc::onElementAdded (DocumentPtr spDocument, ElementPtr spElem)
+{
+    if (spElem->tagName() == "Ref")
     {
-        if (spElem->tagName() == "Ref")
+        // Attach the custom logic to the Element (i.e. ensures the element will
+        // be updated as the physics simulation moves it)
+        //
+        lx_check_error( spElem->getComponent<PhysicsElem>("physics").get() == nullptr );
+
+        spElem->attachComponent(new PhysicsElem(spDocument, spElem, this) );
+    }
+    else if (spElem->tagName() == "Scene")
+        spElem->attachComponent(new SceneElem(spDocument, spElem, this) );
+}
+
+void 
+PhysicsDoc::onElementRemoved (Document* pDocument, ElementPtr spElem)
+{
+    if (spElem->tagName() == "Ref")
+    {
+        spElem->removeComponent("physics");
+    }
+}
+
+void
+PhysicsDoc::_applyWind (const float timeStep)
+{
+    // Early out if there's no wind
+    if (mfWindVelocity < 0.001f)
+        return;
+
+    const glgeom::vector3f airVecTemp = mfWindVelocity * mWindDirection;
+    const btVector3 airVelocity( airVecTemp.x, airVecTemp.y, airVecTemp.z);
+    const btScalar  airDensity = 1.29f;            // kg / m^3
+
+    btCollisionObjectArray objects = mspDynamicsWorld->getCollisionObjectArray();
+    mspDynamicsWorld->clearForces();
+    for (int i = 0; i < objects.size(); i++) 
+    {
+        btRigidBody* pRigidBody = btRigidBody::upcast(objects[i]);
+        if (pRigidBody) 
         {
-            // Attach the custom logic to the Element (i.e. ensures the element will
-            // be updated as the physics simulation moves it)
+            // Compute an approximate surface area in each direct by simply taking some
+            // percentage of the bounding radius.
             //
-            lx_check_error( spElem->getComponent<PhysicsElem>("physics").get() == nullptr );
+            btScalar radius;
+            btCollisionShape* pShape = pRigidBody->getCollisionShape();
+            pShape->getBoundingSphere(btVector3(0,0,0), radius);
+            btScalar approxArea = radius * radius * .66f;
+            btVector3 surfaceArea (approxArea, approxArea, approxArea);
 
-            spElem->attachComponent(new PhysicsElem(spDocument, spElem, this) );
-        }
-        else if (spElem->tagName() == "Scene")
-            spElem->attachComponent(new SceneElem(spDocument, spElem, this) );
-    }
-
-    void 
-    PhysicsDoc::onElementRemoved (Document* pDocument, ElementPtr spElem)
-    {
-        if (spElem->tagName() == "Ref")
-        {
-            spElem->removeComponent("physics");
-        }
-    }
-
-    void
-    PhysicsDoc::_applyWind (const float timeStep)
-    {
-        // Early out if there's no wind
-        if (mfWindVelocity < 0.001f)
-            return;
-
-        const glgeom::vector3f airVecTemp = mfWindVelocity * mWindDirection;
-        const btVector3 airVelocity( airVecTemp.x, airVecTemp.y, airVecTemp.z);
-        const btScalar  airDensity = 1.29f;            // kg / m^3
-
-        btCollisionObjectArray objects = mspDynamicsWorld->getCollisionObjectArray();
-        mspDynamicsWorld->clearForces();
-        for (int i = 0; i < objects.size(); i++) 
-        {
-            btRigidBody* pRigidBody = btRigidBody::upcast(objects[i]);
-            if (pRigidBody) 
-            {
-                // Compute an approximate surface area in each direct by simply taking some
-                // percentage of the bounding radius.
-                //
-                btScalar radius;
-                btCollisionShape* pShape = pRigidBody->getCollisionShape();
-                pShape->getBoundingSphere(btVector3(0,0,0), radius);
-                btScalar approxArea = radius * radius * .66f;
-                btVector3 surfaceArea (approxArea, approxArea, approxArea);
-
-                // Velocity * density * surface area = amount of mass per second hitting the area
-                // " * time * velocity = momentum of that mass over that period of time
-                //
-                // ...which is a measure of impulse, which Bullet understands.
-                //
-                btVector3 impulse = (airVelocity * airDensity * surfaceArea * timeStep) * airVelocity;
-                pRigidBody->applyCentralImpulse(impulse);
-            }
+            // Velocity * density * surface area = amount of mass per second hitting the area
+            // " * time * velocity = momentum of that mass over that period of time
+            //
+            // ...which is a measure of impulse, which Bullet understands.
+            //
+            btVector3 impulse = (airVelocity * airDensity * surfaceArea * timeStep) * airVelocity;
+            pRigidBody->applyCentralImpulse(impulse);
         }
     }
+}
 
-    /*
-        The physics simulation has iterated a time-step.  The results need to be
-        written back to the DOM.
-     */
-    void
-    PhysicsDoc::_updateElements (DocumentPtr spDocument)
+/*
+    The physics simulation has iterated a time-step.  The results need to be
+    written back to the DOM.
+    */
+void
+PhysicsDoc::_updateElements (DocumentPtr spDocument)
+{
+    auto allRefs = spDocument->getElementsByTagName("Ref");
+    for (auto it = allRefs.begin(); it != allRefs.end(); ++it)
     {
-        auto allRefs = spDocument->getElementsByTagName("Ref");
-        for (auto it = allRefs.begin(); it != allRefs.end(); ++it)
-        {
-            ElementPtr spElem = *it;
-            auto spPhysics = spElem->getComponent<PhysicsElem>("physics");
-            lx_check_error(spPhysics.get() != nullptr, "All elements should have an associated physics component!");
+        ElementPtr spElem = *it;
+        auto spPhysics = spElem->getComponent<PhysicsElem>("physics");
+        lx_check_error(spPhysics.get() != nullptr, "All elements should have an associated physics component!");
 
-            btTransform trans;
-            spPhysics->mspRigidBody->getMotionState()->getWorldTransform(trans);
-            glgeom::point3f p = glgeom::point3f( trans.getOrigin().x(), trans.getOrigin().y(), trans.getOrigin().z() );
-            btQuaternion q = trans.getRotation();
+        btTransform trans;
+        spPhysics->mspRigidBody->getMotionState()->getWorldTransform(trans);
+        glgeom::point3f p = glgeom::point3f( trans.getOrigin().x(), trans.getOrigin().y(), trans.getOrigin().z() );
+        btQuaternion q = trans.getRotation();
 
-            spElem->attr("translation", lxvar(p.x, p.y, p.z) );
-            spElem->attr("rotation", lxvar(q.x(), q.y(), q.z(), q.w()) );
-        }
+        spElem->attr("translation", lxvar(p.x, p.y, p.z) );
+        spElem->attr("rotation", lxvar(q.x(), q.y(), q.z(), q.w()) );
     }
+}
 
-    ElementPtr 
-    getElementPtrFor (btCollisionObject* pBtObject)
+ElementPtr 
+getElementPtrFor (btCollisionObject* pBtObject)
+{
+    lx_check_error(pBtObject != nullptr,  "Trying to get ElementPtr for a null object!");
+
+    void* pUserPtr = pBtObject->getUserPointer();
+    if (pUserPtr)
     {
-        lx_check_error(pBtObject != nullptr,  "Trying to get ElementPtr for a null object!");
-
-        void* pUserPtr = pBtObject->getUserPointer();
-        if (pUserPtr)
-        {
-            Element* pElem = reinterpret_cast<Element*>(pUserPtr);
-            return pElem->shared_from_this();
-        }
-        else
-        {
-            return ElementPtr();
-        }
+        Element* pElem = reinterpret_cast<Element*>(pUserPtr);
+        return pElem->shared_from_this();
     }
-
-    void            
-    PhysicsDoc::_applyCollisonActions (DocumentPtr spDocument)
+    else
     {
-        int numManifolds = mspDispatcher->getNumManifolds();
-	    for (int i = 0; i < numManifolds; i++)
-	    {
-		    btPersistentManifold* contactManifold =  mspDynamicsWorld->getDispatcher()->getManifoldByIndexInternal(i);
-		    btCollisionObject* obA = static_cast<btCollisionObject*>(contactManifold->getBody0());
-		    btCollisionObject* obB = static_cast<btCollisionObject*>(contactManifold->getBody1());
+        return ElementPtr();
+    }
+}
+
+void            
+PhysicsDoc::_applyCollisonActions (DocumentPtr spDocument)
+{
+    int numManifolds = mspDispatcher->getNumManifolds();
+	for (int i = 0; i < numManifolds; i++)
+	{
+		btPersistentManifold* contactManifold =  mspDynamicsWorld->getDispatcher()->getManifoldByIndexInternal(i);
+		btCollisionObject* obA = static_cast<btCollisionObject*>(contactManifold->getBody0());
+		btCollisionObject* obB = static_cast<btCollisionObject*>(contactManifold->getBody1());
 	
-		    int numContacts = contactManifold->getNumContacts();
-		    for (int j = 0; j < numContacts; j++)
-		    {
-			    btManifoldPoint& pt = contactManifold->getContactPoint(j);
-			    if (pt.getDistance() < 00.f)
-			    {
-				    const btVector3& ptA = pt.getPositionWorldOnA();
-				    const btVector3& ptB = pt.getPositionWorldOnB();
+		int numContacts = contactManifold->getNumContacts();
+		for (int j = 0; j < numContacts; j++)
+		{
+			btManifoldPoint& pt = contactManifold->getContactPoint(j);
+			if (pt.getDistance() < 00.f)
+			{
+				const btVector3& ptA = pt.getPositionWorldOnA();
+				const btVector3& ptB = pt.getPositionWorldOnB();
 				    
-                    ElementPtr spElemA = getElementPtrFor(obA);
-                    ElementPtr spElemB = getElementPtrFor(obB);
+                ElementPtr spElemA = getElementPtrFor(obA);
+                ElementPtr spElemB = getElementPtrFor(obB);
 
-                    // Objects like the ground plane are not in the Document.
-                    if (spElemA.get() && spElemB.get())
+                // Objects like the ground plane are not in the Document.
+                if (spElemA.get() && spElemB.get())
+                {
+                    struct Wrapper : public lx0::core::lxvar_ns::detail::lxvalue
                     {
-                        struct Wrapper : public lx0::core::lxvar_ns::detail::lxvalue
-                        {
-                            virtual lx0::core::lxvar_ns::detail::lxvalue* clone  (void) const    { auto p = new Wrapper; p->mspValue = mspValue; return p; } 
-                            virtual bool        isHandle    (void) const    { return true; }
-                            virtual std::string handleType  (void) const    { return "Element"; }
-                            virtual void*       unwrap      (void)          { return mspValue.get(); }
-                            ElementPtr mspValue;
-                        };
+                        virtual lx0::core::lxvar_ns::detail::lxvalue* clone  (void) const    { auto p = new Wrapper; p->mspValue = mspValue; return p; } 
+                        virtual bool        isHandle    (void) const    { return true; }
+                        virtual std::string handleType  (void) const    { return "Element"; }
+                        virtual void*       unwrap      (void)          { return mspValue.get(); }
+                        ElementPtr mspValue;
+                    };
 
-                        Wrapper* wrapper = new Wrapper;
-                        wrapper->mspValue = spElemB;
-                        std::vector<lxvar> args;
-                        args.push_back( lxvar(wrapper) );
+                    Wrapper* wrapper = new Wrapper;
+                    wrapper->mspValue = spElemB;
+                    std::vector<lxvar> args;
+                    args.push_back( lxvar(wrapper) );
 
-                        spElemA->call("onCollision", args);
-                        wrapper->mspValue = spElemA;
-                        spElemB->call("onCollision", args);
-                    }
+                    spElemA->call("onCollision", args);
+                    wrapper->mspValue = spElemA;
+                    spElemB->call("onCollision", args);
                 }
-		    }
-	    }
-    }
+            }
+		}
+	}
+}
 
-    void 
-    PhysicsDoc::onUpdate (DocumentPtr spDocument)
+void 
+PhysicsDoc::onUpdate (DocumentPtr spDocument)
+{
+    // In milliseconds...
+    const float kFps = 60.0f;
+    const unsigned int kFrameDurationMs = unsigned int( (1.0f / kFps) * 1000.0f );
+
+    auto timeNow = lx0::lx_milliseconds();
+
+    if (timeNow - mLastUpdate >= kFrameDurationMs)
     {
-        // In milliseconds...
-        const float kFps = 60.0f;
-        const unsigned int kFrameDurationMs = unsigned int( (1.0f / kFps) * 1000.0f );
+        const int kMaxSubSteps = 10;
+        const float kStep = Engine::acquire()->environment().timeScale() * kFrameDurationMs / 1000.0f;
 
-        auto timeNow = lx0::lx_milliseconds();
+        _applyWind(kStep);
 
-        if (timeNow - mLastUpdate >= kFrameDurationMs)
-        {
-            const int kMaxSubSteps = 10;
-            const float kStep = Engine::acquire()->environment().timeScale() * kFrameDurationMs / 1000.0f;
+        mspDynamicsWorld->stepSimulation(kStep, kMaxSubSteps);
 
-            _applyWind(kStep);
+        _updateElements(spDocument);
+        _applyCollisonActions(spDocument);
 
-            mspDynamicsWorld->stepSimulation(kStep, kMaxSubSteps);
-
-            _updateElements(spDocument);
-            _applyCollisonActions(spDocument);
-
-            mLastUpdate = timeNow;
-        }
+        mLastUpdate = timeNow;
     }
+}
 
-    btCollisionShapePtr
-    PhysicsDoc::_acquireSphereShape (float radius)
-    {
-        return mSphereShapeCache.acquire(SphereKey(radius));  
-    }
+btCollisionShapePtr
+PhysicsDoc::_acquireSphereShape (float radius)
+{
+    return mSphereShapeCache.acquire(SphereKey(radius));  
+}
 
-    btCollisionShapePtr      
-    PhysicsDoc::_acquireBoxShape (const glgeom::vector3f& halfBounds)
-    {
-        return mBoxShapeCache.acquire(BoxKey (halfBounds));
-    }
+btCollisionShapePtr      
+PhysicsDoc::_acquireBoxShape (const glgeom::vector3f& halfBounds)
+{
+    return mBoxShapeCache.acquire(BoxKey (halfBounds));
+}

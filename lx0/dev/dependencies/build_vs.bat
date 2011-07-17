@@ -340,7 +340,7 @@ set TESTFILE=..\bullet_build\lib\Debug\BulletCollision.lib
 
 echo mkdir ..\bullet_build>_t.bat
 echo cd ..\bullet_build>>_t.bat
-echo cmake ..\bullet-2.78>>_t.bat
+echo cmake ..\bullet-2.78 -DUSE_MSVC_RUNTIME_LIBRARY_DLL=ON>>_t.bat
 echo msbuild ALL_BUILD.vcxproj /p:Configuration=Debug >>_t.bat
 echo msbuild ALL_BUILD.vcxproj /p:Configuration=Release >>_t.bat
 

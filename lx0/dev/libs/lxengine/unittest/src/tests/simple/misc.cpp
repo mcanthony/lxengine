@@ -21,7 +21,7 @@ testset_misc(TestSet& set)
         CHECK(tr, m[3][0] == 2.0f);
         CHECK(tr, m[3][1] == 4.0f);
         CHECK(tr, m[3][2] == 6.0f);
-        CHECK(tr, m[3][3], 1.0f);
+        CHECK(tr, m[3][3] == 1.0f);
     });
 
 

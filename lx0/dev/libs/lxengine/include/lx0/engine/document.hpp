@@ -82,9 +82,15 @@ namespace lx0
     };
 
     //===========================================================================//
-    //!
+    //! A Document in the LxEngine Document Object Model (DOM)
     /*!
         \ingroup lx0_engine_dom
+
+        A Document represents an XML document (i.e. a tree of Element objects) 
+        with an API similar to that of a simplified HTML DOM.  The LxEngine DOM
+        is tailored toward more numeric data and arrays than text data, thus has
+        differences from the HTML DOM, but tries to make a general parallel that
+        will be familar to HTML DOM users.s
      */
     class Document 
         : public std::enable_shared_from_this<Document>

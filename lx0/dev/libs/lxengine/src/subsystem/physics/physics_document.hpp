@@ -46,7 +46,7 @@ namespace lx0
                 class PhysicsDoc : public Document::Component
                 {
                 public:
-                    virtual const char* name() const;
+                    virtual const char* name() const { return "physics"; }
 
                                     PhysicsDoc();
                                     ~PhysicsDoc();
