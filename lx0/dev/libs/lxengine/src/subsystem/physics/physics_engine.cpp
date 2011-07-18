@@ -38,12 +38,6 @@ using namespace lx0;
 //
 //===========================================================================//
 
-const char* 
-PhysicsEngine::name() const 
-{ 
-    return "physics"; 
-}
-
 void 
 PhysicsEngine::onAttached (EnginePtr spEngine) 
 {
@@ -55,7 +49,27 @@ PhysicsEngine::onAttached (EnginePtr spEngine)
 void 
 PhysicsEngine::onDocumentCreated   (EnginePtr spEngine, DocumentPtr spDocument) 
 {
-    spDocument->attachComponent(new PhysicsDoc);
+    auto pPhysicsDoc = new PhysicsDoc;
+    pPhysicsDoc->setGravity(mGravity);
+
+    spDocument->attachComponent(pPhysicsDoc);
 }
 
+btCollisionShapePtr
+PhysicsEngine::acquireSphereShape (float radius)
+{
+    return mSphereShapeCache.acquire(SphereKey(radius));  
+}
+
+btCollisionShapePtr      
+PhysicsEngine::acquireBoxShape (const glgeom::vector3f& halfBounds)
+{
+    return mBoxShapeCache.acquire(BoxKey (halfBounds));
+}
+
+void 
+PhysicsEngine::setGravity (const glgeom::vector3f& gravity)
+{
+    mGravity = gravity;
+}
 

@@ -431,6 +431,14 @@ public:
                 names.insert(std::make_pair(iter.read_string(), &headers.back()));
                 break;
 
+            case kId_LAND:
+                {
+                    int gridX = iter.read();
+                    int gridY = iter.read();
+                    landscapes.insert( std::make_pair(std::make_pair(gridX, gridY), &headers.back()) );
+                }
+                break;
+
             //
             // Keep this code for debugging all the fields in a sub-record.  Swap 0xFFFFFFFF
             // with a real record id.
@@ -445,6 +453,7 @@ public:
                         std::vector<char> buffer;
                         buffer.resize(iter.sub_size());
                         iter.read(&buffer[0], buffer.size());
+                        char* data = &buffer[0];
                         iter.next_sub();
                     }
                 }
@@ -463,7 +472,7 @@ public:
             case kId_GLOB:      // ?
             case kId_GMST:      // ?
             case kId_INFO:      // Dialogue-related data?
-            case kId_LAND:      // ?
+            //case kId_LAND:      // ?
             case kId_MGEF:      // Magic Effect
             case kId_PGRD:      // Path Grid?
             case kId_RACE:      // Race
@@ -484,8 +493,9 @@ public:
         }
     } 
 
-    std::vector<RecordHeader>               headers;
-    std::map<std::string, RecordHeader*>    names;
+    std::vector<RecordHeader>                   headers;
+    std::map<std::string, RecordHeader*>        names;
+    std::map<std::pair<int,int>, RecordHeader*> landscapes;
 };
 
 struct StaticModel
@@ -500,6 +510,46 @@ struct StaticModel
 
     std::string name;
     std::string model;
+};
+
+struct Landscape
+{
+    Landscape (ESMIterator& iter)
+    {
+        while (!iter.sub_done())
+        {
+            switch (iter.sub_id())
+            {
+            case kId_INTV:
+                gridX = iter.read();
+                gridY = iter.read();
+                break;
+            case kId_DATA:
+            case kId_VHGT:
+            case kId_VNML:
+            case kId_VCLR:
+            case kId_VTEX:
+            case kId_WNAM:
+            default:
+                {
+                    std::string name = iter.sub_name();
+                    std::vector<char> buffer (iter.sub_size());
+                    iter.read(&buffer[0], buffer.size());
+                    mData.push_back( std::make_pair(name, buffer) );
+                }
+            }
+            iter.next_sub();
+        }
+    }
+
+    int gridX;
+    int gridY;
+    int data;
+    std::vector<char> vertexNormal;
+    std::vector<char> vertexHeight;
+    std::vector<char> vertexColor;
+    std::vector<char> vertexUvs;
+    std::vector<std::pair<std::string, std::vector<char>>> mData;
 };
 
 struct Door
@@ -859,6 +909,19 @@ public:
         std::cout << "Region = " << cell.region << std::endl;
         std::cout << boost::format("Grid = %d, %d\n") % cell.grid[0] % cell.grid[1];
         std::cout << "References = " << cell.references.size() << std::endl;
+
+        if (!cell.isInterior())
+        {
+            auto it = mEsmIndex.landscapes.find(std::make_pair(cell.grid[0], cell.grid[1]));
+            if (it != mEsmIndex.landscapes.end())
+            {
+                Landscape landscape(ESMIterator(stream, *it->second));
+                std::cout << "Landscape found at grid location\n";
+            }
+            else
+                std::cout << "Could not find landscape at grid location\n";
+        }
+
         for (auto it = cell.references.begin(); it != cell.references.end(); ++it)
         {
             auto jt = mEsmIndex.names.find(it->name);

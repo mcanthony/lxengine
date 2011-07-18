@@ -28,7 +28,12 @@
 
 #pragma once
 
+#include <map>
+#include <functional>
 #include <lx0/_detail/forward_decls.hpp>
+
+class btRigidBody;
+_LX_FORWARD_DECL_PTRS(btCollisionShape);
 
 namespace lx0
 {
@@ -36,7 +41,52 @@ namespace lx0
     {
         namespace physics_ns
         {
+            /*!
+                
+             */
+            class IPhysicsEngine : public lx0::Engine::Component
+            {
+            public:
+                virtual const char* name() const { return "physics"; }
+                static  const char* s_name()     { return "physics"; }
+
+                typedef std::function<lx0::Element::Component* (lx0::ElementPtr spElement)>  Constructor;
+
+                template <typename T>
+                void addElementComponent (std::string tag);
+                Constructor findElementComponentCtor (std::string tag);
+
+                virtual btCollisionShapePtr     acquireSphereShape  (float radius) = 0;
+                virtual btCollisionShapePtr     acquireBoxShape     (const glgeom::vector3f& halfBounds) = 0;
+
+                virtual void                    setGravity          (const glgeom::vector3f& gravity) = 0;
+
+
+            protected:
+                std::map<std::string, Constructor>   mComponentCtors;
+            };
+
             lx0::Engine::Component* createPhysicsSubsystem();
+
+
+            template <typename T>
+            void IPhysicsEngine::addElementComponent (std::string tag)
+            {
+                auto ctor = [](lx0::ElementPtr spElement) { return new T(spElement); };
+                mComponentCtors.insert(std::make_pair(tag, ctor));
+            }
+
+            class IPhysicsDoc : public lx0::Document::Component
+            {
+            public:
+                virtual const char* name() const { return "physics"; }
+                static  const char* s_name()     { return "physics"; }
+
+                virtual void    setGravity      (const glgeom::vector3f& gravity) = 0;
+
+                virtual void    addToWorld      (btRigidBody* pRigidBody) = 0;
+                virtual void    removeFromWorld (btRigidBody* pRigidBody) = 0;
+            };
         }
     }
     using namespace lx0::subsystem::physics_ns;

@@ -38,6 +38,7 @@
 #include <boost/filesystem.hpp>
 
 #include <lx0/lxengine.hpp>
+#include <lx0/subsystem/physics.hpp>
 #include "tes3loader.hpp"
 
 lx0::UIBinding*         create_uibinding();
@@ -82,6 +83,11 @@ main (int argc, char** argv)
 
         if (spEngine->parseCommandLine(argc, argv, "startingCell"))
         {
+            spEngine->attachComponent(lx0::createPhysicsSubsystem());
+            
+            void initializePhysics();
+            initializePhysics();
+
             //
             // Load up the document and do the very initial processsing
             //

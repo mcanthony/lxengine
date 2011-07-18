@@ -30,6 +30,19 @@
 #include <lx0/subsystem/physics.hpp>
 #include "physics_engine.hpp"
 
+using namespace lx0::subsystem::physics_ns;
+
+IPhysicsEngine::Constructor 
+IPhysicsEngine::findElementComponentCtor (std::string tag)
+{
+    auto it = mComponentCtors.find(tag);
+    if (it != mComponentCtors.end())
+        return it->second;
+    else
+        return IPhysicsEngine::Constructor();
+}
+
+
 lx0::Engine::Component* 
 lx0::subsystem::physics_ns::createPhysicsSubsystem()
 {

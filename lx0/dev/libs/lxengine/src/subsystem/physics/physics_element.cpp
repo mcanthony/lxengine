@@ -28,6 +28,7 @@
 
 #include <lx0/lxengine.hpp>
 #include <lx0/engine/mesh.hpp>
+#include <lx0/subsystem/physics.hpp>
 #include <lx0/util/misc/lxvar_convert.hpp>
 
 #include "physics_element.hpp"
@@ -82,10 +83,11 @@ PhysicsElem::PhysicsElem (DocumentPtr spDocument, ElementPtr spElem, PhysicsDoc*
                       
     // Determine and acquire the collision shape to use
     //
+    auto spPhysicsEng = Engine::acquire()->getComponent<IPhysicsEngine>();
     if (query(spElem->attr("bounds_type"), "box") == "box")
-        mspShape = pPhysics->_acquireBoxShape( spMesh->boundingVector() * scale );
+        mspShape = spPhysicsEng->acquireBoxShape( spMesh->boundingVector() * scale );
     else
-        mspShape =  pPhysics->_acquireSphereShape( spMesh->boundingRadius() * scale );
+        mspShape =  spPhysicsEng->acquireSphereShape( spMesh->boundingRadius() * scale );
 
     btVector3 fallInertia(0, 0, 0);
     mspShape->calculateLocalInertia(kfMass, fallInertia);

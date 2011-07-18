@@ -125,7 +125,12 @@ enum
 	_MAKE_ID(S,P,E,L),
     _MAKE_ID(S,T,A,T),
     _MAKE_ID(T,E,S,3),
+    _MAKE_ID(V,C,L,R),
+    _MAKE_ID(V,H,G,T),
+    _MAKE_ID(V,N,M,L),
+    _MAKE_ID(V,T,E,X),
     _MAKE_ID(W,E,A,P),
+    _MAKE_ID(W,N,A,M),
     _MAKE_ID(X,S,C,L),
 };
 

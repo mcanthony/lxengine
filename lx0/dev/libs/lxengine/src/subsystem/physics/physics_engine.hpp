@@ -28,6 +28,9 @@
 
 #pragma once
 
+#include <lx0/subsystem/physics.hpp>
+#include "shape_cache.hpp"
+
 namespace lx0
 {
     namespace subsystem
@@ -36,13 +39,23 @@ namespace lx0
         {
             namespace detail
             {
-                class PhysicsEngine : public Engine::Component
+                class PhysicsEngine : public IPhysicsEngine
                 {
                 public:
-                    virtual const char* name() const;
-
                     virtual void        onAttached          (EnginePtr spEngine);
                     virtual void        onDocumentCreated   (EnginePtr spEngine, DocumentPtr spDocument);
+
+
+                    virtual btCollisionShapePtr     acquireSphereShape  (float radius);
+                    virtual btCollisionShapePtr     acquireBoxShape     (const glgeom::vector3f& halfBounds);
+
+                    virtual void                    setGravity          (const glgeom::vector3f& gravity);
+                
+                protected:
+                    glgeom::vector3f            mGravity;
+
+                    ShapeCache<SphereKey>       mSphereShapeCache;
+                    ShapeCache<BoxKey>          mBoxShapeCache;
                 };
             }
         }

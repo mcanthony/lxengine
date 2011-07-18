@@ -28,6 +28,7 @@
 
 #pragma once
 
+#include <lx0/subsystem/physics.hpp>
 #include <bullet/btBulletDynamicsCommon.h>
 #include "shape_cache.hpp"
 
@@ -43,7 +44,7 @@ namespace lx0
                 //! The internal physics subsystem
                 /*!
                  */
-                class PhysicsDoc : public Document::Component
+                class PhysicsDoc : public IPhysicsDoc
                 {
                 public:
                     virtual const char* name() const { return "physics"; }
@@ -58,8 +59,11 @@ namespace lx0
 
                     virtual void    onUpdate            (DocumentPtr spDocument);
 
-                    btCollisionShapePtr         _acquireSphereShape         (float radius);
-                    btCollisionShapePtr         _acquireBoxShape            (const glgeom::vector3f& halfBounds);
+                    virtual void    setGravity          (const glgeom::vector3f& gravity);
+
+                    virtual void    addToWorld          (btRigidBody* pRigidBody);
+                    virtual void    removeFromWorld     (btRigidBody* pRigidBody);
+
 
                     void            setWindVelocity     (float v)           { mfWindVelocity = v; }
                     void            setWindDirection    (const glgeom::vector3f& v);
@@ -80,9 +84,6 @@ namespace lx0
                     std::shared_ptr<btSequentialImpulseConstraintSolver>    mspSolver;
 
                     std::shared_ptr<btCollisionShape>                       mspGroundShape;
-
-                    ShapeCache<SphereKey>                                   mSphereShapeCache;
-                    ShapeCache<BoxKey>                                      mBoxShapeCache;
 
                     std::shared_ptr<btDefaultMotionState>                   mspGroundMotionState;
                     std::shared_ptr<btRigidBody>                            mspGroundRigidBody;

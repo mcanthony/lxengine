@@ -27,6 +27,7 @@
 //===========================================================================//
 
 #include <lx0/lxengine.hpp>
+#include "physics_engine.hpp"
 #include "physics_document.hpp"
 #include "physics_element.hpp"
 #include "element_scene.hpp"
@@ -104,17 +105,23 @@ PhysicsDoc::onAttached (DocumentPtr spDocument)
 void 
 PhysicsDoc::onElementAdded (DocumentPtr spDocument, ElementPtr spElem)
 {
-    if (spElem->tagName() == "Ref")
-    {
-        // Attach the custom logic to the Element (i.e. ensures the element will
-        // be updated as the physics simulation moves it)
-        //
-        lx_check_error( spElem->getComponent<PhysicsElem>("physics").get() == nullptr );
+    // Attach the custom logic to the Element (i.e. ensures the element will
+    // be updated as the physics simulation moves it)
+    //
+    lx_check_error( spElem->getComponent<PhysicsElem>("physics").get() == nullptr );
 
+    const std::string tag = spElem->tagName();
+    if (tag == "Ref")
         spElem->attachComponent(new PhysicsElem(spDocument, spElem, this) );
-    }
-    else if (spElem->tagName() == "Scene")
+    else if (tag == "Scene")
         spElem->attachComponent(new SceneElem(spDocument, spElem, this) );
+    else
+    {
+        auto spPhysicsEng = Engine::acquire()->getComponent<PhysicsEngine>();
+        auto ctor = spPhysicsEng->findElementComponentCtor(tag);
+        if (ctor)
+            spElem->attachComponent( ctor(spElem) );
+    }
 }
 
 void 
@@ -269,7 +276,7 @@ PhysicsDoc::onUpdate (DocumentPtr spDocument)
 
         _applyWind(kStep);
 
-        mspDynamicsWorld->stepSimulation(kStep, kMaxSubSteps);
+        mspDynamicsWorld->stepSimulation((timeNow - mLastUpdate) / 1000.0f, kMaxSubSteps);
 
         _updateElements(spDocument);
         _applyCollisonActions(spDocument);
@@ -278,14 +285,20 @@ PhysicsDoc::onUpdate (DocumentPtr spDocument)
     }
 }
 
-btCollisionShapePtr
-PhysicsDoc::_acquireSphereShape (float radius)
+void    
+PhysicsDoc::setGravity (const glgeom::vector3f& gravity)
 {
-    return mSphereShapeCache.acquire(SphereKey(radius));  
+    mspDynamicsWorld->setGravity( btVector3(gravity.x, gravity.y, gravity.z) );
 }
 
-btCollisionShapePtr      
-PhysicsDoc::_acquireBoxShape (const glgeom::vector3f& halfBounds)
+void
+PhysicsDoc::addToWorld (btRigidBody* pRigidBody)
 {
-    return mBoxShapeCache.acquire(BoxKey (halfBounds));
+    mspDynamicsWorld->addRigidBody(pRigidBody);
+}
+
+void
+PhysicsDoc::removeFromWorld (btRigidBody* pRigidBody)
+{
+    mspDynamicsWorld->removeRigidBody(pRigidBody);
 }
