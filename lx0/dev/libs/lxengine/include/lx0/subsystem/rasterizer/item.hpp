@@ -89,11 +89,13 @@ namespace lx0
                 Instance() {}
         
                 //weak_ptr<Target> wpTarget;  - probably should be a member of the RenderList layer or RenderAlgorithm?
-                CameraPtr    spCamera;
-                TransformPtr spTransform;
-                MaterialPtr  spMaterial;
-                GeometryPtr  spGeometry;
-                LightSetPtr  spLightSet;
+                CameraPtr           spCamera;
+                TransformPtr        spTransform;
+                MaterialPtr         spMaterial;
+                GeometryPtr         spGeometry;
+                LightSetPtr         spLightSet;
+
+                glgeom::bsphere3f   bsphere;
             };
 
         }

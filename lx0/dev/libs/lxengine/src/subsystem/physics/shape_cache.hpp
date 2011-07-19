@@ -151,6 +151,45 @@ namespace lx0
                 };
 
                 //-----------------------------------------------------------------------//
+                //! Key used for caching btCapsuleShape
+                /*!
+                    Determines (a) which cache element to use for a given bounds, (b) how to 
+                    create new a cache element for the bounds if one does not exist.
+                 */
+                struct CapsuleKey : public ShapeKeyBase
+                {
+                    CapsuleKey (float width, float height)
+                    {
+                        lx_check_error(width >= 0.0f);
+                        lx_check_error(height >= 0.0f);
+
+                        // Only respect a limited granularity so that similar shapes will simply be
+                        // reused.
+                        //
+                        // Note: this sets a limit of about 0.05 to 3,250 for the sizes...
+                        //
+                        auto key0 = unsigned short( ceil(width /  granularity()) );
+                        auto key1 = unsigned short( ceil(height /  granularity()) );
+                        key = (key0 << 16) | key1;
+                    }
+
+                    bool operator< (const CapsuleKey& that) const
+                    {
+                        int cmp = key - that.key;
+                        return (cmp < 0) ? true : false;
+                    }
+
+                    btCollisionShape* createShape() const
+                    {
+                        const float width = float((key >> 16) & 0xFFFF) * granularity();
+                        const float height = float(key & 0xFFFF) * granularity();
+                        return new btCapsuleShape(width, height);
+                    }
+
+                    int key;
+                };
+
+                //-----------------------------------------------------------------------//
                 //! Wrapper on std::map<> to manage cached btCollisionShapes
                 /*!
                  */

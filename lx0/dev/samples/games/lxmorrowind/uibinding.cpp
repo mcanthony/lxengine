@@ -43,9 +43,6 @@ public:
         if (keyboard.bDown[KC_ESCAPE])
             Engine::acquire()->sendEvent("quit");
         
-        if (keyboard.bDown[KC_R])
-            spView->sendEvent("redraw", lxvar());
-
         if (keyboard.bDown[KC_W])
             spView->document()->sendEvent("move_forward", lxvar(step));
         if (keyboard.bDown[KC_S])
@@ -69,8 +66,6 @@ public:
             spView->document()->sendEvent("rotate_horizontal", horz);
         if (fabs(vert) > 1e-3f)
             spView->document()->sendEvent("rotate_vertical", vert);
-
-        spView->sendEvent("redraw");
     }
 };
 

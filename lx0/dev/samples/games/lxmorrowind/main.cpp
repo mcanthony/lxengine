@@ -83,10 +83,10 @@ main (int argc, char** argv)
 
         if (spEngine->parseCommandLine(argc, argv, "startingCell"))
         {
-            spEngine->attachComponent(lx0::createPhysicsSubsystem());
+            /*spEngine->attachComponent(lx0::createPhysicsSubsystem());
             
             void initializePhysics();
-            initializePhysics();
+            initializePhysics();*/
 
             //
             // Load up the document and do the very initial processsing

@@ -5,7 +5,7 @@
     <Scene startingCell="Caldera">
       
       <SoundBuffer id="music" src="mwdata/Music/Battle/MW battle1.mp3.ogg" />
-      <SoundSource ref="music" sound_state="playing"/>
+      <SoundSource ref="music" sound_state="stopped"/>
         
       <Player>
         {

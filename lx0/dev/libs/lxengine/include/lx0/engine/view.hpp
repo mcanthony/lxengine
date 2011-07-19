@@ -176,6 +176,8 @@ namespace lx0 { namespace engine { namespace dom_ns {
         virtual void        createWindow    (View* pHostView, size_t& handle, unsigned int& width, unsigned int& height, lxvar options) = 0;
         virtual void        destroyWindow   (void) {}
         virtual void        show            (View* pHostView, Document* pDocument) = 0;
+        virtual void        swapBuffers     (void) {}
+
 
         virtual     void        _onElementAdded             (ElementPtr spElem) = 0;
         virtual     void        _onElementRemoved           (ElementPtr spElem) = 0;
@@ -235,6 +237,7 @@ namespace lx0 { namespace engine { namespace dom_ns {
         
         void        show            (void);
         void        show            (lxvar options);
+        void        swapBuffers     (void);
 
         void        updateBegin     (void);
         void        updateFrame     (void);

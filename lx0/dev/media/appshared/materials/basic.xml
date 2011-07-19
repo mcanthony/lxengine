@@ -14,7 +14,23 @@
         _type : "normal2",
       }
     }
-  </Material2> 
+  </Material2>
+
+  <Material2 id="phong_checker">
+    {
+    graph : {
+    _type : "phong",
+    diffuse : {
+    _type : "checker",
+    color0 : [ .2, .1, .1 ],
+    color1 : [ 1, 1, 1 ],
+    uv : { _type : "cube", scale : [ 0.0142857143, 0.0142857143 ] },
+    },
+    specular : [ 1, 1, 1 ],
+    specularEx : 96
+    }
+    }
+  </Material2>
 
   <Material2 id="white_spec96">
     {

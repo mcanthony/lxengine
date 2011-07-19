@@ -431,6 +431,9 @@ public:
                 names.insert(std::make_pair(iter.read_string(), &headers.back()));
                 break;
 
+            //
+            // Indexed by location, not name
+            //
             case kId_LAND:
                 {
                     int gridX = iter.read();
@@ -472,7 +475,6 @@ public:
             case kId_GLOB:      // ?
             case kId_GMST:      // ?
             case kId_INFO:      // Dialogue-related data?
-            //case kId_LAND:      // ?
             case kId_MGEF:      // Magic Effect
             case kId_PGRD:      // Path Grid?
             case kId_RACE:      // Race
@@ -524,9 +526,43 @@ struct Landscape
                 gridX = iter.read();
                 gridY = iter.read();
                 break;
-            case kId_DATA:
             case kId_VHGT:
+                {
+                    // Offset, followed by 65x65 heights, then 3 bytes unknown
+                    float offset = iter.read();
+
+                    std::vector<lx0::int8> buffer(65 * 65);
+                    iter.read(&buffer[0], 65 * 65);
+                    
+                    vertexHeight.reserve(65 * 65);
+
+                    for (int y = 0; y < 65; ++y)
+                    {
+                        offset += buffer[y * 65];
+                        float row = offset;
+                        vertexHeight.push_back(row * 8);
+                        for (int x = 1; x < 65; ++x)
+                        {
+                            row += buffer[y * 65 + x];
+                            vertexHeight.push_back(row * 8);
+                        }
+                    }
+                }
+                break;
             case kId_VNML:
+                {
+                    vertexNormal.resize(65 * 65);
+                    for (auto it = vertexNormal.begin(); it != vertexNormal.end(); ++it)
+                    {
+                        lx0::int8 x = iter.read();
+                        lx0::int8 y = iter.read();
+                        lx0::int8 z = iter.read();
+                        *it = glgeom::normalize( glgeom::vector3f( x / 127.0f, y / 127.0f, z / 127.0f ) );
+                    }
+                }
+                break;
+
+            case kId_DATA:
             case kId_VCLR:
             case kId_VTEX:
             case kId_WNAM:
@@ -544,9 +580,9 @@ struct Landscape
 
     int gridX;
     int gridY;
-    int data;
-    std::vector<char> vertexNormal;
-    std::vector<char> vertexHeight;
+    std::vector<float> vertexHeight;
+    std::vector<glgeom::vector3f> vertexNormal;
+
     std::vector<char> vertexColor;
     std::vector<char> vertexUvs;
     std::vector<std::pair<std::string, std::vector<char>>> mData;
@@ -917,6 +953,45 @@ public:
             {
                 Landscape landscape(ESMIterator(stream, *it->second));
                 std::cout << "Landscape found at grid location\n";
+
+                std::shared_ptr<glgeom::primitive_buffer> spPrimitive (new glgeom::primitive_buffer);
+                spPrimitive->vertex.positions.resize(65 * 65);
+                spPrimitive->vertex.normals.resize(65 * 65);
+                for (int y = 0; y < 65; ++y)
+                {
+                    for (int x = 0; x < 65; ++x)
+                    {
+                        int offset = y * 65 + x;
+                        auto& v = spPrimitive->vertex.positions[offset];
+                        v.x = x * 128;
+                        v.y = y * 128;
+                        v.z = landscape.vertexHeight[offset];
+                        spPrimitive->bbox.merge(v);
+
+                        spPrimitive->vertex.normals[offset] = landscape.vertexNormal[offset];
+                    }
+                }
+
+                // 64 x 64 quads
+                spPrimitive->indices.reserve(64 * 64 * 6);
+                for (int y = 0; y < 64; ++y)
+                {
+                    for (int x = 0; x < 64; ++x)
+                    {
+                        spPrimitive->indices.push_back( (y  + 0) * 65 + (x + 0) ); 
+                        spPrimitive->indices.push_back( (y  + 1) * 65 + (x + 0) ); 
+                        spPrimitive->indices.push_back( (y  + 1) * 65 + (x + 1) ); 
+
+                        spPrimitive->indices.push_back( (y  + 1) * 65 + (x + 1) ); 
+                        spPrimitive->indices.push_back( (y  + 0) * 65 + (x + 1) ); 
+                        spPrimitive->indices.push_back( (y  + 0) * 65 + (x + 0) ); 
+                    }
+                }
+
+                instance inst;
+                inst.primitive = *spPrimitive;
+                inst.transform = glm::translate(glm::mat4(), glm::vec3(landscape.gridX * 8192, landscape.gridY * 8192, 0.0f));
+                group.instances.push_back(inst);
             }
             else
                 std::cout << "Could not find landscape at grid location\n";
@@ -978,8 +1053,8 @@ public:
                         // since the actual mapping of NIF data to LxEngine parameters is not
                         // exactly known.
                         //
-                        esmLight.light.radius *= 16.0f;
-                        esmLight.light.attenuation = glm::vec3(0, 3, 0);
+                        esmLight.light.radius *= 70.0f;
+                        esmLight.light.attenuation = glm::vec3(0, 3 * 70, 0);
 
                         //
                         // Add a glow effect.  This is not native to Morrowind.

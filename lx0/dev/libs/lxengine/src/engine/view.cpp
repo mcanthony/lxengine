@@ -119,6 +119,12 @@ namespace lx0 { namespace engine { namespace dom_ns {
         mspImp->show(this, mpDocument);
     }
 
+    void
+    View::swapBuffers (void)
+    {
+        mspImp->swapBuffers();
+    }
+
     void 
     View::show (void)
     {

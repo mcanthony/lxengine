@@ -209,6 +209,7 @@ namespace lx0 {
 
                     //@name Window Functions
                     //@{
+                    void swapBuffers        (void);
                     //@}
 
                 protected:

@@ -123,6 +123,7 @@ struct ESMIterator
     void                read        (char* data, size_t count)              { mStream.read(data, count); }
     void                read5       (char* data)                            { mStream.read5(data); }
     void                read        (float* data, size_t count = 1)         { mStream.read(data, count); }
+    void                read        (lx0::int8* data, size_t count = 1)     { mStream.read(data, count); }
     void                read        (lx0::uint32* data, size_t count = 1)   { mStream.read(data, count); }
     std::string         read_string (void)                                  { return mStream.read_string(mCurrentSubRecordHeader.size); }
     Stream::auto_cast   read        (void)                                  { return mStream.read(); }

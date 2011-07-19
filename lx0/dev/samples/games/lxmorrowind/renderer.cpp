@@ -89,6 +89,18 @@ public:
         mspRasterizer->shutdown();
     }
 
+    virtual void update (ViewPtr spView) 
+    {
+        lx0::uint32 now = lx0::lx_milliseconds();
+        if (now - mLastUpdate >= 16)
+        {
+            render();
+            spView->swapBuffers();
+            mLastUpdate = now;
+        }
+    }
+    lx0::uint32 mLastUpdate;
+
     virtual void render (void)	
     {
         lx0::RenderAlgorithm algorithm;
@@ -99,9 +111,21 @@ public:
         pass.spLightSet = mspLightSet;
         algorithm.mPasses.push_back(pass);
 
+        auto viewPoint = glm::inverse(mspCamera->viewMatrix) * glgeom::point3f(0, 0, 0);
         lx0::RenderList instances;
         for (auto it = mInstances.begin(); it != mInstances.end(); ++it)
-            instances.push_back(0, *it);
+        {
+            const auto& bsphere = (*it)->bsphere;
+
+            if (false && bsphere.is_finite())
+            {
+                const auto& mat = (*it)->spTransform->mat;
+                if (glgeom::distance(mat * bsphere.center, viewPoint) < 500.0f + 1.25f * bsphere.radius)
+                    instances.push_back(0, *it);
+            }
+            else
+                instances.push_back(0, *it);
+        }
 
         mspRasterizer->beginFrame(algorithm);
         for (auto it = instances.begin(); it != instances.end(); ++it)
@@ -125,9 +149,10 @@ public:
             if (!material.handle.empty())
                 pInstance->spMaterial = _buildMaterial(material);
             else
-                pInstance->spMaterial = mMaterials.find("white_spec96")->second;
+                pInstance->spMaterial = mMaterials.find("phong_checker")->second;
 
             pInstance->spGeometry = mspRasterizer->createGeometry(primitive);
+            pInstance->bsphere    = glgeom::bsphere3f(primitive.bbox.center(), primitive.bbox.diagonal());
             mInstances.push_back(InstancePtr(pInstance));
 
             mBounds.merge(primitive.bbox);
@@ -142,7 +167,6 @@ public:
                 float farDistance  = std::max( glgeom::distance(position, target) * 1.5f, 1000.0f );
                 float nearDistance = glm::clamp( farDistance / 1e6f, 0.05f, 10.0f );
                 mspCamera = mspRasterizer->createCamera(glgeom::radians(glgeom::degrees(60)), nearDistance, farDistance, viewMatrix);
-                spElem->document()->view(0)->sendEvent("redraw");
             });
         }
         else if (spElem->tagName() == "Material2")

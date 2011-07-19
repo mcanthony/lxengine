@@ -67,6 +67,12 @@ PhysicsEngine::acquireBoxShape (const glgeom::vector3f& halfBounds)
     return mBoxShapeCache.acquire(BoxKey (halfBounds));
 }
 
+btCollisionShapePtr
+PhysicsEngine::acquireCapsuleShape (float width, float height)
+{
+    return mCapsuleShapeCache.acquire(CapsuleKey(width, height));
+}
+
 void 
 PhysicsEngine::setGravity (const glgeom::vector3f& gravity)
 {

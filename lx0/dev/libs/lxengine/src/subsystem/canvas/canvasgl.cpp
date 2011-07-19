@@ -299,6 +299,13 @@ namespace lx0 { namespace subsystem { namespace canvas_ns { namespace detail {
         lx_check_error(m_hDC == 0, "Device context should be released before the object is deleted.");
     }
 
+    void 
+    CanvasGL::swapBuffers (void) 
+    {
+        ::SwapBuffers(m_hDC);
+    }
+
+
     void   
     CanvasGL::_createWindow (const char* pszTitle, int x, int y, int w, int h, bool bResizeable)
     {

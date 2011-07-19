@@ -169,10 +169,10 @@ public:
     {
         auto spPhysics = Engine::acquire()->getComponent<IPhysicsEngine>();
 
-        // 2 m tall x .5 m wide in x and y, and 68 kgs
+        // 2 m tall x .5 m wide, and 68 kgs
         //
         auto position = spElement->value()["position"].unwrap2<glgeom::point3f>();
-        auto spShape = spPhysics->acquireBoxShape(glgeom::vector3f(.25f, .25f, 1.0f));
+        auto spShape = spPhysics->acquireCapsuleShape(.25f, 1.0f);
         _initialize(spElement, position, glgeom::quatf(), spShape, 68.0f);
 
         mspRigidBody->setDamping(0.3f, 0.7f);
@@ -195,11 +195,75 @@ public:
     lx0::Element*   mpElement;
 };
 
+class PlayerElem2 : public PhysicsElem
+{
+public:
+    PlayerElem2 (lx0::ElementPtr spElement)
+        : mpElement (spElement.get())
+    {
+        auto spPhysics = Engine::acquire()->getComponent<IPhysicsEngine>();
+
+        // 2 m tall x .5 m wide, and 68 kgs
+        //
+        auto position = spElement->value()["position"].unwrap2<glgeom::point3f>();
+        auto spShape = spPhysics->acquireCapsuleShape(.25f, 1.0f);
+        _initialize(spElement, position, glgeom::quatf(), spShape, 68.0f);
+
+        mspRigidBody->setAngularFactor(0.05f);
+        mspRigidBody->setDamping(0.9f, 0.9f);
+        mspRigidBody->setFriction(0.15f);
+        mspRigidBody->setRestitution(0.1f);
+    }
+
+    virtual void onValueChange (ElementPtr spElem)
+    {
+        auto position = mpElement->value()["position"].unwrap2<glgeom::point3f>();
+        
+        // The position has changed from what Bullet thinks the position is...shove the object in
+        // that direction.
+        auto delta = position - mPositionBt;
+        if (!glgeom::is_zero_length(delta))
+        {
+            float magnitude = length(delta);
+            if (magnitude < 100.0f)
+            {
+                btVector3 v = mspRigidBody->getLinearVelocity();
+                v.setX(10 * delta.x);
+                v.setY(10 * delta.y);
+                v.setZ( (v.z() < 0) ? (v.z() + 30 * delta.z) : delta.z );
+                mspRigidBody->setLinearVelocity(  v );
+            }
+            else
+            {
+                spElem->document()->getComponent<IPhysicsDoc>()->removeFromWorld(mspRigidBody.get());
+                spElem->document()->getComponent<IPhysicsDoc>()->addToWorld(mspRigidBody.get());
+            }
+        }
+    }
+
+    virtual void getWorldTransform(glgeom::point3f& position, glgeom::quatf& orientation)
+    {
+        position = mpElement->value()["position"].unwrap2<glgeom::point3f>();
+        orientation = glgeom::quatf(1, 0, 0, 0);
+        mPositionBt = position;
+    }
+
+    virtual void setWorldTransform(const glgeom::point3f& position, const glgeom::quatf& orientation)
+    {
+        mPositionBt = position;
+        mpElement->value()["position"].unwrap2<glgeom::point3f>() = position;
+        mpElement->notifyValueChanged();
+    }
+
+    glgeom::point3f     mPositionBt;
+    lx0::Element*       mpElement;
+};
+
 void initializePhysics()
 {
     auto spPhysics = Engine::acquire()->getComponent<IPhysicsEngine>();
     spPhysics->addElementComponent<InstanceElem>("Instance"); 
-    spPhysics->addElementComponent<PlayerElem>("Player");
+    spPhysics->addElementComponent<PlayerElem2>("Player");
 
     // Why 70? 70 Morrowind units approx. equals 1 meter
     spPhysics->setGravity( glgeom::vector3f(0, 0, 70 * -9.821f) );

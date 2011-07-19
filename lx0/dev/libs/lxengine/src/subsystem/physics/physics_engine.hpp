@@ -48,6 +48,7 @@ namespace lx0
 
                     virtual btCollisionShapePtr     acquireSphereShape  (float radius);
                     virtual btCollisionShapePtr     acquireBoxShape     (const glgeom::vector3f& halfBounds);
+                    virtual btCollisionShapePtr     acquireCapsuleShape (float width, float height);
 
                     virtual void                    setGravity          (const glgeom::vector3f& gravity);
                 
@@ -56,6 +57,7 @@ namespace lx0
 
                     ShapeCache<SphereKey>       mSphereShapeCache;
                     ShapeCache<BoxKey>          mBoxShapeCache;
+                    ShapeCache<CapsuleKey>      mCapsuleShapeCache;
                 };
             }
         }

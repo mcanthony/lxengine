@@ -65,6 +65,11 @@ public:
         mFin.read(data, count);
     }
 
+    void read (lx0::int8* data, size_t count)
+    {
+        mFin.read((char*)data, count);
+    }
+
     void read5 (char* data)
     {
         mFin.read(data, 4);
@@ -114,9 +119,10 @@ public:
         auto_cast(Stream& stream) : mStream (stream) {}
         
         operator int         () { int v; mStream.read((char *)&v, 4); return v; }
-        operator lx0::uint8  () { lx0::uint8 v; mStream.read((char *)&v, 1); return v; }
-        operator lx0::int16  () { lx0::int16 v; mStream.read((char *)&v, 2); return v; }
-        operator lx0::uint16 () { lx0::uint16 v; mStream.read((char *)&v, 2); return v; }
+        operator lx0::int8   () { lx0::int8 v; mStream.read((char *)&v, sizeof(v)); return v; }
+        operator lx0::uint8  () { lx0::uint8 v; mStream.read((char *)&v, sizeof(v)); return v; }
+        operator lx0::int16  () { lx0::int16 v; mStream.read((char *)&v, sizeof(v)); return v; }
+        operator lx0::uint16 () { lx0::uint16 v; mStream.read((char *)&v, sizeof(v)); return v; }
         operator lx0::uint32 () { lx0::uint32 v; mStream.read(&v); return v; }
         operator float       () { float v; mStream.read(&v); return v; }
         operator char        () { char c; mStream.read(&c, 1); return c; }

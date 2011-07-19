@@ -41,6 +41,7 @@ public:
     virtual void        createWindow    (View* pHostView, size_t& handle, unsigned int& width, unsigned int& height, lxvar options);
     virtual void        destroyWindow   (void);
     virtual void        show            (View* pHostView, Document* pDocument);
+    virtual void        swapBuffers     (void);
 
     virtual     void        _onElementAdded             (ElementPtr spElem) {}
     virtual     void        _onElementRemoved           (ElementPtr spElem) {}
@@ -107,6 +108,12 @@ void
 LxCanvasImp::show (View* pHostView, Document* pDocument)
 {
     mspWin->show();
+}
+
+void 
+LxCanvasImp::swapBuffers (void)
+{
+    mspWin->swapBuffers();
 }
 
 void 
