@@ -29,6 +29,10 @@
 #include <boost/algorithm/string.hpp>
 #include <lx0/lxengine.hpp>
 #include <lx0/util/misc.hpp>
+#include <lx0/subsystem/physics.hpp>
+#include "physics/mwphysics.hpp"
+
+#include <bullet/btBulletDynamicsCommon.h>
 
 using namespace lx0;
 
@@ -58,23 +62,22 @@ public:
 protected:
     void _handleMove (ElementPtr spElem, std::string evt, float step, glgeom::point3f& position, glgeom::point3f& target)
     {
+        auto spMwPhysics = spElem->document()->getComponent<MwPhysicsDoc>();
+
         if (evt == "move_forward")
         {
             auto dir = glgeom::normalize(target - position);
-            position += dir * step;
-            target += dir * step;
+            spMwPhysics->movePlayer(spElem, dir * step);
         }
         else if (evt == "move_right")
         {
             auto dir = glgeom::normalize(target - position);
             dir = glgeom::cross(dir, glgeom::vector3f(0, 0, 1));
-            position += dir * step;
-            target += dir * step;
+            spMwPhysics->movePlayer(spElem,  dir * step);
         }
         else if (evt == "move_up")
         {
-            position.z += step;
-            target.z += step;
+            spMwPhysics->movePlayer(spElem, glgeom::vector3f(0,0,1) * step);
         }
         else if (evt == "rotate_horizontal")
         {

@@ -40,6 +40,7 @@
 #include <lx0/lxengine.hpp>
 #include <lx0/subsystem/physics.hpp>
 #include "tes3loader.hpp"
+#include "physics/mwphysics.hpp"
 
 lx0::UIBinding*         create_uibinding();
 lx0::View::Component*   create_renderer();
@@ -83,15 +84,16 @@ main (int argc, char** argv)
 
         if (spEngine->parseCommandLine(argc, argv, "startingCell"))
         {
-            /*spEngine->attachComponent(lx0::createPhysicsSubsystem());
+            spEngine->attachComponent(lx0::createPhysicsSubsystem());
             
             void initializePhysics();
-            initializePhysics();*/
+            initializePhysics();
 
             //
             // Load up the document and do the very initial processsing
             //
             DocumentPtr spDocument = spEngine->loadDocument("media2/appdata/lxmorrowind/lxmorrowind.xml");
+            spDocument->attachComponent(new MwPhysicsDoc);
             spDocument->addController( create_controller(spDocument) );
             _processDocumentSettings(spEngine, spDocument);            
             lx0::processIncludeDocument(spDocument);

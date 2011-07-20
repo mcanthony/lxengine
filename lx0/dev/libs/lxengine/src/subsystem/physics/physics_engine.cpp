@@ -38,6 +38,11 @@ using namespace lx0;
 //
 //===========================================================================//
 
+PhysicsEngine::PhysicsEngine ()
+    : mEnableSimulation (true)
+{
+}
+
 void 
 PhysicsEngine::onAttached (EnginePtr spEngine) 
 {
@@ -51,6 +56,7 @@ PhysicsEngine::onDocumentCreated   (EnginePtr spEngine, DocumentPtr spDocument)
 {
     auto pPhysicsDoc = new PhysicsDoc;
     pPhysicsDoc->setGravity(mGravity);
+    pPhysicsDoc->enableSimulation(mEnableSimulation);
 
     spDocument->attachComponent(pPhysicsDoc);
 }
@@ -71,6 +77,16 @@ btCollisionShapePtr
 PhysicsEngine::acquireCapsuleShape (float width, float height)
 {
     return mCapsuleShapeCache.acquire(CapsuleKey(width, height));
+}
+
+void 
+PhysicsEngine::enableSimulation (bool bEnable)
+{
+    mEnableSimulation = bEnable;
+
+    auto documents = Engine::acquire()->documents();
+    for (auto it = documents.begin(); it != documents.end(); ++it)
+        (*it)->getComponent<IPhysicsDoc>()->enableSimulation(bEnable);
 }
 
 void 

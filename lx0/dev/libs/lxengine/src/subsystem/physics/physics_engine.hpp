@@ -42,6 +42,8 @@ namespace lx0
                 class PhysicsEngine : public IPhysicsEngine
                 {
                 public:
+                                        PhysicsEngine       ();
+
                     virtual void        onAttached          (EnginePtr spEngine);
                     virtual void        onDocumentCreated   (EnginePtr spEngine, DocumentPtr spDocument);
 
@@ -50,9 +52,12 @@ namespace lx0
                     virtual btCollisionShapePtr     acquireBoxShape     (const glgeom::vector3f& halfBounds);
                     virtual btCollisionShapePtr     acquireCapsuleShape (float width, float height);
 
+                    virtual void                    enableSimulation    (bool bEnable);
+                    
                     virtual void                    setGravity          (const glgeom::vector3f& gravity);
                 
                 protected:
+                    bool                        mEnableSimulation;
                     glgeom::vector3f            mGravity;
 
                     ShapeCache<SphereKey>       mSphereShapeCache;

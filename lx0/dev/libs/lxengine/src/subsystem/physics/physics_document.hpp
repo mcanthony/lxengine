@@ -59,10 +59,13 @@ namespace lx0
 
                     virtual void    onUpdate            (DocumentPtr spDocument);
 
+                    virtual void    enableSimulation    (bool bEnable);
                     virtual void    setGravity          (const glgeom::vector3f& gravity);
 
                     virtual void    addToWorld          (btRigidBody* pRigidBody);
                     virtual void    removeFromWorld     (btRigidBody* pRigidBody);
+                    virtual btCollisionWorld* getWorld  (void);
+
 
 
                     void            setWindVelocity     (float v)           { mfWindVelocity = v; }
@@ -77,6 +80,8 @@ namespace lx0
 
                     float               mfWindVelocity;
                     glgeom::vector3f    mWindDirection;
+
+                    bool                                                    mEnableSimulation;
 
                     std::shared_ptr<btBroadphaseInterface>                  mspBroadphase;
                     std::shared_ptr<btDefaultCollisionConfiguration>        mspCollisionConfiguration;

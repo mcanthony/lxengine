@@ -30,8 +30,11 @@
 #include <lx0/lxengine.hpp>
 #include <lx0/subsystem/physics.hpp>
 #include <lx0/util/misc.hpp>
+#include <glgeom/ext/primitive_buffer.hpp>
 
 #include <bullet/btBulletDynamicsCommon.h>
+
+#include "mwphysics.hpp"
 
 using namespace lx0;
 
@@ -118,7 +121,8 @@ protected:
         //
         {
             btVector3 fallInertia(0, 0, 0);
-            mspShape->calculateLocalInertia(mass, fallInertia);
+            if (mass > 0.0f)
+                mspShape->calculateLocalInertia(mass, fallInertia);
 
             btRigidBody::btRigidBodyConstructionInfo rigidBodyCI (mass, mspMotionState.get(), mspShape.get(), fallInertia);
             mspRigidBody.reset( new btRigidBody(rigidBodyCI) );
@@ -155,115 +159,101 @@ class InstanceElem : public PhysicsElem
 {
 public:
     InstanceElem (lx0::ElementPtr spElement)
-    {
-    }
-    virtual void getWorldTransform(glgeom::point3f& position, glgeom::quatf& orientation)  {}
-    virtual void setWorldTransform(const glgeom::point3f& position, const glgeom::quatf& orientation) {}
-};
-
-class PlayerElem : public PhysicsElem
-{
-public:
-    PlayerElem (lx0::ElementPtr spElement)
         : mpElement (spElement.get())
     {
-        auto spPhysics = Engine::acquire()->getComponent<IPhysicsEngine>();
+        auto& primitive = spElement->value()["primitive"].unwrap<glgeom::primitive_buffer>();
 
-        // 2 m tall x .5 m wide, and 68 kgs
+        glgeom::point3f position;
+        glgeom::quatf   orientation;
+        getWorldTransform(position, orientation);
+
         //
-        auto position = spElement->value()["position"].unwrap2<glgeom::point3f>();
-        auto spShape = spPhysics->acquireCapsuleShape(.25f, 1.0f);
-        _initialize(spElement, position, glgeom::quatf(), spShape, 68.0f);
+        // Create a bullet mesh
+        //
+		btTriangleIndexVertexArray* meshInterface = new btTriangleIndexVertexArray;
+		btIndexedMesh part;
+		part.m_vertexBase = (const unsigned char*)&primitive.vertex.positions[0];
+		part.m_vertexStride = sizeof(primitive.vertex.positions[0]);
+		part.m_numVertices = primitive.vertex.positions.size();
+		part.m_triangleIndexBase = (const unsigned char*)&primitive.indices[0];
+		part.m_triangleIndexStride = sizeof(primitive.indices[0]) * 3;
+		part.m_numTriangles = primitive.indices.size() / 3;
+		part.m_indexType = PHY_SHORT;
+		meshInterface->addIndexedMesh(part,PHY_SHORT);
 
-        mspRigidBody->setDamping(0.3f, 0.7f);
-        mspRigidBody->setFriction(0.15f);
-        mspRigidBody->setRestitution(0.1f);
+		bool	useQuantizedAabbCompression = true;
+		std::shared_ptr<btBvhTriangleMeshShape> spShape (new btBvhTriangleMeshShape(meshInterface, useQuantizedAabbCompression));
+
+        _initialize(spElement, position, orientation, spShape, 0.0f);
     }
 
     virtual void getWorldTransform(glgeom::point3f& position, glgeom::quatf& orientation)
     {
-        position = mpElement->value()["position"].unwrap2<glgeom::point3f>();
-        orientation = glgeom::quatf(1, 0, 0, 0);
-    }
-
-    virtual void setWorldTransform(const glgeom::point3f& position, const glgeom::quatf& orientation)
-    {
-        mpElement->value()["position"].unwrap2<glgeom::point3f>() = position;
-        mpElement->notifyValueChanged();
-    }
-
-    lx0::Element*   mpElement;
-};
-
-class PlayerElem2 : public PhysicsElem
-{
-public:
-    PlayerElem2 (lx0::ElementPtr spElement)
-        : mpElement (spElement.get())
-    {
-        auto spPhysics = Engine::acquire()->getComponent<IPhysicsEngine>();
-
-        // 2 m tall x .5 m wide, and 68 kgs
         //
-        auto position = spElement->value()["position"].unwrap2<glgeom::point3f>();
-        auto spShape = spPhysics->acquireCapsuleShape(.25f, 1.0f);
-        _initialize(spElement, position, glgeom::quatf(), spShape, 68.0f);
+        // This is quite inefficient: bullet wants a btTransform, which can be constructed
+        // directly from an glm::mat4 - *but* the wrapper layer currently forces us to 
+        // convert to position + orientation form.  Fix this layer.
+        //
+        auto& transform = mpElement->value()["transform"].unwrap<glgeom::mat4f>();
 
-        mspRigidBody->setAngularFactor(0.05f);
-        mspRigidBody->setDamping(0.9f, 0.9f);
-        mspRigidBody->setFriction(0.15f);
-        mspRigidBody->setRestitution(0.1f);
+        btTransform t;
+        t.setFromOpenGLMatrix(glm::value_ptr(transform));
+        auto origin = t.getOrigin();
+        auto orient = t.getRotation();
+
+        position = glgeom::point3f(origin.x(), origin.y(), origin.z());
+        orientation = glgeom::quatf(orient.w(), orient.x(), orient.y(), orient.z());
     }
 
-    virtual void onValueChange (ElementPtr spElem)
+    virtual void setWorldTransform(const glgeom::point3f& position, const glgeom::quatf& orientation) 
     {
-        auto position = mpElement->value()["position"].unwrap2<glgeom::point3f>();
-        
-        // The position has changed from what Bullet thinks the position is...shove the object in
-        // that direction.
-        auto delta = position - mPositionBt;
-        if (!glgeom::is_zero_length(delta))
-        {
-            float magnitude = length(delta);
-            if (magnitude < 100.0f)
-            {
-                btVector3 v = mspRigidBody->getLinearVelocity();
-                v.setX(10 * delta.x);
-                v.setY(10 * delta.y);
-                v.setZ( (v.z() < 0) ? (v.z() + 30 * delta.z) : delta.z );
-                mspRigidBody->setLinearVelocity(  v );
-            }
-            else
-            {
-                spElem->document()->getComponent<IPhysicsDoc>()->removeFromWorld(mspRigidBody.get());
-                spElem->document()->getComponent<IPhysicsDoc>()->addToWorld(mspRigidBody.get());
-            }
-        }
+        assert(0);
     }
-
-    virtual void getWorldTransform(glgeom::point3f& position, glgeom::quatf& orientation)
-    {
-        position = mpElement->value()["position"].unwrap2<glgeom::point3f>();
-        orientation = glgeom::quatf(1, 0, 0, 0);
-        mPositionBt = position;
-    }
-
-    virtual void setWorldTransform(const glgeom::point3f& position, const glgeom::quatf& orientation)
-    {
-        mPositionBt = position;
-        mpElement->value()["position"].unwrap2<glgeom::point3f>() = position;
-        mpElement->notifyValueChanged();
-    }
-
-    glgeom::point3f     mPositionBt;
-    lx0::Element*       mpElement;
+    Element*    mpElement;
 };
+
+/*
+    Could change this in the future to segment the test into two parts:
+    - The upper core body, which if it collides, then do not move
+    - The legs/feet, which if they collide, try move up some small distance
+      and retest; if that succeeds, then move to that higher position - thus
+      simulating the ability to step up on objects
+ */
+bool 
+MwPhysicsDoc::movePlayer (lx0::ElementPtr spPlayer, const glgeom::vector3f& dir)
+{
+    auto spPhysics = Engine::acquire()->getComponent<IPhysicsEngine>();
+    auto spPhysicsDoc = spPlayer->document()->getComponent<IPhysicsDoc>();
+
+    auto& position = spPlayer->value()["position"].unwrap2<glgeom::point3f>();
+    auto& target   = spPlayer->value()["target"].unwrap2<glgeom::point3f>();
+
+    btVector3 from (position.x, position.y, position.z);
+    btVector3 to   (position.x + dir.x, position.y + dir.y, position.z + dir.z);
+
+    btTransform start (btQuaternion(), from);
+    btTransform end   (btQuaternion(), to);
+    auto spShape = spPhysics->acquireCapsuleShape(.25f * 70.0f, 2.0f * 70.0f);
+    auto pWorld = spPhysicsDoc->getWorld();
+    btCollisionWorld::ClosestConvexResultCallback result(from, to);   // switch to NotMe variety eventually
+    pWorld->convexSweepTest((btConvexShape*)spShape.get(), start, end, result);
+            
+    if (!result.hasHit())
+    {
+        position += dir;
+        target += dir;
+        spPlayer->notifyValueChanged();
+        return true;
+    }
+    else
+        return false;
+}
 
 void initializePhysics()
 {
     auto spPhysics = Engine::acquire()->getComponent<IPhysicsEngine>();
+    spPhysics->enableSimulation(false);
     spPhysics->addElementComponent<InstanceElem>("Instance"); 
-    spPhysics->addElementComponent<PlayerElem2>("Player");
 
     // Why 70? 70 Morrowind units approx. equals 1 meter
     spPhysics->setGravity( glgeom::vector3f(0, 0, 70 * -9.821f) );

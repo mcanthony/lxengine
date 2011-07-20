@@ -33,6 +33,7 @@
 #include <lx0/_detail/forward_decls.hpp>
 
 class btRigidBody;
+class btCollisionWorld;
 _LX_FORWARD_DECL_PTRS(btCollisionShape);
 
 namespace lx0
@@ -60,6 +61,8 @@ namespace lx0
                 virtual btCollisionShapePtr     acquireBoxShape     (const glgeom::vector3f& halfBounds) = 0;
                 virtual btCollisionShapePtr     acquireCapsuleShape (float width, float height) = 0;
 
+                virtual void                    enableSimulation    (bool bEnable) = 0;
+
                 virtual void                    setGravity          (const glgeom::vector3f& gravity) = 0;
 
 
@@ -83,10 +86,12 @@ namespace lx0
                 virtual const char* name() const { return "physics"; }
                 static  const char* s_name()     { return "physics"; }
 
-                virtual void    setGravity      (const glgeom::vector3f& gravity) = 0;
+                virtual void    enableSimulation    (bool bEnable) = 0;
+                virtual void    setGravity          (const glgeom::vector3f& gravity) = 0;
 
                 virtual void    addToWorld      (btRigidBody* pRigidBody) = 0;
                 virtual void    removeFromWorld (btRigidBody* pRigidBody) = 0;
+                virtual btCollisionWorld* getWorld (void) = 0;
             };
         }
     }

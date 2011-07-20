@@ -40,7 +40,8 @@ using namespace lx0;
 //===========================================================================//
 
 PhysicsDoc::PhysicsDoc()
-    : mfWindVelocity    (0.0f)
+    : mEnableSimulation (true)
+    , mfWindVelocity    (0.0f)
     , mWindDirection    (-1, 0, 0)
 {
     Engine::acquire()->incObjectCount("Physics");
@@ -263,6 +264,13 @@ PhysicsDoc::_applyCollisonActions (DocumentPtr spDocument)
 void 
 PhysicsDoc::onUpdate (DocumentPtr spDocument)
 {
+    //
+    // The physics sub-system may be paused or be used as pure collision detection system,
+    // in which case, we do not want the simulation tick to run
+    //
+    if (!mEnableSimulation)
+        return;
+
     // In milliseconds...
     const float kFps = 60.0f;
     const unsigned int kFrameDurationMs = unsigned int( (1.0f / kFps) * 1000.0f );
@@ -285,6 +293,12 @@ PhysicsDoc::onUpdate (DocumentPtr spDocument)
     }
 }
 
+void 
+PhysicsDoc::enableSimulation (bool bEnable)
+{
+    mEnableSimulation = bEnable;
+}
+
 void    
 PhysicsDoc::setGravity (const glgeom::vector3f& gravity)
 {
@@ -302,3 +316,10 @@ PhysicsDoc::removeFromWorld (btRigidBody* pRigidBody)
 {
     mspDynamicsWorld->removeRigidBody(pRigidBody);
 }
+
+btCollisionWorld* 
+PhysicsDoc::getWorld (void)
+{
+    return mspDynamicsWorld.get();
+}
+
