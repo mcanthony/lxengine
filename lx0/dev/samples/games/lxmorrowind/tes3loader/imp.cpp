@@ -368,6 +368,39 @@ void BsaCollection::initialize (const char* path)
 
 //===========================================================================//
 
+
+struct LandscapeTexture
+{
+    LandscapeTexture (ESMIterator& iter)
+    {
+        while (!iter.sub_done())
+        {
+            switch (iter.sub_id())
+            {
+            case kId_NAME:
+                name = iter.read_string();
+                break;
+            case kId_INTV:
+                value = iter.read();
+                break;
+            case kId_DATA:
+                // The texture name is null terminated.  We don't want to add the
+                // null character to the end of the std::string or else it will be
+                // included as part of the string itself (causing problems later on).
+                //
+                texture.resize( iter.sub_size() - 1);
+                iter.read(&texture[0], texture.size());
+                break;
+            }
+            iter.next_sub();
+        }
+    }
+
+    std::string name;
+    std::string texture;
+    int         value;      //?
+};
+
 struct Index
 {
 public:
@@ -419,7 +452,7 @@ public:
             case kId_LEVI:      
             case kId_LIGH:
             case kId_LOCK:
-            case kId_LTEX:
+            //case kId_LTEX:
             case kId_MISC:
             case kId_NPC_:
             case kId_PROB:
@@ -429,6 +462,18 @@ public:
             case kId_STAT:
             case kId_WEAP:
                 names.insert(std::make_pair(iter.read_string(), &headers.back()));
+                break;
+
+            //
+            // Special case LTEX while the landscape texturing is still being figured out...
+            //
+            case kId_LTEX:
+                {
+                    LandscapeTexture tex(iter);
+                    auto name = tex.name;
+                    names.insert(std::make_pair(name, &headers.back()));
+                    landscapeTextures.push_back(&headers.back());
+                }
                 break;
 
             //
@@ -497,6 +542,7 @@ public:
 
     std::vector<RecordHeader>                   headers;
     std::map<std::string, RecordHeader*>        names;
+    std::vector<RecordHeader*>                  landscapeTextures;
     std::map<std::pair<int,int>, RecordHeader*> landscapes;
 };
 
@@ -562,9 +608,19 @@ struct Landscape
                 }
                 break;
 
+            case kId_VTEX:
+                {
+                    // Still working on figuring out what these values mean
+                    textureId.resize(16 * 16);
+                    iter.read(&textureId[0], textureId.size());
+
+                    // Are these IDs based on the order of the LTEX records?
+                    // How do these map from id to LTEX?
+                }
+                break;
+
             case kId_DATA:
             case kId_VCLR:
-            case kId_VTEX:
             case kId_WNAM:
             default:
                 {
@@ -580,8 +636,9 @@ struct Landscape
 
     int gridX;
     int gridY;
-    std::vector<float> vertexHeight;
+    std::vector<float>            vertexHeight;
     std::vector<glgeom::vector3f> vertexNormal;
+    std::vector<lx0::uint16>      textureId;
 
     std::vector<char> vertexColor;
     std::vector<char> vertexUvs;
@@ -608,34 +665,6 @@ struct Door
     }
     std::string name;
     std::string model;
-};
-
-struct LandscapeTexture
-{
-    LandscapeTexture (ESMIterator& iter)
-    {
-        while (!iter.sub_done())
-        {
-            switch (iter.sub_id())
-            {
-            case kId_NAME:
-                name = iter.read_string();
-                break;
-            case kId_INTV:
-                value = iter.read();
-                break;
-            case kId_DATA:
-                texture.resize( iter.sub_size() );
-                iter.read(&texture[0], texture.size());
-                break;
-            }
-            iter.next_sub();
-        }
-    }
-
-    std::string name;
-    std::string texture;
-    int         value;      //?
 };
 
 struct Armor
@@ -766,6 +795,7 @@ public:
     std::string             name;
     lx0::uint32             flags;
     int                     grid[2];
+    float                   waterHeight;
     std::string             region;
     std::vector<char>       nam5;           // ?
     std::vector<Reference>  references;
@@ -805,6 +835,8 @@ void loadCell (Cell& cell, Stream& stream, RecordHeader& recordHeader)
 {
     ESMIterator iter(stream, recordHeader);
 
+    cell.waterHeight = 0.0f;
+
     bool done = false;
     while (!done && !iter.sub_done()) 
     { 
@@ -824,6 +856,9 @@ void loadCell (Cell& cell, Stream& stream, RecordHeader& recordHeader)
             break;
         case kId_RGNN:
             cell.region = iter.read_string();
+            break;
+        case kId_WHGT:
+            cell.waterHeight = iter.read();
             break;
         case kId_NAM5:
             cell.nam5.resize( iter.sub_size() );
@@ -874,6 +909,23 @@ void loadEsmFile (std::string filenameStr, Index& index)
     }
 }
 
+void _resolveTextureName (material_handle& material)
+{
+    // Apparently Bethesda's level designers/artists used full res TGAs in the editor
+    // and the production system automatically mapped these files to compressed DDS equivalents.
+    // And apparently a BMP or two as well...
+    //
+    // Also, it appears all look-ups are case insensative given that ESM and BSA names
+    // do not always have consistent casing.
+    //
+    boost::to_lower(material.handle);
+    if (boost::ends_with(material.handle, ".tga") || boost::ends_with(material.handle, ".bmp"))
+        material.handle = material.handle.substr(0, material.handle.length() - 4) + ".dds";
+
+    material.handle = std::string("textures\\") + material.handle;
+    material.format = "DDS";
+}
+
 glm::mat4 _transform(Reference& ref)
 {
     glm::mat4 mrot  = glm::gtx::euler_angles::eulerAngleYXZ(-ref.rotation.y, -ref.rotation.x, -ref.rotation.z);
@@ -894,6 +946,24 @@ public:
         mBsaSet.initialize(path);
     }
 
+    void _resolveMaterial (material_handle& material)
+    {
+        if (!material.handle.empty())
+        {
+            _resolveTextureName(material);
+                                
+            std::string name = material.handle;
+            if (mBsaSet.getEntry(name).first)
+            {
+                material.callback = [this, name]() {
+                    return mBsaSet.getTextureStream(name);
+                };
+            }
+            else
+                lx_warn("Model references texture that doesn't exist '%s'", name.c_str());
+        }
+    }
+
     std::shared_ptr<scene_group> _getModel(Reference& ref, std::string modelName)
     {
         auto subgroup = mBsaSet.getModel("meshes\\", modelName);
@@ -904,28 +974,8 @@ public:
             // Account for the cell reference transform in addition to the native transform in 
             // model itself.
             kt->transform = transform * kt->transform;
+            _resolveMaterial(kt->material);
 
-            if (!kt->material.handle.empty())
-            {
-                // Apparently Bethesda's level designers/artists used full res TGAs in the editor
-                // and the production system automatically mapped these files to compressed DDS equivalents.
-                // And apparently a BMP or two as well...
-                if (boost::ends_with(kt->material.handle, ".tga") || boost::ends_with(kt->material.handle, ".bmp"))
-                    kt->material.handle = kt->material.handle.substr(0, kt->material.handle.length() - 4) + ".dds";
-
-                kt->material.handle = std::string("textures\\") + kt->material.handle;
-                kt->material.format = "DDS";
-                                
-                std::string name = kt->material.handle;
-                if (mBsaSet.getEntry(name).first)
-                {
-                    kt->material.callback = [this, name]() {
-                        return mBsaSet.getTextureStream(name);
-                    };
-                }
-                else
-                    lx_warn("Model references texture that doesn't exist '%s'", name.c_str());
-            }
         }
 
         return subgroup;
@@ -957,6 +1007,8 @@ public:
                 std::shared_ptr<glgeom::primitive_buffer> spPrimitive (new glgeom::primitive_buffer);
                 spPrimitive->vertex.positions.resize(65 * 65);
                 spPrimitive->vertex.normals.resize(65 * 65);
+                spPrimitive->vertex.uv.resize(1);
+                spPrimitive->vertex.uv[0].resize(65 * 65);
                 for (int y = 0; y < 65; ++y)
                 {
                     for (int x = 0; x < 65; ++x)
@@ -969,6 +1021,8 @@ public:
                         spPrimitive->bbox.merge(v);
 
                         spPrimitive->vertex.normals[offset] = landscape.vertexNormal[offset];
+
+                        spPrimitive->vertex.uv[0][offset].vec = glm::vec2(x / 4.0f, y / 4.0f);
                     }
                 }
 
@@ -991,7 +1045,45 @@ public:
                 instance inst;
                 inst.primitive = *spPrimitive;
                 inst.transform = glm::translate(glm::mat4(), glm::vec3(landscape.gridX * 8192, landscape.gridY * 8192, 0.0f));
+                
+                LandscapeTexture ltex( ESMIterator(stream, *mEsmIndex.landscapeTextures[3]) );
+                inst.material.handle = ltex.texture;
+                _resolveMaterial(inst.material);
+                
                 group.instances.push_back(inst);
+
+                //
+                // Add water
+                //
+                {
+                    instance inst;
+                    
+                    inst.primitive.vertex.positions.resize(4);
+                    inst.primitive.vertex.positions[0] = glgeom::point3f(0, 0, 0);
+                    inst.primitive.vertex.positions[1] = glgeom::point3f(0, 8192, 0);
+                    inst.primitive.vertex.positions[2] = glgeom::point3f(8192, 8192, 0);
+                    inst.primitive.vertex.positions[3] = glgeom::point3f(8192, 0, 0);
+                    inst.primitive.vertex.normals.resize(4);
+                    inst.primitive.vertex.normals[0] = glgeom::vector3f(0, 0, 1);                   
+                    inst.primitive.vertex.normals[1] = glgeom::vector3f(0, 0, 1);                   
+                    inst.primitive.vertex.normals[2] = glgeom::vector3f(0, 0, 1);                   
+                    inst.primitive.vertex.normals[3] = glgeom::vector3f(0, 0, 1);                   
+                    inst.primitive.indices.resize(6);
+                    inst.primitive.indices[0] = 0;
+                    inst.primitive.indices[1] = 1;
+                    inst.primitive.indices[2] = 2;
+                    inst.primitive.indices[3] = 0;
+                    inst.primitive.indices[4] = 2;
+                    inst.primitive.indices[5] = 3;
+
+                    // Is water height fixed for exteriors?
+                    inst.transform = glm::translate(glm::mat4(), glm::vec3(landscape.gridX * 8192, landscape.gridY * 8192, 0));
+
+                    // TEMP: special-case handle
+                    inst.material.handle = "WATER";
+
+                    group.instances.push_back(inst);
+                }
             }
             else
                 std::cout << "Could not find landscape at grid location\n";

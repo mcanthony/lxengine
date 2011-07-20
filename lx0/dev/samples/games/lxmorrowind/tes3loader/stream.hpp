@@ -69,6 +69,7 @@ public:
     {
         mFin.read((char*)data, count);
     }
+    void read (lx0::int16* data, size_t count) { mFin.read((char*)data, sizeof(data[0]) * count); }
 
     void read5 (char* data)
     {

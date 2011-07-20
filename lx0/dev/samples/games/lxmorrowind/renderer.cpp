@@ -115,16 +115,21 @@ public:
         lx0::RenderList instances;
         for (auto it = mInstances.begin(); it != mInstances.end(); ++it)
         {
-            const auto& bsphere = (*it)->bsphere;
+            bool cull = false;
 
+            const auto& bsphere = (*it)->bsphere;
             if (false && bsphere.is_finite())
             {
                 const auto& mat = (*it)->spTransform->mat;
-                if (glgeom::distance(mat * bsphere.center, viewPoint) < 500.0f + 1.25f * bsphere.radius)
-                    instances.push_back(0, *it);
+                if (glgeom::distance(mat * bsphere.center, viewPoint) > 500.0f + 1.25f * bsphere.radius)
+                    cull = true;
             }
-            else
-                instances.push_back(0, *it);
+
+            if (!cull)
+            {
+                int layer = ((*it)->spMaterial->mBlend == true) ? 1 : 0;
+                instances.push_back(layer, *it);
+            }
         }
 
         mspRasterizer->beginFrame(algorithm);
@@ -186,6 +191,19 @@ public:
 
     lx0::MaterialPtr _buildMaterial (material_handle& material)
     {
+        // TEMP: special-case
+        if (material.handle == "WATER")
+        {
+            lx0::lxvar graph;
+            graph["_type"] = "solid_rgba";
+            graph["color"] = lx0::lxvar(0.388235294f, 0.615686275f, 0.776470588f, .4f);
+
+            auto desc = mShaderBuilder.buildShaderGLSL(graph);
+            auto spMaterial = mspRasterizer->createMaterial(desc.uniqueName, desc.source, desc.parameters);
+            spMaterial->mBlend = true;
+            return spMaterial;
+        }
+
         //
         // First call the texture source callback to get a pointer to the data
         // and create a texture and cache it away.

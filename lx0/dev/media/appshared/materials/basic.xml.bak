@@ -1,0 +1,81 @@
+<Library>
+  
+  <!-- Common shaders -->
+  <Material2 id="normal_shader">
+    {
+      graph : {
+        _type : "normal",
+      }
+    }
+  </Material2>
+  <Material2 id="normal2_shader">
+    {
+      graph : {
+        _type : "normal2",
+      }
+    }
+  </Material2>
+
+  <Material2 id="phong_checker">
+    {
+    graph : {
+    _type : "phong",
+    diffuse : {
+    _type : "checker",
+    color0 : [ .2, .1, .1 ],
+    color1 : [ 1, 1, 1 ],
+    uv : { _type : "cube", scale : [ 1, 1 ] },
+    },
+    specular : [ 1, 1, 1 ],
+    specularEx : 96
+    }
+    }
+  </Material2>
+
+  <Material2 id="white_spec96">
+    {
+    graph : {
+    _type : "phong",
+    diffuse : [ 1, 1, 1 ],
+    specular : [ 1, 1, 1 ],
+    specularEx : 96
+    }
+    }
+  </Material2>
+
+  <!-- Primary colors -->
+  <Material2 id="red">
+    {
+    graph : {
+      _type : "phong",
+      diffuse : [ 1, 0, 0],
+      }
+    }
+  </Material2>
+  <Material2 id="green">
+    {
+    graph : {
+    _type : "phong",
+    diffuse : [ 0, 1, 0]
+    }
+    }
+  </Material2>
+  <Material2 id="blue">
+    {
+    graph : {
+    _type : "phong",
+    diffuse : [ 0, 0, 1]
+    }
+    }
+  </Material2>
+  <Material2 id="yellow">
+    {
+    graph : {
+    _type : "phong",
+    diffuse : [ 1, 1, 0],
+    }
+    }
+  </Material2>
+  
+  
+</Library>

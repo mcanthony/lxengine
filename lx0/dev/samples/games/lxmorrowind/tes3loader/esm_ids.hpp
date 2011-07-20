@@ -130,6 +130,7 @@ enum
     _MAKE_ID(V,N,M,L),
     _MAKE_ID(V,T,E,X),
     _MAKE_ID(W,E,A,P),
+    _MAKE_ID(W,H,G,T),
     _MAKE_ID(W,N,A,M),
     _MAKE_ID(X,S,C,L),
 };

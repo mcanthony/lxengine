@@ -28,7 +28,10 @@
 //===========================================================================//
 
 #include <iostream>
+#include <boost/format.hpp>
 #include <lx0/lxengine.hpp>
+#include <glgeom/prototype/image.hpp>
+#include <lx0/prototype/misc.hpp>
 
 #include <ddraw.h>
 #include <GL3/gl3w_modified.hpp>
@@ -37,6 +40,26 @@
 #define GL_COMPRESSED_RGBA_S3TC_DXT1_EXT                  0x83F1
 #define GL_COMPRESSED_RGBA_S3TC_DXT3_EXT                  0x83F2
 #define GL_COMPRESSED_RGBA_S3TC_DXT5_EXT                  0x83F3
+
+static void _dumpTextureToDisk(GLuint id)
+{
+#ifdef _DEBUG
+    static int count = 0;
+
+    int w, h;
+    glGetTexLevelParameteriv (GL_TEXTURE_2D, 0, GL_TEXTURE_WIDTH, &w);
+    glGetTexLevelParameteriv (GL_TEXTURE_2D, 0, GL_TEXTURE_HEIGHT, &h);
+    
+    glgeom::image3f image(w, h);
+    
+
+    glPixelStorei(GL_PACK_ALIGNMENT, 1);
+    glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+    glGetTexImage(GL_TEXTURE_2D, 0, GL_RGB, GL_FLOAT, image.ptr());
+
+    lx0::save_png(image, boost::str( boost::format("dds_texture_%04d.png") % (count++) ).c_str());
+#endif
+}
 
 GLuint _loadDDS(std::istream& stream)
 {
@@ -107,6 +130,10 @@ GLuint _loadDDS(std::istream& stream)
             mipmapWidth  = std::max(mipmapWidth / 2, 1);
             mipmapHeight = std::max(mipmapHeight / 2, 1);
         }
+
+        if (false)
+            _dumpTextureToDisk(id);
+
     }
     else
         lx_error("Does not appear to be a valid DDS stream!");
