@@ -28,20 +28,36 @@
 
 #pragma once
 
+//===========================================================================//
+//! Simplified physics model used by LxMorrowind
+/*!
+    LxMorrowind uses a very simple physics model that is not physically accurate.
+    As such, the Bullet physics simulation is disabled and this class handles
+    the simplified "simulation" required to move objects around the world. 
+    Bullet is used solely as a collision detection system with this class 
+    handling the interaction.
+
+    Why isn't Bullet simulation used?  It's actually more complex/accurate than 
+    is desired.  For example, there is no desire for torsion, angle changes, etc.
+    on the player; rather making Bullet behave in a physically inaccurate manner 
+    by disabling all these attributes / setting very high damping values / 
+    setting zero multipliers, it's literally easier to simply move the objects
+    around via a simple physics model implemented here.
+ */
 class MwPhysicsDoc : public lx0::Document::Component
 {
 public:
     virtual const char*     name() const { return s_name(); }
     static  const char*     s_name()     { return "mwphysics"; }
 
-    MwPhysicsDoc();
+                    MwPhysicsDoc        (void);
 
     virtual void    onUpdate            (lx0::DocumentPtr spDocument);
 
 
-    void    enableGravity   (bool bEnable);
-    bool    gravityEnabled  (void) const { return mbEnableGravity; }
-    bool    movePlayer      (lx0::ElementPtr spPlayer, const glgeom::vector3f& step);
+    void            enableGravity       (bool bEnable);
+    bool            gravityEnabled      (void) const { return mbEnableGravity; }
+    bool            movePlayer          (lx0::ElementPtr spPlayer, const glgeom::vector3f& step);
 
 protected:
     bool        mbEnableGravity;

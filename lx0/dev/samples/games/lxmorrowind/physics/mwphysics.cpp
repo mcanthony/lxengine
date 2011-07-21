@@ -6,6 +6,8 @@
 
     Copyright (c) 2011 athile@athile.net (http://www.athile.net)
 
+    MIT License: http://www.opensource.org/licenses/mit-license.php
+
     Permission is hereby granted, free of charge, to any person obtaining a 
     copy of this software and associated documentation files (the "Software"), 
     to deal in the Software without restriction, including without limitation 
@@ -26,18 +28,32 @@
 */
 //===========================================================================//
 
+
+//===========================================================================//
+//   H E A D E R S   &   D E C L A R A T I O N S 
+//===========================================================================//
+
 #include <iostream>
+
 #include <lx0/lxengine.hpp>
 #include <lx0/subsystem/physics.hpp>
 #include <lx0/util/misc.hpp>
 #include <glgeom/ext/primitive_buffer.hpp>
-
 #include <bullet/btBulletDynamicsCommon.h>
 
 #include "mwphysics.hpp"
 
 using namespace lx0;
 
+//===========================================================================//
+//   PhysicsElem
+//===========================================================================//
+
+/*
+    Base class for elements to be added to the IPhysicsDoc's World.  
+    Eventually this should be moved out of the sample and into the SDK,
+    however it needs more testing before promoting it into the SDK.
+ */
 class PhysicsElem : public lx0::Element::Component
 {
 public:
@@ -86,9 +102,10 @@ protected:
         PhysicsElem* mpObject;
     };
 
-
-
-
+    /*
+        Should be called by the constructor of the derivde class to set up the
+        internals of this base class.
+     */
     void _initialize(lx0::ElementPtr spElement,
                      glgeom::point3f position, 
                      glgeom::quatf   orientation,
@@ -103,35 +120,45 @@ protected:
         }
 
         //
-        // Create the motion state
+        // Create the motion state: this is the interface by which bullet
+        // will query the initial position/orientation of the object being
+        // added as well as then report back changes in position/orientation
+        // back to object as the simulation runs.  This motion state implementation
+        // passes the get/set calls onto the derived class' virtual functions.
         //
         {
             mspMotionState.reset( new MotionState(this) );
         }
 
         //
-        // Set the shape
+        // Set the shape used for the object in the collision detection.
         //
         {
             mspShape = spShape;
         }
 
         //
-        // Connect them all into a rigid body
+        // Connect the shape and motion state into a rigid body
         //
         {
+            // Inertia is proportional to mass; for zero mass, immovable objects,
+            // the inertia is zero.
             btVector3 fallInertia(0, 0, 0);
             if (mass > 0.0f)
+            {
                 mspShape->calculateLocalInertia(mass, fallInertia);
+            }
 
             btRigidBody::btRigidBodyConstructionInfo rigidBodyCI (mass, mspMotionState.get(), mspShape.get(), fallInertia);
             mspRigidBody.reset( new btRigidBody(rigidBodyCI) );
 
+            // Create a backlink to the source Element so collsion results can
+            // figure out which user object was actually involved.
             mspRigidBody->setUserPointer( spElement.get() );
         }
 
         //
-        // Add it to the world
+        // Finally, add the rigid body to the world
         //
         {
             mpPhysicsDoc->addToWorld(mspRigidBody.get());
@@ -140,6 +167,9 @@ protected:
 
     void _cleanup()
     {
+        //
+        // Remove things in the right order to avoid crashes
+        //
         if (mspRigidBody)
             mpPhysicsDoc->removeFromWorld(mspRigidBody.get());
 
@@ -149,12 +179,21 @@ protected:
         mpPhysicsDoc = nullptr;
     }
 
+protected:
     IPhysicsDoc*                        mpPhysicsDoc;
     std::unique_ptr<btMotionState>      mspMotionState;
     std::unique_ptr<btRigidBody>        mspRigidBody;
     std::shared_ptr<btCollisionShape>   mspShape;
 };
 
+//===========================================================================//
+//   InstanceElem
+//===========================================================================//
+
+/*
+    LxMorrowind specific class that creates the appropriate physics data for
+    an "Instance" Element.
+ */
 class InstanceElem : public PhysicsElem
 {
 public:
@@ -183,7 +222,11 @@ public:
 
 		bool	useQuantizedAabbCompression = true;
 		std::shared_ptr<btBvhTriangleMeshShape> spShape (new btBvhTriangleMeshShape(meshInterface, useQuantizedAabbCompression));
-
+        
+        //
+        // Now that the location and shape are known, use the common initializer to 
+        // get this object into the Bullet world
+        //
         _initialize(spElement, position, orientation, spShape, 0.0f);
     }
 
@@ -205,16 +248,27 @@ public:
         orientation = glgeom::quatf(orient.w(), orient.x(), orient.y(), orient.z());
     }
 
+    //
+    // Currently, this class represents a static, immovable object.  This method is
+    // required as part of the interface, but if all is working properly, it will never
+    // be called.
+    //
     virtual void setWorldTransform(const glgeom::point3f& position, const glgeom::quatf& orientation) 
     {
-        assert(0);
+        lx_error("Unexpected call! This is supposed to be an immovable object.");
     }
+
+protected:
     Element*    mpElement;
 };
 
+//===========================================================================//
+//  MwPhysicsDoc
+//===========================================================================//
+
 MwPhysicsDoc::MwPhysicsDoc()
-    : mbEnableGravity (false)
-    , mLastUpdate (0)
+    : mbEnableGravity   (false)
+    , mLastUpdate       (0)
 {
 }
 
@@ -228,21 +282,32 @@ void
 MwPhysicsDoc::onUpdate (DocumentPtr spDocument)
 {
    lx0::uint32 now = lx0::lx_milliseconds();
-
-   if (now - mLastUpdate > 16)
+   int         delta = now - mLastUpdate;
+   if (delta > 16)
    {
-       mLastUpdate = now;
+        // Cap the most ticks that can occur in a cycle 
+        delta = std::min(delta, 256);
 
-       if (mbEnableGravity)
-       {
-           auto  spPlayer = spDocument->getElementsByTagName("Player")[0];
-           auto& velocity = spPlayer->value()["velocity"].unwrap2<glgeom::vector3f>();
+        auto  spPlayer = spDocument->getElementsByTagName("Player")[0];
+        auto& velocity = spPlayer->value()["velocity"].unwrap2<glgeom::vector3f>();
 
-           velocity.z += 20 * (70 * -9.821) * 0.016;
-
-           if (!movePlayer(spPlayer, velocity * 0.016))
-               velocity.z = 0;
-       }
+        while (delta > 16)
+        {
+            if (mbEnableGravity)
+            {
+                // Gravity is ~9.81 m/s^2 (in some places) on earth.  Morrowind units are 1/70th a meter
+                // so that's 70 * 9.81 units/s^2.  And each tick is supposed to be 16 ms.
+                //
+                // So why is there another 20x factor?  Not sure yet...but it doesn't look right
+                // without it.
+                //
+                velocity.z += (70 * -9.81) * 0.016;
+                if (!movePlayer(spPlayer, velocity * 0.016))
+                    velocity.z = 0;
+            }
+            delta -= 16;
+        }
+        mLastUpdate = now - (delta%16);
    }
 }
 
@@ -256,7 +321,7 @@ _tryMove (IPhysicsEnginePtr spPhysics, IPhysicsDocPtr spPhysicsDoc, const glgeom
     btTransform start (btQuaternion(), from);
     btTransform end   (btQuaternion(), to);
     
-    auto spShape = spPhysics->acquireCapsuleShape(.025f * 70.0f, .20f * 70.0f);
+    auto spShape = spPhysics->acquireCapsuleShape(70.0f, 140.0f);
     auto pWorld = spPhysicsDoc->getWorld();
 
     btCollisionWorld::ClosestConvexResultCallback result(from, to); 
@@ -269,6 +334,8 @@ static
 void
 _setOnGround (IPhysicsEnginePtr spPhysics, IPhysicsDocPtr spPhysicsDoc, glgeom::point3f& position, glgeom::point3f& target)
 {
+    return; 
+
     btVector3 from (position.x, position.y, position.z);
     btVector3 to   (position.x, position.y, position.z - 8 * 70.0f);
 
@@ -317,7 +384,7 @@ MwPhysicsDoc::movePlayer (lx0::ElementPtr spPlayer, const glgeom::vector3f& dir)
         spPlayer->notifyValueChanged();
         return true;
     }
-    else if (_tryMove(spPhysics, spPhysicsDoc, position + stepHeight, dir))
+    else if (false && _tryMove(spPhysics, spPhysicsDoc, position + stepHeight, dir))
     {
         position += stepHeight + dir;
         target += stepHeight + dir;
@@ -332,9 +399,13 @@ MwPhysicsDoc::movePlayer (lx0::ElementPtr spPlayer, const glgeom::vector3f& dir)
 void initializePhysics()
 {
     auto spPhysics = Engine::acquire()->getComponent<IPhysicsEngine>();
-    spPhysics->enableSimulation(false);
-    spPhysics->addElementComponent<InstanceElem>("Instance"); 
 
-    // Why 70? 70 Morrowind units approx. equals 1 meter
-    spPhysics->setGravity( glgeom::vector3f(0, 0, 70 * -9.821f) );
+    //
+    // Disable Bullet simulation.  Why?  Because MwPhysicsDoc handles the
+    // very simplified physics model - which is easier than coercing the Bullet simulation
+    // into the non-physical model that LxMorrowind desires.
+    //
+    spPhysics->enableSimulation(false);
+
+    spPhysics->addElementComponent<InstanceElem>("Instance"); 
 }
