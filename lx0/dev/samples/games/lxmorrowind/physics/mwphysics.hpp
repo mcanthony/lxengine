@@ -34,6 +34,16 @@ public:
     virtual const char*     name() const { return s_name(); }
     static  const char*     s_name()     { return "mwphysics"; }
 
+    MwPhysicsDoc();
 
-    bool    movePlayer  (lx0::ElementPtr spPlayer, const glgeom::vector3f& step);
+    virtual void    onUpdate            (lx0::DocumentPtr spDocument);
+
+
+    void    enableGravity   (bool bEnable);
+    bool    gravityEnabled  (void) const { return mbEnableGravity; }
+    bool    movePlayer      (lx0::ElementPtr spPlayer, const glgeom::vector3f& step);
+
+protected:
+    bool        mbEnableGravity;
+    lx0::uint32 mLastUpdate;
 };

@@ -1063,12 +1063,16 @@ public:
                             }
                         }
 
-                        size_t textureId = landscape.textureId[cy * 16 + cx];
+                        //
+                        // Presumably texture 0 means "NONE" so add 1 before offesting into the 
+                        // LTEX array?
+                        //
+                        size_t textureId = landscape.textureId[cy * 16 + cx] + 1;
                         size_t neighborId[4];
-                        neighborId[0] = landscape.textureId[((cy > 0) ? (cy - 1) : cy) * 16 + cx];
-                        neighborId[1] = landscape.textureId[cy * 16 + ((cx < 15) ? (cx + 1) : cx)];
-                        neighborId[2] = landscape.textureId[((cy < 15) ? (cy + 1) : cy) * 16 + cx];
-                        neighborId[3] = landscape.textureId[cy * 16 + ((cx > 0) ? (cx - 1) : cx)];
+                        neighborId[0] = landscape.textureId[((cy > 0) ? (cy - 1) : cy) * 16 + cx] + 1;
+                        neighborId[1] = landscape.textureId[cy * 16 + ((cx < 15) ? (cx + 1) : cx)] + 1;
+                        neighborId[2] = landscape.textureId[((cy < 15) ? (cy + 1) : cy) * 16 + cx] + 1;
+                        neighborId[3] = landscape.textureId[cy * 16 + ((cx > 0) ? (cx - 1) : cx)] + 1;
 
 
 

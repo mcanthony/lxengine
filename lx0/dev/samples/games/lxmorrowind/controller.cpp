@@ -57,6 +57,11 @@ public:
             _handleMove(spElem, evt, step, position, target);
             spElem->notifyValueChanged();
         }
+        else if (evt == "toggle_gravity")
+        {
+            auto spMwPhysics = mpDocument->getComponent<MwPhysicsDoc>();
+            spMwPhysics->enableGravity( !spMwPhysics->gravityEnabled() );
+        }
     }
 
 protected:

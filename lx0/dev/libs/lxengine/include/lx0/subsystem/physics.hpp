@@ -36,12 +36,16 @@ class btRigidBody;
 class btCollisionWorld;
 _LX_FORWARD_DECL_PTRS(btCollisionShape);
 
+
 namespace lx0
 {
     namespace subsystem
     {
         namespace physics_ns
         {
+            _LX_FORWARD_DECL_PTRS(IPhysicsEngine);
+            _LX_FORWARD_DECL_PTRS(IPhysicsDoc);
+
             /*!
                 
              */

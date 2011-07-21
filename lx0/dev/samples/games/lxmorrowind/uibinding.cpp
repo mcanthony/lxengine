@@ -35,6 +35,15 @@ using namespace lx0;
 class UIBindingImp : public lx0::UIBinding
 {
 public:
+    virtual void onKeyDown (ViewPtr spView, int keyCode) 
+    {
+        switch (keyCode)
+        {
+        case KC_G:
+            spView->document()->sendEvent("toggle_gravity");
+            break;
+        }
+    }
 
     virtual void updateFrame (ViewPtr spView, const KeyboardState& keyboard)
     {

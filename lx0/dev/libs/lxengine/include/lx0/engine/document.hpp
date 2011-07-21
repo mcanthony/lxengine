@@ -126,7 +126,7 @@ namespace lx0
         void                    updateRun       (void);
         void                    endRun          (void);
 
-        void                    sendEvent       (std::string evt, lx0::lxvar params);
+        void                    sendEvent       (std::string evt, lx0::lxvar params = lxvar());
         void                    addController   (Controller* pController);
 
         void                    notifyAttached          (ComponentPtr spComponent) { spComponent->onAttached(shared_from_this()); }

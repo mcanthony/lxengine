@@ -212,6 +212,85 @@ public:
     Element*    mpElement;
 };
 
+MwPhysicsDoc::MwPhysicsDoc()
+    : mbEnableGravity (false)
+    , mLastUpdate (0)
+{
+}
+
+void    
+MwPhysicsDoc::enableGravity (bool bEnable)
+{
+    mbEnableGravity = bEnable;
+}
+
+void    
+MwPhysicsDoc::onUpdate (DocumentPtr spDocument)
+{
+   lx0::uint32 now = lx0::lx_milliseconds();
+
+   if (now - mLastUpdate > 16)
+   {
+       mLastUpdate = now;
+
+       if (mbEnableGravity)
+       {
+           auto  spPlayer = spDocument->getElementsByTagName("Player")[0];
+           auto& velocity = spPlayer->value()["velocity"].unwrap2<glgeom::vector3f>();
+
+           velocity.z += 20 * (70 * -9.821) * 0.016;
+
+           if (!movePlayer(spPlayer, velocity * 0.016))
+               velocity.z = 0;
+       }
+   }
+}
+
+static
+bool 
+_tryMove (IPhysicsEnginePtr spPhysics, IPhysicsDocPtr spPhysicsDoc, const glgeom::point3f& position, const glgeom::vector3f& dir)
+{
+    btVector3 from (position.x, position.y, position.z);
+    btVector3 to   (position.x + dir.x, position.y + dir.y, position.z + dir.z);
+
+    btTransform start (btQuaternion(), from);
+    btTransform end   (btQuaternion(), to);
+    
+    auto spShape = spPhysics->acquireCapsuleShape(.025f * 70.0f, .20f * 70.0f);
+    auto pWorld = spPhysicsDoc->getWorld();
+
+    btCollisionWorld::ClosestConvexResultCallback result(from, to); 
+    pWorld->convexSweepTest((btConvexShape*)spShape.get(), start, end, result);
+
+    return !result.hasHit();
+}
+
+static
+void
+_setOnGround (IPhysicsEnginePtr spPhysics, IPhysicsDocPtr spPhysicsDoc, glgeom::point3f& position, glgeom::point3f& target)
+{
+    btVector3 from (position.x, position.y, position.z);
+    btVector3 to   (position.x, position.y, position.z - 8 * 70.0f);
+
+    btTransform start (btQuaternion(), from);
+    btTransform end   (btQuaternion(), to);
+    
+    auto pWorld = spPhysicsDoc->getWorld();
+
+    btCollisionWorld::ClosestRayResultCallback result(from, to); 
+    pWorld->rayTest(from, to, result);
+
+    if (result.hasHit())
+    {
+        float deltaZ = position.z - result.m_hitPointWorld.z();
+        if (deltaZ > 0.0f && deltaZ < 155.0f)
+        {
+            position.z += 155.0f - deltaZ;
+            target.z += 155.0f - deltaZ;
+        }
+    }
+}
+
 /*
     Could change this in the future to segment the test into two parts:
     - The upper core body, which if it collides, then do not move
@@ -228,20 +307,21 @@ MwPhysicsDoc::movePlayer (lx0::ElementPtr spPlayer, const glgeom::vector3f& dir)
     auto& position = spPlayer->value()["position"].unwrap2<glgeom::point3f>();
     auto& target   = spPlayer->value()["target"].unwrap2<glgeom::point3f>();
 
-    btVector3 from (position.x, position.y, position.z);
-    btVector3 to   (position.x + dir.x, position.y + dir.y, position.z + dir.z);
+    const glgeom::vector3f stepHeight (0.0f, 0.0f, 10.0f);
 
-    btTransform start (btQuaternion(), from);
-    btTransform end   (btQuaternion(), to);
-    auto spShape = spPhysics->acquireCapsuleShape(.25f * 70.0f, 2.0f * 70.0f);
-    auto pWorld = spPhysicsDoc->getWorld();
-    btCollisionWorld::ClosestConvexResultCallback result(from, to);   // switch to NotMe variety eventually
-    pWorld->convexSweepTest((btConvexShape*)spShape.get(), start, end, result);
-            
-    if (!result.hasHit())
+    if (_tryMove(spPhysics, spPhysicsDoc, position, dir))
     {
         position += dir;
         target += dir;
+        _setOnGround(spPhysics, spPhysicsDoc, position, target);
+        spPlayer->notifyValueChanged();
+        return true;
+    }
+    else if (_tryMove(spPhysics, spPhysicsDoc, position + stepHeight, dir))
+    {
+        position += stepHeight + dir;
+        target += stepHeight + dir;
+        _setOnGround(spPhysics, spPhysicsDoc, position, target);
         spPlayer->notifyValueChanged();
         return true;
     }

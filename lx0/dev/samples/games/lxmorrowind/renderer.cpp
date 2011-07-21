@@ -118,7 +118,7 @@ public:
             bool cull = false;
 
             const auto& bsphere = (*it)->bsphere;
-            if (bsphere.is_finite())
+            if (false && bsphere.is_finite())
             {
                 const auto& mat = (*it)->spTransform->mat;
                 if (glgeom::distance(mat * bsphere.center, viewPoint) > 500.0f + 1.25f * bsphere.radius)
