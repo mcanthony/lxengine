@@ -1004,53 +1004,106 @@ public:
                 Landscape landscape(ESMIterator(stream, *it->second));
                 std::cout << "Landscape found at grid location\n";
 
-                std::shared_ptr<glgeom::primitive_buffer> spPrimitive (new glgeom::primitive_buffer);
-                spPrimitive->vertex.positions.resize(65 * 65);
-                spPrimitive->vertex.normals.resize(65 * 65);
-                spPrimitive->vertex.uv.resize(1);
-                spPrimitive->vertex.uv[0].resize(65 * 65);
-                for (int y = 0; y < 65; ++y)
+                //
+                // The landscape is composed of 4x4 blocks that share the same texture.
+                // The landscape as a whole has 16x16 of these (64x64 total).  So build
+                // 256 primitives to represent this, but then merge the ones that share
+                // the same texture in order to reduce the number of objects that need
+                // to be drawn (more objects = slower).
+                //
+                // There are more efficient means of dealing with landscapes: (1) Use a shared
+                // 65x65 vertex buffer with 256 (or less) index buffers all referencing that shared
+                // buffer. (2) Retain the fact that this is heightmap when passing it into 
+                // bullet and pass it in as a single primitive. (3) Other I'm sure.  We'll save
+                // this for a later version of LxEngine.
+                //
+                for (int cy = 0; cy < 16; ++cy)
                 {
-                    for (int x = 0; x < 65; ++x)
+                    for (int cx = 0; cx < 16; ++cx)
                     {
-                        int offset = y * 65 + x;
-                        auto& v = spPrimitive->vertex.positions[offset];
-                        v.x = x * 128;
-                        v.y = y * 128;
-                        v.z = landscape.vertexHeight[offset];
-                        spPrimitive->bbox.merge(v);
+                        std::shared_ptr<glgeom::primitive_buffer> spPrimitive (new glgeom::primitive_buffer);
+                        spPrimitive->vertex.positions.resize(5 * 5);
+                        spPrimitive->vertex.normals.resize(5 * 5);
+                        spPrimitive->vertex.uv.resize(1);
+                        spPrimitive->vertex.uv[0].resize(5 * 5);
 
-                        spPrimitive->vertex.normals[offset] = landscape.vertexNormal[offset];
+                        for (int gy = 0; gy < 5; ++gy)
+                        {
+                            for (int gx = 0; gx < 5; ++gx)
+                            {
+                                // OffsetL into the 65x65 landscape grid
+                                // OffsetP into the 5x5 grid cell
+                                int xL = (cx * 4 + gx);
+                                int yL = (cy * 4 + gy);
+                                int offsetL = yL * 65 + xL;
+                                int offsetP = gy * 5 + gx;
 
-                        spPrimitive->vertex.uv[0][offset].vec = glm::vec2(x / 4.0f, y / 4.0f);
+                                auto& p = spPrimitive->vertex.positions[offsetP];
+                                p.x = xL * 128;
+                                p.y = yL * 128;
+                                p.z = landscape.vertexHeight[offsetL];
+
+                                spPrimitive->vertex.normals[offsetP] = landscape.vertexNormal[offsetL];
+                                spPrimitive->vertex.uv[0][offsetP].vec = glm::vec2(gx / 4.0f, gy / 4.0f);
+                            }
+                        }
+
+                        spPrimitive->indices.resize(5 * 5 * 6);     // 2 triangles per cell (3 x 2)
+                        for (int gy = 0; gy < 4; ++gy)
+                        {
+                            for (int gx = 0; gx < 4; ++gx)
+                            {
+                                spPrimitive->indices.push_back( (gy  + 0) * 5 + (gx + 0) ); 
+                                spPrimitive->indices.push_back( (gy  + 1) * 5 + (gx + 0) ); 
+                                spPrimitive->indices.push_back( (gy  + 1) * 5 + (gx + 1) ); 
+
+                                spPrimitive->indices.push_back( (gy  + 1) * 5 + (gx + 1) ); 
+                                spPrimitive->indices.push_back( (gy  + 0) * 5 + (gx + 1) ); 
+                                spPrimitive->indices.push_back( (gy  + 0) * 5 + (gx + 0) ); 
+                            }
+                        }
+
+                        size_t textureId = landscape.textureId[cy * 16 + cx];
+                        size_t neighborId[4];
+                        neighborId[0] = landscape.textureId[((cy > 0) ? (cy - 1) : cy) * 16 + cx];
+                        neighborId[1] = landscape.textureId[cy * 16 + ((cx < 15) ? (cx + 1) : cx)];
+                        neighborId[2] = landscape.textureId[((cy < 15) ? (cy + 1) : cy) * 16 + cx];
+                        neighborId[3] = landscape.textureId[cy * 16 + ((cx > 0) ? (cx - 1) : cx)];
+
+
+
+                        instance inst;
+                        inst.primitive = *spPrimitive;
+                        inst.transform = glm::translate(glm::mat4(), glm::vec3(landscape.gridX * 8192, landscape.gridY * 8192, 0.0f));
+                
+                        lx0::lxvar graph;
+                        graph["_type"] = "phong";
+                        graph["diffuse"]["_type"] = "texture2d_blend5";
+                        graph["diffuse"]["uv"] = "fragUV";
+
+                        LandscapeTexture ltex( ESMIterator(stream, *mEsmIndex.landscapeTextures[textureId]) );
+                        inst.material.handle = ltex.texture;
+                        _resolveMaterial(inst.material);
+
+                        graph["diffuse"]["texture0"] = lx0::lxvar::wrap(std::shared_ptr<material_handle>(new material_handle(inst.material)));
+                        for (size_t i = 0; i < 4; ++i)
+                        {
+                            material_handle material;
+                            int texId  = neighborId[i];
+                            LandscapeTexture ltex( ESMIterator(stream, *mEsmIndex.landscapeTextures[texId]) );
+                            material.handle = ltex.texture;
+                            _resolveMaterial(material);
+
+                            std::string name = boost::str(boost::format("texture%d") % (i + 1));
+                            graph["diffuse"][name] = lx0::lxvar::wrap(std::shared_ptr<material_handle>(new material_handle(material)));
+
+                        }
+                        inst.material.graph = graph;
+                
+                        group.instances.push_back(inst);
                     }
                 }
 
-                // 64 x 64 quads
-                spPrimitive->indices.reserve(64 * 64 * 6);
-                for (int y = 0; y < 64; ++y)
-                {
-                    for (int x = 0; x < 64; ++x)
-                    {
-                        spPrimitive->indices.push_back( (y  + 0) * 65 + (x + 0) ); 
-                        spPrimitive->indices.push_back( (y  + 1) * 65 + (x + 0) ); 
-                        spPrimitive->indices.push_back( (y  + 1) * 65 + (x + 1) ); 
-
-                        spPrimitive->indices.push_back( (y  + 1) * 65 + (x + 1) ); 
-                        spPrimitive->indices.push_back( (y  + 0) * 65 + (x + 1) ); 
-                        spPrimitive->indices.push_back( (y  + 0) * 65 + (x + 0) ); 
-                    }
-                }
-
-                instance inst;
-                inst.primitive = *spPrimitive;
-                inst.transform = glm::translate(glm::mat4(), glm::vec3(landscape.gridX * 8192, landscape.gridY * 8192, 0.0f));
-                
-                LandscapeTexture ltex( ESMIterator(stream, *mEsmIndex.landscapeTextures[3]) );
-                inst.material.handle = ltex.texture;
-                _resolveMaterial(inst.material);
-                
-                group.instances.push_back(inst);
 
                 //
                 // Add water

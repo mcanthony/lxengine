@@ -179,7 +179,7 @@ public:
 		part.m_triangleIndexStride = sizeof(primitive.indices[0]) * 3;
 		part.m_numTriangles = primitive.indices.size() / 3;
 		part.m_indexType = PHY_SHORT;
-		meshInterface->addIndexedMesh(part,PHY_SHORT);
+		meshInterface->addIndexedMesh(part, PHY_SHORT);
 
 		bool	useQuantizedAabbCompression = true;
 		std::shared_ptr<btBvhTriangleMeshShape> spShape (new btBvhTriangleMeshShape(meshInterface, useQuantizedAabbCompression));

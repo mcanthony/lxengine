@@ -38,11 +38,14 @@ public:
 
     virtual void updateFrame (ViewPtr spView, const KeyboardState& keyboard)
     {
-        const float step = 20.0f;
+        float step = 20.0f;
 
         if (keyboard.bDown[KC_ESCAPE])
             Engine::acquire()->sendEvent("quit");
         
+        if (keyboard.bDown[KC_SHIFT])
+            step *= 8.0f;
+
         if (keyboard.bDown[KC_W])
             spView->document()->sendEvent("move_forward", lxvar(step));
         if (keyboard.bDown[KC_S])

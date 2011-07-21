@@ -1,0 +1,14 @@
+{
+    output : "vec3",
+    uniforms : {
+        unifTexture0 : [ "sampler2D" ],
+        unifTexture1 : [ "sampler2D" ],
+        unifTexture2 : [ "sampler2D" ],
+        unifTexture3 : [ "sampler2D" ],
+        unifTexture4 : [ "sampler2D" ],
+    },
+    input  : {
+        uv     : [ "vec2",   { _type : "spherical" },        "uvMapper" ],
+    },
+    source: "texture2d_blend5.nfrag",
+}

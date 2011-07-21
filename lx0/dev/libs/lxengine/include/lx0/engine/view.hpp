@@ -91,6 +91,10 @@ namespace lx0 { namespace engine { namespace dom_ns {
         KC_ESCAPE,
         KC_SPACE,
 
+        KC_SHIFT,
+        KC_LSHIFT,
+        KC_RSHIFT,
+
         KC_COUNT
     };
 
@@ -124,7 +128,7 @@ namespace lx0 { namespace engine { namespace dom_ns {
     public:
         KeyboardState();
 
-        KeyModifiers    modifers;
+        KeyModifiers    modifiers;
         bool            bDown[KC_COUNT];
     };
 

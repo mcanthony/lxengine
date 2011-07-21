@@ -189,6 +189,25 @@ public:
         }
     }
 
+    lx0::TexturePtr _acquireTexture (material_handle& material)
+    {
+        //
+        // First call the texture source callback to get a pointer to the data
+        // and create a texture and cache it away.
+        //
+        TexturePtr spTexture;
+        auto it = mTextures.find(material.handle);
+        if (it != mTextures.end())
+            spTexture = it->second;
+        else if (material.callback)
+        {
+            auto spStream = material.callback();
+            spTexture = mspRasterizer->createTextureDDS(*spStream);
+            mTextures.insert( std::make_pair(material.handle, spTexture) );
+        }
+        return spTexture;
+    }
+
     lx0::MaterialPtr _buildMaterial (material_handle& material)
     {
         // TEMP: special-case
@@ -204,20 +223,27 @@ public:
             return spMaterial;
         }
 
-        //
-        // First call the texture source callback to get a pointer to the data
-        // and create a texture and cache it away.
-        //
-        TexturePtr spTexture;
-        auto it = mTextures.find(material.handle);
-        if (it != mTextures.end())
-            spTexture = it->second;
-        else if (material.callback)
+        if (material.graph.is_defined())
         {
-            auto spStream = material.callback();
-            spTexture = mspRasterizer->createTextureDDS(*spStream);
-            mTextures.insert( std::make_pair(material.handle, spTexture) );
+            // Ugly special-case...
+            material_handle mat0 = *material.graph["diffuse"]["texture0"].unwrap<std::shared_ptr<material_handle>>();
+            material_handle mat1 = *material.graph["diffuse"]["texture1"].unwrap<std::shared_ptr<material_handle>>();
+            material_handle mat2 = *material.graph["diffuse"]["texture2"].unwrap<std::shared_ptr<material_handle>>();
+            material_handle mat3 = *material.graph["diffuse"]["texture3"].unwrap<std::shared_ptr<material_handle>>();
+            material_handle mat4 = *material.graph["diffuse"]["texture4"].unwrap<std::shared_ptr<material_handle>>();
+
+            auto desc = mShaderBuilder.buildShaderGLSL(material.graph);
+            auto spMaterial = mspRasterizer->createMaterial(desc.uniqueName, desc.source, desc.parameters);
+            spMaterial->mTextures[0] = _acquireTexture(mat0);
+            spMaterial->mTextures[1] = _acquireTexture(mat1);
+            spMaterial->mTextures[2] = _acquireTexture(mat2);
+            spMaterial->mTextures[3] = _acquireTexture(mat3);
+            spMaterial->mTextures[4] = _acquireTexture(mat4);
+
+            return spMaterial;
         }
+
+        auto spTexture = _acquireTexture(material);
 
         //
         // Now build a material that uses that texture

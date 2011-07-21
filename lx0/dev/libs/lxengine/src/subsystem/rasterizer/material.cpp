@@ -128,8 +128,9 @@ Material::activate (RasterizerGL* pRasterizer, GlobalPass& pass)
                 glUniform1i(unifIndex, unit);
 
                 // Activate the corresponding texture unit and set *that* to the GL id
+                const GLuint texId = mTextures[i]->mId;
                 glActiveTexture(GL_TEXTURE0 + unit);
-                glBindTexture(GL_TEXTURE_2D, mTextures[i]->mId);
+                glBindTexture(GL_TEXTURE_2D, texId);
 
                 // Set the parameters on the texture unit
                 glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, mFilter);

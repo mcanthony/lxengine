@@ -1,0 +1,16 @@
+vec3 c;
+
+c = texture2D(unifTexture0, uv).rgb;
+
+vec4 f;
+f.r = ceil(.25 - uv.y) * ((.25 - uv.y) * 4.0);
+f.g = ceil(uv.x - .75) * ((uv.x - .75) * 4.0);
+f.b = ceil(uv.y - .75) * ((uv.y - .75) * 4.0);
+f.a = ceil(.25 - uv.x) * ((.25 - uv.x) * 4.0);
+c += f.r * texture2D(unifTexture1, uv).rgb;
+c += f.g * texture2D(unifTexture2, uv).rgb;
+c += f.b * texture2D(unifTexture3, uv).rgb;
+c += f.a * texture2D(unifTexture4, uv).rgb;
+
+return (c.rgb / (1 + f.r + f.g + f.b + f.a));
+

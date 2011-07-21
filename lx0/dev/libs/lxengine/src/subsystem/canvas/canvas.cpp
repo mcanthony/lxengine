@@ -62,6 +62,9 @@ namespace lx0 { namespace subsystem { namespace canvas_ns { namespace detail {
             {
             case VK_ESCAPE: return KC_ESCAPE;
             case VK_SPACE:  return KC_SPACE;
+            case VK_SHIFT:  return KC_SHIFT;
+            case VK_LSHIFT: return KC_LSHIFT;
+            case VK_RSHIFT: return KC_RSHIFT;
             default:        return 0;
             }
         }
@@ -75,6 +78,16 @@ namespace lx0 { namespace subsystem { namespace canvas_ns { namespace detail {
                 // The most significant bit indicates if the key is down
                 for (int i = 0; i < 256; ++i)
                     lxState.bDown[s_winToLxKey(i)] = !!(winState[i] & 0x80);
+
+                lxState.modifiers.alt = (winState[VK_MENU] & 0x80) ? 1 : 0;
+                lxState.modifiers.lalt = (winState[VK_LMENU] & 0x80) ? 1 : 0;
+                lxState.modifiers.ralt = (winState[VK_RMENU] & 0x80) ? 1 : 0;
+                lxState.modifiers.shift = (winState[VK_SHIFT] & 0x80) ? 1 : 0;
+                lxState.modifiers.lshift = (winState[VK_LSHIFT] & 0x80) ? 1 : 0;
+                lxState.modifiers.rshift = (winState[VK_RSHIFT] & 0x80) ? 1 : 0;
+                lxState.modifiers.ctrl = (winState[VK_CONTROL] & 0x80) ? 1 : 0;
+                lxState.modifiers.lctrl = (winState[VK_LCONTROL] & 0x80) ? 1 : 0;
+                lxState.modifiers.rctrl = (winState[VK_RCONTROL] & 0x80) ? 1 : 0;
 
                 // GetKeyboardState() returns the keyboard state after the events
                 // have been processed - i.e. not the current key if this function
