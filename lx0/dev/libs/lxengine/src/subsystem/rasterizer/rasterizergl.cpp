@@ -201,6 +201,12 @@ RasterizerGL::createTextureDDS (std::istream& stream)
     return spTex;
 }
 
+void 
+RasterizerGL::cacheTexture (std::string name, TexturePtr spTexture)
+{
+    mTextureCache.insert( std::make_pair(name, spTexture) );
+}
+
 
 MaterialPtr 
 RasterizerGL::createMaterial (std::string fragShader)

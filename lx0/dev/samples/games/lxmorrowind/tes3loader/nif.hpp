@@ -30,54 +30,7 @@
 
 #pragma once
 
-#include <string>
-#include <lx0/core/lxvar/lxvar.hpp>
-#include <glgeom/ext/primitive_buffer.hpp>
-#include <glgeom/prototype/std_lights.hpp>
+#include <iostream>
+#include "../lxextensions/material_handle.hpp"
 
-class texture_handle
-{
-public:
-    std::string name;
-    
-    std::string format;
-    std::function< std::shared_ptr<std::istream>() > callback;
-};
-
-//===========================================================================//
-//    G L G E O M   E X T E N S I O N S 
-//===========================================================================//
-
-class instance
-{
-public:
-    lx0::lxvar               material;      //<! name of associated material
-    glgeom::primitive_buffer primitive;
-    glgeom::mat4f            transform;
-};
-
-class scene_group
-{
-public:
-    void merge(scene_group& that);
-
-    std::vector<glgeom::point_light_f>  lights;
-    std::vector<instance>               instances;
-    std::vector<texture_handle>         textures;
-};
-
-template <typename T>
-void append_to (std::vector<T>& dst, std::vector<T>& v)
-{
-    dst.reserve( dst.size() + v.size() );
-    for (auto it = v.begin(); it != v.end(); ++it)
-        dst.push_back(*it);
-}
-
-inline void
-scene_group::merge (scene_group& that)
-{
-    append_to(instances, that.instances);
-    append_to(lights, that.lights);
-    append_to(textures, that.textures);
-}
+std::shared_ptr<scene_group> readNifObject (std::istream& in, std::function<std::string (std::string)> textureNameToId);

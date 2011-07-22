@@ -129,6 +129,12 @@ main (int argc, char** argv)
                 sceneBounds.merge(p0);
                 sceneBounds.merge(p1);
             }
+            for (auto it = group.textures.begin(); it != group.textures.end(); ++it)
+            {
+                auto spElement = spDocument->createElement("Texture");
+                spElement->value( lxvar::wrap(*it) );
+                spGroup->append(spElement);
+            }
             for (auto it = group.lights.begin(); it != group.lights.end(); ++it)
             {
                 auto spElement = spDocument->createElement("Light");

@@ -395,8 +395,13 @@ namespace lx0
                 template <typename T>
                 lxvar lxvar::wrap (const T& native)
                 {
-                    auto pImp = new lxvar_wrapper_imp<T>(native);
-                    return lx0::lxvar(pImp);
+                    if (typeid(T) == typeid(lxvar))
+                        return *reinterpret_cast<const lxvar*>(&native);
+                    else
+                    {
+                        auto pImp = new lxvar_wrapper_imp<T>(native);
+                        return lx0::lxvar(pImp);
+                    }
                 }
                 
                 /*!

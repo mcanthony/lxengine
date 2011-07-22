@@ -301,8 +301,8 @@ MwPhysicsDoc::onUpdate (DocumentPtr spDocument)
                 // So why is there another 20x factor?  Not sure yet...but it doesn't look right
                 // without it.
                 //
-                velocity.z += (70 * -9.81) * 0.016;
-                if (!movePlayer(spPlayer, velocity * 0.016))
+                velocity.z += (70 * -9.81f) * 0.016f;
+                if (!movePlayer(spPlayer, velocity * 0.016f))
                     velocity.z = 0;
             }
             delta -= 16;

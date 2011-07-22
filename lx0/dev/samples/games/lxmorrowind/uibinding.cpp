@@ -39,6 +39,10 @@ public:
     {
         switch (keyCode)
         {
+        case KC_ESCAPE:
+            Engine::acquire()->sendEvent("quit");
+            break;
+
         case KC_G:
             spView->document()->sendEvent("toggle_gravity");
             break;
@@ -48,9 +52,6 @@ public:
     virtual void updateFrame (ViewPtr spView, const KeyboardState& keyboard)
     {
         float step = 20.0f;
-
-        if (keyboard.bDown[KC_ESCAPE])
-            Engine::acquire()->sendEvent("quit");
         
         if (keyboard.bDown[KC_SHIFT])
             step *= 8.0f;

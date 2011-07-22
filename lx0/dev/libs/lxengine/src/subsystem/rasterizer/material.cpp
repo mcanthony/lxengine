@@ -279,6 +279,8 @@ GenericMaterial::activate (RasterizerGL* pRasterizer, GlobalPass& pass)
     //
     if (mParameters.is_defined())
     {
+        int textureCount = 0;
+
         for (auto it = mParameters.begin(); it != mParameters.end(); ++it)
         {
             const std::string uniformName = it.key();
@@ -289,12 +291,48 @@ GenericMaterial::activate (RasterizerGL* pRasterizer, GlobalPass& pass)
             if (index != -1)
             {
                 if (type == "vec2")
+                {
                     glUniform2f(index, value[0].as<float>(), value[1].as<float>());
+                }
                 else if (type == "vec3")
+                {
                     glUniform3f(index, value[0].as<float>(), value[1].as<float>(), value[2].as<float>());
+                }
                 else if (type == "vec4")
+                {
                     glUniform4f(index, value[0].as<float>(), value[1].as<float>(), value[2].as<float>(), value[3].as<float>());
+                }
+                else if (type == "sampler2D")
+                {
+                    auto name = value.as<std::string>();
+                    auto it = pRasterizer->mTextureCache.find(name);
+                    auto spTexture = (it != pRasterizer->mTextureCache.end()) ? it->second : TexturePtr();
+                    if (spTexture)
+                    {
+                        const auto unit = pRasterizer->mContext.textureUnit++;
+
+                        // Set the shader uniform to the *texture unit* containing the texture (NOT
+                        // the GL id of the texture)
+                        glUniform1i(index, unit);
+
+                        // Activate the corresponding texture unit and set *that* to the GL id
+                        const GLuint texId = spTexture->mId;
+                        glActiveTexture(GL_TEXTURE0 + unit);
+                        glBindTexture(GL_TEXTURE_2D, texId);
+
+                        // Set the parameters on the texture unit
+                        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, mFilter);
+                        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, mFilter);
+
+                        textureCount++;
+                    }
+                    else
+                        lx_warn("Could not find referenced texture '%s' in the texture cache.", name.c_str());
+                }
             }
         }
+
+        if (textureCount > 0)
+            glEnable(GL_TEXTURE_2D);
     }
 }

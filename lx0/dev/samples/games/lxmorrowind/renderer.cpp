@@ -146,12 +146,12 @@ public:
         {
             auto& primitive = spElem->value()["primitive"].unwrap<glgeom::primitive_buffer>();
             auto& transform = spElem->value()["transform"].unwrap<glgeom::mat4f>();
-            auto& material = spElem->value()["material"].unwrap<material_handle>();
+            auto& material = spElem->value()["material"];
 
             auto pInstance = new lx0::Instance;
             pInstance->spTransform = mspRasterizer->createTransform(transform);
 
-            if (!material.handle.empty())
+            if (material.is_defined())
                 pInstance->spMaterial = _buildMaterial(material);
             else
                 pInstance->spMaterial = mMaterials.find("phong_checker")->second;
@@ -187,31 +187,18 @@ public:
             auto& light = spElem->value().unwrap<glgeom::point_light_f>();
             mspLightSet->mLights.push_back( mspRasterizer->createLight(light) );
         }
-    }
-
-    lx0::TexturePtr _acquireTexture (material_handle& material)
-    {
-        //
-        // First call the texture source callback to get a pointer to the data
-        // and create a texture and cache it away.
-        //
-        TexturePtr spTexture;
-        auto it = mTextures.find(material.handle);
-        if (it != mTextures.end())
-            spTexture = it->second;
-        else if (material.callback)
+        else if (spElem->tagName() == "Texture")
         {
-            auto spStream = material.callback();
-            spTexture = mspRasterizer->createTextureDDS(*spStream);
-            mTextures.insert( std::make_pair(material.handle, spTexture) );
+            auto& texture = spElem->value().unwrap<texture_handle>();
+            auto spTexture = mspRasterizer->createTextureDDS( *texture.callback() );
+            mspRasterizer->cacheTexture(texture.name, spTexture);
         }
-        return spTexture;
     }
 
-    lx0::MaterialPtr _buildMaterial (material_handle& material)
+    lx0::MaterialPtr _buildMaterial (lx0::lxvar& material)
     {
         // TEMP: special-case
-        if (material.handle == "WATER")
+        if (material.is_string() && material.as<std::string>() == "WATER")
         {
             lx0::lxvar graph;
             graph["_type"] = "solid_rgba";
@@ -223,41 +210,8 @@ public:
             return spMaterial;
         }
 
-        if (material.graph.is_defined())
-        {
-            // Ugly special-case...
-            material_handle mat0 = *material.graph["diffuse"]["texture0"].unwrap<std::shared_ptr<material_handle>>();
-            material_handle mat1 = *material.graph["diffuse"]["texture1"].unwrap<std::shared_ptr<material_handle>>();
-            material_handle mat2 = *material.graph["diffuse"]["texture2"].unwrap<std::shared_ptr<material_handle>>();
-            material_handle mat3 = *material.graph["diffuse"]["texture3"].unwrap<std::shared_ptr<material_handle>>();
-            material_handle mat4 = *material.graph["diffuse"]["texture4"].unwrap<std::shared_ptr<material_handle>>();
-
-            auto desc = mShaderBuilder.buildShaderGLSL(material.graph);
-            auto spMaterial = mspRasterizer->createMaterial(desc.uniqueName, desc.source, desc.parameters);
-            spMaterial->mTextures[0] = _acquireTexture(mat0);
-            spMaterial->mTextures[1] = _acquireTexture(mat1);
-            spMaterial->mTextures[2] = _acquireTexture(mat2);
-            spMaterial->mTextures[3] = _acquireTexture(mat3);
-            spMaterial->mTextures[4] = _acquireTexture(mat4);
-
-            return spMaterial;
-        }
-
-        auto spTexture = _acquireTexture(material);
-
-        //
-        // Now build a material that uses that texture
-        //
-        lx0::lxvar graph;
-        graph["_type"] = "phong";
-        graph["diffuse"]["_type"] = "texture2d";
-        graph["diffuse"]["source"] = material.handle;
-        graph["diffuse"]["uv"] = "fragUV";
-
-        auto desc = mShaderBuilder.buildShaderGLSL(graph);
+        auto desc = mShaderBuilder.buildShaderGLSL(material);
         auto spMaterial = mspRasterizer->createMaterial(desc.uniqueName, desc.source, desc.parameters);
-        spMaterial->mTextures[0] = spTexture;
-
         return spMaterial;
     }
 

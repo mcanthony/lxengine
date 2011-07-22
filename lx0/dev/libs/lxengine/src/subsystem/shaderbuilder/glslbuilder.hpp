@@ -83,6 +83,7 @@ namespace lx0
                     void            _processUniforms    (Shader& shader, Context& context, lxvar& graph);
 
                     std::string     _valueToStr         (lxvar type, lxvar value);
+                    std::string     _uniformName        (Context& context, const std::string name);
                     std::string     _formatSource       (Shader& shader);
 
                     NodeMap& mNodes;

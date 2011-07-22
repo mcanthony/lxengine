@@ -168,7 +168,9 @@ GLSLBuilder::_processNode (Shader& shader, Context& context, lxvar& parameters, 
     // Generate the required external uniforms
     _processUniforms(shader, context, node);
 
+    //
     // Generate the node inputs
+    //
     {
         std::stringstream ss;
         int i = 0;
@@ -178,10 +180,11 @@ GLSLBuilder::_processNode (Shader& shader, Context& context, lxvar& parameters, 
             const auto  type = (*it)[0].as<std::string>();
             const auto& defaultValue = (*it)[1];
 
-            ss << type << " n" << id << "_" << argName << " = ";
-
             const auto userValue = graph.find(argName);
             const auto value = userValue.is_defined() ? userValue : defaultValue;
+
+            if (type != "sampler2D")
+                ss << type << " n" << id << "_" << argName << " = ";
 
             if (value.is_map())
             {
@@ -192,7 +195,7 @@ GLSLBuilder::_processNode (Shader& shader, Context& context, lxvar& parameters, 
                 const auto returnValueName = boost::str( boost::format("n%1%_ret") % childId ); 
                 ss << returnValueName;
             }
-            else if (value.is_string())
+            else if (value.is_string() && type != "sampler2D")
             {
                 //
                 // Assume we're dealing with the name of a built-in variable
@@ -204,17 +207,21 @@ GLSLBuilder::_processNode (Shader& shader, Context& context, lxvar& parameters, 
                 shader.mName += "U";
 
                 //
-                // Whether a default value or a user-specified value,
+                // Whether a default value or a user-specified value, in either case
                 // this becomes a uniform.
                 //
-                std::string argUniformName = "unif_";
-                if (!context.mArgumentStack.empty())
-                    argUniformName += boost::join(context.mArgumentStack, "_") + "_";
-                argUniformName += argName;
+                std::string argUniformName = _uniformName(context, argName);
 
+                //
                 // Store the value in the parameter table
+                //
                 parameters[argUniformName][0] = type;
                 parameters[argUniformName][1] = value;
+
+                //
+                // Create the uniform variable controlling this parameter
+                //
+                std::string uniform = boost::str( boost::format("uniform %-10s %-32s") % type % argUniformName );
 
                 // 
                 // Theoretically, the uniforms should *always* be initialized to the default value and
@@ -223,13 +230,21 @@ GLSLBuilder::_processNode (Shader& shader, Context& context, lxvar& parameters, 
                 // the viewer doesn't have to deal with any parameter mapping (i.e. it can just load the
                 // fragment file and be done).
                 //
-                std::string uniform = boost::str( boost::format("uniform %-6s %-32s = %s;") % type % argUniformName % _valueToStr(type, value) );
+                // Note that samplers intentionally do not get assigned a default.
+                //
+                if (type != "sampler2D")
+                    uniform += boost::str( boost::format(" = %s") % _valueToStr(type, value) );
+
+                uniform += ";";
+
                 shader.mUniforms.push_back(uniform);
 
-                ss << argUniformName;
+                if (type != "sampler2D")
+                    ss << argUniformName;
             }
-                
-            ss << ";\n";
+
+            if (type != "sampler2D")
+                ss << ";\n";
             ++i;
         }
 
@@ -237,11 +252,12 @@ GLSLBuilder::_processNode (Shader& shader, Context& context, lxvar& parameters, 
         shader.mSource.push_back(ss.str());
     }
 
+    //
     // Generate the node function call
+    //
     {
         std::stringstream ss;
         
-
         std::string convertPrefix;
         std::string convertPostfix;
         if (requiredOutputType != outputType)
@@ -262,8 +278,14 @@ GLSLBuilder::_processNode (Shader& shader, Context& context, lxvar& parameters, 
         for (auto it = node["input"].begin(); it != node["input"].end(); ++it)
         {
             const auto  argName = it.key();
+            const auto  type = (*it)[0];
 
-            ss << "n" << id << "_" << argName;
+            // As noted above, samples cannot be used as local variables, so pass the uniform in directly
+            if (type == "sampler2D")
+                ss << _uniformName(context, argName);
+            else
+                ss << "n" << id << "_" << argName;
+
             if (i + 1 < node["input"].size())
                 ss << ", ";
             ++i;
@@ -303,6 +325,17 @@ GLSLBuilder::_processUniforms (Shader& shader, Context& context, lxvar& node)
                 shader.mNodeUniforms.push_back(declaration);
         }
     }
+}
+
+std::string
+GLSLBuilder::_uniformName (Context& context, const std::string name)
+{
+    std::string argUniformName = "unif_";
+    if (!context.mArgumentStack.empty())
+        argUniformName += boost::join(context.mArgumentStack, "_") + "_";
+    argUniformName += name;
+
+    return argUniformName;
 }
 
 std::string 

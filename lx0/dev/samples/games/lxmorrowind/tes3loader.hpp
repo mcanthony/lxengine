@@ -34,43 +34,6 @@
 
 #include "lxextensions/material_handle.hpp"
 
-
-//===========================================================================//
-//    G L G E O M   E X T E N S I O N S 
-//===========================================================================//
-
-class instance
-{
-public:
-    material_handle          material;      //<! name of associated material
-    glgeom::primitive_buffer primitive;
-    glgeom::mat4f            transform;
-};
-
-class scene_group
-{
-public:
-    void merge(scene_group& that);
-
-    std::vector<glgeom::point_light_f>  lights;
-    std::vector<instance>       instances;
-};
-
-template <typename T>
-void append_to (std::vector<T>& dst, std::vector<T>& v)
-{
-    dst.reserve( dst.size() + v.size() );
-    for (auto it = v.begin(); it != v.end(); ++it)
-        dst.push_back(*it);
-}
-
-inline void
-scene_group::merge (scene_group& that)
-{
-    append_to(instances, that.instances);
-    append_to(lights, that.lights);
-}
-
 //===========================================================================//
 //    C O M P O N E N T S
 //===========================================================================//

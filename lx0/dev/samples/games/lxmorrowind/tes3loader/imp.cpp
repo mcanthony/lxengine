@@ -42,163 +42,32 @@
 #include <glgeom/prototype/std_lights.hpp>
 #include <lx0/lxengine.hpp>
 
-#include <niflib/niflib.h>
-#include <niflib/obj/NiObject.h>
-#include <niflib/obj/NiNode.h>
-#include <niflib/obj/NiGeometry.h>
-#include <niflib/obj/NiTriShape.h>
-#include <niflib/obj/NiTriShapeData.h>
-#include <niflib/obj/NiMaterialProperty.h>
-#include <niflib/obj/NiTexture.h>
-#include <niflib/obj/NiTextureProperty.h>
-#include <niflib/obj/NiTexturingProperty.h>
-#include <niflib/obj/NiTextureModeProperty.h>
-#include <niflib/obj/NiImage.h>
-#include <niflib/obj/NiRawImageData.h>
-#include <niflib/gen/TexDesc.h>
-#include <niflib/gen/TexSource.h>
-#include <niflib/obj/NiPixelData.h>
-#include <niflib/obj/NiSourceTexture.h>
-
+#include "nif.hpp"
 #include "../tes3loader.hpp"
 #include "esmiterator.hpp"
 #include "esm_ids.hpp"
 
 namespace bfs = boost::filesystem;
 
-//===========================================================================//
-//   I M P L E M E N T A T I O N
-//===========================================================================//
 
-std::shared_ptr<scene_group>
-processNifObject (Niflib::NiObjectRef spObject)
+std::string _resolveTextureName (std::string texture)
 {
-    std::shared_ptr<scene_group> spGroup( new scene_group );
+    // Apparently Bethesda's level designers/artists used full res TGAs in the editor
+    // and the production system automatically mapped these files to compressed DDS equivalents.
+    // And apparently a BMP or two as well...
+    //
+    // Also, it appears all look-ups are case insensative given that ESM and BSA names
+    // do not always have consistent casing.
+    //
+    boost::to_lower(texture);
+    if (boost::ends_with(texture, ".tga") || boost::ends_with(texture, ".bmp"))
+        texture = texture.substr(0, texture.length() - 4) + ".dds";
 
-    if (Niflib::NiNodeRef spNode = Niflib::DynamicCast<Niflib::NiNode>(spObject))
-    {
-        auto children = spNode->GetChildren();
-        for (auto it = children.begin(); it != children.end(); ++it)
-        {
-            if (Niflib::NiTriShapeRef spTriShape = Niflib::DynamicCast<Niflib::NiTriShape>(*it))
-            {
-                if (!spTriShape->GetVisibility())
-                    continue;
-
-                int material = spTriShape->GetActiveMaterial();
-                std::string textureFilename;
-
-                auto properties = spTriShape->GetProperties();
-                for (auto jt = properties.begin(); jt != properties.end(); ++jt)
-                {
-                    if (Niflib::NiMaterialPropertyRef spMaterial = Niflib::DynamicCast<Niflib::NiMaterialProperty>(*jt))
-                    {
-                    }
-                    else if (Niflib::NiTexturingPropertyRef spInfo = Niflib::DynamicCast<Niflib::NiTexturingProperty>(*jt))
-                    {
-                        int count = spInfo->GetTextureCount();
-                        for (int i = 0; i < count; ++i)
-                        {
-                            Niflib::TexDesc desc = spInfo->GetTexture(0);
-                            Niflib::NiSourceTextureRef spSource = desc.source;
-
-                            if (!spSource->IsTextureExternal())
-                            {
-                                Niflib::NiPixelDataRef spData = spSource->GetPixelData();
-                                int width = spData->GetWidth();
-                                int height = spData->GetHeight();
-                                auto texels = spData->GetColors();
-                            }
-                            else
-                            {
-                                textureFilename = spSource->GetTextureFileName();
-                            }
-                        }
-                    }
-                    else if (Niflib::NiTexturePropertyRef spTexture = Niflib::DynamicCast<Niflib::NiTextureProperty>(*jt))
-                    {
-                        Niflib::NiImageRef spImage = spTexture->GetImage();
-                        bool bExternal = spImage->IsTextureExternal();
-                        if (!bExternal)
-                        {
-                            Niflib::NiRawImageDataRef spData = spImage->GetRawImageData();
-                            spData->GetIDString();
-                        }
-                    }
-                }
-                
-                if (Niflib::NiTriBasedGeomDataRef spData = Niflib::DynamicCast<Niflib::NiTriBasedGeomData>(spTriShape->GetData()))
-                {
-                    spGroup->instances.resize( spGroup->instances.size() + 1 );
-                    auto& primitive = spGroup->instances.back().primitive;
-                    auto& transform = spGroup->instances.back().transform;
-
-                    //
-                    // A mesh is being processed, so record the texture filename found earlier.
-                    //
-                    spGroup->instances.back().material.handle = textureFilename;
-                
-                    //
-                    // Let NifLib compute the full transform up to the parent
-                    //
-                    auto world = spTriShape->GetWorldTransform();
-                    for (int i = 0; i < 16; ++i)
-                        transform[i%4][i/4] = world[i%4][i/4];
-
-                    //
-                    // Copy the data from Niflib form to GLGeom form
-                    //
-                    auto indices = spData->GetTriangles();
-                    primitive.indices.reserve(indices.size() * 3);
-                    for (auto it = indices.begin(); it != indices.end(); ++it)
-                    {
-                        primitive.indices.push_back( it->v1 );
-                        primitive.indices.push_back( it->v2 );
-                        primitive.indices.push_back( it->v3 );
-                    }
-                
-                    auto vertices = spData->GetVertices();
-                    primitive.vertex.positions.reserve(vertices.size());
-                    for (auto it = vertices.begin(); it != vertices.end(); ++it)
-                    {
-                        glgeom::point3f p(it->x, it->y, it->z);
-                        primitive.vertex.positions.push_back(p);
-                        primitive.bbox.merge(p);
-                    }
-
-                    auto normals = spData->GetNormals();
-                    primitive.vertex.normals.reserve(vertices.size());
-                    for (auto it = normals.begin(); it != normals.end(); ++it)
-                        primitive.vertex.normals.push_back( glgeom::vector3f(it->x, it->y, it->z) );
-
-                    auto colors = spData->GetColors();
-                    primitive.vertex.colors.reserve(colors.size());
-                    for (auto it = colors.begin(); it != colors.end(); ++it)
-                    {
-                        // Ignore alpha for now
-                        primitive.vertex.colors.push_back( glgeom::color3f(it->r, it->g, it->b) );
-                    }
-
-                    auto channels = spData->GetUVSetCount();
-                    primitive.vertex.uv.resize(channels);
-                    for (short i = 0; i < channels; ++i)
-                    {
-                        auto uv = spData->GetUVSet(i);
-                        primitive.vertex.uv[i].reserve(uv.size());
-                        for (auto it = uv.begin(); it != uv.end(); ++it)
-                            primitive.vertex.uv[i].push_back( glgeom::point2f(it->u, it->v) );
-                    }
-
-                    auto center = spData->GetCenter();
-                    primitive.bsphere.center = glgeom::point3f(center.x, center.y, center.z);
-                    primitive.bsphere.radius = spData->GetRadius();
-                }
-            }
-        }
-    }
-    return spGroup;
+    return std::string("textures\\") + texture;
 }
 
+//===========================================================================//
+// BsaFile
 //===========================================================================//
 
 struct BsaFile
@@ -250,12 +119,9 @@ BsaCollection::getModel (std::string type, std::string name)
                 Stream stream;
                 stream.open(jt->mFilename);
                 stream.seekg(kt->second.offset);
-
-                Niflib::NifInfo info;
-                auto spNifRoot = Niflib::ReadNifTree(stream.stream(), &info);
+                auto spSceneFragment = readNifObject(stream.stream(), _resolveTextureName);
                 stream.close();
-                
-                return processNifObject(spNifRoot);
+                return spSceneFragment;
             }
         }
     }
@@ -790,6 +656,7 @@ struct Reference
 struct Cell
 {
 public:
+    Cell (ESMIterator& iter);
     bool                isInterior () { return !!(flags & 0x01); }
 
     std::string             name;
@@ -801,8 +668,48 @@ public:
     std::vector<Reference>  references;
 };
 
-void loadObjectReferences (Cell& cell, ESMIterator& iter)
+Cell::Cell (ESMIterator& iter)
 {
+    waterHeight = 0.0f;
+
+    bool done = false;
+    while (!done && !iter.sub_done()) 
+    { 
+        switch (iter.sub_id())
+        {
+        case kId_DATA:
+            flags = iter.read();
+            grid[0] = iter.read();
+            grid[1] = iter.read();
+            break;
+        case kId_FRMR:
+            // Object reference list to follow
+            done = true;
+            break;
+        case kId_NAME:
+            name = iter.read_string();
+            break;
+        case kId_RGNN:
+            region = iter.read_string();
+            break;
+        case kId_WHGT:
+            waterHeight = iter.read();
+            break;
+        case kId_NAM5:
+            nam5.resize( iter.sub_size() );
+            iter.read(&nam5[0], nam5.size() );
+            break;
+        default:
+            std::cout << "cell skip: " << iter.sub_name() << std::endl;
+            break;
+        }
+        if (!done)
+            iter.next_sub();
+    }
+
+    //
+    // The main cell definition is followed by 0-N FRMR sub-records
+    //
     while (iter.is_sub(kId_FRMR))
     {
         Reference ref;
@@ -827,59 +734,18 @@ void loadObjectReferences (Cell& cell, ESMIterator& iter)
             }
             iter.next_sub();
         }
-        cell.references.push_back(ref);
+        references.push_back(ref);
     }
 }
 
-void loadCell (Cell& cell, Stream& stream, RecordHeader& recordHeader)
-{
-    ESMIterator iter(stream, recordHeader);
-
-    cell.waterHeight = 0.0f;
-
-    bool done = false;
-    while (!done && !iter.sub_done()) 
-    { 
-        switch (iter.sub_id())
-        {
-        case kId_DATA:
-            cell.flags = iter.read();
-            cell.grid[0] = iter.read();
-            cell.grid[1] = iter.read();
-            break;
-        case kId_FRMR:
-            // Object reference list to follow
-            done = true;
-            break;
-        case kId_NAME:
-            cell.name = iter.read_string();
-            break;
-        case kId_RGNN:
-            cell.region = iter.read_string();
-            break;
-        case kId_WHGT:
-            cell.waterHeight = iter.read();
-            break;
-        case kId_NAM5:
-            cell.nam5.resize( iter.sub_size() );
-            iter.read(&cell.nam5[0], cell.nam5.size() );
-            break;
-        default:
-            std::cout << "cell skip: " << iter.sub_name() << std::endl;
-            break;
-        }
-        if (!done)
-            iter.next_sub();
-    }
-
-    loadObjectReferences(cell, iter);
-}
-
-void loadCell (Cell& cell, Stream& stream, Index& index, const char* name)
+std::shared_ptr<Cell> 
+loadCell (Stream& stream, Index& index, const char* name)
 {
     auto it = index.names.find(name);
     if (it != index.names.end())
-        loadCell(cell, stream, *it->second);
+        return std::shared_ptr<Cell>(new Cell( ESMIterator(stream, *it->second) ) );
+    else
+        return std::shared_ptr<Cell>();
 }
 
 
@@ -909,23 +775,6 @@ void loadEsmFile (std::string filenameStr, Index& index)
     }
 }
 
-void _resolveTextureName (material_handle& material)
-{
-    // Apparently Bethesda's level designers/artists used full res TGAs in the editor
-    // and the production system automatically mapped these files to compressed DDS equivalents.
-    // And apparently a BMP or two as well...
-    //
-    // Also, it appears all look-ups are case insensative given that ESM and BSA names
-    // do not always have consistent casing.
-    //
-    boost::to_lower(material.handle);
-    if (boost::ends_with(material.handle, ".tga") || boost::ends_with(material.handle, ".bmp"))
-        material.handle = material.handle.substr(0, material.handle.length() - 4) + ".dds";
-
-    material.handle = std::string("textures\\") + material.handle;
-    material.format = "DDS";
-}
-
 glm::mat4 _transform(Reference& ref)
 {
     glm::mat4 mrot  = glm::gtx::euler_angles::eulerAngleYXZ(-ref.rotation.y, -ref.rotation.x, -ref.rotation.z);
@@ -946,16 +795,16 @@ public:
         mBsaSet.initialize(path);
     }
 
-    void _resolveMaterial (material_handle& material)
+    void _resolveTexture (texture_handle& handle)
     {
-        if (!material.handle.empty())
+        if (!handle.name.empty())
         {
-            _resolveTextureName(material);
+            handle.name = _resolveTextureName(handle.name);
                                 
-            std::string name = material.handle;
+            std::string name = handle.name;
             if (mBsaSet.getEntry(name).first)
             {
-                material.callback = [this, name]() {
+                handle.callback = [this, name]() {
                     return mBsaSet.getTextureStream(name);
                 };
             }
@@ -974,8 +823,10 @@ public:
             // Account for the cell reference transform in addition to the native transform in 
             // model itself.
             kt->transform = transform * kt->transform;
-            _resolveMaterial(kt->material);
-
+        }
+        for (auto kt = subgroup->textures.begin(); kt != subgroup->textures.end(); ++kt)
+        {
+            _resolveTexture(*kt);
         }
 
         return subgroup;
@@ -988,17 +839,16 @@ public:
         Stream stream;
         stream.open(mEsmFilename);
         
-        Cell cell;
-        loadCell(cell, stream, mEsmIndex, id);
+        auto spCell = loadCell(stream, mEsmIndex, id);
 
-        std::cout << "Interior = " << (cell.isInterior() ? "yes" : "no") << std::endl;
-        std::cout << "Region = " << cell.region << std::endl;
-        std::cout << boost::format("Grid = %d, %d\n") % cell.grid[0] % cell.grid[1];
-        std::cout << "References = " << cell.references.size() << std::endl;
+        std::cout << "Interior = " << (spCell->isInterior() ? "yes" : "no") << std::endl;
+        std::cout << "Region = " << spCell->region << std::endl;
+        std::cout << boost::format("Grid = %d, %d\n") % spCell->grid[0] % spCell->grid[1];
+        std::cout << "References = " << spCell->references.size() << std::endl;
 
-        if (!cell.isInterior())
+        if (!spCell->isInterior())
         {
-            auto it = mEsmIndex.landscapes.find(std::make_pair(cell.grid[0], cell.grid[1]));
+            auto it = mEsmIndex.landscapes.find(std::make_pair(spCell->grid[0], spCell->grid[1]));
             if (it != mEsmIndex.landscapes.end())
             {
                 Landscape landscape(ESMIterator(stream, *it->second));
@@ -1039,9 +889,11 @@ public:
                                 int offsetP = gy * 5 + gx;
 
                                 auto& p = spPrimitive->vertex.positions[offsetP];
-                                p.x = xL * 128;
-                                p.y = yL * 128;
+                                p.x = xL * 128.0f;
+                                p.y = yL * 128.0f;
                                 p.z = landscape.vertexHeight[offsetL];
+
+                                spPrimitive->bbox.merge(p);
 
                                 spPrimitive->vertex.normals[offsetP] = landscape.vertexNormal[offsetL];
                                 spPrimitive->vertex.uv[0][offsetP].vec = glm::vec2(gx / 4.0f, gy / 4.0f);
@@ -1063,6 +915,8 @@ public:
                             }
                         }
 
+                        spPrimitive->bsphere = glgeom::bsphere3f(spPrimitive->bbox);
+
                         //
                         // Presumably texture 0 means "NONE" so add 1 before offesting into the 
                         // LTEX array?
@@ -1074,8 +928,6 @@ public:
                         neighborId[2] = landscape.textureId[((cy < 15) ? (cy + 1) : cy) * 16 + cx] + 1;
                         neighborId[3] = landscape.textureId[cy * 16 + ((cx > 0) ? (cx - 1) : cx)] + 1;
 
-
-
                         instance inst;
                         inst.primitive = *spPrimitive;
                         inst.transform = glm::translate(glm::mat4(), glm::vec3(landscape.gridX * 8192, landscape.gridY * 8192, 0.0f));
@@ -1086,23 +938,25 @@ public:
                         graph["diffuse"]["uv"] = "fragUV";
 
                         LandscapeTexture ltex( ESMIterator(stream, *mEsmIndex.landscapeTextures[textureId]) );
-                        inst.material.handle = ltex.texture;
-                        _resolveMaterial(inst.material);
+                        texture_handle texture;
+                        texture.name = ltex.texture;
+                        _resolveTexture(texture);
+                        group.textures.push_back(texture);
 
-                        graph["diffuse"]["texture0"] = lx0::lxvar::wrap(std::shared_ptr<material_handle>(new material_handle(inst.material)));
+                        graph["diffuse"]["texture0"] = texture.name;
                         for (size_t i = 0; i < 4; ++i)
                         {
-                            material_handle material;
                             int texId  = neighborId[i];
                             LandscapeTexture ltex( ESMIterator(stream, *mEsmIndex.landscapeTextures[texId]) );
-                            material.handle = ltex.texture;
-                            _resolveMaterial(material);
+                            texture_handle texture;
+                            texture.name = ltex.texture;
+                            _resolveTexture(texture);
 
                             std::string name = boost::str(boost::format("texture%d") % (i + 1));
-                            graph["diffuse"][name] = lx0::lxvar::wrap(std::shared_ptr<material_handle>(new material_handle(material)));
-
+                            graph["diffuse"][name] = texture.name;
+                            group.textures.push_back(texture);
                         }
-                        inst.material.graph = graph;
+                        inst.material = graph;
                 
                         group.instances.push_back(inst);
                     }
@@ -1137,7 +991,7 @@ public:
                     inst.transform = glm::translate(glm::mat4(), glm::vec3(landscape.gridX * 8192, landscape.gridY * 8192, 0));
 
                     // TEMP: special-case handle
-                    inst.material.handle = "WATER";
+                    inst.material = "WATER";
 
                     group.instances.push_back(inst);
                 }
@@ -1146,7 +1000,7 @@ public:
                 std::cout << "Could not find landscape at grid location\n";
         }
 
-        for (auto it = cell.references.begin(); it != cell.references.end(); ++it)
+        for (auto it = spCell->references.begin(); it != spCell->references.end(); ++it)
         {
             auto jt = mEsmIndex.names.find(it->name);
             if (jt != mEsmIndex.names.end())

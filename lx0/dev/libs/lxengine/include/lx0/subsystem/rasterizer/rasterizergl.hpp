@@ -164,6 +164,7 @@ namespace lx0
 
                 TexturePtr      createTexture               (const char* filename);
                 TexturePtr      createTextureDDS            (std::istream& stream);
+                void            cacheTexture                (std::string name, TexturePtr spTexture);
 
                 TransformPtr    createTransform             (glm::mat4& mat);
                 TransformPtr    createTransform             (float tx, float ty, float tz);
@@ -243,9 +244,12 @@ namespace lx0
 
                 std::unique_ptr<GLInterface>      gl;
 
-                std::map<std::string, GLuint>   mCachePrograms;
-                std::list<ResourcePtr>          mResources;
-                std::vector<TexturePtr>         mTextures;
+                std::map<std::string, GLuint>       mCachePrograms;
+                std::list<ResourcePtr>              mResources;
+                std::vector<TexturePtr>             mTextures;
+            public:
+                std::map<std::string,TexturePtr>    mTextureCache;      //!< @todo Replace with a more sophisicated, formal cache
+            protected:
 
                 bool                            mInited;
                 bool                            mShutdown;
