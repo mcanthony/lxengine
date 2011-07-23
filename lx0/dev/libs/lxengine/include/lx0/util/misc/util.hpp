@@ -63,6 +63,7 @@ namespace lx0 { namespace util { namespace misc {
 
             void            start       (void)      { mStart = _ticks(); }
             void            stop        (void)      { mTotal += _ticks() - mStart; mCount++; mStart = 0; }
+            lx0::uint32     reset       (void)      { stop(); lx0::uint32 total = totalMs(); *this = Timer(); return total; }
 
             int             count       (void) const { return mCount; }
             double          averageMs   (void) const { return (lx0::uint32)(mTotal * 1000 / (_ticksPerSec() * mCount)); } 

@@ -41,6 +41,7 @@
 #include <glm/gtx/euler_angles.hpp>
 #include <glgeom/prototype/std_lights.hpp>
 #include <lx0/lxengine.hpp>
+#include <lx0/util/misc.hpp>
 
 #include "nif.hpp"
 #include "../tes3loader.hpp"
@@ -822,7 +823,7 @@ public:
         {
             // Account for the cell reference transform in addition to the native transform in 
             // model itself.
-            kt->transform = transform * kt->transform;
+            *kt->spTransform = transform * (*kt->spTransform);
         }
         for (auto kt = subgroup->textures.begin(); kt != subgroup->textures.end(); ++kt)
         {
@@ -929,8 +930,8 @@ public:
                         neighborId[3] = landscape.textureId[cy * 16 + ((cx > 0) ? (cx - 1) : cx)] + 1;
 
                         instance inst;
-                        inst.primitive = *spPrimitive;
-                        inst.transform = glm::translate(glm::mat4(), glm::vec3(landscape.gridX * 8192, landscape.gridY * 8192, 0.0f));
+                        inst.spPrimitive = spPrimitive;
+                        inst.spTransform = std::shared_ptr<glm::mat4>(new glm::mat4( glm::translate(glm::mat4(), glm::vec3(landscape.gridX * 8192, landscape.gridY * 8192, 0.0f)) ));
                 
                         lx0::lxvar graph;
                         graph["_type"] = "phong";
@@ -969,26 +970,26 @@ public:
                 {
                     instance inst;
                     
-                    inst.primitive.vertex.positions.resize(4);
-                    inst.primitive.vertex.positions[0] = glgeom::point3f(0, 0, 0);
-                    inst.primitive.vertex.positions[1] = glgeom::point3f(0, 8192, 0);
-                    inst.primitive.vertex.positions[2] = glgeom::point3f(8192, 8192, 0);
-                    inst.primitive.vertex.positions[3] = glgeom::point3f(8192, 0, 0);
-                    inst.primitive.vertex.normals.resize(4);
-                    inst.primitive.vertex.normals[0] = glgeom::vector3f(0, 0, 1);                   
-                    inst.primitive.vertex.normals[1] = glgeom::vector3f(0, 0, 1);                   
-                    inst.primitive.vertex.normals[2] = glgeom::vector3f(0, 0, 1);                   
-                    inst.primitive.vertex.normals[3] = glgeom::vector3f(0, 0, 1);                   
-                    inst.primitive.indices.resize(6);
-                    inst.primitive.indices[0] = 0;
-                    inst.primitive.indices[1] = 1;
-                    inst.primitive.indices[2] = 2;
-                    inst.primitive.indices[3] = 0;
-                    inst.primitive.indices[4] = 2;
-                    inst.primitive.indices[5] = 3;
+                    inst.spPrimitive->vertex.positions.resize(4);
+                    inst.spPrimitive->vertex.positions[0] = glgeom::point3f(0, 0, 0);
+                    inst.spPrimitive->vertex.positions[1] = glgeom::point3f(0, 8192, 0);
+                    inst.spPrimitive->vertex.positions[2] = glgeom::point3f(8192, 8192, 0);
+                    inst.spPrimitive->vertex.positions[3] = glgeom::point3f(8192, 0, 0);
+                    inst.spPrimitive->vertex.normals.resize(4);
+                    inst.spPrimitive->vertex.normals[0] = glgeom::vector3f(0, 0, 1);                   
+                    inst.spPrimitive->vertex.normals[1] = glgeom::vector3f(0, 0, 1);                   
+                    inst.spPrimitive->vertex.normals[2] = glgeom::vector3f(0, 0, 1);                   
+                    inst.spPrimitive->vertex.normals[3] = glgeom::vector3f(0, 0, 1);                   
+                    inst.spPrimitive->indices.resize(6);
+                    inst.spPrimitive->indices[0] = 0;
+                    inst.spPrimitive->indices[1] = 1;
+                    inst.spPrimitive->indices[2] = 2;
+                    inst.spPrimitive->indices[3] = 0;
+                    inst.spPrimitive->indices[4] = 2;
+                    inst.spPrimitive->indices[5] = 3;
 
-                    // Is water height fixed for exteriors?
-                    inst.transform = glm::translate(glm::mat4(), glm::vec3(landscape.gridX * 8192, landscape.gridY * 8192, 0));
+                    // Is water height fixed at 0 for exteriors?
+                    *inst.spTransform = glm::translate(glm::mat4(), glm::vec3(landscape.gridX * 8192, landscape.gridY * 8192, 0));
 
                     // TEMP: special-case handle
                     inst.material = "WATER";
@@ -1002,6 +1003,9 @@ public:
 
         for (auto it = spCell->references.begin(); it != spCell->references.end(); ++it)
         {
+            lx0::Timer tmLoad;
+            tmLoad.start();
+
             auto jt = mEsmIndex.names.find(it->name);
             if (jt != mEsmIndex.names.end())
             {
@@ -1010,14 +1014,14 @@ public:
                 switch (jt->second->name_id)
                 {
                     default:
-                        std::cout << "- " << it->name << " (type " << jt->second->name << " not handled)" << std::endl;
+                        std::cout << "- " << jt->second->name << "  " << it->name << " (type not handled)";
                     break;
 
                     case kId_STAT:
                     {
                         StaticModel model (iter);
                         group.merge( *_getModel(*it, model.model) );
-                        std::cout << "+ model " << model.model << "\n";
+                        std::cout << "+ model " << model.model;
                     }
                     break;
 
@@ -1025,7 +1029,7 @@ public:
                     {
                         Armor armor(iter);
                         group.merge( *_getModel(*it, armor.model) );
-                        std::cout << "+ armor " << armor.model << "\n";
+                        std::cout << "+ armor " << armor.model;
                     }
                     break;
 
@@ -1033,7 +1037,7 @@ public:
                     {
                         Container container(iter);
                         group.merge( *_getModel(*it, container.model) );
-                        std::cout << "+ container " << container.model << "\n";
+                        std::cout << "+ container " << container.model;
                     }
                     break;
 
@@ -1041,7 +1045,7 @@ public:
                     {
                         Door door (iter);
                         group.merge( *_getModel(*it, door.model) );
-                        std::cout << "+ door " << door.model << "\n";
+                        std::cout << "+ door " << door.model;
                     }
                     break;
                 
@@ -1071,7 +1075,7 @@ public:
                         if (!esmLight.model.empty())
                             group.merge( *_getModel(*it, esmLight.model) );
 
-                        std::cout << "+ light " << esmLight.name << "\n";
+                        std::cout << "+ light " << esmLight.name;
                     }
                     break;
 
@@ -1079,7 +1083,7 @@ public:
                     {
                         Miscellaneous misc(iter);
                         group.merge( *_getModel(*it, misc.model) );
-                        std::cout << "+ misc " << misc.model << "\n";
+                        std::cout << "+ misc " << misc.model;
                     }
                     break;
 
@@ -1087,6 +1091,9 @@ public:
             }
             else
                 std::cout << "- " << it->name << " (not indexed)" << std::endl;
+
+            tmLoad.stop();
+            std::cout << boost::format(" [%u ms]\n") % tmLoad.totalMs();
         }
         
 

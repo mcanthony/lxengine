@@ -118,14 +118,14 @@ main (int argc, char** argv)
             {
                 ElementPtr spElement = spDocument->createElement("Instance");
                 lxvar value = spElement->value();
-                value["transform"] = lxvar::wrap(it->transform);
-                value["primitive"] = lxvar::wrap(it->primitive);
+                value["transform"] = lxvar::wrap(*it->spTransform);
+                value["primitive"] = lxvar::wrap(*it->spPrimitive);
                 value["material"] = lxvar::wrap(it->material);
                 spElement->value(value);
                 spGroup->append(spElement);
 
-                auto p0 = it->transform * it->primitive.bbox.max;
-                auto p1 = it->transform * it->primitive.bbox.min;
+                auto p0 = (*it->spTransform) * it->spPrimitive->bbox.max;
+                auto p1 = (*it->spTransform) * it->spPrimitive->bbox.min;
                 sceneBounds.merge(p0);
                 sceneBounds.merge(p1);
             }

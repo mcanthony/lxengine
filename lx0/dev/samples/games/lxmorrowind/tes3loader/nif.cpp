@@ -28,6 +28,9 @@
 */
 //===========================================================================//
 
+#include <lx0/lxengine.hpp>
+#include <lx0/util/misc.hpp>
+
 #include <niflib/niflib.h>
 #include <niflib/obj/NiObject.h>
 #include <niflib/obj/NiNode.h>
@@ -52,6 +55,10 @@
 //   I M P L E M E N T A T I O N
 //===========================================================================//
 
+/*
+    Process the Niflib object and covnert it into a generic scene_group
+    structure.
+ */
 static
 std::shared_ptr<scene_group>
 processNifObject (Niflib::NiObjectRef spObject, std::function<std::string (std::string)> textureNameToId)
@@ -65,10 +72,11 @@ processNifObject (Niflib::NiObjectRef spObject, std::function<std::string (std::
         {
             if (Niflib::NiTriShapeRef spTriShape = Niflib::DynamicCast<Niflib::NiTriShape>(*it))
             {
+                // Skip hidden elements
                 if (!spTriShape->GetVisibility())
                     continue;
 
-                int material = spTriShape->GetActiveMaterial();
+                //int material = spTriShape->GetActiveMaterial();
                 std::string textureFilename;
 
                 auto properties = spTriShape->GetProperties();
@@ -113,8 +121,8 @@ processNifObject (Niflib::NiObjectRef spObject, std::function<std::string (std::
                 if (Niflib::NiTriBasedGeomDataRef spData = Niflib::DynamicCast<Niflib::NiTriBasedGeomData>(spTriShape->GetData()))
                 {
                     spGroup->instances.resize( spGroup->instances.size() + 1 );
-                    auto& primitive = spGroup->instances.back().primitive;
-                    auto& transform = spGroup->instances.back().transform;
+                    auto& primitive = *spGroup->instances.back().spPrimitive;
+                    auto& transform = *spGroup->instances.back().spTransform;
 
                     //
                     // A mesh is being processed, so record the texture filename found earlier.
@@ -195,7 +203,16 @@ processNifObject (Niflib::NiObjectRef spObject, std::function<std::string (std::
 std::shared_ptr<scene_group> 
 readNifObject (std::istream& in, std::function<std::string (std::string)> textureNameToId)
 {
+    //
+    // Use Niflib to read the stream into a Niflib data structure
+    //
     Niflib::NifInfo info;
     auto spNifRoot = Niflib::ReadNifTree(in, &info);
-    return processNifObject(spNifRoot, textureNameToId);
+    
+    //
+    // Now convert the Niflib object into a scene_group object
+    //
+    auto spGroup = processNifObject(spNifRoot, textureNameToId);
+    
+    return spGroup;
 }

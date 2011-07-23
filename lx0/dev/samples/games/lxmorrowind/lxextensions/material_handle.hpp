@@ -51,9 +51,19 @@ public:
 class instance
 {
 public:
-    lx0::lxvar               material;      //<! name of associated material
-    glgeom::primitive_buffer primitive;
-    glgeom::mat4f            transform;
+    instance() 
+        : spPrimitive( new glgeom::primitive_buffer )
+        , spTransform( new glm::mat4 )
+    {}
+    instance(const instance& that) 
+        : material (that.material)
+        , spPrimitive (that.spPrimitive)
+        , spTransform (that.spTransform)
+    {}
+
+    lx0::lxvar                                material;      
+    std::shared_ptr<glgeom::primitive_buffer> spPrimitive;
+    std::shared_ptr<glgeom::mat4f>            spTransform;
 };
 
 class scene_group

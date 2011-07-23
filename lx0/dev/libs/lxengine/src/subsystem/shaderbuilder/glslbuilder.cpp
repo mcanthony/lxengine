@@ -135,7 +135,7 @@ GLSLBuilder::_processNode (Shader& shader, Context& context, lxvar& parameters, 
         std::string source;
         if (node["source"].is_string())
         {
-            lx_warn("Source as a string is deprecated.");
+            lx_warn("Source as a string is deprecated (%s).", nodeType.c_str());
             source = node["source"].as<std::string>();
         }
         else
