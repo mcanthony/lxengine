@@ -34,6 +34,7 @@
 //===========================================================================//
 
 #include <iostream>
+#include <boost/format.hpp>
 
 #include <lx0/lxengine.hpp>
 #include <lx0/subsystem/physics.hpp>
@@ -315,29 +316,36 @@ static
 bool 
 _tryMove (IPhysicsEnginePtr spPhysics, IPhysicsDocPtr spPhysicsDoc, const glgeom::point3f& position, const glgeom::vector3f& dir)
 {
-    btVector3 from (position.x, position.y, position.z);
-    btVector3 to   (position.x + dir.x, position.y + dir.y, position.z + dir.z);
+    float zOffset = 0.0f;
+
+    btVector3 from (position.x, position.y, position.z + zOffset);
+    btVector3 to   (position.x + dir.x, position.y + dir.y, position.z + dir.z + zOffset);
 
     btTransform start (btQuaternion(), from);
     btTransform end   (btQuaternion(), to);
     
-    auto spShape = spPhysics->acquireCapsuleShape(70.0f, 140.0f);
+    auto spShape = spPhysics->acquireCapsuleShape(35.0f, 70.0f);
     auto pWorld = spPhysicsDoc->getWorld();
 
     btCollisionWorld::ClosestConvexResultCallback result(from, to); 
     pWorld->convexSweepTest((btConvexShape*)spShape.get(), start, end, result);
 
-    return !result.hasHit();
+    if (!result.hasHit())
+    {
+        return true;
+    }
+    else
+    {
+        return false;
+    }
 }
 
 static
 void
 _setOnGround (IPhysicsEnginePtr spPhysics, IPhysicsDocPtr spPhysicsDoc, glgeom::point3f& position, glgeom::point3f& target)
 {
-    return; 
-
     btVector3 from (position.x, position.y, position.z);
-    btVector3 to   (position.x, position.y, position.z - 8 * 70.0f);
+    btVector3 to   (position.x, position.y, position.z - 15 * 70.0f);
 
     btTransform start (btQuaternion(), from);
     btTransform end   (btQuaternion(), to);
@@ -349,11 +357,13 @@ _setOnGround (IPhysicsEnginePtr spPhysics, IPhysicsDocPtr spPhysicsDoc, glgeom::
 
     if (result.hasHit())
     {
+        const float fPlayerHeight = 105.0f;
+
         float deltaZ = position.z - result.m_hitPointWorld.z();
-        if (deltaZ > 0.0f && deltaZ < 155.0f)
+        if (deltaZ > 0.0f && deltaZ < fPlayerHeight)
         {
-            position.z += 155.0f - deltaZ;
-            target.z += 155.0f - deltaZ;
+            position.z += fPlayerHeight - deltaZ;
+            target.z += fPlayerHeight - deltaZ;
         }
     }
 }
@@ -384,7 +394,7 @@ MwPhysicsDoc::movePlayer (lx0::ElementPtr spPlayer, const glgeom::vector3f& dir)
         spPlayer->notifyValueChanged();
         return true;
     }
-    else if (false && _tryMove(spPhysics, spPhysicsDoc, position + stepHeight, dir))
+    else if (_tryMove(spPhysics, spPhysicsDoc, position + stepHeight, dir))
     {
         position += stepHeight + dir;
         target += stepHeight + dir;
