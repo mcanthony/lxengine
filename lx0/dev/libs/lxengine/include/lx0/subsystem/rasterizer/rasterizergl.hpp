@@ -206,7 +206,7 @@ namespace lx0
                     {}
 
                     GlobalPass*     pGlobalPass;
-                    InstancePtr         spInstance;
+                    InstancePtr     spInstance;
                     unsigned int    itemId;
 
                     LightSetPtr     spLightSet;
@@ -249,8 +249,9 @@ namespace lx0
                 std::vector<TexturePtr>             mTextures;
             public:
                 std::map<std::string,TexturePtr>    mTextureCache;      //!< @todo Replace with a more sophisicated, formal cache
-            protected:
+                lx0::uint32                         mFrameNum;
 
+            protected:
                 bool                            mInited;
                 bool                            mShutdown;
 
@@ -262,6 +263,8 @@ namespace lx0
                     lx0::Timer  tmRasterizeItem;
                     lx0::Timer  tmMaterialActivate;
                     lx0::Timer  tmGeometryActivate;
+                    lx0::Timer  tmLightSetActivate;
+                    lx0::Timer  tmTransformActivate;
                 } mStats;
             };
         }

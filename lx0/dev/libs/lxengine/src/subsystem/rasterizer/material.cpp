@@ -97,57 +97,6 @@ Material::activate (RasterizerGL* pRasterizer, GlobalPass& pass)
             glUniform1f(idx, 32.0f);
     }
 
-    const char* unifTextureName[8] = {
-        "unifTexture0",
-        "unifTexture1",
-        "unifTexture2",
-        "unifTexture3",
-        "unifTexture4",
-        "unifTexture5",
-        "unifTexture6",
-        "unifTexture7",
-    };
-
-    //
-    // Set up textures
-    //
-    int texturesUseCount = 0;
-    for (int i = 0; i < 8; ++i)
-    {
-        // Set unifTexture0 to texture unit 0
-        GLint unifIndex = glGetUniformLocation(mId, unifTextureName[i]);
-        if (unifIndex != -1)
-        {
-            texturesUseCount++;
-
-            if (mTextures[i])
-            {
-                const auto unit = pRasterizer->mContext.textureUnit++;
-
-                // Set the shader uniform to the *texture unit* containing the texture
-                glUniform1i(unifIndex, unit);
-
-                // Activate the corresponding texture unit and set *that* to the GL id
-                const GLuint texId = mTextures[i]->mId;
-                glActiveTexture(GL_TEXTURE0 + unit);
-                glBindTexture(GL_TEXTURE_2D, texId);
-
-                // Set the parameters on the texture unit
-                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, mFilter);
-                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, mFilter);
-            }
-            else
-            {
-                lx_warn("Active shader requires a texture for slot %d, but no texture is set.", i);
-            }
-        }
-    }
-
-    if (texturesUseCount > 0)
-        glEnable(GL_TEXTURE_2D);
-    else
-        glDisable(GL_TEXTURE_2D);
-
     check_glerror();
 
     //
@@ -264,6 +213,82 @@ GenericMaterial::GenericMaterial (GLuint id)
 {
 }
 
+/*!
+    Compiles the lxvar set of parameters into a set of std::function<> objects.
+
+    Using a vector of std::functions<> is a compromise between simplicity (it's
+    quite simple) and efficiency (there's still more overhead than technically
+    necessary).  Overall, this leads to highly flexible, highly maintainable
+    code that still removes the major bottlenecks of uniform look-ups and lxvar
+    conversions on every material activation.
+ */
+void
+GenericMaterial::_compile (RasterizerGL* pRasterizer)
+{
+    for (auto it = mParameters.begin(); it != mParameters.end(); ++it)
+    {
+        const std::string uniformName = it.key();
+        const std::string type        = (*it)[0];
+        lxvar&            value       = (*it)[1];
+
+        GLint index = glGetUniformLocation(mId, uniformName.c_str());
+        if (index != -1)
+        {
+            if (type == "vec2")
+            {
+                float v0 = value[0].as<float>();
+                float v1 = value[1].as<float>();
+                mInstructions.push_back([=]() { glUniform2f(index, v0, v1); });
+            }
+            else if (type == "vec3")
+            {
+                float v0 = value[0].as<float>();
+                float v1 = value[1].as<float>();
+                float v2 = value[2].as<float>();
+                mInstructions.push_back([=]() { glUniform3f(index, v0, v1, v2); });
+            }
+            else if (type == "vec4")
+            {
+                float v0 = value[0].as<float>();
+                float v1 = value[1].as<float>();
+                float v2 = value[2].as<float>();
+                float v3 = value[3].as<float>();
+                mInstructions.push_back([=]() { glUniform4f(index, v0, v1, v2, v3); });
+            }
+            else if (type == "sampler2D")
+            {
+                auto name = value.as<std::string>();
+                auto it = pRasterizer->mTextureCache.find(name);
+                auto spTexture = (it != pRasterizer->mTextureCache.end()) ? it->second : TexturePtr();
+                if (spTexture)
+                {
+                    // Activate the corresponding texture unit and set *that* to the GL id
+                    const GLuint texId = spTexture->mId;
+
+                    mInstructions.push_back([=]() {
+                        const auto unit = pRasterizer->mContext.textureUnit++;
+
+                        // Set the shader uniform to the *texture unit* containing the texture (NOT
+                        // the GL id of the texture)
+                        glUniform1i(index, unit);
+
+                        glActiveTexture(GL_TEXTURE0 + unit);
+                        glBindTexture(GL_TEXTURE_2D, texId);
+
+                        // Set the parameters on the texture unit
+                        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, mFilter);
+                        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, mFilter);
+                        glEnable(GL_TEXTURE_2D);
+                    });
+                }
+                else
+                    lx_warn("Could not find referenced texture '%s' in the texture cache.", name.c_str());
+            }
+        }
+    }
+}
+
+
 void
 GenericMaterial::activate (RasterizerGL* pRasterizer, GlobalPass& pass)
 {
@@ -273,66 +298,15 @@ GenericMaterial::activate (RasterizerGL* pRasterizer, GlobalPass& pass)
     Material::activate(pRasterizer, pass);
 
     //
-    // The parameters lxvar can be internally "compiled" into index locations
-    // and function calls.  For now, the slow lxvar conversions are done every
-    // time to keep the code simple and flexible.
+    // Looking up uniform locations is relatively expensive: compile the
+    // parameters into a set of function calls to provide a speed-up.
     //
-    if (mParameters.is_defined())
-    {
-        int textureCount = 0;
+    if (mInstructions.empty() && mParameters.is_defined())
+        _compile(pRasterizer);
 
-        for (auto it = mParameters.begin(); it != mParameters.end(); ++it)
-        {
-            const std::string uniformName = it.key();
-            const std::string type        = (*it)[0];
-            lxvar&            value       = (*it)[1];
-
-            GLint index = glGetUniformLocation(mId, uniformName.c_str());
-            if (index != -1)
-            {
-                if (type == "vec2")
-                {
-                    glUniform2f(index, value[0].as<float>(), value[1].as<float>());
-                }
-                else if (type == "vec3")
-                {
-                    glUniform3f(index, value[0].as<float>(), value[1].as<float>(), value[2].as<float>());
-                }
-                else if (type == "vec4")
-                {
-                    glUniform4f(index, value[0].as<float>(), value[1].as<float>(), value[2].as<float>(), value[3].as<float>());
-                }
-                else if (type == "sampler2D")
-                {
-                    auto name = value.as<std::string>();
-                    auto it = pRasterizer->mTextureCache.find(name);
-                    auto spTexture = (it != pRasterizer->mTextureCache.end()) ? it->second : TexturePtr();
-                    if (spTexture)
-                    {
-                        const auto unit = pRasterizer->mContext.textureUnit++;
-
-                        // Set the shader uniform to the *texture unit* containing the texture (NOT
-                        // the GL id of the texture)
-                        glUniform1i(index, unit);
-
-                        // Activate the corresponding texture unit and set *that* to the GL id
-                        const GLuint texId = spTexture->mId;
-                        glActiveTexture(GL_TEXTURE0 + unit);
-                        glBindTexture(GL_TEXTURE_2D, texId);
-
-                        // Set the parameters on the texture unit
-                        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, mFilter);
-                        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, mFilter);
-
-                        textureCount++;
-                    }
-                    else
-                        lx_warn("Could not find referenced texture '%s' in the texture cache.", name.c_str());
-                }
-            }
-        }
-
-        if (textureCount > 0)
-            glEnable(GL_TEXTURE_2D);
-    }
+    //
+    // Run the set of instructions to set the parameters
+    //
+    for (auto it = mInstructions.begin(); it != mInstructions.end(); ++it)
+        (*it)();
 }

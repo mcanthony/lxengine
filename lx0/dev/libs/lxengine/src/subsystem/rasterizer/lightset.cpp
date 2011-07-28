@@ -132,8 +132,14 @@ void LightSet::activate(RasterizerGL* pRasterizer)
     // lights.  The number 4 is a hard-coded value based on the current
     // phong shader implementation.  Obviously, this should be generalized.
     //
-    ActiveLights active;
-    _selectLights(mLights, active, pRasterizer);
+    static ActiveLights active;
+    static lx0::uint32  frame = 0;
+    if (pRasterizer->mFrameNum != frame)
+    {
+        active = ActiveLights();
+        frame = pRasterizer->mFrameNum;
+        _selectLights(mLights, active, pRasterizer);
+    }
 
     size_t activeCount = active.positionsEc.size();
 

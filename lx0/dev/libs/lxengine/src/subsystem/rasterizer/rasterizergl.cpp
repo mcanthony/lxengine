@@ -56,6 +56,7 @@ RasterizerGL::RasterizerGL()
     : gl        (new GLInterface)
     , mInited   (false)
     , mShutdown (false)
+    , mFrameNum (0)
 {
 }
 
@@ -105,6 +106,8 @@ void RasterizerGL::shutdown()
     log_timer("rasterizeItem",      mStats.tmRasterizeItem,     mStats.tmScene);
     log_timer("activate Material",  mStats.tmMaterialActivate,  mStats.tmScene);
     log_timer("activate Geometry",  mStats.tmGeometryActivate,  mStats.tmScene);
+    log_timer("activate LightSet",  mStats.tmLightSetActivate,  mStats.tmScene);
+    log_timer("activate Transform", mStats.tmTransformActivate, mStats.tmScene);
 
     mShutdown = true;
     mInited = false;
@@ -886,6 +889,8 @@ void
 RasterizerGL::beginFrame (RenderAlgorithm& algorithm)
 {
     mStats.tmScene.start();
+    
+    mFrameNum++;
 
     lx_check_error( glGetError() == GL_NO_ERROR );
 
@@ -976,6 +981,14 @@ RasterizerGL::Context::Uniforms::activate ()
     check_glerror();
 }
 
+__forceinline static
+void _timeCall (lx0::Timer& timer, std::function<void (void)> f)
+{
+    timer.start();
+    f();
+    timer.stop();
+}
+
 void 
 RasterizerGL::rasterizeItem (GlobalPass& pass, std::shared_ptr<Instance> spInstance)
 {
@@ -1019,21 +1032,19 @@ RasterizerGL::rasterizeItem (GlobalPass& pass, std::shared_ptr<Instance> spInsta
 
         mContext.spCamera->activate(this);
         
-        mStats.tmMaterialActivate.start();
-        mContext.spMaterial->activate(this, pass);
-        mStats.tmMaterialActivate.stop();
+        _timeCall(mStats.tmMaterialActivate, [&](){  mContext.spMaterial->activate(this, pass);  });
 
         // Lights are optional; not all rendering algorithms require explicitly defined lights
-        if (mContext.spLightSet)
-            mContext.spLightSet->activate(this);
+        _timeCall(mStats.tmLightSetActivate, [&]() {
+            if (mContext.spLightSet)
+                mContext.spLightSet->activate(this);
+        });
         
-        spInstance->spTransform->activate(this, spInstance->spCamera);
+        _timeCall(mStats.tmTransformActivate, [&]() { spInstance->spTransform->activate(this, spInstance->spCamera); });
 
         mContext.uniforms.activate();
         
-        mStats.tmGeometryActivate.start();
-        spInstance->spGeometry->activate(this, pass);
-        mStats.tmGeometryActivate.stop();
+        _timeCall(mStats.tmGeometryActivate, [&]() { spInstance->spGeometry->activate(this, pass); });
     
         check_glerror();
     }

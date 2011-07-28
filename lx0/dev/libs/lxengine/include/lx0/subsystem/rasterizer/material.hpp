@@ -98,11 +98,15 @@ namespace lx0
             class GenericMaterial : public Material
             {
             public:
-                        GenericMaterial(GLuint id);
+                                GenericMaterial (GLuint id);
 
-                virtual void activate   (RasterizerGL*, GlobalPass& pass);
+                virtual void    activate        (RasterizerGL*, GlobalPass& pass);
 
-                lxvar   mParameters;
+            //protected:
+                void            _compile        (RasterizerGL*);
+
+                lxvar                                   mParameters;
+                std::vector<std::function<void (void)>> mInstructions;
             };
 
         }
