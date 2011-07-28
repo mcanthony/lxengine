@@ -48,6 +48,8 @@ namespace lx0
 
                 virtual void activate(RasterizerGL* pRasterizer);
                 
+                glm::mat4       projectionMatrix (void) const;
+
                 glgeom::radians   fov;
                 float             nearDist;
                 float             farDist;

@@ -898,7 +898,7 @@ RasterizerGL::beginFrame (RenderAlgorithm& algorithm)
 
 void RasterizerGL::endFrame()
 {
-    lx_check_error( glGetError() == GL_NO_ERROR );
+    check_glerror();
     mStats.tmScene.stop();
 }
 

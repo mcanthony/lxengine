@@ -137,6 +137,7 @@ public:
         {
             mspRasterizer->rasterizeList(algorithm, it->second.list);
         }
+
         mspRasterizer->endFrame();
     }
 

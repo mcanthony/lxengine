@@ -97,15 +97,13 @@ public:
     std::shared_ptr<std::istream>   getTextureStream    (std::string name);
 
 protected:
-    std::map< std::string, std::shared_ptr<glgeom::primitive_buffer> > mModelCache;
+    std::map< std::string, std::shared_ptr<scene_group> > mModelCache;
     std::vector<BsaFile> mBsas;
 };
 
 std::shared_ptr<scene_group>
 BsaCollection::getModel (std::string type, std::string name)
 {
-    std::shared_ptr<scene_group> spGroup(new scene_group);
-
     auto fullname = type + name;
     boost::to_lower(fullname);
 
@@ -122,11 +120,16 @@ BsaCollection::getModel (std::string type, std::string name)
                 stream.seekg(kt->second.offset);
                 auto spSceneFragment = readNifObject(stream.stream(), _resolveTextureName);
                 stream.close();
+
+                mModelCache.insert(std::make_pair(fullname, spSceneFragment));
                 return spSceneFragment;
             }
         }
+
+        return std::shared_ptr<scene_group>();
     }
-    return spGroup;
+    else
+        return it->second;
 }
 
 
@@ -816,14 +819,17 @@ public:
 
     std::shared_ptr<scene_group> _getModel(Reference& ref, std::string modelName)
     {
-        auto subgroup = mBsaSet.getModel("meshes\\", modelName);
+        auto group = mBsaSet.getModel("meshes\\", modelName);
         
+        std::shared_ptr<scene_group> subgroup(new scene_group);
+        subgroup->merge(*group);
+
         auto transform = _transform(ref);
         for (auto kt = subgroup->instances.begin(); kt != subgroup->instances.end(); ++kt)
         {
             // Account for the cell reference transform in addition to the native transform in 
             // model itself.
-            *kt->spTransform = transform * (*kt->spTransform);
+            kt->spTransform.reset( new glm::mat4(transform * (*kt->spTransform)) );
         }
         for (auto kt = subgroup->textures.begin(); kt != subgroup->textures.end(); ++kt)
         {
@@ -835,7 +841,10 @@ public:
     
     virtual void    cell        (const char* id, scene_group& group)
     {
+        lx0::Timer timer;
+
         std::cout << boost::format("Loading cell '%s'...\n") % id;
+        timer.start();
 
         Stream stream;
         stream.open(mEsmFilename);
@@ -1096,8 +1105,10 @@ public:
             std::cout << boost::format(" [%u ms]\n") % tmLoad.totalMs();
         }
         
-
         stream.close();
+        timer.stop();
+
+        std::cout << boost::format("Cell loaded [%u ms]\n") % timer.totalMs();
     }
 
     std::string     mEsmFilename;

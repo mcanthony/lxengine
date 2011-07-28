@@ -30,6 +30,17 @@
 
 using namespace lx0;
 
+glm::mat4 
+Camera::projectionMatrix (void) const
+{
+    int vp[4];  // x, y, width, height
+    glGetIntegerv(GL_VIEWPORT, vp);
+    GLfloat aspectRatio = (GLfloat)vp[2]/(GLfloat)vp[3];
+
+    float fovDegrees = glgeom::degrees(fov).value;
+    return glm::perspective(fovDegrees, aspectRatio, nearDist, farDist);
+}
+
 void
 Camera::activate(RasterizerGL* pRasterizer)
 {
@@ -38,13 +49,7 @@ Camera::activate(RasterizerGL* pRasterizer)
     //
     // Setup projection matrix
     //
-    int vp[4];  // x, y, width, height
-    glGetIntegerv(GL_VIEWPORT, vp);
-    GLfloat aspectRatio = (GLfloat)vp[2]/(GLfloat)vp[3];
-
-    float fovDegrees = glgeom::degrees(fov).value;
-    auto projMatrix = glm::perspective(fovDegrees, aspectRatio, nearDist, farDist);
-    
+    auto projMatrix = projectionMatrix();
     pRasterizer->mContext.uniforms.spProjMatrix.reset(new glm::mat4(projMatrix));
     pRasterizer->mContext.uniforms.spViewMatrix.reset(new glm::mat4(viewMatrix));
 
