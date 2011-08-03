@@ -139,7 +139,10 @@ namespace lx0
             //===========================================================================//
             //! \ingroup lx0_subsystem_rasterizer
             /*!
-                Immediate-mode rasterization system.
+                Low-level rasterization system.
+
+                @todo Allow 'immmediate-mode' rasterization of primitive_buffer.
+                @todo Unify the caching system so that all resources are optionally named.
              */
             class RasterizerGL
             {
@@ -152,11 +155,12 @@ namespace lx0
 
                 CameraPtr       createCamera    (glgeom::radians fov, float nearDist, float farDist, glm::mat4& viewMatrix);
                 
-                LightPtr        createLight     (void);
-                LightPtr        createLight     (const glgeom::point_light_f& light);
-                LightSetPtr     createLightSet  (void);
+                LightSetPtr     createLightSet              (void);
+                LightPtr        createLight                 (void);
+                LightPtr        createLight                 (const glgeom::point_light_f& light);
 
                 MaterialPtr     createMaterial              (std::string fragShader);
+                MaterialPtr     createMaterial              (std::string vertexShader, std::string geometryShader, std::string fragmentShader);
                 MaterialPtr     createMaterial              (std::string name, std::string fragmentSource, lxvar parameters);
                 MaterialPtr     createSolidColorMaterial    (const glgeom::color3f& rgb);
                 MaterialPtr     createVertexColorMaterial   (void);
@@ -199,6 +203,27 @@ namespace lx0
                 unsigned int    readPixel       (int x, int y);
                 void            readBackBuffer  (glgeom::image3f& img);
 
+                struct ActiveLights
+                {
+                    std::vector<glgeom::point3f> positionsEc;
+                    std::vector<glgeom::color3f> colors;
+                    std::vector<glm::vec3>       attenuation;
+
+                    std::vector<float>           glowRadius;
+                    std::vector<float>           glowMultiplier;
+                    std::vector<float>           glowExponent;
+                };
+
+                struct FrameContext
+                {
+                    std::map<LightSet*,ActiveLights> activeLights;
+                };
+
+                /*
+                    The context of "what's currently happening" in the rasterization
+                    process.  This includes the resolved data of what light set is
+                    being used, how many texture units are being used, etc.
+                 */
                 struct Context
                 {
                     Context()
@@ -216,6 +241,8 @@ namespace lx0
                     unsigned int    textureUnit;
 
                     boost::tribool  tbFlatShading;
+
+                    FrameContext    frame;
 
                     class Uniforms
                     {

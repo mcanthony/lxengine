@@ -172,6 +172,8 @@ call:auto_extract_source boost_1_46_1 boost_1_46_1.7z
 call:auto_extract_source glm-0.9.2.3  glm-0.9.2.3.zip
 call:auto_extract_source bullet-2.78 bullet-2.78.zip
 call:auto_extract_source niflib niflib-6cbe9f4d0141b75c951cd05dcbfb3e230d70ea2b.7z
+call:auto_extract_source zlib-1.2.5 zlib-1.2.5.7z
+call:auto_extract_source lpng154 lpng154.7z
 
 if %FAILURE%==1 ( 
     echo.
@@ -560,6 +562,55 @@ call:copy_files %BUILDDIR%\Release\*.lib %PSDK%\niflib\lib\Release
 call:copy_files %BUILDDIR%\Debug\*.dll %PSDK%\niflib\bin\Debug
 call:copy_files %BUILDDIR%\Release\*.dll %PSDK%\niflib\bin\Release
 
+REM ===========================================================================
+REM Build zlib
+REM ===========================================================================
+
+set PROJECT=zlib
+set ROOTDIR=source\zlib-1.2.5
+set TESTFILE=..\zlib_build\Debug\zlibd.lib
+
+echo mkdir ..\zlib_build>_t.bat
+echo cd ..\zlib_build>>_t.bat
+echo erase ..\zlib-1.2.5\zconf.h>>_t.bat
+echo cmake ..\zlib-1.2.5 -DBUILD_SHARED_LIBS=OFF>>_t.bat
+echo msbuild ALL_BUILD.vcxproj /p:Configuration=Debug >>_t.bat
+echo msbuild ALL_BUILD.vcxproj /p:Configuration=Release >>_t.bat
+
+call:build_project %PROJECT% %ROOTDIR% %TESTFILE%
+IF %FAILURE%==1 (goto:EOF)   
+
+call:copy_files %ROOTDIR%\*.h %PSDK%\zlib\include\zlib
+call:copy_files %ROOTDIR%\..\zlib_build\zconf.h %PSDK%\zlib\include\zlib
+call:copy_files %ROOTDIR%\..\zlib_build\Debug\*.lib %PSDK%\zlib\lib\Debug
+call:copy_files %ROOTDIR%\..\zlib_build\Release\*.lib %PSDK%\zlib\lib\Release
+call:copy_files %ROOTDIR%\..\zlib_build\Debug\*.dll %PSDK%\zlib\bin\Debug
+call:copy_files %ROOTDIR%\..\zlib_build\Release\*.dll %PSDK%\zlib\bin\Release
+
+
+REM ===========================================================================
+REM Build lpng
+REM ===========================================================================
+
+set PROJECT=libpng
+set ROOTDIR=source\lpng154
+set TESTFILE=..\lpng_build\Release\libpng15_static.lib
+
+echo mkdir ..\lpng_build>_t.bat
+echo cd ..\lpng_build>>_t.bat
+echo erase ..\lpng154\zconf.h>>_t.bat
+echo cmake ..\lpng154 -DZLIB_INCLUDE_DIR=..\..\%PSDK%\zlib\include\zlib -DZLIB_LIBRARY=..\..\%PSDK%\zlib\lib -DPNG_SHARED=OFF>>_t.bat
+echo msbuild png15_static.vcxproj /p:Configuration=Debug >>_t.bat
+echo msbuild png15_static.vcxproj /p:Configuration=Release >>_t.bat
+
+call:build_project %PROJECT% %ROOTDIR% %TESTFILE%
+IF %FAILURE%==1 (goto:EOF)   
+
+call:copy_files %ROOTDIR%\*.h %PSDK%\libpng\include\libpng
+call:copy_files %ROOTDIR%\..\lpng_build\Debug\*.lib %PSDK%\libpng\lib\Debug
+call:copy_files %ROOTDIR%\..\lpng_build\Release\*.lib %PSDK%\libpng\lib\Release
+call:copy_files %ROOTDIR%\..\lpng_build\Debug\*.dll %PSDK%\libpng\bin\Debug
+call:copy_files %ROOTDIR%\..\lpng_build\Release\*.dll %PSDK%\libpng\bin\Release
 
 REM ===========================================================================
 REM Build process complete

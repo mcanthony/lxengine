@@ -891,6 +891,7 @@ RasterizerGL::beginFrame (RenderAlgorithm& algorithm)
     mStats.tmScene.start();
     
     mFrameNum++;
+    mContext.frame = FrameContext();
 
     lx_check_error( glGetError() == GL_NO_ERROR );
 

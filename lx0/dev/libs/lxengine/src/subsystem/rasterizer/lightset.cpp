@@ -33,20 +33,11 @@
 using namespace lx0;
 using namespace glgeom;
 
-struct ActiveLights
-{
-    std::vector<glgeom::point3f> positionsEc;
-    std::vector<glgeom::color3f> colors;
-    std::vector<glm::vec3>       attenuation;
 
-    std::vector<float>           glowRadius;
-    std::vector<float>           glowMultiplier;
-    std::vector<float>           glowExponent;
-};
 
 static 
 void
-_selectLights (std::vector<LightPtr>& all, ActiveLights& active, RasterizerGL* pRasterizer)
+_selectLights (std::vector<LightPtr>& all, RasterizerGL::ActiveLights& active, RasterizerGL* pRasterizer)
 {
     const int kMaxActive = 8;
 
@@ -132,14 +123,15 @@ void LightSet::activate(RasterizerGL* pRasterizer)
     // lights.  The number 4 is a hard-coded value based on the current
     // phong shader implementation.  Obviously, this should be generalized.
     //
-    static ActiveLights active;
-    static lx0::uint32  frame = 0;
-    if (pRasterizer->mFrameNum != frame)
+    auto it = pRasterizer->mContext.frame.activeLights.find(this);
+    if (it == pRasterizer->mContext.frame.activeLights.end())
     {
-        active = ActiveLights();
-        frame = pRasterizer->mFrameNum;
+        RasterizerGL::ActiveLights active;
         _selectLights(mLights, active, pRasterizer);
+        it = pRasterizer->mContext.frame.activeLights.insert( std::make_pair(this, active) ).first;
     }
+    RasterizerGL::ActiveLights& active = it->second;
+
 
     size_t activeCount = active.positionsEc.size();
 
