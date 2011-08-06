@@ -28,10 +28,12 @@
 
 // Standard headers
 #include <iostream>
+#include <boost/format.hpp>
 
 // Lx0 headers
 #include <lx0/lxengine.hpp>
 #include <lx0/prototype/control_structures.hpp>
+#include <lx0/prototype/misc.hpp>
 #include <glgeom/prototype/image.hpp>
 
 #include <windows.h>
@@ -59,6 +61,26 @@ public:
         timed_gate_block (50, { 
             spView->sendEvent("redraw", lxvar());
         });
+    }
+
+    virtual     void        onKeyDown       (ViewPtr spView, int keyCode)
+    {
+        if (keyCode == KC_S)
+        {
+            time_t rawtime;
+            time(&rawtime);
+            struct tm* timeinfo = localtime(&rawtime);
+            
+            std::string filename = boost::str( boost::format("raytrace_screenshot-%04d%02d%02d_%02d%02d%02d.png") 
+                % (timeinfo->tm_year + 1900) 
+                % (timeinfo->tm_mon + 1)
+                % (timeinfo->tm_mday)
+                % (timeinfo->tm_hour)
+                % (timeinfo->tm_min)
+                % (timeinfo->tm_sec)
+                );
+            lx0::save_png(img, filename.c_str());
+        }
     }
 };
 

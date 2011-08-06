@@ -107,6 +107,10 @@ BsaCollection::getModel (std::string type, std::string name)
     auto fullname = type + name;
     boost::to_lower(fullname);
 
+    //
+    // Models are frequently reused in the cells (for example, a latern fixture).
+    // Therefore, cache the loaded results and return the cache if possible.
+    //
     auto it = mModelCache.find(fullname);
     if (it == mModelCache.end())
     {

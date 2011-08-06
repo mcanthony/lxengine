@@ -1,0 +1,13 @@
+{
+    output : "vec3",
+    uniforms    : 
+    {
+        unifLightCount          : [ "int" ],
+        unifLightPosition       : [ "vec3[8]" ],
+        unifLightColor          : [ "vec3[8]" ],
+    },
+    input  : {
+        texture : [ "sampler2D",    "<not set>",                    "" ],
+    },
+    source: "lightgradient.nfrag",
+}

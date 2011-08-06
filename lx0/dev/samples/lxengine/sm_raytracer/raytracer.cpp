@@ -48,10 +48,10 @@
 
 #include "raytracer.hpp"
 #include "glgeom_ext.hpp"
+#include "parsers.hpp"
 
 using namespace lx0;
 using namespace glgeom;
-
 
 extern glgeom::image3f img;
 
@@ -63,233 +63,6 @@ color3t<T> shade_ambient (const color3t<T>& env_ambient,
 {
     return mat.emissive + env_ambient * mat.ambient;
 }
-
-//===========================================================================//
-
-class Camera : public Element::Component
-{
-public:
-    virtual     const char* name() const { return "raytracer"; }
-
-    camera3f    camera;
-    glm::mat4   viewMatrix;
-    glm::mat4   projMatrix;
-};
-
-//===========================================================================//
-
-class Environment : public Element::Component
-{
-public:
-    virtual     const char* name() const { return "raytracer"; }
-
-    Environment() 
-        : ambient (0.0f, 0.005f, 0.02f) 
-        , shadows (true) 
-    {}
-
-    color3f     ambient;
-    bool        shadows;
-};
-
-//===========================================================================//
-
-class Material : public Element::Component
-{
-public:
-    virtual     const char* name() const { return "raytracer"; }
-
-    virtual     bool        allowShadow    (void) const { return true; }
-    virtual     color3f     shadeAmbient   (ShaderBuilder::ShaderContext& ctx, const color3f& ambient, const intersection3f& intersection) const { return color3f(0, 0, 0); }
-    virtual     color3f     shadeLight     (const point_light_f& light, const vector3f& viewDirection, const intersection3f& intersection) const { return color3f(0, 0, 0); }
-};
-
-class GenericMaterial 
-    : public Material
-{
-public:
-    virtual const char* name() const { return "raytracer"; }
-
-    GenericMaterial (ShaderBuilder::ShadeFunction shader)
-    {
-        mShader = shader;
-    }
-
-    virtual     color3f     shadeAmbient   (ShaderBuilder::ShaderContext& ctx, const color3f& ambient, const intersection3f& intersection) const 
-    { 
-        return glgeom::color3f( mShader(ctx) );
-    }
-
-    virtual     color3f     shadeLight     (const point_light_f& light, const vector3f& viewDirection, const intersection3f& intersection) const 
-    { 
-        return color3f(0, 0, 0); 
-    }
-
-protected:
-    ShaderBuilder::ShadeFunction mShader;
-};
-
-class LightGradientMaterial
-    : public Material
-{
-public:
-    virtual     bool        allowShadow    (void) const { return false; }
-
-    virtual     color3f     shadeAmbient   (ShaderBuilder::ShaderContext& ctx, const color3f& ambient, const intersection3f& intersection) const 
-    { 
-        return color3f(0, 0, 0);
-    }
-    virtual     color3f     shadeLight     (const point_light_f& light, const vector3f& viewDirection, const intersection3f& intersection) const 
-    { 
-        // 
-        // L = unit vector from light to intersection point; the "incidence vector" I is the
-        //     vector pointing in the opposite direction of L.
-        // N = surface normal at the point of intersection
-        //
-        const vector3f  L     (normalize(light.position - intersection.positionWc));
-        const vector3f& N     (intersection.normal);
-        const float     NdotL ( dot(N, L) );
-                
-        const float diffuseSample = (NdotL + 1.0f) / 2.0f;
-        const auto diffuse = mGradient.get(int(diffuseSample * (mGradient.width() - 1)), 0);
-
-        return diffuse * light.color;
-    }
-
-    void    setTexture (std::string s)
-    {
-        lx0::load_png(mGradient, s.c_str());
-    }
-
-protected:
-    glgeom::image3f mGradient;
-};
-
-//===========================================================================//
-
-class Geometry : public Element::Component
-{
-public:
-    virtual     const char* name() const { return "raytracer"; }
-
-    virtual ~Geometry(){}
-
-    bool intersect (const ray3f& ray, intersection3f& isect) 
-    {
-        if (_intersect(ray, isect))
-        {
-            assert( isect.distance >= 0 );
-            return true;
-        }
-        else
-            return false;
-    }
-
-    bool setMaterial (ElementPtr spElem, std::string matName)
-    {
-        if (!matName.empty())
-        {
-            auto spMatElem = spElem->document()->getElementById(matName);
-            if (spMatElem)
-                mspMaterial = spMatElem->getComponent<Material>("raytracer");
-            return true;
-        }
-        else
-            return false;
-    }
-    std::shared_ptr<Material>   mspMaterial;
-
-protected:
-    virtual bool _intersect (const ray3f&, intersection3f& isect) { return false; }
-};
-
-typedef std::shared_ptr<Geometry> GeometryPtr;
-
-//===========================================================================//
-
-class Plane : public Geometry
-{
-public:
-    glgeom::plane3f geom;
-
-protected:
-    virtual bool _intersect (const ray3f& ray, intersection3f& isect) 
-    {
-        return  glgeom::intersect(ray, geom, isect);
-    }
-};
-
-//===========================================================================//
-
-class Cube : public Geometry
-{
-public:
-    glgeom::cube3f geom;
-
-protected:
-    virtual bool _intersect (const ray3f& ray, intersection3f& isect) 
-    {
-        return  glgeom::intersect(ray, geom, isect);
-    }
-};
-
-//===========================================================================//
-
-class Sphere : public Geometry
-{
-public:
-    glgeom::sphere3f geom;
-
-protected:
-    virtual bool _intersect (const ray3f& ray, intersection3f& isect) 
-    {
-        return  glgeom::intersect(ray, geom, isect);
-    }
-};
-
-//===========================================================================//
-
-class Cone : public Geometry
-{
-public:
-    glgeom::cone3f geom;
-
-protected:
-    virtual bool _intersect (const ray3f& ray, intersection3f& isect) 
-    {
-        return  glgeom::intersect(ray, geom, isect);
-    }
-};
-
-//===========================================================================//
-
-class Cylinder : public Geometry
-{
-public:
-    glgeom::cylinder3f geom;
-
-protected:
-    virtual bool _intersect (const ray3f& ray, intersection3f& isect) 
-    {
-        return  glgeom::intersect(ray, geom, isect);
-    }
-};
-
-//===========================================================================//
-
-class Light 
-    : public Element::Component
-    , public point_light_f
-{
-public:
-    virtual     const char* name() const { return "raytracer"; }
-
-    ~Light()
-    {
-        lx_log("Light dtor");
-    }
-};
-typedef std::shared_ptr<Light> LightPtr;
 
 
 //===========================================================================//
@@ -348,6 +121,61 @@ protected:
     std::function<void (int, int)> f;
 };
 
+
+//===========================================================================//
+
+class SpatialIndex
+{
+public:
+    void    add (std::shared_ptr<Geometry> spGeometry)
+    {
+        mGeometry.push_back(spGeometry);
+    }
+
+    void    remove() { assert(0); }
+    void    modify() { assert(0); }
+
+    bool    intersect   (const ray3f& ray, intersection3f& isect);
+    size_t  intersect   (const ray3f& ray, std::vector<std::pair<GeometryPtr, intersection3f>>& hits);
+
+protected:
+    std::vector<std::shared_ptr<Geometry>>  mGeometry;
+};
+
+bool 
+SpatialIndex::intersect (const ray3f& ray, intersection3f& closest)
+{
+    int count = 0;
+
+    for (auto it = mGeometry.begin(); it != mGeometry.end(); ++it)
+    {
+        intersection3f isect;
+        if ((*it)->intersect(ray, isect) && isect.distance < closest.distance)
+        {
+            ++count;
+            closest = isect;
+        }
+    }
+
+    return (count > 0);
+}
+
+size_t 
+SpatialIndex::intersect (const ray3f& ray, std::vector<std::pair<GeometryPtr, intersection3f>>& hits)
+{
+    for (auto it = mGeometry.begin(); it != mGeometry.end(); ++it)
+    {
+        intersection3f isect;
+        if ((*it)->intersect(ray, isect))
+            hits.push_back(std::make_pair(*it, isect));
+    }
+
+    return hits.size();
+}
+
+//===========================================================================//
+
+
 //===========================================================================//
 
 /*
@@ -361,7 +189,6 @@ class RayTracer : public Document::Component
 {
 public: 
     RayTracer()
-        : mSuppressAddNotification (false)
     {
         lxvar graph;
         graph["_type"] = "phong";
@@ -370,134 +197,23 @@ public:
         mspEnvironment.reset(new Environment);
         mspContext.reset(new Context(spDefaultMaterial));
 
+        registerGeometryParsers([&](std::string name, GeometryParser* pParser) {
+            mGeometryParsers[name] = std::unique_ptr<GeometryParser>(pParser);
+        });
+
         mUpdateQueue.push_back([&]() { return _init(), true; });
-
-        mHandlers.insert(std::make_pair("Plane", [&](ElementPtr spElem) {
-            auto pGeom = new Plane;
-            pGeom->geom.normal = spElem->value().find("normal").convert();
-            pGeom->geom.d      = spElem->value().find("d").convert();
-            
-            pGeom->setMaterial(spElem, query(spElem->attr("material"), ""));
-
-            std::shared_ptr<Plane> spComp(pGeom);
-            mGeometry.push_back(spComp);
-            spElem->attachComponent(spComp);
-        }));
-
-        mHandlers.insert(std::make_pair("Sphere", [&](ElementPtr spElem) {
-            auto pGeom = new Sphere;
-            pGeom->geom.center = spElem->value().find("center").convert();
-            pGeom->geom.radius = spElem->value().find("radius").convert(.5f);
-
-            pGeom->setMaterial(spElem, query(spElem->attr("material"), ""));
-            
-            std::shared_ptr<Sphere> spComp(pGeom);
-            mGeometry.push_back(spComp);
-            spElem->attachComponent(spComp);
-        }));
-
-        mHandlers.insert(std::make_pair("Cone", [&](ElementPtr spElem) {
-            auto pGeom = new Cone;
-            pGeom->geom.base = spElem->value().find("base").convert();
-            pGeom->geom.radius = spElem->value().find("radius").convert();
-            pGeom->geom.axis = spElem->value().find("axis").convert();
-            pGeom->setMaterial(spElem, query(spElem->attr("material"), ""));
-
-            std::shared_ptr<Cone> spComp(pGeom);
-            mGeometry.push_back(spComp);
-            spElem->attachComponent(spComp);
-        }));
-
-        mHandlers.insert(std::make_pair("Cylinder", [&](ElementPtr spElem) {
-            auto pGeom = new Cylinder;
-            pGeom->geom.base = spElem->value().find("base").convert();
-            pGeom->geom.radius = spElem->value().find("radius").convert();
-            pGeom->geom.axis = spElem->value().find("axis").convert();
-            pGeom->setMaterial(spElem, query(spElem->attr("material"), ""));
-
-            std::shared_ptr<Cylinder> spComp(pGeom);
-            mGeometry.push_back(spComp);
-            spElem->attachComponent(spComp);
-        }));
-
-        mHandlers.insert(std::make_pair("Cube", [&](ElementPtr spElem) {
-            auto pGeom = new Cube;
-            pGeom->geom.center = spElem->value().find("center").convert(point3f(0, 0, 0));
-            pGeom->geom.scale  = spElem->value().find("scale").convert(vector3f(1, 1, 1));
-                
-            pGeom->setMaterial(spElem, query(spElem->attr("material"), ""));
-                
-            std::shared_ptr<Cube> spComp(pGeom);
-            mGeometry.push_back(spComp);
-            spElem->attachComponent(spComp);
-        }));
-
-        mHandlers.insert(std::make_pair("Material", [&](ElementPtr spElem) {
-            lxvar graph;
-            graph["_type"] = "phong";
-            graph["emissive"] = spElem->value().find("emissive");
-            graph["diffuse"] = spElem->value().find("diffuse");
-            graph["specular"] = spElem->value().find("specular");
-            graph["specularEx"] = spElem->value().find("specular_n");
-
-            auto shader = mShaderBuilder.buildShaderLambda(graph);
-            auto pMat = new GenericMaterial(shader);
-
-            spElem->attachComponent(pMat);
-        }));
-
-        mHandlers.insert(std::make_pair("Material2", [&](ElementPtr spElem) {
-            lx0::lxvar  graph = spElem->value().find("graph");
-            
-            auto shader = mShaderBuilder.buildShaderLambda(graph);
-            auto pMat = new GenericMaterial(shader);
-
-            spElem->attachComponent(pMat);
-        }));
-
-        mHandlers.insert(std::make_pair("LightGradientMaterial", [&](ElementPtr spElem) {
-            auto pMat = new LightGradientMaterial;
-            pMat->setTexture( spElem->value().find("texture").as<std::string>() );
-            spElem->attachComponent(pMat);
-        }));
-
-        mHandlers.insert(std::make_pair("Light", [&](ElementPtr spElem) {
-            auto pLight = new Light;
-            pLight->position = spElem->value().find("position").convert();
-            pLight->color    = spElem->value().find("color").convert();
-            
-            LightPtr spLight(pLight);
-            spElem->attachComponent(spLight);
-            mLights.push_back(spLight);
-        }));
-
-        mHandlers.insert(std::make_pair("Camera", [&](ElementPtr spElem) {
-            if (!mCamera)
-            {
-                auto pCam = new ::Camera;
-                pCam->camera.near_plane = sqrtf(2);
-                pCam->camera.position = spElem->value().find("position").convert();
-                point3f target = spElem->value().find("look_at").convert();
-                
-                pCam->camera.orientation = orientation_from_to_up(pCam->camera.position, target, vector3f(0, 0, 1));
-                pCam->viewMatrix = glm::lookAt(pCam->camera.position.vec, target.vec, glm::vec3(0, 0, 1));
-                pCam->projMatrix = glm::perspective(60.0f, 1.0f, 0.1f, 1000.0f);
-
-                mCamera = std::shared_ptr<::Camera>(pCam);
-            }
-        }));
-
-        mHandlers.insert(std::make_pair("Environment", [&](ElementPtr spElem) {
-            mspEnvironment->shadows = query(spElem->value().find("shadows"), true);
-        }));
     }
 
     virtual void onAttached (DocumentPtr spDocument) 
     {
-        mSuppressAddNotification = true;
+        //
+        // Pull in any <Include> elements into the main document
+        //
         lx0::processIncludeDocument(spDocument);
-        mSuppressAddNotification = false;
 
+        //
+        // Process the document
+        //
         spDocument->iterateElements([&](ElementPtr spElem) -> bool { 
             _onElementAddRemove(spElem, true); 
             return false; 
@@ -505,11 +221,6 @@ public:
     }
     virtual void onElementAdded (DocumentPtr spDocument, ElementPtr spElem) 
     {
-        if (!mSuppressAddNotification)
-        {
-            lx_debug("Element '%s' added", spElem->tagName().c_str());
-            _onElementAddRemove(spElem, true); 
-        }
     }
 
     virtual void onUpdate (DocumentPtr spDocument)
@@ -605,13 +316,9 @@ public:
             const vector3f Ln    (L / distL);
             const ray3f    ray   (intersection.positionWc + 1e-3f * Ln, Ln);
                 
-            for (auto it = mGeometry.begin(); it != mGeometry.end(); ++it)
-            {
-                intersection3f isect;
-                if ((*it)->intersect(ray, isect) && isect.distance < distL)
-                    return true;
-            }
-            return false;
+            intersection3f isect;
+            mIndex.intersect(ray, isect);
+            return (isect.distance < distL);
         }
         else
             return false;
@@ -627,13 +334,7 @@ public:
         ray3f ray = compute_frustum_ray<float>(mspTraceContext->frustum, x, img.height() - y, img.width(), img.height());
         
         std::vector<std::pair<GeometryPtr, intersection3f>> hits;
-        for (auto it = mGeometry.begin(); it != mGeometry.end(); ++it)
-        {
-            intersection3f isect;
-            if ((*it)->intersect(ray, isect))
-                hits.push_back(std::make_pair(*it, isect));
-        }
-
+        mIndex.intersect(ray, hits);
         
         auto c = color3f(0,0,0);
         if (!hits.empty())
@@ -675,12 +376,7 @@ public:
             ctx.fragNormalEc = normalMatrix * ctx.fragNormalOc;
             ctx.fragVertexEc = glm::vec3(mCamera->viewMatrix * glm::vec4(ctx.fragVertexOc, 1));
 
-            c = pMat->shadeAmbient(ctx, env.ambient, intersection);
-            for (auto it = mLights.begin(); it != mLights.end(); ++it)
-            {
-                if (!pMat->allowShadow() || !_shadowTerm(*(*it), intersection))
-                    c += pMat->shadeLight(*(*it), viewDirection, intersection);
-            }
+            c = pMat->shade(ctx, env.ambient, intersection);
         }
         else
             c *= .5f;
@@ -693,16 +389,75 @@ protected:
     {
         const std::string tag = spElem->tagName();
 
-        auto it = mHandlers.find(spElem->tagName());
-        if (it != mHandlers.end())
-            it->second(spElem);
+        auto git = mGeometryParsers.find(tag);
+        if (git != mGeometryParsers.end())
+        {
+            auto pGeometry = git->second->create(spElem);
+            
+            std::shared_ptr<Geometry> spGeometry(pGeometry);
+            spGeometry->setMaterial(spElem, query(spElem->attr("material"), ""));
+            spElem->attachComponent(spGeometry);
+            mIndex.add(spGeometry);
+        }
+        else if (tag == "Material") 
+        {
+            lxvar graph;
+            graph["_type"] = "phong";
+            graph["emissive"] = spElem->value().find("emissive");
+            graph["diffuse"] = spElem->value().find("diffuse");
+            graph["specular"] = spElem->value().find("specular");
+            graph["specularEx"] = spElem->value().find("specular_n");
+
+            auto shader = mShaderBuilder.buildShaderLambda(graph);
+            auto pMat = new GenericMaterial(shader);
+
+            spElem->attachComponent(pMat);
+        }
+        else if (tag == "Material2") 
+        {
+            lx0::lxvar  graph = spElem->value().find("graph");
+
+            auto shader = mShaderBuilder.buildShaderLambda(graph);
+            auto pMat = new GenericMaterial(shader);
+
+            spElem->attachComponent(pMat);
+        }
+        else if (tag == "Light")
+        {
+            auto pLight = new Light;
+            pLight->position = spElem->value().find("position").convert();
+            pLight->color    = spElem->value().find("color").convert();
+            
+            LightPtr spLight(pLight);
+            spElem->attachComponent(spLight);
+            mLights.push_back(spLight);
+        }
+        else if (tag == "Camera") 
+        {
+            if (!mCamera)
+            {
+                auto pCam = new ::Camera;
+                pCam->camera.near_plane = sqrtf(2);
+                pCam->camera.position = spElem->value().find("position").convert();
+                point3f target = spElem->value().find("look_at").convert();
+                
+                pCam->camera.orientation = orientation_from_to_up(pCam->camera.position, target, vector3f(0, 0, 1));
+                pCam->viewMatrix = glm::lookAt(pCam->camera.position.vec, target.vec, glm::vec3(0, 0, 1));
+                pCam->projMatrix = glm::perspective(60.0f, 1.0f, 0.1f, 1000.0f);
+
+                mCamera = std::shared_ptr<::Camera>(pCam);
+            }
+        }
+        else if (tag == "Environment") 
+        {
+            mspEnvironment->shadows = query(spElem->value().find("shadows"), true);
+        }
         else
             std::cout << "Unprocessed tag: " << tag << std::endl;
     }
 
     std::map<std::string, std::function<void (ElementPtr spElem)>> mHandlers;
 
-    bool                                    mSuppressAddNotification;
     std::deque<std::function<bool (void)>>  mUpdateQueue;
 
     lx0::ShaderBuilder                      mShaderBuilder;
@@ -711,8 +466,10 @@ protected:
     std::shared_ptr<Context>                mspContext;
     std::shared_ptr<Environment>            mspEnvironment;
     std::shared_ptr<::Camera>               mCamera;
-    std::vector<std::shared_ptr<Geometry>>  mGeometry;
+    SpatialIndex                            mIndex;
     std::vector<LightPtr>                   mLights;
+
+    std::map<std::string, std::unique_ptr<GeometryParser>> mGeometryParsers;
 
     struct TraceContext
     {

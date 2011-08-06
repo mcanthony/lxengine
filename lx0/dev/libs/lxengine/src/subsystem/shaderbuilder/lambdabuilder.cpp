@@ -31,6 +31,7 @@
 #include <glgeom/ext/patterns.hpp>
 
 #include <lx0/core/log/log.hpp>
+#include <lx0/prototype/misc.hpp>
 
 #include "lambdabuilder.hpp"
 
@@ -116,6 +117,24 @@ static glm::vec3 shade_phong (
 
 //===========================================================================//
 
+TextureCache::Image3fPtr  
+TextureCache::acquire (const std::string& filename)
+{
+    auto it = mCache.find(filename);
+    if (it == mCache.end())
+    {
+        std::shared_ptr<glgeom::image3f> spTexture( new glgeom::image3f );
+        lx0::load_png(*spTexture, filename.c_str());
+        mCache.insert(std::make_pair(filename, spTexture));
+        
+        return spTexture;
+    }
+    else
+        return it->second;
+}
+
+//===========================================================================//
+
 static
 lxvar _value (lxvar param, lxvar node, const char* name)
 {
@@ -124,6 +143,21 @@ lxvar _value (lxvar param, lxvar node, const char* name)
         return node["input"][name][1];
     else
         return value;
+}
+
+/*
+    Calling this a "sampler" is not wholly accurate at the moment, as it is
+    returning an image - not some generalization of an image.  However, 
+    eventually it may make sense to construct a sampler interface that 
+    allows a RGBA image to be sampled as a RGB, etc.
+
+    This has other limitations such as only supporting PNG as the moment.
+ */
+std::shared_ptr<glgeom::image3f>    
+LambdaBuilder::_buildSampler (lxvar param)
+{
+    auto filename = param.as<std::string>();
+    return mTextureCache.acquire(filename);
 }
 
 LambdaBuilder::FunctionFloat
@@ -250,6 +284,43 @@ LambdaBuilder::_buildVec3 (lxvar param)
                     specular(i), 
                     specularEx(i)
                 );
+            };
+        }
+        else if (type == "texture2d")
+        {
+            auto spTexture = _buildSampler(param["texture"]);
+            auto uv = _buildVec2(_value(param, node, "uv")); 
+
+            return [spTexture, uv] (const Context& i) -> glm::vec3 {
+                glm::vec2 uv2 = uv(i);
+                return spTexture->get(
+                    uv2.x * float(spTexture->width() - 1) + 0.5f,
+                    uv2.y * float(spTexture->height() - 1) + 0.5f
+                ).vec;
+            };
+        }
+        else if (type == "lightgradient")
+        {
+            auto spTexture = _buildSampler(param["texture"]);
+
+            return [spTexture](const Context& ctx) -> glm::vec3 {
+
+                glm::vec3 color(0,0,0);
+                for (int i = 0; i < ctx.unifLightCount; ++i)
+                {
+                    // 
+                    // L = unit vector from light to intersection point; the "incidence vector" I is the
+                    //     vector pointing in the opposite direction of L.
+                    // N = surface normal at the point of intersection
+                    //
+                    const glm::vec3  L  (glm::normalize(ctx.unifLightPosition[i] - ctx.fragVertexEc)); 
+                    const glm::vec3& N  (ctx.fragNormalEc);
+                    const float      NdotL ( glm::dot(N, L) );
+                
+                    const float diffuseSample = (NdotL + 1.0f) / 2.0f;
+                    color += spTexture->get(int(diffuseSample * (spTexture->width() - 1)), 0).vec * ctx.unifLightColor[i];
+                }
+                return color;
             };
         }
     }

@@ -167,6 +167,8 @@ void ShaderBuilder::buildShaderGLSL (Material& material, lxvar graph)
 ShaderBuilder::ShadeFunction 
 ShaderBuilder::buildShaderLambda (lxvar graph)
 {
+    lx_check_error(graph.is_defined());
+
     return mpLambdaBuilder->buildShader(graph);
 }
 

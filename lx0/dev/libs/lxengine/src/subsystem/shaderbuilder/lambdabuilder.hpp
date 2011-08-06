@@ -29,6 +29,7 @@
 #pragma once
 
 #include <lx0/subsystem/shaderbuilder.hpp>
+#include <glgeom/prototype/image.hpp>
 
 namespace lx0 
 {
@@ -38,6 +39,17 @@ namespace lx0
         {
             namespace detail
             {
+                class TextureCache
+                {
+                public:
+                    typedef std::shared_ptr<glgeom::image3f>    Image3fPtr;
+
+                    Image3fPtr  acquire (const std::string& filename);
+
+                protected:
+                    std::map<std::string, Image3fPtr> mCache;
+                };
+
                 class LambdaBuilder
                 {
                 public:
@@ -55,12 +67,13 @@ namespace lx0
                     ShadeFunction   buildShader (lx0::lxvar graph);
 
                 protected:
-                    FunctionFloat   _buildFloat (lxvar param);
-                    FunctionVec2    _buildVec2  (lxvar param);
-                    FunctionVec3    _buildVec3  (lxvar param);
-
-
-                    NodeMap& mNodes;
+                    FunctionFloat                       _buildFloat     (lxvar param);
+                    FunctionVec2                        _buildVec2      (lxvar param);
+                    FunctionVec3                        _buildVec3      (lxvar param);
+                    std::shared_ptr<glgeom::image3f>    _buildSampler   (lxvar param);
+                 
+                    NodeMap&        mNodes;
+                    TextureCache    mTextureCache;
                 };
             }
         }

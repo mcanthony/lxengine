@@ -45,10 +45,10 @@ public:
 
     CameraComp (lx0::CameraPtr spCam) : mspCamera (spCam) {}
 
-    virtual void    onValueChange       (ElementPtr spElem, lxvar value)
+    virtual void    onValueChange       (ElementPtr spElem)
     {
-        glgeom::vector3f position = value.find("position").convert();
-        glgeom::point3f target = value.find("look_at").convert();
+        glgeom::vector3f position = spElem->value().find("position").convert();
+        glgeom::point3f target = spElem->value().find("look_at").convert();
 
         auto view = glm::lookAt(position.vec, target.vec, glm::vec3(0, 0, 1));
         mspCamera->viewMatrix = view;

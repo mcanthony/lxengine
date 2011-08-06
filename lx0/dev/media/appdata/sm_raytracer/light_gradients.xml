@@ -15,42 +15,51 @@
       <Group id="material_group">
         <Material2 id="mat1">
           {
-          graph : {
-          _type : "phong",
-          diffuse : [ 1, 1, 0]
+            graph : {
+              _type : "lightgradient",
+              texture : "media2/textures/gradients/1d/light_gradient-00.png"
+            }
           }
+        </Material2>
+        <Material2 id="mat2">
+          {
+            graph : {
+              _type : "lightgradient",
+              texture : "media2/textures/gradients/1d/light_gradient-01.png"
+            }
           }
         </Material2>
         <Material2 id="mat3">
           {
-          graph : {
-          _type : "lightgradient",
-          texture : "media2/textures/gradients/1d/light_gradient-00.png"
-          }
+            graph : {
+              _type : "lightgradient",
+              texture : "media2/textures/gradients/1d/light_gradient-02.png"
+            }
           }
         </Material2>
         <Material2 id="mat4">
           {
-          graph : {
-          _type : "lightgradient",
-          texture : "media2/textures/gradients/1d/light_gradient-01.png"
-          }
+            graph : {
+              _type : "lightgradient",
+              texture : "media2/textures/gradients/1d/light_gradient-03.png"
+            }
           }
         </Material2>        
-      </Group>
+      
+    </Group>
     </Library>
     <Scene view="view">
       <Group id="light_group">
         <Light>
           {
             position : [ 1, 3, 3 ],
-            color    : [ 1, 1, 1 ]
+            color    : [ .65, .7, .8 ]
           }
         </Light>
         <Light>
           {
           position : [ 3, 1, 1 ],
-          color    : [ .2, .1, .1 ]
+          color    : [ .4, .4, .3 ]
           }
         </Light>
       </Group>
@@ -81,7 +90,7 @@
               radius : .5
             }
           </Sphere>
-          <Sphere material="normal_shader">
+          <Sphere material="mat2">
             {
             center : [ .5, 1.5, .5 ],
             radius : .5

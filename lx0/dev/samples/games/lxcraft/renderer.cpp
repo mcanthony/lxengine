@@ -48,7 +48,7 @@ public:
         mspCamera = pRasterizer->createCamera(fov, 0.01f, 8000.0f, glm::lookAt(mPosition.vec, mTarget.vec, glm::vec3(0, 0, 1)));
     }
 
-    virtual void onValueChange (ElementPtr spElem, lxvar value)
+    virtual void onValueChange (ElementPtr spElem)
     {
         resetViewDirection(spElem, value);
     }
@@ -111,7 +111,7 @@ public:
         mspInstance = _createItem(pRasterizer, offset);
     }
 
-    virtual void onValueChange (ElementPtr spElem, lxvar value)
+    virtual void onValueChange (ElementPtr spElem)
     {
     }
 

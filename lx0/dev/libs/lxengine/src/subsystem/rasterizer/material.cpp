@@ -257,9 +257,18 @@ GenericMaterial::_compile (RasterizerGL* pRasterizer)
             }
             else if (type == "sampler2D")
             {
+                TexturePtr spTexture;
+
                 auto name = value.as<std::string>();
-                auto it = pRasterizer->mTextureCache.find(name);
-                auto spTexture = (it != pRasterizer->mTextureCache.end()) ? it->second : TexturePtr();
+                auto it = pRasterizer->mTextureCache.find(name);                    
+                if (it == pRasterizer->mTextureCache.end()) 
+                {
+                    spTexture = pRasterizer->createTexture(name.c_str());
+                    pRasterizer->cacheTexture(name, spTexture);
+                }
+                else
+                    spTexture = it->second;
+
                 if (spTexture)
                 {
                     // Activate the corresponding texture unit and set *that* to the GL id

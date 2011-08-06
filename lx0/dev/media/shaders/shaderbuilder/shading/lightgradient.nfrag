@@ -1,0 +1,15 @@
+vec3 N = normalize(fragNormalEc.xyz);
+       
+vec3 c = vec3(0,0,0);     
+for (int i = 0; i < unifLightCount; ++i)
+{
+    vec3 L = normalize(unifLightPosition[i].xyz - fragVertexEc);
+ 
+    float diffuseSample = (dot(N,L) + 1.0f) / 2.0f;
+    diffuseSample *= 0.99;
+    vec3 diffuse = texture2D(texture, vec2(diffuseSample, diffuseSample)).rgb;
+    vec3 lc = unifLightColor[i].rgb;
+    c += diffuse * lc;                   // diffuse term
+}
+               
+return c;
