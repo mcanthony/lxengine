@@ -32,7 +32,7 @@ void main(void)
     // perspective divide; NDCs are then mapped to display coordinates by
     // the glViewport settings.) 
     //
-    geomVertexOc = gl_Vertex;
+    geomVertexOc = gl_Vertex.xyz;
     vec4 vertexEc = unifViewMatrix * gl_Vertex;
     geomVertexEc = vertexEc.xyz / vertexEc.w;
     

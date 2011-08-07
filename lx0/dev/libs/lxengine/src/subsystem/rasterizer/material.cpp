@@ -234,7 +234,12 @@ GenericMaterial::_compile (RasterizerGL* pRasterizer)
         GLint index = glGetUniformLocation(mId, uniformName.c_str());
         if (index != -1)
         {
-            if (type == "vec2")
+            if (type == "float")
+            {
+                float v = value.as<float>();
+                mInstructions.push_back([=]() { glUniform1f(index, v); });
+            }
+            else if (type == "vec2")
             {
                 float v0 = value[0].as<float>();
                 float v1 = value[1].as<float>();
@@ -293,6 +298,46 @@ GenericMaterial::_compile (RasterizerGL* pRasterizer)
                 else
                     lx_warn("Could not find referenced texture '%s' in the texture cache.", name.c_str());
             }
+            else if (type == "samplerCube")
+            {
+                TexturePtr spTexture;
+
+                auto name = value.as<std::string>();
+                auto it = pRasterizer->mTextureCache.find(name);                    
+                if (it == pRasterizer->mTextureCache.end()) 
+                {
+                    std::string file[6];
+                    file[0] = name + "/xpos.png";
+                    file[1] = name + "/xneg.png";
+                    file[2] = name + "/ypos.png";
+                    file[3] = name + "/yneg.png";
+                    file[4] = name + "/zpos.png";
+                    file[5] = name + "/zneg.png";
+                    spTexture = pRasterizer->createTextureCubeMap(file[0].c_str(), file[1].c_str(), file[2].c_str(), file[3].c_str(), file[4].c_str(), file[5].c_str());
+                    pRasterizer->cacheTexture(name, spTexture);
+                }
+                else
+                    spTexture = it->second;
+
+                if (spTexture)
+                {
+                    // Activate the corresponding texture unit and set *that* to the GL id
+                    const GLuint texId = spTexture->mId;
+
+                    mInstructions.push_back([=]() {
+                        const auto unit = pRasterizer->mContext.textureUnit++;
+
+                        // Set the shader uniform to the *texture unit* containing the texture (NOT
+                        // the GL id of the texture)
+                        glUniform1i(index, unit);
+
+                        glActiveTexture(GL_TEXTURE0 + unit);
+                        glBindTexture(GL_TEXTURE_CUBE_MAP, texId);
+                    });
+                }
+            }
+            else
+                lx_error("Unrecognized parameter type '%s'", type.c_str());
         }
     }
 }
@@ -313,9 +358,13 @@ GenericMaterial::activate (RasterizerGL* pRasterizer, GlobalPass& pass)
     if (mInstructions.empty() && mParameters.is_defined())
         _compile(pRasterizer);
 
+    check_glerror();
+
     //
     // Run the set of instructions to set the parameters
     //
     for (auto it = mInstructions.begin(); it != mInstructions.end(); ++it)
         (*it)();
+
+    check_glerror();
 }

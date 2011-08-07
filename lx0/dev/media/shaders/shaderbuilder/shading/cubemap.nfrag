@@ -1,0 +1,2 @@
+vec3 coord = normalize(fragNormalOc.xyz);
+return texture(cubemap, coord);    

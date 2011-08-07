@@ -167,6 +167,7 @@ namespace lx0
                 MaterialPtr     createPhongMaterial         (const glgeom::material_phong_f& mat);
 
                 TexturePtr      createTexture               (const char* filename);
+                TexturePtr      createTextureCubeMap        (const char* xpos, const char* xneg, const char* ypos, const char* yneg, const char* zpos, const char* zneg); 
                 TexturePtr      createTextureDDS            (std::istream& stream);
                 void            cacheTexture                (std::string name, TexturePtr spTexture);
 

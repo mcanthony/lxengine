@@ -1,0 +1,10 @@
+{
+    output : "vec4",
+    uniforms    : 
+    {
+    },
+    input  : {
+        cubemap : [ "samplerCube",    "<not set>",                    "" ],
+    },
+    source: "cubemap.nfrag",
+}

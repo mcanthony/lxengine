@@ -103,6 +103,12 @@ void GLSLBuilder::buildShader (Material& material, lxvar graph)
     material.parameters = parameters;
 }
 
+static 
+bool
+_isSampler (const std::string& type)
+{
+    return (type == "sampler2D" || type == "samplerCube");
+}
 
 int 
 GLSLBuilder::_processNode (Shader& shader, Context& context, lxvar& parameters, lxvar graph, std::string requiredOutputType)
@@ -180,10 +186,17 @@ GLSLBuilder::_processNode (Shader& shader, Context& context, lxvar& parameters, 
             const auto  type = (*it)[0].as<std::string>();
             const auto& defaultValue = (*it)[1];
 
+            //
+            // Samplers require special-casing since they cannot be declared as local
+            // variables (i.e. the uniform must be referenced directly or passed in
+            // as a function argument).
+            // 
+            const bool bSampler = _isSampler(type);
+
             const auto userValue = graph.find(argName);
             const auto value = userValue.is_defined() ? userValue : defaultValue;
 
-            if (type != "sampler2D")
+            if (!bSampler)
                 ss << type << " n" << id << "_" << argName << " = ";
 
             if (value.is_map())
@@ -195,7 +208,7 @@ GLSLBuilder::_processNode (Shader& shader, Context& context, lxvar& parameters, 
                 const auto returnValueName = boost::str( boost::format("n%1%_ret") % childId ); 
                 ss << returnValueName;
             }
-            else if (value.is_string() && type != "sampler2D")
+            else if (value.is_string() && !bSampler)
             {
                 //
                 // Assume we're dealing with the name of a built-in variable
@@ -232,18 +245,18 @@ GLSLBuilder::_processNode (Shader& shader, Context& context, lxvar& parameters, 
                 //
                 // Note that samplers intentionally do not get assigned a default.
                 //
-                if (type != "sampler2D")
+                if (!bSampler)
                     uniform += boost::str( boost::format(" = %s") % _valueToStr(type, value) );
 
                 uniform += ";";
 
                 shader.mUniforms.push_back(uniform);
 
-                if (type != "sampler2D")
+                if (!bSampler)
                     ss << argUniformName;
             }
 
-            if (type != "sampler2D")
+            if (!bSampler)
                 ss << ";\n";
             ++i;
         }
@@ -267,6 +280,11 @@ GLSLBuilder::_processNode (Shader& shader, Context& context, lxvar& parameters, 
                 convertPrefix = "vec4( ";
                 convertPostfix = ", 1.0)";
             }
+            else if (requiredOutputType == "vec3" && outputType == "vec4")
+            {
+                convertPrefix = "( ";
+                convertPostfix = ").xyz";
+            }
             else
                 lx_warn("Implicit conversion between different types!");
         }
@@ -279,9 +297,10 @@ GLSLBuilder::_processNode (Shader& shader, Context& context, lxvar& parameters, 
         {
             const auto  argName = it.key();
             const auto  type = (*it)[0];
+            const bool  bSampler = _isSampler(type);
 
             // As noted above, samples cannot be used as local variables, so pass the uniform in directly
-            if (type == "sampler2D")
+            if (bSampler)
                 ss << _uniformName(context, argName);
             else
                 ss << "n" << id << "_" << argName;

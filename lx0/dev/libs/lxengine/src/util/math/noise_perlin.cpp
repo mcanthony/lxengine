@@ -296,7 +296,9 @@ namespace lx0 { namespace util { namespace math_ns {
 
     /*!
         Note: consider using GLM's noise functions instead, as they have a faster
-        implementation.
+        implementation.  However, at the current time, the implementation seems
+        significantly different (buggy?) and cannot reproduce proper 3d noise
+        results from it.
      */
     float 
     noise3d_perlin (float x, float y, float z)
@@ -304,5 +306,10 @@ namespace lx0 { namespace util { namespace math_ns {
         // Returns a number in the -1 to 1 range.  Normalize to
         // 0 to 1.
         return (perlin_noise_imp(x, y, z) + 1.0f) / 2.0f;
+    }
+
+    float   noise3d_perlin      (const glm::vec3& v)
+    {
+        return noise3d_perlin(v.x, v.y, v.z);
     }
 }}}

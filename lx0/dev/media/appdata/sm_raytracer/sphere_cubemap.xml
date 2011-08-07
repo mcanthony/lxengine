@@ -1,0 +1,70 @@
+<Document>
+    <Library>
+      <IncludeDocument src="media2/appshared/materials/basic.xml" />
+      <Camera id="camera">
+        {
+          position : [ 2.25, 2.25, 2.25 ],
+          look_at  : [ 1.5, 1.5, 1.5 ]
+        }
+      </Camera>
+      <View id="view">
+        {
+            camera : "camera"
+        }
+      </View>
+      <Material2 id="mat">
+        {
+          graph : {
+            _type : "phong",
+            diffuse : {
+              _type : "cubemap",
+              cubemap : "media2/textures/cubemaps/noise000",
+            },
+            specular : {
+              _type : "cubemap",
+              cubemap : "media2/textures/cubemaps/noise003",
+            },
+            specularEx: 12.0,
+          },
+        }
+      </Material2>
+    </Library>
+    <Scene view="view">
+      <Group id="light_group">
+        <Light>
+          {
+            position : [ 2, 3, 4 ],
+            color    : [ 1, .9, .7 ]
+          }
+        </Light>     
+      </Group>
+        <Group id="plane_group">
+            <Plane id="x_axis_plane" material="red">
+            {
+                normal : [ 1, 0, 0 ],
+                d      : 0
+            }
+            </Plane>
+            <Plane id="y_axis_plane" material="green">
+            {
+                normal : [ 0, 1, 0 ],
+                d      : 0
+            }
+            </Plane>
+            <Plane id="z_axis_plane" material="blue">
+            {
+                normal : [ 0, 0, 1 ],
+                d      : 0
+            }
+            </Plane>
+        </Group>
+        <Group id="geometry">
+          <Sphere material="mat">
+            {
+            scale : [ 1, 1, 1 ],
+            center : [ 1.5, 1.5, 1.5 ]
+            }
+          </Sphere>
+        </Group>
+    </Scene>
+</Document>

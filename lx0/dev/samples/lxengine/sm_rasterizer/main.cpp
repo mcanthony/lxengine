@@ -41,6 +41,73 @@ using namespace lx0;
 //   E N T R Y - P O I N T
 //===========================================================================//
 
+#include <glgeom/prototype/image.hpp>
+#include <lx0/prototype/misc.hpp>
+#include <glgeom/ext/patterns.hpp>
+
+static void
+generateNoiseCubeMap()
+{
+    using namespace glgeom;
+
+    for (int f = 0; f < 6; ++f)
+    {
+        image3f img (256,256);
+        float s = img.width();
+
+        for (int y = 0; y < img.width(); ++y)
+        {
+            for (int x = 0; x < img.height(); ++x)
+            {
+                float dx = 2.0f * (float(x) / float(img.width() - 1) - .5f);
+                float dy = 2.0f * (float(y) / float(img.height() - 1) - .5f);
+
+                vector3f v;
+
+                switch (f)
+                {
+                case 0: v = vector3f( 1, -dy, -dx); break;
+                case 2: v = vector3f(dx, 1, dy); break;
+                case 4: v = vector3f(dx, -dy,  1); break;
+
+                case 1: v = vector3f(-1, -dy, dx); break;
+                case 3: v = vector3f(dx, -1, -dy); break;
+                case 5: v = vector3f(-dx, -dy, -1); break;
+                }
+                v = normalize(v);
+                glm::vec3 u;
+
+                glm::vec3 large(500000, 500000, 500000);
+
+                u.x = lx0::noise3d_perlin(v.vec * (0.3f + lx0::noise3d_perlin(v.vec * 2.5f)));
+                u.y = lx0::noise3d_perlin(v.vec * 1.4f);
+                glm::vec3 a = glgeom::pattern_spot_dimmed( glm::vec3(1, 1, 1), glm::vec3(.2f, .2f, .02f), .49f, glm::vec2(u.x, u.y) );
+
+                u.x = lx0::noise3d_perlin(v.vec * (12.0f + 12.0f * lx0::noise3d_perlin(v.vec * 2.5f)) + large);
+                u.y = lx0::noise3d_perlin(42.0f * v.vec * u.x );
+                glm::vec3 b = glgeom::pattern_spot_dimmed( glm::vec3(.5f, .5f, .3f), glm::vec3(.17f, .3f, .2f), .295f, glm::vec2(u.x, u.y) );
+                           
+                color3f c = color3f( glm::mix(a, b, .315f) );
+
+                img.set(x, y, c);
+            }
+        }
+        const char* filename[] = 
+        {
+            "xpos.png",
+            "xneg.png",
+            "ypos.png",
+            "yneg.png",
+            "zpos.png",
+            "zneg.png",
+        };
+
+        std::string file = "media2/textures/cubemaps/noise000/";
+        file += filename[f];
+        lx0::save_png(img, file.c_str());
+    }
+}
+
 int 
 main (int argc, char** argv)
 {
@@ -56,6 +123,13 @@ main (int argc, char** argv)
 
         if (spEngine->parseCommandLine(argc, argv, "file"))
         {
+            // Temp
+            {
+                generateNoiseCubeMap();
+            }
+            //
+
+
             spEngine->attachComponent(lx0::createJavascriptSubsystem());
             spEngine->attachComponent(createScriptHandler());
         

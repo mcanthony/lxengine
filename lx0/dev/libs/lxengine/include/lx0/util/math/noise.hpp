@@ -36,6 +36,7 @@ namespace lx0
         namespace math_ns 
         {
             float   noise3d_perlin      (float x, float y, float z);
+            float   noise3d_perlin      (const glm::vec3& v);
         }
     }
     using namespace lx0::util::math_ns;
