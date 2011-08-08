@@ -117,6 +117,7 @@ namespace lx0 { namespace core { namespace v8bind
         }
         operator int ()                     { return mValue->Int32Value(); }
         operator float ()                   { return float( mValue->NumberValue() ); }
+        operator glm::vec3 ();
         operator lxvar ();
 
         template <typename T>

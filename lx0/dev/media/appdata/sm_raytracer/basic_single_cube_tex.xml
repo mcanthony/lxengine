@@ -12,7 +12,7 @@
             camera : "camera"
         }
       </View>
-      <Material2 id="mat">
+      <Material id="mat">
         {
           graph : {
             _type : "phong",
@@ -26,7 +26,7 @@
             },
           },
         }
-      </Material2>
+      </Material>
     </Library>
     <Scene view="view">
       <Group id="light_group">

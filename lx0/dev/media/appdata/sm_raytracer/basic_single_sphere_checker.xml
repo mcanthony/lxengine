@@ -17,7 +17,7 @@
           shadows : false,
         }
       </Environment>
-      <Material2 id="checker">
+      <Material id="checker">
         {
           graph : {
             _type : "phong",
@@ -30,7 +30,7 @@
             }
           },
         }
-      </Material2>
+      </Material>
     </Library>
     <Scene view="view">
       <Group id="light_group">

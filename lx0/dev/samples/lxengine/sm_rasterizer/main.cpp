@@ -44,67 +44,96 @@ using namespace lx0;
 #include <glgeom/prototype/image.hpp>
 #include <lx0/prototype/misc.hpp>
 #include <glgeom/ext/patterns.hpp>
+#include <glgeom/ext/mappers.hpp>
+#include <boost/random/mersenne_twister.hpp>
+#include <boost/random/uniform_int.hpp>
+#include <boost/random/variate_generator.hpp>
 
-static void
-generateNoiseCubeMap()
+static 
+void
+generateNoiseCubeMap ()
 {
-    using namespace glgeom;
+    boost::mt19937 generator;         
+    boost::uniform_int<> range(0,1023);
+    boost::variate_generator<boost::mt19937&, boost::uniform_int<> > die(generator, range);
 
-    for (int f = 0; f < 6; ++f)
-    {
-        image3f img (256,256);
-        float s = img.width();
+    glm::vec3 offset(223.33f, 3125.32138f, 2734.234221f);
 
-        for (int y = 0; y < img.width(); ++y)
-        {
-            for (int x = 0; x < img.height(); ++x)
+    std::vector<glgeom::image3f> imageSet;
+    glgeom::generate_cube_map(imageSet, 256, 256, [&] (const glm::vec3& v) -> glm::vec3 {
+
+        glm::vec3 water;
+        if (1) {
+            glm::vec3 sum;
+            for (int i = 1; i <= 8; ++i)
             {
-                float dx = 2.0f * (float(x) / float(img.width() - 1) - .5f);
-                float dy = 2.0f * (float(y) / float(img.height() - 1) - .5f);
+                glm::vec2 uv;
+                uv = glgeom::mapper_spherical(v, glm::vec2(4, 4));
+                uv.x += i * 4.0f * lx0::noise3d_perlin(v * 1.2f + glm::vec3(234, i * 122, 621));
+                uv.y += i * 4.0f * lx0::noise3d_perlin(v * 1.2f + glm::vec3(i * 532, i * 7732, 23462));
 
-                vector3f v;
-
-                switch (f)
-                {
-                case 0: v = vector3f( 1, -dy, -dx); break;
-                case 2: v = vector3f(dx, 1, dy); break;
-                case 4: v = vector3f(dx, -dy,  1); break;
-
-                case 1: v = vector3f(-1, -dy, dx); break;
-                case 3: v = vector3f(dx, -1, -dy); break;
-                case 5: v = vector3f(-dx, -dy, -1); break;
-                }
-                v = normalize(v);
-                glm::vec3 u;
-
-                glm::vec3 large(500000, 500000, 500000);
-
-                u.x = lx0::noise3d_perlin(v.vec * (0.3f + lx0::noise3d_perlin(v.vec * 2.5f)));
-                u.y = lx0::noise3d_perlin(v.vec * 1.4f);
-                glm::vec3 a = glgeom::pattern_spot_dimmed( glm::vec3(1, 1, 1), glm::vec3(.2f, .2f, .02f), .49f, glm::vec2(u.x, u.y) );
-
-                u.x = lx0::noise3d_perlin(v.vec * (12.0f + 12.0f * lx0::noise3d_perlin(v.vec * 2.5f)) + large);
-                u.y = lx0::noise3d_perlin(42.0f * v.vec * u.x );
-                glm::vec3 b = glgeom::pattern_spot_dimmed( glm::vec3(.5f, .5f, .3f), glm::vec3(.17f, .3f, .2f), .295f, glm::vec2(u.x, u.y) );
-                           
-                color3f c = color3f( glm::mix(a, b, .315f) );
-
-                img.set(x, y, c);
+                glgeom::color3f c;
+                sum += glgeom::pattern_spot_dimmed(
+                        glm::vec3(13/255.0f, 128/255.0f, 255/255.0f),
+                        glm::vec3(237/255.0f, 241/255.0f, 244/255.0f),
+                        .45f,
+                        uv
+                    );
             }
-        }
-        const char* filename[] = 
-        {
-            "xpos.png",
-            "xneg.png",
-            "ypos.png",
-            "yneg.png",
-            "zpos.png",
-            "zneg.png",
-        };
 
+            water = sum / 8.0f;
+        }
+
+        glm::vec3 grass;
+        {
+            glm::vec3 sum;
+            for (int i = 1; i <= 3; ++i)
+            {
+                glm::vec2 uv;
+                uv = glgeom::mapper_spherical(v, glm::vec2(4, 4));
+                uv.x += i * 4.0f * lx0::noise3d_perlin(v * 5.2f + glm::vec3(234, i * 122, 621));
+                uv.y += i * 4.0f * lx0::noise3d_perlin(v * 4.2f + glm::vec3(i * 532, i * 7732, 23462));
+
+                glgeom::color3f c;
+                sum += glgeom::pattern_checker(
+                        glm::vec3(174/255.0f, 165/255.0f, 117/255.0f),
+                        glm::vec3(90/255.0f, 47/255.0f, 12/255.0f),
+                        uv
+                    );
+            }
+
+            grass = sum / 8.0f;
+        }
+
+        float b =  lx0::noise3d_perlin(v * 3.2f + glm::vec3(234, 3112, 621));
+        b += lx0::noise3d_perlin(v * 0.62f + glm::vec3(234, 3112, 621));
+        b /= 2.0f;
+        b = pow(.45f + b, 3);
+        b = glm::clamp(b, 0.0f, 1.0f);
+        if (b < .25f) b = powf(b, 1.25f);
+        b = .55f + b * .45f;
+
+        glm::vec3 sum;
+        sum = glm::mix(water, grass, b);
+
+        return sum;
+    });
+
+    const char* filename[] = 
+    {
+        "xpos.png",
+        "xneg.png",
+        "ypos.png",
+        "yneg.png",
+        "zpos.png",
+        "zneg.png",
+    };
+
+    for (int i = 0; i < 6; ++i)
+    {
         std::string file = "media2/textures/cubemaps/noise000/";
-        file += filename[f];
-        lx0::save_png(img, file.c_str());
+        file += filename[i];
+        lx0::save_png(imageSet[i], file.c_str());
     }
 }
 

@@ -12,7 +12,7 @@
             camera : "camera"
         }
       </View>
-      <Material2 id="white">
+      <Material id="white">
         {
           graph : {
             _type : "phong",
@@ -21,8 +21,8 @@
             specularEx : 512
           }
         }
-      </Material2>
-      <Material2 id="wavy">
+      </Material>
+      <Material id="wavy">
         {
           graph : {
             _type : "wave",
@@ -48,7 +48,7 @@
             width : .25,
           }
         }
-      </Material2>
+      </Material>
      
     </Library>
     <Scene view="view">

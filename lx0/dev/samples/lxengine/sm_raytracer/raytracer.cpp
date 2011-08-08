@@ -401,20 +401,6 @@ protected:
         }
         else if (tag == "Material") 
         {
-            lxvar graph;
-            graph["_type"] = "phong";
-            graph["emissive"] = spElem->value().find("emissive");
-            graph["diffuse"] = spElem->value().find("diffuse");
-            graph["specular"] = spElem->value().find("specular");
-            graph["specularEx"] = spElem->value().find("specular_n");
-
-            auto shader = mShaderBuilder.buildShaderLambda(graph);
-            auto pMat = new GenericMaterial(shader);
-
-            spElem->attachComponent(pMat);
-        }
-        else if (tag == "Material2") 
-        {
             lx0::lxvar  graph = spElem->value().find("graph");
 
             auto shader = mShaderBuilder.buildShaderLambda(graph);

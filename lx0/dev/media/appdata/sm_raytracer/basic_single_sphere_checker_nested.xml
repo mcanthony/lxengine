@@ -12,7 +12,7 @@
             camera : "camera"
         }
       </View>
-      <Material2 id="checker">
+      <Material id="checker">
         {
           graph : {
             _type : "checker",
@@ -32,7 +32,7 @@
             }
           },
         }
-      </Material2>
+      </Material>
     </Library>
     <Scene view="view">
       <Group id="light_group">

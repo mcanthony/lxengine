@@ -175,7 +175,7 @@ public:
                 mspCamera = mspRasterizer->createCamera(glgeom::radians(glgeom::degrees(60)), nearDistance, farDistance, viewMatrix);
             });
         }
-        else if (spElem->tagName() == "Material2")
+        else if (spElem->tagName() == "Material")
         {
             auto material = mShaderBuilder.buildShaderGLSL( spElem->value().find("graph") );
             auto spMaterial = mspRasterizer->createMaterial(material.uniqueName, material.source, material.parameters);

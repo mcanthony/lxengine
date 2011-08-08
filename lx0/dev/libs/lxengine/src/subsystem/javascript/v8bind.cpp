@@ -56,6 +56,21 @@ namespace lx0 { namespace core { namespace v8bind
         else
             lx_error("Not implemented");
     }
+    
+    
+    //---------------------------------------------------------------------------//
+    //!
+    /*!
+     */
+    _marshal::operator glm::vec3 ()
+    {
+        v8::Local<v8::Array> arr = v8::Array::Cast(*mValue);
+        glm::vec3 v;
+        v.x = arr->Get(0)->NumberValue();
+        v.y = arr->Get(1)->NumberValue();
+        v.z = arr->Get(2)->NumberValue();
+        return v;
+    }
 
     //---------------------------------------------------------------------------//
     //!

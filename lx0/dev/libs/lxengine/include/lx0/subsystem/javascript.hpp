@@ -40,13 +40,21 @@ namespace lx0
          */
         namespace javascript_ns
         {
+            /*!
+                Primary interface to the Javascript subsystem on a particular Document.
+             */
             class IJavascriptDoc : public lx0::Document::Component
             {
             public:
                 static  const char* s_name  (void)       { return "javascript"; }
                 virtual const char* name    (void) const { return s_name(); }
 
-                virtual void run (const std::string& source) = 0;
+                //! Executes a string of Javascript code in the context of the Document
+                virtual lx0::lxvar  run     (const std::string& source) = 0;
+
+                virtual void        runInContext        (std::function<void(void)> func) = 0;
+                virtual std::function <lx0::lxvar(float, float)> 
+                                    acquireFunction2f   (const char* functionName) = 0;
             };
 
             Engine::Component* createJavascriptSubsystem();

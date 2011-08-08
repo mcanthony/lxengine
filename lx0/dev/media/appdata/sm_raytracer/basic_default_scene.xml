@@ -12,7 +12,7 @@
             camera : "camera"
         }
       </View>
-      <Material2 id="white">
+      <Material id="white">
         {
         graph : {
         _type : "phong",
@@ -21,8 +21,8 @@
         specularEx : 512
         }
         }
-      </Material2>
-      <Material2 id="checker">
+      </Material>
+      <Material id="checker">
         {
           graph : {
             _type : "phong",
@@ -37,7 +37,7 @@
             specularEx : 512
           }
         }
-      </Material2>      
+      </Material>      
     </Library>
     <Scene view="view">
       <Group id="light_group">

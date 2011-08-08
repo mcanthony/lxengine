@@ -134,7 +134,7 @@ protected:
 
         const std::string tag = spElem->tagName();
 
-        if (tag == "Material2")
+        if (tag == "Material")
         {
             lx0::lxvar  graph = spElem->value().find("graph");
             

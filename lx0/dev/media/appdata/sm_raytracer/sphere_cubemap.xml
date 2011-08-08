@@ -12,11 +12,19 @@
             camera : "camera"
         }
       </View>
-      <Material2 id="mat">
+      <Material id="mat_stars">
+        {
+          graph :{
+              _type : "cubemap",
+              cubemap : "media2/textures/cubemaps/stars000",
+          },
+        }
+      </Material>      
+      <Material id="mat">
         {
           graph : {
             _type : "phong",
-            diffuse : {
+            diffuse: {
               _type : "cubemap",
               cubemap : "media2/textures/cubemaps/noise000",
             },
@@ -27,7 +35,7 @@
             specularEx: 12.0,
           },
         }
-      </Material2>
+      </Material>
     </Library>
     <Scene view="view">
       <Group id="light_group">
@@ -39,7 +47,7 @@
         </Light>     
       </Group>
         <Group id="plane_group">
-            <Plane id="x_axis_plane" material="red">
+            <!-- <Plane id="x_axis_plane" material="red">
             {
                 normal : [ 1, 0, 0 ],
                 d      : 0
@@ -56,13 +64,19 @@
                 normal : [ 0, 0, 1 ],
                 d      : 0
             }
-            </Plane>
+            </Plane> -->
         </Group>
         <Group id="geometry">
           <Sphere material="mat">
             {
-            scale : [ 1, 1, 1 ],
+            radius : .5,
             center : [ 1.5, 1.5, 1.5 ]
+            }
+          </Sphere>
+          <Sphere material="mat_stars">
+            {
+            radius : 1000,
+            center : [ 0, 0, 0 ]
             }
           </Sphere>
         </Group>

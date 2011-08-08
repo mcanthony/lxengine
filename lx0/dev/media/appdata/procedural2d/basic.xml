@@ -1,0 +1,35 @@
+<Document>
+  <Script>
+    <!--
+    function checker(s, t)
+    {
+      var p = ((s - Math.floor(s)) < .5) ? 1 : 0;
+      p += ((t - Math.floor(t)) >= .5) ? 1 : 0;
+
+      if (p == 0 || p == 2)
+          return 1;
+      else
+          return 0; 
+    }
+    
+    function generate (s, t)
+    {
+      if (checker(s,t) == 1)
+        return [ 1, Math.abs(.5 - s), Math.abs(.5 - t) ];
+      else
+      {
+        var t = Math.noise3d([s * 6, t * 8, .35]);
+        return [t, t, t];
+      }
+    }
+    -->
+  </Script>
+  <Texture>
+    {
+      width  : 256,
+      height : 256,
+      type   : "2d",
+      source : [ "function", "generate" ],
+    }
+  </Texture>
+</Document>

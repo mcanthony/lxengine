@@ -207,6 +207,8 @@ SET_PROPERTY(TARGET sm_v8_basic             PROPERTY FOLDER "Samples/Misc")
 SET_PROPERTY(TARGET cpp_smartptr            PROPERTY FOLDER "Samples/Misc")
 SET_PROPERTY(TARGET cpp_remove_duplicates   PROPERTY FOLDER "Samples/Misc")
 
+SET_PROPERTY(TARGET procedural2d            PROPERTY FOLDER "Samples/Tools")
+
 SET_PROPERTY(TARGET bm_lxvar                PROPERTY FOLDER "Benchmarks")
 SET_PROPERTY(TARGET blendload               PROPERTY FOLDER "Sandbox")
 SET_PROPERTY(TARGET elm_reference           PROPERTY FOLDER "Sandbox")

@@ -13,30 +13,30 @@
         }
       </View>
       <Group id="material_group">
-        <Material2 id="mat1">
+        <Material id="mat1">
           {
           graph : {
           _type : "phong",
           diffuse : [ 1, 1, 0]
           }
           }
-        </Material2>
-        <Material2 id="mat3">
+        </Material>
+        <Material id="mat3">
           {
           graph : {
           _type : "lightgradient",
           texture : "media2/textures/gradients/1d/light_gradient-00.png"
           }
           }
-        </Material2>
-        <Material2 id="mat4">
+        </Material>
+        <Material id="mat4">
           {
           graph : {
           _type : "lightgradient",
           texture : "media2/textures/gradients/1d/light_gradient-01.png"
           }
           }
-        </Material2>        
+        </Material>        
       </Group>
     </Library>
     <Scene view="view">

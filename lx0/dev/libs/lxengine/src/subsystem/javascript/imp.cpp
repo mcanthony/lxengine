@@ -3,6 +3,7 @@
                                    LxEngine
 
     LICENSE
+    * MIT License (http://www.opensource.org/licenses/mit-license.php)
 
     Copyright (c) 2010-2011 athile@athile.net (http://www.athile.net)
 
@@ -31,6 +32,8 @@
 //===========================================================================//
 
 #include <iostream>
+
+#include <boost/format.hpp>
 
 #include <v8/v8.h>
 
@@ -66,7 +69,7 @@ namespace {
 
 
     //-----------------------------------------------------------------------//
-    //! Wrap a native object without reference counting
+    //! Wrap a native object that does not have reference counting
     /*!
         Stores the pointer to the native object in the "0" internal field of
         the JS object.
@@ -182,9 +185,9 @@ namespace {
         , public Engine::Component
     {
     public:
-                    JsEngineContext (Engine* pEngine);
+                            JsEngineContext (Engine* pEngine);
 
-        virtual const char* name() const { return "javascript"; }
+        virtual const char* name                (void) const { return "javascript"; }
         virtual void        onDocumentCreated   (EnginePtr spEngine, DocumentPtr spDocument);
 
         Engine*     mpEngine;
@@ -194,6 +197,13 @@ namespace {
 
     namespace wrappers_engine
     {
+        /*
+            This is a fairly "old" function from initial prototyping in the code.
+            It doesn't make a lot of sense in the current design, as it's very
+            specific to the idea of a CSS-like Element attribute parser.  The 
+            concept of attribute parsers still makes sense eventually - but this
+            likely isn't the implementation that is desired.
+         */
         static v8::Handle<v8::Value> 
         addAttributeParser (const v8::Arguments& args)
         {
@@ -285,19 +295,20 @@ namespace {
     class JavascriptDoc : public lx0::IJavascriptDoc
     {
     public:
-                        JavascriptDoc   (DocumentPtr spDocument);
-        virtual         ~JavascriptDoc  (void);
+                            JavascriptDoc       (DocumentPtr spDocument);
+        virtual             ~JavascriptDoc      (void);
 
-        virtual void    onElementAdded      (DocumentPtr spDocument, ElementPtr spElem);
-        virtual void    onUpdate            (DocumentPtr spDocument);
+        virtual void        onElementAdded      (DocumentPtr spDocument, ElementPtr spElem);
+        virtual void        onUpdate            (DocumentPtr spDocument);
 
 
-        virtual void    run (const std::string& source) { run (mpDocument->shared_from_this(), source); }
-
-        void            run (DocumentPtr spDocument, std::string source);
+        virtual lx0::lxvar  run                 (const std::string& source);
         
+        
+        virtual std::function <lx0::lxvar(float, float)>    acquireFunction2f (const char* functionName);
+        virtual void        runInContext        (std::function<void(void)> func);
 
-        void            _processTimeoutQueue        (void);
+        void                _processTimeoutQueue        (void);
 
         //@name Add functions/objects to JS context
         //@{
@@ -321,6 +332,9 @@ namespace {
         Persistent<Function>            mOnUpdate;
         Persistent<Function>            mWindowOnKeyDown;
         std::vector<std::pair<int, Persistent<Function>>> mTimeoutQueue;
+
+
+
     };
 
     //=======================================================================//
@@ -336,6 +350,10 @@ namespace {
     {
         spDocument->attachComponent(new JavascriptDoc(spDocument));
 
+        //
+        // Auto-loading attribute parsers is a relic of earlier code: the engine 
+        // should not being doing something so specific.
+        //
         lx0::for_files_in_directory("media2/scripts/engine/attribute_parsers", "js", [&] (std::string path) {
             this->runFile(path.c_str());
         });
@@ -481,8 +499,11 @@ namespace {
         }
     }
 
-    void 
-    JavascriptDoc::run (DocumentPtr spDocument, std::string text)
+    /*!
+        Run the associated source text within the context of the given document.
+     */
+    lx0::lxvar 
+    JavascriptDoc::run (const std::string& text)
     {
         Context::Scope context_scope(mContext);
 
@@ -498,14 +519,54 @@ namespace {
         {
             // Run the script
             TryCatch trycatch;
+            
+            lxvar         lxresult;
             Handle<Value> result = script->Run();
-            if (result.IsEmpty()) {  
+            
+            if (result.IsEmpty()) 
+            {  
                 Handle<Value> exception = trycatch.Exception();
                 
                 String::AsciiValue exception_str(exception);
                 lx_warn("Javascript Exception: %s\n", *exception_str);
             }
+            else
+            {
+                lxresult = _marshal(result);
+            }
+
+            return lxresult;
         }
+    }
+
+    void  JavascriptDoc::runInContext (std::function<void(void)> func)
+    {
+        Context::Scope    context_scope(mContext);
+        HandleScope       handle_scope;
+        
+        func();
+    }
+
+    std::function <lx0::lxvar(float, float)>
+    JavascriptDoc::acquireFunction2f (const char* functionName)
+    {
+        Handle<v8::Object> global( mContext->Global() );
+        Handle<v8::Value>  value = global->Get(String::New(functionName)); 
+        
+        if (value->IsFunction())
+        {
+            Handle<v8::Function> func( v8::Handle<v8::Function>::Cast(value) );
+                
+            return [func,global](float a0, float a1) -> lx0::lxvar {
+                Handle<Value> args[2];
+                args[0] = _marshal(a0);
+                args[1] = _marshal(a1);
+                Handle<Value> ret = func->Call(global, 2, args);
+                return _marshal(ret);
+            };
+        }
+        else
+            return std::function <lx0::lxvar(float, float)>();
     }
 
     void
@@ -1122,90 +1183,11 @@ namespace {
         return Persistent<Function>::New( templ->GetFunction() );
     }
 
-    namespace MathWrappers
-    {
-        Handle<Value> sin (const v8::Arguments& args)
-        {
-            float a = _marshal(args[0]);
-            return _marshal( ::sin(a) );
-        }
-
-        Handle<Value> cos (const v8::Arguments& args)
-        {
-            float a = _marshal(args[0]);
-            return _marshal( ::cos(a) );
-        }
-
-        Handle<Value> abs (const v8::Arguments& args)
-        {
-            float a = _marshal(args[0]);
-            return _marshal( fabs(a) );
-        }
-
-        Handle<Value> sign (const v8::Arguments& args)
-        {
-            float a = _marshal(args[0]);
-            int s;
-            if (a < 0.0f) 
-                s = -1;
-            else if (a > 0.0f)
-                s = 1;
-            else
-                s = 0;
-            return _marshal(s);
-        }
-    }
-
     void
     JavascriptDoc::_addMath (void)
     {
-        namespace W = MathWrappers;
-
-        struct Math
-        {
-            static v8::Handle<v8::Value> random (const v8::Arguments& args)
-            {
-                auto pThis = _nativeThis<Math>(args); 
-
-                float ret = 0.0f;
-                if (args.Length() == 0)
-                {
-                    ret = float(rand()) / float(RAND_MAX);
-                }
-                else if (args.Length() == 2)
-                {
-                    float mn = _marshal(args[0]);
-                    float mx = _marshal(args[1]);
-                    ret = (mx - mn) * (float(rand()) / float(RAND_MAX)) + mn;
-                }
-                else
-                    lx_warn("Wrong number of arguments passed to Math.random().  Expects either 0 or 2 arguments.");
-
-                return _marshal(ret);
-            }
-        };
-
-        // Create the "Math" function template and add it's methods.
-        //
-        Handle<FunctionTemplate>    templ( FunctionTemplate::New() );
-        Handle<ObjectTemplate>      objInst( templ->InstanceTemplate() );
-        objInst->SetInternalFieldCount(1);
-
-        Handle<Template> proto_t( templ->PrototypeTemplate() );
-        auto method = [&proto_t] (const char* name, InvocationCallback cb) {
-            proto_t->Set(name, FunctionTemplate::New(cb));
-        };
-        proto_t->Set("random",  FunctionTemplate::New(Math::random));
-        method("sin",   W::sin);
-        method("cos",   W::cos);
-        method("abs",   W::abs);
-        method("sign",  W::sign);
-
-        // Create the function and add it to the global object 
-        //
-        //@todo The native Math object is being leaked
-        Handle<Object> obj( templ->GetFunction()->NewInstance() );
-        obj->SetInternalField(0, External::New(new Math));
+        Handle<Object> create_javascript_math();
+        auto obj = create_javascript_math();
         mContext->Global()->Set(String::New("Math"), obj);
     }
 }
