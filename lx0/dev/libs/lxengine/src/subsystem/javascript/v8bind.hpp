@@ -105,6 +105,7 @@ namespace lx0 { namespace core { namespace v8bind
         _marshal(float f)                   : mValue( v8::Number::New(f) ) {}
         _marshal(const char* s)             : mValue( v8::String::New(s) ) { }
         _marshal(std::string s)             : mValue( v8::String::New(s.c_str()) ) {}
+        _marshal(const glm::vec3& v);
         _marshal(lxvar v);
 
 

@@ -118,7 +118,7 @@ struct ESMIterator
     bool                good        (void) const                            { return mStream.good(); }
     lx0::uint64         tellg       (void)                                  { return mStream.tellg(); }
     void                seekg       (lx0::uint64 pos)                       { mStream.seekg(pos); }
-    void                skip    (   size_t bytes)                           { mStream.skip(bytes); }
+    void                skip        (size_t bytes)                          { mStream.skip(bytes); }
     
     void                read        (char* data, size_t count)              { mStream.read(data, count); }
     void                read5       (char* data)                            { mStream.read5(data); }

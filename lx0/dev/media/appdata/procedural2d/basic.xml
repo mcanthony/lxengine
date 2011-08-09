@@ -12,22 +12,42 @@
           return 0; 
     }
     
-    function generate (s, t)
+    function stripe(t)
     {
-      if (checker(s,t) == 1)
-        return [ 1, Math.abs(.5 - s), Math.abs(.5 - t) ];
+      return (Math.fract(t) < .5);
+    }
+    
+    function wood (s, t)
+    {
+      var n = .6 + .4 * Math.noise3d(s, 1.4 * t, .25);
+      if (stripe(t * 16 * n))
+      {
+        var k = .75 + .25 * Math.noise3d(.45 + s + t, 10.62 + t, s);
+        if (stripe(t * 32 * k))
+          return [0.50, 0.16, .13];
+        else
+          return [0.37, 0.17, .09];
+      }
       else
       {
-        var t = Math.noise3d([s * 6, t * 8, .35]);
-        return [t, t, t];
-      }
+        var k = .75 + .25 * Math.noise3d(.45 + s + t, 10.62 + t, s);
+        if (stripe(t * 32 * k))
+          return [0.38, 0.17, .12];
+        else
+          return [0.34, 0.19, .13];
+      } 
+    }
+    
+    function generate (s, t)
+    {
+      return wood(s, t * 3);
     }
     -->
   </Script>
   <Texture>
     {
-      width  : 256,
-      height : 256,
+      width  : 512,
+      height : 512,
       type   : "2d",
       source : [ "function", "generate" ],
     }

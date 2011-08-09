@@ -28,6 +28,10 @@
 */
 //===========================================================================//
 
+//===========================================================================//
+//   H E A D E R S   &   D E C L A R A T I O N S 
+//===========================================================================//
+
 #include <lx0/lxengine.hpp>
 #include <lx0/util/misc.hpp>
 
@@ -136,7 +140,7 @@ processNifObject (Niflib::NiObjectRef spObject, std::function<std::string (std::
                     graph["diffuse"]["_type"] = "texture2d";
                     graph["diffuse"]["texture"] = textureNameToId(textureFilename);
                     graph["diffuse"]["uv"] = "fragUV";
-                    spGroup->instances.back().material = graph;
+                    spGroup->instances.back().material["graph"] = graph;
                 
                     //
                     // Let NifLib compute the full transform up to the parent

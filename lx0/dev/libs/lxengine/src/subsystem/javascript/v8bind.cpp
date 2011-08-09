@@ -26,6 +26,7 @@
 */
 //===========================================================================//
 
+#include <glm/glm.hpp>
 #include <lx0/util/misc/util.hpp>
 #include "v8bind.hpp"
 
@@ -35,6 +36,15 @@ using v8::Object;
 
 namespace lx0 { namespace core { namespace v8bind
 {
+
+    _marshal::_marshal (const glm::vec3& v)
+    {
+        Handle<Array> arr = Array::New(3);
+        arr->Set(uint32_t(0), _marshal(v[0]));
+        arr->Set(uint32_t(1), _marshal(v[1]));
+        arr->Set(uint32_t(2), _marshal(v[2]));
+        mValue = arr;
+    }
 
     _marshal::_marshal (lxvar v)
     {
@@ -78,7 +88,7 @@ namespace lx0 { namespace core { namespace v8bind
      */
     _marshal::operator lxvar ()
     {
-        if (mValue->IsUndefined())
+        if (mValue.IsEmpty() || mValue->IsUndefined())
         {
             return lxvar();
         }

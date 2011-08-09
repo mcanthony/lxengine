@@ -3,6 +3,7 @@
                                    LxEngine
 
     LICENSE
+    * MIT License (http://www.opensource.org/licenses/mit-license.php)
 
     Copyright (c) 2011 athile@athile.net (http://www.athile.net)
 
@@ -55,9 +56,9 @@ std::string _resolveTextureName (std::string texture)
 {
     // Apparently Bethesda's level designers/artists used full res TGAs in the editor
     // and the production system automatically mapped these files to compressed DDS equivalents.
-    // And apparently a BMP or two as well...
+    // And apparently at least one BMP as well...
     //
-    // Also, it appears all look-ups are case insensative given that ESM and BSA names
+    // Also, it appears all look-ups are case insensitive given that ESM and BSA names
     // do not always have consistent casing.
     //
     boost::to_lower(texture);
@@ -82,16 +83,58 @@ struct BsaFile
 
     typedef std::map<std::string, Entry> EntryMap;
 
+    void            set     (EntryMap& map);
+    Entry*          find    (const std::string& name);
+
+    void            _dumpIndex ();
+
     std::string     mFilename;
+
+protected:
     EntryMap        mEntries;
 };
 
+void
+BsaFile::set (EntryMap& map)
+{
+    mEntries.swap(map);
+}
+
+BsaFile::Entry* 
+BsaFile::find (const std::string& name)
+{
+    auto it = mEntries.find(name);
+    return (it != mEntries.end()) ? &it->second : nullptr;
+}
+
+void
+BsaFile::_dumpIndex ()
+{
+    //
+    // Debugging tool: create an index of all the named entries
+    //
+    std::ofstream out(boost::str(boost::format("%s_index.txt") % boost::filesystem::path(mFilename).filename()));
+    lx_check_error(out.good());
+    for (auto it = mEntries.begin(); it != mEntries.end(); ++it)
+        out << it->first << std::endl;
+    out.close();
+}
+
+//===========================================================================//
+// BsaCollection
+//===========================================================================//
+
+/*
+    Represents a set of loaded BSA files.  Morrowind MODs include new BSA
+    files, so a particular resource could be coming from any of a set of 
+    BSA files.
+ */
 class BsaCollection
 {
 public:
     void initialize(const char* path);
 
-    std::pair<bool,BsaFile::EntryMap::iterator>     getEntry    (std::string name);
+    std::pair<bool,BsaFile::Entry*> getEntry    (std::string name);
 
     std::shared_ptr<scene_group>    getModel            (std::string type, std::string name);
     std::shared_ptr<std::istream>   getTextureStream    (std::string name);
@@ -116,12 +159,12 @@ BsaCollection::getModel (std::string type, std::string name)
     {
         for (auto jt = mBsas.begin(); jt != mBsas.end(); ++jt)
         {
-            auto kt = jt->mEntries.find(fullname);
-            if (kt != jt->mEntries.end())
+            auto pEntry = jt->find(fullname);
+            if (pEntry)
             {
                 Stream stream;
                 stream.open(jt->mFilename);
-                stream.seekg(kt->second.offset);
+                stream.seekg(pEntry->offset);
                 auto spSceneFragment = readNifObject(stream.stream(), _resolveTextureName);
                 stream.close();
 
@@ -137,19 +180,17 @@ BsaCollection::getModel (std::string type, std::string name)
 }
 
 
-std::pair<bool,BsaFile::EntryMap::iterator>
+std::pair<bool,BsaFile::Entry*>
 BsaCollection::getEntry (std::string name)
 {
     for (auto jt = mBsas.begin(); jt != mBsas.end(); ++jt)
     {
         boost::to_lower(name);
-        auto kt = jt->mEntries.find(name);
-        if (kt != jt->mEntries.end())
-        {
-            return std::make_pair(true, kt);
-        }
+        auto pEntry = jt->find(name);
+        if (pEntry)
+            return std::make_pair(true, pEntry);
     }
-    return std::make_pair(false, BsaFile::EntryMap::iterator());
+    return std::make_pair(false, nullptr);
 }
 
 std::shared_ptr<std::istream>   
@@ -158,12 +199,12 @@ BsaCollection::getTextureStream (std::string name)
     for (auto jt = mBsas.begin(); jt != mBsas.end(); ++jt)
     {
         boost::to_lower(name);
-        auto kt = jt->mEntries.find(name);
-        if (kt != jt->mEntries.end())
+        auto pEntry = jt->find(name);
+        if (pEntry)
         {
             std::shared_ptr<std::ifstream> spStream(new std::ifstream);
             spStream->open(jt->mFilename, std::ios::binary);
-            spStream->seekg(kt->second.offset);
+            spStream->seekg(pEntry->offset);
             return spStream;
         }
     }
@@ -207,6 +248,7 @@ void loadBsaFile (BsaFile& bsa, const std::string& filename)
 
         lx0::uint64 dataOffset = stream.tellg();
 
+        BsaFile::EntryMap map;
         for (lx0::uint32 i = 0; i < fileCount; ++i)
         {
             BsaFile::Entry entry;
@@ -214,21 +256,10 @@ void loadBsaFile (BsaFile& bsa, const std::string& filename)
             entry.size = fileOffsets[i].size; 
             entry.offset = dataOffset + fileOffsets[i].offset; 
 
-            bsa.mEntries.insert(std::make_pair(entry.name, entry));
+            map.insert(std::make_pair(entry.name, entry));
         }
+        bsa.set(map);
         stream.close();
-    }
-
-    //
-    // Debugging tool: create an index of all the named entries
-    //
-    if (false)
-    {
-        std::ofstream out(boost::str(boost::format("%s_index.txt") % boost::filesystem::path(bsa.mFilename).filename()));
-        lx_check_error(out.good());
-        for (auto it = bsa.mEntries.begin(); it != bsa.mEntries.end(); ++it)
-            out << it->first << std::endl;
-        out.close();
     }
 }
 
@@ -241,7 +272,7 @@ void BsaCollection::initialize (const char* path)
 }
 
 //===========================================================================//
-
+//===========================================================================//
 
 struct LandscapeTexture
 {
@@ -443,19 +474,48 @@ struct Landscape
             switch (iter.sub_id())
             {
             case kId_INTV:
-                gridX = iter.read();
-                gridY = iter.read();
+                {
+                    // INTV = Integer Values
+                    //
+                    // The signed 32-bit integer values are the grid location of this landscape
+                    // cell.  Each cell takes up a 8192x8129 unit region of world space (in
+                    // Morrowind units).  
+                    //
+                    gridX = iter.read();
+                    gridY = iter.read();
+                }
                 break;
+
             case kId_VHGT:
                 {
-                    // Offset, followed by 65x65 heights, then 3 bytes unknown
-                    float offset = iter.read();
+                    // VHGT = Vertex Height
 
+                    //
+                    // Offset, followed by 65x65 heights, then 3 bytes unknown.
+                    // The heights are signed chars (-128 to 127).
+                    //
+                    float offset = iter.read();
                     std::vector<lx0::int8> buffer(65 * 65);
                     iter.read(&buffer[0], 65 * 65);
-                    
                     vertexHeight.reserve(65 * 65);
 
+                    //
+                    // The heights are run-length encoded: each height is relative
+                    // to the preceding heights.  
+                    //
+                    // More specifically, each height is simply an offset from the prior 
+                    // height in that row.  The first height in a row is relative to the
+                    // to the *first* offset in the prior row.  The first height in the
+                    // first row is relative to the "offset" variable that precedes the
+                    // 65x65 map.
+                    //
+                    // (This is a pretty smart format, by the way, given the characteristics of
+                    // a heightmap - which is to say low variation from point to point
+                    // but potentially large variation over the whole map.)
+                    //
+                    // Finally, note the the heights are *signed* bytes and are all 
+                    // scaled by a factor of 8.
+                    //
                     for (int y = 0; y < 65; ++y)
                     {
                         offset += buffer[y * 65];
@@ -469,8 +529,15 @@ struct Landscape
                     }
                 }
                 break;
+
             case kId_VNML:
                 {
+                    // VNML = Vertex Normals
+                    //
+                    // 65x65 array of signed bytes.  The signed bytes are simply to compress the
+                    // normals.  Dividing by 127 and normalizing gives a "standard" 3-tuple float
+                    // representation for the normal.
+                    //
                     vertexNormal.resize(65 * 65);
                     for (auto it = vertexNormal.begin(); it != vertexNormal.end(); ++it)
                     {
@@ -484,20 +551,35 @@ struct Landscape
 
             case kId_VTEX:
                 {
-                    // Still working on figuring out what these values mean
+                    // VTEX = Vertex Textures
+
+                    //
+                    // Still working on figuring out what these values mean exactly...
+                    //
+                    // The textures for the 64x64 cells in Morrowind seem to be divided
+                    // into 4x4 chunks (i.e. every 4x4 chunk has the same texture), 
+                    // meaning ther are only 16x16 texture ids per LAND record.
+                    //  
+                    // But what exactly do these 16x16 16-bit values represent?  Are they
+                    // indices into the array of LTEX records?  How do we take the 16-bits
+                    // for a particular 4x4 region can know which LTEX record that's
+                    // referencing??
+                    //
                     textureId.resize(16 * 16);
                     iter.read(&textureId[0], textureId.size());
-
-                    // Are these IDs based on the order of the LTEX records?
-                    // How do these map from id to LTEX?
                 }
                 break;
 
             case kId_DATA:
-            case kId_VCLR:
+            case kId_VCLR:  // VCLR = Vertex Color - ignored for now, but technically not hard to implement
             case kId_WNAM:
             default:
                 {
+                    //
+                    // If the ID isn't recognized, just read the bytes into a buffer
+                    // so we can view them in the debugger to try to figure out what
+                    // they are...
+                    //
                     std::string name = iter.sub_name();
                     std::vector<char> buffer (iter.sub_size());
                     iter.read(&buffer[0], buffer.size());
@@ -862,9 +944,19 @@ public:
 
         if (!spCell->isInterior())
         {
+            //
+            // Each CELL has a specific grid x,y: this corresponds to the same grid x,y as the
+            // associated LAND record for the landscape data.  (Not sure if/what the CELL's grid
+            // x,y is used for in the case of an interior cell.)  So grab the LAND record based
+            // on the grid location.
+            //
             auto it = mEsmIndex.landscapes.find(std::make_pair(spCell->grid[0], spCell->grid[1]));
+            
             if (it != mEsmIndex.landscapes.end())
             {
+                //
+                // Read the Landscape object out of the ESM
+                //
                 Landscape landscape(ESMIterator(stream, *it->second));
                 std::cout << "Landscape found at grid location\n";
 
@@ -878,42 +970,75 @@ public:
                 // There are more efficient means of dealing with landscapes: (1) Use a shared
                 // 65x65 vertex buffer with 256 (or less) index buffers all referencing that shared
                 // buffer. (2) Retain the fact that this is heightmap when passing it into 
-                // bullet and pass it in as a single primitive. (3) Other I'm sure.  We'll save
-                // this for a later version of LxEngine.
+                // bullet and pass it in as a single primitive. (3) Use a single buffer for the
+                // physics representation since texture has effect on the physics. (4) Other I'm sure.  
+                // We'll save these optimizations for "someday"...
                 //
                 for (int cy = 0; cy < 16; ++cy)
                 {
                     for (int cx = 0; cx < 16; ++cx)
                     {
+                        //
+                        // Allocate the buffer representation (5x5 vertices representing the 4x4 quad cells)
+                        //
                         std::shared_ptr<glgeom::primitive_buffer> spPrimitive (new glgeom::primitive_buffer);
                         spPrimitive->vertex.positions.resize(5 * 5);
                         spPrimitive->vertex.normals.resize(5 * 5);
                         spPrimitive->vertex.uv.resize(1);
                         spPrimitive->vertex.uv[0].resize(5 * 5);
 
+                        //
+                        // Read the vertex information: height, normal, uv, etc.
+                        //
                         for (int gy = 0; gy < 5; ++gy)
                         {
                             for (int gx = 0; gx < 5; ++gx)
                             {
-                                // OffsetL into the 65x65 landscape grid
-                                // OffsetP into the 5x5 grid cell
-                                int xL = (cx * 4 + gx);
-                                int yL = (cy * 4 + gy);
-                                int offsetL = yL * 65 + xL;
-                                int offsetP = gy * 5 + gx;
+                                //
+                                // The LAND record is a big 65x65 array.  The geometry we're creating is
+                                // a 5x5 array.  Therefore separate offsets into each array are needed
+                                // based on which 4x4 chunk we're creating.
+                                //
+                                int xL = (cx * 4 + gx);         // x-offset into the LAND array
+                                int yL = (cy * 4 + gy);         // y-offset into the LAND array
+                                int offsetL = yL * 65 + xL;     // offset into the LAND array
+                                int offsetP = gy * 5 + gx;      // offset into the geometry array
 
+                                //
+                                // The LAND cell is 8192x8192, so at 64x64 cells that's 128 units per cell.
+                                // Since the cells are uniformly spaced, the x/y position of each vertex is
+                                // simply 128 times the x,y.
+                                //
+                                // The height is already scaled to Morrowind units in the Landscape object.
+                                //
                                 auto& p = spPrimitive->vertex.positions[offsetP];
                                 p.x = xL * 128.0f;
                                 p.y = yL * 128.0f;
                                 p.z = landscape.vertexHeight[offsetL];
 
+                                //
+                                // Keep track of the bounds while building this object
+                                //
                                 spPrimitive->bbox.merge(p);
 
+                                //
+                                // Vertex normals are directly copied from the Landscape object: no scaling
+                                // or anything unusual needed.
+                                //
                                 spPrimitive->vertex.normals[offsetP] = landscape.vertexNormal[offsetL];
+
+                                //
+                                // The texturing in LxMorrowind is not yet correct, but I'm *assuming* the
+                                // UVs are uniformly distributed over the 4x4 regions.  I.e. the specified
+                                // texture map is stretched from 0,0 to 1,1 across that 4x4 cell.
+                                //
                                 spPrimitive->vertex.uv[0][offsetP].vec = glm::vec2(gx / 4.0f, gy / 4.0f);
                             }
                         }
 
+                        //
+                        // Build the triangle mesh now that the vertex data is ready
+                        //
                         spPrimitive->indices.resize(5 * 5 * 6);     // 2 triangles per cell (3 x 2)
                         for (int gy = 0; gy < 4; ++gy)
                         {
@@ -929,28 +1054,71 @@ public:
                             }
                         }
 
+                        //
+                        // Set the bounding sphere as well
+                        //
                         spPrimitive->bsphere = glgeom::bsphere3f(spPrimitive->bbox);
 
                         //
+                        // Here's some guesswork since the landscape textures don't seem to be right
+                        // yet...
+                        //
                         // Presumably texture 0 means "NONE" so add 1 before offesting into the 
-                        // LTEX array?
+                        // LTEX array?  Otherwise take the x,y of the 4x4 region we just created
+                        // and use that to index the ESM's LTEX record list.
+                        // 
+                        // (This doesn't seem like it can be right: what happens if multiple MODs add new
+                        // LTEX records?  How could that possibly work as the index would change depending
+                        // on the load order of those MODs.)
+                        //
+                        // Anyway, this gets us *a* texture to use for testing for now.
                         //
                         size_t textureId = landscape.textureId[cy * 16 + cx] + 1;
+
+                        //
+                        // Now do the same for the local neighbors of the current cell.  Do this so 
+                        // that we can blend the edges with the neighbors.  Morrowind apparently blends
+                        // up to 2 textures.  We'll do 5 here, because we can. 
+                        //
                         size_t neighborId[4];
                         neighborId[0] = landscape.textureId[((cy > 0) ? (cy - 1) : cy) * 16 + cx] + 1;
                         neighborId[1] = landscape.textureId[cy * 16 + ((cx < 15) ? (cx + 1) : cx)] + 1;
                         neighborId[2] = landscape.textureId[((cy < 15) ? (cy + 1) : cy) * 16 + cx] + 1;
                         neighborId[3] = landscape.textureId[cy * 16 + ((cx > 0) ? (cx - 1) : cx)] + 1;
 
+                        //
+                        // Now take the geometry and bundle it up into a geometry, transform, material
+                        //
+                        // The transform is always (8192 * grid x,y) since each cell is 8192x8192 Morrowind
+                        // units.
+                        //
                         instance inst;
                         inst.spPrimitive = spPrimitive;
                         inst.spTransform = std::shared_ptr<glm::mat4>(new glm::mat4( glm::translate(glm::mat4(), glm::vec3(landscape.gridX * 8192, landscape.gridY * 8192, 0.0f)) ));
                 
+                        //
+                        // Set up the material.  This uses the LxEngine ShaderBuilder system, which
+                        // isn't well documented at the moment.  Basically construct a Phong material
+                        // that sets the diffuse color via a shader fragment named "texture2d_blend5",
+                        // which is a little shader function more or less created just for LxMorrowind
+                        // sample a simple texture but also blend with it's neighbor textures along
+                        // the edges.
+                        //
                         lx0::lxvar graph;
                         graph["_type"] = "phong";
-                        graph["diffuse"]["_type"] = "texture2d_blend5";
-                        graph["diffuse"]["uv"] = "fragUV";
+                        graph["diffuse"]["_type"] = "texture2d_blend5";     // Use the texture2d_blend5 ShaderBuilder node
+                        graph["diffuse"]["uv"] = "fragUV";                  // Use the UV set on the fragment
 
+                        //
+                        // This next chunk simply loads up each of the LTEX records in order to grab
+                        // the name over each landscape texture (we computed numeric IDs above, not
+                        // names).
+                        //
+                        // These names get throw into the the "texture0", "texture1", etc. arguments of 
+                        // the texture2d_blend5 shader node.  We also push a texture_handle for each one
+                        // so that LxEngine can then know how to load these textures the first time 
+                        // it seems an unrecognized name.
+                        // 
                         LandscapeTexture ltex( ESMIterator(stream, *mEsmIndex.landscapeTextures[textureId]) );
                         texture_handle texture;
                         texture.name = ltex.texture;
@@ -970,7 +1138,7 @@ public:
                             graph["diffuse"][name] = texture.name;
                             group.textures.push_back(texture);
                         }
-                        inst.material = graph;
+                        inst.material["graph"] = graph;
                 
                         group.instances.push_back(inst);
                     }
@@ -979,6 +1147,8 @@ public:
 
                 //
                 // Add water
+                //
+                // Create a big 8192x8129 quad for transparent blue for now.
                 //
                 {
                     instance inst;
@@ -1004,8 +1174,21 @@ public:
                     // Is water height fixed at 0 for exteriors?
                     *inst.spTransform = glm::translate(glm::mat4(), glm::vec3(landscape.gridX * 8192, landscape.gridY * 8192, 0));
 
-                    // TEMP: special-case handle
-                    inst.material = "WATER";
+                    // 
+                    // Water is a special-case material since it should be more a "system"
+                    // than a mere material
+                    //
+                    {
+                        lx0::lxvar graph;
+                        graph["_type"] = "solid_rgba";
+                        graph["color"] = lx0::lxvar(0.388235294f, 0.615686275f, 0.776470588f, .4f);
+                        
+                        lx0::lxvar options;
+                        options["blend"] = true;
+
+                        inst.material["graph"] = graph;
+                        inst.material["options"] = options;
+                    }
 
                     group.instances.push_back(inst);
                 }
@@ -1014,6 +1197,9 @@ public:
                 std::cout << "Could not find landscape at grid location\n";
         }
 
+        //
+        // Create instances for all the objects referenced in the cell
+        //
         for (auto it = spCell->references.begin(); it != spCell->references.end(); ++it)
         {
             lx0::Timer tmLoad;

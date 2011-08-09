@@ -3,6 +3,7 @@
                                    LxEngine
 
     LICENSE
+    * MIT License (http://www.opensource.org/licenses/mit-license.php)
 
     Copyright (c) 2011 athile@athile.net (http://www.athile.net)
 
@@ -26,6 +27,10 @@
 */
 //===========================================================================//
 
+//===========================================================================//
+//   H E A D E R S   &   D E C L A R A T I O N S 
+//===========================================================================//
+
 #include <boost/algorithm/string.hpp>
 #include <lx0/lxengine.hpp>
 #include <lx0/util/misc.hpp>
@@ -38,6 +43,12 @@ using namespace lx0;
 
 //===========================================================================//
 
+/*
+    A standard Controller implementation: listens for "events" on the Document
+    and translates those high-level events into specific Document changes.
+
+    In this case, the only events are camera movements.
+ */
 class ControllerImp : public lx0::Controller
 {
 public:

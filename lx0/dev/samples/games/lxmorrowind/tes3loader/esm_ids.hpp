@@ -68,6 +68,11 @@
 
 #define _MAKE_ID(a,b,c,d) kId_ ## a ## b ## c ## d = ( (_MAKE_ID_ ## d << 24) | (_MAKE_ID_ ## c << 16) | (_MAKE_ID_ ## b << 8) | (_MAKE_ID_ ## a) ) 
 
+/*
+    Create 32-bit integer enums representing each of the four character tags
+    so that simple int comparisons can be done rather than short string 
+    compares.
+ */
 enum
 {
     _MAKE_ID(A,C,T,I),

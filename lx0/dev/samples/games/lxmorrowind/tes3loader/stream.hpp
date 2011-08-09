@@ -35,6 +35,19 @@
 
 //===========================================================================//
 
+/*
+    Convenience wrapper on a std::ifstream.  Mirrors standard tellg(), 
+    seekg(), etc. methods but also includes a series of read() overloads
+    for convenience.
+
+    For example:
+
+    float f = stream.read();
+    unsigned char b = stream.read();
+
+    Both should do what you would expect and read 32-bits and 8-bits
+    respectively.
+ */
 class Stream
 {
 public:

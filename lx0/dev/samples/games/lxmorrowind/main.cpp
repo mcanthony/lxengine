@@ -3,6 +3,7 @@
                                    LxEngine
 
     LICENSE
+    * MIT License (http://www.opensource.org/licenses/mit-license.php)
 
     Copyright (c) 2011 athile@athile.net (http://www.athile.net)
 
@@ -49,9 +50,12 @@ lx0::Controller*        create_controller(lx0::DocumentPtr spDoc);
 //===========================================================================//
 
 /*
-    Push any global settings set by the document into Engine::globals() 
-    so the rest of the app can always rely on Engine::globals() containing
-    the appropriate value.
+    Ensure any settings set in the Document are pushed into Engine::globals().
+
+    This allows the rest of the code to check the setting in Engine::globals()
+    and know that's the appropriate value regardless of whether it was the
+    default value, a command-line value, or a Document value.  In other words,
+    it prevents each setting query from having to check multiple sources.
  */ 
 static
 void _processDocumentSettings (lx0::EnginePtr spEngine, lx0::DocumentPtr spDocument)
@@ -61,8 +65,6 @@ void _processDocumentSettings (lx0::EnginePtr spEngine, lx0::DocumentPtr spDocum
     {     
         std::string startingCell = spDocument->getElementsByTagName("Scene")[0]->attr("startingCell").as<std::string>();
         startingCellVar = startingCell;
-
-        lx_warn("");
     }
 }
 
@@ -86,6 +88,9 @@ main (int argc, char** argv)
         {
             spEngine->attachComponent(lx0::createPhysicsSubsystem());
             
+            //
+            // A bit of a hack at the moment...
+            //
             void initializePhysics();
             initializePhysics();
 
@@ -107,11 +112,15 @@ main (int argc, char** argv)
 
             //
             // Load the initial Morrowind cell
-            // ...then populate the Document with its data
             //
             scene_group group;
             spEngine->getComponent<ITES3Loader>()->cell( spEngine->globals()["startingCell"].as<std::string>().c_str(), group);
 
+            //
+            // Process the loaded the scene_group data loaded from the Morrowind ESM/BSA
+            // and push the data into the Document in the form of <Instance>, <Texture>,
+            // <Light>, etc. Elements.
+            // 
             glgeom::abbox3f sceneBounds;
             ElementPtr spGroup = spDocument->createElement("Group");
             for (auto it = group.instances.begin(); it != group.instances.end(); ++it)
@@ -120,7 +129,7 @@ main (int argc, char** argv)
                 lxvar value = spElement->value();
                 value["transform"] = lxvar::wrap(*it->spTransform);
                 value["primitive"] = lxvar::wrap(*it->spPrimitive);
-                value["material"] = lxvar::wrap(it->material);
+                value["material"]  = lxvar::wrap(it->material);
                 spElement->value(value);
                 spGroup->append(spElement);
 
@@ -176,8 +185,8 @@ main (int argc, char** argv)
     catch (lx0::error_exception& e)
     {
         std::cout << "Error: " << e.details().c_str() << std::endl
-                    << "Code: " << e.type() << std::endl
-                    << std::endl;
+            << "Code: " << e.type() << std::endl
+            << std::endl;
     }
     catch (std::exception& e)
     {

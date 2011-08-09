@@ -126,6 +126,34 @@ namespace {
 
             return _marshal(ret);
         }
+
+        Handle<Value> fract (const Arguments& args)
+        {
+            float v = _marshal(args[0]);
+            
+            float unused;
+            float f = modf(v, &unused);
+            
+            return _marshal(f);
+        }
+
+        Handle<Value> mix (const Arguments& args)
+        {
+            if (args[0]->IsArray())
+            {
+                glm::vec3 a = _marshal(args[0]);
+                glm::vec3 b = _marshal(args[1]);
+                float t = _marshal(args[2]);
+                return _marshal( glm::mix(a, b, t) );
+            }
+            else
+            {
+                float a = _marshal(args[0]);
+                float b = _marshal(args[1]);
+                float t = _marshal(args[2]);
+                return _marshal( glm::mix(a, b, t) );
+            }
+        }
     }
 
 }
@@ -152,6 +180,8 @@ Handle<v8::Object> create_javascript_math()
     method("sign",      W::sign);
     method("floor",     W::floor);
     method("noise3d",   W::noise3d);
+    method("fract",     W::fract);
+    method("mix",       W::mix);
 
     // Create the function and add it to the global object 
     //

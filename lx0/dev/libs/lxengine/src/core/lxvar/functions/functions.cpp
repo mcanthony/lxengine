@@ -38,20 +38,15 @@ namespace lx0 { namespace core {  namespace lxvar_ns {
     static lxvar
     _query_path (lxvar v, std::string path)
     {
+        //
         // Split the path into components
+        //
         std::vector<std::string> keys;
-        size_t s = 0;
-        size_t i = 0;
-        while (i < path.size())
-        {
-            while (i < path.size() && path[i] != '/')
-                i++;
+        boost::split(keys, path, boost::is_any_of("/"));
 
-            keys.push_back( path.substr(s, i - s) );
-            s = i + 1;
-        }
-
+        //
         // Walk the path
+        //
         for (auto it = keys.begin(); it != keys.end(); ++it)
         {
             if (v.is_map())

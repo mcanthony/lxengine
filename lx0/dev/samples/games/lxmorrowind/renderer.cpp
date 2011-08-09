@@ -3,6 +3,7 @@
                                    LxEngine
 
     LICENSE
+    * MIT License (http://www.opensource.org/licenses/mit-license.php)
 
     Copyright (c) 2011 athile@athile.net (http://www.athile.net)
 
@@ -26,6 +27,10 @@
 */
 //===========================================================================//
 
+//===========================================================================//
+//   H E A D E R S   &   D E C L A R A T I O N S 
+//===========================================================================//
+
 #include <iostream>
 #include <glgeom/ext/primitive_buffer.hpp>
 #include <lx0/subsystem/rasterizer.hpp>
@@ -39,6 +44,15 @@ using namespace glgeom;
 
 //===========================================================================//
 
+/*
+    Experimental class designed to allow a std::function<> callback to be
+    associated with a particular Element objects value being changed.
+
+    This is "experimental" since, while useful, the core API is intended to
+    be as lean as possible - and it's not clear if this wrapper should be
+    part of the API or if there are ways to accomplish the same while not
+    forcing the user to learn another concept.
+ */
 class ValueChangeListener : public Element::Component
 {
 public:
@@ -59,6 +73,10 @@ void addValueChangeListener (ElementPtr spElem, std::function<void (ElementPtr)>
 
 //===========================================================================//
 
+/*
+    Receives the view update notification and renders the view based on what's
+    current in the Document.
+ */
 class Renderer : public View::Component
 {
 public:
@@ -91,6 +109,9 @@ public:
 
     virtual void update (ViewPtr spView) 
     {
+        //
+        // Force a redraw at least once every 16 ms (~60 fps)
+        //
         lx0::uint32 now = lx0::lx_milliseconds();
         if (now - mLastUpdate >= 16)
         {
@@ -111,6 +132,10 @@ public:
         pass.spLightSet = mspLightSet;
         algorithm.mPasses.push_back(pass);
 
+        //
+        // Hack at culling since LxEngine does not yet have a built-in culling
+        // mechanism.
+        //
         auto viewPoint = glm::inverse(mspCamera->viewMatrix) * glgeom::point3f(0, 0, 0);
         lx0::RenderList instances;
         for (auto it = mInstances.begin(); it != mInstances.end(); ++it)
@@ -137,7 +162,6 @@ public:
         {
             mspRasterizer->rasterizeList(algorithm, it->second.list);
         }
-
         mspRasterizer->endFrame();
     }
 
@@ -198,8 +222,8 @@ public:
 
     lx0::MaterialPtr _buildMaterial (lx0::lxvar& material)
     {
-        // TEMP: special-case
-        if (material.is_string() && material.as<std::string>() == "WATER")
+        // TEMP: hack a special-case
+        /*if (material.is_string() && material.as<std::string>() == "WATER")
         {
             lx0::lxvar graph;
             graph["_type"] = "solid_rgba";
@@ -209,10 +233,11 @@ public:
             auto spMaterial = mspRasterizer->createMaterial(desc.uniqueName, desc.source, desc.parameters);
             spMaterial->mBlend = true;
             return spMaterial;
-        }
+        }*/
 
-        auto desc = mShaderBuilder.buildShaderGLSL(material);
+        auto desc = mShaderBuilder.buildShaderGLSL(material["graph"]);
         auto spMaterial = mspRasterizer->createMaterial(desc.uniqueName, desc.source, desc.parameters);
+        spMaterial->mBlend = query_path(material, "options/blend", false);
         return spMaterial;
     }
 
