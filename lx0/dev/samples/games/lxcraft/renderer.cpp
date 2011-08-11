@@ -50,13 +50,13 @@ public:
 
     virtual void onValueChange (ElementPtr spElem)
     {
-        resetViewDirection(spElem, value);
+        resetViewDirection(spElem);
     }
 
-    void resetViewDirection (ElementPtr spElem, lxvar value)
+    void resetViewDirection (ElementPtr spElem)
     {
-        mPosition = value.find("position").convert();
-        mTarget = value.find("look_at").convert();
+        mPosition = spElem->value().find("position").convert();
+        mTarget = spElem->value().find("look_at").convert();
 
         auto view = glm::lookAt(mPosition.vec, mTarget.vec, glm::vec3(0, 0, 1));
         mspCamera->viewMatrix = view;
@@ -400,7 +400,7 @@ protected:
         }
         else if (tag == "Camera")
         {
-            mspCamera->resetViewDirection(spElem, spElem->value());
+            mspCamera->resetViewDirection(spElem);
             spElem->attachComponent(mspCamera);
         }
         else 

@@ -144,22 +144,23 @@ namespace
         // Set up the desired attributes
         //
         std::vector<int> vAttributes;
+        vAttributes.reserve(64 * 2);
         auto add_attrib = [&vAttributes](int name, int value) -> int& {
             vAttributes.push_back(name);
             vAttributes.push_back(value);
             return vAttributes.back();
         };
-                            add_attrib(WGL_DRAW_TO_WINDOW_ARB, GL_TRUE);
-                            add_attrib(WGL_SUPPORT_OPENGL_ARB, GL_TRUE);
-                            add_attrib(WGL_ACCELERATION_ARB,   WGL_FULL_ACCELERATION_ARB);
-                            add_attrib(WGL_COLOR_BITS_ARB,     24);
-                            add_attrib(WGL_ALPHA_BITS_ARB,     8);
-                            add_attrib(WGL_DEPTH_BITS_ARB,     16);
-                            add_attrib(WGL_STENCIL_BITS_ARB,   0);
-                            add_attrib(WGL_DOUBLE_BUFFER_ARB,  GL_TRUE);
-                            add_attrib(WGL_SAMPLE_BUFFERS_ARB, GL_TRUE);
-        auto& sampleCount = add_attrib(WGL_SAMPLES_ARB,        4);
-                            add_attrib(0, 0);
+                              add_attrib(WGL_DRAW_TO_WINDOW_ARB, GL_TRUE);
+                              add_attrib(WGL_SUPPORT_OPENGL_ARB, GL_TRUE);
+                              add_attrib(WGL_ACCELERATION_ARB,   WGL_FULL_ACCELERATION_ARB);
+                              add_attrib(WGL_COLOR_BITS_ARB,     24);
+                              add_attrib(WGL_ALPHA_BITS_ARB,     8);
+                              add_attrib(WGL_DEPTH_BITS_ARB,     16);
+                              add_attrib(WGL_STENCIL_BITS_ARB,   0);
+                              add_attrib(WGL_DOUBLE_BUFFER_ARB,  GL_TRUE);
+        auto& sampleBuffers = add_attrib(WGL_SAMPLE_BUFFERS_ARB, GL_TRUE);
+        auto& sampleCount   = add_attrib(WGL_SAMPLES_ARB,        4);
+                              add_attrib(0, 0);
 
         //
         // Local function to try multiple formats
@@ -180,18 +181,35 @@ namespace
         //
         // Return on the first successful format
         //
-        sampleCount = 16;
+        for (int i = 16; i >= 1; --i)
+        {
+            sampleCount = i;
+            if (try_format())
+                return format;
+        }
+        lx_warn("Could not find a multi-sampling pixel format");
+
+        //
+        // Drop multi-sample support and try again...
+        // 
+        vAttributes.clear();
+        add_attrib(WGL_DRAW_TO_WINDOW_ARB, GL_TRUE);
+        add_attrib(WGL_SUPPORT_OPENGL_ARB, GL_TRUE);
+        add_attrib(WGL_ACCELERATION_ARB,   WGL_FULL_ACCELERATION_ARB);
+        add_attrib(WGL_COLOR_BITS_ARB,     24);
+        add_attrib(WGL_ALPHA_BITS_ARB,     8);
+        add_attrib(WGL_DEPTH_BITS_ARB,     16);
+        add_attrib(WGL_STENCIL_BITS_ARB,   0);
+        add_attrib(WGL_DOUBLE_BUFFER_ARB,  GL_TRUE);
+        add_attrib(0, 0);
+
         if (try_format())
             return format;
 
-        sampleCount = 4;
-        if (try_format())
-            return format;
-        
-        sampleCount = 2;
-        if (try_format())
-            return format;
-
+        //
+        // No pixel format whatsoever was found.
+        //
+        lx_error("Could not find a valid pixel format!");
         return 0;
     }
 

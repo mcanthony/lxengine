@@ -222,19 +222,6 @@ public:
 
     lx0::MaterialPtr _buildMaterial (lx0::lxvar& material)
     {
-        // TEMP: hack a special-case
-        /*if (material.is_string() && material.as<std::string>() == "WATER")
-        {
-            lx0::lxvar graph;
-            graph["_type"] = "solid_rgba";
-            graph["color"] = lx0::lxvar(0.388235294f, 0.615686275f, 0.776470588f, .4f);
-
-            auto desc = mShaderBuilder.buildShaderGLSL(graph);
-            auto spMaterial = mspRasterizer->createMaterial(desc.uniqueName, desc.source, desc.parameters);
-            spMaterial->mBlend = true;
-            return spMaterial;
-        }*/
-
         auto desc = mShaderBuilder.buildShaderGLSL(material["graph"]);
         auto spMaterial = mspRasterizer->createMaterial(desc.uniqueName, desc.source, desc.parameters);
         spMaterial->mBlend = query_path(material, "options/blend", false);

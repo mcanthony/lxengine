@@ -47,6 +47,8 @@ using namespace lx0;
 #include <glgeom/ext/mappers.hpp>
 #include <boost/random/mersenne_twister.hpp>
 #include <boost/random/uniform_int.hpp>
+#include <boost/random/uniform_real.hpp>
+#include <boost/random/uniform_on_sphere.hpp>
 #include <boost/random/variate_generator.hpp>
 
 static 
@@ -137,6 +139,193 @@ generateNoiseCubeMap ()
     }
 }
 
+
+static
+glm::vec3
+uniform_on_sphere ()
+{
+    static boost::mt19937 outer_rng;
+    static boost::uniform_on_sphere<float> s(3);
+    static boost::variate_generator<boost::mt19937, boost::uniform_on_sphere<float>> die(outer_rng, s);
+    
+    auto p = die();
+    return glm::vec3( p[0], p[1], p[2] );
+}
+
+static
+float 
+uniform_unit()
+{
+    static boost::mt19937 gen;
+    static boost::uniform_real<float> r( 0.0f, 1.0f );
+    static boost::variate_generator<boost::mt19937, boost::uniform_real<float> > die(gen, r);
+    return die();
+}
+
+static
+float 
+uniform_unit_exclusive()
+{
+    static boost::mt19937 gen;
+    static boost::uniform_real<float> r( 0.0f, 1.0f );
+    static boost::variate_generator<boost::mt19937, boost::uniform_real<float> > die(gen, r);
+    
+    float d;
+    do 
+    {
+        d = die();
+    } while (!(d < 1.0f));
+    return d;
+}
+
+static 
+void
+set (glgeom::cubemap3f& cubemap, const glm::vec3& p, const glgeom::color3f& c)
+{
+    //
+    // Map the 3-space point to a cube map tile + texel location
+    //
+
+    // Set by coverage where the sample point is considered the
+    // center of a unit square on the texture
+
+    int tile;
+    glm::vec3 ap( glm::abs(p) );
+    if (ap.x > ap.z)
+    {
+        if (ap.x > ap.y)
+            tile = (p.x > 0) ? 0 : 1;
+        else 
+            tile = (p.y > 0) ? 2 : 3;
+    }
+    else
+    {
+        if (ap.y > ap.z)
+            tile = (p.y > 0) ? 2 : 3;
+        else 
+            tile = (p.z > 0) ? 4 : 5;
+    }
+
+    glm::vec2 uv;
+    auto set = [](float sc, float tc, float ma) -> glm::vec2
+    {
+        return glm::vec2(
+            (sc / ma + 1.0f) / 2.0f,
+            (tc / ma + 1.0f) / 2.0f
+        );
+    };
+
+    switch (tile)
+    {
+    default:    lx_assert(0);
+    case 0:     uv = set(-p.z, -p.y, ap.x);     break;
+    case 1:     uv = set( p.z, -p.y, ap.x);     break;
+    case 2:     uv = set( p.x,  p.z, ap.y);     break;
+    case 3:     uv = set( p.x, -p.z, ap.y);     break;
+    case 4:     uv = set( p.x, -p.y, ap.z);     break;
+    case 5:     uv = set(-p.x, -p.y, ap.z);     break;
+    };
+    uv.x *= cubemap.width();
+    uv.y *= cubemap.height();
+
+    glm::ivec2 xy( glm::floor(uv) );
+
+    cubemap.mImage[tile].set(xy.x, xy.y, c);
+}
+
+
+static
+void
+generateSkyMap()
+{
+    glgeom::cubemap3f cubemap(512, 512);
+    glgeom::clear(cubemap, glgeom::color3f(0.02f, 0.05f, .10f) );
+
+
+    // Color gradient choice, radius of circle, (diamond stretch)
+    // Clustering
+    // Gradient maps - named? Loaded from disk?
+    // Draw circle to image map
+
+
+
+    auto rollf = [&](glm::fvec2 range) -> float
+    {
+        boost::mt19937 gen;
+        boost::uniform_real<float> r( range[0], range[1] );
+        boost::variate_generator<boost::mt19937, boost::uniform_real<float> > die(gen, r);
+        return die();
+    };
+
+    auto rolli = [&](glm::ivec2 range) -> int
+    {
+        boost::mt19937 gen;
+        boost::uniform_int<> r( range[0], range[1] );
+        boost::variate_generator<boost::mt19937, boost::uniform_int<> > die(gen, r);
+        return die();
+    };
+
+    /*
+        clusters, count_range, gradient, size_range
+     */
+    struct Batch
+    {
+        glm::ivec2      clusterCount;
+        glm::vec2       clusterRadius;
+        glm::ivec2      starCount;
+        glm::vec2       starRadius;
+        std::vector<std::pair<glgeom::color3f,glgeom::color3f>> color;
+    };
+
+    Batch b;
+    b.clusterCount  = glm::ivec2(20, 40);
+    b.clusterRadius = glm::vec2(glgeom::pi().value / 100.0f, glgeom::pi().value / 3.0f);
+    b.starCount     = glm::ivec2(14, 320);
+    b.starRadius    = glm::vec2(1, 1);
+    b.color.push_back( std::make_pair( glgeom::color3f(0.9f, 0.9f, 1.0f), glgeom::color3f(0.5f, 0.4f, 0.4f) ) );
+    b.color.push_back( std::make_pair( glgeom::color3f(0.6f, 0.55f, 0.40f), glgeom::color3f(0.1f, 0.1f, 0.1f) ) );
+    b.color.push_back( std::make_pair( glgeom::color3f(1.0f, 1.0f, 0.90f), glgeom::color3f(0.4f, 0.4f, 0.4f) ) );
+
+
+    const int clusters = rolli(b.clusterCount);
+    for (int i = 0; i < clusters; ++i)
+    {
+        const float clusterRadius = rollf(b.clusterRadius);
+        const int   stars = rolli(b.starCount);
+        for (int j = 0; j < stars; ++j)
+        {
+            const int   gradient = int(uniform_unit_exclusive() * b.color.size());
+            const float blend = uniform_unit();
+            const glgeom::color3f color = glm::mix(b.color[gradient].first.vec, b.color[gradient].second.vec, blend);
+            
+            const float radius = rollf(b.starRadius);
+
+            // Eventually, we want this to generate a center point of the cluster
+            // and create variations from there.  For now, it's much simpler...
+            glm::vec3 pt = uniform_on_sphere();
+
+            set(cubemap, pt, color);
+        }
+    }
+
+    const char* filename[] = 
+    {
+        "xpos.png",
+        "xneg.png",
+        "ypos.png",
+        "yneg.png",
+        "zpos.png",
+        "zneg.png",
+    };
+
+    for (int i = 0; i < 6; ++i)
+    {
+        std::string file = "temp/";
+        file += filename[i];
+        lx0::save_png(cubemap.mImage[i], file.c_str());
+    }
+}
+
 int 
 main (int argc, char** argv)
 {
@@ -154,7 +343,8 @@ main (int argc, char** argv)
         {
             // Temp
             {
-                generateNoiseCubeMap();
+                generateSkyMap();
+                //generateNoiseCubeMap();
             }
             //
 

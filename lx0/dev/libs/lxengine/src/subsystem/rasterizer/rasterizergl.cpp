@@ -52,6 +52,12 @@ void lx0::subsystem::rasterizer_ns::check_glerror()
     lx_check_error( errCode == GL_NO_ERROR, "glError() == %d: %s", errCode, gluErrorString(errCode) );
 }
 
+/*!
+    Creates the RasterizerGL in an uninitialized state.
+
+    RasterizerGL::initialize() should be called once the GL context is
+    available and made current.
+ */
 RasterizerGL::RasterizerGL()
     : gl        (new GLInterface)
     , mInited   (false)

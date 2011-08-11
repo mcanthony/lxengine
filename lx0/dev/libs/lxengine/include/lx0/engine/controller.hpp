@@ -38,13 +38,15 @@ namespace lx0
         namespace dom_ns 
         {
             //===========================================================================//
-            //!
+            //! Maps user-interface / device events into high-level application events
             /*!
                 \ingroup lx0_engine_dom
 
                 A UIBinding is intended to map UI state such as keyboard presses, 
                 mouse movements, frame updates, etc. into high-level application events
-                such as "select_object", "move_camera", etc.  
+                such as "select_object", "move_camera", etc. which are then passed to
+                a sendEvent() call on the appropriate object or objects (Engine,
+                Document, View, etc.).
 
                 The high-level mapping is intended allow for reuse between multiple
                 applications.  For example, a UIBinding might be set up to allow for
