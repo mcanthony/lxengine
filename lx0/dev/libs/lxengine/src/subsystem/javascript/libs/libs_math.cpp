@@ -186,10 +186,94 @@ namespace {
                 return _marshal( glm::mix(a, b, t) );
             }
         }
-    }
 
+        Handle<Value> PI (Local< String > property, const AccessorInfo &info)
+        {
+            return _marshal( glgeom::pi().value );
+        }
+    }
 }
 
+// func object
+// function pointer
+
+namespace detail2
+{
+    typedef std::function<v8::Handle<Value> (Local<String>, const AccessorInfo&)> Function2;
+    static std::deque<Function2> generated;
+    static std::deque< std::function< Handle<Value>(const Arguments& args) > > methods;
+
+    void
+    create_function (int slot, float value)
+    {    
+        //
+        // Generate the std::function<> via a lambda using the input argument, and then
+        // store it in fixed global offset in memory.  The fixed offset allows us
+        // to generate a function pointer to the lambda at compile-time.
+        //
+        Function2 func = [value](Local<String>, const AccessorInfo&) -> Handle<Value> {
+            return _marshal( value );
+        };
+
+        if (generated.size() <= slot) 
+            generated.resize(slot + 1); 
+        generated[slot] = func;
+    }
+
+    void
+    create_method (int slot, float (*fp)(float))
+    {
+        auto func = [fp](const Arguments& args) -> Handle<Value> {
+            return _marshal( (*fp)( _marshal(args[0]) ) );
+        };
+
+        if (methods.size() <= slot) 
+            methods.resize(slot + 1); 
+        methods[slot] = func;
+    }
+
+    //
+    // Generate a static function that references the array of std::functions
+    //
+    template <int N>
+    v8::Handle<Value> 
+    template_function (Local<String> prop, const AccessorInfo& info)
+    {
+        return generated[N](prop, info);
+    }
+
+    template <int SLOT>
+    v8::Handle<Value>
+    template_method (const Arguments& args)
+    {
+        return methods[SLOT](args);
+    }
+}
+
+template <int N>
+v8::AccessorGetter generate_constant_function (float f)
+{
+    detail2::create_function(N, f);
+    return &detail2::template_function<N>;
+}
+
+namespace
+{
+    template <int SLOT>
+    void
+    constant (Handle<ObjectTemplate>& objInst, const char* name, float value)
+    {
+        objInst->SetAccessor( String::New(name), generate_constant_function<SLOT>(value) );
+    }
+
+    template <int SLOT>
+    void
+    method2(Handle<Template>& proto_t, const char* name, float (*fp)(float) )
+    {
+        detail2::create_method(SLOT, fp);
+        proto_t->Set(name, FunctionTemplate::New( &detail2::template_method<SLOT> ) );
+    }
+}
 
 Handle<v8::Object> create_javascript_math()
 {
@@ -205,19 +289,55 @@ Handle<v8::Object> create_javascript_math()
     auto method = [&proto_t] (const char* name, InvocationCallback cb) {
         proto_t->Set(name, FunctionTemplate::New(cb));
     };
-    method("random",    W::random);
-    method("sin",       W::sin);
-    method("cos",       W::cos);
+
+    // Constants
+    constant<0>(objInst,    "E",       2.7182818284590452f);
+    constant<1>(objInst,    "PI",      glgeom::pi().value);
+    constant<2>(objInst,    "SQRT2",   1.4142135623730951f);
+    constant<3>(objInst,    "SQRT1_2", 0.7071067811865476f);
+    constant<4>(objInst,    "LN2",     0.6931471805599453f);
+    constant<5>(objInst,    "LN10",    2.302585092994046f);
+    constant<6>(objInst,    "LOG2E",   1.4426950408889634f);
+    constant<7>(objInst,    "LOG10E",  0.4342944819032518f);
+
+    // Trig functions
+    method2<0>(proto_t,     "cos",      &std::cosf );
+    method2<1>(proto_t,     "sin",      &std::sinf );
+    method2<2>(proto_t,     "tan",      &std::tanf );
+    method2<3>(proto_t,     "acos",     &std::acosf );
+    method2<4>(proto_t,     "asin",     &std::asinf );
+    method2<5>(proto_t,     "atan",     &std::atanf );
+
+    // Hyperbolic functions
+    // cosh
+    // sinh
+    // tanh
+
+    // Exponential and logarithmic functions
+    // exp
+    // frexp
+    // ldexp
+    // log
+    // log10
+    // modf
+
+    // Power functions
+    method("pow",       W::pow);
+    //method("sqrt",    
+
+    // Rounding, absolute value, remainder functions
     method("abs",       W::abs);
     method("sign",      W::sign);
-    method("pow",       W::pow);
     method("ceil",      W::ceil);
     method("floor",     W::floor);
+    method("fract",     W::fract);
+
+    // Miscellaneous
     method("min",       W::min);
     method("max",       W::max);
     method("noise3d",   W::noise3d);
-    method("fract",     W::fract);
     method("mix",       W::mix);
+    method("random",    W::random);
 
     // Create the function and add it to the global object 
     //
