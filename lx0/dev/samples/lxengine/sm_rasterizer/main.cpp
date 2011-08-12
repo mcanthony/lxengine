@@ -230,7 +230,20 @@ set (glgeom::cubemap3f& cubemap, const glm::vec3& p, const glgeom::color3f& c)
 
     glm::ivec2 xy( glm::floor(uv) );
 
-    cubemap.mImage[tile].set(xy.x, xy.y, c);
+    glm::ivec2 g( glm::floor(uv - glm::vec2(.5f, .5f)) );
+    glm::vec2  f( glm::vec2(1.0f, 1.0f) - glm::fract(uv - glm::vec2(.5f, .5f)) );
+
+    if (g.x >= 0 && g.y >= 0 && g.x < cubemap.width() && g.y < cubemap.height()) 
+        cubemap.mImage[tile].set(g.x, g.y, c * (f.x * f.y));
+    if (g.x + 1 >= 0 && g.y >= 0 && g.x + 1 < cubemap.width() && g.y < cubemap.height()) 
+        cubemap.mImage[tile].set(g.x + 1, g.y, c * ((1.0f - f.x) * f.y));
+    if (g.x >= 0 && g.y + 1 >= 0 && g.x < cubemap.width() && g.y + 1 < cubemap.height()) 
+        cubemap.mImage[tile].set(g.x, g.y + 1, c * (f.x * (1.0f - f.y)));
+    if (g.x + 1 >= 0 && g.y + 1 >= 0 && g.x + 1 < cubemap.width() && g.y + 1 < cubemap.height()) 
+        cubemap.mImage[tile].set(g.x + 1, g.y + 1, c * ((1.0f - f.x) * (1.0f - f.y)));
+    
+    // .6 - .5 = .1
+    //cubemap.mImage[tile].set(xy.x, xy.y, c);
 }
 
 
@@ -246,8 +259,6 @@ generateSkyMap()
     // Clustering
     // Gradient maps - named? Loaded from disk?
     // Draw circle to image map
-
-
 
     auto rollf = [&](glm::fvec2 range) -> float
     {

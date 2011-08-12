@@ -88,9 +88,19 @@ namespace {
             return _marshal(s);
         }
 
+        Handle<Value> pow (const Arguments& args)
+        {
+            return _marshal( std::pow( (float)_marshal(args[0]), (float)_marshal(args[1]) ) );
+        }
+
         Handle<Value> floor (const v8::Arguments& args)
         {
             return _marshal( std::floor( (float)_marshal(args[0]) ) );
+        }
+
+        Handle<Value> ceil (const v8::Arguments& args)
+        {
+            return _marshal( std::ceil( (float)_marshal(args[0])));
         }
 
         Handle<Value> noise3d (const v8::Arguments& args)
@@ -137,6 +147,28 @@ namespace {
             return _marshal(f);
         }
 
+        Handle<Value> min (const Arguments& args)
+        {
+            float m = _marshal(args[0]);
+            for (int i = 1; i < args.Length(); ++i)
+            {
+                float n = _marshal(args[i]);
+                m = std::min(m, n);
+            }
+            return _marshal(m);
+        }
+
+        Handle<Value> max (const Arguments& args)
+        {
+            float m = _marshal(args[0]);
+            for (int i = 1; i < args.Length(); ++i)
+            {
+                float n = _marshal(args[i]);
+                m = std::max(m, n);
+            }
+            return _marshal(m);
+        }
+
         Handle<Value> mix (const Arguments& args)
         {
             if (args[0]->IsArray())
@@ -178,7 +210,11 @@ Handle<v8::Object> create_javascript_math()
     method("cos",       W::cos);
     method("abs",       W::abs);
     method("sign",      W::sign);
+    method("pow",       W::pow);
+    method("ceil",      W::ceil);
     method("floor",     W::floor);
+    method("min",       W::min);
+    method("max",       W::max);
     method("noise3d",   W::noise3d);
     method("fract",     W::fract);
     method("mix",       W::mix);
