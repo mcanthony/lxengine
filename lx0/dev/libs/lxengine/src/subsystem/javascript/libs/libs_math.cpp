@@ -57,50 +57,26 @@ namespace {
     
     namespace MathWrappers
     {
-        Handle<Value> sin (const v8::Arguments& args)
+        int sign (float a)
         {
-            float a = _marshal(args[0]);
-            return _marshal( ::sin(a) );
-        }
-
-        Handle<Value> cos (const v8::Arguments& args)
-        {
-            float a = _marshal(args[0]);
-            return _marshal( ::cos(a) );
-        }
-
-        Handle<Value> abs (const v8::Arguments& args)
-        {
-            float a = _marshal(args[0]);
-            return _marshal( fabs(a) );
-        }
-
-        Handle<Value> sign (const v8::Arguments& args)
-        {
-            float a = _marshal(args[0]);
-            int s;
             if (a < 0.0f) 
-                s = -1;
+                return -1;
             else if (a > 0.0f)
-                s = 1;
+                return 1;
             else
-                s = 0;
-            return _marshal(s);
+                return 0;
         }
 
-        Handle<Value> pow (const Arguments& args)
+        Handle<Value> modf (const v8::Arguments& args)
         {
-            return _marshal( std::pow( (float)_marshal(args[0]), (float)_marshal(args[1]) ) );
-        }
+            float v = _marshal(args[0]);
+            float i;
+            float f = std::modf(v, &i);
 
-        Handle<Value> floor (const v8::Arguments& args)
-        {
-            return _marshal( std::floor( (float)_marshal(args[0]) ) );
-        }
-
-        Handle<Value> ceil (const v8::Arguments& args)
-        {
-            return _marshal( std::ceil( (float)_marshal(args[0])));
+            auto arr = v8::Array::New(2);
+            arr->Set(0, _marshal(i));
+            arr->Set(1, _marshal(f));
+            return arr;
         }
 
         Handle<Value> noise3d (const v8::Arguments& args)
@@ -137,14 +113,10 @@ namespace {
             return _marshal(ret);
         }
 
-        Handle<Value> fract (const Arguments& args)
+        float fract (float v)
         {
-            float v = _marshal(args[0]);
-            
             float unused;
-            float f = modf(v, &unused);
-            
-            return _marshal(f);
+            return ::modf(v, &unused);
         }
 
         Handle<Value> min (const Arguments& args)
@@ -201,7 +173,6 @@ namespace detail2
 {
     typedef std::function<v8::Handle<Value> (Local<String>, const AccessorInfo&)> Function2;
     static std::deque<Function2> generated;
-    static std::deque< std::function< Handle<Value>(const Arguments& args) > > methods;
 
     void
     create_function (int slot, float value)
@@ -215,21 +186,9 @@ namespace detail2
             return _marshal( value );
         };
 
-        if (generated.size() <= slot) 
+        if ((int)generated.size() <= slot) 
             generated.resize(slot + 1); 
         generated[slot] = func;
-    }
-
-    void
-    create_method (int slot, float (*fp)(float))
-    {
-        auto func = [fp](const Arguments& args) -> Handle<Value> {
-            return _marshal( (*fp)( _marshal(args[0]) ) );
-        };
-
-        if (methods.size() <= slot) 
-            methods.resize(slot + 1); 
-        methods[slot] = func;
     }
 
     //
@@ -240,13 +199,6 @@ namespace detail2
     template_function (Local<String> prop, const AccessorInfo& info)
     {
         return generated[N](prop, info);
-    }
-
-    template <int SLOT>
-    v8::Handle<Value>
-    template_method (const Arguments& args)
-    {
-        return methods[SLOT](args);
     }
 }
 
@@ -266,14 +218,98 @@ namespace
         objInst->SetAccessor( String::New(name), generate_constant_function<SLOT>(value) );
     }
 
-    template <int SLOT>
-    void
-    method2(Handle<Template>& proto_t, const char* name, float (*fp)(float) )
+
+    template <typename RTYPE>
+    std::function< Handle<Value>(const Arguments&) >
+    method (RTYPE (*fp)(float))
     {
-        detail2::create_method(SLOT, fp);
-        proto_t->Set(name, FunctionTemplate::New( &detail2::template_method<SLOT> ) );
+        return [fp](const Arguments& args) -> Handle<Value> {
+            return _marshal( (*fp)( _marshal(args[0]) ) );
+        };
     }
+
+    std::function< Handle<Value>(const Arguments&) >
+    method (float (*fp)(float, float))
+    {
+        return [fp](const Arguments& args) -> Handle<Value> {
+            return _marshal( (*fp)( _marshal(args[0]), _marshal(args[1]) ) );
+        };
+    }
+
+    template <typename RTYPE>
+    std::function< Handle<Value>(const Arguments&) >
+    method_allow_array (RTYPE (*fp)(float))
+    {
+        return [fp](const Arguments& args) -> Handle<Value> 
+        {
+            if (args[0]->IsArray())
+            {
+                auto vec = Handle<Array>::Cast(args[0]);
+                auto arr = v8::Array::New(vec->Length());
+                for (uint32_t index = 0; index < vec->Length(); ++index)
+                    arr->Set( index, _marshal( (*fp)(_marshal(vec->Get(index))) ) );
+                return arr;
+            }
+            else
+                return _marshal( (*fp)( _marshal(args[0]) ) );
+        };
+    } 
 }
+
+template <int M, int N>
+class FunctionTableImp : public FunctionTableImp<M, N-1>
+{
+public:
+    FunctionTableImp()
+    {
+        mPointers[N-1] = func;
+    }
+
+    static v8::Handle<Value> func(const Arguments& args)
+    {
+        return mFunctions[N-1](args);
+    }
+};
+
+template<int M>
+class FunctionTableImp<M,0>
+{
+public:
+    static v8::InvocationCallback                           mPointers[M];
+    static std::function< Handle<Value>(const Arguments&) > mFunctions[M];
+};
+
+template <int M> v8::InvocationCallback FunctionTableImp<M,0>::mPointers[M];
+template <int M> std::function< Handle<Value>(const Arguments&) > FunctionTableImp<M,0>::mFunctions[M];
+
+
+template <int N>
+class FunctionTable : public FunctionTableImp<N,N>
+{
+};
+
+template <int N>
+class Builder
+{
+public:
+    Builder (Handle<Template>& proto, FunctionTable<N>& table)
+        : mProto (&proto)
+        , mTable (table)
+        , mCount (0)
+    {
+    }
+
+    void method ( const char* name, std::function<Handle<Value>(const Arguments&)> func )
+    {
+        mTable.mFunctions[mCount] = func;
+        (*mProto)->Set(name, FunctionTemplate::New(mTable.mPointers[mCount]) );
+        mCount++;
+    }
+
+    Handle<Template>* mProto;
+    FunctionTable<N>& mTable;
+    int               mCount;
+};
 
 Handle<v8::Object> create_javascript_math()
 {
@@ -284,11 +320,15 @@ Handle<v8::Object> create_javascript_math()
     Handle<FunctionTemplate>    templ( FunctionTemplate::New() );
     Handle<ObjectTemplate>      objInst( templ->InstanceTemplate() );
     objInst->SetInternalFieldCount(1);
+    //obj->SetInternalField(0, External::New(new Math));
 
     Handle<Template> proto_t( templ->PrototypeTemplate() );
-    auto method = [&proto_t] (const char* name, InvocationCallback cb) {
-        proto_t->Set(name, FunctionTemplate::New(cb));
-    };
+
+    FunctionTable<64> table2;
+    Builder<64> build (proto_t, table2);
+
+    build.method( "sin",    method_allow_array(std::sinf) );
+    build.method( "cos",    method_allow_array(std::cosf) );
 
     // Constants
     constant<0>(objInst,    "E",       2.7182818284590452f);
@@ -301,49 +341,46 @@ Handle<v8::Object> create_javascript_math()
     constant<7>(objInst,    "LOG10E",  0.4342944819032518f);
 
     // Trig functions
-    method2<0>(proto_t,     "cos",      &std::cosf );
-    method2<1>(proto_t,     "sin",      &std::sinf );
-    method2<2>(proto_t,     "tan",      &std::tanf );
-    method2<3>(proto_t,     "acos",     &std::acosf );
-    method2<4>(proto_t,     "asin",     &std::asinf );
-    method2<5>(proto_t,     "atan",     &std::atanf );
+    build.method("cos",         method_allow_array(std::cosf) );
+    build.method("sin",         method_allow_array(std::sinf) );
+    build.method("tan",         method_allow_array(std::tanf) );
+    build.method("acos",        method_allow_array(std::acosf) );
+    build.method("asin",        method_allow_array(std::asinf) );
+    build.method("atan",        method_allow_array(std::atanf) );
 
     // Hyperbolic functions
-    // cosh
-    // sinh
-    // tanh
+    build.method("cosh",        method_allow_array(std::coshf) );
+    build.method("sinh",        method_allow_array(std::sinhf) );
+    build.method("tanh",        method_allow_array(std::tanhf) );
 
     // Exponential and logarithmic functions
-    // exp
+    build.method("exp",          method(std::expf));
     // frexp
     // ldexp
-    // log
-    // log10
-    // modf
+    build.method("log",          method_allow_array(std::logf));
+    build.method("log10",        method_allow_array(std::log10f));
+    build.method("modf",         W::modf);
 
     // Power functions
-    method("pow",       W::pow);
-    //method("sqrt",    
+    build.method("pow",          method(&std::powf) );
+    build.method("sqrt",         method_allow_array(&std::sqrtf) );
 
     // Rounding, absolute value, remainder functions
-    method("abs",       W::abs);
-    method("sign",      W::sign);
-    method("ceil",      W::ceil);
-    method("floor",     W::floor);
-    method("fract",     W::fract);
+    build.method("abs",          method_allow_array(&std::abs) );
+    build.method("sign",         method_allow_array(&W::sign) );
+    build.method("ceil",         method_allow_array(&std::ceilf) );
+    build.method("floor",        method_allow_array(&std::floorf) );
+    build.method("fract",        method_allow_array(W::fract) );
 
     // Miscellaneous
-    method("min",       W::min);
-    method("max",       W::max);
-    method("noise3d",   W::noise3d);
-    method("mix",       W::mix);
-    method("random",    W::random);
-
-    // Create the function and add it to the global object 
+    build.method("min",          W::min);
+    build.method("max",          W::max);
+    build.method("noise3d",      W::noise3d);
+    build.method("mix",          W::mix);
+    build.method("random",       W::random);
+      
     //
-    //@todo The native Math object is being leaked
-    Handle<v8::Object> obj( templ->GetFunction()->NewInstance() );
-    //obj->SetInternalField(0, External::New(new Math));
-
-    return obj;
+    // Instaniate the object
+    //
+    return templ->GetFunction()->NewInstance() ;
 }

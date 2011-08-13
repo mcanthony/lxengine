@@ -106,6 +106,9 @@
 
     function generate (s, t)
     {
+      var a = Math.cos(1.1);
+      a = Math.cos([1.0, 2.0]);
+    
       var c = 8;
       return f7(c * s, c * t);
     }
