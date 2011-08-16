@@ -75,7 +75,7 @@ generateNoiseCubeMap ()
                 uv.y += i * 4.0f * lx0::noise3d_perlin(v * 1.2f + glm::vec3(i * 532, i * 7732, 23462));
 
                 glgeom::color3f c;
-                sum += glgeom::pattern_spot_dimmed(
+                sum += glgeom::pattern_spot_dim(
                         glm::vec3(13/255.0f, 128/255.0f, 255/255.0f),
                         glm::vec3(237/255.0f, 241/255.0f, 244/255.0f),
                         .45f,

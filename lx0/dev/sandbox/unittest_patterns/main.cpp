@@ -146,10 +146,10 @@ static void runTestSet(lxvar& results)
     });
 
     runTest(results, "spot_dimmed_r0.50", [](const glm::vec2& uv) -> glm::vec3 {
-        return glgeom::pattern_spot_dimmed(glm::vec3(1, 1, 1), glm::vec3(0, 0, 0), .5f, uv);
+        return glgeom::pattern_spot_dim(glm::vec3(1, 1, 1), glm::vec3(0, 0, 0), .5f, uv);
     });
     runTest(results, "spot_dimmed_r0.15", [](const glm::vec2& uv) -> glm::vec3 {
-        return glgeom::pattern_spot_dimmed(glm::vec3(1, 1, 1), glm::vec3(0, 0, 0), .15f, uv);
+        return glgeom::pattern_spot_dim(glm::vec3(1, 1, 1), glm::vec3(0, 0, 0), .15f, uv);
     });
 
     runTest(results, "wave_w0.10", [](const glm::vec2& uv) {
@@ -177,7 +177,7 @@ static void runTestSet(lxvar& results)
 
     runTest(results, "complex_spot_dimmed_noise", [](const glm::vec2& uv) -> glm::vec3 {
         float radius = 4.0f * glm::perlin(uv * 9.0f);
-        return glgeom::pattern_spot_dimmed( glm::vec3(1, 1, 1), glm::vec3(0, 0, 0), radius, uv );
+        return glgeom::pattern_spot_dim( glm::vec3(1, 1, 1), glm::vec3(0, 0, 0), radius, uv );
     });
 
     runTest(results, "complex_checker_noise", [](const glm::vec2& uv) -> glm::vec3 {

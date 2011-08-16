@@ -37,6 +37,8 @@
 
 #include <v8/v8.h>
 
+#include <glgeom/ext/patterns.hpp>
+
 #include <lx0/engine/engine.hpp>
 #include <lx0/engine/document.hpp>
 #include <lx0/engine/element.hpp>
@@ -236,6 +238,27 @@ namespace
         };
     }
 
+    template <typename RTYPE, typename T0>
+    std::function< Handle<Value>(const Arguments&) >
+    method (RTYPE (*fp)(T0, const glm::vec2&))
+    {
+        return [fp](const Arguments& args) -> Handle<Value> {
+            T0 a0 = _marshal(args[0]);
+            glm::vec2 a1 = _marshal(args[1]);
+            return _marshal( (*fp)(a0, a1) );
+        };
+    }
+
+    template <typename RTYPE>
+    std::function< Handle<Value>(const Arguments&) >
+    method (RTYPE (*fp)(const glm::vec2& uv))
+    {
+        return [fp](const Arguments& args) -> Handle<Value> {
+            glm::vec2 v( (float)_marshal(args[0]), (float)_marshal(args[1]) );
+            return _marshal( (*fp)(v) );
+        };
+    }
+
     template <typename RTYPE>
     std::function< Handle<Value>(const Arguments&) >
     method_allow_array (RTYPE (*fp)(float))
@@ -333,12 +356,13 @@ Handle<v8::Object> create_javascript_math()
     // Constants
     constant<0>(objInst,    "E",       2.7182818284590452f);
     constant<1>(objInst,    "PI",      glgeom::pi().value);
-    constant<2>(objInst,    "SQRT2",   1.4142135623730951f);
-    constant<3>(objInst,    "SQRT1_2", 0.7071067811865476f);
-    constant<4>(objInst,    "LN2",     0.6931471805599453f);
-    constant<5>(objInst,    "LN10",    2.302585092994046f);
-    constant<6>(objInst,    "LOG2E",   1.4426950408889634f);
-    constant<7>(objInst,    "LOG10E",  0.4342944819032518f);
+    constant<2>(objInst,    "TWOPI",   2.0f * glgeom::pi().value);
+    constant<3>(objInst,    "SQRT2",   1.4142135623730951f);
+    constant<4>(objInst,    "SQRT1_2", 0.7071067811865476f);
+    constant<5>(objInst,    "LN2",     0.6931471805599453f);
+    constant<6>(objInst,    "LN10",    2.302585092994046f);
+    constant<7>(objInst,    "LOG2E",   1.4426950408889634f);
+    constant<8>(objInst,    "LOG10E",  0.4342944819032518f);
 
     // Trig functions
     build.method("cos",         method_allow_array(std::cosf) );
@@ -378,6 +402,11 @@ Handle<v8::Object> create_javascript_math()
     build.method("noise3d",      W::noise3d);
     build.method("mix",          W::mix);
     build.method("random",       W::random);
+
+    // Patterns
+    build.method("checker",      method( glgeom::pattern_checker<float> ) );
+    build.method("checker_dim",  method( glgeom::pattern_checker_dim<float> ) );
+    build.method("spot_dim",     method( glgeom::pattern_spot_dim<float> ) );
       
     //
     // Instaniate the object
