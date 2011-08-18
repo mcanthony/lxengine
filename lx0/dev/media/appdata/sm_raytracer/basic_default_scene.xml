@@ -3,8 +3,8 @@
       <IncludeDocument src="media2/appshared/materials/basic.xml" />
         <Camera id="camera">
         {
-            position : [ 1.25, 1.25, 1.25 ],
-            look_at  : [ .6, .6, 0 ]
+            position : [ 1.5, 1.75, 1.25 ],
+            look_at  : [ .6, .6, .25 ]
         }
         </Camera>
       <View id="view">
@@ -22,6 +22,39 @@
         }
         }
       </Material>
+      <Material id="blue_mirror">
+        {
+        graph : {
+        _type : "phong",
+        diffuse : [ .75, .5, .5 ],
+        specular : [ 1, 1, .5 ],
+        specularEx : 512,
+        reflectivity: .05,
+        }
+        }
+      </Material>
+      <Material id="gray_mirror">
+        {
+        graph : {
+        _type : "phong",
+        diffuse : [ .5, .5, .5 ],
+        specular : [ .5, .5, 1 ],
+        specularEx : 512,
+        reflectivity: .05,
+        }
+        }
+      </Material>      
+      <Material id="mirror">
+        {
+          graph : {
+            _type : "phong",
+            diffuse : [ .5, .5, .75 ],
+            specular : [ 1, 1, 0 ],
+            specularEx : 1024,
+            reflectivity : 0.45,
+          },
+        }
+      </Material>
       <Material id="checker">
         {
           graph : {
@@ -33,11 +66,36 @@
                 scale : [ 8, 8 ],
               },
             },
-            specular : [ 2, 1.7, 0 ],
+            specular : [ 1, 1, 1 ],
             specularEx : 512
           }
         }
       </Material>      
+      <Material id="checker2">
+        {
+          graph : {
+            _type : "checker",
+            uv : {
+                _type : "spherical",
+                scale : [ 8, 8 ],            
+            },
+            color0 : {
+              _type : "phong",
+              diffuse : [0.2784313725490196, 0.24705882352941178, 0.48627450980392156],
+              specular : [ .6, .6, 1 ],
+              specularEx : 512,
+              reflectivity: .10,
+            },
+            color1 : {
+              _type : "phong",
+              diffuse : [0.8549019607843137, 0.8392156862745098, 0.9568627450980393],
+              specular : [ .9, .9, 1 ],
+              specularEx : 256,
+              reflectivity : .025,
+            },            
+          }
+        }
+      </Material>        
     </Library>
     <Scene view="view">
       <Group id="light_group">
@@ -49,8 +107,8 @@
         </Light>
         <Light>
           {
-          position : [ 1.1, 2, .1 ],
-          color    : [ 0, 0, .5 ]
+          position : [ 3.1, 2.6, 4 ],
+          color    : [ .3, .4, .5 ]
           }
         </Light>
       </Group>
@@ -61,59 +119,77 @@
                 d      : 0
             }
             </Plane>
+          <Plane id="xn_axis_plane" material="cyan">
+            {
+            normal : [ -1, 0, 0 ],
+            d      : 10
+            }
+          </Plane>          
             <Plane id="y_axis_plane" material="green">
             {
                 normal : [ 0, 1, 0 ],
                 d      : 0
             }
             </Plane>
+          <Plane id="yn_axis_plane" material="violet">
+            {
+            normal : [ 0, -1, 0 ],
+            d      : 10
+            }
+          </Plane>          
             <Plane id="z_axis_plane" material="blue">
             {
                 normal : [ 0, 0, 1 ],
                 d      : 0
             }
             </Plane>
+          <Plane id="zn_axis_plane" material="yellow">
+            {
+            normal : [ 0, 0, -1 ],
+            d      : 10
+            }
+          </Plane>
         </Group>
         <Group id="sphere_group">
-            <Sphere material="white">
+            <Sphere material="mirror">
             {
                 center : [ .5, .5, .5 ],
                 radius : .5
             }
             </Sphere>
-          <Sphere material="red">
+           <Sphere material="red">
               {
               center : [ 1.25, .25, .25 ],
               radius : .25
               }
           </Sphere>
-          <Sphere material="green">
+          <Sphere material="checker">
             {
             center : [ 1.25, .75, .25 ],
             radius : .25
             }
           </Sphere>
-
-          <Sphere>
+          
+          <Sphere material="gray_mirror">
             {
             center : [ 0.25, 1.25, .25 ],
             radius : .25
             }
           </Sphere>
 
-          <Sphere material="checker">
+          <Sphere material="checker2">
             {
             center : [ 0.75, 1.25, .25 ],
             radius : .25
             }
           </Sphere>
 
-          <Sphere material="blue">
+          <Sphere material="blue_mirror">
             {
             center : [ 1.25, 1.25, .25 ],
             radius : .25
             }
-          </Sphere>
+          </Sphere> 
 
         </Group>
     </Scene>

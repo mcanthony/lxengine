@@ -127,6 +127,11 @@ protected:
 class SpatialIndex
 {
 public:
+    ~SpatialIndex()
+    {
+        mGeometry.clear();
+    }
+
     void    add (std::shared_ptr<Geometry> spGeometry)
     {
         mGeometry.push_back(spGeometry);
@@ -192,7 +197,7 @@ public:
     {
         lxvar graph;
         graph["_type"] = "phong";
-        std::shared_ptr<Material>  spDefaultMaterial( new GenericMaterial(mShaderBuilder.buildShaderLambda(graph)) );
+        std::shared_ptr<Material>  spDefaultMaterial( new Material(mShaderBuilder.buildShaderLambda(graph)) );
 
         mspEnvironment.reset(new Environment);
         mspContext.reset(new Context(spDefaultMaterial));
@@ -202,6 +207,11 @@ public:
         });
 
         mUpdateQueue.push_back([&]() { return _init(), true; });
+    }
+
+    ~RayTracer()
+    {
+        lx_log("");
     }
 
     virtual void onAttached (DocumentPtr spDocument) 
@@ -324,15 +334,8 @@ public:
             return false;
     }
 
-    color3f _trace (int x, int y)
+    color3f _trace2 (const Environment& env, const ray3f& ray, int depth)
     {
-        const auto& env = *mspEnvironment;
-
-        if (x == 0 && y % 4 == 0)
-            std::cout << "Tracing row " << y << "..." << std::endl;
-        
-        ray3f ray = compute_frustum_ray<float>(mspTraceContext->frustum, x, img.height() - y, img.width(), img.height());
-        
         std::vector<std::pair<GeometryPtr, intersection3f>> hits;
         mIndex.intersect(ray, hits);
         
@@ -354,7 +357,6 @@ public:
             const vector3f viewDirection = glgeom::normalize(intersection.positionWc - mCamera->camera.position);
             const Material* pMat ( spGeom->mspMaterial ? spGeom->mspMaterial.get() : mspContext->mspMaterial.get());
 
-
             glm::mat3 normalMatrix = glm::mat3(glm::inverseTranspose(mCamera->viewMatrix));
 
             ShaderBuilder::ShaderContext ctx;
@@ -371,10 +373,19 @@ public:
                     ctx.unifLightCount ++;
                 }
             }
+
+            ctx.unifEyeWc = ray.origin.vec;
+
+            ctx.fragVertexWc = intersection.positionWc.vec;
             ctx.fragVertexOc = intersection.positionOc.vec;
+            ctx.fragNormalWc = intersection.normal.vec;
             ctx.fragNormalOc = intersection.normal.vec;
             ctx.fragNormalEc = normalMatrix * ctx.fragNormalOc;
             ctx.fragVertexEc = glm::vec3(mCamera->viewMatrix * glm::vec4(ctx.fragVertexOc, 1));
+            
+            ctx.traceFunc = [&](const ray3f& ray) -> color3f {
+                return _trace2(env, ray, depth + 1);
+            };
 
             c = pMat->shade(ctx, env.ambient, intersection);
         }
@@ -382,6 +393,18 @@ public:
             c *= .5f;
 
         return c;
+    }
+
+    color3f _trace (int x, int y)
+    {
+        const auto& env = *mspEnvironment;
+
+        if (x == 0 && y % 4 == 0)
+            std::cout << "Tracing row " << y << "..." << std::endl;
+        
+        ray3f ray = compute_frustum_ray<float>(mspTraceContext->frustum, x, img.height() - y, img.width(), img.height());
+        
+        return _trace2(env, ray, 0);
     }
 
 protected:
@@ -404,7 +427,7 @@ protected:
             lx0::lxvar  graph = spElem->value().find("graph");
 
             auto shader = mShaderBuilder.buildShaderLambda(graph);
-            auto pMat = new GenericMaterial(shader);
+            auto pMat = new Material(shader);
 
             spElem->attachComponent(pMat);
         }

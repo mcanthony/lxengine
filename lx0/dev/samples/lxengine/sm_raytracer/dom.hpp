@@ -37,13 +37,32 @@
 using namespace lx0;
 using namespace glgeom;
 
+struct ObjectCounter
+{
+    ObjectCounter(const char* s) : name(s) { Engine::acquire()->incObjectCount(name); }
+    ~ObjectCounter() { Engine::acquire()->decObjectCount(name); }
+    std::string name;
+};
+
 //===========================================================================//
 
-class Camera : public Element::Component
+class RaytracerComponent 
+    : public Element::Component
+    , public ObjectCounter
 {
 public:
-    virtual     const char* name() const { return "raytracer"; }
+    RaytracerComponent() : ObjectCounter( typeid(this).name() ) {}
 
+    virtual     const char* name() const { return "raytracer"; }
+    static      const char* s_name()     { return "raytracer"; }
+};
+
+//===========================================================================//
+
+class Camera 
+    : public RaytracerComponent
+{
+public:
     camera3f    camera;
     glm::mat4   viewMatrix;
     glm::mat4   projMatrix;
@@ -51,11 +70,9 @@ public:
 
 //===========================================================================//
 
-class Environment : public Element::Component
+class Environment : public RaytracerComponent
 {
 public:
-    virtual     const char* name() const { return "raytracer"; }
-
     Environment() 
         : ambient (0.0f, 0.005f, 0.02f) 
         , shadows (true) 
@@ -68,23 +85,16 @@ public:
 
 //===========================================================================//
 
-class Material : public Element::Component
+class Material 
+    : public RaytracerComponent
 {
 public:
-    virtual     const char* name() const { return "raytracer"; }
-
-    virtual     bool        allowShadow    (void) const { return true; }
-    virtual     color3f     shade          (ShaderBuilder::ShaderContext& ctx, const color3f& ambient, const intersection3f& intersection) const { return color3f(0, 0, 0); }
-};
-
-class GenericMaterial 
-    : public Material
-{
-public:
-    GenericMaterial (ShaderBuilder::ShadeFunction shader)
+    Material (ShaderBuilder::ShadeFunction shader)
     {
         mShader = shader;
     }
+
+    virtual     bool        allowShadow    (void) const { return true; }
 
     virtual     color3f     shade (ShaderBuilder::ShaderContext& ctx, const color3f& ambient, const intersection3f& intersection) const 
     { 
@@ -97,13 +107,9 @@ protected:
 
 //===========================================================================//
 
-class Geometry : public Element::Component
+class Geometry : public RaytracerComponent
 {
 public:
-    virtual     const char* name() const { return "raytracer"; }
-
-    virtual ~Geometry(){}
-
     bool intersect (const ray3f& ray, intersection3f& isect) 
     {
         if (_intersect(ray, isect))
@@ -208,15 +214,9 @@ protected:
 //===========================================================================//
 
 class Light 
-    : public Element::Component
+    : public RaytracerComponent
     , public point_light_f
 {
 public:
-    virtual     const char* name() const { return "raytracer"; }
-
-    ~Light()
-    {
-        lx_log("Light dtor");
-    }
 };
 typedef std::shared_ptr<Light> LightPtr;

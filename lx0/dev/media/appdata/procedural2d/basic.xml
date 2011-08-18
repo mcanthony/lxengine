@@ -137,11 +137,26 @@
       var c = f10(.93 * s + 124.33, .92 * t + 833.33);
       return Math.mix(Math.max(a, b, c), a, .5);
     }
+    
+    function f12(s, t)
+    {
+      s += 2.2 * Math.cos( .2 * Math.TWOPI * Math.noise3d(t, s, .22) );
+      t += 2.2 * Math.cos( .2 * Math.TWOPI * Math.noise3d(s, t, 5.22) );
+      var r = 1.0 * Math.noise3d(s, t, .4) + .45;
+      var u = Math.spot_dim(r, [s, t]);
+      return u;
+    }    
+
+    function f13(s, t)
+    {
+      var u = Math.spot_dim(Math.fract(s + t), [s, t]);
+      return u;
+    }    
 
     function generate (s, t)
     {  
       var c = 8;
-      var v = f11(c * s, c * t);
+      var v = f13(c * s, c * t);
       return [v, v, v];
     }
     -->

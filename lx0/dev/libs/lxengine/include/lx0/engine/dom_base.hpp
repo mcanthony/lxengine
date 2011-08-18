@@ -132,6 +132,20 @@ namespace lx0 { namespace engine {  namespace dom_ns { namespace detail {
                 lx_error("Attempt to remove a Component '%s' that is not attached.", name.c_str());
         }
 
+        void removeComponent (Component* pComponent)
+        {
+            for (auto it = mComponents.begin(); it != mComponents.end(); ++it)
+            {
+                if (it->second.get() == pComponent)
+                {
+                    mComponents.erase(it);
+                    return;
+                }
+            }
+
+            lx_error("Attempt to remove a Component that is not attached.");
+        }
+
         template <typename T>
         std::shared_ptr<T>  ensureComponent (std::string name, std::function<T* (void)> ctor)
         {

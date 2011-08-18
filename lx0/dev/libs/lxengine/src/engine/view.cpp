@@ -76,6 +76,8 @@ namespace lx0 { namespace engine { namespace dom_ns {
         mpDocument->slotElementAdded -= mOnElementAddedId;
         mpDocument->slotElementRemoved -= mOnElementRemovedId; 
 
+        mpDocument->removeComponent(mpDocForwarder);
+
         for (auto it = mComponents.begin(); it != mComponents.end(); ++it)
             (it->second)->shutdown(this);
 

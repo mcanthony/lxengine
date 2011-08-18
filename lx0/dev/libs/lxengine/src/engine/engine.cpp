@@ -191,6 +191,7 @@ namespace lx0 { namespace engine { namespace dom_ns {
             
         // Explicitly free all references to shared objects so that memory leak checks will work
         mDocuments.clear();
+        mComponents.clear();
 
         // All Documents should be gone by shutdown...
         lx_assert( objectCount("Document").current() == 0 );

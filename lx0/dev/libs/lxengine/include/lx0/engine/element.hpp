@@ -97,7 +97,7 @@ namespace lx0 { namespace engine { namespace dom_ns {
         typedef std::function<void (ElementPtr, std::vector<lxvar>&)> Function;
 
                         Element         (void);
-                        ~Element        (void);
+        virtual         ~Element        (void);
 
         std::string     tagName         (void) const            { return mTagName; }    //!< Get DOM tagName of the Element
         void            tagName         (const char* s)         { mTagName = s; }       //!< Set DOM tagName of the Element
@@ -113,6 +113,7 @@ namespace lx0 { namespace engine { namespace dom_ns {
         ElementPtr      child           (int i);
         int             childCount      (void) const;
         void            removeChild     (ElementPtr spElem);
+        void            removeAll       (void);
 
         lxvar&          value               (void) const    { return mValue; }
         lxvar&          value               (void)          { return mValue; }

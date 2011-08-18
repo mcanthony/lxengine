@@ -87,9 +87,9 @@ namespace lx0 { namespace core { namespace v8bind
     {
         v8::Local<v8::Array> arr = v8::Array::Cast(*mValue);
         glm::vec3 v;
-        v.x = arr->Get(0)->NumberValue();
-        v.y = arr->Get(1)->NumberValue();
-        v.z = arr->Get(2)->NumberValue();
+        v.x = (float)arr->Get(0)->NumberValue();
+        v.y = (float)arr->Get(1)->NumberValue();
+        v.z = (float)arr->Get(2)->NumberValue();
         return v;
     }
 

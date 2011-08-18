@@ -76,15 +76,12 @@ static glm::vec3 shade_normal2 (
 }
 
 static glm::vec3 shade_phong (
-    int              unifLightCount,
-    const glm::vec3* unifLightPosition,
-    const glm::vec3* unifLightColor,
-    const glm::vec3& fragVertexEc,
-    const glm::vec3& fragNormalEc,
+    const ShaderBuilder::ShaderContext& ctx,
     const glm::vec3& ambient,
     const glm::vec3& diffuse,
     const glm::vec3& specular,
-    float            specularEx
+    float            specularEx,
+    float            reflectivity
     )
 {
     using namespace glm;
@@ -92,26 +89,35 @@ static glm::vec3 shade_phong (
     // Since the eye is at <0,0,0>, the direction vector to the vertex and 
     // the vertex position in eye coordinates are equivalent.
     //
-    vec3 N = normalize(fragNormalEc);
-    vec3 V = -normalize(fragVertexEc);
+    vec3 N = normalize(ctx.fragNormalEc);
+    vec3 V = -normalize(ctx.fragVertexEc);
        
     vec3 c = ambient;                        // ambient term
     
-    for (int i = 0; i < unifLightCount; ++i)
+    for (int i = 0; i < ctx.unifLightCount; ++i)
     {
-        vec3 L = unifLightPosition[i] - fragVertexEc;
+        vec3 L = ctx.unifLightPosition[i] - ctx.fragVertexEc;
         float d = length(L);
         L = normalize(L);
     
         float atten = 1;    // / (unifLightAtten[i].x + unifLightAtten[i].y * d  + unifLightAtten[i].x * d * d);
-        vec3 lc = unifLightColor[i] * atten;
+        vec3 lc = ctx.unifLightColor[i] * atten;
     
         c += diffuse * lc * max(dot(N,L), 0.0f);                   // diffuse term
 
         vec3 H = normalize(L + V);
         c += lc * specular * pow(max(dot(N,H), 0.0f), specularEx);  // specular term
     }
-               
+    
+    if (reflectivity > 0.0f)
+    {
+        // Compute reflection ray, nudge it out, cast, blend
+        vec3 R = -glm::reflect(glm::normalize(ctx.unifEyeWc - ctx.fragVertexWc), glm::normalize(ctx.fragNormalWc));
+        glgeom::ray3f ray(ctx.fragVertexWc + R * 1e-3f, R);
+        vec3 cr = ctx.traceFunc(ray).vec;
+        c = glm::mix(c, cr, reflectivity);
+    }
+
     return c;
 }
 
@@ -267,22 +273,20 @@ LambdaBuilder::_buildVec3 (lxvar param)
         }
         else if (type == "phong")
         {
-            auto ambient    = _buildVec3(_value(param, node, "ambient"));
-            auto diffuse    = _buildVec3(_value(param, node, "diffuse"));
-            auto specular   = _buildVec3(_value(param, node, "specular"));
-            auto specularEx = _buildFloat(_value(param, node, "specularEx"));
+            auto ambient      = _buildVec3(_value(param, node, "ambient"));
+            auto diffuse      = _buildVec3(_value(param, node, "diffuse"));
+            auto specular     = _buildVec3(_value(param, node, "specular"));
+            auto specularEx   = _buildFloat(_value(param, node, "specularEx"));
+            auto reflectivity = _buildFloat(_value(param, node, "reflectivity"));
            
-            return [ambient, diffuse, specular, specularEx](const Context& i) {
+            return [ambient, diffuse, specular, specularEx, reflectivity](const Context& ctx) {
                 return shade_phong(
-                    i.unifLightCount,
-                    i.unifLightCount ? &i.unifLightPosition[0] : nullptr,
-                    i.unifLightCount ? &i.unifLightColor[0] : nullptr,
-                    i.fragVertexEc,
-                    i.fragNormalEc,
-                    ambient(i), 
-                    diffuse(i), 
-                    specular(i), 
-                    specularEx(i)
+                    ctx,
+                    ambient(ctx), 
+                    diffuse(ctx), 
+                    specular(ctx), 
+                    specularEx(ctx),
+                    reflectivity(ctx)
                 );
             };
         }

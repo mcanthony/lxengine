@@ -49,6 +49,7 @@ namespace lx0 { namespace engine { namespace dom_ns {
     Document::~Document()
     {
         m_views.clear();
+        m_spRoot->removeAll();
         _clearComponents();
         m_spRoot->notifyRemoved(this);
 

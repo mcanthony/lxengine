@@ -42,21 +42,38 @@ namespace lx0 { namespace engine { namespace dom_ns {
 
     Element::FunctionMap Element::s_funcMap;
     
+    //---------------------------------------------------------------------------//
+
     Element::Element (void)
         : mpDocument (nullptr)
     {
     }
 
+    //---------------------------------------------------------------------------//
+
     Element::~Element ()
     {
         lx_assert(mpDocument == nullptr, "Element being deleted whilst actively in a Document");
+
+        mComponents.clear();
     }
+
+    //---------------------------------------------------------------------------//
 
     void    
     Element::prepend (ElementPtr spElem)
     {
-        lx_check_error(!"Not implemented");
+        lx_check_error(this != nullptr);
+        lx_check_error(spElem->parent().get() == nullptr);
+       
+        spElem->mspParent = shared_from_this();
+        mChildren.push_front(spElem);
+
+        if (mpDocument)
+            spElem->notifyAdded(mpDocument);
     }
+
+    //---------------------------------------------------------------------------//
 
     void
     Element::append (ElementPtr spElem)
@@ -71,7 +88,8 @@ namespace lx0 { namespace engine { namespace dom_ns {
             spElem->notifyAdded(mpDocument);
     }
 
-    /*
+    //---------------------------------------------------------------------------//
+    /*!
         If this element has a parent, then it returns a const, read-only 
         shared-pointer to the parent element.
 
@@ -85,11 +103,15 @@ namespace lx0 { namespace engine { namespace dom_ns {
         return mspParent;
     }
 
+    //---------------------------------------------------------------------------//
+
     ElementPtr     
     Element::parent()
     {
         return mspParent;
     }
+
+    //---------------------------------------------------------------------------//
     
     ElementCPtr     
     Element::child(int i) const
@@ -105,6 +127,8 @@ namespace lx0 { namespace engine { namespace dom_ns {
         }
     }
 
+    //---------------------------------------------------------------------------//
+
     ElementPtr     
     Element::child(int i)
     {
@@ -119,11 +143,15 @@ namespace lx0 { namespace engine { namespace dom_ns {
         }
     }
 
+    //---------------------------------------------------------------------------//
+
     int
     Element::childCount (void) const
     {
         return int(mChildren.size());
     }
+
+    //---------------------------------------------------------------------------//
 
     void
     Element::removeChild (ElementPtr spElem)
@@ -143,6 +171,37 @@ namespace lx0 { namespace engine { namespace dom_ns {
             lx_warn("Trying to remove an element that is not a child of this element");
     }
 
+    //---------------------------------------------------------------------------//
+
+    void
+    Element::removeAll (void)
+    {
+        while (!mChildren.empty())
+        {
+            auto spChild = mChildren.back();
+            spChild->removeAll();
+         
+            mChildren.pop_back();
+            spChild->mspParent.reset();
+
+            if (mpDocument)
+                spChild->notifyRemoved(mpDocument);
+        }
+    }
+
+
+    //---------------------------------------------------------------------------//
+
+    /*!
+        Creates a shallow clone of the Element.
+
+        WARNING: This method is a bit dangerous as the "shallow" clone actually
+        contains a shared reference to the same attributes, parent, and children
+        as the original object.  This could easily be used to create a corrupt
+        tree structure as the shared reference modified in one object affects the
+        other.  A shallow clone does not necessarily make a lot of sense in the
+        Element class.
+     */ 
     ElementPtr      
     Element::_clone () const
     {
@@ -160,6 +219,8 @@ namespace lx0 { namespace engine { namespace dom_ns {
         pClone->mValue = mValue.clone();
         return ElementPtr(pClone);
     }
+
+    //---------------------------------------------------------------------------//
 
     ElementPtr
     Element::cloneDeep (void) const
@@ -288,7 +349,7 @@ namespace lx0 { namespace engine { namespace dom_ns {
     Element::notifyRemoved (Document* pDocument)
     {
         lx_check_error(mpDocument == pDocument, 
-            "Element notified that it being removed from a Document that it did not belong to.");
+            "Element notified that it is being removed from a Document that it did not belong to.");
 
         _setHostDocument(nullptr);
 

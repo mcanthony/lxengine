@@ -30,7 +30,10 @@
 
 #include <string>
 #include <set>
+#include <functional>
 
+#include <glgeom/core/ray.hpp>
+#include <glgeom/core/color.hpp>
 #include <lx0/core/lxvar/lxvar.hpp>
 
 namespace lx0 
@@ -66,16 +69,25 @@ namespace lx0
 
                 struct ShaderContext
                 {
+                    typedef     std::function<glgeom::color3f (const glgeom::ray3f&)>   TraceFunction;
+
                     glm::mat4               unifViewMatrix;
 
                     int                     unifLightCount;
                     std::vector<glm::vec3>  unifLightPosition;
                     std::vector<glm::vec3>  unifLightColor;
 
+                    glm::vec3               unifEyeWc;
+
+                    glm::vec3               fragVertexWc;
                     glm::vec3               fragVertexOc;
-                    glm::vec3               fragNormalOc;
                     glm::vec3               fragVertexEc;
+
+                    glm::vec3               fragNormalWc;
+                    glm::vec3               fragNormalOc;
                     glm::vec3               fragNormalEc;
+
+                    TraceFunction           traceFunc;
                 };
                 typedef std::function<glm::vec3 (const ShaderContext&)> ShadeFunction;
 
