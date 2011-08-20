@@ -158,12 +158,7 @@ Cache::acquire (const std::string& id)
         return it->second;
 }
 
-void LambdaBuilder::addTexture (std::string id, std::shared_ptr<glgeom::cubemap3f> image)
-{
-    mCubemapCache.add(id, image);
-}
 
-//===========================================================================//
 
 static
 lxvar _value (lxvar param, lxvar node, const char* name)
@@ -173,6 +168,32 @@ lxvar _value (lxvar param, lxvar node, const char* name)
         return node["input"][name][1];
     else
         return value;
+}
+
+//===========================================================================//
+
+LambdaBuilder::LambdaBuilder (NodeMap& nodeMap) 
+    : mNodes (nodeMap)
+{
+    _init();
+}
+
+void LambdaBuilder::_init()
+{
+    mFuncs3f["cubemap"] = [&](lxvar param) -> FunctionVec3 
+    {
+        auto spTexture = _buildSamplerCube(param["cubemap"]);
+
+        return [spTexture] (const Context& ctx) -> glm::vec3 {
+            glm::vec3 uvw = glm::normalize( ctx.fragNormalOc );
+            return spTexture->get(uvw).vec;
+        };
+    };
+}
+
+void LambdaBuilder::addTexture (std::string id, std::shared_ptr<glgeom::cubemap3f> image)
+{
+    mCubemapCache.add(id, image);
 }
 
 /*
@@ -209,6 +230,18 @@ LambdaBuilder::_buildFloat (lxvar param)
     {
         int v = param;
         return [v](const Context&) { return float(v); };
+    }
+    else if (param.is_map())
+    {
+        std::string type = param["_type"].as<std::string>();
+        auto& node = mNodes[type];
+
+        auto it = mFuncs3f.find(type);
+        if (it != mFuncs3f.end())
+        {
+            auto func = (it->second)(param);
+            return [=](const Context& ctx) { return func(ctx).x; };
+        }
     }
 
     lx_error("Could not build lambda for parameter");
@@ -253,54 +286,6 @@ LambdaBuilder::_buildVec2 (lxvar param)
     return FunctionVec2();
 }
 
-static
-const glgeom::color3f& 
-sampleCube(glgeom::cubemap3f& cubemap, glm::vec3& p)
-{
-    int tile;
-    glm::vec3 ap( glm::abs(p) );
-    if (ap.x > ap.z)
-    {
-        if (ap.x > ap.y)
-            tile = (p.x > 0) ? 0 : 1;
-        else 
-            tile = (p.y > 0) ? 2 : 3;
-    }
-    else
-    {
-        if (ap.y > ap.z)
-            tile = (p.y > 0) ? 2 : 3;
-        else 
-            tile = (p.z > 0) ? 4 : 5;
-    }
-
-    glm::vec2 uv;
-    auto set = [](float sc, float tc, float ma) -> glm::vec2
-    {
-        return glm::vec2(
-            (sc / ma + 1.0f) / 2.0f,
-            (tc / ma + 1.0f) / 2.0f
-        );
-    };
-
-    switch (tile)
-    {
-    default:    lx_assert(0);
-    case 0:     uv = set(-p.z, -p.y, ap.x);     break;
-    case 1:     uv = set( p.z, -p.y, ap.x);     break;
-    case 2:     uv = set( p.x,  p.z, ap.y);     break;
-    case 3:     uv = set( p.x, -p.z, ap.y);     break;
-    case 4:     uv = set( p.x, -p.y, ap.z);     break;
-    case 5:     uv = set(-p.x, -p.y, ap.z);     break;
-    };
-    uv.x *= cubemap.width() - 1;
-    uv.y *= cubemap.height() - 1;
-
-    glm::ivec2 xy( glm::floor(uv + glm::vec2(.5, .5)) );
-
-    return cubemap.mImage[tile].get(xy.x, xy.y);
-}
-
 LambdaBuilder::FunctionVec3
 LambdaBuilder::_buildVec3 (lxvar param)
 {
@@ -308,6 +293,10 @@ LambdaBuilder::_buildVec3 (lxvar param)
     {
         std::string type = param["_type"].as<std::string>();
         auto& node = mNodes[type];
+
+        auto it = mFuncs3f.find(type);
+        if (it != mFuncs3f.end())
+            return (it->second)(param);
 
         if (type == "checker")
         {
@@ -367,15 +356,6 @@ LambdaBuilder::_buildVec3 (lxvar param)
                     specularEx(ctx),
                     reflectivity(ctx)
                 );
-            };
-        }
-        else if (type == "cubemap")
-        {
-            auto spTexture = _buildSamplerCube(param["cubemap"]);
-
-            return [spTexture] (const Context& ctx) -> glm::vec3 {
-                glm::vec3 uvw = glm::normalize( ctx.fragNormalOc );
-                return sampleCube(*spTexture, uvw).vec;
             };
         }
         else if (type == "texture2d")

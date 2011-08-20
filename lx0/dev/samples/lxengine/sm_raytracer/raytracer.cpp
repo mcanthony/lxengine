@@ -427,11 +427,13 @@ protected:
         {
             std::string id = spElem->attr("id").as<std::string>();
             std::string type = spElem->value().find("type").as<std::string>();
+            int width = spElem->value().find("width").as<int>();
+            int height = spElem->value().find("height").as<int>();
             std::string funcName = spElem->value().find("function").as<std::string>();
 
             if (type == "cubemap")
             {
-                glgeom::cubemap3f* cubemap( new cubemap3f(128, 128));
+                glgeom::cubemap3f* cubemap( new cubemap3f(width, height));
                             
                 auto spIJavascriptDoc = spElem->document()->getComponent<IJavascriptDoc>();
                 spIJavascriptDoc->runInContext([&](void) 

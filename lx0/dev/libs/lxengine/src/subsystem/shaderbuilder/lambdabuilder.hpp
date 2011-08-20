@@ -74,13 +74,15 @@ namespace lx0
                     typedef std::function<glm::vec3 (const Context&)> FunctionVec3;
                     typedef std::function<glm::vec4 (const Context&)> FunctionVec4;
 
-                    LambdaBuilder (NodeMap& nodeMap) : mNodes (nodeMap) {}
+                    LambdaBuilder (NodeMap& nodeMap);
 
                     ShadeFunction   buildShader (lx0::lxvar graph);
 
                     void            addTexture          (std::string id, std::shared_ptr<glgeom::cubemap3f> spImage);
 
                 protected:
+                    void                                _init            (void);
+
                     FunctionFloat                       _buildFloat      (lxvar param);
                     FunctionVec2                        _buildVec2       (lxvar param);
                     FunctionVec3                        _buildVec3       (lxvar param);
@@ -90,6 +92,11 @@ namespace lx0
                     NodeMap&        mNodes;
                     TextureCache    mTextureCache;
                     Cache           mCubemapCache;
+
+                    std::map<std::string, std::function<FunctionVec4 (lxvar)>>  mFuncs4f;
+                    std::map<std::string, std::function<FunctionVec3 (lxvar)>>  mFuncs3f;
+                    std::map<std::string, std::function<FunctionVec2 (lxvar)>>  mFuncs2f;
+                    std::map<std::string, std::function<FunctionFloat (lxvar)>> mFuncs1f;
                 };
             }
         }
