@@ -139,6 +139,30 @@ TextureCache::acquire (const std::string& filename)
         return it->second;
 }
 
+
+//===========================================================================//
+
+void
+Cache::add (const std::string& id, Image3fPtr spImage)
+{
+    mCache.insert(std::make_pair(id, spImage));
+}
+
+Cache::Image3fPtr  
+Cache::acquire (const std::string& id)
+{
+    auto it = mCache.find(id);
+    if (it == mCache.end())
+        return Cache::Image3fPtr();
+    else
+        return it->second;
+}
+
+void LambdaBuilder::addTexture (std::string id, std::shared_ptr<glgeom::cubemap3f> image)
+{
+    mCubemapCache.add(id, image);
+}
+
 //===========================================================================//
 
 static
@@ -160,10 +184,17 @@ lxvar _value (lxvar param, lxvar node, const char* name)
     This has other limitations such as only supporting PNG as the moment.
  */
 std::shared_ptr<glgeom::image3f>    
-LambdaBuilder::_buildSampler (lxvar param)
+LambdaBuilder::_buildSampler2d (lxvar param)
 {
     auto filename = param.as<std::string>();
     return mTextureCache.acquire(filename);
+}
+
+std::shared_ptr<glgeom::cubemap3f>
+LambdaBuilder::_buildSamplerCube (lxvar param)
+{
+    auto id = param.as<std::string>();
+    return mCubemapCache.acquire(id);
 }
 
 LambdaBuilder::FunctionFloat
@@ -220,6 +251,54 @@ LambdaBuilder::_buildVec2 (lxvar param)
 
     lx_error("Could not build lambda for parameter");
     return FunctionVec2();
+}
+
+static
+const glgeom::color3f& 
+sampleCube(glgeom::cubemap3f& cubemap, glm::vec3& p)
+{
+    int tile;
+    glm::vec3 ap( glm::abs(p) );
+    if (ap.x > ap.z)
+    {
+        if (ap.x > ap.y)
+            tile = (p.x > 0) ? 0 : 1;
+        else 
+            tile = (p.y > 0) ? 2 : 3;
+    }
+    else
+    {
+        if (ap.y > ap.z)
+            tile = (p.y > 0) ? 2 : 3;
+        else 
+            tile = (p.z > 0) ? 4 : 5;
+    }
+
+    glm::vec2 uv;
+    auto set = [](float sc, float tc, float ma) -> glm::vec2
+    {
+        return glm::vec2(
+            (sc / ma + 1.0f) / 2.0f,
+            (tc / ma + 1.0f) / 2.0f
+        );
+    };
+
+    switch (tile)
+    {
+    default:    lx_assert(0);
+    case 0:     uv = set(-p.z, -p.y, ap.x);     break;
+    case 1:     uv = set( p.z, -p.y, ap.x);     break;
+    case 2:     uv = set( p.x,  p.z, ap.y);     break;
+    case 3:     uv = set( p.x, -p.z, ap.y);     break;
+    case 4:     uv = set( p.x, -p.y, ap.z);     break;
+    case 5:     uv = set(-p.x, -p.y, ap.z);     break;
+    };
+    uv.x *= cubemap.width() - 1;
+    uv.y *= cubemap.height() - 1;
+
+    glm::ivec2 xy( glm::floor(uv + glm::vec2(.5, .5)) );
+
+    return cubemap.mImage[tile].get(xy.x, xy.y);
 }
 
 LambdaBuilder::FunctionVec3
@@ -290,9 +369,18 @@ LambdaBuilder::_buildVec3 (lxvar param)
                 );
             };
         }
+        else if (type == "cubemap")
+        {
+            auto spTexture = _buildSamplerCube(param["cubemap"]);
+
+            return [spTexture] (const Context& ctx) -> glm::vec3 {
+                glm::vec3 uvw = glm::normalize( ctx.fragNormalOc );
+                return sampleCube(*spTexture, uvw).vec;
+            };
+        }
         else if (type == "texture2d")
         {
-            auto spTexture = _buildSampler(param["texture"]);
+            auto spTexture = _buildSampler2d(param["texture"]);
             auto uv = _buildVec2(_value(param, node, "uv")); 
 
             return [spTexture, uv] (const Context& i) -> glm::vec3 {
@@ -305,7 +393,7 @@ LambdaBuilder::_buildVec3 (lxvar param)
         }
         else if (type == "lightgradient")
         {
-            auto spTexture = _buildSampler(param["texture"]);
+            auto spTexture = _buildSampler2d(param["texture"]);
 
             return [spTexture](const Context& ctx) -> glm::vec3 {
 

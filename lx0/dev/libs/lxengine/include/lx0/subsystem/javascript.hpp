@@ -53,8 +53,9 @@ namespace lx0
                 virtual lx0::lxvar  run     (const std::string& source) = 0;
 
                 virtual void        runInContext        (std::function<void(void)> func) = 0;
-                virtual std::function <lx0::lxvar(float, float)> 
-                                    acquireFunction2f   (const char* functionName) = 0;
+                virtual std::function <lx0::lxvar(float, float)>    acquireFunction2f   (const char* functionName) = 0;
+                virtual std::function <lx0::lxvar(float, float, float)>    acquireFunction3f   (const char* functionName) = 0;
+
             };
 
             Engine::Component* createJavascriptSubsystem();

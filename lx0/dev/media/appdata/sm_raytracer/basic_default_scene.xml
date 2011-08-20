@@ -12,6 +12,21 @@
             camera : "camera"
         }
       </View>
+      <Script>
+        <!--
+        function noisetexture(s, t, r)
+        {
+          var v = Math.noise3d(8 * s, 8 * t, 8 * r);
+          return [v, v, v];
+        }
+        -->
+      </Script>
+      <Texture id="noisepattern">
+        {
+        type : "cubemap",
+        function : "noisetexture"
+        }
+      </Texture>      
       <Material id="white">
         {
         graph : {
@@ -20,6 +35,17 @@
         specular : [ 1, 1, .5 ],
         specularEx : 512
         }
+        }
+      </Material>
+      <Material id="red2">
+        {
+          graph : {
+            _type : "phong",
+            diffuse : {
+              _type : "cubemap",
+              cubemap : "noisepattern",
+            }
+          }
         }
       </Material>
       <Material id="blue_mirror">
@@ -95,7 +121,7 @@
             },            
           }
         }
-      </Material>        
+      </Material>
     </Library>
     <Scene view="view">
       <Group id="light_group">
@@ -157,7 +183,7 @@
                 radius : .5
             }
             </Sphere>
-           <Sphere material="red">
+           <Sphere material="red2">
               {
               center : [ 1.25, .25, .25 ],
               radius : .25

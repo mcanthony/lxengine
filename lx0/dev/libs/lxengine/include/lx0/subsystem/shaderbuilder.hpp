@@ -34,6 +34,7 @@
 
 #include <glgeom/core/ray.hpp>
 #include <glgeom/core/color.hpp>
+#include <glgeom/prototype/image.hpp>
 #include <lx0/core/lxvar/lxvar.hpp>
 
 namespace lx0 
@@ -101,6 +102,9 @@ namespace lx0
                 void            buildShaderGLSL     (Material& material, lxvar graph);
                 ShadeFunction   buildShaderLambda   (lxvar graph);
                 void            x_buildShaderNative (lxvar graph);
+
+                void            addTexture          (std::string id, std::shared_ptr<glgeom::cubemap3f> spImage);
+
 
             protected:
                 typedef std::map<std::string, lxvar> NodeMap;

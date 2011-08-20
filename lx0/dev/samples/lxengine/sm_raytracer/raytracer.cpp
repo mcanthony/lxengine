@@ -35,6 +35,7 @@
 // Lx0 headers
 #include <lx0/lxengine.hpp>
 #include <lx0/subsystem/shaderbuilder.hpp>
+#include <lx0/subsystem/javascript.hpp>
 #include <lx0/util/misc/lxvar_convert.hpp>
 #include <lx0/prototype/misc.hpp>
 
@@ -421,6 +422,28 @@ protected:
             spGeometry->setMaterial(spElem, query(spElem->attr("material"), ""));
             spElem->attachComponent(spGeometry);
             mIndex.add(spGeometry);
+        }
+        else if (tag == "Texture")
+        {
+            std::string id = spElem->attr("id").as<std::string>();
+            std::string type = spElem->value().find("type").as<std::string>();
+            std::string funcName = spElem->value().find("function").as<std::string>();
+
+            if (type == "cubemap")
+            {
+                glgeom::cubemap3f* cubemap( new cubemap3f(128, 128));
+                            
+                auto spIJavascriptDoc = spElem->document()->getComponent<IJavascriptDoc>();
+                spIJavascriptDoc->runInContext([&](void) 
+                {
+                    auto func = spIJavascriptDoc->acquireFunction3f( funcName.c_str() );
+                    glgeom::generate_cube_map(*cubemap, [func](const glm::vec3& p) -> glm::vec3 {
+                        return func(p.x, p.y, p.z);
+                    });
+                });
+
+                mShaderBuilder.addTexture(id, std::shared_ptr<glgeom::cubemap3f>(cubemap));
+            }
         }
         else if (tag == "Material") 
         {

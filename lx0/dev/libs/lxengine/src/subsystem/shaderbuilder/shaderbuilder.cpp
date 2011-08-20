@@ -189,4 +189,11 @@ ShaderBuilder::x_buildShaderNative (lxvar graph)
     lx_error("Not yet implemented!");
 }
 
+void            
+ShaderBuilder::addTexture (std::string id, std::shared_ptr<glgeom::cubemap3f> spImage)
+{
+    mpLambdaBuilder->addTexture(id, spImage);
+}
+
+
 

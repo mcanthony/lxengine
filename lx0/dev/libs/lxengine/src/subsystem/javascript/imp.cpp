@@ -306,6 +306,8 @@ namespace {
         
         
         virtual std::function <lx0::lxvar(float, float)>    acquireFunction2f (const char* functionName);
+        virtual std::function <lx0::lxvar(float, float, float)>    acquireFunction3f (const char* functionName);
+
         virtual void        runInContext        (std::function<void(void)> func);
 
         void                _processTimeoutQueue        (void);
@@ -567,6 +569,29 @@ namespace {
         }
         else
             return std::function <lx0::lxvar(float, float)>();
+    }
+
+    std::function <lx0::lxvar(float, float, float)>
+    JavascriptDoc::acquireFunction3f (const char* functionName)
+    {
+        Handle<v8::Object> global( mContext->Global() );
+        Handle<v8::Value>  value = global->Get(String::New(functionName)); 
+        
+        if (value->IsFunction())
+        {
+            Handle<v8::Function> func( v8::Handle<v8::Function>::Cast(value) );
+                
+            return [func,global](float a0, float a1, float a2) -> lx0::lxvar {
+                Handle<Value> args[3];
+                args[0] = _marshal(a0);
+                args[1] = _marshal(a1);
+                args[2] = _marshal(a2);
+                Handle<Value> ret = func->Call(global, 3, args);
+                return _marshal(ret);
+            };
+        }
+        else
+            return std::function <lx0::lxvar(float, float, float)>();
     }
 
     void
