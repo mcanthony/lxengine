@@ -156,15 +156,15 @@
     function generate (s, t)
     {  
       var c = 8;
-      var v = f13(c * s, c * t);
+      var v = f12(c * s, c * t);
       return [v, v, v];
     }
     -->
   </Script>
   <Texture>
     {
-      width  : 256,
-      height : 256,
+      width  : 1024,
+      height : 1024,
       type   : "2d",
       source : [ "function", "generate" ],
     }

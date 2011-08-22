@@ -75,6 +75,12 @@ namespace lx0
                     if (mPtr)
                         mPtr->_incRef();
                 }
+                lxshared_ptr (lxshared_ptr&& that)
+                {
+                    mPtr = that.mPtr;
+                    that.mPtr = nullptr;
+                }
+
                 void operator= (const lxshared_ptr& that)
                 {
                     if (that.mPtr)
@@ -82,6 +88,17 @@ namespace lx0
                     if (mPtr)
                         mPtr->_decRef();
                     mPtr = that.mPtr;
+                }
+
+                void operator= (lxshared_ptr&& that)
+                {
+                    if (that.mPtr != mPtr)
+                    {
+                        if (mPtr)
+                            mPtr->_decRef();
+                        mPtr = that.mPtr;
+                        that.mPtr = nullptr;
+                    }
                 }
 
                 T*      operator->  () { return mPtr; }

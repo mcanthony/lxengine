@@ -438,7 +438,7 @@ protected:
                 auto spIJavascriptDoc = spElem->document()->getComponent<IJavascriptDoc>();
                 spIJavascriptDoc->runInContext([&](void) 
                 {
-                    auto func = spIJavascriptDoc->acquireFunction3f( funcName.c_str() );
+                    auto func = spIJavascriptDoc->acquireFunction<glm::vec3 (float, float, float)>( funcName.c_str() );
                     glgeom::generate_cube_map(*cubemap, [func](const glm::vec3& p) -> glm::vec3 {
                         return func(p.x, p.y, p.z);
                     });

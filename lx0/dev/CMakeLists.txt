@@ -7,6 +7,11 @@ project(lx0)
 cmake_minimum_required(VERSION 2.8)
 set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/config/cmake")
 
+IF(MSVC)
+   ADD_DEFINITIONS(/arch:SSE2 /D_CRT_SECURE_NO_WARNINGS)
+ENDIF(MSVC)
+
+
 #
 # Look for prebuilt binaries
 #

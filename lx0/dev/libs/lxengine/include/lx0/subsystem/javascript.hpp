@@ -28,6 +28,7 @@
 
 #pragma once
 
+#include <boost/any.hpp>
 #include <lx0/engine/document.hpp>
 
 namespace lx0 
@@ -53,8 +54,19 @@ namespace lx0
                 virtual lx0::lxvar  run     (const std::string& source) = 0;
 
                 virtual void        runInContext        (std::function<void(void)> func) = 0;
-                virtual std::function <lx0::lxvar(float, float)>    acquireFunction2f   (const char* functionName) = 0;
-                virtual std::function <lx0::lxvar(float, float, float)>    acquireFunction3f   (const char* functionName) = 0;
+
+                template <typename T>
+                std::function<T> acquireFunction (const char* functionName)
+                {
+                    std::function<T> func;
+                    boost::any t(func);
+                    _acquireFunction(functionName, t);
+                    return boost::any_cast< std::function<T> >(t);
+                }
+
+            protected:
+                virtual void        _acquireFunction     (const char* functionName, boost::any& func) = 0;
+
 
             };
 

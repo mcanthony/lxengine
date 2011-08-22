@@ -199,7 +199,7 @@ main (int argc, char** argv)
             auto spIJavascriptDoc = spDocument->getComponent<IJavascriptDoc>();
             spIJavascriptDoc->runInContext([&](void) 
             {
-                auto func = spIJavascriptDoc->acquireFunction2f( sourceName.c_str() );
+                auto func = spIJavascriptDoc->acquireFunction<glm::vec3 (float, float)>(sourceName.c_str());
 
                 glgeom::generate_image3f(img, [&](glm::vec2 st, glm::ivec2 xy) -> glm::vec3 {
                     return func(st.s, st.t);

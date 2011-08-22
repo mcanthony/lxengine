@@ -305,8 +305,17 @@ namespace {
         virtual lx0::lxvar  run                 (const std::string& source);
         
         
-        virtual std::function <lx0::lxvar(float, float)>    acquireFunction2f (const char* functionName);
-        virtual std::function <lx0::lxvar(float, float, float)>    acquireFunction3f (const char* functionName);
+        template <typename R, typename T0, typename T1>
+        void _acquireFunction (const char* functionName, std::function<R(T0,T1)>& func);
+
+        template <typename R, typename T0, typename T1, typename T2>
+        void _acquireFunction (const char* functionName, std::function <R(T0,T1,T2)>& func);
+
+        template <typename T>
+        bool _checkFunction (const char* functionName, boost::any& func);
+        
+        virtual void        _acquireFunction     (const char* functionName, boost::any& func);
+
 
         virtual void        runInContext        (std::function<void(void)> func);
 
@@ -549,8 +558,10 @@ namespace {
         func();
     }
 
-    std::function <lx0::lxvar(float, float)>
-    JavascriptDoc::acquireFunction2f (const char* functionName)
+
+    template <typename R, typename T0, typename T1>
+    void
+    JavascriptDoc::_acquireFunction (const char* functionName, std::function <R(T0,T1)>& funcObj)
     {
         Handle<v8::Object> global( mContext->Global() );
         Handle<v8::Value>  value = global->Get(String::New(functionName)); 
@@ -559,7 +570,7 @@ namespace {
         {
             Handle<v8::Function> func( v8::Handle<v8::Function>::Cast(value) );
                 
-            return [func,global](float a0, float a1) -> lx0::lxvar {
+            funcObj = [func,global](T0 a0, T1 a1) -> R {
                 Handle<Value> args[2];
                 args[0] = _marshal(a0);
                 args[1] = _marshal(a1);
@@ -567,12 +578,11 @@ namespace {
                 return _marshal(ret);
             };
         }
-        else
-            return std::function <lx0::lxvar(float, float)>();
     }
 
-    std::function <lx0::lxvar(float, float, float)>
-    JavascriptDoc::acquireFunction3f (const char* functionName)
+    template <typename R, typename T0, typename T1, typename T2>
+    void
+    JavascriptDoc::_acquireFunction (const char* functionName, std::function <R(T0,T1,T2)>& funcObj)
     {
         Handle<v8::Object> global( mContext->Global() );
         Handle<v8::Value>  value = global->Get(String::New(functionName)); 
@@ -581,7 +591,7 @@ namespace {
         {
             Handle<v8::Function> func( v8::Handle<v8::Function>::Cast(value) );
                 
-            return [func,global](float a0, float a1, float a2) -> lx0::lxvar {
+            funcObj = [func,global](T0 a0, T1 a1, T2 a2) -> R {
                 Handle<Value> args[3];
                 args[0] = _marshal(a0);
                 args[1] = _marshal(a1);
@@ -590,9 +600,41 @@ namespace {
                 return _marshal(ret);
             };
         }
-        else
-            return std::function <lx0::lxvar(float, float, float)>();
     }
+
+    template <typename T>
+    bool JavascriptDoc::_checkFunction (const char* functionName, boost::any& func)
+    {
+        if (func.type() == typeid(std::function<T>))
+        {
+            std::function<T> funcObj;
+            _acquireFunction(functionName, funcObj);
+            func = funcObj; 
+            return true;
+        }
+        else
+            return false;
+    }
+
+
+    void 
+    JavascriptDoc::_acquireFunction (const char* functionName, boost::any& func)
+    {
+        if (_checkFunction<float (float,float)>(functionName, func))
+            return;
+        if (_checkFunction<glm::vec2 (float,float)>(functionName, func))
+            return;
+        if (_checkFunction<glm::vec3 (float,float)>(functionName, func))
+            return;
+
+        if (_checkFunction<float (float,float,float)>(functionName, func))
+            return;
+        if (_checkFunction<glm::vec2 (float,float,float)>(functionName, func))
+            return;
+        if (_checkFunction<glm::vec3 (float,float,float)>(functionName, func))
+            return;
+    }
+
 
     void
     JavascriptDoc::_addGlobals (v8::Handle<v8::ObjectTemplate>& globalTempl)
