@@ -281,6 +281,9 @@ namespace {
                         ~JavascriptElem();
 
         virtual const char* name() const { return "javascript"; }
+
+        virtual lx0::uint32 flags() const;
+
         virtual void    onUpdate            (ElementPtr spElem);
 
         Persistent<Function>            mOnUpdate;
@@ -376,6 +379,16 @@ namespace {
     {
         for (auto it = mCallbacks.begin(); it != mCallbacks.end(); ++it)
             it->second.Dispose();
+    }
+
+    lx0::uint32 
+    JavascriptElem::flags() const
+    {
+        lx0::uint32 flags = 0;
+
+        flags |= mOnUpdate.IsEmpty() ? eSkipUpdate : eCallUpdate;
+
+        return flags;
     }
 
     void
@@ -998,6 +1011,7 @@ namespace {
 
             Handle<Function> func     = _marshal(value);
             pThis->getComponent<JavascriptElem>("_js")->mOnUpdate = Persistent<Function>::New(func);
+            pThis->recomputeFlags();
         }
 
         static v8::Handle<v8::Value> 

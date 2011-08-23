@@ -62,11 +62,19 @@ namespace lx0 { namespace engine { namespace dom_ns {
     class ElementComponent : public detail::_ComponentBase
     {
     public:
-        virtual void    onAttributeChange   (ElementPtr spElem, std::string name, lxvar value) {}
-        virtual void    onValueChange       (ElementPtr spElem) {}
-        virtual void    onAdded             (void) {}
-        virtual void    onRemoved           (void) {}
-        virtual void    onUpdate            (ElementPtr spElem) {}
+        enum Flags
+        {
+            eCallUpdate     =   (1 << 0),
+            eSkipUpdate     =   (1 << 1),
+        };
+
+        virtual lx0::uint32 flags               (void) const { return 0; }
+
+        virtual void        onAttributeChange   (ElementPtr spElem, std::string name, lxvar value) {}
+        virtual void        onValueChange       (ElementPtr spElem) {}
+        virtual void        onAdded             (void) {}
+        virtual void        onRemoved           (void) {}
+        virtual void        onUpdate            (ElementPtr spElem) { }
     };
 
     //===========================================================================//
@@ -131,7 +139,8 @@ namespace lx0 { namespace engine { namespace dom_ns {
         void            notifyAdded     (Document* pDocument);
         void            notifyRemoved   (Document* pDocument);
         void            notifyUpdate    (Document* pDocument);
-        void            notifyAttached  (ComponentPtr spComponent) { /*! \todo */ } 
+
+        void            notifyAttached  (ComponentPtr spComponent); 
 
         DocumentPtr     document        (void);
 
@@ -146,6 +155,10 @@ namespace lx0 { namespace engine { namespace dom_ns {
 
         void            addCallback     (std::string name, Function func);
 
+        bool            flagNeedsUpdate (void) const    { return !!(mFlags & eCallUpdate); }
+
+        void            recomputeFlags  (void);
+
     protected:
         typedef std::map<std::string,Function>  FunctionMap;
         typedef std::map<std::string,lx0::slot<void (ElementPtr, std::vector<lxvar>&)>> CallbackMap;
@@ -156,8 +169,13 @@ namespace lx0 { namespace engine { namespace dom_ns {
 
         void            _setHostDocument    (Document* pDocument);
 
-        Document*       mpDocument;     // Non-owning pointer to host document
+        enum Flags
+        {
+            eCallUpdate     = (1 << 0),
+        };
 
+        Document*       mpDocument;     // Non-owning pointer to host document
+        lx0::uint32     mFlags;
         std::string     mTagName;
         AttrMap         mAttributes;
         ElementPtr      mspParent;

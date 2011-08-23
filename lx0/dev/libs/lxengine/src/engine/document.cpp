@@ -163,6 +163,25 @@ namespace lx0 { namespace engine { namespace dom_ns {
         _iterateElements2Imp(root(), f);
     }
 
+    static
+    bool 
+    _walkElementsImp (std::function<bool (ElementPtr)> f, ElementPtr spElem)
+    {
+        if (f(spElem))
+            return true;
+
+        const auto count = spElem->childCount();
+        auto pElem = spElem.get();
+                
+        for (int i = 0; i < count; ++i)
+        {
+            if (_walkElementsImp(f, pElem->child(i)))
+                return true;
+        }
+                
+        return false;
+    }
+
     /*!
         Helper method that traverses the Elements in the Document from root down
         (depth-first) and calls the function f on each Element.  The traversal
@@ -171,25 +190,7 @@ namespace lx0 { namespace engine { namespace dom_ns {
     bool
     Document::_walkElements (std::function<bool (ElementPtr)> f)
     {
-        struct L
-        {
-            static bool 
-            walk (std::function<bool (ElementPtr)> f, ElementPtr spElem)
-            {
-                if (f(spElem))
-                    return true;
-
-                for (int i = 0; i < spElem->childCount(); ++i)
-                {
-                    if (walk(f, spElem->child(i)))
-                        return true;
-                }
-                
-                return false;
-            }
-        };
-
-        return L::walk(f, root());
+        return _walkElementsImp(f, root());
     }
 
     bool
@@ -287,16 +288,28 @@ namespace lx0 { namespace engine { namespace dom_ns {
         
         slotUpdateRun();
 
-        _walkElements([&](ElementPtr spElem) -> bool {
-            spElem->notifyUpdate(this);
-            return false;
-        });
+        if (0)
+        {
+            _walkElements([&](ElementPtr spElem) -> bool {
+                spElem->notifyUpdate(this);
+                return false;
+            });
+        }
+        else
+        {
+            for (auto it = mElementsWithUpdate.begin(); it != mElementsWithUpdate.end(); ++it)
+            {
+                auto& pElem = *it;
+                pElem->notifyUpdate(this);
+            }
+        }
 
         for (auto it = m_views.begin(); it != m_views.end(); ++it)
             it->second->updateFrame();
     }
 
-    void Document::notifyElementAdded (ElementPtr spElem)
+    void 
+    Document::notifyElementAdded (ElementPtr spElem)
     {
         // Automatically attach all registered Element components for the given tag
         //
@@ -324,14 +337,34 @@ namespace lx0 { namespace engine { namespace dom_ns {
             it->onElementAdded(shared_from_this(), spElem);
         });   
         slotElementAdded(spElem);
+
+        notifyFlagsModified(spElem.get());
     }
 
-    void Document::notifyElementRemoved (ElementPtr spElem)
+    void 
+    Document::notifyElementRemoved (ElementPtr spElem)
     {
+        //
+        // Remove from the cached list
+        //
+        mElementsWithUpdate.erase(spElem.get());
+
         _foreach ([&](ComponentPtr it) {
             it->onElementRemoved(this, spElem);
         });  
         slotElementRemoved(spElem);
+    }
+
+    void
+    Document::notifyFlagsModified (Element* pElem)
+    {
+        //
+        // Update any cached information regarding this Element's flags
+        //
+        if (pElem->flagNeedsUpdate())
+            mElementsWithUpdate.insert(pElem);
+        else
+            mElementsWithUpdate.erase(pElem);
     }
 
     void        

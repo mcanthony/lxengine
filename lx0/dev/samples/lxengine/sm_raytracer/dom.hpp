@@ -55,6 +55,8 @@ public:
 
     virtual     const char* name() const { return "raytracer"; }
     static      const char* s_name()     { return "raytracer"; }
+
+    virtual lx0::uint32 flags               (void) const { return eSkipUpdate; }
 };
 
 //===========================================================================//
@@ -177,10 +179,7 @@ public:
     glgeom::sphere3f geom;
 
 protected:
-    virtual bool _intersect (const ray3f& ray, intersection3f& isect) 
-    {
-        return  glgeom::intersect(ray, geom, isect);
-    }
+    virtual bool _intersect (const ray3f& ray, intersection3f& isect); 
 };
 
 //===========================================================================//

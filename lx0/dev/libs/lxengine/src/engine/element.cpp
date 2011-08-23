@@ -40,12 +40,15 @@
 
 namespace lx0 { namespace engine { namespace dom_ns {
 
+    //===========================================================================//
+
     Element::FunctionMap Element::s_funcMap;
     
     //---------------------------------------------------------------------------//
 
     Element::Element (void)
         : mpDocument (nullptr)
+        , mFlags     (0)
     {
     }
 
@@ -370,9 +373,48 @@ namespace lx0 { namespace engine { namespace dom_ns {
     void
     Element::notifyUpdate (Document* pDocument)
     {
-        _foreach([&](ComponentPtr it) {
-            it->onUpdate(this->shared_from_this());
-        });
+        //
+        // Track flags on whether any components override the onUpdate() method.
+        // This way in the common case that no components override the method,
+        // an early exit is possible.
+        //
+        if (mFlags & eCallUpdate)
+        {
+            _foreach([&](ComponentPtr it) {
+                it->onUpdate(this->shared_from_this());
+            });
+        }
+    }
+
+    void
+    Element::recomputeFlags (void)
+    {
+        lx0::uint32 elemFlags = 0;
+
+        for (auto it = mComponents.begin(); it != mComponents.end(); ++it)
+        {
+            auto pComponent = it->second.get();
+            lx0::uint32 compFlags = pComponent->flags();
+
+            if (compFlags & ElementComponent::eCallUpdate)
+                elemFlags |= Element::eCallUpdate;
+            else
+            {
+                if (!(compFlags & ElementComponent::eSkipUpdate))
+                    lx_error("Component needs to explicitly return either eSkipUpdate or eCallUpdate from flags() implementation!");
+            }
+        }
+
+        mFlags = elemFlags;
+
+        document()->notifyFlagsModified(this);
+    }
+
+    void
+    Element::notifyAttached  (ComponentPtr spComponent)
+    {
+        // The new component may affect the cached flags
+        recomputeFlags();
     }
 
     DocumentPtr

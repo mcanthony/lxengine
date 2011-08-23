@@ -36,6 +36,7 @@
 #include <memory>
 #include <vector>
 #include <map>
+#include <set>
 
 // Lx headers
 #include <lx0/_detail/forward_decls.hpp>
@@ -132,6 +133,7 @@ namespace lx0
         void                    notifyAttached          (ComponentPtr spComponent) { spComponent->onAttached(shared_from_this()); }
         void                    notifyElementAdded      (ElementPtr spElem);
         void                    notifyElementRemoved    (ElementPtr spElem);
+        void                    notifyFlagsModified     (Element* pElem);
 
         slot<void(ElementPtr)>  slotElementCreated;
         slot<void(ElementPtr)>  slotElementAdded;
@@ -152,6 +154,8 @@ namespace lx0
         ElementPtr                      m_spRoot;
         std::map<std::string, ViewPtr>  m_views;
         std::vector<lx0::ControllerPtr> mControllers;
+
+        std::set<Element*>              mElementsWithUpdate;
     };
 
         }
