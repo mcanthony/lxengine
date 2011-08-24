@@ -45,6 +45,7 @@
 using namespace lx0;
 
 extern glgeom::image3f img;
+extern glgeom::abbox2i imgRegion;
 
 //===========================================================================//
 
@@ -103,9 +104,19 @@ public:
     virtual void render (void)	
     {
         glEnable(GL_TEXTURE_2D);
-        
+
         glBindTexture(GL_TEXTURE_2D, mId);
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, img.width(), img.height(), 0, GL_RGB, GL_FLOAT, img.ptr());
+        if (!imgRegion.is_empty())
+        {
+            glTexSubImage2D(GL_TEXTURE_2D, 0, 
+                0, imgRegion.min.y,
+                img.width(), 
+                imgRegion.height(),
+                GL_RGB, GL_FLOAT, 
+                img.rowPtr(imgRegion.min.y)
+                );
+            imgRegion = glgeom::abbox2i();
+        }
         glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
 
         glColor3f(0, 1, 1);

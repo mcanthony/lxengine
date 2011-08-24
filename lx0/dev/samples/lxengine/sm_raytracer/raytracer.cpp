@@ -55,6 +55,7 @@ using namespace lx0;
 using namespace glgeom;
 
 extern glgeom::image3f img;
+extern glgeom::abbox2i imgRegion;
 
 //===========================================================================//
 
@@ -270,7 +271,10 @@ public:
                 for (int ix = sx; ix < ex; ix ++)
                 {
                     if ((ix%2) + (iy%2) != 1)
+                    {
                         img.set(ix, iy, c);
+                        imgRegion.merge(glm::ivec2(0, iy));
+                    }
                 }
             }
         }));
@@ -288,13 +292,17 @@ public:
                 for (int ix = sx; ix < ex; ix ++)
                 {
                     if ((ix%2) + (iy%2) == 1)
+                    {
                         img.set(ix, iy, c);
+                        imgRegion.merge(glm::ivec2(0, iy));
+                    }
                 }
             }
         }));
         
         std::shared_ptr<ScanIterator> passHigh(new ScanIterator (img.width(), img.height(), [&](int x, int y) {
             img.set(x, y, _trace(x, y)); 
+            imgRegion.merge(glm::ivec2(0, y));
         }));
 
         mUpdateQueue.push_back([&]() { return mRenderTime = lx0::lx_milliseconds(), true; });

@@ -366,8 +366,8 @@ LambdaBuilder::_buildVec3 (lxvar param)
             return [spTexture, uv] (const Context& i) -> glm::vec3 {
                 glm::vec2 uv2 = uv(i);
                 return spTexture->get(
-                    uv2.x * float(spTexture->width() - 1) + 0.5f,
-                    uv2.y * float(spTexture->height() - 1) + 0.5f
+                    int( uv2.x * float(spTexture->width() - 1) + 0.5f ),
+                    int( uv2.y * float(spTexture->height() - 1) + 0.5f )
                 ).vec;
             };
         }
