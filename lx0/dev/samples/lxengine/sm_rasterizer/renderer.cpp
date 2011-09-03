@@ -42,6 +42,7 @@ class CameraComp : public Element::Component
 {
 public:
     virtual     const char* name() const { return "rasterizer"; }
+    virtual     lx0::uint32 flags() const { return eSkipUpdate; }
 
     CameraComp (lx0::CameraPtr spCam) : mspCamera (spCam) {}
 

@@ -34,6 +34,7 @@
 #include <iostream>
 
 #include <boost/format.hpp>
+#include <boost/math/constants/constants.hpp>
 
 #include <v8/v8.h>
 
@@ -324,6 +325,8 @@ public:
 
     void method ( const char* name, std::function<Handle<Value>(const Arguments&)> func )
     {
+        lx_check_error(mCount < N);
+
         mTable.mFunctions[mCount] = func;
         (*mProto)->Set(name, FunctionTemplate::New(mTable.mPointers[mCount]) );
         mCount++;
@@ -350,19 +353,19 @@ Handle<v8::Object> create_javascript_math()
     FunctionTable<64> table2;
     Builder<64> build (proto_t, table2);
 
-    build.method( "sin",    method_allow_array(std::sinf) );
-    build.method( "cos",    method_allow_array(std::cosf) );
-
     // Constants
-    constant<0>(objInst,    "E",       2.7182818284590452f);
-    constant<1>(objInst,    "PI",      glgeom::pi().value);
-    constant<2>(objInst,    "TWOPI",   2.0f * glgeom::pi().value);
-    constant<3>(objInst,    "SQRT2",   1.4142135623730951f);
-    constant<4>(objInst,    "SQRT1_2", 0.7071067811865476f);
-    constant<5>(objInst,    "LN2",     0.6931471805599453f);
-    constant<6>(objInst,    "LN10",    2.302585092994046f);
-    constant<7>(objInst,    "LOG2E",   1.4426950408889634f);
-    constant<8>(objInst,    "LOG10E",  0.4342944819032518f);
+    constant<0>(objInst,    "E",            boost::math::constants::e<float>() );
+    constant<1>(objInst,    "PI",           glgeom::pi().value);
+    constant<2>(objInst,    "TWO_PI",       2.0f * glgeom::pi().value);
+    constant<3>(objInst,    "ROOT_PI",      boost::math::constants::root_pi<float>() );
+    constant<4>(objInst,    "ROOT_HALF_PI", boost::math::constants::root_half_pi<float>() );
+    constant<5>(objInst,    "ROOT_TWO_PI",  boost::math::constants::root_two_pi<float>() );
+    constant<6>(objInst,    "SQRT2",        1.4142135623730951f);
+    constant<7>(objInst,    "SQRT1_2",      0.7071067811865476f);
+    constant<8>(objInst,    "LN2",          0.6931471805599453f);
+    constant<9>(objInst,    "LN10",         2.302585092994046f);
+    constant<10>(objInst,   "LOG2E",        1.4426950408889634f);
+    constant<11>(objInst,   "LOG10E",       0.4342944819032518f);
 
     // Trig functions
     build.method("cos",         method_allow_array(std::cosf) );

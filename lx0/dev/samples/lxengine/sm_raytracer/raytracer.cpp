@@ -31,6 +31,7 @@
 //===========================================================================//
 
 #include <iostream>
+#include <array>
 
 // Lx0 headers
 #include <lx0/lxengine.hpp>
@@ -56,6 +57,33 @@ using namespace glgeom;
 
 extern glgeom::image3f img;
 extern glgeom::abbox2i imgRegion;
+
+
+template <typename T>
+class lxarray
+{
+public:
+    lxarray()
+        : mSize (0)
+    {
+    }
+
+    bool    empty() const { return (mSize == 0); }
+    size_t  size() const { return mSize; }
+
+    T& front() { return mData[0]; }
+
+    void push_back (const T& t)
+    {
+        mData[mSize] = t;
+        mSize++;
+    }
+
+    T& operator[] (size_t i) { return mData[i]; }
+
+    size_t                        mSize;
+    __declspec(align(16)) T       mData[32];
+};
 
 //===========================================================================//
 
@@ -143,7 +171,7 @@ public:
     void    modify() { assert(0); }
 
     bool    intersect   (const ray3f& ray, intersection3f& isect);
-    size_t  intersect   (const ray3f& ray, std::vector<std::pair<GeometryPtr, intersection3f>>& hits);
+    size_t  intersect   (const ray3f& ray, lxarray<std::pair<Geometry*, intersection3f>>& hits);
 
 protected:
     std::vector<std::shared_ptr<Geometry>>  mGeometry;
@@ -168,13 +196,15 @@ SpatialIndex::intersect (const ray3f& ray, intersection3f& closest)
 }
 
 size_t 
-SpatialIndex::intersect (const ray3f& ray, std::vector<std::pair<GeometryPtr, intersection3f>>& hits)
+SpatialIndex::intersect (const ray3f& ray, lxarray<std::pair<Geometry*, intersection3f>>& hits)
 {
     for (auto it = mGeometry.begin(); it != mGeometry.end(); ++it)
     {
+        auto pGeom = it->get();
+
         intersection3f isect;
-        if ((*it)->intersect(ray, isect))
-            hits.push_back(std::make_pair(*it, isect));
+        if (pGeom->intersect(ray, isect))
+            hits.push_back(std::make_pair(pGeom, isect));
     }
 
     return hits.size();
@@ -324,6 +354,14 @@ public:
                 return true;
             });
         }
+
+        if (true)
+        {
+            mUpdateQueue.push_back([]() -> bool { 
+                Engine::acquire()->sendEvent("quit");
+                return true;
+            });
+        }
     }
 
     bool _shadowTerm (const point_light_f& light, const intersection3f& intersection)
@@ -345,26 +383,27 @@ public:
 
     color3f _trace2 (const Environment& env, const ray3f& ray, int depth)
     {
-        std::vector<std::pair<GeometryPtr, intersection3f>> hits;
+        lxarray<std::pair<Geometry*, intersection3f>> hits;
         mIndex.intersect(ray, hits);
         
         auto c = color3f(0,0,0);
         if (!hits.empty())
         {
             intersection3f* pIntersection = &hits.front().second;
-            GeometryPtr spGeom = hits.front().first;
+            Geometry* pGeom = hits.front().first;
 
-            for (auto it = hits.begin(); it != hits.end(); ++it)
+            for (size_t i = 0; i < hits.size(); ++i)
             {
-                if (it->second.distance < pIntersection->distance)
+                auto& it = hits[i];
+                if (it.second.distance < pIntersection->distance)
                 {
-                    pIntersection = &it->second;
-                    spGeom = it->first;
+                    pIntersection = &it.second;
+                    pGeom = it.first;
                 }
             }
             const intersection3f& intersection = *pIntersection;
             const vector3f viewDirection = glgeom::normalize(intersection.positionWc - mCamera->camera.position);
-            const Material* pMat ( spGeom->mspMaterial ? spGeom->mspMaterial.get() : mspContext->mspMaterial.get());
+            const Material* pMat ( pGeom->mspMaterial ? pGeom->mspMaterial.get() : mspContext->mspMaterial.get());
 
             glm::mat3 normalMatrix = glm::mat3(glm::inverseTranspose(mCamera->viewMatrix));
 
@@ -411,7 +450,7 @@ public:
         if (x == 0 && y % 4 == 0)
             std::cout << "Tracing row " << y << "..." << std::endl;
         
-        ray3f ray = compute_frustum_ray<float>(mspTraceContext->frustum, x, img.height() - y, img.width(), img.height());
+        ray3f ray = compute_frustum_ray<float>(mspTraceContext->frustum, float(x), float(img.height() - y), img.width(), img.height());
         
         return _trace2(env, ray, 0);
     }

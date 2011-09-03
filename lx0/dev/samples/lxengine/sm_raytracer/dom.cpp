@@ -29,11 +29,10 @@
 #include <lx0/lxengine.hpp>
 #include "dom.hpp"
 
-
 //===========================================================================//
 
 bool 
-Sphere::_intersect (const ray3f& ray, intersection3f& isect) 
+Sphere::_intersect (const ray3f& ray, intersection3f& intersect) 
 {
-    return  glgeom::intersect(ray, geom, isect);
+    return glgeom::intersect(ray, geom, intersect);
 }

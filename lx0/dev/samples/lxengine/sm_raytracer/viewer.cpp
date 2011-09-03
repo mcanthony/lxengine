@@ -66,6 +66,9 @@ public:
 
     virtual     void        onKeyDown       (ViewPtr spView, int keyCode)
     {
+        //
+        // Take a screenshot
+        //
         if (keyCode == KC_S)
         {
             time_t rawtime;
@@ -105,6 +108,10 @@ public:
     {
         glEnable(GL_TEXTURE_2D);
 
+        //
+        // Refresh the sub-region of the texture that has been modified since
+        // the last update
+        //
         glBindTexture(GL_TEXTURE_2D, mId);
         if (!imgRegion.is_empty())
         {
@@ -119,6 +126,9 @@ public:
         }
         glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
 
+        //
+        // Draw the textured quad to fill the window
+        //
         glColor3f(0, 1, 1);
         glBegin(GL_QUADS);
             glTexCoord2f(0, 1);
