@@ -47,6 +47,7 @@ namespace lx0 { namespace util { namespace misc {
 
             std::string         lx_itoa                 (size_t i);
             std::string         lx_ctime                (void);
+            std::string         lx_timestring           (void);
 
             unsigned int        lx_milliseconds         (void);
             void                lx_message_box          (std::string caption, std::string message);
@@ -68,6 +69,9 @@ namespace lx0 { namespace util { namespace misc {
             int             count       (void) const { return mCount; }
             double          averageMs   (void) const { return (lx0::uint32)(mTotal * 1000 / (_ticksPerSec() * mCount)); } 
             lx0::uint32     totalMs     (void) const { return (lx0::uint32)(mTotal * 1000 / _ticksPerSec()); }
+            lx0::int64      totalTicks  (void) const { return mTotal; }
+            
+            static lx0::uint32 ticksToMs (lx0::int64 ticks) { return (lx0::uint32)(ticks * 1000 / _ticksPerSec()); }
 
             protected:
                 static  lx0::int64  _ticks();

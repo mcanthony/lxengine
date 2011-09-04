@@ -133,6 +133,30 @@ namespace lx0 { namespace util { namespace misc {
         return stream.str();
     }
 
+    /*!
+        Returns the current time as in the form:
+
+        YYYYMMDD_HHMMSS
+
+        e.g. 20110903_154632
+     */
+    std::string
+    lx_timestring (void)
+    {
+        time_t rawtime;
+        time(&rawtime);
+        struct tm* timeinfo = localtime(&rawtime);
+            
+        return boost::str( boost::format("%04d%02d%02d_%02d%02d%02d") 
+            % (timeinfo->tm_year + 1900) 
+            % (timeinfo->tm_mon + 1)
+            % (timeinfo->tm_mday)
+            % (timeinfo->tm_hour)
+            % (timeinfo->tm_min)
+            % (timeinfo->tm_sec)
+            );
+    }
+
     std::string
     lx_ctime (void)
     {
