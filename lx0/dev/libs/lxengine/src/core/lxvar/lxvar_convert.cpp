@@ -56,9 +56,9 @@ namespace lx0 { namespace core { namespace lxvar_ns {
         void _convert (lxvar& v,    glm::vec3& u)           { _convert_any3f(v, u); }
         void _convert (lxvar& v,    glgeom::point3f& u)     { _convert_any3f(v, u); }
         void _convert (lxvar& v,    glgeom::point3d& u)     { _convert_any3f(v, u); }
-        void _convert (lxvar& v,    glgeom::vector3f& u)    { _convert_any3f(v, u);}
+        void _convert (lxvar& v,    glgeom::vector3f& u)    { _convert_any3f(v, u); }
         void _convert (lxvar& v,    glgeom::vector3d& u)    { _convert_any3f(v, u); }
-        void _convert (lxvar& v,    glgeom::color3f& u)     { _convert_any3f(v, u);}
+        void _convert (lxvar& v,    glgeom::color3f& u)     { _convert_any3f(v, u); }
         void _convert (lxvar& v,    glgeom::color3d& u)     { _convert_any3f(v, u); }
 
         //===========================================================================//
