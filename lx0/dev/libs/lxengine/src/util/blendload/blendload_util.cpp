@@ -148,7 +148,7 @@ _primitive_buffer_from_block (glgeom::primitive_buffer& primitive, lx0::BlendRea
     // Compute the bounding sphere from the bounding box
     // (Tighter bounds than calling merge() iteratively).
     //
-    primitive.bsphere = glgeom::bsphere3f(primitive.bbox);
+    primitive.bsphere = bsphere3_from(primitive.bbox);
 
     //
     // Check post-conditions
@@ -156,8 +156,8 @@ _primitive_buffer_from_block (glgeom::primitive_buffer& primitive, lx0::BlendRea
     lx_check_error( !primitive.vertex.positions.empty() );
     lx_check_error( primitive.vertex.normals.empty() || primitive.vertex.normals.size() == primitive.vertex.positions.size() );
     lx_check_error( primitive.vertex.colors.empty() || primitive.vertex.colors.size() == primitive.vertex.positions.size() );
-    lx_check_error( primitive.bbox.is_finite() );
-    lx_check_error( primitive.bsphere.is_finite() );
+    lx_check_error( is_finite(primitive.bbox) );
+    lx_check_error( is_finite(primitive.bsphere) );
 }
 
 /*!

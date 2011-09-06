@@ -32,7 +32,7 @@
 #include <set>
 #include <functional>
 
-#include <glgeom/core/ray.hpp>
+#include <glgeom/core/primitives.hpp>
 #include <glgeom/core/color.hpp>
 #include <glgeom/prototype/image.hpp>
 #include <lx0/core/lxvar/lxvar.hpp>

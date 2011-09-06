@@ -52,6 +52,10 @@ namespace lx0 { namespace util { namespace misc {
             unsigned int        lx_milliseconds         (void);
             void                lx_message_box          (std::string caption, std::string message);
 
+            float                   random_unit         (void);
+            std::function<float()>  random_die_f        (float min, float max, int seed);
+            std::function<int()>    random_die_i        (int min, int max, int seed);
+
             void                _lx_reposition_console  (void);
 
             void                lx_operating_system_info (lxvar& map);

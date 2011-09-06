@@ -35,6 +35,11 @@
 #include <boost/format.hpp>
 #include <boost/algorithm/string.hpp>
 #include <boost/filesystem.hpp>
+#include <boost/random/mersenne_twister.hpp>
+#include <boost/random/uniform_int.hpp>
+#include <boost/random/uniform_real.hpp>
+#include <boost/random/uniform_on_sphere.hpp>
+#include <boost/random/variate_generator.hpp>
 
 #include <lx0/lxengine.hpp>
 
@@ -176,6 +181,93 @@ namespace lx0 { namespace util { namespace misc {
         s.resize( s.size() - whitespaceCount );
 
         return s;
+    }
+
+    namespace 
+    {
+        class RandomUnit
+        {
+        public:
+            RandomUnit (int seed)
+                : mDie   (mGenerator, mRange)
+            {
+                mGenerator.seed(seed);
+            }
+
+            float operator() () 
+            {
+                return mDie();
+            }
+
+        private:
+            boost::mt19937 mGenerator;
+            boost::uniform_01<float> mRange;
+            boost::variate_generator<boost::mt19937, boost::uniform_01<float> > mDie;
+        };
+
+        class RandomFloat
+        {
+        public:
+            RandomFloat (int seed, float min, float max)
+                : mRange (min, max)
+                , mDie   (mGenerator, mRange)
+            {
+                mGenerator.seed(seed);
+            }
+
+            float operator() () const
+            {
+                return mDie();
+            }
+
+        private:
+            boost::mt19937 mGenerator;
+            boost::uniform_real<float> mRange;
+            mutable boost::variate_generator<boost::mt19937, boost::uniform_real<float> > mDie;
+        };
+
+        class RandomInt
+        {
+        public:
+            RandomInt (int seed, int min, int max)
+                : mRange (min, max)
+                , mDie   (mGenerator, mRange)
+            {
+                mGenerator.seed(seed);
+            }
+
+            int operator() () const
+            {
+                return mDie();
+            }
+
+        private:
+            boost::mt19937 mGenerator;
+            boost::uniform_int<> mRange;
+            mutable boost::variate_generator<boost::mt19937, boost::uniform_int<> > mDie;
+        };
+    }
+
+
+    float                   
+    random_unit (void)
+    {
+        static RandomUnit die(0);
+        return die();
+    }
+
+    std::function<float()>  
+    random_die_f (float min, float max, int seed)
+    {
+        RandomFloat die(seed, min, max);
+        return [die]() { return die(); };
+    }
+
+    std::function<int()>    
+    random_die_i (int min, int max, int seed)
+    {
+        RandomInt die(seed, min, max);
+        return [die]() { return die(); };
     }
 
 }}}

@@ -1057,7 +1057,7 @@ public:
                         //
                         // Set the bounding sphere as well
                         //
-                        spPrimitive->bsphere = glgeom::bsphere3f(spPrimitive->bbox);
+                        spPrimitive->bsphere = bsphere3_from(spPrimitive->bbox);
 
                         //
                         // Here's some guesswork since the landscape textures don't seem to be right
