@@ -113,16 +113,30 @@ public:
         // the last update
         //
         glBindTexture(GL_TEXTURE_2D, mId);
-        if (!imgRegion.is_empty())
+        const auto region = imgRegion;
         {
-            glTexSubImage2D(GL_TEXTURE_2D, 0, 
-                0, imgRegion.min.y,
-                img.width(), 
-                imgRegion.height(),
-                GL_RGB, GL_FLOAT, 
-                img.rowPtr(imgRegion.min.y)
-                );
-            imgRegion = glgeom::abbox2i();
+            volatile int sx = 0;
+            volatile int dx = img.width();
+            volatile int sy = region.min.y;
+            volatile int dy = region.height();
+            volatile float* pRow = img.rowPtr(0);
+
+            
+            if (dy < 0)
+                dy = 0;
+            else if (sy + dy > img.height())
+                dy = img.height() - sy;
+ 
+            sx = 0;
+            dx = img.width();
+            sy = 0;
+            dy = img.height();
+
+            {
+                GLvoid* p = (void*)pRow;
+                glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, img.width(), img.height(), GL_RGB, GL_FLOAT, p);
+                imgRegion = glgeom::abbox2i();
+            }
         }
         glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
 

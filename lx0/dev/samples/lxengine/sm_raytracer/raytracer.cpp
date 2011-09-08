@@ -48,6 +48,8 @@
 
 #include <glm/gtc/matrix_inverse.hpp>
 
+#include <boost/thread.hpp>
+
 #include "raytracer.hpp"
 #include "glgeom_ext.hpp"
 #include "parsers.hpp"
@@ -57,6 +59,8 @@ using namespace glgeom;
 
 extern glgeom::image3f img;
 extern glgeom::abbox2i imgRegion;
+extern std::vector<std::function<void()>> preShutdown;
+
 
 
 template <typename T>
@@ -213,6 +217,98 @@ SpatialIndex::intersect (const ray3f& ray, lxarray<std::pair<Geometry*, intersec
 //===========================================================================//
 
 
+struct controller_t2
+{
+    controller_t2(const size_t threadCount, std::vector<std::function<void()>>& taskPool)
+    {
+        tasks.swap(taskPool);
+
+        // signals MUST be reserved in advance since the tasks will be using
+        // pointers into the array (i.e. reallocation due to resizing would
+        // move the objects).
+        signals.reserve(threadCount);
+
+        threads.reserve(threadCount);
+
+        active = 0;
+    }
+
+    void cancel() 
+    {
+        for (auto it = signals.begin(); it != signals.end(); ++it)
+            *it = 1;
+        join_all();
+    }
+    void join_all() 
+    {
+        group.join_all();
+    }
+
+    template <typename F>
+    void create_thread(F f)
+    {
+        auto p = group.create_thread(f);
+        signals.push_back(0);
+        threads.push_back(p);
+    }
+    
+    volatile int                       active;
+    boost::thread_group                group;
+    std::vector<boost::thread*>        threads;
+    std::vector<int>                   signals;
+    std::vector<std::function<void()>> tasks;
+};
+
+struct controller_t
+{
+public:
+    controller_t(controller_t2* p) : pImp(p) {}
+    controller_t(const controller_t& that) : pImp(that.pImp) {}
+
+    void cancel()
+    {
+        pImp->cancel();
+    }
+    void join_all()
+    {
+        pImp->join_all();
+    }
+
+protected:
+    std::shared_ptr<controller_t2> pImp;
+};
+
+
+controller_t
+run_tasks (const size_t threadCount, std::vector<std::function<void()>>& taskPool, std::function<void()> final)
+{
+    controller_t2* pGroup(new controller_t2(threadCount, taskPool));
+    
+    auto& tasks = pGroup->tasks;
+    for (size_t offset = 0; offset < threadCount; ++offset)
+    {
+        volatile int* pSignal = &pGroup->signals[offset];
+        auto& active  = pGroup->active;
+        pGroup->create_thread( [&tasks, offset, pGroup, final, pSignal, threadCount]()
+        {
+            ++(pGroup->active);
+            for (size_t i = offset; i < tasks.size(); i += threadCount)
+            {
+                if (*pSignal)
+                    break;
+
+                tasks[i]();
+            }
+            --(pGroup->active);
+
+            if (pGroup->active == 0)
+                final();
+        });
+    }
+    return controller_t(pGroup);
+}
+
+
 //===========================================================================//
 
 /*
@@ -340,8 +436,41 @@ public:
             mUpdateQueue.push_back([=]() { return passQuick->done() ? true : (passQuick->next(), false); });
         if (img.width() > 256 || img.height() > 256)
             mUpdateQueue.push_back([=]() { return passMedium->done() ? true : (passMedium->next(), false); });
+        
+#if 0
         mUpdateQueue.push_back([=]() { return passHigh->done() ? true : (passHigh->next(), false); });
-        mUpdateQueue.push_back([&]() { return std::cout << "Done (" << lx0::lx_milliseconds() - mRenderTime << " ms)." << std::endl, true; });
+#else
+        mUpdateQueue.push_back([&]() -> bool
+        {
+            auto pThis = this;
+
+            std::vector<std::function<void()>> tasks;           // Addition 1
+            tasks.reserve(img.height());
+
+            for (int y = 0; y < img.height(); ++y)
+            {
+                tasks.push_back([y, pThis]() {
+                    const int yy = y;
+                    for (int x = 0; x < img.width(); ++x)
+                    {
+                        img.set(x, y, pThis->_trace(x, y)); 
+                    }
+                    imgRegion.merge(glm::ivec2(0, y));
+                });
+            }
+
+            auto start = mRenderTime; 
+            auto f = [start]() { std::cout << "Done (" << lx0::lx_milliseconds() - start << " ms)." << std::endl; };
+
+            controller_t barrier = run_tasks(8, tasks, f);
+            preShutdown.push_back([barrier]() {
+                const_cast<controller_t&>(barrier).cancel();
+            });        
+
+            return true;
+        });
+
+#endif
         
         auto varOutputFile = Engine::acquire()->globals().find("output");
         if (varOutputFile.is_defined())
@@ -355,7 +484,7 @@ public:
             });
         }
 
-        if (true)
+        if (false)
         {
             mUpdateQueue.push_back([]() -> bool { 
                 Engine::acquire()->sendEvent("quit");
@@ -383,6 +512,9 @@ public:
 
     color3f _trace2 (const Environment& env, const ray3f& ray, int depth)
     {
+        if (depth > 4)
+            return color3f(.5f, .5f, .5f);
+
         lxarray<std::pair<Geometry*, intersection3f>> hits;
         mIndex.intersect(ray, hits);
         

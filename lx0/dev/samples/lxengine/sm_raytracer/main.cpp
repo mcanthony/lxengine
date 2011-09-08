@@ -44,6 +44,8 @@
 glgeom::image3f img;
 glgeom::abbox2i imgRegion;
 
+std::vector<std::function<void()>> preShutdown;
+
 //===========================================================================//
 //   E N T R Y - P O I N T
 //===========================================================================//
@@ -85,6 +87,8 @@ main (int argc, char** argv)
             spView->show(options);
 
             exitCode = spEngine->run();
+            for (auto it = preShutdown.begin(); it != preShutdown.end(); ++it)
+                (*it)();
         }
         spEngine->shutdown();
     }
