@@ -231,6 +231,12 @@ struct controller_t2
         threads.reserve(threadCount);
 
         active = 0;
+        mDone = false;
+    }
+
+    bool done()
+    {
+        return mDone;
     }
 
     void cancel() 
@@ -252,6 +258,7 @@ struct controller_t2
         threads.push_back(p);
     }
     
+    bool                               mDone;
     volatile int                       active;
     boost::thread_group                group;
     std::vector<boost::thread*>        threads;
@@ -262,9 +269,11 @@ struct controller_t2
 struct controller_t
 {
 public:
+    controller_t() {}
     controller_t(controller_t2* p) : pImp(p) {}
     controller_t(const controller_t& that) : pImp(that.pImp) {}
 
+    bool done() { return pImp->done(); }
     void cancel()
     {
         pImp->cancel();
@@ -303,11 +312,20 @@ run_tasks (const size_t threadCount, std::vector<std::function<void()>>& taskPoo
 
             if (pGroup->active == 0)
                 final();
+            pGroup->mDone = true;
         });
     }
     return controller_t(pGroup);
 }
 
+controller_t
+run_tasks (const size_t threadCount, std::vector<std::function<void()>>& taskPool)
+{
+    return run_tasks(threadCount, taskPool, [](){});
+}
+
+
+controller_t quickBarrier;
 
 //===========================================================================//
 
@@ -368,6 +386,63 @@ public:
                 mUpdateQueue.pop_front();
     }
 
+    std::vector<std::function<void()>>
+    _buildScan (const int chunk_width, const int chunk_height)
+    {
+        std::vector<std::function<void()>> tasks;
+        tasks.reserve(chunk_height);
+
+        for (int y = 0; y < chunk_height; ++y)
+        {
+            tasks.push_back([y, chunk_height, chunk_width, this]() 
+            {
+                for (int x = 0; x < chunk_width; ++x)
+                {
+                    int sx = (x * img.width()) / chunk_width;
+                    int sy = (y * img.height()) / chunk_height;
+                    int ex = std::min( ((x + 1) * img.width() ) / chunk_width, img.width());
+                    int ey = std::min( ((y + 1) * img.height() ) / chunk_height, img.height());
+
+                    auto c = _trace((sx + ex) / 2, (sy + ey) / 2);
+
+                    for (int iy = sy; iy < ey; iy ++)
+                    {
+                        for (int ix = sx; ix < ex; ix ++)
+                        {
+                            if ((ix%2) + (iy%2) != 1)
+                            {
+                                img.set(ix, iy, c);
+                                imgRegion.merge(glm::ivec2(0, iy));
+                            }
+                        }
+                    }
+                }
+            });
+        }
+        return tasks;
+    }
+
+    std::vector<std::function<void()>>
+    _buildScan ()
+    {
+        std::vector<std::function<void()>> tasks;
+        tasks.reserve(img.height());
+
+        for (int y = 0; y < img.height(); ++y)
+        {
+            tasks.push_back([y, this]() 
+            {
+                for (int x = 0; x < img.width(); ++x)
+                {
+                    img.set(x, y, _trace(x, y)); 
+                }
+                imgRegion.merge(glm::ivec2(0, y));
+            });
+        }
+
+        return tasks;
+    }
+
     void _init()
     {
         lx_log("Initializing ray tracer");
@@ -384,85 +459,26 @@ public:
         mspTraceContext.reset(new TraceContext);
         mspTraceContext->frustum = frustum_from_camera(mCamera->camera);
 
-        std::shared_ptr<ScanIterator> passQuick(new ScanIterator (48, 48, [&](int x, int y) {
-            int sx = (x * img.width()) / 48;
-            int sy = (y * img.height()) / 48;
-            int ex = std::min( ((x + 1) * img.width() ) / 48, img.width());
-            int ey = std::min( ((y + 1) * img.height() ) / 48, img.height());
-
-            auto c = _trace((sx + ex) / 2, (sy + ey) / 2);
-
-            for (int iy = sy; iy < ey; iy ++)
-            {
-                for (int ix = sx; ix < ex; ix ++)
-                {
-                    if ((ix%2) + (iy%2) != 1)
-                    {
-                        img.set(ix, iy, c);
-                        imgRegion.merge(glm::ivec2(0, iy));
-                    }
-                }
-            }
-        }));
-
-        std::shared_ptr<ScanIterator> passMedium(new ScanIterator (128, 128, [&](int x, int y) {
-            int sx = (x * img.width()) / 128;
-            int sy = (y * img.height()) / 128;
-            int ex = std::min( ((x + 1) * img.width() ) / 128, img.width());
-            int ey = std::min( ((y + 1) * img.height() ) / 128, img.height());
-
-            auto c = _trace((sx + ex) / 2, (sy + ey) / 2);
-
-            for (int iy = sy; iy < ey; iy ++)
-            {
-                for (int ix = sx; ix < ex; ix ++)
-                {
-                    if ((ix%2) + (iy%2) == 1)
-                    {
-                        img.set(ix, iy, c);
-                        imgRegion.merge(glm::ivec2(0, iy));
-                    }
-                }
-            }
-        }));
-        
-        std::shared_ptr<ScanIterator> passHigh(new ScanIterator (img.width(), img.height(), [&](int x, int y) {
-            img.set(x, y, _trace(x, y)); 
-            imgRegion.merge(glm::ivec2(0, y));
-        }));
+        const auto maxDimension = std::max(img.width(), img.height());
 
         mUpdateQueue.push_back([&]() { return mRenderTime = lx0::lx_milliseconds(), true; });
-        if (img.width() > 96 || img.height() > 96)
-            mUpdateQueue.push_back([=]() { return passQuick->done() ? true : (passQuick->next(), false); });
-        if (img.width() > 256 || img.height() > 256)
-            mUpdateQueue.push_back([=]() { return passMedium->done() ? true : (passMedium->next(), false); });
-        
-#if 0
-        mUpdateQueue.push_back([=]() { return passHigh->done() ? true : (passHigh->next(), false); });
-#else
+        if (maxDimension > 96 )
+        {
+            mUpdateQueue.push_back([this]() { return quickBarrier = run_tasks(1, _buildScan(48, 48)), true; }); 
+            mUpdateQueue.push_back([]() { return const_cast<controller_t&>(quickBarrier).done(); });
+        }
+        if (maxDimension > 256)
+        {
+            mUpdateQueue.push_back([this]() { return quickBarrier = run_tasks(1, _buildScan(128, 128)), true; });
+            mUpdateQueue.push_back([]() { return const_cast<controller_t&>(quickBarrier).done(); });
+        }
+
         mUpdateQueue.push_back([&]() -> bool
         {
-            auto pThis = this;
+            auto tasks = _buildScan();
+            auto final = [=]() { std::cout << "Done (" << lx0::lx_milliseconds() - mRenderTime << " ms)." << std::endl; };
 
-            std::vector<std::function<void()>> tasks;           // Addition 1
-            tasks.reserve(img.height());
-
-            for (int y = 0; y < img.height(); ++y)
-            {
-                tasks.push_back([y, pThis]() {
-                    const int yy = y;
-                    for (int x = 0; x < img.width(); ++x)
-                    {
-                        img.set(x, y, pThis->_trace(x, y)); 
-                    }
-                    imgRegion.merge(glm::ivec2(0, y));
-                });
-            }
-
-            auto start = mRenderTime; 
-            auto f = [start]() { std::cout << "Done (" << lx0::lx_milliseconds() - start << " ms)." << std::endl; };
-
-            controller_t barrier = run_tasks(8, tasks, f);
+            controller_t barrier = run_tasks(8, tasks, final);
             preShutdown.push_back([barrier]() {
                 const_cast<controller_t&>(barrier).cancel();
             });        
@@ -470,8 +486,6 @@ public:
             return true;
         });
 
-#endif
-        
         auto varOutputFile = Engine::acquire()->globals().find("output");
         if (varOutputFile.is_defined())
         {
