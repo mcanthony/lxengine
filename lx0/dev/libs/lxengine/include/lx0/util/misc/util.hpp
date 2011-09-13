@@ -32,6 +32,7 @@
 #include <string>
 #include <functional>
 #include <lx0/core/lxvar/lxvar.hpp>
+#include <glgeom/glgeom.hpp>
 
 namespace lx0 { namespace util { namespace misc {
 
@@ -53,6 +54,7 @@ namespace lx0 { namespace util { namespace misc {
             void                lx_message_box          (std::string caption, std::string message);
 
             float                   random_unit         (void);
+            glgeom::vector3f        random_vector3f     (void);
             std::function<float()>  random_die_f        (float min, float max, int seed);
             std::function<int()>    random_die_i        (int min, int max, int seed);
 

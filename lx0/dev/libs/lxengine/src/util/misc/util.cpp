@@ -256,6 +256,13 @@ namespace lx0 { namespace util { namespace misc {
         return die();
     }
 
+    glgeom::vector3f        
+    random_vector3f (void)
+    {
+        static auto die = random_die_f(-1, 1, 0);
+        return glgeom::normalize( glgeom::vector3f( die(), die(), die() ) );
+    }
+
     std::function<float()>  
     random_die_f (float min, float max, int seed)
     {

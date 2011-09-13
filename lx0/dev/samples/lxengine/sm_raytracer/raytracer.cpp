@@ -41,6 +41,7 @@
 #include <lx0/prototype/misc.hpp>
 
 #include <glgeom/glgeom.hpp>
+#include <glgeom/ext/samplers.hpp>
 #include <glgeom/prototype/camera.hpp>
 #include <glgeom/prototype/std_lights.hpp>
 #include <glgeom/prototype/material_phong.hpp>
@@ -552,21 +553,55 @@ public:
         }
     }
 
-    bool _shadowTerm (const point_light_f& light, const intersection3f& intersection)
+    float _shadowTerm (const glgeom::point3f& lightPosition, const intersection3f& intersection)
+    {
+        const vector3f L     (lightPosition - intersection.positionWc);
+        const float    distL (length(L));
+        const vector3f Ln    (L / distL);
+        const ray3f    ray   (intersection.positionWc + 1e-3f * Ln, Ln);
+                
+        intersection3f isect;
+        mIndex.intersect(ray, isect);
+
+        return (isect.distance < distL) ? 0.0f : 1.0f;
+    }
+
+    float _shadowTerm (const point_light_f& light, const intersection3f& intersection)
     {
         if (mspEnvironment->shadows)
         {
-            const vector3f L     (light.position - intersection.positionWc);
-            const float    distL (length(L));
-            const vector3f Ln    (L / distL);
-            const ray3f    ray   (intersection.positionWc + 1e-3f * Ln, Ln);
+            const float radius = light.glow.radius;
+            const float baseTerm = _shadowTerm(light.position, intersection);
+
+            //
+            // Check if the light is an area light and do multiple samples if so
+            //
+            if (radius > 0.0f)
+            {
+                const vector3f L    (normalize(light.position - intersection.positionWc));
+                const disc3f   disc (light.position, L, radius);
                 
-            intersection3f isect;
-            mIndex.intersect(ray, isect);
-            return (isect.distance < distL);
+                auto sampler = [this, &intersection](const glgeom::point3f& pt)
+                {
+                    return _shadowTerm(pt, intersection);
+                };
+
+                //
+                // If all the samples are in shadow or out of shadow, return immediately.
+                // Only do more samples if there's a mix.
+                //
+                float term = sample_disc_circumference<float>(disc, 6u, sampler);
+                float value = glm::mix(baseTerm, term, 1.0f/7.0f); 
+                if (value > .98f || value < .02f)
+                    return value;
+                else
+                    return sample_disc_random<float>(disc, 64u, lx0::random_unit, sampler);
+            }
+            else
+                return baseTerm;
         }
         else
-            return false;
+            return 1.0f;
     }
 
     color3f _trace2 (const Environment& env, const ray3f& ray, int depth)
@@ -604,11 +639,15 @@ public:
             ctx.unifLightCount = 0;
             for (auto it = mLights.begin(); it != mLights.end(); ++it)
             {
-                if (!pMat->allowShadow() || !_shadowTerm(*(*it), intersection))
+                float shadowTerm = pMat->allowShadow() 
+                    ? _shadowTerm(*(*it), intersection) 
+                    : 1.0f;
+
+                if (shadowTerm > 0.0f)
                 {
                     glm::vec3 lightPosEc = glm::vec3(mCamera->viewMatrix * glm::vec4((*it)->position.vec, 1.0f));
                     ctx.unifLightPosition.push_back(lightPosEc);
-                    ctx.unifLightColor.push_back( (*it)->color.vec );
+                    ctx.unifLightColor.push_back( shadowTerm * (*it)->color.vec);
                     ctx.unifLightCount ++;
                 }
             }
@@ -724,6 +763,10 @@ protected:
             auto pLight = new Light;
             pLight->position = spElem->value().find("position").convert();
             pLight->color    = spElem->value().find("color").convert();
+            pLight->glow.radius = query_path( spElem->value(), "glow_radius", 0.0f );
+
+            if (pLight->glow.radius > 0)
+                std::cout << "Area light detected.\n";
             
             LightPtr spLight(pLight);
             spElem->attachComponent(spLight);

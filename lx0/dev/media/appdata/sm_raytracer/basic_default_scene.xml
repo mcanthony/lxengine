@@ -283,7 +283,8 @@
         <Light>
           {
             position : [ 3, 2, 3 ],
-            color    : [ 1, .9, .9 ]
+            color    : [ 1, .9, .9 ],
+            glow_radius   : .2,
           }
         </Light>
         <Light>
@@ -291,7 +292,7 @@
           position : [ 3.1, 2.6, 4 ],
           color    : [ .3, .4, .5 ]
           }
-        </Light>
+        </Light> 
       </Group>
         <Group id="plane_group">
             <Plane id="x_axis_plane" material="red3">
