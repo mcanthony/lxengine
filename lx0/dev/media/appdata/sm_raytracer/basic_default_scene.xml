@@ -16,9 +16,9 @@
         <!--
         function noisetexture(s, t, r)
         {
-          s *= 8;
-          t *= 8;
-          r *= 8;
+          s *= 4;
+          t *= 4;
+          r *= 16;
           s += Math.noise3d(s, t, r);
           t += Math.noise3d(s, t, r);
           var v = Math.checker_dim(s, t);
@@ -26,8 +26,31 @@
           t += Math.noise3d(s, t, r + 22.4); 
           var u = Math.spot_dim(.4, [s, t]);
           var w = Math.max(u, v);
-          return [w, w, w];
+          return [w/2 + .5, w, .75 - w/2 ];
         }
+        
+        function texture2(s,t)
+        {
+          s *= 32;
+          t *= 32;
+          var v0 = Math.noise3d(s, t, .10);
+          var v1 = Math.noise3d(2.1 * s, 2.1 * t, 88.22);
+          var v2 = Math.noise3d(2 * s, 2 * t, .34);
+          var v = Math.max(v0, v1, v2);
+          var n = Math.min(v0, v1, v2);
+          v = Math.mix(v, n, .5);
+          v *= .5 + Math.pow(Math.abs(Math.fract(Math.mix(Math.fract(4 * s), v0, v1)) - .5), 1);
+          return [1 - v, .1, .1];
+        }
+        
+        function texture3(s,t,r)
+        {
+          s *= 8;
+          t *= 8;
+          r *= 32;
+          var v = Math.noise3d(s, t, r);
+          return [v * v, v, 1 - v];
+        }        
         -->
       </Script>
       <Texture id="noisepattern">
@@ -37,7 +60,23 @@
         height : 256,
         function : "noisetexture"
         }
-      </Texture>      
+      </Texture>
+      <Texture id="texture2">
+        {
+        type : "2d",
+        width : 256,
+        height : 256,
+        function : "texture2"
+        }
+      </Texture>
+      <Texture id="texture3">
+        {
+        type : "cubemap",
+        width : 256,
+        height : 256,
+        function : "texture3"
+        }
+      </Texture>
       <Material id="white">
         {
         graph : {
@@ -56,15 +95,76 @@
               _type : "cubemap",
               cubemap : "noisepattern",
             },
-            reflectivity : .10,
+            normal_diffuse : {
+                _type : "bump",
+                value : {
+                  _type : "texture2d",
+                  texture : "media2\textures\bumpmaps\gray_spot-000.png",
+                  uv : {
+                    _type : "spherical",
+                    scale : [ 9, .25 ],
+                  },
+                },
+              },            
+            specular : [ 4, 3, .5 ],
+            specularEx : 32,            
+            reflectivity : {
+              _type : "cubemap",
+              cubemap : "texture3",
+              intensity : .75,
+            },         
           }
         }
       </Material>
+      <Material id="red3">
+        {
+          graph : {
+            _type : "phong",
+            diffuse : {
+              _type : "texture2d",
+              texture : "texture2",
+              uv : {
+                _type : "cube",
+                scale : [ .5, .5 ]
+              },
+            },
+          }
+        }
+      </Material>
+      <Material id="green2">
+        {
+        graph : {
+        _type : "phong",
+        diffuse : [ 0, 1, 0],
+        reflectivity : .2,
+        }
+        }
+      </Material>
+      <Material id="blue2">
+        {
+        graph : {
+        _type : "phong",
+        diffuse : [ 0, 0, 1],
+        specular : [ 1, 0, 1],
+        }
+        }
+      </Material>      
+      <Material id="yellow2">
+        {
+        graph : {
+        _type : "phong",
+        diffuse : [ 1, 1, 0],
+        specular : [ 1, 1, .15 ],
+        specularEx : 4096,
+        reflectivity : 0.35,
+        }
+        }
+      </Material>      
       <Material id="blue_mirror">
         {
         graph : {
         _type : "phong",
-        diffuse : [ .75, .5, .5 ],
+        diffuse : [ 0.75, .5, .5 ],
         specular : [ 1, 1, .5 ],
         specularEx : 512,
         reflectivity: .05,
@@ -73,13 +173,26 @@
       </Material>
       <Material id="gray_mirror">
         {
-        graph : {
-        _type : "phong",
-        diffuse : [ .5, .5, .5 ],
-        specular : [ .5, .5, 1 ],
-        specularEx : 512,
-        reflectivity: .05,
-        }
+          graph : {
+            _type : "phong",
+            diffuse : [ 1, .6, 0 ],
+            specular : [ .5, .5, 1 ],
+            specularEx : 512,
+            reflectivity: .05,
+            normal_diffuse : {
+                _type : "bump",
+                value : {
+                  _type : "spot_dim",
+                  radius : .2,
+                  color0 : [ 0, 0, 0],
+                  color1 : [ 1, 1, 1],
+                  uv : {
+                    _type : "spherical",
+                    scale : [ 32, 32 ],
+                  },                  
+                }, 
+              },
+          }
         }
       </Material>      
       <Material id="mirror">
@@ -87,9 +200,9 @@
           graph : {
             _type : "phong",
             diffuse : [ .5, .5, .75 ],
-            specular : [ 1, 1, 0 ],
+            specular : [ 1.75, 1.5, 0 ],
             specularEx : 1024,
-            reflectivity : 0.45,
+            reflectivity : 0.75,                
           },
         }
       </Material>
@@ -97,14 +210,17 @@
         {
           graph : {
             _type : "phong",
-            diffuse : {
+            diffuse : 
+            {
               _type : "checker",
-              uv : {
+              color1 : [.015, .015, .005],
+              uv : 
+              {
                 _type : "spherical",
                 scale : [ 8, 8 ],
               },
             },
-            specular : [ 1, 1, 1 ],
+            specular : [ 1, .95, .95 ],
             specularEx : 512
           }
         }
@@ -134,6 +250,33 @@
           }
         }
       </Material>
+
+      <Material id="cyan_checker">
+        {
+        graph : {
+        _type : "checker",
+        uv : {
+        _type : "cube",
+        scale : [ 1, 1 ],
+        },
+        color0 : {
+        _type : "phong",
+        diffuse : [0.2784313725490196, 1, 1],
+        specular : [ .6, .6, 1 ],
+        specularEx : 512,
+        reflectivity: 0.15,
+        },
+        color1 : {
+        _type : "phong",
+        diffuse : [0.2, .9, .9 ],
+        specular : [ .9, .9, 1 ],
+        specularEx : 256,
+        reflectivity : .25,
+        },
+        }
+        }
+      </Material>      
+      
     </Library>
     <Scene view="view">
       <Group id="light_group">
@@ -151,19 +294,19 @@
         </Light>
       </Group>
         <Group id="plane_group">
-            <Plane id="x_axis_plane" material="red">
+            <Plane id="x_axis_plane" material="red3">
             {
                 normal : [ 1, 0, 0 ],
                 d      : 0
             }
             </Plane>
-          <Plane id="xn_axis_plane" material="cyan">
+          <Plane id="xn_axis_plane" material="cyan_checker">
             {
             normal : [ -1, 0, 0 ],
             d      : 10
             }
           </Plane>          
-            <Plane id="y_axis_plane" material="green">
+            <Plane id="y_axis_plane" material="green2">
             {
                 normal : [ 0, 1, 0 ],
                 d      : 0
@@ -175,13 +318,13 @@
             d      : 10
             }
           </Plane>          
-            <Plane id="z_axis_plane" material="blue">
+            <Plane id="z_axis_plane" material="blue2">
             {
                 normal : [ 0, 0, 1 ],
                 d      : 0
             }
             </Plane>
-          <Plane id="zn_axis_plane" material="yellow">
+          <Plane id="zn_axis_plane" material="yellow2">
             {
             normal : [ 0, 0, -1 ],
             d      : 10

@@ -4,7 +4,8 @@
     {
     },
     input  : {
-        cubemap : [ "samplerCube",    "<not set>",                    "" ],
+        cubemap     : [ "samplerCube",  "<not set>",                    "" ],
+        intensity   : [ "float",        1.0,                            "" ],   
     },
     source: "cubemap.nfrag",
 }

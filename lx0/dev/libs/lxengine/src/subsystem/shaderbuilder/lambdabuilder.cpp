@@ -34,6 +34,7 @@
 #include <lx0/prototype/misc.hpp>
 
 #include "lambdabuilder.hpp"
+#include "lamdba_fragments/lambda_fragments.hpp"
 
 using namespace lx0;
 using namespace lx0::subsystem::shaderbuilder_ns;
@@ -81,7 +82,8 @@ static glm::vec3 shade_phong (
     const glm::vec3& diffuse,
     const glm::vec3& specular,
     float            specularEx,
-    float            reflectivity
+    float            reflectivity,
+    const glm::vec3& normalDiffuse
     )
 {
     using namespace glm;
@@ -89,7 +91,7 @@ static glm::vec3 shade_phong (
     // Since the eye is at <0,0,0>, the direction vector to the vertex and 
     // the vertex position in eye coordinates are equivalent.
     //
-    vec3 N = normalize(ctx.fragNormalEc);
+    vec3 N = normalize(normalDiffuse);
     vec3 V = -normalize(ctx.fragVertexEc);
        
     vec3 c = ambient;                        // ambient term
@@ -111,8 +113,10 @@ static glm::vec3 shade_phong (
     
     if (reflectivity > 0.0f)
     {
+        vec3 NWc = glm::normalize(ctx.fragNormalWc);
+
         // Compute reflection ray, nudge it out, cast, blend
-        vec3 R = -glm::reflect(glm::normalize(ctx.unifEyeWc - ctx.fragVertexWc), glm::normalize(ctx.fragNormalWc));
+        vec3 R = -glm::reflect(glm::normalize(ctx.unifEyeWc - ctx.fragVertexWc), NWc);
         glgeom::ray3f ray(ctx.fragVertexWc + R * 1e-3f, R);
         vec3 cr = ctx.traceFunc(ray).vec;
         c = glm::mix(c, cr, reflectivity);
@@ -122,6 +126,12 @@ static glm::vec3 shade_phong (
 }
 
 //===========================================================================//
+
+void
+TextureCache::add (const std::string& id, Image3fPtr spImage)
+{
+    mCache.insert(std::make_pair(id, spImage));
+}
 
 TextureCache::Image3fPtr  
 TextureCache::acquire (const std::string& filename)
@@ -161,7 +171,7 @@ Cache::acquire (const std::string& id)
 
 
 static
-lxvar _value (lxvar param, lxvar node, const char* name)
+lxvar _value (lxvar& param, lxvar& node, const char* name)
 {
     auto value = param.find(name);
     if (value.is_undefined())
@@ -180,15 +190,164 @@ LambdaBuilder::LambdaBuilder (NodeMap& nodeMap)
 
 void LambdaBuilder::_init()
 {
-    mFuncs3f["cubemap"] = [&](lxvar param) -> FunctionVec3 
+    mFuncs3f["cubemap"] = [&](lxvar param, lxvar node) -> FunctionVec3 
     {
         auto spTexture = _buildSamplerCube(param["cubemap"]);
+        auto intensity = _buildFloat(_value(param, node, "intensity"));
 
-        return [spTexture] (const Context& ctx) -> glm::vec3 {
+        return [intensity, spTexture] (const Context& ctx) -> glm::vec3 {
             glm::vec3 uvw = glm::normalize( ctx.fragNormalOc );
-            return spTexture->get(uvw).vec;
+            return intensity(ctx) * spTexture->get(uvw).vec;
         };
     };
+
+    mFuncs3f["texture2d"] = [&](lxvar param, lxvar node) -> FunctionVec3
+    {
+        auto spTexture = _buildSampler2d(param["texture"]);
+        auto uv = _buildVec2(_value(param, node, "uv"));
+        auto intensity = _buildFloat(_value(param, node, "intensity"));
+
+        return [spTexture, uv, intensity] (const Context& ctx) -> glm::vec3 {
+            glm::vec2 uv2 = uv(ctx);
+            uv2.x = fmodf(uv2.x, 1.0f);
+            uv2.y = fmodf(uv2.y, 1.0f);
+
+            if (uv2.x < 0) uv2.x = 1.0f + uv2.x;
+            if (uv2.y < 0) uv2.y = 1.0f + uv2.y;
+            
+            return intensity(ctx) * spTexture->get(
+                int( uv2.x * float(spTexture->width() - 1) + 0.5f ),
+                int( uv2.y * float(spTexture->height() - 1) + 0.5f )
+            ).vec;
+        };
+    };
+
+    mFuncs3f["checker"] = [&](lxvar param, lxvar node) -> FunctionVec3
+    {
+        auto color0 = _buildVec3(_value(param, node, "color0"));
+        auto color1 = _buildVec3(_value(param, node, "color1"));
+        auto uv = _buildVec2(_value(param, node, "uv"));
+        return [color0, color1, uv] (const Context& i) -> glm::vec3 {
+            return glgeom::pattern_checker(color0(i), color1(i), uv(i));
+        };
+    };
+
+    mFuncs3f["wave"] = [&](lxvar param, lxvar node) -> FunctionVec3
+    {
+        auto color0 = _buildVec3(_value(param, node, "color0"));
+        auto color1 = _buildVec3(_value(param, node, "color1"));
+        auto width = _buildFloat(_value(param, node, "width"));
+        auto uv = _buildVec2(_value(param, node, "uv"));   
+        return [color0, color1, width, uv] (const Context& i) {
+            return glgeom::pattern_wave(color0(i), color1(i), width(i), uv(i));
+        };
+    };
+
+    mFuncs3f["spot"] = [&](lxvar param, lxvar node) -> FunctionVec3
+    {
+        auto color0 = _buildVec3(_value(param, node, "color0"));
+        auto color1 = _buildVec3(_value(param, node, "color1"));
+        auto radius = _buildFloat(_value(param, node, "radius"));
+        auto uv = _buildVec2(_value(param, node, "uv"));   
+        return [color0, color1, radius, uv] (const Context& i) {
+            return glgeom::pattern_spot(color0(i), color1(i), radius(i), uv(i));
+        };
+    };
+
+    mFuncs3f["spot_dim"] = [&](lxvar param, lxvar node) -> FunctionVec3
+    {
+        auto color0 = _buildVec3(_value(param, node, "color0"));
+        auto color1 = _buildVec3(_value(param, node, "color1"));
+        auto radius = _buildFloat(_value(param, node, "radius"));
+        auto uv = _buildVec2(_value(param, node, "uv"));   
+        return [color0, color1, radius, uv] (const Context& i) {
+            return glgeom::pattern_spot_dim(color0(i), color1(i), radius(i), uv(i));
+        };
+    };
+
+
+    mFuncs3f["normal"] = [&](lxvar param, lxvar node) -> FunctionVec3
+    {
+        return [](const Context& i) {
+            return shade_normal (i.unifViewMatrix, i.fragNormalEc);
+        };
+    };
+
+    mFuncs3f["normal2"] = [&](lxvar param, lxvar node) -> FunctionVec3
+    {
+        return [](const Context& i) {
+            return shade_normal2 (i.unifViewMatrix, i.fragNormalEc);
+        };
+    };
+
+    mFuncs3f["phong"] = [&](lxvar param, lxvar node) -> FunctionVec3
+    {
+        auto ambient      = _buildVec3(_value(param, node, "ambient"));
+        auto diffuse      = _buildVec3(_value(param, node, "diffuse"));
+        auto specular     = _buildVec3(_value(param, node, "specular"));
+        auto specularEx   = _buildFloat(_value(param, node, "specularEx"));
+        auto reflectivity = _buildFloat(_value(param, node, "reflectivity"));
+        auto normalDiffuse= _buildVec3(_value(param, node, "normal_diffuse"));
+               
+        return [ambient, diffuse, specular, specularEx, reflectivity, normalDiffuse](const Context& ctx) {
+            return shade_phong(
+                ctx,
+                ambient(ctx), 
+                diffuse(ctx), 
+                specular(ctx), 
+                specularEx(ctx),
+                reflectivity(ctx),
+                normalDiffuse(ctx)
+            );
+        };
+    };  
+
+    mFuncs3f["lightgradient"] = [&](lxvar param, lxvar node) -> FunctionVec3
+    {
+        auto spTexture = _buildSampler2d(param["texture"]);
+
+        return [spTexture](const Context& ctx) -> glm::vec3 {
+
+            glm::vec3 color(0,0,0);
+            for (int i = 0; i < ctx.unifLightCount; ++i)
+            {
+                // 
+                // L = unit vector from light to intersection point; the "incidence vector" I is the
+                //     vector pointing in the opposite direction of L.
+                // N = surface normal at the point of intersection
+                //
+                const glm::vec3  L  (glm::normalize(ctx.unifLightPosition[i] - ctx.fragVertexEc)); 
+                const glm::vec3& N  (ctx.fragNormalEc);
+                const float      NdotL ( glm::dot(N, L) );
+                
+                const float diffuseSample = (NdotL + 1.0f) / 2.0f;
+                color += spTexture->get(int(diffuseSample * (spTexture->width() - 1)), 0).vec * ctx.unifLightColor[i];
+            }
+            return color;
+        };
+    };
+
+    // Generate a normal from a height map function
+    mFuncs3f["bump"] = [&](lxvar param, lxvar node) -> FunctionVec3
+    {
+        auto value = _buildFloat(_value(param, node, "value"));
+
+        return [value] (const Context& ctx) -> glm::vec3 {
+            auto ctx2 = ctx;
+            auto value2 = value;
+
+            auto heightFunc = [&ctx2, value2](const glm::vec3& Pobj) -> float {
+                ctx2.fragVertexOc = Pobj;
+                return value2(ctx2);
+            };
+            return computeBumpNormal2(ctx.fragVertexOc, ctx.fragNormalOc, heightFunc);
+        };
+    };
+}
+
+void LambdaBuilder::addTexture (std::string id, std::shared_ptr<glgeom::image3f> image)
+{
+    mTextureCache.add(id, image);
 }
 
 void LambdaBuilder::addTexture (std::string id, std::shared_ptr<glgeom::cubemap3f> image)
@@ -239,7 +398,7 @@ LambdaBuilder::_buildFloat (lxvar param)
         auto it = mFuncs3f.find(type);
         if (it != mFuncs3f.end())
         {
-            auto func = (it->second)(param);
+            auto func = (it->second)(param, node);
             return [=](const Context& ctx) { return func(ctx).x; };
         }
     }
@@ -296,105 +455,7 @@ LambdaBuilder::_buildVec3 (lxvar param)
 
         auto it = mFuncs3f.find(type);
         if (it != mFuncs3f.end())
-            return (it->second)(param);
-
-        if (type == "checker")
-        {
-            auto color0 = _buildVec3(_value(param, node, "color0"));
-            auto color1 = _buildVec3(_value(param, node, "color1"));
-            auto uv = _buildVec2(_value(param, node, "uv"));
-            return [color0, color1, uv] (const Context& i) -> glm::vec3 {
-                return glgeom::pattern_checker(color0(i), color1(i), uv(i));
-            };
-        }
-        else if (type == "wave")
-        {
-            auto color0 = _buildVec3(_value(param, node, "color0"));
-            auto color1 = _buildVec3(_value(param, node, "color1"));
-            auto width = _buildFloat(_value(param, node, "width"));
-            auto uv = _buildVec2(_value(param, node, "uv"));   
-            return [color0, color1, width, uv] (const Context& i) {
-                return glgeom::pattern_wave(color0(i), color1(i), width(i), uv(i));
-            };
-        }
-        else if (type == "spot")
-        {
-            auto color0 = _buildVec3(_value(param, node, "color0"));
-            auto color1 = _buildVec3(_value(param, node, "color1"));
-            auto radius = _buildFloat(_value(param, node, "radius"));
-            auto uv = _buildVec2(_value(param, node, "uv"));   
-            return [color0, color1, radius, uv] (const Context& i) {
-                return glgeom::pattern_spot(color0(i), color1(i), radius(i), uv(i));
-            };
-        }
-        else if (type == "normal")
-        {
-            return [](const Context& i) {
-                return shade_normal (i.unifViewMatrix, i.fragNormalEc);
-            };
-        }
-        else if (type == "normal2")
-        {
-            return [](const Context& i) {
-                return shade_normal2 (i.unifViewMatrix, i.fragNormalEc);
-            };
-        }
-        else if (type == "phong")
-        {
-            auto ambient      = _buildVec3(_value(param, node, "ambient"));
-            auto diffuse      = _buildVec3(_value(param, node, "diffuse"));
-            auto specular     = _buildVec3(_value(param, node, "specular"));
-            auto specularEx   = _buildFloat(_value(param, node, "specularEx"));
-            auto reflectivity = _buildFloat(_value(param, node, "reflectivity"));
-           
-            return [ambient, diffuse, specular, specularEx, reflectivity](const Context& ctx) {
-                return shade_phong(
-                    ctx,
-                    ambient(ctx), 
-                    diffuse(ctx), 
-                    specular(ctx), 
-                    specularEx(ctx),
-                    reflectivity(ctx)
-                );
-            };
-        }
-        else if (type == "texture2d")
-        {
-            auto spTexture = _buildSampler2d(param["texture"]);
-            auto uv = _buildVec2(_value(param, node, "uv")); 
-
-            return [spTexture, uv] (const Context& i) -> glm::vec3 {
-                glm::vec2 uv2 = uv(i);
-                return spTexture->get(
-                    int( uv2.x * float(spTexture->width() - 1) + 0.5f ),
-                    int( uv2.y * float(spTexture->height() - 1) + 0.5f )
-                ).vec;
-            };
-        }
-        else if (type == "lightgradient")
-        {
-            auto spTexture = _buildSampler2d(param["texture"]);
-
-            return [spTexture](const Context& ctx) -> glm::vec3 {
-
-                glm::vec3 color(0,0,0);
-                for (int i = 0; i < ctx.unifLightCount; ++i)
-                {
-                    // 
-                    // L = unit vector from light to intersection point; the "incidence vector" I is the
-                    //     vector pointing in the opposite direction of L.
-                    // N = surface normal at the point of intersection
-                    //
-                    const glm::vec3  L  (glm::normalize(ctx.unifLightPosition[i] - ctx.fragVertexEc)); 
-                    const glm::vec3& N  (ctx.fragNormalEc);
-                    const float      NdotL ( glm::dot(N, L) );
-                
-                    const float diffuseSample = (NdotL + 1.0f) / 2.0f;
-                    color += spTexture->get(int(diffuseSample * (spTexture->width() - 1)), 0).vec * ctx.unifLightColor[i];
-                }
-                return color;
-            };
-        }
+            return (it->second)(param, node);
     }
     else if (param.is_array())
     {
@@ -403,6 +464,15 @@ LambdaBuilder::_buildVec3 (lxvar param)
         v.y = param[1];
         v.z = param[2];
         return [v](const Context& i) { return v; };
+    }
+    else if (param.is_string())
+    {
+        auto s = param.as<std::string>();
+
+             if (s == "fragNormalEc") return [](const Context& ctx) { return ctx.fragNormalEc; };
+        else if (s == "fragNormalOc") return [](const Context& ctx) { return ctx.fragNormalOc; };
+        else
+            lx_error("Unrecognized constant '%s' used in graph", s.c_str());
     }
 
     lx_error("Could not build lambda for parameter");

@@ -44,6 +44,7 @@ namespace lx0
                 public:
                     typedef std::shared_ptr<glgeom::image3f>    Image3fPtr;
 
+                    void        add     (const std::string& id, Image3fPtr spImage);
                     Image3fPtr  acquire (const std::string& filename);
 
                 protected:
@@ -78,6 +79,7 @@ namespace lx0
 
                     ShadeFunction   buildShader (lx0::lxvar graph);
 
+                    void            addTexture          (std::string id, std::shared_ptr<glgeom::image3f> spImage);
                     void            addTexture          (std::string id, std::shared_ptr<glgeom::cubemap3f> spImage);
 
                 protected:
@@ -93,10 +95,10 @@ namespace lx0
                     TextureCache    mTextureCache;
                     Cache           mCubemapCache;
 
-                    std::map<std::string, std::function<FunctionVec4 (lxvar)>>  mFuncs4f;
-                    std::map<std::string, std::function<FunctionVec3 (lxvar)>>  mFuncs3f;
-                    std::map<std::string, std::function<FunctionVec2 (lxvar)>>  mFuncs2f;
-                    std::map<std::string, std::function<FunctionFloat (lxvar)>> mFuncs1f;
+                    std::map<std::string, std::function<FunctionVec4 (lxvar,lxvar)>>  mFuncs4f;
+                    std::map<std::string, std::function<FunctionVec3 (lxvar,lxvar)>>  mFuncs3f;
+                    std::map<std::string, std::function<FunctionVec2 (lxvar,lxvar)>>  mFuncs2f;
+                    std::map<std::string, std::function<FunctionFloat(lxvar,lxvar)>>  mFuncs1f;
                 };
             }
         }

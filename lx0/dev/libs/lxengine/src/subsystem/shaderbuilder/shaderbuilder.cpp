@@ -195,5 +195,9 @@ ShaderBuilder::addTexture (std::string id, std::shared_ptr<glgeom::cubemap3f> sp
     mpLambdaBuilder->addTexture(id, spImage);
 }
 
-
+void            
+ShaderBuilder::addTexture (std::string id, std::shared_ptr<glgeom::image3f> spImage)
+{
+    mpLambdaBuilder->addTexture(id, spImage);
+}
 

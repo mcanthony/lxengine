@@ -112,50 +112,6 @@ public:
     std::shared_ptr<Material>   mspMaterial;
 };
 
-
-//===========================================================================//
-
-class ScanIterator
-{
-public:
-    ScanIterator()
-        : x (0)
-        , y (0)
-        , width (0)
-        , height (0)
-    {
-    }
-
-    ScanIterator(int w, int h, std::function<void(int,int)> func)
-        : x (0)
-        , y (0)
-        , width (w)
-        , height (h)
-        , f (func)
-    {
-    }
-
-    bool done() const { return !(y < height && x < width); }
-    void next() 
-    {
-        f(x, y);
-
-        if (++x >= width)
-        {
-            x = 0;
-            ++y;
-        }
-    }
-
-protected:
-    int x;
-    int y;
-    int width;
-    int height;
-    std::function<void (int, int)> f;
-};
-
-
 //===========================================================================//
 
 class SpatialIndex
@@ -226,10 +182,11 @@ struct controller_t2
         // signals MUST be reserved in advance since the tasks will be using
         // pointers into the array (i.e. reallocation due to resizing would
         // move the objects).
-        signals.reserve(threadCount);
+        signals.resize(threadCount);
 
-        threads.reserve(threadCount);
+        threads.resize(threadCount);
 
+        count = 0;
         active = 0;
         mDone = false;
     }
@@ -254,13 +211,15 @@ struct controller_t2
     void create_thread(F f)
     {
         auto p = group.create_thread(f);
-        signals.push_back(0);
-        threads.push_back(p);
+        signals[count] = 0;
+        threads[count] = p;
+        ++count;
     }
     
     bool                               mDone;
     volatile int                       active;
     boost::thread_group                group;
+    size_t                             count;
     std::vector<boost::thread*>        threads;
     std::vector<int>                   signals;
     std::vector<std::function<void()>> tasks;
@@ -327,6 +286,52 @@ run_tasks (const size_t threadCount, std::vector<std::function<void()>>& taskPoo
 
 controller_t quickBarrier;
 
+struct TaskQueue
+{
+    struct C
+    {
+        virtual ~C() {}
+        virtual bool exec () = 0;
+    };
+    struct C1 : public C
+    {
+        C1(const std::function<void()>& g) : f(g) {}
+        virtual bool exec () { f(); return true; }
+        std::function<void()> f;
+    };
+
+    struct C2 : public C
+    {
+        C2(const std::function<bool()>& g) : f(g) {}
+        virtual bool exec () { return f(); }
+        std::function<bool()> f;
+    };
+
+    void push_back_cond (std::function<bool()> f) 
+    { 
+        queue.push_back( std::unique_ptr<C>(new C2(f)) );
+    }
+    void push_back (std::function<void()> f) 
+    { 
+        queue.push_back( std::unique_ptr<C>(new C1(f)) );
+    } 
+
+    void exec_next (void)
+    {
+        if (!queue.empty())
+        {
+            auto& task = queue.front();
+            
+            bool done = task->exec();
+            
+            if (done)
+                queue.pop_front();
+        }
+    }
+
+    std::deque<std::unique_ptr<C>> queue;
+};
+
 //===========================================================================//
 
 /*
@@ -348,11 +353,13 @@ public:
         mspEnvironment.reset(new Environment);
         mspContext.reset(new Context(spDefaultMaterial));
 
+        // VS2010 bug: if this line is moved to the end of the function, VS seems to destroy the lambda object
+        // *before* calling push_back().
+        mUpdateQueue.push_back([this]() { _init(); });
+
         registerGeometryParsers([&](std::string name, GeometryParser* pParser) {
             mGeometryParsers[name] = std::unique_ptr<GeometryParser>(pParser);
         });
-
-        mUpdateQueue.push_back([&]() { return _init(), true; });
     }
 
     ~RayTracer()
@@ -381,27 +388,26 @@ public:
 
     virtual void onUpdate (DocumentPtr spDocument)
     {
-        if (!mUpdateQueue.empty())
-            if (mUpdateQueue.front()())
-                mUpdateQueue.pop_front();
+        mUpdateQueue.exec_next();
     }
 
     std::vector<std::function<void()>>
-    _buildScan (const int chunk_width, const int chunk_height)
+    _buildScan (const int tilesX, const int tilesY)
     {
         std::vector<std::function<void()>> tasks;
-        tasks.reserve(chunk_height);
+        tasks.reserve(tilesY);
 
-        for (int y = 0; y < chunk_height; ++y)
+        for (int y = 0; y < tilesY; ++y)
         {
-            tasks.push_back([y, chunk_height, chunk_width, this]() 
+            const int sy = (y * img.height()) / tilesY;
+            const int ey = std::min( ((y + 1) * img.height() ) / tilesY, img.height());
+
+            tasks.push_back([=]() 
             {
-                for (int x = 0; x < chunk_width; ++x)
+                for (int x = 0; x < tilesX; ++x)
                 {
-                    int sx = (x * img.width()) / chunk_width;
-                    int sy = (y * img.height()) / chunk_height;
-                    int ex = std::min( ((x + 1) * img.width() ) / chunk_width, img.width());
-                    int ey = std::min( ((y + 1) * img.height() ) / chunk_height, img.height());
+                    int sx = (x * img.width()) / tilesX;
+                    int ex = std::min( ((x + 1) * img.width() ) / tilesX, img.width());
 
                     auto c = _trace((sx + ex) / 2, (sy + ey) / 2);
 
@@ -434,7 +440,51 @@ public:
             {
                 for (int x = 0; x < img.width(); ++x)
                 {
-                    img.set(x, y, _trace(x, y)); 
+                    float offsets1[] = 
+                    {
+                        -.25f, -.25f,
+                         .25f, -.25f,
+                        -.25f,  .25f,
+                         .25f,  .25f
+                    };
+                    float offsets2[] = 
+                    {
+                         .00f, -.25f,
+                        -.25f, -.00f,
+                         .00f,  .00f,
+                         .25f, -.00f,
+                         .00f,  .25f,
+                    };
+
+                    int j = 0;
+                    glgeom::color3f c = _trace(x + offsets1[j*2+0], y + offsets1[j*2+1]); 
+                    glgeom::color3f sum  = c;
+                    glm::vec3 min = c.vec;
+                    glm::vec3 max = c.vec;
+
+                    for (j = 1; j < 4; j++)
+                    {
+                        glgeom::color3f c = _trace(x + offsets1[j*2+0], y + offsets1[j*2+1]); 
+                        sum  += c;
+                        min = glm::min(c.vec, min);
+                        max = glm::max(c.vec, max);
+                    }
+
+                    glm::vec3 diff = max - min;
+
+                    if (std::max(diff.x, std::max(diff.y, diff.z)) > 0.05f)
+                    {
+                        for (j = 0; j < 5; j++)
+                        {
+                            glgeom::color3f c = _trace(x + offsets2[j*2+0], y + offsets2[j*2+1]); 
+                            sum  += c;
+                        }
+                        sum /= 9.0f;
+                    }
+                    else
+                        sum /= 4.0f;
+
+                    img.set(x, y, sum); 
                 }
                 imgRegion.merge(glm::ivec2(0, y));
             });
@@ -461,49 +511,44 @@ public:
 
         const auto maxDimension = std::max(img.width(), img.height());
 
-        mUpdateQueue.push_back([&]() { return mRenderTime = lx0::lx_milliseconds(), true; });
+        mUpdateQueue.push_back([&]() { mRenderTime = lx0::lx_milliseconds(); });
         if (maxDimension > 96 )
         {
-            mUpdateQueue.push_back([this]() { return quickBarrier = run_tasks(1, _buildScan(48, 48)), true; }); 
-            mUpdateQueue.push_back([]() { return const_cast<controller_t&>(quickBarrier).done(); });
+            mUpdateQueue.push_back([this]() { quickBarrier = run_tasks(1, _buildScan(48, 48)); }); 
+            mUpdateQueue.push_back_cond([]() { return const_cast<controller_t&>(quickBarrier).done(); });
         }
         if (maxDimension > 256)
         {
-            mUpdateQueue.push_back([this]() { return quickBarrier = run_tasks(1, _buildScan(128, 128)), true; });
-            mUpdateQueue.push_back([]() { return const_cast<controller_t&>(quickBarrier).done(); });
+            mUpdateQueue.push_back([this]() { quickBarrier = run_tasks(1, _buildScan(128, 128)); });
+            mUpdateQueue.push_back_cond([]() { return const_cast<controller_t&>(quickBarrier).done(); });
         }
 
-        mUpdateQueue.push_back([&]() -> bool
+        mUpdateQueue.push_back([&]()
         {
             auto tasks = _buildScan();
             auto final = [=]() { std::cout << "Done (" << lx0::lx_milliseconds() - mRenderTime << " ms)." << std::endl; };
 
-            controller_t barrier = run_tasks(8, tasks, final);
-            preShutdown.push_back([barrier]() {
-                const_cast<controller_t&>(barrier).cancel();
+            quickBarrier = run_tasks(8, tasks, final);
+            preShutdown.push_back([]() {
+                const_cast<controller_t&>(quickBarrier).cancel();
             });        
-
-            return true;
         });
 
         auto varOutputFile = Engine::acquire()->globals().find("output");
         if (varOutputFile.is_defined())
         {
-            mUpdateQueue.push_back([varOutputFile]() -> bool { 
+            mUpdateQueue.push_back([varOutputFile]() { 
+                quickBarrier.join_all();
                 std::cout << "Saving image...";
                 lx0::save_png(img, varOutputFile.as<std::string>().c_str());
                 std::cout << "done.\n";
                 Engine::acquire()->sendEvent("quit");
-                return true;
             });
         }
 
         if (false)
         {
-            mUpdateQueue.push_back([]() -> bool { 
-                Engine::acquire()->sendEvent("quit");
-                return true;
-            });
+            mUpdateQueue.push_back([]() { Engine::acquire()->sendEvent("quit"); });
         }
     }
 
@@ -591,12 +636,17 @@ public:
 
     color3f _trace (int x, int y)
     {
+        return _trace(float(x), float(y));
+    }
+
+    color3f _trace (float x, float y)
+    {
         const auto& env = *mspEnvironment;
 
-        if (x == 0 && y % 4 == 0)
+        if (x == 0 && int(y) % 4 == 0 && int(10.0f * fmodf(y, 1.0f)) == 0)
             std::cout << "Tracing row " << y << "..." << std::endl;
         
-        ray3f ray = compute_frustum_ray<float>(mspTraceContext->frustum, float(x), float(img.height() - y), img.width(), img.height());
+        ray3f ray = compute_frustum_ray<float>(mspTraceContext->frustum, x, float(img.height()) - y, img.width(), img.height());
         
         return _trace2(env, ray, 0);
     }
@@ -624,11 +674,14 @@ protected:
             int height = spElem->value().find("height").as<int>();
             std::string funcName = spElem->value().find("function").as<std::string>();
 
+            auto spIJavascriptDoc = spElem->document()->getComponent<IJavascriptDoc>();
+
             if (type == "cubemap")
             {
                 glgeom::cubemap3f* cubemap( new cubemap3f(width, height));
                             
-                auto spIJavascriptDoc = spElem->document()->getComponent<IJavascriptDoc>();
+                
+                std::cout << "Generating texture (cubemap)...";
                 spIJavascriptDoc->runInContext([&](void) 
                 {
                     auto func = spIJavascriptDoc->acquireFunction<glm::vec3 (float, float, float)>( funcName.c_str() );
@@ -636,8 +689,25 @@ protected:
                         return func(p.x, p.y, p.z);
                     });
                 });
+                std::cout << "done." << std::endl;
 
                 mShaderBuilder.addTexture(id, std::shared_ptr<glgeom::cubemap3f>(cubemap));
+            }
+            else if (type == "2d")
+            {
+                glgeom::image3f* image( new image3f(width, height) );
+
+                std::cout << "Generating texture (2d)...";
+                spIJavascriptDoc->runInContext([&](void) 
+                {
+                    auto func = spIJavascriptDoc->acquireFunction<glm::vec3 (float, float)>( funcName.c_str() );
+                    glgeom::generate_image3f(*image, [func](glm::vec2 p, glm::ivec2) -> glm::vec3 {
+                        return func(p.x, p.y);
+                    });
+                });
+                std::cout << "done." << std::endl;
+
+                mShaderBuilder.addTexture(id, std::shared_ptr<glgeom::image3f>(image));
             }
         }
         else if (tag == "Material") 
@@ -685,7 +755,7 @@ protected:
 
     std::map<std::string, std::function<void (ElementPtr spElem)>> mHandlers;
 
-    std::deque<std::function<bool (void)>>  mUpdateQueue;
+    TaskQueue                               mUpdateQueue;
 
     lx0::ShaderBuilder                      mShaderBuilder;
 

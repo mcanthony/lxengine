@@ -91,6 +91,7 @@ namespace lx0 { namespace engine { namespace dom_ns {
                 {
                     std::string name = pAttrib->Name();
                     std::string value = pAttrib->Value();
+
                     lxvar parsedValue = Engine::acquire()->parseAttribute(name, value);
                     spElem->attr(name, parsedValue);
                 }

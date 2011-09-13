@@ -1,8 +1,9 @@
 {
     output : "vec3",
     input  : {
-        uv      : [ "vec2",         { _type : "spherical" },        "uvMapper" ],
-        texture : [ "sampler2D",    "<not set>",                    "" ],
+        uv          : [ "vec2",         { _type : "spherical" },    "uvMapper" ],
+        texture     : [ "sampler2D",    "<not set>",                "" ],
+        intensity   : [ "float",        1.0,                        "" ],
     },
-    source: "return texture2D(texture, uv).rgb;",
+    source: "return intensity * texture2D(texture, uv).rgb;",
 }

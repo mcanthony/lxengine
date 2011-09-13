@@ -41,6 +41,7 @@ namespace lx0 { namespace core { namespace detail {
         void            _reset              (const char* pStream);
 
         char            _peek               (void);
+        const char*     _peekString         (void);
         char            _advance            (void);
         void            _consume            (char c);
         bool            _consumeConditional (char c);

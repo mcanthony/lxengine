@@ -70,6 +70,12 @@ namespace lx0 { namespace core {
             return *state().mpStream;
         }
 
+        const char*
+        BaseParser::_peekString (void)
+        {
+            return state().mpStream;
+        }
+
         char            
         BaseParser::_advance (void)
         {
@@ -155,7 +161,16 @@ namespace lx0 { namespace core {
     LxsonParser::parse (const char* pStream)
     {
         _reset(pStream);
-        return _readValue();
+        auto value = _readValue();
+        _skipWhitespace();
+
+        //
+        // Did the parsing stop before the end of the text?
+        // Likely an extra bracket, brace, etc.
+        //
+        lx_check_error( _peek() == '\0', "lxvar parsing ended with remaining text: '%s'", _peekString());
+
+        return value;
     }
 
     lxvar 

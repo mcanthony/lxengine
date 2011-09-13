@@ -45,6 +45,8 @@
 #include <lx0/core/lxvar/lxvar.hpp>
 #include <lx0/util/misc/util.hpp>
 
+#include <glgeom/core/_detail/swizzle_members.hpp>
+
 using namespace lx0::core;
 
 class fixed8
@@ -94,19 +96,129 @@ inline fixed8 operator+ (fixed8 a, fixed8 b) { return fixed8::_raw(a.mValue + b.
 inline fixed8 operator- (fixed8 a, fixed8 b) { return fixed8::_raw(a.mValue - b.mValue); }
 
 //===========================================================================//
+
+#include <boost/thread.hpp>
+#include <boost/thread/mutex.hpp>
+
+typedef std::function<void()>  YieldFunc;
+
+struct InterleavedThreads
+{
+    InterleavedThreads (std::function<void(YieldFunc)> f0, std::function<void(YieldFunc)> f1)
+    {
+        volatile int start0 = 0;
+        volatile int start1 = 0;
+
+        auto yield = [&]() 
+        {
+            active.unlock();
+            waiting.lock();
+            active.lock();
+            waiting.unlock();
+        };
+
+        boost::thread_group group;
+        group.create_thread( [&]() {
+            
+            active.lock();
+            start0 = 1;
+            while (!start1) {}
+
+            f0(yield);
+
+            active.unlock();
+        });
+        group.create_thread(  [&]() {
+            
+            while (!start0) {}
+            
+            waiting.lock();
+            start1 = 1;
+
+            active.lock();
+            waiting.unlock();
+
+            f1(yield);
+
+            active.unlock();
+        });
+        group.join_all();
+    }
+
+    volatile int    started;
+    boost::mutex    active;
+    boost::mutex    waiting;
+};
+
+void count_odds (YieldFunc yield)
+{
+    for (int i = 1; i < 100; i += 2)
+    {
+        std::cout << i << ", ";
+        std::cout.flush();
+        yield();
+    }
+}
+
+void count_evens (YieldFunc yield)
+{
+    for (int i = 0; i < 100; i += 2)
+    {
+        std::cout << i << ", ";
+        std::cout.flush();
+        yield();
+    }
+}
+
+void interleaved()
+{
+    InterleavedThreads(count_evens, count_odds);
+}
+
+//===========================================================================//
+
+
+
+struct triple
+{
+    triple () : x(0), y(0), z(0) {}
+    triple (int a, int b, int c) : x(a), y(b), z(c) {}  
+    
+    void operator= (const triple& t)
+    {
+        x = t.x;
+        y = t.y;
+        z = t.z;
+    }
+    int operator[] (int i) const { return e[i]; }
+
+    union 
+    {
+        struct
+        {
+            int x, y, z;
+        };
+        int e[3];
+
+        _GLGEOM_SWIZZLE3_MEMBERS(int,triple,x,y,z);
+    };
+    
+};
+
+
+//===========================================================================//
 //   E N T R Y - P O I N T
 //===========================================================================//
 
 int 
 main (int argc, char** argv)
 {
-    fixed8 a (5);
-    fixed8 b (4.3f);
+    auto size = sizeof(triple);
 
-    fixed8 c = a + b;
-    fixed8 d = a + b;
-
-    std::cout << "Value = " << float(c) << std::endl;
+    triple t(1, 2, 3);
+    triple a00 = t.xxx;
+    triple a01 = t.zyx;
+    t.zyx = t.xyz;
 
     return 0;
 }

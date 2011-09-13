@@ -104,6 +104,7 @@ namespace lx0
                 void            x_buildShaderNative (lxvar graph);
 
                 void            addTexture          (std::string id, std::shared_ptr<glgeom::cubemap3f> spImage);
+                void            addTexture          (std::string id, std::shared_ptr<glgeom::image3f> spImage);
 
 
             protected:

@@ -12,11 +12,12 @@
     },
     input  : 
     {
-        ambient     : [ "vec3",     [0.1, 0.1, 0.1],          ],
-        diffuse     : [ "vec3",     [1.0, 1.0, 1.0],          ],
-        specular    : [ "vec3",     [0.0, 0.0, 0.0],          ],
-        specularEx  : [ "float",    64                        ],
-        reflectivity: [ "float",    0.0                       ],
+        ambient         : [ "vec3",     [0.1, 0.1, 0.1],          ],
+        diffuse         : [ "vec3",     [1.0, 1.0, 1.0],          ],
+        specular        : [ "vec3",     [0.0, 0.0, 0.0],          ],
+        specularEx      : [ "float",    64                        ],
+        reflectivity    : [ "float",    0.0                       ],
+        normal_diffuse  : [ "vec3",     "fragNormalEc",         ""],
     },
     source : "phong.nfrag",
 }
