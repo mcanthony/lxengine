@@ -335,6 +335,91 @@ struct TaskQueue
 
 //===========================================================================//
 
+static bool 
+shadow_term (const glgeom::point3f& lightPosition, const intersection3f& intersection, std::function<void (const ray3f&, intersection3f&)> intersectFunc)
+{
+    const vector3f L     (lightPosition - intersection.positionWc);
+    const float    distL (length(L));
+    const vector3f Ln    (L / distL);
+    const ray3f    ray   (intersection.positionWc + 1e-3f * Ln, Ln);
+
+    intersection3f isect;
+    intersectFunc(ray, isect);
+
+    return !!(isect.distance < distL);
+}
+
+//===========================================================================//
+
+static
+glgeom::color3f 
+_sampleAdaptive (int x, int y, std::function<glgeom::color3f(float, float)> traceFunc)
+{
+    float offsets1[] = 
+    {
+        -.25f, -.25f,
+        .25f, -.25f,
+        -.25f,  .25f,
+        .25f,  .25f
+    };
+    float offsets2[] = 
+    {
+        .00f, -.25f,
+        -.25f, -.00f,
+        .00f,  .00f,
+        .25f, -.00f,
+        .00f,  .25f,
+    };
+
+    int j = 0;
+    glgeom::color3f c = traceFunc(x + offsets1[j*2+0], y + offsets1[j*2+1]); 
+    glgeom::color3f sum  = c;
+    glm::vec3 min = c.vec;
+    glm::vec3 max = c.vec;
+
+    for (j = 1; j < 4; j++)
+    {
+        glgeom::color3f c = traceFunc(x + offsets1[j*2+0], y + offsets1[j*2+1]); 
+        sum  += c;
+        min = glm::min(c.vec, min);
+        max = glm::max(c.vec, max);
+    }
+
+    glm::vec3 diff = max - min;
+
+    if (std::max(diff.x, std::max(diff.y, diff.z)) > 0.05f)
+    {
+        for (j = 0; j < 5; j++)
+        {
+            glgeom::color3f c = traceFunc(x + offsets2[j*2+0], y + offsets2[j*2+1]); 
+            sum  += c;
+        }
+        sum /= 9.0f;
+    }
+    else
+        sum /= 4.0f;
+
+    return sum;
+}
+
+static
+glgeom::color3f 
+_sampleJitter (int x, int y, std::function<glgeom::color3f(float, float)> traceFunc)
+{
+    static auto r = lx0::random_die_f(-.5f, .5f, 0);
+    static const int kSamples = 16;
+
+    glgeom::color3f sum;
+    for (int i = 0; i < kSamples; ++i)
+    {
+        sum += traceFunc(x + r(), y + r()); 
+    }
+
+    return sum / float(kSamples);
+}
+
+//===========================================================================//
+
 /*
     Dev Notes:
 
@@ -410,7 +495,8 @@ public:
                     int sx = (x * img.width()) / tilesX;
                     int ex = std::min( ((x + 1) * img.width() ) / tilesX, img.width());
 
-                    auto c = _trace((sx + ex) / 2, (sy + ey) / 2);
+                    glm::vec2 p( (sx + ex) / 2, (sy + ey) / 2 ); 
+                    auto c = _trace(p.x, p.y);
 
                     for (int iy = sy; iy < ey; iy ++)
                     {
@@ -429,63 +515,45 @@ public:
         return tasks;
     }
 
+    std::function<glgeom::color3f (int, int)>
+    _acquireSampleFunction (std::string name)
+    {
+        static std::map<std::string, std::function<glgeom::color3f (int, int)>> table;
+        if (table.empty())
+        {
+            auto traceFunc = [this](float x, float y) { return _trace(x, y); };
+
+            table["adaptive"] = [traceFunc](int x, int y) { return _sampleAdaptive(x, y, traceFunc); };
+            table["jitter"]   = [traceFunc](int x, int y) { return _sampleJitter(x, y, traceFunc); };
+            table["single"]   = [traceFunc](int x, int y) { return traceFunc(float(x + .5f), float(y + .5f)); };
+        }
+
+        auto it = table.find(name);
+        if (it != table.end())
+            return it->second;
+        else
+        {
+            lx_warn("Unrecognized sample function '%s'", name.c_str());
+            return table.find("single")->second;
+        }
+    }
+
+
+
+    static
     std::vector<std::function<void()>>
-    _buildScan ()
+    _buildScan (std::function<glgeom::color3f (int, int)> sampleFunc)
     {
         std::vector<std::function<void()>> tasks;
         tasks.reserve(img.height());
 
         for (int y = 0; y < img.height(); ++y)
         {
-            tasks.push_back([y, this]() 
+            tasks.push_back([y, sampleFunc]() 
             {
                 for (int x = 0; x < img.width(); ++x)
                 {
-                    float offsets1[] = 
-                    {
-                        -.25f, -.25f,
-                         .25f, -.25f,
-                        -.25f,  .25f,
-                         .25f,  .25f
-                    };
-                    float offsets2[] = 
-                    {
-                         .00f, -.25f,
-                        -.25f, -.00f,
-                         .00f,  .00f,
-                         .25f, -.00f,
-                         .00f,  .25f,
-                    };
-
-                    int j = 0;
-                    glgeom::color3f c = _trace(x + offsets1[j*2+0], y + offsets1[j*2+1]); 
-                    glgeom::color3f sum  = c;
-                    glm::vec3 min = c.vec;
-                    glm::vec3 max = c.vec;
-
-                    for (j = 1; j < 4; j++)
-                    {
-                        glgeom::color3f c = _trace(x + offsets1[j*2+0], y + offsets1[j*2+1]); 
-                        sum  += c;
-                        min = glm::min(c.vec, min);
-                        max = glm::max(c.vec, max);
-                    }
-
-                    glm::vec3 diff = max - min;
-
-                    if (std::max(diff.x, std::max(diff.y, diff.z)) > 0.05f)
-                    {
-                        for (j = 0; j < 5; j++)
-                        {
-                            glgeom::color3f c = _trace(x + offsets2[j*2+0], y + offsets2[j*2+1]); 
-                            sum  += c;
-                        }
-                        sum /= 9.0f;
-                    }
-                    else
-                        sum /= 4.0f;
-
-                    img.set(x, y, sum); 
+                    img.set(x, y, sampleFunc(x, y)); 
                 }
                 imgRegion.merge(glm::ivec2(0, y));
             });
@@ -526,7 +594,9 @@ public:
 
         mUpdateQueue.push_back([&]()
         {
-            auto tasks = _buildScan();
+            const std::string samplerName = Engine::acquire()->globals().find("sampler").as<std::string>();
+
+            auto tasks = _buildScan( _acquireSampleFunction(samplerName) );
             auto final = [=]() { std::cout << "Done (" << lx0::lx_milliseconds() - mRenderTime << " ms)." << std::endl; };
 
             quickBarrier = run_tasks(8, tasks, final);
@@ -553,49 +623,55 @@ public:
         }
     }
 
-    float _shadowTerm (const glgeom::point3f& lightPosition, const intersection3f& intersection)
+    float _shadowTermSingle (const glgeom::point3f& lightPosition, const intersection3f& intersection)
     {
-        const vector3f L     (lightPosition - intersection.positionWc);
-        const float    distL (length(L));
-        const vector3f Ln    (L / distL);
-        const ray3f    ray   (intersection.positionWc + 1e-3f * Ln, Ln);
-                
-        intersection3f isect;
-        mIndex.intersect(ray, isect);
-
-        return (isect.distance < distL) ? 0.0f : 1.0f;
+        auto intersectFunc = [this](const ray3f& ray, intersection3f& isect) 
+        {
+            mIndex.intersect(ray, isect);
+        };
+        return shadow_term(lightPosition, intersection, intersectFunc) ? 0.0f : 1.0f;
     }
 
     float _shadowTerm (const point_light_f& light, const intersection3f& intersection)
     {
         if (mspEnvironment->shadows)
         {
-            const float radius = light.glow.radius;
-            const float baseTerm = _shadowTerm(light.position, intersection);
+            const float radius   = light.glow.radius;
+            const float baseTerm = _shadowTermSingle(light.position, intersection);
 
             //
-            // Check if the light is an area light and do multiple samples if so
+            // Check if the light is an area light, if so take multiple samples
             //
             if (radius > 0.0f)
             {
+                //
+                // Compute a 3-space disc about the light oriented toward the interesction point
+                // 
                 const vector3f L    (normalize(light.position - intersection.positionWc));
                 const disc3f   disc (light.position, L, radius);
                 
-                auto sampler = [this, &intersection](const glgeom::point3f& pt)
+                auto sampler = [this, &intersection](const glgeom::point3f& pt) -> float
                 {
-                    return _shadowTerm(pt, intersection);
+                    return _shadowTermSingle (pt, intersection);
                 };
 
                 //
-                // If all the samples are in shadow or out of shadow, return immediately.
-                // Only do more samples if there's a mix.
+                // Take several samples along the circumference of the disc to get an 
+                // some sort of guess at the variance.  If the light is not completely
+                // visble or completely obscured, then generate far more samples using
+                // a random distribution on the disc to come up with a estimate as to
+                // what percentage of the disc is visible from the intersection point.
                 //
-                float term = sample_disc_circumference<float>(disc, 6u, sampler);
-                float value = glm::mix(baseTerm, term, 1.0f/7.0f); 
-                if (value > .98f || value < .02f)
+                const size_t kInitial = 6;
+                const size_t kFull = 512;
+                const float  kEpsilon = 1e-4f;
+
+                const float term = sample_disc_circumference<float>(disc, kInitial, sampler);
+                float value = glm::mix(baseTerm, term, 1.0f / float(kInitial + 1)); 
+                if (value > 1.0f - kEpsilon || value < kEpsilon )
                     return value;
                 else
-                    return sample_disc_random<float>(disc, 64u, lx0::random_unit, sampler);
+                    return sample_disc_random<float>(disc, kFull, lx0::random_unit, sampler);
             }
             else
                 return baseTerm;
@@ -628,7 +704,6 @@ public:
                 }
             }
             const intersection3f& intersection = *pIntersection;
-            const vector3f viewDirection = glgeom::normalize(intersection.positionWc - mCamera->camera.position);
             const Material* pMat ( pGeom->mspMaterial ? pGeom->mspMaterial.get() : mspContext->mspMaterial.get());
 
             glm::mat3 normalMatrix = glm::mat3(glm::inverseTranspose(mCamera->viewMatrix));
@@ -667,15 +742,7 @@ public:
 
             c = pMat->shade(ctx, env.ambient, intersection);
         }
-        else
-            c *= .5f;
-
         return c;
-    }
-
-    color3f _trace (int x, int y)
-    {
-        return _trace(float(x), float(y));
     }
 
     color3f _trace (float x, float y)
@@ -758,7 +825,7 @@ protected:
 
             spElem->attachComponent(pMat);
         }
-        else if (tag == "Light")
+        else if (tag == "Light" && query(spElem->attr("enabled"), true) )
         {
             auto pLight = new Light;
             pLight->position = spElem->value().find("position").convert();

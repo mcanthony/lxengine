@@ -83,6 +83,7 @@ static glm::vec3 shade_phong (
     const glm::vec3& specular,
     float            specularEx,
     float            reflectivity,
+    float            opacity,
     const glm::vec3& normalDiffuse
     )
 {
@@ -120,6 +121,17 @@ static glm::vec3 shade_phong (
         glgeom::ray3f ray(ctx.fragVertexWc + R * 1e-3f, R);
         vec3 cr = ctx.traceFunc(ray).vec;
         c = glm::mix(c, cr, reflectivity);
+    }
+
+    //
+    // Work-in-progress opacity: need index of refraction, shadowing, and Beer's Law accounted for
+    //
+    if (opacity < 1.0f)
+    {
+        vec3 D = (ctx.fragVertexWc - ctx.unifEyeWc);
+        glgeom::ray3f ray(ctx.fragVertexWc + D * 1e-3f, D);
+        vec3 co = ctx.traceFunc(ray).vec;
+        c = glm::mix(co, c, opacity);
     }
 
     return c;
@@ -287,9 +299,10 @@ void LambdaBuilder::_init()
         auto specular     = _buildVec3(_value(param, node, "specular"));
         auto specularEx   = _buildFloat(_value(param, node, "specularEx"));
         auto reflectivity = _buildFloat(_value(param, node, "reflectivity"));
+        auto opacity      = _buildFloat(_value(param, node, "opacity"));
         auto normalDiffuse= _buildVec3(_value(param, node, "normal_diffuse"));
                
-        return [ambient, diffuse, specular, specularEx, reflectivity, normalDiffuse](const Context& ctx) {
+        return [ambient, diffuse, specular, specularEx, reflectivity, opacity, normalDiffuse](const Context& ctx) {
             return shade_phong(
                 ctx,
                 ambient(ctx), 
@@ -297,6 +310,7 @@ void LambdaBuilder::_init()
                 specular(ctx), 
                 specularEx(ctx),
                 reflectivity(ctx),
+                opacity(ctx),
                 normalDiffuse(ctx)
             );
         };

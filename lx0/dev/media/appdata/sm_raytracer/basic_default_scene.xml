@@ -221,7 +221,7 @@
               },
             },
             specular : [ 1, .95, .95 ],
-            specularEx : 512
+            specularEx : 512,
           }
         }
       </Material>      
@@ -284,13 +284,14 @@
           {
             position : [ 3, 2, 3 ],
             color    : [ 1, .9, .9 ],
-            glow_radius   : .2,
+            glow_radius   : .35,
           }
         </Light>
-        <Light>
+        <Light enabled="true">
           {
-          position : [ 3.1, 2.6, 4 ],
-          color    : [ .3, .4, .5 ]
+          position : [ .1, 2.6, 4 ],
+          color    : [ .7, .4, .1 ],
+          glow_radius : .35
           }
         </Light> 
       </Group>

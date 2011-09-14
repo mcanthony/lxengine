@@ -538,6 +538,7 @@ namespace {
         if (script.IsEmpty())
         {
             lx_error("Javascript script failed to compile!");
+            return lxvar::undefined();
         }
         else
         {

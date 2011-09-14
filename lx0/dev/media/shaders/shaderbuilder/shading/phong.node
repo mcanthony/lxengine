@@ -17,6 +17,7 @@
         specular        : [ "vec3",     [0.0, 0.0, 0.0],          ],
         specularEx      : [ "float",    64                        ],
         reflectivity    : [ "float",    0.0                       ],
+        opacity         : [ "float",    1.0                       ],
         normal_diffuse  : [ "vec3",     "fragNormalEc",         ""],
     },
     source : "phong.nfrag",
