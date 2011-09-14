@@ -30,6 +30,8 @@
 
 #pragma once
 
+#include <boost/format.hpp>
+
 #include <lx0/core/slot/slot.hpp>
 
 namespace lx0 
@@ -38,72 +40,97 @@ namespace lx0
     {
         namespace log_ns
         {
+            //===========================================================================//
+            // types
+            //===========================================================================//
+
+            namespace detail
+            {
+                class _exception_base : public std::exception 
+                {
+                public:
+                                    _exception_base (const char* file, int line);
+
+                    void                location (const char* file, int line);
+                    _exception_base&    detail   (void) { return *this; }
+                    _exception_base&    detail   (const char* msg);
+
+                    template <typename T0>  
+                    _exception_base& detail (const char* format, T0 a0) {  return detail( boost::str( _fmt(format) % a0 ).c_str() ); }
+                    
+                    template <typename T0, typename T1>  
+                    _exception_base& detail (const char* format, T0 a0, T1 a1) {  return detail( boost::str( _fmt(format) % a0 % a1 ).c_str() ); }
+                    
+                    template <typename T0, typename T1, typename T2>  
+                    _exception_base& detail (const char* format, T0 a0, T1 a1, T2 a2) { return detail( boost::str( _fmt(format) % a0 % a1 % a2 ).c_str() ); }
+                    
+                    template <typename T0, typename T1, typename T2, typename T3>  
+                    _exception_base& detail (const char* format, T0 a0, T1 a1, T2 a2, T3 a3) { return detail( boost::str( _fmt(format) % a0 % a1 % a2 % a3 ).c_str() ); }
+                    
+                    template <typename T0, typename T1, typename T2, typename T3, typename T4>  
+                    _exception_base& detail (const char* format, T0 a0, T1 a1, T2 a2, T3 ae, T4 a4) { return detail( boost::str( _fmt(format) % a0 % a1 % a2 % a3 % a4 ).c_str() ); }
+
+                    virtual const char* what() const throw();
+
+                protected:
+                    boost::format _fmt(const char* format)
+                    {
+                        // Disable exceptions within boost::format, since nested exceptions can not be handled
+                        // properly
+                        boost::format f(format);
+                        f.exceptions(boost::io::no_error_bits);
+                        return f;
+                    }
+
+                    std::string       mWhat;
+                };
+            }
+
 
             /*!
                 \ingroup lx0_core_log
              */
-            void lx_assert (bool condition);
-            
-            /*!
-                \ingroup lx0_core_log
-             */
-            void lx_assert (bool condition, const char* format, ...);
+            class error_exception : public detail::_exception_base
+            {
+            public:
+                    error_exception (const char* file, int line) : detail::_exception_base(file, line) {}
+                    
+                    template <typename T0>
+                    error_exception (const char* file, int line, const char* format, T0 a0) : detail::_exception_base(file, line) { detail(format, a0); }
+            };
 
             /*!
                 \ingroup lx0_core_log
              */
-            void lx_fatal  (void);
-            
-            /*!
-                \ingroup lx0_core_log
-             */
-            void lx_fatal  (const char* format, ...);
-            
-            /*!
-                \ingroup lx0_core_log
-             */
-            void lx_error  (const char* format, ...);
-            
-            /*!
-                \ingroup lx0_core_log
-             */
-            void lx_warn   (const char* format, ...);
-            
-            /*!
-                \ingroup lx0_core_log
-             */
-            void lx_log    (const char* format, ...);
-            
-            /*!
-                \ingroup lx0_core_log
-             */
-            void lx_debug  (const char* format, ...);
+            class fatal_exception : public detail::_exception_base
+            {
+            public:
+                    fatal_exception (const char* file, int line) : detail::_exception_base(file, line) {}
+            };
 
-            /*!
-                \ingroup lx0_core_log
-             */
-            void lx_debug  (const std::string& s);
+            //===========================================================================//
+            // functions
+            //===========================================================================//
+
+            void        lx_assert       (bool condition);
+            void        lx_assert       (bool condition, const char* format, ...);
+
+            void        lx_debug        (const char* format, ...);
+            void        lx_debug        (const std::string& s);
+            void        lx_log          (const char* format, ...);
+            void        lx_warn         (const char* format, ...);
+            void        lx_error        (const char* format, ...);
+            void        lx_fatal        (void);
+            void        lx_fatal        (const char* format, ...);
             
-            /*!
-                \ingroup lx0_core_log
-             */
-            #define lx_warn_once(FORMAT,...) \
-                do { static bool once = false;  if(!once) { lx_warn(FORMAT,__VA_ARGS__); once = true; } } while (0)
     
-            /*!
-                \ingroup lx0_core_log
-             */
-            void lx_check_fatal (bool condition);
-            
-            /*!
-                \ingroup lx0_core_log
-             */
-            void lx_check_error (bool condition);
-            
-            /*!
-                \ingroup lx0_core_log
-             */
-            void lx_check_error (bool condition, const char* format, ...);
+            void        lx_check_fatal (bool condition);
+            void        lx_check_error (bool condition);
+            void        lx_check_error (bool condition, const char* format, ...);
+
+
+            #define     lx_warn_once(FORMAT,...)  do { static bool once = false;  if(!once) { lx_warn(FORMAT,__VA_ARGS__); once = true; } } while (0)
+
 
             extern slot<void (const char*)> slotFatal;
             extern slot<void (const char*)> slotError;
@@ -112,43 +139,7 @@ namespace lx0
             extern slot<void (const char*)> slotAssert;
             extern slot<void (const char*)> slotDebug;
     
-            /*!
-                \ingroup lx0_core_log
-             */
-            class error_exception : public std::exception 
-            {
-            public:
-                                error_exception (const char* t, const char* d)
-                                    : mType     (t)
-                                    , mDetails  (d)
-                                { }
 
-                std::string     type    (void) const    { return mType; }
-                std::string     details (void) const    { return mDetails; }
-
-            protected:
-                std::string     mType;
-                std::string     mDetails;
-            };
-
-            /*!
-                \ingroup lx0_core_log
-             */
-            class fatal_exception : public std::exception 
-            {
-            public:
-                    fatal_exception (const char* t, const char* d)
-                        : mType     (t)
-                        , mDetails  (d)
-                    { }
-
-                std::string     type    (void) const    { return mType; }
-                std::string     details (void) const    { return mDetails; }
-
-            protected:
-                std::string     mType;
-                std::string     mDetails;
-            };
 
 
             /*!

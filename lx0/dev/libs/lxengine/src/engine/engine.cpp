@@ -201,7 +201,9 @@ namespace lx0 { namespace engine { namespace dom_ns {
     {
        lx_log("lx::core::Engine dtor");
 
-       lx_check_error( mDocuments.empty() );
+       // Don't throw exceptions in a destructor!
+       if (!mDocuments.empty())
+           lx_log("Engine.Shutdown: Documents not cleaned up correctly.");
 
        // Check for memory leaks of Engine-related objects
        bool bLeaksFound = false;
@@ -243,13 +245,19 @@ namespace lx0 { namespace engine { namespace dom_ns {
     }
 
     void 
-    Engine::decObjectCount  (std::string name)
+    Engine::decObjectCount (std::string name)
     {
         auto it = m_objectCounts.find(name);
-        lx_check_error (it != m_objectCounts.end());
-        lx_check_fatal(it->second.current() >= 1);
+        
+        if (it != m_objectCounts.end())
+        {
+            if (!(it->second.current() >= 1))
+                lx_warn("Object count for '%s' is unexpectedly less than 1!", name.c_str());
 
-        it->second.dec();
+            it->second.dec();
+        }
+        else
+            lx_warn("Decrementing object count on '%s' but no entry for that name.", name.c_str());
     }
 
     /*!

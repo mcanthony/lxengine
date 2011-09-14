@@ -101,7 +101,7 @@ main (int argc, char** argv)
     }
     catch (lx0::error_exception& e)
     {
-        std::cout << "Lx Error: " << e.details() << std::endl;
+        std::cout << "Lx Error: " << e.what() << std::endl;
     }
     catch (std::exception& e)
     {

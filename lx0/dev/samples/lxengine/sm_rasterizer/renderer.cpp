@@ -137,14 +137,22 @@ protected:
 
         if (tag == "Material")
         {
+            std::string name = query(spElem->attr("id"), "");
             lx0::lxvar  graph = spElem->value().find("graph");
             
-            lx0::ShaderBuilder::Material material;
-            mShaderBuilder.buildShaderGLSL(material, graph);
-
-            std::string name = query(spElem->attr("id"), "");
-            auto spMat = mspRasterizer->createMaterial(material.uniqueName, material.source, material.parameters);
-            mMaterials.insert(std::make_pair(name, spMat));
+            try
+            {
+                lx0::ShaderBuilder::Material material;
+                mShaderBuilder.buildShaderGLSL(material, graph);
+            
+                auto spMat = mspRasterizer->createMaterial(material.uniqueName, material.source, material.parameters);
+                mMaterials.insert(std::make_pair(name, spMat));
+            }
+            catch (lx0::error_exception& e)
+            {
+                // Consume the exception
+                lx0::lx_message_box("Error", boost::str( boost::format("Could not create Material with id='%s'\n\nDetails:%s\n") % name % e.what()) );
+            }
         }
         else if (tag == "Sphere")
         {

@@ -352,50 +352,49 @@ main (int argc, char** argv)
 
         if (spEngine->parseCommandLine(argc, argv, "file"))
         {
-            // Temp
+            try
             {
-                generateSkyMap();
-                //generateNoiseCubeMap();
-            }
-            //
+                // Temp
+                {
+                    generateSkyMap();
+                    //generateNoiseCubeMap();
+                }
+                //
 
-
-            spEngine->attachComponent(lx0::createJavascriptSubsystem());
-            spEngine->attachComponent(createScriptHandler());
+                spEngine->attachComponent(lx0::createJavascriptSubsystem());
+                spEngine->attachComponent(createScriptHandler());
         
-            DocumentPtr spDocument = spEngine->loadDocument(spEngine->globals().find("file"));
-            spDocument->addController( create_controller(spDocument) );
+                DocumentPtr spDocument = spEngine->loadDocument(spEngine->globals().find("file"));
+                spDocument->addController( create_controller(spDocument) );
 
-            ViewPtr spView = spDocument->createView("Canvas", "view", create_renderer() );
-            spView->addUIBinding( create_uibinding() );
+                ViewPtr spView = spDocument->createView("Canvas", "view", create_renderer() );
+                spView->addUIBinding( create_uibinding() );
 
-            lxvar options;
-            options.insert("title",  "LxEngine Rasterizer Sample");
-            options.insert("width",  spEngine->globals().find("width"));
-            options.insert("height", spEngine->globals().find("height"));
-            spView->show(options);
+                lxvar options;
+                options.insert("title",  "LxEngine Rasterizer Sample");
+                options.insert("width",  spEngine->globals().find("width"));
+                options.insert("height", spEngine->globals().find("height"));
+                spView->show(options);
 
-            lxvar outputVar = spEngine->globals().find("output");
-            if (outputVar.is_defined())
-            {
-                spView->sendEvent("screenshot", outputVar);
-                spEngine->sendEvent("quit");
+                lxvar outputVar = spEngine->globals().find("output");
+                if (outputVar.is_defined())
+                {
+                    spView->sendEvent("screenshot", outputVar);
+                    spEngine->sendEvent("quit");
+                }
+
+                exitCode = spEngine->run();
             }
-
-            exitCode = spEngine->run();
+            catch (lx0::error_exception& e)
+            {
+                lx0::lx_message_box(std::string("Application Error"), e.what());
+            }
         }
         spEngine->shutdown();
     }
-    catch (lx0::error_exception& e)
-    {
-        std::cerr << "Error: " << e.details().c_str() << std::endl
-                    << "Code: " << e.type() << std::endl
-                    << std::endl;
-    }
     catch (std::exception& e)
     {
-        std::cerr << "Fatal: unhandled std::exception.\n"
-            << "Exception: " << e.what();
+        std::cerr << "Fatal: unhandled std::exception.\n" << "Exception: " << e.what();
     }
 
     return exitCode;

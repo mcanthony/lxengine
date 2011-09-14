@@ -86,6 +86,33 @@ namespace lx0 { namespace core { namespace log_ns {
 #endif
     }
 
+    detail::_exception_base::_exception_base (const char* file, int line)
+    {
+        mWhat.reserve(512);
+        location(file, line);
+    }
+
+    void 
+    detail::_exception_base::location (const char* file, int line)
+    {
+        mWhat += boost::str(boost::format("\n>> %1%:%2%\n") % file % line);
+    }
+
+    detail::_exception_base&
+    detail::_exception_base::detail (const char* msg)
+    {
+        mWhat += msg;
+        mWhat += "\n";
+        return *this;
+    }
+
+
+    const char*
+    detail::_exception_base::what() const 
+    {
+        return mWhat.c_str();
+    }
+
     /*!
         Check that a condition is true.   If it is not, cause an error.
      */
@@ -210,7 +237,9 @@ namespace lx0 { namespace core { namespace log_ns {
 #endif
             
         std::string err("lx_error (re-throw if error is non-recoverable).\n");
-        throw lx0::error_exception("Generic", (err + buffer).c_str());
+        err += buffer;
+        err += "\n";
+        throw lx0::error_exception("<unknown>", 0).detail(err.c_str());
     }
 
     void
@@ -225,7 +254,7 @@ namespace lx0 { namespace core { namespace log_ns {
 
         slotError(buffer);
 
-        throw lx0::error_exception(type, buffer);
+        throw lx0::error_exception("<Unknown>", 0).detail(buffer);
     }
 
     void

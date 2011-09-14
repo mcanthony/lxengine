@@ -28,6 +28,7 @@
 
 #include <lx0/util/misc/util.hpp>
 #include <boost/format.hpp>
+#include <boost/algorithm/string.hpp>
 
 #include <windows.h>
 
@@ -42,9 +43,18 @@ namespace lx0 { namespace util { namespace misc {
     void
     lx_message_box (std::string caption, std::string message)
     {
+        boost::replace_all(message, "\n", "\n\r");
+
         HWND hWnd = ::GetForegroundWindow();
         ::MessageBoxA(hWnd, message.c_str(), caption.c_str(), MB_OK);
     }
+
+    void 
+    lx_debugger_message (std::string message)
+    {
+        ::OutputDebugStringA(message.c_str());
+    }
+
 
     void
     lx_break_if_debugging (void)

@@ -52,6 +52,7 @@ namespace lx0 { namespace util { namespace misc {
 
             unsigned int        lx_milliseconds         (void);
             void                lx_message_box          (std::string caption, std::string message);
+            void                lx_debugger_message     (std::string message);
 
             float                   random_unit         (void);
             glgeom::vector3f        random_vector3f     (void);

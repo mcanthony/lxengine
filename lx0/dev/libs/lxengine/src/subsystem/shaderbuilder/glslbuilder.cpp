@@ -70,37 +70,46 @@ namespace {
 
 void GLSLBuilder::buildShader (Material& material, lxvar graph)
 {
-    Shader          shader;
-    lxvar           parameters;
-    Context         context;
+    try
+    {
+        Shader          shader;
+        lxvar           parameters;
+        Context         context;
 
-    //
-    // Set up all the predefined variables
-    //
-    shader.mVersion = "#version 150";
+        //
+        // Set up all the predefined variables
+        //
+        shader.mVersion = "#version 150";
 
-    shader.mConstants.push_back("const float PI = 3.14159265358979323846264;");
+        shader.mConstants.push_back("const float PI = 3.14159265358979323846264;");
 
-    shader.mShaderInputs.push_back("in vec3         fragVertexOc;");
-    shader.mShaderInputs.push_back("in vec3         fragVertexEc;");
-    shader.mShaderInputs.push_back("in vec3         fragNormalOc;");
-    shader.mShaderInputs.push_back("in vec3         fragNormalEc;");
-    shader.mShaderInputs.push_back("in vec3         fragColor;");
-    shader.mShaderInputs.push_back("in vec2         fragUV;");
+        shader.mShaderInputs.push_back("in vec3         fragVertexOc;");
+        shader.mShaderInputs.push_back("in vec3         fragVertexEc;");
+        shader.mShaderInputs.push_back("in vec3         fragNormalOc;");
+        shader.mShaderInputs.push_back("in vec3         fragNormalEc;");
+        shader.mShaderInputs.push_back("in vec3         fragColor;");
+        shader.mShaderInputs.push_back("in vec2         fragUV;");
 
-    shader.mShaderOutputs.push_back("out vec4        out_color;");
+        shader.mShaderOutputs.push_back("out vec4        out_color;");
 
-    //
-    // Start processing at the root and recurse through the nodes
-    //
-    _processNode(shader, context, parameters, graph, "vec4");
+        //
+        // Start processing at the root and recurse through the nodes
+        //
+        _processNode(shader, context, parameters, graph, "vec4");
 
-    //
-    // Copy  the results (and discard all the intermediate data)
-    //
-    material.uniqueName = shader.mName;
-    material.source     = _formatSource(shader);
-    material.parameters = parameters;
+        //
+        // Copy  the results (and discard all the intermediate data)
+        //
+        material.uniqueName = shader.mName;
+        material.source     = _formatSource(shader);
+        material.parameters = parameters;
+    }
+    catch (lx0::error_exception& e)
+    {
+        e.location(__FILE__, __LINE__);
+        e.detail("Error creating GLSL shader");
+        throw;
+    }
 }
 
 static 
@@ -110,25 +119,35 @@ _isSampler (const std::string& type)
     return (type == "sampler2D" || type == "samplerCube");
 }
 
+#define lx_error_exception(F,...)  lx0::error_exception(__FILE__, __LINE__,F,__VA_ARGS__)
+#define lx_check_error2(CONDITION,...) \
+    if (!(CONDITION)) { lx0::error_exception e(__FILE__, __LINE__); e.detail("Error check failed: '%s'", #CONDITION); e.detail(__VA_ARGS__); throw e; }
+
 int 
 GLSLBuilder::_processNode (Shader& shader, Context& context, lxvar& parameters, lxvar graph, std::string requiredOutputType)
 {
-    lx_check_error(graph.find("_type").is_defined());
+    lx_check_error2( this != nullptr );
+    lx_check_error2( graph.find("_type").is_defined() );
 
     const int         id       = context.mNodeCount++;
     const std::string nodeType = graph["_type"].as<std::string>();
 
+    //
+    // Get the node template
+    //
     auto it = mNodes.find(nodeType);
     if (it == mNodes.end())
-        lx_error("Node of type '%s' not loaded.", nodeType.c_str());
+    {
+        throw lx_error_exception("ShaderBuilder node fragment for type '%1%' not found.", nodeType);
+    }
 
     // Build up a unique name for this shader.  Do this for caching purposes so 
     // that duplicate names indicate a shader can be reused.
     shader.mName += boost::str( boost::format("%s[") % nodeType );
 
     lxvar node = mNodes[nodeType];
-    lx_check_error(node.find("output").is_defined());
-    lx_check_error(node.find("input").is_defined());
+    lx_check_error2( node.find("output").is_defined() );
+    lx_check_error2( node.find("input").is_defined() );
 
     const std::string outputType = node.find("output").as<std::string>();
     const std::string funcName = boost::str(boost::format("fn_%1%") % nodeType);
