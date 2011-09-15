@@ -88,6 +88,7 @@ namespace lx0 { namespace core { namespace log_ns {
 
     detail::_exception_base::_exception_base (const char* file, int line)
     {
+        lx_log("Exception created");
         mWhat.reserve(512);
         location(file, line);
     }
@@ -95,12 +96,15 @@ namespace lx0 { namespace core { namespace log_ns {
     void 
     detail::_exception_base::location (const char* file, int line)
     {
+        lx_log("Exception location: %s : %d", file, line);
         mWhat += boost::str(boost::format("\n>> %1%:%2%\n") % file % line);
+
     }
 
     detail::_exception_base&
     detail::_exception_base::detail (const char* msg)
     {
+        lx_log("Exception detail: %s", msg);
         mWhat += msg;
         mWhat += "\n";
         return *this;
@@ -142,39 +146,6 @@ namespace lx0 { namespace core { namespace log_ns {
             vsnprintf_s(buffer, sizeof(buffer), _TRUNCATE, format, args);
 
             lx_break_if_debugging();
-        }
-    }
-
-    /*!
-        Similar to lx_assert() but will cause lx_error() to be called if the
-        condition fails in *either* production or debug code.
-     */
-    void 
-    lx_check_error (bool condition)
-    {
-        _lx_check_init();
-
-        if (!condition)
-            lx_error("Error condition encountered!");
-    }
-
-    /*!
-        Overload of lx_check_error that provides an additional string of
-        information.
-     */
-    void 
-    lx_check_error (bool condition, const char* format, ...)
-    {
-        _lx_check_init();
-
-        if (!condition)
-        {
-            char buffer[512] = "";
-            va_list args;
-            va_start(args, format);
-            vsnprintf_s(buffer, sizeof(buffer), _TRUNCATE, format, args);
-
-            lx_error("%s", buffer);
         }
     }
 
@@ -266,6 +237,8 @@ namespace lx0 { namespace core { namespace log_ns {
         va_list args;
         va_start(args, format);
         vsnprintf_s(buffer, sizeof(buffer), _TRUNCATE, format, args);
+
+        std::cerr << "WARNING: " << buffer << std::endl;
 
         slotWarn(buffer);
     }

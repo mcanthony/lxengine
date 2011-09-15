@@ -83,7 +83,16 @@ ShaderBuilder::_refreshNodes (void)
             lx0::find_files_in_directory(nodeFiles, it->c_str(),  "node");
 
         for (auto it = nodeFiles.begin(); it != nodeFiles.end(); ++it)
-            _loadNodeImp(*it);
+        {
+            try
+            {
+                _loadNodeImp(*it);
+            }
+            catch (lx0::error_exception& e)
+            {
+                lx_warn("Error with node file '%s'.  Ignoring. Error details: %s\n", it->c_str(), e.what());
+            }
+        }
     }
     catch (boost::system::system_error&)
     {
@@ -137,19 +146,29 @@ void ShaderBuilder::_loadNodeImp (std::string filename)
     std::string id = path.filename().string();
     id = id.substr(0, id.length() - path.extension().string().length());
 
-    lxvar value = lxvar_from_file(filename);
-
-    if (value["output"].is_undefined())
-        lx_error("'output' not defined for node '%s'", filename.c_str());
-    else if (value["input"].is_undefined())
-        lx_error("'input' not defined for node '%s'", filename.c_str());
-    else
+    try
     {
+        lxvar value = lxvar_from_file(filename);
+
+        lx_check_error(value["output"].is_defined(),    "'output' not defined for node '%s'", filename);
+        lx_check_error(value["input"].is_defined(),     "'input' not defined for node '%s'", filename);
+        lx_check_error(value["source"].is_defined(),    "'source' not defined for node '%s'", filename);
+
         _loadSourceFileIfNecessary(value, path);
 
-        bool bExists = mNodes.insert(std::make_pair(id, value)).second;
-        if (!bExists)
-            lx_warn("ShaderBuilder node by name '%s' already exists in cache", id.c_str());
+        bool bExists = !mNodes.insert(std::make_pair(id, value)).second;
+        if (bExists)
+        {
+            lx_warn("ShaderBuilder node by name '%s' already exists in cache."
+                    "Ignoring new defintion", id);
+        }
+    }
+    catch (lx0::error_exception& e)
+    {
+        e.location(__FILE__, __LINE__);
+        e.detail("Error loading node from file '%s'", filename);
+        e.detail("Ignoring node.");
+        throw;
     }
 }
 

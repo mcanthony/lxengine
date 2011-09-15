@@ -163,6 +163,7 @@ namespace lx0
 
 
                     static lxvar    parse           (const char* s);
+                    static lxvar    parse           (std::string filename, int lineOffset, const char* s);
 
                     template <typename T>
                     detail::lxshared_ptr<T>

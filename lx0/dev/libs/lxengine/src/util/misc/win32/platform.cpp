@@ -45,7 +45,7 @@ namespace lx0 { namespace util { namespace misc {
     {
         boost::replace_all(message, "\n", "\n\r");
 
-        HWND hWnd = ::GetForegroundWindow();
+        HWND hWnd = NULL; //::GetForegroundWindow();
         ::MessageBoxA(hWnd, message.c_str(), caption.c_str(), MB_OK);
     }
 

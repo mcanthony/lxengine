@@ -119,15 +119,11 @@ _isSampler (const std::string& type)
     return (type == "sampler2D" || type == "samplerCube");
 }
 
-#define lx_error_exception(F,...)  lx0::error_exception(__FILE__, __LINE__,F,__VA_ARGS__)
-#define lx_check_error2(CONDITION,...) \
-    if (!(CONDITION)) { lx0::error_exception e(__FILE__, __LINE__); e.detail("Error check failed: '%s'", #CONDITION); e.detail(__VA_ARGS__); throw e; }
-
 int 
 GLSLBuilder::_processNode (Shader& shader, Context& context, lxvar& parameters, lxvar graph, std::string requiredOutputType)
 {
-    lx_check_error2( this != nullptr );
-    lx_check_error2( graph.find("_type").is_defined() );
+    lx_check_error( this != nullptr );
+    lx_check_error( graph.find("_type").is_defined() );
 
     const int         id       = context.mNodeCount++;
     const std::string nodeType = graph["_type"].as<std::string>();
@@ -138,7 +134,11 @@ GLSLBuilder::_processNode (Shader& shader, Context& context, lxvar& parameters, 
     auto it = mNodes.find(nodeType);
     if (it == mNodes.end())
     {
-        throw lx_error_exception("ShaderBuilder node fragment for type '%1%' not found.", nodeType);
+        throw lx_error_exception(
+            "ShaderBuilder node fragment for type '%1%' not found. "
+            "The file for the node type likely does not exist or has "
+            "not been properly loaded."
+            , nodeType);
     }
 
     // Build up a unique name for this shader.  Do this for caching purposes so 
@@ -146,8 +146,8 @@ GLSLBuilder::_processNode (Shader& shader, Context& context, lxvar& parameters, 
     shader.mName += boost::str( boost::format("%s[") % nodeType );
 
     lxvar node = mNodes[nodeType];
-    lx_check_error2( node.find("output").is_defined() );
-    lx_check_error2( node.find("input").is_defined() );
+    lx_check_error( node.find("output").is_defined() );
+    lx_check_error( node.find("input").is_defined() );
 
     const std::string outputType = node.find("output").as<std::string>();
     const std::string funcName = boost::str(boost::format("fn_%1%") % nodeType);
@@ -170,6 +170,8 @@ GLSLBuilder::_processNode (Shader& shader, Context& context, lxvar& parameters, 
             for (auto it = node["source"].begin(); it != node["source"].end(); ++it)
                 source += (*it).as<std::string>() + "\n";
         }
+
+        lx_check_error(!source.empty(), "Source for node '%s' is empty.  Cannot generate valid GLSL.", nodeType);
 
         std::stringstream ss;
         ss << boost::format("%2% %1% (") % funcName % outputType;
@@ -265,7 +267,19 @@ GLSLBuilder::_processNode (Shader& shader, Context& context, lxvar& parameters, 
                 // Note that samplers intentionally do not get assigned a default.
                 //
                 if (!bSampler)
-                    uniform += boost::str( boost::format(" = %s") % _valueToStr(type, value) );
+                {
+                    try
+                    {
+                        uniform += boost::str( boost::format(" = %s") % _valueToStr(type, value) );
+                    } 
+                    catch (lx0::error_exception& e)
+                    {
+                        e.location(__FILE__, __LINE__);
+                        e.detail("In node type '%s':", nodeType);
+                        e.detail("Error determining value for input '%s' of type '%s'", argName, type);
+                        throw;
+                    }
+                }
 
                 uniform += ";";
 
@@ -391,7 +405,7 @@ GLSLBuilder::_valueToStr (lxvar type, lxvar value)
     else
     {
         fmt = boost::format("SHADER_GENERATION_ERROR");
-        lx_error("Unrecognized type '%s'", type.as<std::string>().c_str());
+        throw lx_error_exception("Unrecognized node type '%s'", type.as<std::string>());
     }
     return boost::str(fmt);
 }

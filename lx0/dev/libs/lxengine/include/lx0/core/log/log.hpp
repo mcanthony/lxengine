@@ -109,6 +109,15 @@ namespace lx0
             };
 
             //===========================================================================//
+            // defines
+            //===========================================================================//
+
+            #define lx_error_exception(F,...) \
+                lx0::error_exception(__FILE__, __LINE__,F,__VA_ARGS__)
+            #define lx_check_error(CONDITION,...) \
+                if (!(CONDITION)) { lx0::error_exception e(__FILE__, __LINE__); e.detail("Error check failed: '%s'", #CONDITION); e.detail(__VA_ARGS__); throw e; }
+
+            //===========================================================================//
             // functions
             //===========================================================================//
 
@@ -125,9 +134,6 @@ namespace lx0
             
     
             void        lx_check_fatal (bool condition);
-            void        lx_check_error (bool condition);
-            void        lx_check_error (bool condition, const char* format, ...);
-
 
             #define     lx_warn_once(FORMAT,...)  do { static bool once = false;  if(!once) { lx_warn(FORMAT,__VA_ARGS__); once = true; } } while (0)
 
@@ -151,6 +157,9 @@ namespace lx0
                 \ingroup lx0_core_log
              */
             inline void lx_error2 (const char* name) { lx_error2(name, ""); }
+
+
+
             
         }
     }

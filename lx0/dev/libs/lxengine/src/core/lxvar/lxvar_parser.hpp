@@ -35,6 +35,20 @@ namespace lx0 { namespace core { namespace detail {
 
     class BaseParser
     {
+    public:
+        /*
+            Optional information about what is about to be parsed.  Useful mostly
+            for providing more informative error messages.
+         */
+        struct ParseContext
+        {
+            ParseContext() : lineOffset(0) {}
+
+            std::string filename;
+            int         lineOffset;
+        } context;
+
+
     protected:
                         BaseParser();
 

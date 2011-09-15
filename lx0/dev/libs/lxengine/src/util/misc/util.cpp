@@ -127,7 +127,7 @@ namespace lx0 { namespace util { namespace misc {
         std::string s = string_from_file(filename);
 
         const char* p = s.c_str();
-        return lxvar::parse(p);
+        return lxvar::parse(filename, 0, p);
     }
 
     std::string         

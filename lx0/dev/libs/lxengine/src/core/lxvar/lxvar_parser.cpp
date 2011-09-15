@@ -95,7 +95,9 @@ namespace lx0 { namespace core {
         BaseParser::_consume (char c)
         {
             if (_peek() == c)
+            {
                 _advance();
+            }
             else
             {
                 std::string carrot;
@@ -104,10 +106,14 @@ namespace lx0 { namespace core {
                     carrot += " ";
                 carrot += "^";
 
-                lx_error2("JSON.ParseError",
-                    "JSON Parse Error, line %d.\n%s\n%s\n"
-                    "Did not find expected character '%c'.  Found '%c' instead.",
-                         state().mLineNumber, _currentLine().c_str(), carrot.c_str(), c, *state().mpStream);
+                lx0::error_exception e(__FILE__,__LINE__);
+                e.detail("JSON Parse Error on line %d", state().mLineNumber);
+                if (!context.filename.empty())
+                    e.detail("In file: %s", context.filename);
+                e.detail("%s", _currentLine());
+                e.detail("%s", carrot);
+                e.detail("Expected character '%c'.  Found '%c' instead.", c, *state().mpStream);
+                throw e;
             }
         }
 

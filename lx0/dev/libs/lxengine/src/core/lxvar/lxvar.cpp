@@ -539,6 +539,16 @@ namespace lx0 { namespace core { namespace lxvar_ns {
         return parser.parse(s);
     }
 
+    lxvar    
+    lxvar::parse (std::string filename, int lineOffset, const char* s)
+    {
+        lx0::core::detail::LxsonParser parser;
+        parser.context.filename = filename;
+        parser.context.lineOffset = lineOffset;
+
+        return parser.parse(s);
+    }
+
     //===========================================================================//
 
 

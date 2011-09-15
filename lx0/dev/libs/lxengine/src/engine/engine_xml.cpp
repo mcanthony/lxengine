@@ -197,10 +197,10 @@ namespace lx0 { namespace engine { namespace dom_ns {
             switch (doc.ErrorId())
             {
             default:
-                lx_error2("Document.Load.Unknown", "Unknown error loading document '%s'", filename.c_str());
+                throw lx_error_exception("Unknown error loading document '%s'", filename.c_str());
             
             case TiXmlDocument::TIXML_ERROR_DOCUMENT_EMPTY: 
-                lx_error2("Document.Load.FileEmpty", "The file '%s' appears to contain no data.", filename.c_str());
+                throw lx_error_exception("The file '%s' appears to contain no data.", filename.c_str());
                 break;
 
             case TiXmlDocument::TIXML_ERROR_PARSING_ELEMENT:
@@ -212,7 +212,7 @@ namespace lx0 { namespace engine { namespace dom_ns {
             case TiXmlDocument::TIXML_ERROR_PARSING_UNKNOWN:
             case TiXmlDocument::TIXML_ERROR_PARSING_COMMENT:
             case TiXmlDocument::TIXML_ERROR_PARSING_DECLARATION:
-                lx_error2("Document.Load.ParseError", "Format error loading document '%s'.", filename.c_str());
+                throw lx_error_exception("XML format error when loading document '%s'.", filename.c_str());
                 break;
             }
         }

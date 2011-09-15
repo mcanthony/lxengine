@@ -151,7 +151,7 @@ protected:
             catch (lx0::error_exception& e)
             {
                 // Consume the exception
-                lx0::lx_message_box("Error", boost::str( boost::format("Could not create Material with id='%s'\n\nDetails:%s\n") % name % e.what()) );
+                lx_warn("Could not create Material with id='%s'\n\nDetails:%s\n", name.c_str(), e.what());
             }
         }
         else if (tag == "Sphere")

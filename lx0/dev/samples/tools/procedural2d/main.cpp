@@ -227,9 +227,7 @@ main (int argc, char** argv)
     }
     catch (lx0::error_exception& e)
     {
-        std::cout << "Error: " << e.details().c_str() << std::endl
-            << "Code: " << e.type() << std::endl
-            << std::endl;
+        std::cout << "Error: " << e.what() << std::endl;
     }
 
     return exitCode;

@@ -420,8 +420,10 @@ RasterizerGL::_linkProgram (GLuint prog, const char* pszSource)
             lx_debug(boost::str(boost::format("%s") % source));
         }
 
-        const char* text = &log[0];
-        lx_error("Shader compilation error! See lxengine_log.html for details.  '%s'", &log[0]);            
+        lx0::error_exception e(__FILE__, __LINE__);
+        e.detail("GLSL shader compilation error. See lxengine_log.html for full details.");
+        e.detail("\n%s", &log[0]);
+        throw e;
     }
 }
 
