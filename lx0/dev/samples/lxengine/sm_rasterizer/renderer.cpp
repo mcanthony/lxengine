@@ -27,6 +27,7 @@
 //===========================================================================//
 
 #include <lx0/subsystem/rasterizer.hpp>
+#include <lx0/subsystem/javascript.hpp>
 #include <lx0/util/misc/lxvar_convert.hpp>
 #include <lx0/util/blendload.hpp>
 #include <lx0/prototype/misc.hpp>
@@ -227,14 +228,13 @@ protected:
             {
                 using namespace glgeom;
 
-                vector3f right;
-                if (abs((abs(normal.x) - 1.0f)) < 0.1f)
-                    right = vector3f(0, 1, 0);
-                else
-                    right = vector3f(1, 0, 0);
+                vector3f xaxis, yaxis;
+                glgeom::perpendicular_axes_smooth(normal, xaxis, yaxis);
 
-                vector3f yaxis = normalize( cross(normal, right) );
-                vector3f xaxis = normalize( cross(yaxis, normal) );
+                lx_assert( is_finite(normal) );
+                lx_assert( is_finite(xaxis) );
+                lx_assert( is_finite(yaxis) );
+                lx_assert( is_orthonormal(normal, xaxis, yaxis) );
 
                 // Create the new basis.  This creates a right-handed coordinate system where
                 // -z is into the screen / increasing depth.
@@ -243,13 +243,9 @@ protected:
                 // is done by setting each column of the matrix to the vectors representing
                 // the new coordinate system (in terms of the old coordinate system).
                 //
-                // The final step is simply to convert that basis transformation matrix into
-                // quaternion form and return the value.
-                //
-                mat = glm::mat4(glm::mat3(xaxis.vec, yaxis.vec, normal.vec));
-
-                // Now add in the translation
-                mat = glm::translate(mat, (normal * d).vec);
+                auto R = glm::mat4(glm::mat3(xaxis.vec, yaxis.vec, normal.vec));
+                auto T = glm::translate(mat, -(normal * d).vec);
+                mat = T * R;
             }
 
 
@@ -258,7 +254,7 @@ protected:
             pInstance->spLightSet = mspLightSet;
             pInstance->spMaterial = _findMaterial(spElem);
             pInstance->spTransform = mspRasterizer->createTransform(glm::mat4(mat));
-            pInstance->spGeometry = _loadMesh("media2/models/plane_1k-000.blend");
+            pInstance->spGeometry = _loadMesh("media2/models/plane_1k-001.blend");
             
             mGeometry.push_back(InstancePtr(pInstance));
         }
@@ -279,6 +275,54 @@ protected:
             mspCamera = mspRasterizer->createCamera(glgeom::pi() / 3.0f, 0.1f, 2000.0f, view);
 
             spElem->attachComponent(new CameraComp(mspCamera));
+        }
+        else if (tag == "Texture")
+        {
+            std::string id = spElem->attr("id").as<std::string>();
+            std::string type = spElem->value().find("type").as<std::string>();
+            int width = spElem->value().find("width").as<int>();
+            int height = spElem->value().find("height").as<int>();
+            std::string funcName = spElem->value().find("function").as<std::string>();
+
+#ifdef _DEBUG
+            width = std::min(width, 32);
+            height = std::min(height, 32);
+#endif
+
+            auto spIJavascriptDoc = spElem->document()->getComponent<IJavascriptDoc>();
+
+            if (type == "cubemap")
+            {
+                glgeom::cubemap3f cubemap(width, height);
+                            
+                std::cout << "Generating texture (cubemap)...";
+                spIJavascriptDoc->runInContext([&](void) 
+                {
+                    auto func = spIJavascriptDoc->acquireFunction<glm::vec3 (float, float, float)>( funcName.c_str() );
+                    glgeom::generate_cube_map(cubemap, [func](const glm::vec3& p) -> glm::vec3 {
+                        return func(p.x, p.y, p.z);
+                    });
+                });
+                std::cout << "done." << std::endl;
+
+                mspRasterizer->cacheTexture(id, mspRasterizer->createTextureCubeMap(cubemap));
+            }
+            else if (type == "2d")
+            {
+                glgeom::image3f image(width, height);
+
+                std::cout << "Generating texture (2d)...";
+                spIJavascriptDoc->runInContext([&](void) 
+                {
+                    auto func = spIJavascriptDoc->acquireFunction<glm::vec3 (float, float)>( funcName.c_str() );
+                    glgeom::generate_image3f(image, [func](glm::vec2 p, glm::ivec2) -> glm::vec3 {
+                        return func(p.x, p.y);
+                    });
+                });
+                std::cout << "done." << std::endl;
+
+                mspRasterizer->cacheTexture(id, mspRasterizer->createTexture3f(image));
+            }
         }
         else 
         { 

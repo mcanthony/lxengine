@@ -119,6 +119,83 @@ _isSampler (const std::string& type)
     return (type == "sampler2D" || type == "samplerCube");
 }
 
+lx0::lxvar      
+GLSLBuilder::_selectValue (const lx0::lxvar& userValue, const lx0::lxvar& defaultValue)
+{
+    if (!userValue.is_defined())
+    {
+        //
+        // If the user has not specified a value for the parameter, obviously use the
+        // default value for the parameter instead.
+        //
+        return defaultValue;
+    }
+    else
+    {
+        //
+        // Do a quick check to see if the userValue is clearly invalid.  If so, warn
+        // about the error and use the default instead.  This code obviously does not
+        // catch all potential errors.
+        //
+        if (userValue.is_map())
+        {
+            try
+            {
+                lx0::lxvar type = userValue.find("_type");
+                lx_check_error(type.is_string(), "Value type does not appear to be a string.");
+            
+                const std::string nodeType = type.as<std::string>();
+                auto it = mNodes.find(nodeType);
+                lx_check_error(it != mNodes.end(), "Node type '%1%' is not a known node type.", nodeType);
+
+                auto& node = it->second;
+                lx_check_error(node.find("source").is_string(), "GLSL source fragment for '%1%' is not defined as a string.", nodeType);
+
+                auto source = node.find("source").as<std::string>();
+                lx_check_error(!source.empty(), "GLSL source fragment for '%1%' is empty.", nodeType);
+            }
+            catch (lx0::error_exception& e)
+            {
+                lx_warn("Error reading user value.  Using default value instead.  Details: %s", e.what());
+                return defaultValue;
+            }
+        }
+
+        //
+        // The userValue survived the above checks, so return it assuming it is valid.
+        //
+        return userValue;
+    }
+}
+
+static
+void
+_implicitConversion (const std::string& fromType, const std::string& toType, 
+                    std::string& convertPrefix, std::string& convertPostfix)
+{
+    if (toType == "vec4" && fromType == "vec3")
+    {
+        convertPrefix = "vec4( ";
+        convertPostfix = ", 1.0)";
+    }
+    else if (toType == "vec3" && fromType == "vec4")
+    {
+        convertPrefix = "( ";
+        convertPostfix = ").xyz";
+    }
+    else if (toType == "float")
+    {
+        if (fromType == "vec2" || fromType == "vec3" || fromType == "vec4")
+        {
+            convertPrefix = "(";
+            convertPostfix = ").x";
+        }
+    }
+    else
+        lx_warn("Implicit conversion from '%s' to '%s'. May cause a GLSL compilation error.", fromType.c_str(), toType.c_str());
+}
+
+
 int 
 GLSLBuilder::_processNode (Shader& shader, Context& context, lxvar& parameters, lxvar graph, std::string requiredOutputType)
 {
@@ -148,6 +225,7 @@ GLSLBuilder::_processNode (Shader& shader, Context& context, lxvar& parameters, 
     lxvar node = mNodes[nodeType];
     lx_check_error( node.find("output").is_defined() );
     lx_check_error( node.find("input").is_defined() );
+    lx_check_error( node.find("source").is_string() );
 
     const std::string outputType = node.find("output").as<std::string>();
     const std::string funcName = boost::str(boost::format("fn_%1%") % nodeType);
@@ -157,20 +235,7 @@ GLSLBuilder::_processNode (Shader& shader, Context& context, lxvar& parameters, 
     //
     if (context.mFunctionsBuilt.insert(nodeType).second)
     {
-        std::string source;
-        if (node["source"].is_string())
-        {
-            lx_warn("Source as a string is deprecated (%s).", nodeType.c_str());
-            source = node["source"].as<std::string>();
-        }
-        else
-        {
-            ///@todo Would be nice to modify lxvar such that boost::join could
-            /// be used here.
-            for (auto it = node["source"].begin(); it != node["source"].end(); ++it)
-                source += (*it).as<std::string>() + "\n";
-        }
-
+        std::string source = node.find("source").as<std::string>();
         lx_check_error(!source.empty(), "Source for node '%s' is empty.  Cannot generate valid GLSL.", nodeType);
 
         std::stringstream ss;
@@ -215,7 +280,7 @@ GLSLBuilder::_processNode (Shader& shader, Context& context, lxvar& parameters, 
             const bool bSampler = _isSampler(type);
 
             const auto userValue = graph.find(argName);
-            const auto value = userValue.is_defined() ? userValue : defaultValue;
+            const auto value = _selectValue(userValue, defaultValue);
 
             if (!bSampler)
                 ss << type << " n" << id << "_" << argName << " = ";
@@ -302,26 +367,15 @@ GLSLBuilder::_processNode (Shader& shader, Context& context, lxvar& parameters, 
     // Generate the node function call
     //
     {
-        std::stringstream ss;
-        
+        //
+        // Handle implicit conversions (maybe someday a 'strict' mode might be a good addition)
+        //
         std::string convertPrefix;
         std::string convertPostfix;
-        if (requiredOutputType != outputType)
-        {
-            if (requiredOutputType == "vec4" && outputType == "vec3")
-            {
-                convertPrefix = "vec4( ";
-                convertPostfix = ", 1.0)";
-            }
-            else if (requiredOutputType == "vec3" && outputType == "vec4")
-            {
-                convertPrefix = "( ";
-                convertPostfix = ").xyz";
-            }
-            else
-                lx_warn("Implicit conversion between different types!");
-        }
+        if (outputType != requiredOutputType)
+            _implicitConversion(outputType, requiredOutputType, convertPrefix, convertPostfix);
 
+        std::stringstream ss;
         ss << requiredOutputType << " n" << id << "_ret = ";
         ss << convertPrefix;
         ss << funcName << "(";

@@ -123,9 +123,9 @@ namespace lx0 { namespace engine { namespace dom_ns {
                 //
                 {
                     if (!elemText.empty() && !elemComment.empty())
-                        lx_error("Unexpected Element found with both inner text and comments. "
+                        throw lx_error_exception("Unexpected Element '%s' found with both inner text and comments. "
                                  "Elements are expected to have their values defined by either "
-                                 "a single block of text or a single block of comment, not both.");
+                                 "a single block of text or a single block of comment, not both.", tagName);
                 }
 
 

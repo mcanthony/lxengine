@@ -408,12 +408,11 @@ namespace lx0 { namespace subsystem { namespace canvas_ns { namespace detail {
 
     bool CanvasGL::impRedraw()
     {
-        try
+        if (!mRedrawActive)
         {
-            if (!mRedrawActive)
+            mRedrawActive = true;
+            try
             {
-                mRedrawActive = true;
-
                 // The default behavior of the imp/signal is to call the imp method, then the signals.
                 // However, in this case the imp methods wants to swap the buffer *after* the slots
                 // have been called.  
@@ -421,20 +420,19 @@ namespace lx0 { namespace subsystem { namespace canvas_ns { namespace detail {
                 slotRedraw();
 
                 ::SwapBuffers(::GetDC(m_hWnd));
-
-                mRedrawActive = false;
             }
-            else
-                lx_warn("Recursive redraw detected.  Ignoring recursive call.");
+            catch (lx0::error_exception& e)
+            {
+                // Prevent the exception from slipping into the Windows OS message handling code.
+                // The message handling code would blindly consume and ignore the exception, which
+                // is confusing to the developer.  Since the exception cannot be passed directly
+                // up the call stack, postpone the exception until the next Engine update().
+                Engine::acquire()->postponeException(e);
+            }
+            mRedrawActive = false;
         }
-        catch (lx0::error_exception& e)
-        {
-            // Prevent the exception from slipping into the Windows OS message handling code.
-            // The message handling code would blindly consume and ignore the exception, which
-            // is confusing to the developer.  Since the exception cannot be passed directly
-            // up the call stack, postpone the exception until the next Engine update().
-            Engine::acquire()->postponeException(e);
-        }
+        else
+            lx_warn("Recursive redraw detected.  Ignoring recursive call.");
 
         return false;
     }

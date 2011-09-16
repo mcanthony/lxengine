@@ -174,6 +174,21 @@ void Texture::load()
 }
 
 TexturePtr
+RasterizerGL::createTexture3f (const glgeom::image3f& image)
+{
+    TexturePtr spTex(new Texture);
+
+    glGenTextures(1, &spTex->mId);
+    glBindTexture(GL_TEXTURE_2D, spTex->mId);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, image.width(), image.height(), 0, GL_RGB, GL_FLOAT, image.ptr());
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+    return spTex;
+}
+
+
+TexturePtr
 RasterizerGL::createTexture (const char* filename)
 {
     lx_check_error(filename != nullptr);
@@ -185,15 +200,15 @@ RasterizerGL::createTexture (const char* filename)
     spTex->load();
 
     if (spTex->mId == 0)
-        lx_error("Failed to load texture from file '%s'", filename);
-    
+        throw lx_error_exception("Failed to load texture from file '%s'", filename);
+
     mResources.push_back(spTex);
     mTextures.push_back(spTex);
     return spTex;
 }
 
 TexturePtr      
-RasterizerGL::createTextureCubeMap (const char* xpos, const char* xneg, const char* ypos, const char* yneg, const char* zpos, const char* zneg)
+RasterizerGL::createTextureCubeMap (const glgeom::cubemap3f& cubemap)
 {
     check_glerror();
 
@@ -203,7 +218,6 @@ RasterizerGL::createTextureCubeMap (const char* xpos, const char* xneg, const ch
     // The filenames[] array order needs to match the expected OpenGL target sequence
     //
     GLuint              id;
-    const char*         filenames[] = { xpos, xneg, ypos, yneg, zpos, zneg };
     GLenum              target      = GL_TEXTURE_CUBE_MAP_POSITIVE_X;
 
     glGenTextures(1, &id);
@@ -217,10 +231,7 @@ RasterizerGL::createTextureCubeMap (const char* xpos, const char* xneg, const ch
 
     for (int i = 0; i < 6; ++i, ++target)
     {
-        Image4b img;
-        lx0::load_png(img, filenames[i]);
-        
-        glTexImage2D(target, 0, GL_RGBA, img.mWidth, img.mHeight, 0, GL_RGBA, GL_UNSIGNED_BYTE, img.mData.get());
+        glTexImage2D(target, 0, GL_RGB, cubemap.width(), cubemap.height(), 0, GL_RGB, GL_FLOAT, cubemap.mImage[i].ptr());
     }
 
     auto pTexture = new Texture;
@@ -229,6 +240,20 @@ RasterizerGL::createTextureCubeMap (const char* xpos, const char* xneg, const ch
     check_glerror();
 
     return TexturePtr(pTexture);
+}
+
+TexturePtr      
+RasterizerGL::createTextureCubeMap (const char* xpos, const char* xneg, const char* ypos, const char* yneg, const char* zpos, const char* zneg)
+{
+    const char*         filenames[] = { xpos, xneg, ypos, yneg, zpos, zneg };
+
+    glgeom::cubemap3f cubemap;
+    for (int i = 0; i < 6; ++i)
+        lx0::load_png(cubemap.mImage[i], filenames[i]);
+    cubemap._resetDimensions();
+
+
+    return createTextureCubeMap(cubemap);
 }
 
 TexturePtr
@@ -958,31 +983,40 @@ void RasterizerGL::endFrame()
 void 
 RasterizerGL::rasterizeList (RenderAlgorithm& algorithm, std::vector<std::shared_ptr<Instance>>& list)
 {
-    mStats.tmRasterizeList.start();
-
-    for (auto pass = algorithm.mPasses.begin(); pass != algorithm.mPasses.end(); ++pass)
+    try
     {
-        mContext.itemId = 0;
-        mContext.pGlobalPass = &(*pass);
+        mStats.tmRasterizeList.start();
 
-        for (auto it = list.begin(); it != list.end(); ++it)
+        for (auto pass = algorithm.mPasses.begin(); pass != algorithm.mPasses.end(); ++pass)
         {
-            auto spInstance = *it;
-            if (spInstance)
+            mContext.itemId = 0;
+            mContext.pGlobalPass = &(*pass);
+
+            for (auto it = list.begin(); it != list.end(); ++it)
             {
-                rasterizeItem(*pass, *it);
+                auto spInstance = *it;
+                if (spInstance)
+                {
+                    rasterizeItem(*pass, *it);
+                }
+                else
+                {
+                    lx_error("Null Instance in rasterization list");
+                }
+                mContext.itemId ++;
             }
-            else
-            {
-                lx_error("Null Instance in rasterization list");
-            }
-            mContext.itemId ++;
+
+            mContext.pGlobalPass = nullptr;
         }
 
-        mContext.pGlobalPass = nullptr;
+        mStats.tmRasterizeList.stop();
     }
-
-    mStats.tmRasterizeList.stop();
+    catch (lx0::error_exception& e)
+    {
+        e.location(__FILE__, __LINE__);
+        e.detail("Exception thrown during rasterizeList.  Rasterizer potentially in unknown state.");
+        throw;
+    }
 }
 
 void

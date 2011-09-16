@@ -168,7 +168,9 @@ namespace lx0
 
                 TexturePtr      createTexture               (const char* filename);
                 TexturePtr      createTextureCubeMap        (const char* xpos, const char* xneg, const char* ypos, const char* yneg, const char* zpos, const char* zneg); 
+                TexturePtr      createTextureCubeMap        (const glgeom::cubemap3f& image); 
                 TexturePtr      createTextureDDS            (std::istream& stream);
+                TexturePtr      createTexture3f             (const glgeom::image3f& image);
                 void            cacheTexture                (std::string name, TexturePtr spTexture);
 
                 TransformPtr    createTransform             (glm::mat4& mat);

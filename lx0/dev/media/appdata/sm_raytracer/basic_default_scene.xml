@@ -296,19 +296,19 @@
         </Light> 
       </Group>
         <Group id="plane_group">
-            <Plane id="x_axis_plane" material="red3">
+          <Plane id="x_axis_plane" material="red3">
             {
-                normal : [ 1, 0, 0 ],
-                d      : 0
+            normal : [ 1, 0, 0 ],
+            d      : 0
             }
-            </Plane>
-          <Plane id="xn_axis_plane" material="cyan_checker">
+          </Plane>
+           <Plane id="xn_axis_plane" material="cyan_checker">
             {
             normal : [ -1, 0, 0 ],
             d      : 10
             }
-          </Plane>          
-            <Plane id="y_axis_plane" material="green2">
+          </Plane>
+          <Plane id="y_axis_plane" material="green2">
             {
                 normal : [ 0, 1, 0 ],
                 d      : 0
@@ -372,8 +372,7 @@
             center : [ 1.25, 1.25, .25 ],
             radius : .25
             }
-          </Sphere> 
-
+          </Sphere>
         </Group>
     </Scene>
 </Document>

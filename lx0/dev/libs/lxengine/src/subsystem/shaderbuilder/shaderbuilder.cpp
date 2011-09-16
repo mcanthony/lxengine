@@ -107,10 +107,21 @@ void ShaderBuilder::loadNode (std::string filename)
     _loadNodeImp(filename);
 }
 
+/*
+    The source can currently be specified in one of three ways:
+
+    * A string source fragment
+    * An array of strings
+    * A filename containing the source
+
+    This function will normalize things such that the given node["source"]
+    field always is a single source string.
+ */
 static
-void _loadSourceFileIfNecessary (lxvar& value, boost::filesystem::path& path)
+void 
+_normalizeFragmentSource (lxvar& value, boost::filesystem::path& path)
 {
-    namespace bfs = boost::filesystem;
+    lx_check_error(value.find("source").is_array() || value.find("source").is_string());
 
     //
     // Check if the source field is a reference to a file - in which case
@@ -120,15 +131,30 @@ void _loadSourceFileIfNecessary (lxvar& value, boost::filesystem::path& path)
     {
         std::string filename = value["source"].as<std::string>();
         
-        if (boost::ends_with(filename, ".nfrag"))
+        if (!boost::ends_with(filename, ".nfrag"))
         {
-            bfs::path fragPath( path.parent_path().string() + "/" + filename );
-            std::string source = lx0::string_from_file(fragPath.string());
-            std::vector<std::string> lines;
-            boost::split(lines, source, boost::is_any_of("\n"));
-
-            value["source"] = lxvar(lines);
+            // Presumably it's already in the right format: nothing needs to be
+            // done.
         }
+        else
+        {
+            //
+            // The source appears to be coming from a file: load that file into
+            // a string.
+            //
+            boost::filesystem::path fragPath( path.parent_path().string() + "/" + filename );
+            std::string source = lx0::string_from_file(fragPath.string());
+
+            value["source"] = source;
+        }
+    }
+    else if (value["source"].is_array())
+    {
+        std::string source;
+        for (auto it = value["source"].begin(); it != value["source"].end(); ++it)
+            source += (*it).as<std::string>() + "\n";
+
+        value["source"] = source;
     }
 }
 
@@ -154,14 +180,11 @@ void ShaderBuilder::_loadNodeImp (std::string filename)
         lx_check_error(value["input"].is_defined(),     "'input' not defined for node '%s'", filename);
         lx_check_error(value["source"].is_defined(),    "'source' not defined for node '%s'", filename);
 
-        _loadSourceFileIfNecessary(value, path);
+        _normalizeFragmentSource(value, path);
 
         bool bExists = !mNodes.insert(std::make_pair(id, value)).second;
-        if (bExists)
-        {
-            lx_warn("ShaderBuilder node by name '%s' already exists in cache."
-                    "Ignoring new defintion", id);
-        }
+
+        lx_check_warn(!bExists, "ShaderBuilder node by name '%s' already exists in cache.  Ignoring new defintion", id);
     }
     catch (lx0::error_exception& e)
     {

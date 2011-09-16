@@ -79,6 +79,7 @@ namespace lx0
                         std::vector<std::string>    mArgumentStack;
                     };
 
+                    lx0::lxvar      _selectValue        (const lx0::lxvar& userValue, const lx0::lxvar& defaultValue);
                     int             _processNode        (Shader& shader, Context& context, lxvar& parameters, lxvar desc, std::string requiredOutputType);
                     void            _processUniforms    (Shader& shader, Context& context, lxvar& graph);
 

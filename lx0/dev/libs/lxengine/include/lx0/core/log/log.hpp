@@ -93,10 +93,10 @@ namespace lx0
             class error_exception : public detail::_exception_base
             {
             public:
-                    error_exception (const char* file, int line) : detail::_exception_base(file, line) {}
+                error_exception (const char* file, int line) : detail::_exception_base(file, line) {}
                     
-                    template <typename T0>
-                    error_exception (const char* file, int line, const char* format, T0 a0) : detail::_exception_base(file, line) { detail(format, a0); }
+                template <typename T0>
+                error_exception (const char* file, int line, const char* format, T0 a0) : detail::_exception_base(file, line) { detail(format, a0); }
             };
 
             /*!
@@ -105,7 +105,7 @@ namespace lx0
             class fatal_exception : public detail::_exception_base
             {
             public:
-                    fatal_exception (const char* file, int line) : detail::_exception_base(file, line) {}
+                fatal_exception (const char* file, int line) : detail::_exception_base(file, line) {}
             };
 
             //===========================================================================//
@@ -116,6 +116,8 @@ namespace lx0
                 lx0::error_exception(__FILE__, __LINE__,F,__VA_ARGS__)
             #define lx_check_error(CONDITION,...) \
                 if (!(CONDITION)) { lx0::error_exception e(__FILE__, __LINE__); e.detail("Error check failed: '%s'", #CONDITION); e.detail(__VA_ARGS__); throw e; }
+            #define lx_check_warn(CONDITION,...) \
+                if (!(CONDITION)) { lx_warn("Check failed: '%s'", #CONDITION); lx_warn(__VA_ARGS__); }
 
             //===========================================================================//
             // functions
@@ -128,6 +130,7 @@ namespace lx0
             void        lx_debug        (const std::string& s);
             void        lx_log          (const char* format, ...);
             void        lx_warn         (const char* format, ...);
+            inline void lx_warn         (void) {}
             void        lx_error        (const char* format, ...);
             void        lx_fatal        (void);
             void        lx_fatal        (const char* format, ...);
@@ -145,17 +148,8 @@ namespace lx0
             extern slot<void (const char*)> slotAssert;
             extern slot<void (const char*)> slotDebug;
     
-
-
-
-            /*!
-                \ingroup lx0_core_log
-             */
             void lx_error2 (const char* name, const char* detailsFormat, ...);
             
-            /*!
-                \ingroup lx0_core_log
-             */
             inline void lx_error2 (const char* name) { lx_error2(name, ""); }
 
 

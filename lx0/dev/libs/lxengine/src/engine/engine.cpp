@@ -275,8 +275,6 @@ namespace lx0 { namespace engine { namespace dom_ns {
     void
     Engine::postponeException (lx0::error_exception& e)
     {
-        lx_break_if_debugging();
-
         m_postponedExceptions.push_back(e);
     }
 
