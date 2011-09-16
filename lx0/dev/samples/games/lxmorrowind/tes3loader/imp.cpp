@@ -500,7 +500,7 @@ struct Landscape
                     vertexHeight.reserve(65 * 65);
 
                     //
-                    // The heights are run-length encoded: each height is relative
+                    // The heights are differential encoded: each height is relative
                     // to the preceding heights.  
                     //
                     // More specifically, each height is simply an offset from the prior 
