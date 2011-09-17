@@ -345,8 +345,9 @@ void LambdaBuilder::_init()
     mFuncs3f["bump"] = [&](lxvar param, lxvar node) -> FunctionVec3
     {
         auto value = _buildFloat(_value(param, node, "value"));
+        auto intensity = _buildFloat(_value(param, node, "intensity"));
 
-        return [value] (const Context& ctx) -> glm::vec3 {
+        return [value, intensity] (const Context& ctx) -> glm::vec3 {
             auto ctx2 = ctx;
             auto value2 = value;
 
@@ -354,7 +355,7 @@ void LambdaBuilder::_init()
                 ctx2.fragVertexOc = Pobj;
                 return value2(ctx2);
             };
-            return computeBumpNormal2(ctx.fragVertexOc, ctx.fragNormalOc, heightFunc);
+            return computeBumpNormal2(ctx.fragVertexOc, ctx.fragNormalOc, intensity(ctx), heightFunc);
         };
     };
 }

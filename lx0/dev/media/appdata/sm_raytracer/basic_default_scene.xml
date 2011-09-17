@@ -99,14 +99,15 @@
                 _type : "bump",
                 value : {
                   _type : "texture2d",
-                  texture : "media2\textures\bumpmaps\gray_spot-000.png",
-                  uv : {
+                  texture : "media2/textures/bumpmaps/gray_circuit-000.png",
+                  uv: { 
                     _type : "spherical",
-                    scale : [ 9, .25 ],
-                  },
+                    scale : [ 6, 6 ],
+                  }
                 },
+                intensity : .15,                
               },            
-            specular : [ 4, 3, .5 ],
+            specular : [ 1, .8, .5 ],
             specularEx : 32,            
             reflectivity : {
               _type : "cubemap",
@@ -291,7 +292,6 @@
           {
           position : [ .1, 2.6, 4 ],
           color    : [ .7, .4, .1 ],
-          glow_radius : .35
           }
         </Light> 
       </Group>

@@ -1,7 +1,8 @@
 {
     output : "vec3",
     input  : {
-        value : [ "float",   .5,     "" ],
+        value       : [ "float",   .5,      "" ],
+        intensity   : [ "float",  1.0,      "" ],
     },
     source: "bump.nfrag",
 }

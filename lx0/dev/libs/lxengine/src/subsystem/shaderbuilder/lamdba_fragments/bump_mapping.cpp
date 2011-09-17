@@ -103,9 +103,9 @@ computeBumpNormal (const glm::vec3 Pobj, const glm::vec3& Nobj, std::function<gl
 
 
 
-
+///@todo 
 glm::vec3 
-computeBumpNormal2 (const glm::vec3 Pobj, const glm::vec3& Nobj, std::function<float (glm::vec3)> F)
+computeBumpNormal2 (const glm::vec3 Pobj, const glm::vec3& Nec, float intensity, std::function<float (glm::vec3)> F)
 {
     //
     // Create a plane at the surface point with a normal directed towards the normal and an
@@ -113,17 +113,17 @@ computeBumpNormal2 (const glm::vec3 Pobj, const glm::vec3& Nobj, std::function<f
     //
     glm::vec3 tangent;
     glm::vec3 binormal;
-    glgeom::perpendicular_axes_smooth(glgeom::vector3_cast(Nobj), glgeom::vector3_cast(tangent), glgeom::vector3_cast(binormal));
+    glgeom::perpendicular_axes_smooth(glgeom::vector3_cast(Nec), glgeom::vector3_cast(tangent), glgeom::vector3_cast(binormal));
 
     //
     // Sample the rate of change of the function F in terms of the tangent and binormal directions
     //
     const float r = 0.0025f;
-    vec3 sT = 2 * r * tangent + Nobj * (F(Pobj + r * tangent) - F(Pobj - r * tangent));
-    vec3 sB = 2 * r * binormal + Nobj * (F(Pobj + r * binormal) - F(Pobj - r * binormal));
+    vec3 sT = 2 * r * tangent + Nec * (F(Pobj + r * tangent) - F(Pobj - r * tangent));
+    vec3 sB = 2 * r * binormal + Nec * (F(Pobj + r * binormal) - F(Pobj - r * binormal));
     vec3 sN = normalize( cross( normalize(sT), normalize(sB) ) );
 
-    return sN;
+    return glm::mix(Nec, sN, intensity);
 }
 
 #if 0

@@ -30,4 +30,4 @@ vec3 N = normalize( cross(T, B) );
 //
 vec3 delta = fragNormalEc - normalize(cross(dPdx, dPdy));
 
-return normalize(N + delta);
+return mix( fragNormalEc, normalize(N + delta), intensity);

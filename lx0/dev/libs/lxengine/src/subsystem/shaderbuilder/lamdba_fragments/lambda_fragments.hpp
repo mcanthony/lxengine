@@ -31,4 +31,4 @@
 
 #include <glgeom/glgeom.hpp>
 
-glm::vec3 computeBumpNormal2 (const glm::vec3 Pobj, const glm::vec3& Nobj, std::function<float (glm::vec3)> F);
+glm::vec3 computeBumpNormal2 (const glm::vec3 Pobj, const glm::vec3& Nobj, float intensity, std::function<float (glm::vec3)> F);
