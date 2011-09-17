@@ -6,6 +6,5 @@
         color1      : [ "vec3",     [0,0,0],            "secondaryColor" ],
         radius      : [ "float",    .45                                  ],
     },
-    source : [
-    ],
+    source : "spot_dim.nfrag",
 }

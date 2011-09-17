@@ -37,13 +37,6 @@
 namespace lx0 { namespace core { namespace log_ns {
     extern std::ofstream s_log;
     extern int s_log_count;
-
-    extern lx0::slot<void (const char*)> slotFatal;
-    extern lx0::slot<void (const char*)> slotError;
-    extern lx0::slot<void (const char*)> slotWarn;
-    extern lx0::slot<void (const char*)> slotLog;
-    extern lx0::slot<void (const char*)> slotAssert;
-    extern lx0::slot<void (const char*)> slotDebug;
 }}}
 
 using namespace lx0::core::log_ns;
@@ -99,48 +92,48 @@ namespace lx0 { namespace core { namespace init_ns {
                 << "<ul style='padding-left: 12px;'>" 
                 << std::endl;
 
-            // Define a helper lambda function that returns a function (this effectively 
-            // acts as runtime template function).
-            auto prefix_print = [](std::string css, std::string prefix) -> std::function<void(const char*)> {
-                return [css, prefix](const char* s) {
-                    
-                    // Quick and ugly HTML escaping
-                    bool multiline = false;
-                    size_t len = strlen(s);
-                    std::string t;
-                    t.reserve(len);
-                    for (size_t i = 0; i < len; ++i)
-                    {
-                        switch (s[i])
-                        {
-                        case '<':   t += "&lt;";    break;
-                        case '>':   t += "&gt;";    break;
-                        case '\n':  t += "<br />";  multiline = true; break;
-                        default:
-                            t += s[i];
-                        }
-                    }
-                    if (multiline)
-                        s_log << "<li class='" << css << "'><span class='prefix'>" << prefix << "</span></li>" 
-                            << "<div class='multiline " << css << "'>"<< t << "</div>"  
-                            << std::endl; 
-                    else
-                        s_log << "<li class='" << css << "'><span class='prefix'>" << prefix << "</span>"<< t << "</li>" << std::endl;
-
-                    if (s_log_count++ == 100)
-                    {
-                        s_log_count = 0;
-                        s_log.flush();
-                    }
-                };
-            };
-            slotDebug   = prefix_print("debug", "DBG");
-            slotLog     = prefix_print("log",   "LOG");
-            slotWarn    = prefix_print("warn",  "WARN");
-            slotError   = prefix_print("error", "ERROR");
-            slotFatal   = prefix_print("fatal", "FATAL: ");
-
             s_lx_init_called = true;
         }
     }
+
 }}}
+
+
+    namespace lx0 
+{ 
+    namespace core 
+    {
+        namespace log_ns
+        {
+    void _lx_write_to_log (const char* css, const char* prefix, const char* s)
+    {
+        // Quick and ugly HTML escaping
+        bool multiline = false;
+        size_t len = strlen(s);
+        std::string t;
+        t.reserve(len);
+        for (size_t i = 0; i < len; ++i)
+        {
+            switch (s[i])
+            {
+            case '<':   t += "&lt;";    break;
+            case '>':   t += "&gt;";    break;
+            case '\n':  t += "<br />";  multiline = true; break;
+            default:
+                t += s[i];
+            }
+        }
+        if (multiline)
+            s_log << "<li class='" << css << "'><span class='prefix'>" << prefix << "</span></li>" 
+                << "<div class='multiline " << css << "'>"<< t << "</div>"  
+                << std::endl; 
+        else
+            s_log << "<li class='" << css << "'><span class='prefix'>" << prefix << "</span>"<< t << "</li>" << std::endl;
+
+        if (s_log_count++ == 100)
+        {
+            s_log_count = 0;
+            s_log.flush();
+        }
+    }
+        }}}

@@ -64,7 +64,7 @@ namespace lx0 { namespace core { namespace v8bind
             mValue = arr;
         }
         else
-            lx_error("Not implemented");
+            throw lx_error_exception("Not implemented");
     }
     
     //---------------------------------------------------------------------------//
@@ -105,7 +105,7 @@ namespace lx0 { namespace core { namespace v8bind
         }
         else if (mValue->IsExternal())
         {
-            lx_error("Not valid!  Cannot automatically marshal a native External value.");
+            throw lx_error_exception("Not valid!  Cannot automatically marshal a native External value.");
         }
         else if (mValue->IsString())
         {
@@ -168,12 +168,12 @@ namespace lx0 { namespace core { namespace v8bind
         }
         else if (mValue->IsFunction())
         {
-            lx_error("Not valid");
+            throw lx_error_exception("Not valid");
         }
         else
-            lx_error("Cannot convert Javascript value to lxvar.");
+            throw lx_error_exception("Cannot convert Javascript value to lxvar.");
 
-        lx_error("Unreachable code.");
+        throw lx_error_exception("Unreachable code.");
         return lxvar();
     }
 
@@ -211,7 +211,7 @@ namespace lx0 { namespace core { namespace v8bind
         }
         catch (std::exception& e)
         {
-            lx_error("Exception attempting run javascript script!");
+            throw lx_error_exception("Exception attempting run javascript script!");
             throw e;
         }
     }

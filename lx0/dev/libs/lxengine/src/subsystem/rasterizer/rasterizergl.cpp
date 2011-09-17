@@ -267,7 +267,7 @@ RasterizerGL::createTextureDDS (std::istream& stream)
     spTex->mId = _loadDDS(stream);
 
     if (spTex->mId == 0)
-        lx_error("Load of DDS stream failed");
+        throw lx_error_exception("Load of DDS stream failed");
     
     mResources.push_back(spTex);
     mTextures.push_back(spTex);
@@ -442,9 +442,14 @@ RasterizerGL::_linkProgram (GLuint prog, const char* pszSource)
                     p++;
                 }
             }
-            lx_debug(boost::str(boost::format("%s") % source));
+
+            lx_debug("Writing shader source to log file.");
+            lx_log("%s", source);
         }
 
+        //
+        // Report the error
+        //
         lx0::error_exception e(__FILE__, __LINE__);
         e.detail("GLSL shader compilation error. See lxengine_log.html for full details.");
         e.detail("\n%s", &log[0]);
@@ -457,7 +462,7 @@ RasterizerGL::_createShader(const char* filename, GLuint type)
 {
     std::string shaderText = lx0::string_from_file(filename);
     if (shaderText.empty())
-        lx_error("Could not load shader '%s' (file exists = %s)", filename, lx0::file_exists(filename) ? "true" : "false");
+        throw lx_error_exception("Could not load shader '%s' (file exists = %s)", filename, (lx0::file_exists(filename) ? "true" : "false"));
    
     return _createShader2(shaderText, type);
 }
@@ -476,7 +481,7 @@ RasterizerGL::_createShader2 (std::string& shaderText, GLuint type)
         glCompileShader(shaderHandle);
     }
     else
-        lx_error("Shader source empty!");
+        throw lx_error_exception("Shader source empty!");
 
     return shaderHandle;
 }
@@ -1001,7 +1006,7 @@ RasterizerGL::rasterizeList (RenderAlgorithm& algorithm, std::vector<std::shared
                 }
                 else
                 {
-                    lx_error("Null Instance in rasterization list");
+                    throw lx_error_exception("Null Instance in rasterization list");
                 }
                 mContext.itemId ++;
             }
@@ -1103,7 +1108,7 @@ RasterizerGL::rasterizeItem (GlobalPass& pass, std::shared_ptr<Instance> spInsta
     //
     {
         if (!mContext.spCamera)
-            lx_error("No camera set! Set a camera either on the InstancePtr or the GlobalPass.");
+            throw lx_error_exception("No camera set! Set a camera either on the InstancePtr or the GlobalPass.");
     }
 
     //

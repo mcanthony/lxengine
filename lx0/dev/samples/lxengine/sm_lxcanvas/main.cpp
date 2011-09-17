@@ -142,7 +142,7 @@ protected:
             glCompileShader(shaderHandle);
         }
         else
-            lx_error("Could not load shader '%s' (file exists = %s)", filename, lx0::file_exists(filename) ? "true" : "false");
+            throw lx_error_exception("Could not load shader '%s' (file exists = %s)", filename, lx0::file_exists(filename) ? "true" : "false");
 
         return shaderHandle;
     }
@@ -168,7 +168,7 @@ main (int argc, char** argv)
      uniform variables in the shader.  This is not difficult, but there is a 
      question of how relevant this sample is in the first place.
      */
-    lx_error("This sample is currently broken! It needs to be fixed or removed.");
+    throw lx_error_exception("This sample is currently broken! It needs to be fixed or removed.");
 
     CanvasHost host;
     Renderer renderer;

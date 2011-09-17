@@ -537,7 +537,7 @@ namespace {
 
         if (script.IsEmpty())
         {
-            lx_error("Javascript script failed to compile!");
+            throw lx_error_exception("Javascript script failed to compile!");
             return lxvar::undefined();
         }
         else
@@ -672,7 +672,7 @@ namespace {
                     lx0::lx_message_box("Alert", text);
                 }
                 else
-                    lx_error("alert() called from script with too few arguments.");
+                    throw lx_error_exception("alert() called from script with too few arguments.");
 
                 return Undefined();
             }
@@ -1179,7 +1179,7 @@ namespace {
                         mFunc->Call(recv, i, callArgs);
                     }
                     else
-                        lx_error("Callback wrapper set with an empty JS function!");
+                        throw lx_error_exception("Callback wrapper set with an empty JS function!");
                 }
             };
             pThis->addCallback(name, wrapper);

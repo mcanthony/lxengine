@@ -438,7 +438,7 @@ public:
             // Unknown
             //
             default:
-                lx_error("Unrecognized record id '%s'", iter.record_name().c_str()); 
+                throw lx_error_exception("Unrecognized record id '%s'", iter.record_name().c_str()); 
                 break;
             }
             iter.next_record();

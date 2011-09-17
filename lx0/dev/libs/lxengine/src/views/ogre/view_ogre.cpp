@@ -268,7 +268,7 @@ namespace {
                 else if (value.equal("none"))
                     mpEntity->setVisible(false);
                 else
-                    lx_error("Unexpected value for display attribute");
+                    throw lx_error_exception("Unexpected value for display attribute");
             }
             else if (name == "color" || name == "specular")
                 _setMaterial(spElem);
@@ -413,8 +413,7 @@ namespace {
         }
         catch (std::exception& e)
         {
-            lx_fatal("OGRE exception caught during initialization");
-            throw e;
+            throw lx_fatal_exception("OGRE exception caught during initialization");
         }
     }
 

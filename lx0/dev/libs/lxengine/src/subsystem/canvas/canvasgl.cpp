@@ -209,7 +209,7 @@ namespace
         //
         // No pixel format whatsoever was found.
         //
-        lx_error("Could not find a valid pixel format!");
+        throw lx_error_exception("Could not find a valid pixel format!");
         return 0;
     }
 
@@ -247,7 +247,7 @@ namespace
                          hInstance, 
                          NULL);	
         if (!hWnd)    
-            lx_error("Could not create window");
+            throw lx_error_exception("Could not create window");
 
         HDC   hDC = GetDC(hWnd);
         HGLRC hRC = 0;
@@ -255,19 +255,19 @@ namespace
         PIXELFORMATDESCRIPTOR pfd;
         GLuint uPixelFormat = _chooseGenericPixelFormat(hDC, pfd);
         if (!uPixelFormat)
-            lx_error("Cannot find suitable pixel format");
+            throw lx_error_exception("Cannot find suitable pixel format");
 
         if (::SetPixelFormat(hDC, uPixelFormat, &pfd) == FALSE)
-            lx_error("Cannot set pixel format");
+            throw lx_error_exception("Cannot set pixel format");
 
         //
         // Create a temporary context so that the extensions will initialize properly
         //
         HGLRC tempRC = wglCreateContext(hDC);
         if (!tempRC)
-            lx_error("Cannot create OpenGL context");
+            throw lx_error_exception("Cannot create OpenGL context");
         if (!wglMakeCurrent(hDC, tempRC))
-            lx_error("Cannot set rendering context");
+            throw lx_error_exception("Cannot set rendering context");
 
         //
         // Initialize (pulls in all the OpenGL extension functions)
@@ -356,7 +356,7 @@ namespace lx0 { namespace subsystem { namespace canvas_ns { namespace detail {
                          hInstance, 
                          this);	
         if (!hWnd)    
-            lx_error("Could not create window");
+            throw lx_error_exception("Could not create window");
     }
 
 
@@ -471,7 +471,7 @@ namespace lx0 { namespace subsystem { namespace canvas_ns { namespace detail {
         PIXELFORMATDESCRIPTOR pfd;
         _initPixelFormatDescriptor(pfd);
         if (::SetPixelFormat(m_hDC, mPixelFormat, &pfd) == FALSE)
-            lx_error("Cannot set pixel format");
+            throw lx_error_exception("Cannot set pixel format");
      
         //
         // Create the OpenGL 3.2 context using wglCreateContextAttribsARB.
@@ -499,7 +499,7 @@ namespace lx0 { namespace subsystem { namespace canvas_ns { namespace detail {
             wglMakeCurrent(m_hDC, m_hRC);
         }
         else
-            lx_error("Using a pre-OpenGL 3.2 context");
+            throw lx_error_exception("Using a pre-OpenGL 3.2 context");
     
         // Check post-conditions
         //
@@ -514,10 +514,10 @@ namespace lx0 { namespace subsystem { namespace canvas_ns { namespace detail {
         if (m_hRC) 
         {
             if (!wglMakeCurrent(0, 0))					
-                lx_error("Release Of DC And RC Failed.");
+                throw lx_error_exception("Release Of DC And RC Failed.");
 
             if (!wglDeleteContext(m_hRC))
-                lx_error("Release Rendering Context Failed.");
+                throw lx_error_exception("Release Rendering Context Failed.");
 
             m_hRC = 0;
         }
@@ -525,7 +525,7 @@ namespace lx0 { namespace subsystem { namespace canvas_ns { namespace detail {
         if (m_hDC) 
         {
             if (!ReleaseDC(m_hWnd, m_hDC))
-                lx_error("Cannot Release Window Context");
+                throw lx_error_exception("Cannot Release Window Context");
             m_hDC = 0;
         }
     }

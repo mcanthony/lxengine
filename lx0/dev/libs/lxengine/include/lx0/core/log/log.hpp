@@ -94,9 +94,23 @@ namespace lx0
             {
             public:
                 error_exception (const char* file, int line) : detail::_exception_base(file, line) {}
-                    
+                   
+                error_exception (const char* file, int line, const char* s) : detail::_exception_base(file, line) { detail("%1%", s); }
+
                 template <typename T0>
                 error_exception (const char* file, int line, const char* format, T0 a0) : detail::_exception_base(file, line) { detail(format, a0); }
+                
+                template <typename T0, typename T1>  
+                error_exception (const char* file, int line, const char* format, T0 a0, T1 a1) : detail::_exception_base(file, line) { detail(format, a0, a1); }
+                    
+                template <typename T0, typename T1, typename T2>  
+                error_exception (const char* file, int line, const char* format, T0 a0, T1 a1, T2 a2) : detail::_exception_base(file, line) { detail(format, a0, a1, a2); }
+                    
+                template <typename T0, typename T1, typename T2, typename T3>  
+                error_exception (const char* file, int line, const char* format, T0 a0, T1 a1, T2 a2, T3 a3) : detail::_exception_base(file, line) { detail(format, a0, a1, a2, a3); }
+                    
+                template <typename T0, typename T1, typename T2, typename T3, typename T4>  
+                error_exception (const char* file, int line, const char* format, T0 a0, T1 a1, T2 a2, T3 ae, T4 a4) : detail::_exception_base(file, line) { detail(format, a0, a1, a2, a3, a4); }
             };
 
             /*!
@@ -106,55 +120,81 @@ namespace lx0
             {
             public:
                 fatal_exception (const char* file, int line) : detail::_exception_base(file, line) {}
+
+                fatal_exception (const char* file, int line, const char* s) : detail::_exception_base(file, line) { detail("%1%", s); }
+
+                template <typename T0>
+                fatal_exception (const char* file, int line, const char* format, T0 a0) : detail::_exception_base(file, line) { detail(format, a0); }
+                
+                template <typename T0, typename T1>  
+                fatal_exception (const char* file, int line, const char* format, T0 a0, T1 a1) : detail::_exception_base(file, line) { detail(format, a0, a1); }
+                    
+                template <typename T0, typename T1, typename T2>  
+                fatal_exception (const char* file, int line, const char* format, T0 a0, T1 a1, T2 a2) : detail::_exception_base(file, line) { detail(format, a0, a1, a2); }
+                    
+                template <typename T0, typename T1, typename T2, typename T3>  
+                fatal_exception (const char* file, int line, const char* format, T0 a0, T1 a1, T2 a2, T3 a3) : detail::_exception_base(file, line) { detail(format, a0, a1, a2, a3); }
+                    
+                template <typename T0, typename T1, typename T2, typename T3, typename T4>  
+                fatal_exception (const char* file, int line, const char* format, T0 a0, T1 a1, T2 a2, T3 ae, T4 a4) : detail::_exception_base(file, line) { detail(format, a0, a1, a2, a3, a4); }
             };
 
             //===========================================================================//
             // defines
             //===========================================================================//
 
-            #define lx_error_exception(F,...) \
-                lx0::error_exception(__FILE__, __LINE__,F,__VA_ARGS__)
-            #define lx_check_error(CONDITION,...) \
-                if (!(CONDITION)) { lx0::error_exception e(__FILE__, __LINE__); e.detail("Error check failed: '%s'", #CONDITION); e.detail(__VA_ARGS__); throw e; }
-            #define lx_check_warn(CONDITION,...) \
-                if (!(CONDITION)) { lx_warn("Check failed: '%s'", #CONDITION); lx_warn(__VA_ARGS__); }
+            #define lx_message(FMT,...)             lx0::_lx_message_imp(__FILE__,__LINE__,_lx_format(FMT,__VA_ARGS__))
+            #define lx_debug(FMT,...)               lx0::_lx_debug_imp(__FILE__,__LINE__,_lx_format(FMT,__VA_ARGS__))
+            #define lx_log(FMT,...)                 lx0::_lx_log_imp(__FILE__,__LINE__,_lx_format(FMT,__VA_ARGS__))
+            #define lx_warn(FMT,...)                lx0::_lx_warn_imp(__FILE__,__LINE__,_lx_format(FMT,__VA_ARGS__))
+            #define lx_error_exception(FMT,...)     lx0::error_exception(__FILE__, __LINE__,FMT,__VA_ARGS__)
+            #define lx_fatal_exception(FMT,...)     lx0::fatal_exception(__FILE__, __LINE__,FMT,__VA_ARGS__)
+                        
+            #define lx_assert(CONDITION,...)        if (!(CONDITION)) { lx_warn("Assert failed: '%s' at %s:%d", #CONDITION, __FILE__, __LINE__); lx0::_lx_warn_imp(__FILE__,__LINE__,_lx_format(__VA_ARGS__)); lx_break_if_debugging(); }
+            #define lx_check_warn(CONDITION,...)    if (!(CONDITION)) { lx_warn("Check failed: '%s'", #CONDITION); lx0::_lx_warn_imp(__FILE__,__LINE__,_lx_format(__VA_ARGS__)); }
+            #define lx_check_error(CONDITION,...)   if (!(CONDITION)) { lx0::error_exception e(__FILE__, __LINE__); e.detail("Error check failed: '%s'", #CONDITION); e.detail(__VA_ARGS__); throw e; }
+            #define lx_check_fatal(CONDITION,...)   if (!(CONDITION)) { lx0::fatal_exception e(__FILE__, __LINE__); e.detail("Error check failed: '%s'", #CONDITION); e.detail(__VA_ARGS__); throw e; }
+
+            #define lx_message_once(FMT,...)        do { static bool once = false; if(!once) { lx_message(FMT,__VA_ARGS__); once = true; } } while (0)
+            #define lx_debug_once(FMT,...)          do { static bool once = false; if(!once) { lx_debug(FMT,__VA_ARGS__); once = true; } } while (0)
+            #define lx_log_once(FMT,...)            do { static bool once = false; if(!once) { lx_log(FMT,__VA_ARGS__); once = true; } } while (0            
+            #define lx_warn_once(FMT,...)           do { static bool once = false; if(!once) { lx_warn(FMT,__VA_ARGS__); once = true; } } while (0)
+
+            #ifndef _DEBUG
+                #undef lx_assert
+                #define lx_assert(FMT,...)
+                #undef lx_debug
+                #define lx_debug(FMT,...)
+            #endif
 
             //===========================================================================//
             // functions
             //===========================================================================//
 
-            void        lx_assert       (bool condition);
-            void        lx_assert       (bool condition, const char* format, ...);
+            inline std::string _lx_format      (void) { return std::string(); }
+            inline std::string _lx_format      (const char* format) { return std::string(format); }
+            template <typename T0>  
+            std::string _lx_format      (const char* format, T0 a0) {  return boost::str( boost::format(format) % a0 ); }
+            template <typename T0, typename T1>  
+            std::string _lx_format      (const char* format, T0 a0, T1 a1) {  return boost::str( boost::format(format) % a0 % a1 ); }
+            template <typename T0, typename T1, typename T2>  
+            std::string _lx_format      (const char* format, T0 a0, T1 a1, T2 a2) { return boost::str( boost::format(format) % a0 % a1 % a2 ); }
+            template <typename T0, typename T1, typename T2, typename T3>  
+            std::string _lx_format      (const char* format, T0 a0, T1 a1, T2 a2, T3 a3) { return boost::str( boost::format(format) % a0 % a1 % a2 % a3 ); }
+            template <typename T0, typename T1, typename T2, typename T3, typename T4>  
+            std::string _lx_format      (const char* format, T0 a0, T1 a1, T2 a2, T3 a3, T4 a4) { return boost::str( boost::format(format) % a0 % a1 % a2 % a3 % a4 ); }
 
-            void        lx_debug        (const char* format, ...);
-            void        lx_debug        (const std::string& s);
-            void        lx_log          (const char* format, ...);
-            void        lx_warn         (const char* format, ...);
-            inline void lx_warn         (void) {}
-            void        lx_error        (const char* format, ...);
-            void        lx_fatal        (void);
-            void        lx_fatal        (const char* format, ...);
-            
-    
-            void        lx_check_fatal (bool condition);
+            void        _lx_message_imp (const char* file, int line, const std::string& s);
+            void        _lx_debug_imp   (const char* file, int line, const std::string& s);
+            void        _lx_log_imp     (const char* file, int line, const std::string& s);
+            void        _lx_warn_imp    (const char* file, int line, const std::string& s);
 
-            #define     lx_warn_once(FORMAT,...)  do { static bool once = false;  if(!once) { lx_warn(FORMAT,__VA_ARGS__); once = true; } } while (0)
+            inline void _lx_message_imp (const char* file, int line) {}
+            inline void _lx_debug_imp   (const char* file, int line) {}
+            inline void _lx_log_imp     (const char* file, int line) {}
+            inline void _lx_warn_imp    (const char* file, int line) {}
 
-
-            extern slot<void (const char*)> slotFatal;
-            extern slot<void (const char*)> slotError;
-            extern slot<void (const char*)> slotWarn;
-            extern slot<void (const char*)> slotLog;
-            extern slot<void (const char*)> slotAssert;
-            extern slot<void (const char*)> slotDebug;
-    
-            void lx_error2 (const char* name, const char* detailsFormat, ...);
-            
-            inline void lx_error2 (const char* name) { lx_error2(name, ""); }
-
-
-
-            
+            void        _lx_write_to_log(const char* css, const char* prefix, const char* s);
         }
     }
     using namespace lx0::core::log_ns;

@@ -178,7 +178,7 @@ main (int argc, char** argv)
     }
     catch (std::exception& e)
     {
-        lx_fatal("Fatal: unhandled std::exception.\nException: %s\n", e.what());
+        throw lx_fatal_exception("Fatal: unhandled std::exception.\nException: %s\n", e.what());
     }
 
     return exitCode;

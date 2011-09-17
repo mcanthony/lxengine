@@ -337,7 +337,7 @@ GenericMaterial::_compile (RasterizerGL* pRasterizer)
                 }
             }
             else
-                lx_error("Unrecognized parameter type '%s'", type.c_str());
+                throw lx_error_exception("Unrecognized parameter type '%s'", type.c_str());
         }
     }
 }

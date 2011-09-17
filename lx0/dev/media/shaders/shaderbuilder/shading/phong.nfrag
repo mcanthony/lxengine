@@ -3,7 +3,7 @@
 // Since the eye is at <0,0,0>, the direction vector to the vertex and 
 // the vertex position in eye coordinates are equivalent.
 //
-vec3 N = normalize(fragNormalEc);
+vec3 N = normalize(normal_diffuse);
 vec3 V = -normalize(fragVertexEc);
        
 vec3 c = ambient;                        // ambient term

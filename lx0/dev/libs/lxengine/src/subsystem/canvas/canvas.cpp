@@ -101,7 +101,7 @@ namespace lx0 { namespace subsystem { namespace canvas_ns { namespace detail {
             }
             else
             {
-                lx_error("Call to Win32 GetKeyboardState() failed!");
+                throw lx_error_exception("Call to Win32 GetKeyboardState() failed!");
                 
                 for (int i = 0; i < KC_COUNT; ++i)
                     lxState.bDown[i] = false;

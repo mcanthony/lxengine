@@ -96,7 +96,7 @@ GLuint _loadDDS(std::istream& stream)
             blockSize = 16;
         }
         else
-            lx_error("Unrecognized pixel format");
+            throw lx_error_exception("Unrecognized pixel format");
 
         int width = surface.dwWidth;
         int height = surface.dwHeight;
@@ -136,7 +136,7 @@ GLuint _loadDDS(std::istream& stream)
 
     }
     else
-        lx_error("Does not appear to be a valid DDS stream!");
+        throw lx_error_exception("Does not appear to be a valid DDS stream!");
 
     return id;
 }

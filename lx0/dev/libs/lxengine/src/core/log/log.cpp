@@ -37,19 +37,15 @@
 #include <string>
 #include <fstream>
 
+#include <boost/filesystem.hpp>
+#include <boost/algorithm/string.hpp>
+
 #include <lx0/core/init/init.hpp>
 #include <lx0/core/log/log.hpp>
 #include <lx0/core/slot/slot.hpp>
 #include <lx0/util/misc/util.hpp>
 
 namespace lx0 { namespace core { namespace log_ns {
-
-    lx0::slot<void (const char*)> slotFatal;
-    lx0::slot<void (const char*)> slotError;
-    lx0::slot<void (const char*)> slotWarn;
-    lx0::slot<void (const char*)> slotLog;
-    lx0::slot<void (const char*)> slotAssert;
-    lx0::slot<void (const char*)> slotDebug;
 
     std::ofstream s_log;
     int s_log_count = 0;
@@ -81,14 +77,14 @@ namespace lx0 { namespace core { namespace log_ns {
         if (!lx0::_lx_init_called())
         {
             lx_init();
-            lx_error("lx_init() has not been called!");
+            throw lx_error_exception("lx_init() has not been called!");
         }
 #endif
     }
 
     detail::_exception_base::_exception_base (const char* file, int line)
     {
-        lx_log("Exception created");
+        lx_log("lx0::error_exception (%p) created ", this);
         mWhat.reserve(512);
         location(file, line);
     }
@@ -96,7 +92,7 @@ namespace lx0 { namespace core { namespace log_ns {
     void 
     detail::_exception_base::location (const char* file, int line)
     {
-        lx_log("Exception location: %s : %d", file, line);
+        lx_log("lx0::error_exception (%p) location: %s : %d", this, file, line);
         mWhat += boost::str(boost::format("\n>> %1%:%2%\n") % file % line);
 
     }
@@ -104,7 +100,7 @@ namespace lx0 { namespace core { namespace log_ns {
     detail::_exception_base&
     detail::_exception_base::detail (const char* msg)
     {
-        lx_log("Exception detail: %s", msg);
+        lx_log("lx0::error_exception (%p) detail: %s", this, msg);
         mWhat += msg;
         mWhat += "\n";
         return *this;
@@ -117,163 +113,33 @@ namespace lx0 { namespace core { namespace log_ns {
         return mWhat.c_str();
     }
 
-    /*!
-        Check that a condition is true.   If it is not, cause an error.
-     */
-    void 
-    lx_assert (bool condition)
+    void _lx_message_imp (const char* file, int line, const std::string& s)
     {
-        _lx_check_init();
-
-        if (!condition)
-            lx_break_if_debugging();
+        _lx_write_to_log("message", "MSG", s.c_str());
+        std::cout << s << std::endl;
     }
 
-    /*!
-        Check that a condition is true.   If it is not, cause an error.
-        Provides an string message with additional information as well.
-     */
-    void 
-    lx_assert (bool condition, const char* format, ...)
+    void _lx_debug_imp   (const char* file, int line, const std::string& s)
     {
-        _lx_check_init();
+        _lx_write_to_log("debug", "DBG", s.c_str());
 
-        if (!condition)
-        {
-            char buffer[512] = "";
-            va_list args;
-            va_start(args, format);
-            vsnprintf_s(buffer, sizeof(buffer), _TRUNCATE, format, args);
+        boost::filesystem::path filePath(file);
+        std::string filename = filePath.filename().string();
+        if (filename.front() == '\"' && filename.back() == '\"')
+            filename = filename.substr(1, filename.length() - 2);
 
-            lx_break_if_debugging();
-        }
+        lx0::lx_debugger_message(boost::str(boost::format("DEBUG %s:%d: %s\n") % filename % line % s));;
     }
 
-    /*!
-        Similar to lx_check_error() but will cause lx_fatal() to be called if the
-        condition fails in *either* production or debug code.
-     */
-    void 
-    lx_check_fatal (bool condition)
+    void _lx_log_imp     (const char* file, int line, const std::string& s)
     {
-        _lx_check_init();
-
-        if (!condition)
-            lx_fatal("Error condition encountered!");
+        _lx_write_to_log("log", "LOG", s.c_str());
     }
 
-    void 
-    lx_fatal  (void)
+    void _lx_warn_imp    (const char* file, int line, const std::string& s)
     {
-        lx_fatal("Unknown fatal error!");
-    }
-
-    /*!
-        Reserved for unrecoverable errors.  Throws a lx0::fatal_exception.
-        Subsystems that catch the exception should do minimal work to 
-        attempt to save critical user data and then re-throw the exception.
-        The application should shutdown immediately in response to a 
-        fatal exception.
-     */
-    void
-    lx_fatal (const char* format, ...)
-    {
-        _lx_check_init();
-
-        char buffer[512] = "";
-        va_list args;
-        va_start(args, format);
-        vsnprintf_s(buffer, sizeof(buffer), _TRUNCATE, format, args);
-
-        slotFatal(buffer);
-
-        std::string err("lx_fatal (save all data and exit).\n");
-        throw std::exception((err + buffer).c_str());
-    }
-
-    void
-    lx_error (const char* format, ...)
-    {
-        _lx_check_init();
-
-        char buffer[4096] = "";
-        va_list args;
-        va_start(args, format);
-        vsnprintf_s(buffer, sizeof(buffer), _TRUNCATE, format, args);
-
-        slotError(buffer);
-
-#if defined(_MSC_VER)      
-        lx0::lx_message_box("LxEngine Error", buffer);
-#endif
-            
-        std::string err("lx_error (re-throw if error is non-recoverable).\n");
-        err += buffer;
-        err += "\n";
-        throw lx0::error_exception("<unknown>", 0).detail(err.c_str());
-    }
-
-    void
-    lx_error2 (const char* type, const char* format, ...)
-    {
-        _lx_check_init();
-
-        char buffer[4096] = "";
-        va_list args;
-        va_start(args, format);
-        vsnprintf_s(buffer, sizeof(buffer), _TRUNCATE, format, args);
-
-        slotError(buffer);
-
-        throw lx0::error_exception("<Unknown>", 0).detail(buffer);
-    }
-
-    void
-    lx_warn (const char* format, ...)
-    {
-        _lx_check_init();
-
-        char buffer[512] = "";
-        va_list args;
-        va_start(args, format);
-        vsnprintf_s(buffer, sizeof(buffer), _TRUNCATE, format, args);
-
-        std::cerr << "WARNING: " << buffer << std::endl;
-
-        slotWarn(buffer);
-    }
-
-    void 
-    lx_log (const char* format, ...)
-    {
-        _lx_check_init();
-
-        char buffer[512] = "";
-        va_list args;
-        va_start(args, format);
-        vsnprintf_s(buffer, sizeof(buffer), _TRUNCATE, format, args);
-
-        slotLog(buffer);
-    }
-
-    void 
-    lx_debug (const char* format, ...)
-    {
-#ifndef NDEBUG
-        _lx_check_init();
-
-        char buffer[512] = "";
-        va_list args;
-        va_start(args, format);
-        vsnprintf_s(buffer, sizeof(buffer), _TRUNCATE, format, args);
-
-        slotDebug(buffer);
-#endif
-    }
-
-    void lx_debug  (const std::string& s)
-    {
-        slotDebug(s.c_str());
+        _lx_write_to_log("warn", "WARN", s.c_str());
+        std::cerr << "WARNING: " << s << std::endl;
     }
 
 }}}

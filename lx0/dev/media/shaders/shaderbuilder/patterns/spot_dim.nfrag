@@ -1,0 +1,7 @@
+vec2 t = abs(fract(uv)) - vec2(0.5, 0.5);
+float t2 = dot(t,t);
+float r2 = radius * radius;
+if (t2 <= r2)        
+    return mix(color0, color1, t2 / r2);                          
+else                                       
+    return color1;    

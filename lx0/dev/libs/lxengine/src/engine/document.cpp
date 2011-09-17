@@ -102,7 +102,7 @@ namespace lx0 { namespace engine { namespace dom_ns {
             m_views.erase(it);
         }
         else
-            lx_error("Could name find view '%s' on document.", name.c_str());
+            throw lx_error_exception("Could name find view '%s' on document.", name.c_str());
     }
     
     //---------------------------------------------------------------------------//

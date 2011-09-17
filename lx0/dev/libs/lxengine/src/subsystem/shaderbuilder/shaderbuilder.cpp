@@ -96,7 +96,7 @@ ShaderBuilder::_refreshNodes (void)
     }
     catch (boost::system::system_error&)
     {
-        lx_error("Error reading ShaderBuilder node files");
+        throw lx_error_exception("Error reading ShaderBuilder node files");
     }
 }
 
@@ -228,7 +228,7 @@ ShaderBuilder::x_buildShaderNative (lxvar graph)
         - Don't compile the DLL until a shader is used (then compile all known shaders)
         - On shader calls, quickly check if the DLL needs to be recompiled due a shader(s) being added
      */
-    lx_error("Not yet implemented!");
+    throw lx_error_exception("Not yet implemented!");
 }
 
 void            

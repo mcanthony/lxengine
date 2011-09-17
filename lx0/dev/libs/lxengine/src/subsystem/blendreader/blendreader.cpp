@@ -148,7 +148,7 @@ namespace lx0 { namespace subsystem { namespace blendreader_ns {
         else if (buffer[7] == '-')
             header.pointerSize = 8;
         else
-            lx_error("Unrecognized pointer size!");
+            throw lx_error_exception("Unrecognized pointer size!");
 
         // Next character indicates the endianness with which
         // the numbers were saved.
@@ -158,7 +158,7 @@ namespace lx0 { namespace subsystem { namespace blendreader_ns {
         else if (buffer[8] == 'V')
             header.littleEndian = false;
         else
-            lx_error("Unrecognized little endian");
+            throw lx_error_exception("Unrecognized little endian");
 
         // The final three characters are the version number, written as 
         // 3 ascii characters
@@ -283,7 +283,7 @@ namespace lx0 { namespace subsystem { namespace blendreader_ns {
         }
         else
         {
-            lx_error("Field '%s' does not exist in object of type '%s'",
+            throw lx_error_exception("Field '%s' does not exist in object of type '%s'",
                 ref.c_str(),
                 spStruct->name.c_str());
             return std::make_pair(nullptr, 0);
@@ -319,7 +319,7 @@ namespace lx0 { namespace subsystem { namespace blendreader_ns {
             case 8: mIO.read_address = read_addr_64L; break;
             case 4: mIO.read_address = read_addr_32L; break;
             default: 
-                lx_error("Unexpected pointer size read from .blend file");
+                throw lx_error_exception("Unexpected pointer size read from .blend file");
             }
 
             _readBlocks();

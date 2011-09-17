@@ -40,6 +40,8 @@
 #include <string>
 #include <functional>
 
+#include <lx0/core/log/log.hpp>
+
 namespace lx0 { namespace engine {  namespace dom_ns { namespace detail {
 
     class _ComponentBase : public std::enable_shared_from_this<_ComponentBase>
@@ -129,7 +131,7 @@ namespace lx0 { namespace engine {  namespace dom_ns { namespace detail {
             if (it != mComponents.end())
                 mComponents.erase(it);
             else
-                lx_error("Attempt to remove a Component '%s' that is not attached.", name.c_str());
+                throw lx_error_exception("Attempt to remove a Component '%s' that is not attached.", name.c_str());
         }
 
         void removeComponent (Component* pComponent)
@@ -143,7 +145,7 @@ namespace lx0 { namespace engine {  namespace dom_ns { namespace detail {
                 }
             }
 
-            lx_error("Attempt to remove a Component that is not attached.");
+            throw lx_error_exception("Attempt to remove a Component that is not attached.");
         }
 
         template <typename T>

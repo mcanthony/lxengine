@@ -63,7 +63,7 @@ void Win32WindowClass::registerClass (void)
         m_wndClass.lpszClassName = className();
 
         if (!::RegisterClassEx(&m_wndClass))
-            lx_error("Cannot register window class");
+            throw lx_error_exception("Cannot register window class");
     }
 }
 
@@ -72,7 +72,7 @@ void Win32WindowClass::unregisterClass (void)
     if (--m_refCount == 0)
     {
         if (!::UnregisterClass(className(), ::GetModuleHandle(NULL)))
-            lx_error("Unregistering class failed.");
+            throw lx_error_exception("Unregistering class failed.");
     }
 }
 

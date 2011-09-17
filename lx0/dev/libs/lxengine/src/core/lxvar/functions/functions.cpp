@@ -82,7 +82,7 @@ namespace lx0 { namespace core {  namespace lxvar_ns {
     void 
     insert (lxvar& v, const char* path, lxvar value)
     {
-        lx_error("Not yet implemented!");
+        throw lx_error_exception("Not yet implemented!");
     }
 
     /*!

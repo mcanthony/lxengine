@@ -256,7 +256,7 @@ public:
     //
     virtual void setWorldTransform(const glgeom::point3f& position, const glgeom::quatf& orientation) 
     {
-        lx_error("Unexpected call! This is supposed to be an immovable object.");
+        throw lx_error_exception("Unexpected call! This is supposed to be an immovable object.");
     }
 
 protected:

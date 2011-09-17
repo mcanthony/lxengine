@@ -121,7 +121,7 @@ namespace {
         /*
             switch (hash % 12)
             {
-            default:    lx_error("Unreachable code");
+            default:    throw lx_error_exception("Unreachable code");
 
             case 0:  return vector3( 1,  1, 0);
             case 1:  return vector3(-1,  1, 0);
@@ -146,7 +146,7 @@ namespace {
         //
         switch (hash % 12)
         {
-        default:    lx_error("Unreachable code");
+        default:    throw lx_error_exception("Unreachable code");
 
         case 0:  return  v.x + v.y;
         case 1:  return -v.x + v.y;

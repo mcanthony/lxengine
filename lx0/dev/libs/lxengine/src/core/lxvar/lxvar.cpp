@@ -49,14 +49,14 @@ namespace lx0 { namespace core { namespace lxvar_ns {
         void
         lxvalue::_invalid (void) const
         {
-            lx_error("Invalid operation for lxvar type");
+            throw lx_error_exception("Invalid operation for lxvar type");
         }
 
 
         void
         lxvalue_iterator::_invalid (void) const
         {
-            lx_error("Invalid operation for lxvar iterator type");
+            throw lx_error_exception("Invalid operation for lxvar iterator type");
         }
     }
 
@@ -324,7 +324,7 @@ namespace lx0 { namespace core { namespace lxvar_ns {
         {
             T* pDerived = dynamic_cast<T*>(pBase);
             if (!pDerived)
-                lx_error("lxvar treated as incompatible type");
+                throw lx_error_exception("lxvar treated as incompatible type");
 
             return pDerived;
         }
@@ -503,7 +503,7 @@ namespace lx0 { namespace core { namespace lxvar_ns {
         if (is_string())
             return that.is_string() && as<std::string>() == that.as<std::string>();
         
-        lx_error("Not yet support type!");
+        throw lx_error_exception("Not yet support type!");
         return false;
     }
 

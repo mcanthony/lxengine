@@ -182,7 +182,7 @@ lx0::util::blendload_ns::primitive_buffer_from_blendfile (glgeom::primitive_buff
     switch (meshBlocks.size())
     {
     case 0:
-        lx_error("Loaded .blend file but no mesh block were found");
+        throw lx_error_exception("Loaded .blend file but no mesh block were found");
     case 1:
         // A-OK
         break;

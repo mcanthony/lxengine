@@ -353,7 +353,7 @@ namespace lx0 { namespace core { namespace detail {
                 else if (ext == ".ogg")
                     type = "ogg";
                 else
-                    lx_error("No type specified and could not determine type from extension for '%s'", filename.c_str());
+                    throw lx_error_exception("No type specified and could not determine type from extension for '%s'", filename.c_str());
             }
 
             lx_check_error (alGetError() == AL_NO_ERROR);
@@ -366,7 +366,7 @@ namespace lx0 { namespace core { namespace detail {
             else if (type == "ogg")
                 _loadOgg(filename);
             else
-                lx_error("Unrecognized type: '%s'", type.c_str());
+                throw lx_error_exception("Unrecognized type: '%s'", type.c_str());
         }
     }
 

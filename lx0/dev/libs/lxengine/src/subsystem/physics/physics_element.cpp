@@ -159,7 +159,7 @@ void PhysicsElem::onAttributeChange(ElementPtr spElem, std::string name, lxvar v
         else if (value.equal("none"))
             _removeFromWorld();
         else
-            lx_error("Unexpected value for display attribute");
+            throw lx_error_exception("Unexpected value for display attribute");
     }
     else
     {

@@ -242,7 +242,7 @@ Renderer::_generateRenderAlgorithm (lx0::RenderAlgorithm& algorithm)
     switch (mViewMode)
     {
     default:
-        lx_error("Invalid view mode %d", mViewMode);
+        throw lx_error_exception("Invalid view mode %d", mViewMode);
     case 0:
         // Use a single pass with all the default settings
         algorithm.mPasses.push_back(pass[0]);

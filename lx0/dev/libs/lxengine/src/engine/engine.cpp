@@ -91,7 +91,7 @@ namespace lx0 { namespace engine { namespace dom_ns {
     Engine::Environment::setTimeScale (float s)
     {
         if (s < 0.0f)
-            lx_error("Time scale cannot be negative.  '%f' is not a valid value.", s);
+            throw lx_error_exception("Time scale cannot be negative.  '%f' is not a valid value.", s);
         else
             mTimeScale = s;
     }
@@ -442,7 +442,7 @@ namespace lx0 { namespace engine { namespace dom_ns {
         if (it != mDocuments.end())
             mDocuments.erase(it);
         else
-            lx_error("Document being closed but not in Engine Document list! Was this Document already closed?");
+            throw lx_error_exception("Document being closed but not in Engine Document list! Was this Document already closed?");
 
         // Free the incoming pointer
         auto count = spDocument.use_count();
@@ -491,7 +491,7 @@ namespace lx0 { namespace engine { namespace dom_ns {
 
             if (!spRoot)
             {
-                lx_error("Could not load document.  Does file '%s' exist?", filename.c_str());
+                throw lx_error_exception("Could not load document.  Does file '%s' exist?", filename.c_str());
             }
         }
         else
@@ -602,7 +602,7 @@ namespace lx0 { namespace engine { namespace dom_ns {
         }
         else
         {
-            lx_error("Registering View plugin '%s': there is already a plugin with that name.", name.c_str()); 
+            throw lx_error_exception("Registering View plugin '%s': there is already a plugin with that name.", name.c_str()); 
         }
     }
 
@@ -616,7 +616,7 @@ namespace lx0 { namespace engine { namespace dom_ns {
         }
         else
         {
-            lx_error("No View plug-in with name '%s' found.", name.c_str()); 
+            throw lx_error_exception("No View plug-in with name '%s' found.", name.c_str()); 
             return nullptr;
         }
     }

@@ -119,7 +119,7 @@ namespace lx0 { namespace prototype { namespace misc_ns {
 
         if (decoder.hasError())
         {
-            lx_error("Could not load png file '%s'.\nError code from LodePNG: %u\nError message:\n%s", 
+            throw lx_error_exception("Could not load png file '%s'.\nError code from LodePNG: %u\nError message:\n%s", 
                 filename, 
                 decoder.getError(),
                 LodePNG_error_text(decoder.getError())

@@ -125,7 +125,7 @@ namespace lx0 { namespace engine { namespace dom_ns {
         }
         else
         {
-            lx_error("Index %d out of range in Element::child()", i);
+            throw lx_error_exception("Index %d out of range in Element::child()", i);
             return ElementCPtr();
         }
     }
@@ -141,7 +141,7 @@ namespace lx0 { namespace engine { namespace dom_ns {
         }
         else
         {
-            lx_error("Index %d out of range in Element::child()", i);
+            throw lx_error_exception("Index %d out of range in Element::child()", i);
             return ElementPtr();
         }
     }
@@ -210,7 +210,7 @@ namespace lx0 { namespace engine { namespace dom_ns {
     {
         if (this == 0)
         {
-            lx_error("Cloning a null pointer!");
+            throw lx_error_exception("Cloning a null pointer!");
             return ElementPtr();
         }
 
@@ -304,7 +304,7 @@ namespace lx0 { namespace engine { namespace dom_ns {
             pElem->value()["position"] = lxvar::wrap(glgeom::point3f(1, 2, 3));
             pElem->notifyValueChanged("position");
          */
-        lx_error("Not implemented");
+        throw lx_error_exception("Not implemented");
     }
 
     void
@@ -326,7 +326,7 @@ namespace lx0 { namespace engine { namespace dom_ns {
     Element::notifyAdded (Document* pDocument)
     {        
         if (mpDocument == pDocument)
-            lx_error("Element already added to this Document.");
+            throw lx_error_exception("Element already added to this Document.");
         lx_check_error(mpDocument == nullptr, 
             "Element notified that it being added to a Document, but already belongs to a Document");
 
@@ -401,7 +401,7 @@ namespace lx0 { namespace engine { namespace dom_ns {
             else
             {
                 if (!(compFlags & ElementComponent::eSkipUpdate))
-                    lx_error("Component needs to explicitly return either eSkipUpdate or eCallUpdate from flags() implementation!");
+                    throw lx_error_exception("Component needs to explicitly return either eSkipUpdate or eCallUpdate from flags() implementation!");
             }
         }
 

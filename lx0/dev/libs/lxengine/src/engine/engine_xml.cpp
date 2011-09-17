@@ -70,7 +70,7 @@ namespace lx0 { namespace engine { namespace dom_ns {
         // Check prerequisites
         //
         if (!lx0::file_exists(filename))
-            lx_error2("Document.Load.FileDoesNotExist", "Can't find file '%s'", filename.c_str());
+            throw lx_error_exception("Document file does not exist.  Can't find file '%s'", filename);
 
         //
         // Define a local structure within which the recursive loading function can be set

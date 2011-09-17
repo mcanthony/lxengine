@@ -417,7 +417,7 @@ LambdaBuilder::_buildFloat (lxvar param)
         }
     }
 
-    lx_error("Could not build lambda for parameter");
+    throw lx_error_exception("Could not build lambda for parameter");
     return FunctionFloat();
 }
 
@@ -445,7 +445,7 @@ LambdaBuilder::_buildVec2 (lxvar param)
             };
         }
         else
-            lx_error("Unrecognized node type '%s'", type.c_str());
+            throw lx_error_exception("Unrecognized node type '%s'", type.c_str());
     }
     else if (param.is_array())
     {
@@ -455,7 +455,7 @@ LambdaBuilder::_buildVec2 (lxvar param)
         return [v](const Context& i) { return v; };
     }
 
-    lx_error("Could not build lambda for parameter");
+    throw lx_error_exception("Could not build lambda for parameter");
     return FunctionVec2();
 }
 
@@ -486,10 +486,10 @@ LambdaBuilder::_buildVec3 (lxvar param)
              if (s == "fragNormalEc") return [](const Context& ctx) { return ctx.fragNormalEc; };
         else if (s == "fragNormalOc") return [](const Context& ctx) { return ctx.fragNormalOc; };
         else
-            lx_error("Unrecognized constant '%s' used in graph", s.c_str());
+            throw lx_error_exception("Unrecognized constant '%s' used in graph", s.c_str());
     }
 
-    lx_error("Could not build lambda for parameter");
+    throw lx_error_exception("Could not build lambda for parameter");
     return FunctionVec3();
 }
 

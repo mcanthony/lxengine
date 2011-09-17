@@ -3,5 +3,5 @@
     input  : {
         value : [ "float",   .5,     "" ],
     },
-    source: "return fragNormalEc;",
+    source: "bump.nfrag",
 }
