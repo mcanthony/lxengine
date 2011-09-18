@@ -1,0 +1,183 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+
+  <!-- HEADER -->
+  <head>
+    <meta content="text/html; charset=ISO-8859-1" http-equiv="content-type">
+    <title>Canvas BSP split sample</title>
+    <link rel="stylesheet" href="style/style.css" media="screen" />
+    <script type="text/javascript" src="../../shared/script/extern/seedrandom.min.js"></script>  <!-- See http://davidbau.com/encode/seedrandom.js for licensing -->
+    <script type="text/javascript" src="../../shared/script/extern/jquery-1.6.4.min.js"></script>
+    <script type="text/javascript" src="../../shared/script/extern/json2.js"></script>
+    <script type="text/javascript" src="../../shared/script/LxJs.js"></script>
+  </head>
+
+  <body>
+
+    <div style="margin: 24px; float: left">
+      <canvas id="canvas" style='border: 1px solid gray' width='400' height='400'></canvas>
+    </div>
+    <div style="margin-top: 64px; float: left">
+      <div>
+        <a href="index.html">random</a><br />
+        <a href="index.html?seed=10">seed 10</a><br />
+        <a href="index.html?seed=500">seed 500</a><br />
+        <a href="index.html?seed=700">seed 700</a><br />
+        <a href="index.html?seed=78432">seed 78432</a><br />
+        <br /><br />
+        <a href="index.html?colorset=softreds">color set #1</a><br />
+        <a href="index.html?colorset=bluebird">color set #2</a><br />
+        <a href="index.html?colorset=coppertone">color set #3</a><br />
+        <a href="index.html?colorset=forest">color set #4</a><br />
+      </div>
+    </div>
+    <div style="clear:both"></div>
+
+    <script type="text/javascript">
+    <!--
+      // Use David Bau's excellent seedrandom.js library to generate predictable seeded random numbers
+      Math.seedrandom(LxJs.url_param("seed", new Date().getTime()));
+      var gradient_set = LxJs.url_param("colorset", "softreds");
+
+      //
+      // Define our basic Cell data type for the BSP tree.  The only fields
+      // that are important for this sample are "bbox" and "cells".
+      //
+      function Cell() {
+        this.bbox = [];
+        this.axis = '?'
+        this.value = null;
+        this.cells = [];
+        this.leaf = null;
+      }
+
+      //
+      // Takes a cell and recursively subdivides it, alternating between x and
+      // y splits until the cell is below a threshold size.
+      //
+      function subdivide(cell, axis) {
+
+        var maxSize = LxJs.rand(60, 300);
+        if (axis == 'x') {
+          if (cell.bbox[2] > maxSize) {
+            var v = LxJs.rand(.3, .7);
+            cell.axis = 'x';
+            cell.value = cell.bbox[0] + cell.bbox[2] * v;
+            cell.cells = [new Cell(), new Cell()];
+            cell.cells[0].bbox = [cell.bbox[0], cell.bbox[1], cell.bbox[2] * v, cell.bbox[3]];
+            cell.cells[1].bbox = [cell.bbox[0] + cell.bbox[2] * v, cell.bbox[1], cell.bbox[2] * (1 - v), cell.bbox[3]];
+            subdivide(cell.cells[0], 'y');
+            subdivide(cell.cells[1], 'y');
+          }
+          else if (cell.bbox[3] > maxSize) {
+            subdivide(cell, 'y');
+          }
+        }
+        else {
+          if (cell.bbox[3] > maxSize) {
+            var v = LxJs.rand(.3, .7);
+            cell.axis = 'y';
+            cell.value = cell.bbox[1] + cell.bbox[3] * v;
+            cell.cells = [new Cell(), new Cell()];
+            cell.cells[0].bbox = [cell.bbox[0], cell.bbox[1], cell.bbox[2], cell.bbox[3] * v];
+            cell.cells[1].bbox = [cell.bbox[0], cell.bbox[1] + cell.bbox[3] * v, cell.bbox[2], cell.bbox[3] * (1 - v)];
+            subdivide(cell.cells[0], 'x');
+            subdivide(cell.cells[1], 'x');
+          }
+          else if (cell.bbox[2] > maxSize) {
+            subdivide(cell, 'x');
+          }
+        }
+      }
+
+      //
+      // Create the initial cell and then recursively subdivide.
+      //
+      function create_bsp() {
+        var size = { x: LxJs.rand(500, 1000), y: LxJs.rand(500, 1000) };
+        var offset = { x: (1000 - size.x) * LxJs.rand(.25, .75),
+          y: (1000 - size.y) * LxJs.rand(.25, .75)
+        };
+
+        var cell = new Cell();
+        cell.bbox = [offset.x, offset.y, size.x, size.y];
+        subdivide(cell, 'x');
+
+        return cell;
+      }
+
+      //
+      // Take a BSP cell and generate a sequence of function objects to draw the
+      // cells.  Note that this generates the code to do the drawing without actually
+      // drawing the BSP. 
+      //
+      // Handling the drawing process as a sequence of calls allows the drawing to be
+      // done incrementally.
+      //
+      function generate_draw_calls(cell) {
+      
+        var ctx = $('#canvas')[0].getContext("2d");
+
+        // Local helper to using LxJs to choose a random color from a weighted
+        // gradient color set.  (Much more aesthetically pleasing than a truly
+        // random color.)
+        function generate_color() { return LxJs.rgb_from_gradient_set(LxJs.Media.GradientSet[gradient_set]); }
+
+        //
+        // Push the set of tasks to draw the BSP.
+        //
+        // The double lambdas used below are necessary to ensure the closure copies the
+        // reference variables.
+        //
+        function worker(tasks, cell) {
+
+          tasks.push((function () {
+            var c = cell;
+            return function () {
+              ctx.save();
+              ctx.fillStyle = generate_color();
+              ctx.fillRect(c.bbox[0], c.bbox[1], c.bbox[2], c.bbox[3]);
+              ctx.restore();
+            };
+          })());
+
+          for (var i = 0; i < cell.cells.length; ++i) {
+            tasks.push((function () {
+              var c = cell.cells[i];
+              return function () {
+                worker(tasks, c);
+              };
+            })());
+          }
+        }
+
+        var tasks = [];
+        worker(tasks, cell);
+        return tasks;
+      }
+
+
+      //
+      // Standard JQuery code for a callback once the document is ready..
+      //
+      $(document).ready(function () {
+        //
+        // Grab the canvas element and rescale it to a 0-1000 coordinate system
+        //
+        var canvas = $('#canvas');
+        var ctx = canvas[0].getContext("2d");
+        ctx.scale(canvas.width() / 1000, canvas.height() / 1000);
+
+        //
+        // Create the BSP, set up the draw, then incrementally draw it with a slight
+        // delay after each step of the draw
+        //
+        var cell = create_bsp();
+        var tasks = generate_draw_calls(cell);
+        LxJs.run_tasks(tasks, 10);
+      });
+
+    -->
+    </script>
+  </body>
+</html>
