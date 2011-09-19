@@ -14,10 +14,11 @@
 
   <body>
 
+    <h1>Canvas BSP Split Sample</h1>
     <div style="margin: 24px; float: left">
       <canvas id="canvas" style='border: 1px solid gray' width='400' height='400'></canvas>
     </div>
-    <div style="margin-top: 64px; float: left">
+    <div style="margin-top: 32px; float: left; width: 32em">
       <div>
         <a href="index.html">random</a><br />
         <a href="index.html?seed=10">seed 10</a><br />
@@ -29,6 +30,24 @@
         <a href="index.html?colorset=bluebird">color set #2</a><br />
         <a href="index.html?colorset=coppertone">color set #3</a><br />
         <a href="index.html?colorset=forest">color set #4</a><br />
+        <br />
+        <i>Current seed: <span id="currentseed"></span></i>
+      </div>
+      <div>
+        <p>
+          This page generates a random region (or predictably random to a given seed value) and 
+          subsequently subdivides the region into a BSP tree until the cell sizes are no larger
+          than a randomly generated random.  This predictably random subdivision is used as the
+          basis for various procedural generation algorithms.
+        </p>
+        <p>
+          The BSP is then drawn using an array of Javascript closures, rather than a loop of
+          direct callbacks.  This approach likely has more overhead than directly injecting
+          setTimeout calls in the draw loop, but arguably results in a less mangled draw routine.
+        </p>
+        <p>
+          View the page source for more details.
+        </p>
       </div>
     </div>
     <div style="clear:both"></div>
@@ -36,7 +55,8 @@
     <script type="text/javascript">
     <!--
       // Use David Bau's excellent seedrandom.js library to generate predictable seeded random numbers
-      Math.seedrandom(LxJs.url_param("seed", new Date().getTime()));
+      var seed = LxJs.url_param("seed", new Date().getTime())
+      Math.seedrandom(seed);
       var gradient_set = LxJs.url_param("colorset", "softreds");
 
       //
@@ -161,6 +181,11 @@
       // Standard JQuery code for a callback once the document is ready..
       //
       $(document).ready(function () {
+        //
+        // Display the seed being used in case someone wants to recreate this image
+        //
+        $("#currentseed").text(seed);
+
         //
         // Grab the canvas element and rescale it to a 0-1000 coordinate system
         //
