@@ -29,12 +29,12 @@
 #include <glgeom/glgeom.hpp>
 #include <glgeom/ext/mappers.hpp>
 #include <glgeom/ext/patterns.hpp>
+#include <glgeom/ext/shaders.hpp>
 
 #include <lx0/core/log/log.hpp>
 #include <lx0/prototype/misc.hpp>
 
 #include "lambdabuilder.hpp"
-#include "lamdba_fragments/lambda_fragments.hpp"
 
 using namespace lx0;
 using namespace lx0::subsystem::shaderbuilder_ns;
@@ -43,38 +43,9 @@ using namespace lx0::subsystem::shaderbuilder_ns::detail;
 //===========================================================================//
 // L O W - L E V E L   I M P S
 //
-// (move these to glgeom once complete!)
+// (move these to glgeom once ShaderContext is removed and implementation is 
+// complete!)
 //===========================================================================//
-
-static glm::vec3 shade_normal (
-    const glm::mat4& unifViewMatrix,
-    const glm::vec3& fragNormalEc)
-{
-    using namespace glm;
-
-    vec4 normalWc = vec4(fragNormalEc, 1.0) * unifViewMatrix;	
-    vec3 N = abs(normalize(vec3(normalWc)));    	
-    return N;
-}
-
-static glm::vec3 shade_normal2 (
-    const glm::mat4& unifViewMatrix,
-    const glm::vec3& fragNormalEc)
-{
-    using namespace glm;
-
-    vec4 normalWc = vec4(fragNormalEc, 1.0) * unifViewMatrix;    	
-    vec3 N = normalize(vec3(normalWc.x, normalWc.y, normalWc.z));
-    vec3 A = abs(N);
-    
-    vec3 c = vec3(0,0,0);
-    vec3 F = ceil(N);
-    vec3 B = -floor(N);
-    c += A.x * (F.x * vec3(1,0,0) + B.x * vec3(0,1,1)); 
-    c += A.y * (F.y * vec3(0,1,0) + B.y * vec3(1,0,1)); 
-    c += A.z * (F.z * vec3(0,0,1) + B.z * vec3(1,1,0));
-    return c;
-}
 
 static glm::vec3 shade_phong (
     const ShaderBuilder::ShaderContext& ctx,
@@ -202,6 +173,36 @@ LambdaBuilder::LambdaBuilder (NodeMap& nodeMap)
 
 void LambdaBuilder::_init()
 {
+    _initFuncs1f();
+    _initFuncs2f();
+    _initFuncs3f();
+    _initFuncs4f();
+}
+
+void LambdaBuilder::_initFuncs1f (void)
+{
+}
+
+void LambdaBuilder::_initFuncs2f (void)
+{
+    mFuncs2f["cube"] = [&](lxvar param, lxvar node) -> FunctionVec2
+    {
+        auto scale = _buildVec2(_value(param, node, "scale"));
+        return [scale](const Context& i) { 
+            return glgeom::mapper_cube(i.fragVertexOc, i.fragNormalOc, scale(i)); 
+        };
+    };
+    mFuncs2f["spherical"] = [&](lxvar param, lxvar node) -> FunctionVec2
+    {
+        auto scale = _buildVec2(_value(param, node, "scale"));
+        return [scale](const Context& i) { 
+            return glgeom::mapper_spherical(i.fragVertexOc, scale(i)); 
+        };
+    };
+}
+
+void LambdaBuilder::_initFuncs3f (void)
+{
     mFuncs3f["cubemap"] = [&](lxvar param, lxvar node) -> FunctionVec3 
     {
         auto spTexture = _buildSamplerCube(param["cubemap"]);
@@ -281,14 +282,14 @@ void LambdaBuilder::_init()
     mFuncs3f["normal"] = [&](lxvar param, lxvar node) -> FunctionVec3
     {
         return [](const Context& i) {
-            return shade_normal (i.unifViewMatrix, i.fragNormalEc);
+            return glgeom::shade_normal (i.unifViewMatrix, i.fragNormalEc);
         };
     };
 
     mFuncs3f["normal2"] = [&](lxvar param, lxvar node) -> FunctionVec3
     {
         return [](const Context& i) {
-            return shade_normal2 (i.unifViewMatrix, i.fragNormalEc);
+            return glgeom::shade_normal2 (i.unifViewMatrix, i.fragNormalEc);
         };
     };
 
@@ -355,9 +356,13 @@ void LambdaBuilder::_init()
                 ctx2.fragVertexOc = Pobj;
                 return value2(ctx2);
             };
-            return computeBumpNormal2(ctx.fragVertexOc, ctx.fragNormalOc, intensity(ctx), heightFunc);
+            return glgeom::shade_bump_normal(ctx.fragVertexOc, ctx.fragNormalOc, intensity(ctx), heightFunc);
         };
     };
+}
+
+void LambdaBuilder::_initFuncs4f (void)
+{
 }
 
 void LambdaBuilder::addTexture (std::string id, std::shared_ptr<glgeom::image3f> image)
@@ -431,22 +436,9 @@ LambdaBuilder::_buildVec2 (lxvar param)
         std::string type = param["_type"].as<std::string>();
         auto& node = mNodes[type];
 
-        if (type == "spherical")
-        {
-            auto scale = _buildVec2(_value(param, node, "scale"));
-            return [scale](const Context& i) { 
-                return glgeom::mapper_spherical(i.fragVertexOc, scale(i)); 
-            };
-        }
-        else if (type == "cube")
-        {
-            auto scale = _buildVec2(_value(param, node, "scale"));
-            return [scale](const Context& i) { 
-                return glgeom::mapper_cube(i.fragVertexOc, i.fragNormalOc, scale(i)); 
-            };
-        }
-        else
-            throw lx_error_exception("Unrecognized node type '%s'", type.c_str());
+        auto it = mFuncs2f.find(type);
+        if (it != mFuncs2f.end())
+            return (it->second)(param, node);
     }
     else if (param.is_array())
     {
@@ -465,6 +457,9 @@ LambdaBuilder::_buildVec3 (lxvar param)
 {
     if (param.is_map())
     {
+        //
+        // Consider the map to be a sub-node
+        //
         std::string type = param["_type"].as<std::string>();
         auto& node = mNodes[type];
 
@@ -474,6 +469,9 @@ LambdaBuilder::_buildVec3 (lxvar param)
     }
     else if (param.is_array())
     {
+        //
+        // Consider the array to be a value
+        //
         glm::vec3 v;
         v.x = param[0];
         v.y = param[1];
@@ -482,6 +480,9 @@ LambdaBuilder::_buildVec3 (lxvar param)
     }
     else if (param.is_string())
     {
+        //
+        // Consider the string to be a reference to a uniform in the context
+        //
         auto s = param.as<std::string>();
 
              if (s == "fragNormalEc") return [](const Context& ctx) { return ctx.fragNormalEc; };

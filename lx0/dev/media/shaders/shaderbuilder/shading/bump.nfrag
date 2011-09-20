@@ -1,33 +1,32 @@
 //
-// Measure the rate of change of the value as we move in x and y.
-// Then measure the rate of change of the position in eye coordinates
-// as we move in x and y, so that we can re-express the value change (dV) in
-// eye coordinates - and thus create a new eye coordinate normal.
+// Measure the rate of change in the height value as x and y change in
+// window coordinates.
 //
 vec2 dV = vec2(dFdx(value), dFdy(value));
-vec3 dPdx = dFdx(fragVertexEc);
-vec3 dPdy = dFdy(fragVertexEc);  
 
 //
-// dPdx is effectively the vector one unit in X as measured in eye space;
-// thus to do height mapping, we bump up the "height" (i.e. direction of
-// the fragment normal) by the relative change in value of the height as
-// we move one unit in X (i.e. dV.x).  Repeat the same for Y.  Now we have
-// a "tilted" surface plane to compute a new normal from.
+// Measure the rate in change in eye-space as we move in window
+// coordinates.  This effectively gives us basis vectors on the surface
+// expressed in eye coordinates.
 //
-vec3 T = dPdx + dV.x * fragNormalEc;
-vec3 B = dPdy + dV.y * fragNormalEc;
-vec3 N = normalize( cross(T, B) );
+vec3 dPdx = dFdx(fragVertexEc);
+vec3 dPdy = dFdy(fragVertexEc);  
+vec3 dPdz = cross(dPdx, dPdy);
+
+//
+// After numerous expansions and simplifications, the height map normal
+// transformed to eye coordinates looks becomes:
+//
+vec3 N = normalize(-dV.x * dPdx - dV.y * dPdy + dPdz);
 
 //
 // But...
 //
 // The new bump-based normal was computed relative to the plane of the
-// triangle: i.e. a flat shaded normal.  We'll assume flat and smooth
-// normal are 'relatively similar' and use a simple linear delta between the
-// flat and smooth normal to adjust to the bump normal onto the "smooth"
-// surface of the object.
+// triangle: i.e. a flat shaded normal.  For simplicity, we'll just use a 
+// linear delta as an approximation to take us from the "flat" surface to
+// the "smooth" surface.  Note: this approximation is less and less accurate 
+// the greater the difference between the height map normal and flat normal.
 //
-vec3 delta = fragNormalEc - normalize(cross(dPdx, dPdy));
-
+vec3 delta = fragNormalEc - normalize(dPdz);
 return mix( fragNormalEc, normalize(N + delta), intensity);

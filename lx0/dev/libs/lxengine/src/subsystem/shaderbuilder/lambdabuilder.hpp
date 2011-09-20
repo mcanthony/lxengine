@@ -84,6 +84,10 @@ namespace lx0
 
                 protected:
                     void                                _init            (void);
+                    void                                _initFuncs1f     (void);
+                    void                                _initFuncs2f     (void);
+                    void                                _initFuncs3f     (void);
+                    void                                _initFuncs4f     (void);
 
                     FunctionFloat                       _buildFloat      (lxvar param);
                     FunctionVec2                        _buildVec2       (lxvar param);
