@@ -2,7 +2,7 @@
 // Measure the rate of change in the height value as x and y change in
 // window coordinates.
 //
-vec2 dV = vec2(dFdx(value), dFdy(value));
+vec2 dV = intensity * vec2(dFdx(value), dFdy(value));
 
 //
 // Measure the rate in change in eye-space as we move in window
@@ -11,22 +11,18 @@ vec2 dV = vec2(dFdx(value), dFdy(value));
 //
 vec3 dPdx = dFdx(fragVertexEc);
 vec3 dPdy = dFdy(fragVertexEc);  
-vec3 dPdz = cross(dPdx, dPdy);
+
+//
+// Reset the basis to the "smooth" fragment normal rather the "flat" 
+// surface of the triangle.
+//
+vec3 dPdz = normalize(fragNormalEc);
+dPdy = normalize(cross(dPdz, dPdx));
+dPdx = normalize(cross(dPdy, dPdz));
 
 //
 // After numerous expansions and simplifications, the height map normal
 // transformed to eye coordinates looks becomes:
 //
 vec3 N = normalize(-dV.x * dPdx - dV.y * dPdy + dPdz);
-
-//
-// But...
-//
-// The new bump-based normal was computed relative to the plane of the
-// triangle: i.e. a flat shaded normal.  For simplicity, we'll just use a 
-// linear delta as an approximation to take us from the "flat" surface to
-// the "smooth" surface.  Note: this approximation is less and less accurate 
-// the greater the difference between the height map normal and flat normal.
-//
-vec3 delta = fragNormalEc - normalize(dPdz);
-return mix( fragNormalEc, normalize(N + delta), intensity);
+return N;

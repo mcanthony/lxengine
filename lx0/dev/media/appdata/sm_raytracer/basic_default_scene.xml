@@ -105,7 +105,7 @@
                     scale : [ 6, 6 ],
                   }
                 },
-                intensity : .15,                
+                intensity : 2.65,                
               },            
             specular : [ 1, .8, .5 ],
             specularEx : 32,            
@@ -182,6 +182,7 @@
             reflectivity: .05,
             normal_diffuse : {
                 _type : "bump",
+                intensity : 6.0,
                 value : {
                   _type : "spot_dim",
                   radius : .2,
@@ -190,7 +191,7 @@
                   uv : {
                     _type : "spherical",
                     scale : [ 32, 32 ],
-                  },                  
+                  },
                 }, 
               },
           }
