@@ -11,16 +11,29 @@
           <h1 style="letter-spacing: .3em; color: #333; font-style: italic">CSS Font Preview</h1>
           <fieldset>
             <legend>Settings</legend>
-            <div id="settings"></div>
-            <a id="css-view-toggle" href="#" style="font-size: 80%; font-style: sans-serif">View CSS (toggle)</a>
             <div class="layout-row">
-              <div style="min-width: 45%">
-              <pre id="css-view" style="border: 1px solid #EEE; background-color: #F7F7F7; border-radius: 4px; padding: .5em; font-size: 90%;">
+              <div id="settings" style="width: 75%; border-right: 1px dotted #DDD"></div>
+              <div>
+                <strong style="letter-spacing: .3em; color: #777">Examples</strong><br />
+                <select id="presets">
+                </select>
+              </div>
+            </div>
+            <div>
+              <a id="css-view-toggle" href="#" style="font-size: 80%; font-style: sans-serif">View CSS / Javascript (toggle)</a>
+            </div>
+            <div class="layout-row">
+              <div style="min-width: 45%; max-width: 45%;">
+              <pre id="css-view" style="border: 1px solid #EEE; background-color: #F7F7F7; border-radius: 4px; padding: .5em; font-size: 90%; overflow: auto;">
 .myclass 
 {<div id="css-props"></div>}
               </pre>
               </div>
-              <div style="min-width: 45%">
+              <div style="min-width: 45%; max-width: 45%; overflow: auto;  ">
+              <pre id="preset-view" style="border: 1px solid #EEE; background-color: #F7F7F7; border-radius: 4px; padding: .5em; font-size: 90%; overflow: auto;">
+var preset =  
+{<div id="preset-props"></div>}
+              </pre>              
               </div>          
             </div>
           </fieldset>
@@ -39,8 +52,10 @@
       $(document).ready(function () {
 
         $("#css-view").hide();
+        $("#preset-view").hide();
         $("#css-view-toggle").click(function () {
           $("#css-view").slideToggle();
+          $("#preset-view").slideToggle();
           return false;
         });
 
@@ -51,6 +66,7 @@
             elem.change(function () {
               $("#demo").css(name, $(this).val());
               $("#css-" + name).text($(this).val());
+              $("#preset-" + name).text($(this).val());
             });
             elem.val(value).trigger('change');
           }
@@ -58,6 +74,10 @@
           var cssview = $("<span/>");
           cssview.html("  " + name + " : " + "<span id='css-" + name + "'></span>;\n");
           $("#css-props").append(cssview);
+
+          var presetview = $("<span/>");
+          presetview.html("  \"" + name + "\" : \"" + "<span id='preset-" + name + "'></span>\",\n");
+          $("#preset-props").append(presetview);
 
           var elem = $("<select/>");
           elem.attr("title", name);
@@ -133,6 +153,80 @@
           "1em",
         ]);
         build("color", "#111", ["#000", "#111", "#333", "#555", "#777", "#CCC"]);
+        build("text-shadow", "none", [
+          "none",
+          "rgba(0,0,0,.20) 2px 1px 3px",
+          "rgba(128,128,128,.25) 2px 2px 6px",
+          "rgba(128,128,128,.50) 4px 4px 6px",
+          "0.10em 0.10em rgba(0,0,0,.10)",
+          "0.05em 0.05em rgba(0,0,0,.10)",
+          "0.1em 0.1em #333",
+          "rgba(0,0,196,.80) 0px 0px 6px",
+        ]);
+
+        var presets = {
+          "Default" : {
+            "font-family" : "serif",
+            "line-height" : "1.5em",
+            "font-style" : "normal",
+            "font-variant" : "normal",
+            "text-align" : "justify",
+            "font-size" : "120%",
+            "font-weight" : "normal",
+            "letter-spacing" : "0em",
+            "color" : "#111",
+            "text-shadow" : "none"
+          },
+          "Footnote Text" : {
+            "font-family" : "'Gill Sans', 'Gill Sans MT', sans-serif",
+            "line-height" : "1.25em",
+            "font-style" : "normal",
+            "font-variant" : "normal",
+            "text-align" : "justify",
+            "font-size" : "90%",
+            "font-weight" : "normal",
+            "letter-spacing" : "0.10em",
+            "color" : "#333",
+            "text-shadow" : "none",
+          },
+          "Blue Highlight" : {
+            "font-family" : "'Palatino Linotype', 'Book Antiqua', Palatino, serif",
+            "line-height" : "1.25em",
+            "font-style" : "normal",
+            "font-variant" : "normal",
+            "text-align" : "justify",
+            "font-size" : "140%",
+            "font-weight" : "normal",
+            "letter-spacing" : "0.05em",
+            "color" : "#555",
+            "text-shadow" : "rgba(0,0,196,.80) 0px 0px 6px",
+          },
+          "Overly Bold" : {
+            "font-family" : "fantasy",
+            "line-height" : ".9em",
+            "font-style" : "normal",
+            "font-variant" : "small-caps",
+            "text-align" : "justify",
+            "font-size" : "400%",
+            "font-weight" : "normal",
+            "letter-spacing" : "0.10em",
+            "color" : "#000",
+            "text-shadow" : "none",
+          }
+        };
+
+        $.each(presets, function(key, value) {
+          var e = $("<option/>").text(key);
+          $("#presets").append(e);
+        });
+        $("#presets").change(function() {
+          var preset = presets[$(this).val()];
+          $.each(preset, function(key, value) {
+            $("#SL-" + key).val(value).trigger('change');
+          });
+        });
+        $("#presets").val("Default").trigger('change');
+
 
       });
     -->
