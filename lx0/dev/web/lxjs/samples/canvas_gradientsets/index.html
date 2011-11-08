@@ -1,0 +1,90 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+
+  <!-- HEADER -->
+  <head>
+    <meta content="text/html; charset=ISO-8859-1" http-equiv="content-type">
+    <title>Canvas Gradient Sets</title>
+    <link rel="stylesheet" href="style/style.css" media="screen" />
+    <script type="text/javascript" src="../../shared/script/extern/seedrandom.min.js"></script>  <!-- See http://davidbau.com/encode/seedrandom.js for licensing -->
+    <script type="text/javascript" src="../../shared/script/extern/jquery-1.6.4.min.js"></script>
+    <script type="text/javascript" src="../../shared/script/extern/json2.js"></script>
+    <script type="text/javascript" src="../../shared/script/LxJs.js"></script>
+  </head>
+
+  <body>
+
+    <h1>Canvas Gradient Sets</h1>
+    <div id="content"></div>
+
+    <script type="text/javascript">
+    <!--
+
+      function generate() {
+        var tasks = [];
+
+        $.each(LxJs.Media.GradientSet, function (key, value) {
+          var e = $("<div/>");
+          e.append($("<h2>").text(key));
+
+          var c = $("<canvas/>");
+          c.attr("width", 640);
+          c.attr("height", 100);
+          e.append(c);
+          $("#content").append(e);
+
+          var sum = 0;
+          for (var i = 0; i < value.length; ++i) {
+            sum += value[i][0];
+          }
+
+          var ctx = c[0].getContext("2d");
+          var start = 0;
+          for (var i = 0; i < value.length; ++i) {
+            var rows = 100 * value[i][0] / sum;
+            var grad = ctx.createLinearGradient(0, 0, 640, 0);
+            grad.addColorStop(0, value[i][1][0]);
+            grad.addColorStop(1, value[i][1][1]);
+            ctx.fillStyle = grad;
+            ctx.fillRect(0, start, 640, rows);
+            start += rows;
+          }
+
+          var c2 = $("<canvas/>");
+          c2.attr("width", 100);
+          c2.attr("height", 100);
+          e.append(c2);
+          $("#content").append(e);
+
+          var ctx = c2[0].getContext("2d");
+          for (var y = 0; y < c2.height(); ++y) {
+            tasks.push((function () {
+              var ctx2 = ctx;
+              var y2 = y;
+              var w = c2.width();
+              var gradient_set = value;
+              return function () {
+                for (var x = 0; x < w; ++x) {
+                  ctx2.fillStyle = LxJs.rgb_from_gradient_set(gradient_set);
+                  ctx2.fillRect(x, y2, 1, 1);
+                }
+              };
+            })());
+          }
+        });
+
+        return tasks;
+      }
+
+      //
+      // Standard JQuery code for a callback once the document is ready..
+      //
+      $(document).ready(function () {
+
+        LxJs.run_tasks(generate(), 10);
+      });
+
+    -->
+    </script>
+  </body>
+</html>

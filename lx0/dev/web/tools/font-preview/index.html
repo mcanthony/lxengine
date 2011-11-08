@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html>
+    <head>
+      <link type="text/css" href="style/default.less" rel="stylesheet/less" />
+      <script type="text/javascript" src="script/extern/less-1.1.3.min.js"></script>
+      <script type="text/javascript" src="script/extern/jquery-1.6.4.min.js"></script>
+      <script type="text/javascript" src="script/extern/jquery.cookie.js"></script>
+    </head>
+    <body>
+       <div id="body-wrap1">
+          <h1 style="letter-spacing: .3em; color: #333; font-style: italic">CSS Font Preview</h1>
+          <fieldset>
+            <legend>Settings</legend>
+            <div id="settings"></div>
+            <a id="css-view-toggle" href="#" style="font-size: 80%; font-style: sans-serif">View CSS (toggle)</a>
+            <div class="layout-row">
+              <div style="min-width: 45%">
+              <pre id="css-view" style="border: 1px solid #EEE; background-color: #F7F7F7; border-radius: 4px; padding: .5em; font-size: 90%;">
+.myclass 
+{<div id="css-props"></div>}
+              </pre>
+              </div>
+              <div style="min-width: 45%">
+              </div>          
+            </div>
+          </fieldset>
+
+          <div id="demo">
+            <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Donec dapibus mi tristique ante imperdiet gravida. Fusce nulla lorem, accumsan vel lobortis vitae, rutrum et leo. Aliquam sapien leo, aliquet eu eleifend quis, elementum id turpis. Nunc purus massa, convallis ut faucibus id, varius vitae libero. Cras tempor lacinia massa, sit amet commodo ligula suscipit ut. Proin sagittis vulputate pharetra. Mauris felis lorem, dictum non sollicitudin vitae, dictum sit amet risus. In hac habitasse platea dictumst. Curabitur ac varius elit. Quisque vulputate, augue vel mollis porta, risus orci molestie orci, ac porttitor lorem leo quis elit. Donec eget metus vitae purus imperdiet fermentum. Quisque velit dolor, scelerisque et porta sit amet, mattis aliquet odio.</p>
+            <p>Nunc at sapien urna. Proin pellentesque elit in eros sagittis tempus. Nulla eget sem nibh. Proin sollicitudin volutpat vehicula. Nunc auctor purus a augue interdum sagittis. Ut tincidunt erat eu nisi lobortis rhoncus. Vestibulum ultricies lacus eget felis tempus accumsan. Vestibulum ante ipsum primis in faucibus orci luctus et ultrices posuere cubilia Curae;</p>
+            <p>Morbi ultrices dictum dui. Sed dapibus vestibulum lectus, quis facilisis dolor cursus vel. Donec suscipit facilisis aliquet. Nulla a aliquam justo. Etiam pharetra pulvinar enim, eget convallis diam adipiscing in. Sed suscipit, magna nec euismod pellentesque, ipsum metus malesuada erat, at molestie ante enim ac metus. Aliquam mollis est eget mauris adipiscing id semper sem consequat. Praesent nec enim ac orci feugiat scelerisque vitae sed orci. Mauris fringilla neque sit amet ante euismod feugiat. Morbi tempus, risus a pretium porttitor, nisi ligula mattis lorem, eget varius erat lacus eget nunc. Vivamus feugiat imperdiet consequat. Ut eu neque vitae diam dignissim tincidunt. Vivamus id varius augue. Aliquam erat volutpat. Duis hendrerit vestibulum erat, eget pretium risus tincidunt vel. Pellentesque ante metus, luctus sit amet pulvinar eget, accumsan ac quam.</p>
+            <p>Phasellus nec nulla ac enim ultrices hendrerit et at risus. Duis nibh nisi, facilisis eu facilisis non, aliquet posuere nisi. Nam molestie urna sollicitudin magna accumsan eu sollicitudin turpis ultrices. Etiam aliquet sodales neque in imperdiet. Nunc fringilla egestas euismod. Pellentesque odio libero, luctus et porta a, suscipit vitae libero. Cras ante libero, tempor eget auctor et, facilisis eget velit. Vivamus tempor augue sit amet quam lacinia ultrices. Vivamus vel neque justo. Sed at porttitor ante.</p>
+            <p>Nunc leo diam, volutpat ut aliquet ac, condimentum et sapien. Cum sociis natoque penatibus et magnis dis parturient montes, nascetur ridiculus mus. Nunc id felis sem. Donec pharetra laoreet eros, non ultricies nunc facilisis quis. Nam pulvinar dictum molestie. Nulla adipiscing, mi a aliquam commodo, nisl justo lacinia magna, in posuere quam nibh non nisi. Aliquam nec tortor nibh, et lobortis est. Ut vitae elit lacus. Nullam iaculis arcu sit amet nisl ullamcorper ullamcorper. Phasellus ornare leo vitae eros egestas scelerisque. Donec hendrerit dictum erat et faucibus. Suspendisse libero nulla, ullamcorper sit amet blandit non, aliquet non metus. Mauris molestie pulvinar odio, eu convallis enim viverra non.</p>
+          </div>
+       </div>
+    </body>
+    <script>
+    <!--
+      $(document).ready(function () {
+
+        $("#css-view").hide();
+        $("#css-view-toggle").click(function () {
+          $("#css-view").slideToggle();
+          return false;
+        });
+
+        function build(name, def, values) {
+
+          function selector(name, value) {
+            var elem = $("#SL-" + name);
+            elem.change(function () {
+              $("#demo").css(name, $(this).val());
+              $("#css-" + name).text($(this).val());
+            });
+            elem.val(value).trigger('change');
+          }
+
+          var cssview = $("<span/>");
+          cssview.html("  " + name + " : " + "<span id='css-" + name + "'></span>;\n");
+          $("#css-props").append(cssview);
+
+          var elem = $("<select/>");
+          elem.attr("title", name);
+          elem.attr("id", "SL-" + name);
+          $.each(values, function (i, v) {
+            var opt = $("<option/>");
+            opt.text(v);
+            elem.append(opt);
+          });
+          $("#settings").append(elem);
+          selector(name, def);
+        }
+
+        build("font-family", "120%", [
+          "serif",
+          "sans-serif",
+          "cursive",
+          "monospace",
+          "fantasy",
+          "Impact, Charcoal, sans-serif",
+          "'Palatino Linotype', 'Book Antiqua', Palatino, serif",
+          "Tahoma, Geneva, sans-serif",
+          "Century Gothic, sans-serif",
+          "'Lucida Sans Unicode', 'Lucida Grande', sans-serif",
+          "'Arial Black', Gadget, sans-serif",
+          "Copperplate, 'Copperplate Gothic Light', sans-serif",
+          "'Lucida Console', Monaco, monospace",
+          "'Gill Sans', 'Gill Sans MT', sans-serif",
+          "'Trebuchet MS', Helvetica, sans-serif",
+        ]);
+        build("line-height", "1.5em", [
+          ".9em",
+          "1em",
+          "1.1em",
+          "1.25em",
+          "1.3em",
+          "1.4em",
+          "1.5em",
+          "1.6em",
+          "1.75em",
+          "2.0em",
+          "2.5em",
+        ]);
+        build("font-style", "normal", ["normal", "italic", "oblique"]);
+        build("font-variant", "normal", ["normal", "small-caps"]);
+        build("text-align", "justify", [
+          "justify",
+          "left",
+          "right",
+          "center",
+        ]);
+        build("font-size", "120%", [
+          "50%",
+          "80%",
+          "90%",
+          "100%",
+          "120%",
+          "140%",
+          "160%",
+          "200%",
+          "400%",
+        ]);
+        build("font-weight", "normal", [
+          "normal", "bold", "bolder", "lighter", "100", "200", "300", "400", "500", "600", "700", "800", "900"
+        ]);
+        build("letter-spacing", "0em", [
+          "0em",
+          "0.05em",
+          "0.10em",
+          "0.15em",
+          "0.20em",
+          "0.30em",
+          "1em",
+        ]);
+        build("color", "#111", ["#000", "#111", "#333", "#555", "#777", "#CCC"]);
+
+      });
+    -->
+    </script>
+</html>
