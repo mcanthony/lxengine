@@ -118,10 +118,10 @@
                         ctx.mozImageSmoothingEnabled = true;
                         var img = new Image();
 
-                        var opacity = 0.5;
+                        var opacity = 0.8;
                         function update() {
 
-                          var scale = 135 * (1.0 - opacity/6);
+                          var scale = 135 * (1.0 - opacity/3);
                           ctx.drawImage(img, 67.5 - scale/2.0, 67.5 - scale/2.0, scale, scale);
 
                           ctx.fillStyle = "rgba(255, 255, 255," + opacity + ")";
@@ -129,9 +129,9 @@
                           ctx.arc(67.5, 67.5, scale/2.0, 0, Math.PI * 2, true);
                           ctx.closePath();
                           ctx.fill();
-                          opacity -= .01;
+                          opacity -= .0025;
                           if (opacity > 0) {
-                            window.setTimeout(update, 500);
+                            window.setTimeout(update, 100);
                           }
                         }
 
