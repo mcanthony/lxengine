@@ -4,6 +4,16 @@
       <script type="text/javascript" src="script/extern/less-1.1.3.min.js"></script>
       <script type="text/javascript" src="script/extern/jquery-1.6.4.min.js"></script>
       <script type="text/javascript" src="script/extern/jquery.cookie.js"></script>
+      
+      <!-- Chrome / Webkit specific stylization (unfortunately!) -->
+      <script type="text/javascript">
+      <!--
+        if ($.browser.webkit) {
+          document.writeln("<style type='text/css'> h1:first-letter { margin-top: -.25em; } </style>");
+        }
+      -->
+      </script>
+
     </head>
     <body>
         <div id="body-outer">
