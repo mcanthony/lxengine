@@ -1,0 +1,142 @@
+<html>
+    <head>
+      <link type="text/css" href="style/theme/default.less" rel="stylesheet/less" />
+      <script type="text/javascript" src="script/extern/less-1.1.3.min.js"></script>
+      <script type="text/javascript" src="script/extern/jquery-1.6.4.min.js"></script>
+      <script type="text/javascript" src="script/extern/jquery.cookie.js"></script>
+    </head>
+    <body>
+        <div id="body-outer">
+            <h1>Athile Technologies</h1>
+            <div class="tagline">
+                Delivering visualization techonology for the independent designer.
+            </div>
+            
+            <div class="info-box" style="postion: relative; top: -6em; padding-top: 6em;">
+                <!-- Top row layout -->
+                <div class="layout-row">
+                    <div class="layout-col1_3">
+                        <h4>Tools</h4>
+                        <ul>
+                          <li><a href="tools/font-preview">CSS Font Preview</a></li>
+                        </ul>
+                        <h4>Technologies</h4>
+                        <ul>
+                          <li><a href="tools/font-preview">LxEngine</a></li>
+                          <li><a href="tools/font-preview">GLGeom</a></li>
+                        </ul>
+                        <h4>Library</h4>
+                        <ul>
+                          <li><a href="http://blog.athile.net">athile blog</a></li>
+                          <li><a href="http://www.athile.net/library/wiki">athile wiki</a></li>
+                        </ul>
+                    </div>
+                    <div class="layout-col2_3" style="position: relative; top: -4em">
+                        <h2>Contact</h2>
+                        <p>
+                          <em>
+                            Contact use today to enquire about 
+                            having athile technologies handle the technical side of your next visualization project.
+                          </em>
+                          <div style="text-align: center">
+                            <a class="span-button" href="mailto:athile@athile.net">Contact us today</a>
+                          </div>
+                        </p>
+                        <h2>About</h2>
+                        <div>
+                          <p>
+                            Athile Technologies is an small <strong>software development consulting company</strong>
+                            aiming to develop custom solutions for independent designers, design
+                            firms, and individuals for their professional and personal projects. 
+                          </p>
+                          <p>
+                            We seek out small projects to develop custom visualization and presentation elements for 
+                            <em>web sites</em> using the latest in HTML technologies, <em>mobile platforms</em>
+                            such as the iPad and Android, and <em>desktop applications</em> utilitizing the power
+                            of a hosted GPU.
+                          </p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Divider -->
+                <div style="text-align: center; font-size: 200%; position: relative; top: -1em; letter-spacing: .25em; color: #CCC"> &bullet; &diams; &bullet; &diams; &bullet;</div>
+
+                <!-- Start details -->
+                <div class="layout-row">
+                  <div class="layout-col2_3">
+                    <h2>In More Detail...</h2>
+                    <p>
+                      Athile Technologies is a small, independent consulting company aiming to develop software
+                      for designers in the form of tools and visualization technologies.
+                    </p>
+                    <p>
+                      We are eager to work on the web, on mobile applications, and on the desktop.  Our engineers
+                      have experience with low-level C++ written for the GPU as well as high-level web technologies 
+                      such as LESS.  The Athile Technologies engineering is composed <em>exclusively</em> of programmers
+                      who are interested in design: they know there is <strong>both form and function</strong> in <em>all</em>
+                      aspects of a project.  
+                      It is a team that understands the importance of theory and the necessity of practice; and thrives
+                      on defining the correct balance between the two.
+                      We will produce only the <strong>highest-quality</strong> deliverables including 
+                      well-written documentation, a usable and intuitive API, and (of course) cleanly written and
+                      standards-oriented code.  
+                    </p>
+                    <p>
+                      Athile Technologies looks forward to working with clients who want high-quality deliverables
+                      that uniquely serve their requirements rather than off-the-shelf generic solutions or poorly 
+                      re-themed approximations of what is truly desired.
+                    </p>
+                    <div style="text-align: center">
+                      <a class="span-button" href="mailto:athile@athile.net">Contact us today</a>
+                    </div>
+                    <p>
+                      Contact us today if you are looking for a small techonology development firm that understands
+                      the requirement for high-quality, well-designed solutions.
+                    </p>
+                  </div>
+                  <div class="layout-col1_3">
+                    <div style="margin: 6em auto 1em auto">
+                      <div style="margin: 0 auto; width: 135px;">
+                        <canvas id="logo" width="135" height="135" style="background-color: transparent" />
+                      </div>
+                    </div>
+                    <script type="text/javascript">
+                    <!--
+                      $(document).ready(function () {
+                        var ctx = document.getElementById("logo").getContext('2d');
+                        ctx.mozImageSmoothingEnabled = true;
+                        var img = new Image();
+
+                        var opacity = 0.5;
+                        function update() {
+
+                          var scale = 135 * (1.0 - opacity/6);
+                          ctx.drawImage(img, 67.5 - scale/2.0, 67.5 - scale/2.0, scale, scale);
+
+                          ctx.fillStyle = "rgba(255, 255, 255," + opacity + ")";
+                          ctx.beginPath();
+                          ctx.arc(67.5, 67.5, scale/2.0, 0, Math.PI * 2, true);
+                          ctx.closePath();
+                          ctx.fill();
+                          opacity -= .01;
+                          if (opacity > 0) {
+                            window.setTimeout(update, 500);
+                          }
+                        }
+
+                        img.onload = function () {
+                          ctx.clearRect(0, 0, 135, 135);
+                          update();
+                        };
+                        img.src = "images/wiki-logo.png";
+                      });
+                    -->
+                    </script>
+                  </div>
+                </div>
+            </div>
+           
+        </div>
+    </body>
+</html>

@@ -1,0 +1,194 @@
+/*=============================================================================
+    Page variables
+ =============================================================================*/
+
+@base-color1: #567ba4;
+@base-color2: #ac3d11;
+
+/*=============================================================================
+    Base HTML styles
+ =============================================================================*/
+
+body
+{
+	background-image: url(../../images/bg-grid-green-32x32.png);
+    margin: 0px;
+    padding: 0px;
+}
+h1
+{
+    color : darken(@base-color1, 25%);
+
+    font-size: 300%;
+    letter-spacing: 16px;
+	text-shadow: 0.05em 0.05em 0.05em #CCC;
+}
+h1:first-letter
+{
+	font-size: 500%;
+	color : @base-color1;
+	float: left;
+	letter-spacing: 0px;
+	margin-top: -.25em;
+	margin-right: -.175em;
+	text-shadow: 0.015em 0.015em 0.05em #CCC;
+}
+h2
+{
+    color : lighten(@base-color1, 20%);
+
+    font-size: 160%;
+	font-style: italic;
+    letter-spacing: .2em;
+
+	padding: 0em;
+	margin: 0em 0em 1em 0em;
+}
+h3
+{
+    color : darken(@base-color1, 10%);
+    font-size: 130%;
+    margin: 0em;
+    padding: 0em;
+}
+h4
+{
+    font-size: 120%;
+    letter-spacing: .2em;
+    font-style: italic;
+    margin: 0;
+    padding: 0;
+    color : darken(@base-color1, 10%);
+    text-shadow: rgba(0, 0, 0, .25) 1px 1px 2px;
+}
+h5
+{
+    font-size: 110%;
+    color : darken(@base-color1, 10%);
+}
+h6
+{
+    font-size: 100%;
+    color : darken(@base-color1, 0%);
+}
+
+p, blockquote
+{
+    color : darken( desaturate(@base-color1, 50%), 30%);
+    
+    line-height: 1.5em;
+    text-align: justify;
+}
+
+a
+{
+    color : darken( spin( @base-color1, 160), 20% );
+    text-decoration: none;
+    border-bottom: 1px dotted @base-color1;
+}
+a:hover
+{
+    color : @base-color1;
+}
+
+strong
+{
+    color: @base-color2;
+}
+
+/*=============================================================================
+    Layout Styles
+ =============================================================================*/
+
+ .clear
+ {
+    clear: both;
+ }
+
+.layout-row
+{
+}
+.layout-row > div
+{
+    display: inline-block;
+    vertical-align: top;
+    margin: 0em .5em;
+}
+
+.layout-col1_3
+{
+    width: 30%;
+    margin-left: auto;
+    margin-right: auto;
+}
+.layout-col2_3
+{
+    width: 60%;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+/*=============================================================================
+    Section styles
+ =============================================================================*/
+
+#body-outer
+{
+	background-color: rgba(255, 255, 255, .97);
+	border: 1px solid rgba(0, 0, 0, .08);
+	box-shadow: 1em 1em 2em rgba(0, 0, 0, .5);
+	
+	border-radius: .5em;
+    margin: .5em auto 6em auto;
+	padding: 1.5em 4em 2em 4em;
+	max-width: 64em;
+    min-height: 60em;
+}
+
+/*=============================================================================
+    Content type styles
+ =============================================================================*/
+
+ .tagline
+ {
+	color: #666;
+	font-style: italic;
+	
+	font-size: 100%;
+	letter-spacing: 2px;
+	margin: -1em 0em 2em 12em;
+ }
+ .info-box
+ {
+    background-color: rgba(255, 255, 255, .50);
+	padding: 1em 3em 4em 3em; 
+	margin-bottom: 2em;
+    margin-right: 4em;
+	border: 2px solid #EEE; 
+	border-radius: 1em
+ }
+
+ .big-button
+ {
+	padding: 1em 4em 1em 4em; 
+	margin: -1em auto 1em auto;
+	width: 32em;
+	
+	background: rgba(160, 200, 240, .25);
+	border: 2px solid rgba(100, 100, 140, .1); 
+	border-radius: 1em;
+	box-shadow: 0 0 2em .25em rgba(160, 200, 240, .25) inset;
+ }
+
+ a.span-button
+ {
+    display: inline-block;
+  	background: rgba(160, 200, 240, .5);
+	border: 2px solid rgba(100, 100, 140, .1); 
+	border-radius: 1em;
+	box-shadow: 0 0 2em .25em rgba(160, 200, 240, .25) inset;
+    padding: 0em .5em 0em .5em;  
+    background-image: linear-gradient(top, #eee, #ccc);
+    text-shadow: 0 1px 0 rgba(255, 255, 255, .8);
+ }
+
