@@ -39,6 +39,7 @@ h2
     font-size: 160%;
 	font-style: italic;
     letter-spacing: .2em;
+    text-shadow: rgba(0, 0, 0, .05) 1px 1px 2px;
 
 	padding: 0em;
 	margin: 0em 0em 1em 0em;
@@ -77,6 +78,9 @@ p, blockquote
     
     line-height: 1.5em;
     text-align: justify;
+
+    background-color: rgba(255,255,255,.02);
+    text-shadow: rgba(255,255,255,.95) 0px 0px 5px;
 }
 
 a
@@ -134,7 +138,9 @@ strong
 #body-outer
 {
 	background-color: rgba(255, 255, 255, .97);
-	border: 1px solid rgba(0, 0, 0, .08);
+    background-image: -webkit-linear-gradient(bottom, rgba(255,255,255,.25) 92%, rgba(100,140,140,.25) 98%);
+
+    border: 1px solid rgba(0, 0, 0, .08);
 	box-shadow: 1em 1em 2em rgba(0, 0, 0, .5);
 	
 	border-radius: .5em;
@@ -160,6 +166,8 @@ strong
  .info-box
  {
     background-color: rgba(255, 255, 255, .50);
+	background-image: -webkit-linear-gradient(left, rgba(255,255,255,.85) 45%, rgba(240,240,240,.85) 98%);
+
 	padding: 1em 3em 4em 3em; 
 	margin-bottom: 2em;
     margin-right: 4em;
