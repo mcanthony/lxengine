@@ -5,6 +5,7 @@
 @base-color1: #567ba4;
 @base-color2: #ac3d11;
 @base-color3: spin(@base-color1, -20);
+@base-color4: rgb(120,200,180);
 
 /*=============================================================================
     Base HTML styles
@@ -31,23 +32,27 @@ h1:first-letter
 	float: left;
 	letter-spacing: 0px;
 	margin-right: -.175em;
+<<<<<<< HEAD
 	text-shadow: 0.018em 0.018em 0.045em #333;
+=======
+	text-shadow: 0.015em 0.005em 0.05em rgba(0,0,0,.35);
+>>>>>>> 30131acadaa11eb2a6cfd0dbce76d86b2a332840
 }
 h2
 {
-    color : lighten(@base-color1, 20%);
+    color : darken(@base-color1, 10%);
 
-    font-size: 160%;
+    font-size: 140%;
 	font-style: italic;
     letter-spacing: .2em;
-    text-shadow: rgba(0, 0, 0, .05) 1px 1px 2px;
+    text-shadow: rgba(0, 0, 0, .15) 1px 1px 2px;
 
 	padding: 0em;
 	margin: 0em 0em 1em 0em;
 }
 h3
 {
-    color : darken(@base-color1, 10%);
+    color : lighten(@base-color1, 10%);
     font-size: 130%;
     margin: 0em;
     padding: 0em;
@@ -59,10 +64,8 @@ h4
     font-style: italic;
     margin: 0;
     padding: 0em 0em 0em 1em;
-    color : darken(@base-color1, 10%);
-    text-shadow: rgba(0, 0, 0, .25) 1px 1px 2px;
-
-    background-image: -webkit-linear-gradient(top left, rgba(0,0,0,.05) 2%, rgba(100,140,140,.05) 5%, rgba(100,140,140,.00) 95%);
+    color : spin( lighten(@base-color1, 5%), -8);
+    text-shadow: rgba(0, 0, 0, .15) 1px 1px 2px;
 }
 h5
 {
@@ -75,11 +78,17 @@ h6
     color : darken(@base-color1, 0%);
 }
 
+li,p
+{
+	font-family: sans-serif;
+}
+
 p, blockquote
 {
     color : darken( desaturate(@base-color1, 50%), 30%);
+	font-size: 11pt;
     
-    line-height: 1.5em;
+    line-height: 1.65em;
     text-align: justify;
 
     background-color: rgba(255,255,255,.02);
@@ -88,9 +97,9 @@ p, blockquote
 
 a
 {
-    color : darken( spin( @base-color1, 160), 20% );
+    color : darken( desaturate(@base-color4, 20%), 18% );
     text-decoration: none;
-    border-bottom: 1px dotted @base-color1;
+    border-bottom: 1px dotted lighten(desaturate(@base-color4, 90%),20%);
 }
 a:hover
 {
@@ -103,10 +112,11 @@ strong
 }
 li
 {
-    font-size: 95%;
-    letter-spacing: .1em;
-    padding-bottom: .45em;
     text-shadow: 2px 2px 3px rgba(200,128,128,.5);
+	font-size: 10pt;
+	font-weight: bold;
+    letter-spacing: .05em;
+    padding-bottom: .5em;
 }
 
 /*=============================================================================
@@ -137,9 +147,19 @@ li
 .layout-col2_3
 {
     width: 60%;
+}
+
+.layout-col1_4
+{
+    width: 23%;
     margin-left: auto;
     margin-right: auto;
 }
+.layout-col3_4
+{
+    width: 72%;
+}
+
 
 /*=============================================================================
     Section styles
