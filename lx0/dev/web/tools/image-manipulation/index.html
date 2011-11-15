@@ -14,120 +14,78 @@
     <body>
        <div id="body-wrap1">
           <div style="position:relative">
-          <canvas class="color-wheel" data-saturation="3" width="512" height="512" style="z-index : -10; position: absolute; left: -128px;"></canvas>          
+          <canvas class="color-wheel" data-saturation="2" width="512" height="512" style="z-index : -10; position: absolute; left: -128px;"></canvas>          
           </div>
-          <h1 style="">Color</h1>
+          <h1 style="">Image</h1>
 
-          <fieldset style="background-color: rgba(255,255,255,.8)">
-            <legend>Settings</legend>
-            <form id="color-form">
-              <input id="color-field" type="text" value="#FFFFFF" />
-              <button type="submit">Parse</button>
-            </form>
-          </fieldset>
-
-          <div>
-            <canvas class="color-view" data-spin="-60" style="border: 1px solid #EEE" width="64" height="64"></canvas>
-            <canvas class="color-view" data-spin="-30" style="border: 1px solid #EEE" width="64" height="64"></canvas>
-            <canvas class="color-view" data-spin="0" style="border: 1px solid #EEE" width="64" height="64"></canvas>
-            <canvas class="color-view" data-spin="30" style="border: 1px solid #EEE" width="64" height="64"></canvas>
-            <canvas class="color-view" data-spin="60" style="border: 1px solid #EEE" width="64" height="64"></canvas>
-          </div>
-          <div>
-            <canvas class="color-view" data-saturation="-80" style="border: 1px solid #EEE" width="64" height="64"></canvas>
-            <canvas class="color-view" data-saturation="-40" style="border: 1px solid #EEE" width="64" height="64"></canvas>
-            <canvas class="color-view" data-saturation="0" style="border: 1px solid #EEE" width="64" height="64"></canvas>
-            <canvas class="color-view" data-saturation="40" style="border: 1px solid #EEE" width="64" height="64"></canvas>
-            <canvas class="color-view" data-saturation="80" style="border: 1px solid #EEE" width="64" height="64"></canvas>
-          </div>
-          <div>
-            <canvas class="color-view" data-value="-60" style="border: 1px solid #EEE" width="64" height="64"></canvas>
-            <canvas class="color-view" data-value="-30" style="border: 1px solid #EEE" width="64" height="64"></canvas>
-            <canvas class="color-view" data-value="0" style="border: 1px solid #EEE" width="64" height="64"></canvas>
-            <canvas class="color-view" data-value="30" style="border: 1px solid #EEE" width="64" height="64"></canvas>
-            <canvas class="color-view" data-value="60" style="border: 1px solid #EEE" width="64" height="64"></canvas>
-          </div>
+          <p>
+            This is the temporary home for the Color Wheel ui-element.  The Color wheel needs to be refined
+            into a JQuery plug-in with a more standardized parameter passing mechanism.
+          </p>
 
           <h2>Color Wheel</h2>
-          <canvas class="color-wheel" data-step-factor=".5" width="128" height="128"></canvas>
-          <canvas class="color-wheel" data-step-factor="2" width="128" height="128"></canvas>
-          <canvas class="color-wheel" data-step-factor="4" width="128" height="128"></canvas>
-          <canvas class="color-wheel" data-step-factor="8" width="128" height="128"></canvas>
-
+          
+          <h3>Arc Count and Arc Radius</h3>
+          <canvas class="color-wheel" data-step-count="3" data-step-arc="80" width="128" height="128"></canvas>
+          <canvas class="color-wheel" data-step-count="3" data-step-arc="10" width="128" height="128"></canvas>
+          <canvas class="color-wheel" data-step-count="8" data-step-arc="40" width="128" height="128"></canvas>
+          <canvas class="color-wheel" data-step-count="32" data-step-arc="5" width="128" height="128"></canvas>
           <p>
-            Digital devices display an <em>approximation</em> of the full physical 
-            <a href="http://en.wikipedia.org/wiki/Visible_spectrum" class="wikipedia">visible spectrum</a>
-            of colors.
+            The number of arc segments drawn in the color wheel can be set to an 0-360 integer value.  The span of
+            each individual arc can likewise be set a 0-360 value.  Normally the arc radius should be set such 
+            that <code>arcCount * arcRadius <= 360</code>.
           </p>
-          <p>&nbsp;</p>
+          
+          <h3>Inner Radius</h3>
+          <canvas class="color-wheel" data-step-count="360" data-step-arc="2" data-inner=".25" width="128" height="128"></canvas>
+          <canvas class="color-wheel" data-step-count="32" data-step-arc="5" data-inner=".8" width="128" height="128"></canvas>
+          <canvas class="color-wheel" data-step-count="32" data-step-arc="5" data-inner=".95" width="128" height="128"></canvas>
 
-          <h2>Saturation</h2>
-          <canvas class="color-wheel" data-step-factor="2" data-saturation="100" width="128" height="128"></canvas>
-          <canvas class="color-wheel" data-step-factor="2" data-saturation="60" width="128" height="128"></canvas>
-          <canvas class="color-wheel" data-step-factor="2" data-saturation="40" width="128" height="128"></canvas>
-          <canvas class="color-wheel" data-step-factor="2" data-saturation="20" width="128" height="128"></canvas>
+          <h3>Hue Offset</h3>
+          <canvas class="color-wheel" data-step-count="3" data-step-arc="80" data-offset="10" width="128" height="128"></canvas>
+          <canvas class="color-wheel" data-step-count="3" data-step-arc="80" data-offset="30" width="128" height="128"></canvas>
+          <canvas class="color-wheel" data-step-count="3" data-step-arc="80" data-offset="90" width="128" height="128"></canvas>
+          <canvas class="color-wheel" data-step-count="3" data-step-arc="80" data-offset="140" width="128" height="128"></canvas>
 
-          <h2>Value</h2>
-          <canvas class="color-wheel" data-step-factor="2" data-value="100" width="128" height="128"></canvas>
-          <canvas class="color-wheel" data-step-factor="2" data-value="60" width="128" height="128"></canvas>
-          <canvas class="color-wheel" data-step-factor="2" data-value="40" width="128" height="128"></canvas>
-          <canvas class="color-wheel" data-step-factor="2" data-value="20" width="128" height="128"></canvas>
-
-          <p>
-          Warm, cool, gradients, contrast, subtle, lighteness, hsv, grayscale.
-          Palettes, sets, complements.
-          </p>
-
-          <h2>Unit Tests</h2>
-          <div class="unit-test">lx.color.parse('#FF7733').html()</div>
-      
        </div>
     </body>
     <script>
     <!--
-      function acquire_context_normalized_2d(canvas) {
-        var context = canvas.getContext('2d');
 
-        context.save();
-        context.scale(canvas.width / 2, canvas.height / 2);
-        context.translate(1, 1);
-        return context;
-      }
-
-      function redraw(color) {
-
-        $(".color-view").each(function () {
-          var ctx = acquire_context_normalized_2d(this);
-
-          var spin = parseFloat($(this).attr("data-spin") || 0);
-          var sat = parseFloat($(this).attr("data-saturation") || 0);
-          var val = parseFloat($(this).attr("data-value") || 0);
-
-          var result = color.hue(spin).saturation(sat).value(val);
-          $(this).attr('title', result.html());
-          ctx.fillStyle = result.html('rgba');
-          ctx.fillRect(-1, -1, 2, 2);
-          ctx.restore();
-        });
-      }
 
       $(document).ready(function () {
+
+        function acquire_context_normalized_2d(canvas) {
+          var context = canvas.getContext('2d');
+
+          context.save();
+          context.scale(canvas.width / 2, canvas.height / 2);
+          context.translate(1, 1);
+          return context;
+        }
 
         $(".color-wheel").each(function () {
           var elem = this;
           window.setTimeout(function () {
             var ctx = acquire_context_normalized_2d(elem);
-            var step = 2 * Math.PI / 64;
 
-            var factor = parseFloat($(elem).attr("data-step-factor") || 0.5);
+
+            var offset = parseFloat($(elem).attr("data-offset") || 0);
+            var count = parseFloat($(elem).attr("data-step-count") || 360);
+            var arc = parseFloat($(elem).attr("data-step-arc") || 1);
+            var inner = parseFloat($(elem).attr("data-inner") || .6);
             var saturation = parseInt($(elem).attr("data-saturation") || 100);
             var value = parseInt($(elem).attr("data-value") || 100);
 
-            for (var i = 0; i < Math.PI * 2 - step * factor * .5; i += step * factor) {
-              ctx.fillStyle = lx.color.parse('hsv', i * 180 / Math.PI, saturation, value).html('rgba');
+
+            arc *= Math.PI / 180.0;
+            var step = 2 * Math.PI / count;
+
+            for (var i = 0; i < Math.PI * 2; i += step) {
+              ctx.fillStyle = lx.color.parse('hsv', (i * 180 / Math.PI + offset) % 360, saturation, value).html('rgba');
               ctx.beginPath();
               ctx.moveTo(0, 0);
-              ctx.arc(0, 0, 1, i - step / 2, i + step / 2);
+              ctx.arc(0, 0, 1, i - arc / 1.95, i + arc / 1.95);
               ctx.lineTo(0, 0);
               ctx.fill();
               ctx.closePath();
@@ -135,45 +93,13 @@
 
             ctx.fillStyle = "white";
             ctx.beginPath();
-            ctx.arc(0, 0, .6, 0, 2 * Math.PI);
+            ctx.arc(0, 0, inner, 0, 2 * Math.PI);
             ctx.fill();
             ctx.closePath();
           }, 1);
         });
 
-        $("#color-field").autocomplete({
-          delay: 5,
-          autoFocus: true,
-          source: lx.color.lib.named_colors(),
-          select: function (event, ui) {
-            if (ui.item.value) {
-              $("#color-field").val(ui.item.value);
-              $("#color-form").submit();
-            }
-          }
-        });
 
-        $("#color-form").submit(function () {
-          try {
-            var val = $("#color-field").val();
-            val = lx.color.parse(val);
-            if (val)
-              redraw(val);
-          } catch (e) {
-            console.log(e);
-          }
-          return false;
-        });
-
-        $(".wikipedia").each(function () {
-          $(this).after($("<sup style='color: Gray'>W</sup>"));
-          $(this).attr("target", "_blank");
-        });
-
-        $(".unit-test").each(function () {
-          var code = $(this).text();
-          $(this).text(code + " => " + JSON.stringify(eval(code + ";")));
-        });
 
       });
     -->
