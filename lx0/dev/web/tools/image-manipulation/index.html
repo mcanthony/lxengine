@@ -1,0 +1,502 @@
+<!DOCTYPE html>
+<html>
+    <head>
+      <link type="text/css" href="style/default.less" rel="stylesheet/less" />
+      <link type="text/css" href="script/extern/jqueryui/css/ui-lightness/jquery-ui-1.8.16.custom.css" rel="Stylesheet"/>
+      
+      <script type="text/javascript" src="script/extern/less-1.1.3.min.js"></script>
+      <script type="text/javascript" src="script/extern/jquery-1.6.4.min.js"></script>
+      <script type="text/javascript" src="script/extern/jquery.cookie.js"></script>
+      <script type="text/javascript" src="script/extern/jqueryui/js/jquery-ui-1.8.16.custom.min.js"></script>
+    </head>
+    <body>
+       <div id="body-wrap1">
+          <div style="position:relative">
+          <canvas class="color-wheel" data-saturation="3" width="512" height="512" style="z-index : -10; position: absolute; left: -128px;"></canvas>          
+          </div>
+          <h1 style="">Color</h1>
+
+          <fieldset style="background-color: rgba(255,255,255,.8)">
+            <legend>Settings</legend>
+            <form id="color-form">
+              <input id="color-field" type="text" value="#FFFFFF" />
+              <button type="submit">Parse</button>
+            </form>
+          </fieldset>
+
+          <div>
+            <canvas class="color-view" data-spin="-60" style="border: 1px solid #EEE" width="64" height="64"></canvas>
+            <canvas class="color-view" data-spin="-30" style="border: 1px solid #EEE" width="64" height="64"></canvas>
+            <canvas class="color-view" data-spin="0" style="border: 1px solid #EEE" width="64" height="64"></canvas>
+            <canvas class="color-view" data-spin="30" style="border: 1px solid #EEE" width="64" height="64"></canvas>
+            <canvas class="color-view" data-spin="60" style="border: 1px solid #EEE" width="64" height="64"></canvas>
+          </div>
+          <div>
+            <canvas class="color-view" data-saturation="-80" style="border: 1px solid #EEE" width="64" height="64"></canvas>
+            <canvas class="color-view" data-saturation="-40" style="border: 1px solid #EEE" width="64" height="64"></canvas>
+            <canvas class="color-view" data-saturation="0" style="border: 1px solid #EEE" width="64" height="64"></canvas>
+            <canvas class="color-view" data-saturation="40" style="border: 1px solid #EEE" width="64" height="64"></canvas>
+            <canvas class="color-view" data-saturation="80" style="border: 1px solid #EEE" width="64" height="64"></canvas>
+          </div>
+          <div>
+            <canvas class="color-view" data-value="-60" style="border: 1px solid #EEE" width="64" height="64"></canvas>
+            <canvas class="color-view" data-value="-30" style="border: 1px solid #EEE" width="64" height="64"></canvas>
+            <canvas class="color-view" data-value="0" style="border: 1px solid #EEE" width="64" height="64"></canvas>
+            <canvas class="color-view" data-value="30" style="border: 1px solid #EEE" width="64" height="64"></canvas>
+            <canvas class="color-view" data-value="60" style="border: 1px solid #EEE" width="64" height="64"></canvas>
+          </div>
+
+          <h2>Color Wheel</h2>
+          <canvas class="color-wheel" data-step-factor=".5" width="128" height="128"></canvas>
+          <canvas class="color-wheel" data-step-factor="2" width="128" height="128"></canvas>
+          <canvas class="color-wheel" data-step-factor="4" width="128" height="128"></canvas>
+          <canvas class="color-wheel" data-step-factor="8" width="128" height="128"></canvas>
+
+          <p>
+            Digital devices display an <em>approximation</em> of the full physical 
+            <a href="http://en.wikipedia.org/wiki/Visible_spectrum" class="wikipedia">visible spectrum</a>
+            of colors.
+          </p>
+          <p>&nbsp;</p>
+
+          <h2>Saturation</h2>
+          <canvas class="color-wheel" data-step-factor="2" data-saturation="100" width="128" height="128"></canvas>
+          <canvas class="color-wheel" data-step-factor="2" data-saturation="60" width="128" height="128"></canvas>
+          <canvas class="color-wheel" data-step-factor="2" data-saturation="40" width="128" height="128"></canvas>
+          <canvas class="color-wheel" data-step-factor="2" data-saturation="20" width="128" height="128"></canvas>
+
+          <h2>Value</h2>
+          <canvas class="color-wheel" data-step-factor="2" data-value="100" width="128" height="128"></canvas>
+          <canvas class="color-wheel" data-step-factor="2" data-value="60" width="128" height="128"></canvas>
+          <canvas class="color-wheel" data-step-factor="2" data-value="40" width="128" height="128"></canvas>
+          <canvas class="color-wheel" data-step-factor="2" data-value="20" width="128" height="128"></canvas>
+
+          <p>
+          Warm, cool, gradients, contrast, subtle, lighteness, hsv, grayscale.
+          Palettes, sets, complements.
+          </p>
+          
+       </div>
+    </body>
+    <script>
+    <!--
+      var lx = {};
+      lx.web = {};
+      lx.web.tr0 = {};
+      lx.web.tr0.color = {};
+
+      (function (NS) {
+        var hsv = function () { };
+        hsv.prototype.h = 0;
+        hsv.prototype.s = 0;
+        hsv.prototype.v = 0;
+        
+        lx.web.tr0.color.hsv = hsv;
+
+        /**
+        * Converts HSV to RGB value.
+        *
+        * @param {Integer} h Hue as a value between 0 - 360 degrees
+        * @param {Integer} s Saturation as a value between 0 - 100 %
+        * @param {Integer} v Value as a value between 0 - 100 %
+        * @returns {Array} The RGB values  EG: [r,g,b], [255,255,255]
+        * 
+        * @credit http://matthaynes.net/blog/2008/08/07/javascript-colour-functions/
+        */
+        NS.hsv_to_rgb = function (h, s, v) {
+
+          var s = s / 100,
+          v = v / 100;
+
+          var hi = Math.floor((h / 60) % 6);
+          var f = (h / 60) - hi;
+          var p = v * (1 - s);
+          var q = v * (1 - f * s);
+          var t = v * (1 - (1 - f) * s);
+
+          var rgb = [];
+
+          switch (hi) {
+            case 0: rgb = [v, t, p]; break;
+            case 1: rgb = [q, v, p]; break;
+            case 2: rgb = [p, v, t]; break;
+            case 3: rgb = [p, q, v]; break;
+            case 4: rgb = [t, p, v]; break;
+            case 5: rgb = [v, p, q]; break;
+          }
+
+          var r = Math.min(255, Math.round(rgb[0] * 256)),
+          g = Math.min(255, Math.round(rgb[1] * 256)),
+          b = Math.min(255, Math.round(rgb[2] * 256));
+          return [r, g, b];
+        }
+
+        /**
+        * Converts RGB to HSV value.
+        *
+        * @param {Integer} r Red value, 0-255
+        * @param {Integer} g Green value, 0-255
+        * @param {Integer} b Blue value, 0-255
+        * @returns {Array} The HSV values EG: [h,s,v], [0-360 degrees, 0-100%, 0-100%]
+        */
+        NS.rgb_to_hsv = function(r, g, b) {
+
+          var r = (r / 255),
+         g = (g / 255),
+  	 b = (b / 255);
+
+          var min = Math.min(Math.min(r, g), b),
+        max = Math.max(Math.max(r, g), b),
+        delta = max - min;
+
+          var value = max,
+        saturation,
+        hue;
+
+          // Hue
+          if (max == min) {
+            hue = 0;
+          } else if (max == r) {
+            hue = (60 * ((g - b) / (max - min))) % 360;
+          } else if (max == g) {
+            hue = 60 * ((b - r) / (max - min)) + 120;
+          } else if (max == b) {
+            hue = 60 * ((r - g) / (max - min)) + 240;
+          }
+
+          if (hue < 0) {
+            hue += 360;
+          }
+
+          // Saturation
+          if (max == 0) {
+            saturation = 0;
+          } else {
+            saturation = 1 - (min / max);
+          }
+
+          return [Math.round(hue), Math.round(saturation * 100), Math.round(value * 100)];
+        };
+
+        /*
+         * @credit http://matthaynes.net/blog/2008/08/07/javascript-colour-functions/
+         */
+        NS.rgb_to_hex = function (rgb) {
+          function i2h(i) {
+            var hex = parseInt(i).toString(16);
+            return (hex.length < 2) ? "0" + hex : hex;
+          }
+          return "#" + i2h(rgb[0]) + i2h(rgb[1]) + i2h(rgb[2]);
+        };
+        NS.hex_to_rgb = function(hex) {
+        };
+
+        NS.hex7_to_rgb = function(color) {
+          return [
+            parseInt(color.substr(1, 2), 16),
+            parseInt(color.substr(3, 2), 16),
+            parseInt(color.substr(5, 2), 16)
+          ];
+        }
+
+        var _color_table = 
+        {
+          aliceblue : NS.hex7_to_rgb("#F0F8FF"),
+          antiquewhite : NS.hex7_to_rgb("#FAEBD7"),
+          aqua : NS.hex7_to_rgb("#00FFFF"),
+          aquamarine : NS.hex7_to_rgb("#7FFFD4"),
+          azure : NS.hex7_to_rgb("#F0FFFF"),
+          beige : NS.hex7_to_rgb("#F5F5DC"),
+          bisque : NS.hex7_to_rgb("#FFE4C4"),
+          black : NS.hex7_to_rgb("#000000"),
+          blanchedalmond : NS.hex7_to_rgb("#FFEBCD"),
+          blue : NS.hex7_to_rgb("#0000FF"),
+          blueviolet : NS.hex7_to_rgb("#8A2BE2"),
+          brown : NS.hex7_to_rgb("#A52A2A"),
+          burlywood : NS.hex7_to_rgb("#DEB887"),
+          cadetblue : NS.hex7_to_rgb("#5F9EA0"),
+          chartreuse : NS.hex7_to_rgb("#7FFF00"),
+          chocolate : NS.hex7_to_rgb("#D2691E"),
+          coral : NS.hex7_to_rgb("#FF7F50"),
+          cornflowerblue : NS.hex7_to_rgb("#6495ED"),
+          cornsilk : NS.hex7_to_rgb("#FFF8DC"),
+          crimson : NS.hex7_to_rgb("#DC143C"),
+          cyan : NS.hex7_to_rgb("#00FFFF"),
+          darkblue : NS.hex7_to_rgb("#00008B"),
+          darkcyan : NS.hex7_to_rgb("#008B8B"),
+          darkgoldenrod : NS.hex7_to_rgb("#B8860B"),
+          darkgray : NS.hex7_to_rgb("#A9A9A9"),
+          darkgrey : NS.hex7_to_rgb("#A9A9A9"),
+          darkgreen : NS.hex7_to_rgb("#006400"),
+          darkkhaki : NS.hex7_to_rgb("#BDB76B"),
+          darkmagenta : NS.hex7_to_rgb("#8B008B"),
+          darkolivegreen : NS.hex7_to_rgb("#556B2F"),
+          darkorange : NS.hex7_to_rgb("#FF8C00"),
+          darkorchid : NS.hex7_to_rgb("#9932CC"),
+          darkred : NS.hex7_to_rgb("#8B0000"),
+          darksalmon : NS.hex7_to_rgb("#E9967A"),
+          darkseagreen : NS.hex7_to_rgb("#8FBC8F"),
+          darkslateblue : NS.hex7_to_rgb("#483D8B"),
+          darkslategray : NS.hex7_to_rgb("#2F4F4F"),
+          darkslategrey : NS.hex7_to_rgb("#2F4F4F"),
+          darkturquoise : NS.hex7_to_rgb("#00CED1"),
+          darkviolet : NS.hex7_to_rgb("#9400D3"),
+          deeppink : NS.hex7_to_rgb("#FF1493"),
+          deepskyblue : NS.hex7_to_rgb("#00BFFF"),
+          dimgray : NS.hex7_to_rgb("#696969"),
+          dimgrey : NS.hex7_to_rgb("#696969"),
+          dodgerblue : NS.hex7_to_rgb("#1E90FF"),
+          firebrick : NS.hex7_to_rgb("#B22222"),
+          floralwhite : NS.hex7_to_rgb("#FFFAF0"),
+          forestgreen : NS.hex7_to_rgb("#228B22"),
+          fuchsia : NS.hex7_to_rgb("#FF00FF"),
+          gainsboro : NS.hex7_to_rgb("#DCDCDC"),
+          ghostwhite : NS.hex7_to_rgb("#F8F8FF"),
+          gold : NS.hex7_to_rgb("#FFD700"),
+          goldenrod : NS.hex7_to_rgb("#DAA520"),
+          gray : NS.hex7_to_rgb("#808080"),
+          grey : NS.hex7_to_rgb("#808080"),
+          green : NS.hex7_to_rgb("#008000"),
+          greenyellow : NS.hex7_to_rgb("#ADFF2F"),
+          honeydew : NS.hex7_to_rgb("#F0FFF0"),
+          hotpink : NS.hex7_to_rgb("#FF69B4"),
+          indianred  : NS.hex7_to_rgb("#CD5C5C"),
+          indigo  : NS.hex7_to_rgb("#4B0082"),
+          ivory : NS.hex7_to_rgb("#FFFFF0"),
+          khaki : NS.hex7_to_rgb("#F0E68C"),
+          lavender : NS.hex7_to_rgb("#E6E6FA"),
+          lavenderblush : NS.hex7_to_rgb("#FFF0F5"),
+          lawngreen : NS.hex7_to_rgb("#7CFC00"),
+          lemonchiffon : NS.hex7_to_rgb("#FFFACD"),
+          lightblue : NS.hex7_to_rgb("#ADD8E6"),
+          lightcoral : NS.hex7_to_rgb("#F08080"),
+          lightcyan : NS.hex7_to_rgb("#E0FFFF"),
+          lightgoldenrodyellow : NS.hex7_to_rgb("#FAFAD2"),
+          lightgray : NS.hex7_to_rgb("#D3D3D3"),
+          lightgrey : NS.hex7_to_rgb("#D3D3D3"),
+          lightgreen : NS.hex7_to_rgb("#90EE90"),
+          lightpink : NS.hex7_to_rgb("#FFB6C1"),
+          lightsalmon : NS.hex7_to_rgb("#FFA07A"),
+          lightseagreen : NS.hex7_to_rgb("#20B2AA"),
+          lightskyblue : NS.hex7_to_rgb("#87CEFA"),
+          lightslategray : NS.hex7_to_rgb("#778899"),
+          lightslategrey : NS.hex7_to_rgb("#778899"),
+          lightsteelblue : NS.hex7_to_rgb("#B0C4DE"),
+          lightyellow : NS.hex7_to_rgb("#FFFFE0"),
+          lime : NS.hex7_to_rgb("#00FF00"),
+          limegreen : NS.hex7_to_rgb("#32CD32"),
+          linen : NS.hex7_to_rgb("#FAF0E6"),
+          magenta : NS.hex7_to_rgb("#FF00FF"),
+          maroon : NS.hex7_to_rgb("#800000"),
+          mediumaquamarine : NS.hex7_to_rgb("#66CDAA"),
+          mediumblue : NS.hex7_to_rgb("#0000CD"),
+          mediumorchid : NS.hex7_to_rgb("#BA55D3"),
+          mediumpurple : NS.hex7_to_rgb("#9370D8"),
+          mediumseagreen : NS.hex7_to_rgb("#3CB371"),
+          mediumslateblue : NS.hex7_to_rgb("#7B68EE"),
+          mediumspringgreen : NS.hex7_to_rgb("#00FA9A"),
+          mediumturquoise : NS.hex7_to_rgb("#48D1CC"),
+          mediumvioletred : NS.hex7_to_rgb("#C71585"),
+          midnightblue : NS.hex7_to_rgb("#191970"),
+          mintcream : NS.hex7_to_rgb("#F5FFFA"),
+          mistyrose : NS.hex7_to_rgb("#FFE4E1"),
+          moccasin : NS.hex7_to_rgb("#FFE4B5"),
+          navajowhite : NS.hex7_to_rgb("#FFDEAD"),
+          navy : NS.hex7_to_rgb("#000080"),
+          oldlace : NS.hex7_to_rgb("#FDF5E6"),
+          olive : NS.hex7_to_rgb("#808000"),
+          olivedrab : NS.hex7_to_rgb("#6B8E23"),
+          orange : NS.hex7_to_rgb("#FFA500"),
+          orangered : NS.hex7_to_rgb("#FF4500"),
+          orchid : NS.hex7_to_rgb("#DA70D6"),
+          palegoldenrod : NS.hex7_to_rgb("#EEE8AA"),
+          palegreen : NS.hex7_to_rgb("#98FB98"),
+          paleturquoise : NS.hex7_to_rgb("#AFEEEE"),
+          palevioletred : NS.hex7_to_rgb("#D87093"),
+          papayawhip : NS.hex7_to_rgb("#FFEFD5"),
+          peachpuff : NS.hex7_to_rgb("#FFDAB9"),
+          peru : NS.hex7_to_rgb("#CD853F"),
+          pink : NS.hex7_to_rgb("#FFC0CB"),
+          plum : NS.hex7_to_rgb("#DDA0DD"),
+          powderblue : NS.hex7_to_rgb("#B0E0E6"),
+          purple : NS.hex7_to_rgb("#800080"),
+          red : NS.hex7_to_rgb("#FF0000"),
+          rosybrown : NS.hex7_to_rgb("#BC8F8F"),
+          royalblue : NS.hex7_to_rgb("#4169E1"),
+          saddlebrown : NS.hex7_to_rgb("#8B4513"),
+          salmon : NS.hex7_to_rgb("#FA8072"),
+          sandybrown : NS.hex7_to_rgb("#F4A460"),
+          seagreen : NS.hex7_to_rgb("#2E8B57"),
+          seashell : NS.hex7_to_rgb("#FFF5EE"),
+          sienna : NS.hex7_to_rgb("#A0522D"),
+          silver : NS.hex7_to_rgb("#C0C0C0"),
+          skyblue : NS.hex7_to_rgb("#87CEEB"),
+          slateblue : NS.hex7_to_rgb("#6A5ACD"),
+          slategray : NS.hex7_to_rgb("#708090"),
+          slategrey : NS.hex7_to_rgb("#708090"),
+          snow : NS.hex7_to_rgb("#FFFAFA"),
+          springgreen : NS.hex7_to_rgb("#00FF7F"),
+          steelblue : NS.hex7_to_rgb("#4682B4"),
+          tan : NS.hex7_to_rgb("#D2B48C"),
+          teal : NS.hex7_to_rgb("#008080"),
+          thistle : NS.hex7_to_rgb("#D8BFD8"),
+          tomato : NS.hex7_to_rgb("#FF6347"),
+          turquoise : NS.hex7_to_rgb("#40E0D0"),
+          violet : NS.hex7_to_rgb("#EE82EE"),
+          wheat : NS.hex7_to_rgb("#F5DEB3"),
+          white : NS.hex7_to_rgb("#FFFFFF"),
+          whitesmoke : NS.hex7_to_rgb("#F5F5F5"),
+          yellow : NS.hex7_to_rgb("#FFFF00"),
+          yellowgreen : NS.hex7_to_rgb("#9ACD32"),
+        };
+
+        NS.named_colors = _color_table;
+
+
+        NS.parse_to_rgb = function(color) {
+          if (typeof(color) == "string") {
+            if (color.substr(0,1) == "#")
+            {
+              if (color.length == 7)
+              {
+                return NS.hex7_to_rgb(color);
+              }
+            }
+
+            if (true)
+            {
+              var c = _color_table[color.toLowerCase()];
+              if (c)
+                return c;
+            }
+          }
+
+          return undefined;
+        };
+
+      })(lx.web.tr0.color);
+      
+      lx.color = lx.web.tr0.color;
+
+      // library : largely stand-alone functions & types; low-level, not necessarily designed for conciseness & completeness, not necessaily convenience
+      // extension : module, convenience
+
+
+
+
+      function acquire_context_normalized_2d(canvas) {
+        var context = canvas.getContext('2d');
+
+        context.save();
+        context.scale(canvas.width / 2, canvas.height / 2);
+        context.translate(1, 1);
+        return context;
+      }
+
+      function redraw(rgb) {
+        console.log("-----");
+
+        $(".color-view").each(function () {
+          var ctx = acquire_context_normalized_2d(this);
+
+          var hsv = lx.color.rgb_to_hsv(rgb[0], rgb[1], rgb[2]);
+          var spin = parseFloat($(this).attr("data-spin") || 0) % 360;
+          var sat = parseFloat($(this).attr("data-saturation") || 0);
+          var val = parseFloat($(this).attr("data-value") || 0);
+
+          hsv[0] = (hsv[0] + spin + 720) % 360;
+          hsv[1] = Math.min(Math.max((hsv[1] + sat), 0), 100);
+          hsv[2] = Math.min(Math.max(hsv[2] + val, 0), 100);
+
+          console.log("HSV", hsv);
+          var rgb2 = lx.color.hsv_to_rgb(hsv[0], hsv[1], hsv[2]);
+          console.log("RGB", rgb2);
+          ctx.fillStyle = lx.color.rgb_to_hex(rgb2);
+          ctx.fillRect(-1, -1, 2, 2);
+          ctx.restore();
+        });
+      }
+
+      $(document).ready(function () {
+
+        $(".circle-span").each(function () {
+          for (var alpha = 1; alpha >= 0; alpha -= .1) {
+            var canvas = $("<canvas/>").attr("width", 32).attr("height", 32);
+            canvas.css("padding-right", "6px");
+            canvas.attr("data-color", "rgba(" + $(this).attr("data-rgb") + "," + Math.max(alpha, 0.0001) + ")");
+            canvas.addClass("circle");
+            $(this).append(canvas);
+          }
+        });
+
+        $(".circle").each(function () {
+          var ctx = acquire_context_normalized_2d(this);
+          ctx.fillStyle = $(this).attr("data-color");
+          ctx.arc(0, 0, 1, 0, Math.PI * 2);
+          ctx.fill();
+        });
+
+        $(".color-wheel").each(function () {
+          var elem = this;
+          window.setTimeout(function () {
+            var ctx = acquire_context_normalized_2d(elem);
+            $(elem).css("padding-right", "20px");
+            var step = 2 * Math.PI / 64;
+
+            var factor = parseFloat($(elem).attr("data-step-factor") || 0.5);
+            var saturation = parseInt($(elem).attr("data-saturation") || 100);
+            var value = parseInt($(elem).attr("data-value") || 100);
+
+            for (var i = 0; i < Math.PI * 2 - step * factor * .5; i += step * factor) {
+              ctx.fillStyle = lx.color.rgb_to_hex(lx.color.hsv_to_rgb(i * 180 / Math.PI, saturation, value));
+              ctx.beginPath();
+              ctx.moveTo(0, 0);
+              ctx.arc(0, 0, 1, i - step / 2, i + step / 2);
+              ctx.lineTo(0, 0);
+              ctx.fill();
+              ctx.closePath();
+            }
+
+            ctx.fillStyle = "white";
+            ctx.beginPath();
+            ctx.arc(0, 0, .6, 0, 2 * Math.PI);
+            ctx.fill();
+            ctx.closePath();
+          }, 1);
+        });
+
+        var keys = (function() { 
+              var keys = [];
+              $.each(lx.color.named_colors, function(k,v) { keys.push(k); });
+              return keys;
+            })();
+        $("#color-field").autocomplete({
+          delay: 5,
+          autoFocus : true,
+          source: keys,
+          select: function (event, ui) {
+            if (ui.item.value)
+            {
+              $("#color-field").val(ui.item.value);
+              $("#color-form").submit();
+            }
+          }
+        });
+
+        $("#color-form").submit(function () {
+          var val = $("#color-field").val();
+          val = lx.color.parse_to_rgb(val);
+          if (val)
+            redraw(val);
+          return false;
+        });
+
+        $(".wikipedia").each(function() {
+          $(this).after($("<sup style='color: Gray'>W</sup>"));
+          $(this).attr("target", "_blank");
+        });
+
+      });
+    -->
+    </script>
+</html>
