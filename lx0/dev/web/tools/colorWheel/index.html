@@ -139,9 +139,29 @@ $("#my-color-wheel").colorWheel();
             default value is 0.6.
           </p>
 
+          <h3>Stops</h3>
+          <div>
+            <canvas class="color-wheel" data-colorWheel="{ stops : [ -90, 0, 90, 180 ], offset : -90, arcRadius : 40 }" width="128" height="128"></canvas>
+            <canvas class="color-wheel" data-colorWheel="{ stops : [ -120, 0, 120 ], offset : -90, hue : 18, arcRadius : 115 }" width="128" height="128"></canvas>
+            <canvas class="color-wheel" data-colorWheel="{ stops : [ -160, 0, 160 ], offset : -90, arcRadius : 30 }" width="128" height="128"></canvas>
+            <canvas class="color-wheel" data-colorWheel="{ stops : [ -140, -40, 0, 40, 140, 180 ], offset : -90, hue : 110, arcRadius : 20 }" width="128" height="128"></canvas>
+            <canvas class="color-wheel" data-colorWheel="{ stops : [ -140, -70, -45, 0, 45, 70, 140, 180 ], offset : -90, hue : 110, arcRadius : 20 }" width="128" height="128"></canvas>
+          </div>
+          <p>
+            The <code>stops</code> parameter is an array of degree values that can be used to explicitly
+            denote where arcs should be drawn (as opposed to a regular distance between each arc for
+            the full circle).
+          </p>
+
+          <h2>Advanced Usage</h2>
+
+          <h3>Animation</h3>
+          <div>
+            <canvas id="spin-wheel" class="color-wheel" data-colorWheel="{ count : 32, arcRadius: 10 }" width="128" height="128"></canvas>
+          </div>
+
           <h2>Future Work</h2>
           <ul>
-            <li>A <code>stops[]</code> option to discretely control the location of the arcs (rather than only regularly spaced arcs)</li>
             <li>Interaction - i.e. a color-picker rather than a view-only color display</li>
           </ul>
 
@@ -151,6 +171,36 @@ $("#my-color-wheel").colorWheel();
     <!--
       $(document).ready(function () {
         $(".color-wheel").colorWheel();
+
+        (function () {
+          var hue = 0;
+          function spin() {
+            $("#spin-wheel").colorWheel({ hue: hue });
+            hue += 1;
+            window.setTimeout(spin, 10);
+          }
+          window.setTimeout(spin, 1000);
+        })();
+
+        $("h2").each(function () {
+          $(this).click(function () {
+            var e = $(this).next();
+            while (e[0].tagName != 'H2') {
+              e.slideToggle(750);
+              e = e.next();
+            }
+          });
+        });
+
+        $("h3").each(function () {
+          $(this).click(function () {
+            var e = $(this).next();
+            while (e[0].tagName != 'H2' && e[0].tagName != 'H3') {
+              e.slideToggle(750);
+              e = e.next();
+            }
+          });
+        });
       });
     -->
     </script>

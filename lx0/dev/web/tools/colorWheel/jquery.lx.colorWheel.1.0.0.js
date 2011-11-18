@@ -18,15 +18,33 @@
                 var arc = options.arcRadius * Math.PI / 180.0;
                 var step = 2 * Math.PI / options.count;
 
-                for (var i = 0; i < Math.PI * 2; i += step) {
-                  var angle = offset + (2 * Math.PI -  i);
-                  ctx.fillStyle = lx.color.parse('hsv', (i * 180.0 / Math.PI + hue) % 360, options.saturation, options.value).html('rgba');
+                function drawArc(hue, angle)
+                {
+                  ctx.fillStyle = lx.color.parse('hsv', hue, options.saturation, options.value).html('rgba');
                   ctx.beginPath();
                   ctx.moveTo(0, 0);
                   ctx.arc(0, 0, 1, angle - arc / 1.95, angle + arc / 1.95);
                   ctx.lineTo(0, 0);
                   ctx.fill();
                   ctx.closePath();
+                }
+
+                ctx.clearRect(-1, -1, 2, 2);
+                if (!options.stops)
+                {
+                    for (var i = 0; i < Math.PI * 2; i += step) {
+                      var angle = offset + (2 * Math.PI -  i);
+                      var h = (i * 180.0 / Math.PI + hue) % 360;
+                      drawArc(h, angle);
+                    }
+                }
+                else 
+                {
+                    $.each(options.stops, function(key, value) {
+                        var angle = offset + (2 * Math.PI - value * Math.PI / 180);
+                        var h = (360 + value + hue) % 360;
+                        drawArc(h, angle);
+                    });
                 }
 
                 ctx.fillStyle = "white";
@@ -48,8 +66,7 @@
             'offset' : 0,
             'arcRadius' : 2,
             'innerRadius' : .6,
-
-            //stops
+            'stops' : undefined,
         }, options);
         
         return this.each(function () {
