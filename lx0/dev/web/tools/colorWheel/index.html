@@ -25,6 +25,38 @@
             a given HTML &lt;canvas&gt; element. 
           </p>
 
+          <div class="tableOfContents" data-tableOfContents="{ selector : 'h2' }"></div>
+          <script>
+            $(document).ready(function () {
+              $(".tableOfContents").each(function () {
+                eval("var options = " + $(this).attr('data-tableOfContents') + ";");
+                var selector = options.selector;
+
+                var anchorNames = [];
+                $(selector).each(function (i) {
+                  var anchor = $("<a/>");
+                  var name = "toc_" + i;
+                  anchor.attr("name", name);
+                  anchorNames.push([name, $(this).text()]);
+                  $(this).before(anchor);
+                });
+
+                var list = $("<ol/>");
+                $.each(anchorNames, function (i, value) {
+                  var item = $("<li/>");
+                  var link = $("<a/>");
+                  link.text(value[1]);
+                  console.log(value);
+                  link.attr("href", "#" + value[0]);
+                  item.html(link);
+                  list.append(item);
+                });
+                $(this).html(list);
+              });
+            });
+          </script>
+
+
           <h2>Usage</h2>
           <canvas class="color-wheel" width="128" height="128"></canvas>
           <p>
