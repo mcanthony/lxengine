@@ -15,7 +15,7 @@
             canvas_context_normalized_2d(elem, function(ctx) {
                 var hue = parseFloat(options.hue);
                 var offset = parseFloat(options.offset) * Math.PI / 180.0;
-                var arc = options.arcRadius * Math.PI / 180.0;
+                var arc = options.arc * Math.PI / 180.0;
                 var step = 2 * Math.PI / options.count;
 
                 function drawArc(hue, angle)
@@ -64,7 +64,7 @@
             'value' : 99,
             'count' : 360,
             'offset' : 0,
-            'arcRadius' : 2,
+            'arc' : 2,
             'innerRadius' : .6,
             'stops' : undefined,
         }, options);
