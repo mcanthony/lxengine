@@ -15,6 +15,9 @@ if (!lx.color) lx.color = {};
     lib._hex_to_int = function(hex) {
         return parseInt(hex, 16);
     };
+    lib._blend = function(a, b, t) {
+        return a * (1 - t) + b * t;
+    };
 
 
         /**
@@ -28,8 +31,8 @@ if (!lx.color) lx.color = {};
         lib.rgb_to_hsv = function(r, g, b) {
 
           var r = (r / 255),
-         g = (g / 255),
-  	 b = (b / 255);
+          g = (g / 255),
+  	      b = (b / 255);
 
           var min = Math.min(Math.min(r, g), b),
         max = Math.max(Math.max(r, g), b),
@@ -128,6 +131,30 @@ if (!lx.color) lx.color = {};
       this.g = lib._clamp(this.g, 0, 255);
       this.b = lib._clamp(this.b, 0, 255);
       return lib.rgb_to_hex(this.r, this.g, this.b);  
+    };
+    _RGBA.prototype.clone = function() {
+        return new _RGBA(this.r, this.g, this.b, this.a);
+    };
+    _RGBA.prototype.mix = function(color, amount) {
+        color = color.convert('rgb');
+        this.r = parseInt(lib._blend(this.r, color.r, amount));
+        this.g = parseInt(lib._blend(this.g, color.g, amount));
+        this.b = parseInt(lib._blend(this.b, color.b, amount));
+        this.a = parseInt(lib._blend(this.a, color.a, amount));
+        return this;
+    };
+    _RGBA.prototype._White = new _RGBA(255, 255, 255, 255);
+    _RGBA.prototype._Black = new _RGBA(0, 0, 0, 255);
+    _RGBA.prototype._Gray = new _RGBA(127, 127, 127, 255);
+
+    _RGBA.prototype.tint = function(amount) {
+        return this.mix(this._White, amount);
+    };
+    _RGBA.prototype.shade = function(amount) {
+        return this.mix(this._Black, amount);
+    };
+    _RGBA.prototype.tone = function(amount) {
+        return this.mix(this._Gray, amount);
     };
 
     lib.parse_hex7 = function(color) {
@@ -319,11 +346,14 @@ if (!lx.color) lx.color = {};
     };
     _RGBA.prototype.convert = function(type)
     {
+        type = type.toUpperCase();
         if (type == 'HSVA')
         {
             var arr = lib.rgb_to_hsv(this.r, this.g, this.b);
             return new _HSVA(arr[0], arr[1], arr[2], this.a);
         }
+        else if (type == 'RGB')
+            return this;
     }
 
     function delegate_to_hsv(method, args)
@@ -376,6 +406,10 @@ if (!lx.color) lx.color = {};
                 if (named)
                     return named;
             }
+        }
+        else if (arguments[0] == 'rgb' && arguments.length == 4)
+        {
+            return new _RGBA(arguments[1], arguments[2], arguments[3], 255);
         }
         else if (arguments[0] == 'hsv' && arguments.length == 4)
         {

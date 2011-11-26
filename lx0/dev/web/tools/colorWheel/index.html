@@ -75,6 +75,312 @@
             download a copy of the associated scripts.)
           </p>
 
+          <h2>Theory</h2>
+          
+          <h3>Color Models</h3>
+          <h4>The Color Spectrum</h4>
+          <p>
+            Color models for electronic devices are approximations of the physical color spectrum.  
+            A color in reality is composed of a combination of physical wavelengths of light reflected
+            by or emitted from an object.  For the purposes of this documentation, we'll simply discuss
+            the color models used on digital displays.
+          </p>          
+          <ul class="also-see">
+            <li><a href="http://en.wikipedia.org/wiki/Color">Wikipedia: Color</a></li>
+          </ul>
+          
+          <h4>RGB and HSV</h4>
+          <p>
+            Most computer displays use an "RGB" <a href="http://en.wikipedia.org/wiki/Additive_color">additive color model</a> where each color in
+            the spectrum is approximated using a weighted combination of the colors red, green, and blue.
+            While this format is useful for display representation (as it parallel's the physical device
+            representation) and while it may <em>become</em> intuitive after frequent use to the user,
+            a hue-saturation-value model may be more useful from a perspective design in arriving at a
+            color scheme.
+          </p>
+          <div class="layout-row">
+            <div style="width: 73%">
+              <p>
+                The HSV color model stands for Hue-Saturation-Value, where each color is specified via:
+              </p>
+              <ul>
+                <li><strong>Hue</strong> - a radial position on the standard color wheel</li>
+                <li><strong>Saturation</strong> - the relative purity of the hue versus white in the color</li>
+                <li><strong>Value</strong> - the relative brightness of the color</li>
+              </ul>
+              <p>
+                There are other color models and systems including <a href="http://www.google.com/search?q=CMYK">CMYK</a>, HSL, HSB, 
+                PANTONE&trade; but for the purposes of this documentation
+                the focus will remain on the RGB and HSV color models.
+              </p>
+            </div>
+            <div style="width: 23%">
+              <canvas class="color-wheel" width="128" height="128"></canvas>
+            </div>
+          </div>
+          <div style="clear: both"></div>
+          <ul class="also-see">
+            <li><a href="http://en.wikipedia.org/wiki/HSL_and_HSV">Wikipedia: HSL and HSV</a></li>
+          </ul>
+
+
+          <h3>Color Properties</h3>
+          <h4>Hue</h4>
+          <div>
+            <canvas class="hue-spectrum" width="800" height="32" data-value="1" style="border: 1px solid #CCC"></canvas>
+            <canvas class="hue-spectrum" width="800" height="32" data-value="36" style="border: 1px solid #CCC"></canvas>
+            <div class="caption">
+              The color spectrum represented by a 0-360&deg; hue in the HSV model.
+            </div>
+            <script type="text/javascript">
+            <!--
+              $(document).ready(function () {
+                $(".hue-spectrum").each(function () {
+                  var ctx = this.getContext('2d');
+                  ctx.scale(this.width / 360, this.height / 2);
+                  ctx.translate(0, 1);
+                  var step = parseFloat($(this).attr("data-value"));
+                  for (var i = 0; i < 360; i += step) {
+                    ctx.fillStyle = lx.color.parse('hsv', i + step / 2, 100, 100).html();
+                    ctx.fillRect(i, -1, step * 1.5, 2);
+                  }
+                });
+              });
+            -->
+            </script>
+          </div>
+          <p>
+            Hue is the pure color without any mixture of black or white.
+          </p>
+
+          <h4>Saturation</h4>
+          <div>
+            <canvas class="saturation-spectrum" width="800" height="32" data-value="215" style="border: 1px solid #CCC"></canvas>
+            <canvas class="saturation-spectrum" width="800" height="32" data-value="195" style="border: 1px solid #CCC"></canvas>
+            <canvas class="saturation-spectrum" width="800" height="32" data-value="40" style="border: 1px solid #CCC"></canvas>
+            <script type="text/javascript">
+            <!--
+              $(document).ready(function () {
+                $(".saturation-spectrum").each(function () {
+                  var ctx = this.getContext('2d');
+                  ctx.scale(this.width / 100, this.height / 2);
+                  ctx.translate(0, 1);
+                  var hue = parseInt($(this).attr("data-value"))
+                  for (var i = 0; i < 100; ++i) {
+                    ctx.fillStyle = lx.color.parse('hsv', hue, 100 - i, 100).html();
+                    ctx.fillRect(i, -1, 2, 2);
+                  }
+                });
+              });
+            -->
+            </script>
+            <div class="caption">
+              Gradually decreasing saturation from 100 to 0 on a hues of 215&deg;, 195&deg, and 40&deg;.
+            </div>
+          </div>
+          <p>
+            In the HSV model, an decrease in <strong>saturation</strong> effectively produces a <strong>tint</strong> of the hue: i.e. effectively 
+            decreasing saturation adds white to the color of the pure hue.
+          </p>
+          <p class="note">
+            The definition of "saturation" varies between color models.  For example, the HSL color model uses a different formula
+            to compute saturation.
+          </p>
+
+          <h4>Value</h4>
+          <div>
+            <canvas class="value-spectrum" width="800" height="32" data-value="215" style="border: 1px solid #CCC"></canvas>
+            <canvas class="value-spectrum" width="800" height="32" data-value="195" style="border: 1px solid #CCC"></canvas>
+            <canvas class="value-spectrum" width="800" height="32" data-value="40" style="border: 1px solid #CCC"></canvas>
+            <div class="caption">
+              Gradually decreasing value from 100 to 0 on a hues of 215&deg;, 195&deg, and 40&deg;.
+            </div>
+            <script type="text/javascript">
+            <!--
+              $(document).ready(function () {
+                $(".value-spectrum").each(function () {
+                  var ctx = this.getContext('2d');
+                  ctx.scale(this.width / 100, this.height / 2);
+                  ctx.translate(0, 1);
+                  for (var i = 0; i < 100; ++i) {
+                    ctx.fillStyle = lx.color.parse('hsv', parseInt($(this).attr("data-value")), 100, 100 - i).html();
+                    ctx.fillRect(i, -1, 2, 2);
+                  }
+                });
+              });
+            -->
+            </script>
+          </div>
+          <p>
+            In the HSV model, the value corresponds to the relative brightness of the color as compared to a pure white spectrum.  In other words,
+            colors of full saturation and zero saturation should have roughly the same relative brightness regardless of hue (though this is not
+            strictly true in practice due to display brightness differences in digital displays).
+          </p>
+
+          <style>
+          .tint-block
+          {
+              display: inline-block; 
+              width: 3em; 
+              height: 3em; 
+              border: 1px solid #DDD;
+          }
+          .diagram65
+          {
+            border-radius: 8px; 
+            border: 1px solid #CCC; 
+            box-shadow: 3px 3px 6px #EEE; 
+            padding: 1em 1.5em; 
+            width: 65%;              
+          }
+          </style>
+
+          <h4>Tints</h4>
+
+          <div id="tint-spectrum" class="diagram65">
+            <div class="tint-block" data-value=".0"></div>
+            <div class="tint-block" data-value=".1"></div>
+            <div class="tint-block" data-value=".2"></div>
+            <div class="tint-block" data-value=".3"></div>
+            <div class="tint-block" data-value=".4"></div>
+            <div class="tint-block" data-value=".5"></div>
+            <div class="tint-block" data-value=".6"></div>
+            <div class="tint-block" data-value=".7"></div>
+            <div class="tint-block" data-value=".8"></div>
+            <div class="tint-block" data-value=".9"></div>
+            <div class="caption">
+              Tints of red &mdash; (rgb: 255, 0, 0)
+            </div>
+          </div>
+          <script type="text/javascript">
+          <!--
+            $(document).ready(function () {
+              var base = lx.color.parse('rgb', 255, 0, 0);
+              $("#tint-spectrum").children().each(function () {
+                var color = base.clone().tint(parseFloat($(this).attr("data-value")));
+                $(this).css("background-color", color.html());
+              });
+            });
+          -->
+          </script>
+          <p>
+            A <strong>tint</strong> of a color is any color with white added to it.
+          </p>
+          <style type="text/css">
+            <!--
+              .more-info
+              {
+                border: 1px solid rgba(0, 127, 192, .04);  
+                margin: 0em 8em 0em 1.5em;
+                padding: .5em 1em 0em 1em;          
+                background: rgba(0, 127, 192, .02);        
+              }
+              .more-info>span
+              {
+                font-size: 110%; 
+                color: #37C;
+                font-weight: bold;
+              }
+              .more-info>div
+              {
+                  margin: 1em 1em 1em 1em;
+                  font-size: 80%;
+              }
+            -->
+          </style>
+          <script>
+            $(document).ready(function () {
+              
+            }); 
+          </script>
+          <div class="more-info">
+            <span><em>lx.color</em> : tint ()</span>
+            <div class="more-info-content">
+              The <code>tint(amount)</code> method can be used to tint a color.
+            </div>
+          </div>
+          <ul class="also-see">
+            <li><a href="http://en.wikipedia.org/wiki/Tint">Wikipedia: Tints and Shades</a></li>
+          </ul>
+
+
+          <h4>Shades</h4>
+          <div id="shade-spectrum" class="diagram65">
+            <div class="tint-block" data-value=".0"></div>
+            <div class="tint-block" data-value=".1"></div>
+            <div class="tint-block" data-value=".2"></div>
+            <div class="tint-block" data-value=".3"></div>
+            <div class="tint-block" data-value=".4"></div>
+            <div class="tint-block" data-value=".5"></div>
+            <div class="tint-block" data-value=".6"></div>
+            <div class="tint-block" data-value=".7"></div>
+            <div class="tint-block" data-value=".8"></div>
+            <div class="tint-block" data-value=".9"></div>
+            <div class="caption">
+              Shades of red &mdash; (rgb: 255, 0, 0)
+            </div>
+          </div>
+          <script type="text/javascript">
+          <!--
+            $(document).ready(function () {
+              var base = lx.color.parse('rgb', 255, 0, 0);
+              $("#shade-spectrum").children().each(function () {
+                var color = base.clone().shade(parseFloat($(this).attr("data-value")));
+                $(this).css("background-color", color.html());
+              });
+            });
+          -->
+          </script>
+          <p>
+            A <strong>shade</strong> of a color is any color with black added to it.
+          </p>
+
+          <h4>Tones</h4>
+          <div id="tone-spectrum" class="diagram65">
+            <div class="tint-block" data-value=".0"></div>
+            <div class="tint-block" data-value=".1"></div>
+            <div class="tint-block" data-value=".2"></div>
+            <div class="tint-block" data-value=".3"></div>
+            <div class="tint-block" data-value=".4"></div>
+            <div class="tint-block" data-value=".5"></div>
+            <div class="tint-block" data-value=".6"></div>
+            <div class="tint-block" data-value=".7"></div>
+            <div class="tint-block" data-value=".8"></div>
+            <div class="tint-block" data-value=".9"></div>
+            <div class="caption">
+              Shades of red &mdash; (rgb: 255, 0, 0)
+            </div>
+          </div>
+          <script type="text/javascript">
+          <!--
+            $(document).ready(function () {
+              var base = lx.color.parse('rgb', 255, 0, 0);
+              $("#tone-spectrum").children().each(function () {
+                var color = base.clone().tone(parseFloat($(this).attr("data-value")));
+                $(this).css("background-color", color.html());
+              });
+            });
+          -->
+          </script>
+          <p>
+            A <strong>tone</strong> of a color is any color with gray added to it (i.e. a combination of both black and white).
+          </p>
+
+          <h3>Color Formats</h3>
+          <ul>
+            <li>RGB</li>
+            <li>RGBA</li>
+            <li>HSV</li>
+            <li>HSL</li>
+            <li>HSB</li>
+            <li>Named colors</li>
+            <li>Float format</li>
+            <li>Byte format / hex format</li>
+          </ul>
+
+
+          <h2>Tools</h2>
+
           <h2>Usage</h2>
 
           <h3>Default Settings</h3>
@@ -143,6 +449,8 @@ $(".my-color-wheel").colorWheel();
             Scroll through the documentation for example usage of the color wheel.  The documentation
             uses the plug-in directly to generate the color wheel images.
           </p>
+
+          <h2>Reference</h2>
 
           <h2>Basic Settings</h2>
 
@@ -300,6 +608,18 @@ $(".my-color-wheel").colorWheel();
           }
           window.setTimeout(spin, 1000);
         })();
+
+        $("a").each(function () {
+          var href = $(this).attr("href");
+          if (/wikipedia\.org/.test(href)) {
+            $(this).attr("target", "_blank");
+            $(this).after($("<sup style='font-size: 50%; color: #77F'> W</sup>"));
+          }
+          else if (/google\.com/.test(href)) {
+            $(this).attr("target", "_blank");
+            $(this).after($("<sup style='font-size: 50%; color: #F77'> G</sup>"));
+          }
+        });
 
         $("h2").each(function () {
           $(this).click(function () {
