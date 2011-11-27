@@ -53,11 +53,20 @@
                 canvas.attr("style", $(elem).attr("style"));
                 canvas.attr("class", $(elem).attr("class"));
             
+                //
                 // Store the state for the plug-in
-                $.data(canvas, "seamlessImage-count", parseFloat(options.count));
-                $.data(canvas, 'seamlessImage-image', img);
-                $.data(canvas, "seamlessImage-onDraw", []);
+                //
+                var state = 
+                {
+                    count : parseFloat(options.count),
+                    image : img,
+                    onDraw : [],
+                }
+                $.data(canvas, "seamlessImage", state);
 
+                //
+                // Set up the HTML UI elements
+                //
                 if (options.ui)
                 {
                     var div = $("<div/>");
@@ -83,12 +92,11 @@
                     div.append(inner);
 
                     slider.change(function() {
-                        var count = parseFloat($(this).val()) / 100;
-                        $.data(canvas, "seamlessImage-count", count);
+                        state.count = parseFloat($(this).val()) / 100;
                         methods.draw(canvas);
                     });
-                    $.data(canvas, "seamlessImage-onDraw").push(function() {
-                        var count = $.data(canvas, "seamlessImage-count");
+                    state.onDraw.push(function() {
+                        var count = $.data(canvas, "seamlessImage").count;
                         text.text(count);
                         slider.val(count * 100);
                     });
@@ -105,9 +113,9 @@
         },
 
         draw: function (elem) {
-            var scale = 1.0 / $.data(elem, "seamlessImage-count");
-            var img = $.data(elem, 'seamlessImage-image');
-            var onDraw = $.data(elem, "seamlessImage-onDraw");
+            var state = $.data(elem, "seamlessImage");
+            var scale = 1.0 / state.count;
+            var img = state.image;
 
             var ctx = elem[0].getContext('2d');
             ctx.save();
@@ -121,7 +129,7 @@
                         
             // Call any callbacks registered after draw (for example, updating the
             // UI). 
-            $.each(onDraw, function(i,f) { f(); });
+            $.each(state.onDraw, function(i,f) { f(); });
         }
     };
 

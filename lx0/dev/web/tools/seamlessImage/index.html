@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
     <head>
-      <title>jquery.lx.seamlessTexture</title>
+      <title>jquery.lx.seamlessImage</title>
       <link type="text/css" href="../shared/style/default.less" rel="stylesheet/less" />
       <link type="text/css" href="style.less" rel="stylesheet/less" />
       
@@ -11,17 +11,35 @@
     </head>
     <body>
        <div id="body-wrap1">
-          <h1>Seamless Texture</h1>
+          <h1>Seamless Image</h1>
           <p>
             The <strong>jquery.lx.seamlessImage</strong> plug-in is a JQuery plug-in that replaces a given &lt;IMG&gt;
             tag with a dynamic, tiled display of the image.  This is useful for previewing seamless textures at various
             resolutions.
           </p>
+          <p>
+            Download : <a href="jquery.lx.seamlessImage.0.2.0.js">v0.2.0</a>
+          </p>
 
           <h2>Demonstration</h2>
-          <div>
-            <img class="seamlessImage" style="border: 1px solid #CCC; box-shadow: 2px 2px 6px #CCC" src="test-image.png" />
+          <div class="layout-row">
+            <div style="width: 64%">
+                <img class="seamlessImage" style="border: 1px solid #CCC; box-shadow: 2px 2px 6px #CCC" src="test-image.png" />
+            </div>
+            <div style="width: 31%">
+                <p>
+                    Use the slider below the image to control the number of tiles of the image to 
+                    display.
+                </p>
+            </div>
           </div>
+          <div style="clear: both"></div>
+
+          <h2>Future Work</h2>
+          <ul>
+            <li>Documentation</li>
+            <li>Allow for image size and canvas size to vary independently</li>
+          </ul>
 
         </div>
         <script type="text/javascript">
