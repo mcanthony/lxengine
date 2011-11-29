@@ -118,6 +118,7 @@
             var img = state.image;
 
             var ctx = elem[0].getContext('2d');
+            ctx.clearRect(0, 0, elem[0].width, elem[0].height);
             ctx.save();
             ctx.translate(img.width / 2, img.height / 2);
             ctx.scale(scale, scale);

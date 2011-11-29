@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html>
+    <head>
+      <title>Seamless Image Generator</title>
+      <link type="text/css" href="../shared/style/default.less" rel="stylesheet/less" />
+      <link type="text/css" href="style.less" rel="stylesheet/less" />
+      
+      <script type="text/javascript" src="../shared/script/extern/less-1.1.3.min.js"></script>
+      <script type="text/javascript" src="../shared/script/extern/jquery-1.6.4.min.js"></script>
+      <script type="text/javascript" src="../shared/script/extern/seedrandom.min.js"></script>
+      <script type="text/javascript" src="map.0.0.0.js"></script>
+      <script type="text/javascript" src="../seamlessImage/jquery.lx.seamlessImage.0.2.0.js"></script>
+    </head>
+    <body>
+       <div id="body-wrap1">
+        <h1>Seamless Image Generator</h1>
+
+        <h2>Scratch</h2>
+        <div>
+            <div style="float: left; margin-right: 1em;"><canvas id="image" width="512" height="512" style="border: 1px solid #CCC;"></canvas></div>
+            <div>
+                <p>View as PNG: <a id="dataLink" target="_blank" href="">here</a></p>
+
+                <table>
+                    <tr>                       
+                        <td>
+                            <span style="padding-right: 1em">seed</span>
+                        </td>
+                        <td>
+                            <input id="seedSlider" type="input" value="0"/>
+                            <input id="seedButton" type="button" onclick="$('#seedSlider').val( Math.floor(Math.random() * 10000) ).trigger('change');" value="random" />
+                            <script type="text/javascript">
+                            <!--
+                                $(document).ready(function () {
+                                    $("#seedSlider").change(function () {
+                                        var value = $(this).val();
+                                        $("#seedValue").text(value);
+                                        opt.seed = value;
+                                        redraw();
+                                    });
+                                });
+                            -->
+                            </script>                        
+                        </td>
+                    </tr>
+
+                    <tr>                       
+                        <td>
+                            <span style="padding-right: 1em">count</span>
+                        </td>
+                        <td>
+                            <input id="countInput" type="input" value="8"/>
+                            <script type="text/javascript">
+                            <!--
+                                $(document).ready(function () {
+                                    $("#countInput").change(function () {
+                                        var value = $(this).val();
+                                        opt.count = value;
+                                        redraw();
+                                    });
+                                });
+                            -->
+                            </script>                        
+                        </td>
+                    </tr>
+
+                    <tr>                       
+                        <td>
+                            <span style="padding-right: 1em">minRadius</span>
+                        </td>
+                        <td>
+                            <input id="radiusMinInput" type="input" value=".01"/>
+                            <script type="text/javascript">
+                            <!--
+                                $(document).ready(function () {
+                                    $("#radiusMinInput").change(function () {
+                                        var value = parseFloat($(this).val());
+                                        opt.radiusMin = value;
+                                        redraw();
+                                    });
+                                });
+                            -->
+                            </script>                        
+                        </td>
+                    </tr>
+
+                    <tr>                       
+                        <td>
+                            <span style="padding-right: 1em">maxRadius</span>
+                        </td>
+                        <td>
+                            <input id="radiusMaxInput" type="input" value=".03"/>
+                            <script type="text/javascript">
+                            <!--
+                                $(document).ready(function () {
+                                    $("#radiusMaxInput").change(function () {
+                                        var value = parseFloat($(this).val());
+                                        opt.radiusMax = value;
+                                        redraw();
+                                    });
+                                });
+                            -->
+                            </script>                        
+                        </td>
+                    </tr>
+
+
+                </table>
+
+            </div>
+            <div style="clear:both"></div>
+        </div>
+        <h2>Preview</h2>
+        <div id="previewImage"></div>
+
+        <script type="text/javascript">
+        <!--
+            Math.seedrandom();
+            
+            var opt =
+            {
+                seed : 18,
+                background : null,
+                count : 3,
+                radiusMin : .045,
+                radiusMax : .095,
+                grayMin : 10,
+                grayMax : 75,
+            };
+
+
+            function redraw()
+            {
+                $("#image").each(function () {                   
+
+                    if (opt.seed)
+                    {
+                        Math.seedrandom(opt.seed);
+                    }
+
+                    var ctx = this.getContext('2d');
+                    ctx.clearRect(0, 0, this.width, this.height);
+                    
+                    if (opt.background)
+                    {
+                        ctx.fillStyle = opt.background;
+                        ctx.fillRect(0, 0, this.width, this.height);
+                    }
+
+                    ctx.save();
+
+                    // Reset the view to -.5 to .5, centered at 0,0, y+ = up, x+ = right
+                    ctx.scale(this.width, -this.height);
+                    ctx.translate(.5, -.5);
+
+                    function callback4(x, y, f) {
+                        var offsets = [
+                            [0, 0], 
+                            [-1, 0], 
+                            [1, 0], 
+                            [0, -1], 
+                            [0, 1],
+                            [-1, 1],
+                            [1, 1],
+                            [1, -1],
+                            [-1, -1],
+                        ];
+                        for (var i = 0; i < offsets.length; ++i) {
+                            f(x + offsets[i][0], y + offsets[i][1]);
+                        }
+                    }
+
+
+                    for (var i = 0; i < opt.count; ++i) {
+
+                        var x = -.5 + Math.random();
+                        var y = -.5 + Math.random();
+                        var w = opt.radiusMin + Math.random() * (opt.radiusMax - opt.radiusMin);
+
+                        var g = parseInt(Math.max(0, Math.min(255, opt.grayMin + Math.random() * (opt.grayMax - opt.grayMin))));
+                        ctx.fillStyle = "rgba(" + g + ", " + g + ", " + g + ", 1);";
+
+                        callback4(x, y, function (x, y) {
+                            ctx.beginPath();
+                            ctx.arc(x, y, w, 0, Math.PI * 2, true);
+                            ctx.fill();
+                        });
+                    }
+
+                    ctx.restore();
+
+                    var data = this.toDataURL("image/png");
+
+                    $("#dataLink").attr("href", data);
+
+                    var img = $("<img/>");
+                    img.attr("src", data);
+                    $("#previewImage").html(img);
+                    img.seamlessImage({ count: 3 });
+                });
+            }
+            
+            $(document).ready(function () {
+
+                // TODO
+                // - Create plug-in for each pattern (with UI) and base framework for generation
+                //
+                $("#seedSlider").trigger('change');
+                $("#countInput").trigger('change');
+            });
+        -->
+        </script>
+    </body>
+</html>
