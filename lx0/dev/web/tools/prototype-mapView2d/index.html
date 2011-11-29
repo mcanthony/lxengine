@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html>
+    <head>
+      <title>Map Test</title>
+      <link type="text/css" href="../shared/style/default.less" rel="stylesheet/less" />
+      <link type="text/css" href="style.less" rel="stylesheet/less" />
+      
+      <script type="text/javascript" src="../shared/script/extern/less-1.1.3.min.js"></script>
+      <script type="text/javascript" src="../shared/script/extern/jquery-1.6.4.min.js"></script>
+      <script type="text/javascript" src="map.0.0.0.js"></script>
+    </head>
+    <body>
+       <div id="body-wrap1">
+        <h1>Map Test</h1>
+
+        <h2>Controls</h2>
+        <p>
+            The controls take effect when the map has input focus.
+        </p>
+        <table class="clean-table">
+            <tr><td>W,A,S,D</td><td>scroll up, down, left, right</td></tr>
+            <tr><td>R,F</td><td>zoom in, out</td></tr>
+        </table>
+
+        <h2>Map</h2>
+        <form id="mapContainer">
+            <div style="float: left; margin-right: 16px;">
+                <canvas id="map" width="512" height="512" style="border: 1px solid #07C; box-shadow: 0px 0px 6px #07C"></canvas><br />
+            </div>
+            <div>                
+                <textarea id="test" readonly rows="1" style="width: 18em; font-size: 8pt; resize: none; color: #CCC; text-align: center"></textarea><br />
+                <script type="text/javascript">
+                <!--
+                    $(document).ready(function () {
+                        $("#test").focus(function () {
+                            $(this).val("Map has focus");
+                            $(this).css("border", "");
+                            $(this).css("color", "gray");
+                        });
+                        $("#test").focusout(function () {
+                            $(this).val("Map does not have focus");
+                            $(this).css("border", "1px solid red");
+                            $(this).css("color", "#C00");
+
+                            //
+                            // Reset the key state on loss of focus to avoid a key down
+                            // being received without a corresponding key up (i.e. focus was
+                            // lost while the key was down).
+                            //
+                            $.each(keyState, function (key, value) {
+                                delete keyState[key];
+                            });
+                        });
+                        $("#test").trigger('focus');
+                    });
+                -->
+                </script>
+
+                <table>
+                    <tr>                       
+                        <td>
+                            <span style="padding-right: 1em">debug.clip</span>
+                        </td>
+                        <td>
+                            <input id="debugClip" type="range" min="20" max="100" value="100"/>
+                            <small id="debugClipValue"></small>
+                            <script type="text/javascript">
+                            <!--
+                                $(document).ready(function () {
+                                    $("#debugClip").change(function () {
+                                        var clip = $(this).val() / 100;
+                                        $("#debugClipValue").text(clip);
+                                        engine.send('debug.clip', clip);
+                                        redraw();
+                                    });
+                                    window.setTimeout(function () { $("#debugClip").trigger('change'); }, 750);
+                                });
+                            -->
+                            </script>                        
+                        </td>
+                    </tr>
+                </table>
+            
+            </div>
+            <div style="clear: both"></div>
+        </form>
+
+        <h2>Credits</h2>
+        <div>
+            <p>
+                <img src="treeTall.png" /><br />
+                Image credit: <a target="_blank" href="http://opengameart.org/content/planetcute-tree-tallpng">Daniel Cook</a> at opengameart.org
+            </p>
+            <p>
+                Key state tracking for multiple keys: 
+                <a href="http://stackoverflow.com/questions/4954403/can-jquery-keypress-detect-more-than-one-key-at-the-same-time">Box9</a> at stackoverflow.com.
+            </p>
+        </div>
+
+        <!-- 
+            class Entity 
+        -->
+        <script type="text/javascript">
+        <!--
+
+        var Entity = function (params) {
+            var this_ = this;
+            if (params) {
+                $.each(params, function (key, value) {
+                    this_[key] = value;
+                });
+            }
+        };
+        Entity.prototype.x = 0;
+        Entity.prototype.y = 0;
+        Entity.prototype.width = 1;
+        Entity.prototype.height = 1;
+        Entity.prototype.image = null;
+        Entity.prototype.draw = function (ctx, camera) {
+            if (true) {
+                if (false) {
+                    ctx.fillStyle = "red";
+                    ctx.fillRect(this.x, this.y, this.width, this.height);
+                }
+                ctx.save();
+                ctx.translate(this.x, this.y + this.height);
+                ctx.scale(1, -1);
+                ctx.drawImage(this.image, 
+                              0, 0, this.image.width, this.image.height, 
+                              0, 0, this.width, this.height);
+                ctx.restore();
+            }
+            else {
+                ctx.drawImage(this.image, 0, 0, this.image.width, this.image.height, this.x, this.y, this.width, this.height);
+            }
+        };
+
+        -->
+        </script>
+
+        <script type="text/javascript">
+        <!--
+        function addClipDebug()
+        {
+            //
+            // Add user-visible options
+            //
+            $.extend(engine._debug, {
+                clip : false,
+                clipScale : 1.0,
+            });
+
+            //
+            // Add plug-in state
+            //
+            var state =
+            {
+                _debugClip : [],
+            };
+
+            //
+            // Chain the pre-render method to store a debug clipping rect
+            //
+            var standardPreRender = engine.preRender;
+            engine.preRender = function(ctx, camera, halfScale) 
+            {
+                var debugClipScale = engine._debug.clipScale;                        
+                state._debugClip = [ -halfScale * debugClipScale + camera.center[0], -halfScale * debugClipScale + camera.center[1], 2 * halfScale * debugClipScale , 2 * halfScale * debugClipScale ];
+                if (engine._debug.clip)
+                {
+                    ctx.strokeStyle = "rgba(255, 0, 0, .5)";
+                    ctx.strokeRect(state._debugClip[0], state._debugClip[1], state._debugClip[2], state._debugClip[3]);
+                }
+
+                standardPreRender();
+            };
+            
+            //
+            // Replace the standard entity draw with a clip aware one
+            // 
+            var standardDraw = engine.draw;
+            engine.draw = function(ctx, camera, entity) {
+                if (!engine._debug.clip)
+                {
+                    standardDraw.apply(engine, arguments);
+                }
+                else
+                {       
+                    if (!lib.clip(entity, state._debugClip))
+                    {
+                        standardDraw.apply(engine, arguments);
+                    }
+                    else 
+                    {
+                        ctx.fillStyle = "rgba(255, 0, 0, .1)";
+                        ctx.fillRect(entity.x, entity.y, entity.width, entity.height);
+                    }
+                }
+            };
+        }
+        -->
+        </script>
+
+
+        <script type="text/javascript">
+        <!--
+        var engine;
+        var redraw;
+        var keyState;
+
+        var lib = 
+        {
+            clip : function (sprite, rect)
+            {
+                return !(sprite.x + sprite.width >= rect[0] 
+                    && sprite.x <= rect[0] + rect[2]
+                    && sprite.y + sprite.height >= rect[1]
+                    && sprite.y <= rect[1] + rect[3]);
+            },
+        };
+
+        
+        $(document).ready(function () {
+
+            // todo
+            // - register debug.clip as plug-in (add options, add functionality)
+            // - sort plug-in to sort entities from highest y to lowest (draw overlap more correctly)
+
+            engine = 
+            {
+                _debug : {
+                },
+            };
+
+            engine.send = function(action, params) {
+                if (action == 'debug.clip')
+                {
+                    if (params < 1.0)
+                    {
+                        this._debug.clip = true;
+                        this._debug.clipScale = params;
+                    }
+                    else {
+                        this._debug.clip = false;
+                    }
+                }
+            };
+
+            engine.preRender = function() {};
+            engine.draw = function (ctx, camera, entity)
+            {
+                entity.draw(ctx, camera); 
+            };
+            engine.callSlot = function(slot, args)
+            {
+                for (var i = 0; i < slot.length; ++i)
+                    slot[i].apply(null, args);
+            };
+
+
+            addClipDebug();
+
+
+            var imageTable = 
+            { 
+                tree : "treeTall.png",
+            };
+            $.each(imageTable, function(key,value) {
+                imageTable[key] = new Image();
+                imageTable[key].src = value;
+            });
+
+            var camera =
+            {
+                scale : 700,
+                center : [ 0, 0 ],
+            };
+            
+            var entities = [];
+            for (var i = 0; i < 200; ++i)
+            {
+                var ent = new Entity({
+                    x : (Math.random() * 1000 - 500) * .9,
+                    y : (Math.random() * 1000 - 500) * .9,
+                    width : 25,
+                    height : 30,
+                    image : imageTable.tree,
+                });
+                entities.push(ent);
+            }
+
+            redraw = function() {
+                $("#map").each(function () {
+                    var ctx = this.getContext('2d');
+                    ctx.clearRect(0, 0, this.width, this.height);
+                    ctx.save();
+
+                    // Reset the view to -.5 to .5, centered at 0,0, y+ = up, x+ = right
+                    ctx.scale(this.width, -this.height);
+                    ctx.translate(.5, -.5);
+
+                    ctx.fillStyle = "#82a7d0";
+                    ctx.fillRect(-.5, -.5, 1, 1);
+
+                    with (camera)
+                    {
+                        ctx.scale(1/scale, 1/scale);
+                        ctx.translate(-center[0], -center[1]);
+                    }
+                
+                    ctx.fillStyle = "#9fc49f";
+                    ctx.fillRect(-500, -500, 1000, 1000);
+                    
+                    var halfScale = camera.scale / 2;
+                    var visible = [ -halfScale + camera.center[0], -halfScale + camera.center[1], 2 * halfScale, 2 * halfScale ];
+
+                    engine.preRender(ctx, camera, halfScale);
+
+                    $.each(entities, function(i,entity) {
+                        if (!lib.clip(entity, visible))
+                            engine.draw(ctx, camera, entity);
+                    });
+
+                    ctx.restore();
+                });
+            }
+            
+            $("#map").click(function() {
+              $("#test").focus();  
+            });
+
+            // Credit: http://stackoverflow.com/questions/4954403/can-jquery-keypress-detect-more-than-one-key-at-the-same-time
+            keyState = {};
+            $("#mapContainer").keydown(function(event) { keyState[event.which] = true; });
+            $("#mapContainer").keyup(function(event) { delete keyState[event.which]; });
+
+            window.setInterval(function() {
+                
+                var actionsRedraw = 
+                {
+                    82 /*r*/ : function() { camera.scale *= .97; },
+                    70 /*f*/ : function() { camera.scale *= 1.03; },
+                    87 /*w*/ : function() { camera.center[1] += 10 * camera.scale / 1000; },
+                    65  /*a*/ : function() { camera.center[0] -= 10 * camera.scale / 1000; },
+                    83 /*s*/ : function() { camera.center[1] -= 10 * camera.scale / 1000; },
+                    68 /*d*/ : function() { camera.center[0] += 10 * camera.scale / 1000; },
+                };
+
+                var any = false;
+                $.each(actionsRedraw, function(key,func) {
+                    if (keyState[key])
+                    {
+                        func();
+                        redraw();
+                        any = true;
+                    }
+                });
+            }, 20);
+
+            $("#mapContainer").keypress(function(event) { return false; });
+
+
+        });
+        -->
+        </script>
+    </body>
+</html>
