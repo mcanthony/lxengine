@@ -17,7 +17,9 @@
 
         <h2>Scratch</h2>
         <div>
-            <div style="float: left; margin-right: 1em;"><canvas id="image" width="512" height="512" style="border: 1px solid #CCC;"></canvas></div>
+            <div style="float: left; margin-right: 1em;">
+                <div id="previewImage" style="width: 512px; height: 564px;"></div>
+            </div>            
             <div>
                 <p>View as PNG: <a id="dataLink" target="_blank" href="">here</a></p>
 
@@ -110,8 +112,8 @@
             </div>
             <div style="clear:both"></div>
         </div>
-        <h2>Preview</h2>
-        <div id="previewImage"></div>
+        <h2>Raw Image</h2>
+        <canvas id="image" width="512" height="512" style="border: 1px solid #CCC;"></canvas>
 
         <script type="text/javascript">
         <!--
@@ -195,6 +197,7 @@
 
                     var img = $("<img/>");
                     img.attr("src", data);
+                    img.css("border", "1px solid #EEE");
                     $("#previewImage").html(img);
                     img.seamlessImage({ count: 3 });
                 });
