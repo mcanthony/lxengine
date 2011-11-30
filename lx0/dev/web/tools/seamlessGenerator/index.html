@@ -161,11 +161,17 @@
                     var opt = this.options;
                     var tasks = [];
 
+                    //
+                    // Set up the initial state
+                    //
                     tasks.push(function() {
                         ctx.lineCap = "round";
                         ctx.lineWidth = 0.12;
                     });
 
+                    //
+                    // Draw a dirt background
+                    //
                     for (var i = 0; i < 100; ++i) {
                         tasks.push(function() {                            
                             var x = -.5 + Math.random();
@@ -185,38 +191,87 @@
                         });
                     }
                     
-                    for (var i = 0; i < opt.clusters; ++i) {
-                        tasks.push(function() {
-                            var x = -.5 + Math.random();
-                            var y = -.5 + Math.random();
+                    //
+                    // Generate the data for each grass cluster (and blades within the clusters)
+                    //
+                    var clusters = [];
+                    for (var i = 0; i < opt.clusters; ++i)
+                    {
+                        var cluster = 
+                        {
+                            x : -.5 + Math.random(),
+                            y : -.5 + Math.random(),
+                            blades : [],
+                        };
+                        var clusterSize = parseInt(opt.bladesMin + Math.random() * (opt.bladesMax - opt.bladesMin));
+                        for (var j = 0; j < clusterSize; ++j)
+                        {
+                            cluster.blades.push({
+                                bx : .01 * (2 * Math.random() - 1),
+                                by : .01 * (2 * Math.random() - 1),
+                                dx : -.02 + Math.random() * .03,
+                                dy : .02 + Math.random() * .02,              
+                                baseColor : lx.color.mix("#64b119", "green", Math.random()),
+                            });
+                        }
+                        clusters.push(cluster);
+                    }
 
-                            var clusterSize = parseInt(opt.bladesMin + Math.random() * (opt.bladesMax - opt.bladesMin));
-                            for (var j = 0; j < clusterSize; ++j)
-                            {
-                                var bx = .01 * (2 * Math.random() - 1);
-                                var by = .01 * (2 * Math.random() - 1);
-                                var dx = -.02 + Math.random() * .03;
-                                var dy = .02 + Math.random() * .02;               
-                                var baseColor = lx.color.mix("#64b119", "green", Math.random());
-        
-                                drawTiled(x + bx, y + by, function (x, y) {
+                    // Sort by y to avoid one cluster looking like it sits on top of another
+                    clusters.sort(function(a, b) {
+                        a = a.y;
+                        b = b.y;
+                        return (a < b) ? 1 : (a > b) ? -1 : 0; 
+                    });
+                   
+                    //
+                    // Loop over the 9 tiles and draw the tiles left-to-right, top-to-bottom.
+                    // This avoids undoing the effect of the y-sorting where the overlap from
+                    // the bottom tile would be drawn before the bottommost clusters in the 
+                    // center tile.  
+                    //
+                    // Note: this drastically affects perceived performance as ~80%of the time
+                    // will be spent drawing blades to the not-visible neighboring tiles and 
+                    // these are grouped so that 80% of the time it looks like "nothing" is
+                    // happening.
+                    //
+                    // Todo
+                    // - Add a simple clip check to avoid drawing clusters that clearly are
+                    //   not overlapping into the main tile
+                    //
+                    for (var tile = 0; tile < 9; ++tile) {                        
+                        // Skip the corner tiles for performance                        
+                        if (tile in { 1:1,3:1,4:1,5:1,7:1})  {
+                            for (var i = 0; i < clusters.length; ++i) {   
+                                tasks.push((function(i, tile) { return function() {
                             
-                                    ctx.lineWidth = opt.bladeWidth; 
-                                    ctx.strokeStyle = baseColor.html();
-                                    ctx.beginPath();                            
-                                    ctx.moveTo(x, y);
-                                    ctx.lineTo(x + dx * 2/3, y + dy * 2/3);
-                                    ctx.stroke();
+                                    var cluster = clusters[i];
+                                    var x = cluster.x;
+                                    var y = cluster.y;
 
-                                    ctx.lineWidth =  .75 * opt.bladeWidth;
-                                    ctx.strokeStyle = baseColor.value(Math.random() * 20).html();
-                                    ctx.beginPath();
-                                    ctx.moveTo(x + dx * 2/3, y + dy * 2/3);
-                                    ctx.lineTo(x + dx, y + dy);
-                                    ctx.stroke();
-                                });
+                                    for (var j = 0; j < cluster.blades.length; ++j)
+                                    {
+                                        with(cluster.blades[j]) {
+                                            drawTiled(x + bx, y + by, tile, function (x, y) {
+                                                ctx.lineWidth = opt.bladeWidth; 
+                                                ctx.strokeStyle = baseColor.html();
+                                                ctx.beginPath();                            
+                                                ctx.moveTo(x, y);
+                                                ctx.lineTo(x + dx * 2/3, y + dy * 2/3);
+                                                ctx.stroke();
+
+                                                ctx.lineWidth =  .75 * opt.bladeWidth;
+                                                ctx.strokeStyle = baseColor.value(Math.random() * 20).html();
+                                                ctx.beginPath();
+                                                ctx.moveTo(x + dx * 2/3, y + dy * 2/3);
+                                                ctx.lineTo(x + dx, y + dy);
+                                                ctx.stroke();
+                                            });
+                                        }
+                                    }
+                                }})(i,tile));
                             }
-                        });
+                        }
                     }
 
                     return tasks;
@@ -282,18 +337,28 @@
                     ctx.translate(.5, -.5);
 
                     function drawTiled (x, y, f) {
-                        var offsets = [
-                            [0, 0], 
-                            [-1, 0], 
-                            [1, 0], 
-                            [0, -1], 
+                        var offsets = [                           
+                            [-1, 1],                           
                             [0, 1],
-                            [-1, 1],
                             [1, 1],
+
+                            [-1, 0], 
+                            [0, 0], 
+                            [1, 0], 
+
+                            [-1, -1],                            
+                            [0, -1], 
                             [1, -1],
-                            [-1, -1],
                         ];
-                        for (var i = 0; i < offsets.length; ++i) {
+
+                        if (typeof(f) == "function") {
+                            for (var i = 0; i < offsets.length; ++i) {
+                                f(x + offsets[i][0], y + offsets[i][1]);
+                            }
+                        }
+                        else {
+                            var i = arguments[2];
+                            var f = arguments[3];
                             f(x + offsets[i][0], y + offsets[i][1]);
                         }
                     }
