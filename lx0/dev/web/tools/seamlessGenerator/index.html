@@ -9,16 +9,18 @@
       <script type="text/javascript" src="../shared/script/extern/jquery-1.6.4.min.js"></script>
       <script type="text/javascript" src="../shared/script/extern/seedrandom.min.js"></script>
       <script type="text/javascript" src="map.0.0.0.js"></script>
-      <script type="text/javascript" src="../shared/script/lx.color-0.1.0.js?12345"></script>
+      <script type="text/javascript" src="lx.tableUI-0.1.0.js"></script>
+      <script type="text/javascript" src="../shared/script/lx.core-0.1.0.js"></script>
+      <script type="text/javascript" src="../shared/script/lx.color-0.1.0.js"></script>
       <script type="text/javascript" src="../shared/script/jquery.lx.seamlessImage.0.2.0.js"></script>
     </head>
     <body>
        <div id="body-wrap1">
         <h1>Seamless Image Generator</h1>
 
-        <h2>Scratch</h2>
+        <h2>Canvas</h2>
         <div>
-            <div style="float: left; margin-right: 1em;">
+            <div style="float: left; margin-right: 1em;">                
                 <div id="previewImage" style="width: 512px; height: 564px;"></div>
             </div>            
             <div>               
@@ -32,118 +34,19 @@
                     </tr>
                 </table>
 
-                <p>View as PNG: <a id="dataLink" target="_blank" href="">here</a></p>
+                <p>
+                    <progress id="status" value="" max="" style="display: none"></progress>
+                    <span id="download">View as PNG: <a id="dataLink" target="_blank" href="">here</a></span>
+                </p>
 
                 <table id="table-ui">
-                </table>
+                </table>                
 
             </div>
             <div style="clear:both"></div>
         </div>
         <h2>Raw Image</h2>
-        <canvas id="image" width="512" height="512" style="border: 1px solid #CCC;"></canvas>
-
-        <script type="text/javascript">
-        <!--
-            // Table-UI: a lightweight, functional automatic UI generator for rapid prototyping
-
-            var tableUI =
-            {
-                _generators : 
-                {
-                    _label : function(data)
-                    {
-                        var td = $("<td/>");
-                        var span = $("<span/>");
-                        span.css("padding-right", "1em");
-                        span.text(data.label);
-                        td.append(span);
-                        return td;
-                    },
-
-                    seed : function (ui, options, data)
-                    {
-                        var value;
-
-                        var tr = $("<tr/>");
-                        tr.append( this._label(data) );
-                        
-                        {
-                            var td = $("<td/>");
-                            value = $("<input/>");
-                            value.attr("type", "input");
-                            value.val(options[data.label]);
-
-                            var button = $("<input/>");
-                            button.attr("type", "button");
-                            button.val("random");
-                            button.click(function() {
-                                value.val( Math.floor(Math.random() * 10000) ).trigger('change');
-                            });
-
-                            td.append(value);
-                            td.append(button);
-                            tr.append(td);
-
-                            value.change(function () {                                var value = $(this).val();                                options[data.label] = value;                                ui.onchange(value);                            });                        }
-                        return tr;
-                    },
-
-                    "int" : function (ui, options, data)
-                    {
-                        var tr = $("<tr/>");
-                        tr.append( this._label(data) );
-
-                        {
-                            var td = $("<td/>");
-                            value = $("<input/>");
-                            value.attr("type", "input");
-                            value.val(options[data.label]);
-                            
-                            td.append(value);
-                            tr.append(td);
-
-                            value.change(function () {                                var value = parseInt($(this).val());                                options[data.label] = value;                                ui.onchange(value);                            });                        }
-                        return tr;
-                    },
-
-                    "float" : function (ui, options, data)
-                    {
-                        var tr = $("<tr/>");
-                        tr.append( this._label(data) );
-
-                        {
-                            var td = $("<td/>");
-                            value = $("<input/>");
-                            value.attr("type", "input");
-                            value.val(options[data.label]);
-                            
-                            td.append(value);
-                            tr.append(td);
-
-                            value.change(function () {                                var value = parseFloat($(this).val());                                options[data.label] = value;                                ui.onchange(value);                            });                        }
-                        return tr;
-                    }
-                },
-
-                generate : function(anchor, options, elements, params)
-                {
-                    var ui = 
-                    {
-                        onchange : params.onchange,
-                    };
-
-                    var _this = this;
-                    $.each(elements, function(i,data) {
-                        var tr = _this._generators[data.type](ui, options, data);
-                        $(anchor).append(tr);
-                    });
-                },
-            };
-
-
-        -->
-        </script>
+        <img id="image2" style="border: 1px solid #CCC;" src="" />
 
         <script type="text/javascript">
         <!--
@@ -181,24 +84,30 @@
                     }
                 ],
 
-                draw : function (ctx, drawTiled)
+                taskGroupSize : 24,
+
+                drawTasks : function (ctx, drawTiled)
                 {
+                    var tasks = [];
                     var opt = this.options;
 
                     for (var i = 0; i < opt.count; ++i) {
-                        var x = -.5 + Math.random();
-                        var y = -.5 + Math.random();
-                        var w = opt.radiusMin + Math.random() * (opt.radiusMax - opt.radiusMin);
+                        tasks.push(function() {
+                            var x = -.5 + Math.random();
+                            var y = -.5 + Math.random();
+                            var w = opt.radiusMin + Math.random() * (opt.radiusMax - opt.radiusMin);
 
-                        var g = parseInt(Math.max(0, Math.min(255, opt.grayMin + Math.random() * (opt.grayMax - opt.grayMin))));
-                        ctx.fillStyle = "rgba(" + g + ", " + g + ", " + g + ", 1);";
+                            var g = parseInt(Math.max(0, Math.min(255, opt.grayMin + Math.random() * (opt.grayMax - opt.grayMin))));
+                            ctx.fillStyle = "rgba(" + g + ", " + g + ", " + g + ", 1);";
 
-                        drawTiled(x, y, function (x, y) {
-                            ctx.beginPath();
-                            ctx.arc(x, y, w, 0, Math.PI * 2, true);
-                            ctx.fill();
+                            drawTiled(x, y, function (x, y) {
+                                ctx.beginPath();
+                                ctx.arc(x, y, w, 0, Math.PI * 2, true);
+                                ctx.fill();
+                            });
                         });
                     }
+                    return tasks;
                 },
             };  
             return plugin;
@@ -220,6 +129,7 @@
                     clusters : 5000,
                     bladesMin : 2,
                     bladesMax : 8,
+                    bladeWidth : 0.01,
                 },
 
                 ui :
@@ -240,63 +150,76 @@
                         type : "int",
                         label : "bladesMax",
                     },
+                    {
+                        type : "float",
+                        label : "bladeWidth"
+                    },
                 ],
 
-                draw : function (ctx, drawTiled)
+                drawTasks : function (ctx, drawTiled)
                 {
                     var opt = this.options;
+                    var tasks = [];
 
+                    tasks.push(function() {
+                        ctx.lineCap = "round";
+                        ctx.lineWidth = 0.12;
+                    });
 
-                    ctx.lineCap = "round";
-                    ctx.lineWidth = 0.12;
                     for (var i = 0; i < 100; ++i) {
-                        var x = -.5 + Math.random();
-                        var y = -.5 + Math.random();
-                        var dx = -.01 + Math.random() * .02;
-                        var dy = .02 + Math.random() * .04;
-                        var m = Math.random();    
+                        tasks.push(function() {                            
+                            var x = -.5 + Math.random();
+                            var y = -.5 + Math.random();
+                            var dx = -.01 + Math.random() * .02;
+                            var dy = .02 + Math.random() * .04;
+                            var m = Math.random();    
                         
-                        ctx.strokeStyle= lx.color.mix("#663d22", "#5d381f", m).html();
+                            ctx.strokeStyle= lx.color.mix("#663d22", "#5d381f", m).html();
                        
-                        drawTiled(x, y, function (x, y) {
-                            ctx.beginPath();
-                            ctx.moveTo(x, y);
-                            ctx.lineTo(x + dx, y + dy);
-                            ctx.stroke();
+                            drawTiled(x, y, function (x, y) {
+                                ctx.beginPath();
+                                ctx.moveTo(x, y);
+                                ctx.lineTo(x + dx, y + dy);
+                                ctx.stroke();
+                            });
                         });
                     }
                     
                     for (var i = 0; i < opt.clusters; ++i) {
-                        var x = -.5 + Math.random();
-                        var y = -.5 + Math.random();
+                        tasks.push(function() {
+                            var x = -.5 + Math.random();
+                            var y = -.5 + Math.random();
 
-                        var clusterSize = parseInt(opt.bladesMin + Math.random() * (opt.bladesMax - opt.bladesMin));
-                        for (var j = 0; j < clusterSize; ++j)
-                        {
-                            var bx = .01 * (2 * Math.random() - 1);
-                            var by = .01 * (2 * Math.random() - 1);
-                            var dx = -.02 + Math.random() * .03;
-                            var dy = .02 + Math.random() * .02;               
-                            var baseColor = lx.color.mix("#64b119", "green", Math.random());
+                            var clusterSize = parseInt(opt.bladesMin + Math.random() * (opt.bladesMax - opt.bladesMin));
+                            for (var j = 0; j < clusterSize; ++j)
+                            {
+                                var bx = .01 * (2 * Math.random() - 1);
+                                var by = .01 * (2 * Math.random() - 1);
+                                var dx = -.02 + Math.random() * .03;
+                                var dy = .02 + Math.random() * .02;               
+                                var baseColor = lx.color.mix("#64b119", "green", Math.random());
         
-                            drawTiled(x + bx, y + by, function (x, y) {
+                                drawTiled(x + bx, y + by, function (x, y) {
                             
-                                ctx.lineWidth = 0.01;
-                                ctx.strokeStyle = baseColor.html();
-                                ctx.beginPath();                            
-                                ctx.moveTo(x, y);
-                                ctx.lineTo(x + dx * 2/3, y + dy * 2/3);
-                                ctx.stroke();
+                                    ctx.lineWidth = opt.bladeWidth; 
+                                    ctx.strokeStyle = baseColor.html();
+                                    ctx.beginPath();                            
+                                    ctx.moveTo(x, y);
+                                    ctx.lineTo(x + dx * 2/3, y + dy * 2/3);
+                                    ctx.stroke();
 
-                                ctx.lineWidth = 0.0075;
-                                ctx.strokeStyle = baseColor.value(Math.random() * 20).html();
-                                ctx.beginPath();
-                                ctx.moveTo(x + dx * 2/3, y + dy * 2/3);
-                                ctx.lineTo(x + dx, y + dy);
-                                ctx.stroke();
-                            });
-                        }
+                                    ctx.lineWidth =  .75 * opt.bladeWidth;
+                                    ctx.strokeStyle = baseColor.value(Math.random() * 20).html();
+                                    ctx.beginPath();
+                                    ctx.moveTo(x + dx * 2/3, y + dy * 2/3);
+                                    ctx.lineTo(x + dx, y + dy);
+                                    ctx.stroke();
+                                });
+                            }
+                        });
                     }
+
+                    return tasks;
                 },
             };  
             return plugin;
@@ -329,7 +252,13 @@
 
             function redraw()
             {
-                $("#image").each(function () {                   
+                $("#previewImage").each(function () {                   
+
+                    var $canvas = $("<canvas width='512' height='512'></canvas>");
+                    $canvas.css("border", "1px solid #CCC");
+                    var canvas = $canvas[0];
+                    $(this).html($canvas);
+
                     var opt = plugin.options;
 
                     if (opt.seed)
@@ -337,19 +266,19 @@
                         Math.seedrandom(opt.seed);
                     }
 
-                    var ctx = this.getContext('2d');
-                    ctx.clearRect(0, 0, this.width, this.height);
+                    var ctx = canvas.getContext('2d');
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
                     
                     if (opt.background)
                     {
                         ctx.fillStyle = opt.background;
-                        ctx.fillRect(0, 0, this.width, this.height);
+                        ctx.fillRect(0, 0, canvas.width, canvas.height);
                     }
 
                     ctx.save();
 
                     // Reset the view to -.5 to .5, centered at 0,0, y+ = up, x+ = right
-                    ctx.scale(this.width, -this.height);
+                    ctx.scale(canvas.width, -canvas.height);
                     ctx.translate(.5, -.5);
 
                     function drawTiled (x, y, f) {
@@ -369,20 +298,52 @@
                         }
                     }
 
-                    plugin.draw(ctx, drawTiled);                    
-                    ctx.restore();
+                    redraw.activeTasks.length = 0;
+                    var tasks = [];
 
-                    var data = this.toDataURL("image/png");
+                    if (plugin.draw)
+                    {
+                        tasks.push(function() {
+                            plugin.draw(ctx, drawTiled);                    
+                        });
+                    }
+                    else 
+                    {
+                        tasks.push.apply(tasks, plugin.drawTasks(ctx, drawTiled) );
+                    }
+                                            
+                    tasks.push(function() {
+                        ctx.restore();
 
-                    $("#dataLink").attr("href", data);
+                        var data = canvas.toDataURL("image/png");
 
-                    var img = $("<img/>");
-                    img.attr("src", data);
-                    img.css("border", "1px solid #EEE");
-                    $("#previewImage").html(img);
-                    img.seamlessImage({ count: 3, sliderMax : 16 });
+                        $("#dataLink").attr("href", data);
+                        $("#image2").attr("src", data);
+
+                        var img = $("<img/>");
+                        img.attr("src", data);
+                        img.css("border", "1px solid #EEE");
+                        $("#previewImage").html(img);
+                        img.seamlessImage({ count: 3, sliderMax : 16 });
+                    });
+
+                    $("#status").attr("value", 0);
+                    $("#status").attr("max", tasks.length);
+                    $("#status").show();
+                    $("#download").hide();
+
+                    redraw.activeTasks = lx.core.run_tasks(tasks, 0, {
+                        groupSize : plugin.taskGroupSize || 12,
+                        callback : function(i) {
+                            $("#status").attr("value", i);
+                        }, 
+                        oncomplete : function() {
+                            $("#status").fadeOut(function() { $("#download").fadeIn(); } );
+                        },
+                    });
                 });
             }
+            redraw.activeTasks = [];
             
             $(document).ready(function () {
 
@@ -402,11 +363,6 @@
                 });
 
                 $("#pluginSelect").val('grass').trigger('change');
-
-                // TODO
-                // - Create plug-in for each pattern (with UI) and base framework for generation
-                //
-                redraw();
             });
         -->
         </script>
