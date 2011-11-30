@@ -116,7 +116,7 @@ if (!lx.color) lx.color = {};
           return [r, g, b];
         };
   
-    var _RGBA = function(r,g,b,a) { 
+    function _RGBA (r,g,b,a) { 
         this.r = r;
         this.g = g;
         this.b = b;
@@ -134,6 +134,9 @@ if (!lx.color) lx.color = {};
     };
     _RGBA.prototype.clone = function() {
         return new _RGBA(this.r, this.g, this.b, this.a);
+    };
+    _RGBA.prototype.convert = function(type) {
+        return this;
     };
     _RGBA.prototype.mix = function(color, amount) {
         color = color.convert('rgb');
@@ -383,21 +386,32 @@ if (!lx.color) lx.color = {};
         return this;
     }
     _HSVA.prototype.value = function(d)
-    {
+    {    
+        if (arguments.length == 0)
+            return this.v;
+                
         if (typeof(d) == "number")
             this.v = lib._clamp(this.v + d, 0, 100);
+        else if (typeof(d) == "string")
+        {
+            if (d.substr(0,1) == "+")
+            {
+                var amount = parseFloat(d.substr(1));
+                return this.value( this.v + amount );
+            }
+        }
         return this;
     }
-
 
     NS.parse = function (color) {
         if (arguments.length == 1)
         {
-            if (typeof(color) == "string") {
+            if (typeof(color) == "string") {                
                 color = lib._trim(color);
-                if (color.substr(0,1) == "#") {
-                    if (color.length == 7)
+                if (color.substr(0,1) == "#") {                    
+                    if (color.length == 7) {
                         return lib.parse_hex7(color);
+                    }
                     else if (color.length == 4)
                         return undefined;
                 }
@@ -416,6 +430,12 @@ if (!lx.color) lx.color = {};
             return new _HSVA(arguments[1], arguments[2], arguments[3], 255);
         }
         return undefined;
+    };
+
+    NS.mix = function(c0, c1, a) {
+        var color0 = this.parse(c0);
+        var color1 = this.parse(c1);
+        return color0.mix(color1, a);
     };
 
     NS.lib = lib;

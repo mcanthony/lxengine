@@ -9,7 +9,8 @@
       <script type="text/javascript" src="../shared/script/extern/jquery-1.6.4.min.js"></script>
       <script type="text/javascript" src="../shared/script/extern/seedrandom.min.js"></script>
       <script type="text/javascript" src="map.0.0.0.js"></script>
-      <script type="text/javascript" src="../seamlessImage/jquery.lx.seamlessImage.0.2.0.js"></script>
+      <script type="text/javascript" src="../shared/script/lx.color-0.1.0.js?12345"></script>
+      <script type="text/javascript" src="../shared/script/jquery.lx.seamlessImage.0.2.0.js"></script>
     </head>
     <body>
        <div id="body-wrap1">
@@ -20,93 +21,20 @@
             <div style="float: left; margin-right: 1em;">
                 <div id="previewImage" style="width: 512px; height: 564px;"></div>
             </div>            
-            <div>
+            <div>               
+                <table class="clean-table">
+                    <tr>
+                        <td>Algorithm</td>
+                        <td>
+                            <select id="pluginSelect">
+                            </select>
+                        </td>
+                    </tr>
+                </table>
+
                 <p>View as PNG: <a id="dataLink" target="_blank" href="">here</a></p>
 
-                <table>
-                    <tr>                       
-                        <td>
-                            <span style="padding-right: 1em">seed</span>
-                        </td>
-                        <td>
-                            <input id="seedSlider" type="input" value="0"/>
-                            <input id="seedButton" type="button" onclick="$('#seedSlider').val( Math.floor(Math.random() * 10000) ).trigger('change');" value="random" />
-                            <script type="text/javascript">
-                            <!--
-                                $(document).ready(function () {
-                                    $("#seedSlider").change(function () {
-                                        var value = $(this).val();
-                                        $("#seedValue").text(value);
-                                        opt.seed = value;
-                                        redraw();
-                                    });
-                                });
-                            -->
-                            </script>                        
-                        </td>
-                    </tr>
-
-                    <tr>                       
-                        <td>
-                            <span style="padding-right: 1em">count</span>
-                        </td>
-                        <td>
-                            <input id="countInput" type="input" value="8"/>
-                            <script type="text/javascript">
-                            <!--
-                                $(document).ready(function () {
-                                    $("#countInput").change(function () {
-                                        var value = $(this).val();
-                                        opt.count = value;
-                                        redraw();
-                                    });
-                                });
-                            -->
-                            </script>                        
-                        </td>
-                    </tr>
-
-                    <tr>                       
-                        <td>
-                            <span style="padding-right: 1em">minRadius</span>
-                        </td>
-                        <td>
-                            <input id="radiusMinInput" type="input" value=".01"/>
-                            <script type="text/javascript">
-                            <!--
-                                $(document).ready(function () {
-                                    $("#radiusMinInput").change(function () {
-                                        var value = parseFloat($(this).val());
-                                        opt.radiusMin = value;
-                                        redraw();
-                                    });
-                                });
-                            -->
-                            </script>                        
-                        </td>
-                    </tr>
-
-                    <tr>                       
-                        <td>
-                            <span style="padding-right: 1em">maxRadius</span>
-                        </td>
-                        <td>
-                            <input id="radiusMaxInput" type="input" value=".03"/>
-                            <script type="text/javascript">
-                            <!--
-                                $(document).ready(function () {
-                                    $("#radiusMaxInput").change(function () {
-                                        var value = parseFloat($(this).val());
-                                        opt.radiusMax = value;
-                                        redraw();
-                                    });
-                                });
-                            -->
-                            </script>                        
-                        </td>
-                    </tr>
-
-
+                <table id="table-ui">
                 </table>
 
             </div>
@@ -117,23 +45,292 @@
 
         <script type="text/javascript">
         <!--
-            Math.seedrandom();
-            
-            var opt =
+            // Table-UI: a lightweight, functional automatic UI generator for rapid prototyping
+
+            var tableUI =
             {
-                seed : 18,
-                background : null,
-                count : 3,
-                radiusMin : .045,
-                radiusMax : .095,
-                grayMin : 10,
-                grayMax : 75,
+                _generators : 
+                {
+                    _label : function(data)
+                    {
+                        var td = $("<td/>");
+                        var span = $("<span/>");
+                        span.css("padding-right", "1em");
+                        span.text(data.label);
+                        td.append(span);
+                        return td;
+                    },
+
+                    seed : function (ui, options, data)
+                    {
+                        var value;
+
+                        var tr = $("<tr/>");
+                        tr.append( this._label(data) );
+                        
+                        {
+                            var td = $("<td/>");
+                            value = $("<input/>");
+                            value.attr("type", "input");
+                            value.val(options[data.label]);
+
+                            var button = $("<input/>");
+                            button.attr("type", "button");
+                            button.val("random");
+                            button.click(function() {
+                                value.val( Math.floor(Math.random() * 10000) ).trigger('change');
+                            });
+
+                            td.append(value);
+                            td.append(button);
+                            tr.append(td);
+
+                            value.change(function () {                                var value = $(this).val();                                options[data.label] = value;                                ui.onchange(value);                            });                        }
+                        return tr;
+                    },
+
+                    "int" : function (ui, options, data)
+                    {
+                        var tr = $("<tr/>");
+                        tr.append( this._label(data) );
+
+                        {
+                            var td = $("<td/>");
+                            value = $("<input/>");
+                            value.attr("type", "input");
+                            value.val(options[data.label]);
+                            
+                            td.append(value);
+                            tr.append(td);
+
+                            value.change(function () {                                var value = parseInt($(this).val());                                options[data.label] = value;                                ui.onchange(value);                            });                        }
+                        return tr;
+                    },
+
+                    "float" : function (ui, options, data)
+                    {
+                        var tr = $("<tr/>");
+                        tr.append( this._label(data) );
+
+                        {
+                            var td = $("<td/>");
+                            value = $("<input/>");
+                            value.attr("type", "input");
+                            value.val(options[data.label]);
+                            
+                            td.append(value);
+                            tr.append(td);
+
+                            value.change(function () {                                var value = parseFloat($(this).val());                                options[data.label] = value;                                ui.onchange(value);                            });                        }
+                        return tr;
+                    }
+                },
+
+                generate : function(anchor, options, elements, params)
+                {
+                    var ui = 
+                    {
+                        onchange : params.onchange,
+                    };
+
+                    var _this = this;
+                    $.each(elements, function(i,data) {
+                        var tr = _this._generators[data.type](ui, options, data);
+                        $(anchor).append(tr);
+                    });
+                },
             };
 
+
+        -->
+        </script>
+
+        <script type="text/javascript">
+        <!--
+        function pluginSpot() {
+            var plugin =
+            {
+                options : 
+                {
+                    seed : Math.floor(Math.random() * 10000),
+                    background : null,
+                    count : 8,
+                    radiusMin : .20,
+                    radiusMax : .40,
+                    grayMin : 10,
+                    grayMax : 75,
+                },
+
+                ui :
+                [
+                    { 
+                        type : "seed",
+                        label: "seed", 
+                    },
+                    { 
+                        type : "int",
+                        label: "count", 
+                    },
+                    { 
+                        type : "float",
+                        label: "radiusMin", 
+                    },
+                    { 
+                        type : "float",
+                        label: "radiusMax", 
+                    }
+                ],
+
+                draw : function (ctx, drawTiled)
+                {
+                    var opt = this.options;
+
+                    for (var i = 0; i < opt.count; ++i) {
+                        var x = -.5 + Math.random();
+                        var y = -.5 + Math.random();
+                        var w = opt.radiusMin + Math.random() * (opt.radiusMax - opt.radiusMin);
+
+                        var g = parseInt(Math.max(0, Math.min(255, opt.grayMin + Math.random() * (opt.grayMax - opt.grayMin))));
+                        ctx.fillStyle = "rgba(" + g + ", " + g + ", " + g + ", 1);";
+
+                        drawTiled(x, y, function (x, y) {
+                            ctx.beginPath();
+                            ctx.arc(x, y, w, 0, Math.PI * 2, true);
+                            ctx.fill();
+                        });
+                    }
+                },
+            };  
+            return plugin;
+        }
+        -->
+        </script>
+
+
+        <script type="text/javascript">
+        <!--
+        function pluginGrass() {
+            var plugin =
+            {
+                options : 
+                {
+                    seed : Math.floor(Math.random() * 10000),
+                    background : "#5d381f",
+
+                    clusters : 5000,
+                    bladesMin : 2,
+                    bladesMax : 8,
+                },
+
+                ui :
+                [
+                    { 
+                        type : "seed",
+                        label: "seed", 
+                    },
+                    {
+                        type : "int",
+                        label : "clusters",
+                    },
+                    {
+                        type : "int",
+                        label : "bladesMin",
+                    },
+                    {
+                        type : "int",
+                        label : "bladesMax",
+                    },
+                ],
+
+                draw : function (ctx, drawTiled)
+                {
+                    var opt = this.options;
+
+
+                    ctx.lineCap = "round";
+                    ctx.lineWidth = 0.12;
+                    for (var i = 0; i < 100; ++i) {
+                        var x = -.5 + Math.random();
+                        var y = -.5 + Math.random();
+                        var dx = -.01 + Math.random() * .02;
+                        var dy = .02 + Math.random() * .04;
+                        var m = Math.random();    
+                        
+                        ctx.strokeStyle= lx.color.mix("#663d22", "#5d381f", m).html();
+                       
+                        drawTiled(x, y, function (x, y) {
+                            ctx.beginPath();
+                            ctx.moveTo(x, y);
+                            ctx.lineTo(x + dx, y + dy);
+                            ctx.stroke();
+                        });
+                    }
+                    
+                    for (var i = 0; i < opt.clusters; ++i) {
+                        var x = -.5 + Math.random();
+                        var y = -.5 + Math.random();
+
+                        var clusterSize = parseInt(opt.bladesMin + Math.random() * (opt.bladesMax - opt.bladesMin));
+                        for (var j = 0; j < clusterSize; ++j)
+                        {
+                            var bx = .01 * (2 * Math.random() - 1);
+                            var by = .01 * (2 * Math.random() - 1);
+                            var dx = -.02 + Math.random() * .03;
+                            var dy = .02 + Math.random() * .02;               
+                            var baseColor = lx.color.mix("#64b119", "green", Math.random());
+        
+                            drawTiled(x + bx, y + by, function (x, y) {
+                            
+                                ctx.lineWidth = 0.01;
+                                ctx.strokeStyle = baseColor.html();
+                                ctx.beginPath();                            
+                                ctx.moveTo(x, y);
+                                ctx.lineTo(x + dx * 2/3, y + dy * 2/3);
+                                ctx.stroke();
+
+                                ctx.lineWidth = 0.0075;
+                                ctx.strokeStyle = baseColor.value(Math.random() * 20).html();
+                                ctx.beginPath();
+                                ctx.moveTo(x + dx * 2/3, y + dy * 2/3);
+                                ctx.lineTo(x + dx, y + dy);
+                                ctx.stroke();
+                            });
+                        }
+                    }
+                },
+            };  
+            return plugin;
+        }
+        -->
+        </script>
+
+        <script type="text/javascript">
+        <!--
+            Math.seedrandom();
+
+            var pluginTable = 
+            { 
+                spot : pluginSpot(),
+                grass : pluginGrass(),
+            };
+            var plugin = pluginTable.grass;
+
+            function rebuildUI()
+            {
+                $("#table-ui").empty();
+                tableUI.generate("#table-ui", plugin.options, plugin.ui,
+                    {
+                        onchange : function() {
+                            redraw();
+                        },
+                    }
+                );
+            }
 
             function redraw()
             {
                 $("#image").each(function () {                   
+                    var opt = plugin.options;
 
                     if (opt.seed)
                     {
@@ -155,7 +352,7 @@
                     ctx.scale(this.width, -this.height);
                     ctx.translate(.5, -.5);
 
-                    function callback4(x, y, f) {
+                    function drawTiled (x, y, f) {
                         var offsets = [
                             [0, 0], 
                             [-1, 0], 
@@ -172,23 +369,7 @@
                         }
                     }
 
-
-                    for (var i = 0; i < opt.count; ++i) {
-
-                        var x = -.5 + Math.random();
-                        var y = -.5 + Math.random();
-                        var w = opt.radiusMin + Math.random() * (opt.radiusMax - opt.radiusMin);
-
-                        var g = parseInt(Math.max(0, Math.min(255, opt.grayMin + Math.random() * (opt.grayMax - opt.grayMin))));
-                        ctx.fillStyle = "rgba(" + g + ", " + g + ", " + g + ", 1);";
-
-                        callback4(x, y, function (x, y) {
-                            ctx.beginPath();
-                            ctx.arc(x, y, w, 0, Math.PI * 2, true);
-                            ctx.fill();
-                        });
-                    }
-
+                    plugin.draw(ctx, drawTiled);                    
                     ctx.restore();
 
                     var data = this.toDataURL("image/png");
@@ -199,17 +380,33 @@
                     img.attr("src", data);
                     img.css("border", "1px solid #EEE");
                     $("#previewImage").html(img);
-                    img.seamlessImage({ count: 3 });
+                    img.seamlessImage({ count: 3, sliderMax : 16 });
                 });
             }
             
             $(document).ready(function () {
 
+                $("#pluginSelect").each(function() {
+                    var $this = $(this);
+                    $.each(pluginTable, function(key, value) {
+                        var option = $("<option/>");
+                        option.text(key);
+                        $this.append(option);
+                    });
+
+                    $this.change(function() {
+                        plugin = pluginTable[$(this).val()];    
+                        rebuildUI();
+                        redraw();
+                    });
+                });
+
+                $("#pluginSelect").val('grass').trigger('change');
+
                 // TODO
                 // - Create plug-in for each pattern (with UI) and base framework for generation
                 //
-                $("#seedSlider").trigger('change');
-                $("#countInput").trigger('change');
+                redraw();
             });
         -->
         </script>

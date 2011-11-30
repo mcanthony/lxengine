@@ -78,7 +78,7 @@
                         var slider = $("<input/>");
                         slider.attr("type", "range");
                         slider.attr("min", 25);
-                        slider.attr("max", 400);
+                        slider.attr("max", options.sliderMax * 100);
                         slider.attr("value", 100);
                         slider.attr("step", 1);
                         slider.css("width", elem.width + "px");
@@ -147,6 +147,7 @@
 
         var settings = $.extend({
             'count' : 1,
+            'sliderMax' : 4,
             'ui' : true,
         }, userOptions);
 
