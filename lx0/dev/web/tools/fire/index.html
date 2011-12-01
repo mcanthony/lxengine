@@ -29,121 +29,179 @@
         <!--
             Math.seedrandom(new Date());
 
-            fireEffect = function () {
+            //
+            // The fire effect works by creating a "fire" grid, which stores the intensity of the 
+            // fire at that point in grid.  Each update spreads the intensity from the lower rows
+            // upward toward the upper rows, however each upward movement is accompanied with
+            // a decay factor as the flames moves from its base.
+            //
+            // The next key factor is mapping the intensity values to colors.  A complex gradient
+            // is used to create an aethestically pleasing spectrum from the highest intensity
+            // to the lowest.
+            //
+            // Lastly, blending in the drawing is used to further smooth the transitions as the
+            // flames change.
+            //
+            // Todo:
+            // - Remove hard-coded fire grid size
+            //
+            FireEffect = function () {
                 this.canvas = null;
                 this.fire = [];
+                this.shift = 0.04;
             };
 
-            fireEffect.prototype.init = function () {
-                    this.canvas = $("#image")[0];
-                    for (var y = 0; y < 32; ++y)
-                        this.fire[y] = [];
+            FireEffect.prototype.init = function () {
 
+                // Store a reference to the canvas to avoid doing a JQuery look-up on every redraw
+                this.canvas = $("#image")[0];
+
+                //
+                // Initialize the fire grid.  Note that the flames grow upward from the bottom
+                // row, so they are the only values set to non-zero values on the initial frame.
+                //
+                for (var y = 0; y < 32; ++y) {
+                    this.fire[y] = [];
+                    for (var x = 0; x < 128; ++x)
+                        this.fire[y][x] = 0;
+                }
+                for (var x = 0; x < 128; ++x) {
+                    this.fire[0][x] = lx.core.random(0.2, 1.0);
+                }
+            };
+
+            FireEffect.prototype.update = function () {
+
+                //
+                // Modulate the bottom-row as base intensity increases / descreases
+                //
+                var flare = 0.2;
+                for (var x = 0; x < 128; ++x) {
+                    this.fire[0][x] += lx.core.random(-flare, flare);
+                    this.fire[0][x] = lx.core.clamp(this.fire[0][x], 0, 1.2);
+                }
+
+                //
+                // Move the flames upward by averaging the neighbors in the next lowest row.
+                //
+                // Add in a left/right "shift" bias to grow the flames slightly as if a 
+                // horizontal wind existed.
+                //
+                // Then add a decay, ensuring it grows stronger as the limit of the flame
+                // height approaches.
+                //
+                // Add some entropy to make it look more natural.
+                //
+                this.shift = lx.core.clamp(this.shift + lx.core.random(-.004, .004), -.08, .08);
+                for (var y = 1; y < 32; ++y) {
                     for (var x = 0; x < 128; ++x) {
-                        this.fire[0][x] = lx.core.random(0.2, 1.0);
-                    }
-                };
+                        var i = 0;
+                        i += (.25 - this.shift) * this.fire[y - 1][(x - 1 + 128) % 128];
+                        i += .50 * this.fire[y - 1][x];
+                        i += (.25 + this.shift) * this.fire[y - 1][(x + 1) % 128];
 
-                fireEffect.prototype.update = function () {
+                        var decay = lx.core.random(1 / 48, 1 / 24) + Math.pow(y / 32, 32);
+                        var entropy = lx.core.random(-.02, 0.02);
+                        i += entropy - decay;
+                        this.fire[y][x] = lx.core.clamp(i, 0, 1.2);
+                    }
+                }
+            };
+
+            FireEffect.prototype.redraw = function () {
+
+                var ctx = this.canvas.getContext('2d');
+                ctx.save();
+                ctx.scale(this.canvas.width / 128, this.canvas.height / 30);
+
+                //
+                // The color mapping of intensity -> RGB
+                //
+                var gradient =
+                [
+                    [1.0, [240, 240, 255]],
+                    [0.95, [250, 250, 255]],
+                    [0.92, [255, 255, 255]],
+                    [0.8, [255, 255, 200]],
+                    [0.7, [255, 255, 100]],
+                    [0.5, [255, 220, 20]],
+                    [0.3, [255, 200, 0]],
+                    [0.1, [192, 68, 20]],
+                    [0.05, [136, 0, 0]],
+                    [0.02, [74, 32, 0]],
+                    [0.0, [0, 0, 0]],
+                ];
+
+                function mapColor(intensity) {
+                    var entropy = intensity / 12;
+                    intensity = lx.core.clamp(intensity + lx.core.random(-entropy, entropy), 0.0, 1.0);
+                    var a = null;
+                    var b = null;
+                    for (var j = 0; j < gradient.length && b == null; ++j) {
+                        if (!(intensity < gradient[j][0])) {
+                            a = (j > 0) ? gradient[j - 1] : gradient[j];
+                            b = gradient[j];
+                        }
+                    }
+
+                    var r, g, b;
+                    var factor = (a[0] - b[0]);
+                    if (!(factor > 0)) {
+                        r = a[1][0];
+                        g = a[1][1];
+                        b = a[1][2];
+                    }
+                    else {
+                        var blend = (a[0] - intensity) / factor;
+                        r = lx.core.blend(a[1][0], b[1][0], blend);
+                        g = lx.core.blend(a[1][1], b[1][1], blend);
+                        b = lx.core.blend(a[1][2], b[1][2], blend);
+                        r = Math.floor(r);
+                        g = Math.floor(g);
+                        b = Math.floor(b);
+                    }
+                    return "rgba(" + r + "," + g + "," + b + ",0.2)";
+                }
+
+                //
+                // Add a random pixel shift to each rectangle to cause alpha blending over time
+                // between neighbors. Likewise, overdraw the "pixel" in y to cause more graphical
+                // blending.
+                //
+                // Also don't draw the bottom two rows as they have the most entropy are the least
+                // visually appealing.
+                //
+                var dx = lx.core.random(-.2, .2);
+                for (var y = 0; y < 30; ++y) {
                     for (var x = 0; x < 128; ++x) {
-                        this.fire[0][x] += lx.core.random(-0.2, 0.2);
-                        this.fire[0][x] = lx.core.clamp(this.fire[0][x], 0, 1.2);
+                        var intensity = this.fire[y + 2][x];
+                        ctx.fillStyle = mapColor(intensity);
+                        ctx.fillRect(x + dx, 28 - y, 1, 2);
                     }
+                }
+                ctx.restore();
+            };
 
-                    for (var y = 1; y < 32; ++y) {
-                        for (var x = 0; x < 128; ++x) {
-                            var c0 = this.fire[y - 1][(x - 1 + 128) % 128];
-                            var c1 = this.fire[y - 1][x];
-                            var c2 = this.fire[y - 1][(x + 1) % 128];
-
-                            var decay = lx.core.random(1 / 48, 1 / 24) + Math.pow(y / 32, 32);
-                            var entropy = lx.core.random(-.02, 0.02);
-                            var c = (c0 + c1 + c2) / 3.0 + entropy - decay;
-                            c = lx.core.clamp(c, 0, 1.2);
-                            this.fire[y][x] = c;
-                        }
-                    }
-                };
-
-                fireEffect.prototype.redraw = function () {
-
-                    var ctx = this.canvas.getContext('2d');
-                    ctx.save();
-                    ctx.scale(this.canvas.width / 128, this.canvas.height / 30);
-
-                    var gradient =
-                    [
-                        [1.0, [240, 240, 255]],
-                        [0.95, [250, 250, 255]],
-                        [0.92, [255, 255, 255]],
-                        [0.8, [255, 255, 200]],
-                        [0.7, [255, 255, 100]],
-                        [0.5, [255, 220, 20]],
-                        [0.3, [255, 200, 0]],
-                        [0.1, [192, 68, 20]],
-                        [0.05, [136, 0, 0]],
-                        [0.02, [74, 32, 0]],
-                        [0.0, [0, 0, 0]],
-                    ];
-
-                    function mapColor(intensity) {
-                        var entropy = intensity / 12;
-                        intensity = lx.core.clamp(intensity + lx.core.random(-entropy, entropy), 0.0, 1.0);
-                        var a = null;
-                        var b = null;
-                        for (var j = 0; j < gradient.length && b == null; ++j) {
-                            if (!(intensity < gradient[j][0])) {
-                                a = (j > 0) ? gradient[j - 1] : gradient[j];
-                                b = gradient[j];
-                            }
-                        }
-
-                        var r, g, b;
-                        var factor = (a[0] - b[0]);
-                        if (!(factor > 0)) {
-                            r = a[1][0];
-                            g = a[1][1];
-                            b = a[1][2];
-                        }
-                        else {
-                            var blend = (a[0] - intensity) / factor;
-                            r = lx.core.blend(a[1][0], b[1][0], blend);
-                            g = lx.core.blend(a[1][1], b[1][1], blend);
-                            b = lx.core.blend(a[1][2], b[1][2], blend);
-                            r = Math.floor(r);
-                            g = Math.floor(g);
-                            b = Math.floor(b);
-                        }
-                        return "rgba(" + r + "," + g + "," + b + ",0.2)";
-                    }
-
-                    var dx = lx.core.random(-.2, .2);
-                    for (var y = 0; y < 30; ++y) {
-                        for (var x = 0; x < 128; ++x) {
-                            var intensity = this.fire[y + 2][x];
-                            ctx.fillStyle = mapColor(intensity);
-                            ctx.fillRect(x + dx, 28 - y, 1, 2);
-                        }
-                    }
-                    ctx.restore();
-                };
-            
 
             $(document).ready(function () {
 
+                //
+                // Run four fire effects on top of each other to create a more
+                // complex flame.
+                //
                 var effects = [];
                 for (var i = 0; i < 4; ++i)
-                    effects.push(new fireEffect());
-                                
-                $.each(effects, function(i,effect) { effect.init(); } );
-                
+                    effects.push(new FireEffect());
 
+                $.each(effects, function (i, effect) { effect.init(); });
+
+                var fps = 24;
                 window.setInterval(function () {
-                    $.each(effects, function(i,effect) { 
+                    $.each(effects, function (i, effect) {
                         effect.update();
                         effect.redraw();
-                    } );                    
-                }, 1000 / 60);
+                    });
+                }, 1000 / fps);
             });
         -->
         </script>
