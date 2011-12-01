@@ -21,6 +21,10 @@
                 <canvas id="image" width="512" height="128" style="border: 1px solid #CCC"></canvas>
             </div>            
             <div>               
+                <p>
+                    <b>Feedback?</b> Please e-mail a<span style="display:none">56</span>thile@athile.net!<br />
+                    Please let me know what you think!<br>
+                </p>
             </div>
             <div style="clear:both"></div>
         </div>
@@ -55,6 +59,12 @@
 
                 // Store a reference to the canvas to avoid doing a JQuery look-up on every redraw
                 this.canvas = $("#image")[0];
+
+                // Clear to black
+                var ctx = this.canvas.getContext('2d');
+                ctx.save();
+                ctx.fillStyle = "rgba(0,0,0,1)";
+                ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
 
                 //
                 // Initialize the fire grid.  Note that the flames grow upward from the bottom
@@ -160,7 +170,9 @@
                         g = Math.floor(g);
                         b = Math.floor(b);
                     }
-                    return "rgba(" + r + "," + g + "," + b + ",0.2)";
+
+                    var a = .2;
+                    return "rgba(" + r + "," + g + "," + b + "," + a + ")";
                 }
 
                 //
