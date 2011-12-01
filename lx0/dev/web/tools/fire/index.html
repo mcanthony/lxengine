@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html>
+    <head>
+      <title>Fire Effect</title>
+      <link type="text/css" href="../shared/style/default.less" rel="stylesheet/less" />
+      <link type="text/css" href="style.less" rel="stylesheet/less" />
+      
+      <script type="text/javascript" src="../shared/script/extern/less-1.1.3.min.js"></script>
+      <script type="text/javascript" src="../shared/script/extern/jquery-1.6.4.min.js"></script>
+      <script type="text/javascript" src="../shared/script/extern/seedrandom.min.js"></script>
+      <script type="text/javascript" src="../shared/script/lx.core-0.1.0.js"></script>
+      <script type="text/javascript" src="../shared/script/lx.color-0.1.0.js"></script>
+    </head>
+    <body>
+       <div id="body-wrap1">
+        <h1>Fire Effect</h1>
+
+        <h2>Canvas</h2>
+        <div>
+            <div style="float: left; margin-right: 1em;">                
+                <canvas id="image" width="512" height="128" style="border: 1px solid #CCC"></canvas>
+            </div>            
+            <div>               
+            </div>
+            <div style="clear:both"></div>
+        </div>
+
+        <script type="text/javascript">
+        <!--
+            Math.seedrandom(new Date());
+
+            fireEffect = function () {
+                this.canvas = null;
+                this.fire = [];
+            };
+
+            fireEffect.prototype.init = function () {
+                    this.canvas = $("#image")[0];
+                    for (var y = 0; y < 32; ++y)
+                        this.fire[y] = [];
+
+                    for (var x = 0; x < 128; ++x) {
+                        this.fire[0][x] = lx.core.random(0.2, 1.0);
+                    }
+                };
+
+                fireEffect.prototype.update = function () {
+                    for (var x = 0; x < 128; ++x) {
+                        this.fire[0][x] += lx.core.random(-0.2, 0.2);
+                        this.fire[0][x] = lx.core.clamp(this.fire[0][x], 0, 1.2);
+                    }
+
+                    for (var y = 1; y < 32; ++y) {
+                        for (var x = 0; x < 128; ++x) {
+                            var c0 = this.fire[y - 1][(x - 1 + 128) % 128];
+                            var c1 = this.fire[y - 1][x];
+                            var c2 = this.fire[y - 1][(x + 1) % 128];
+
+                            var decay = lx.core.random(1 / 48, 1 / 24) + Math.pow(y / 32, 32);
+                            var entropy = lx.core.random(-.02, 0.02);
+                            var c = (c0 + c1 + c2) / 3.0 + entropy - decay;
+                            c = lx.core.clamp(c, 0, 1.2);
+                            this.fire[y][x] = c;
+                        }
+                    }
+                };
+
+                fireEffect.prototype.redraw = function () {
+
+                    var ctx = this.canvas.getContext('2d');
+                    ctx.save();
+                    ctx.scale(this.canvas.width / 128, this.canvas.height / 30);
+
+                    var gradient =
+                    [
+                        [1.0, [240, 240, 255]],
+                        [0.95, [250, 250, 255]],
+                        [0.92, [255, 255, 255]],
+                        [0.8, [255, 255, 200]],
+                        [0.7, [255, 255, 100]],
+                        [0.5, [255, 220, 20]],
+                        [0.3, [255, 200, 0]],
+                        [0.1, [192, 68, 20]],
+                        [0.05, [136, 0, 0]],
+                        [0.02, [74, 32, 0]],
+                        [0.0, [0, 0, 0]],
+                    ];
+
+                    function mapColor(intensity) {
+                        var entropy = intensity / 12;
+                        intensity = lx.core.clamp(intensity + lx.core.random(-entropy, entropy), 0.0, 1.0);
+                        var a = null;
+                        var b = null;
+                        for (var j = 0; j < gradient.length && b == null; ++j) {
+                            if (!(intensity < gradient[j][0])) {
+                                a = (j > 0) ? gradient[j - 1] : gradient[j];
+                                b = gradient[j];
+                            }
+                        }
+
+                        var r, g, b;
+                        var factor = (a[0] - b[0]);
+                        if (!(factor > 0)) {
+                            r = a[1][0];
+                            g = a[1][1];
+                            b = a[1][2];
+                        }
+                        else {
+                            var blend = (a[0] - intensity) / factor;
+                            r = lx.core.blend(a[1][0], b[1][0], blend);
+                            g = lx.core.blend(a[1][1], b[1][1], blend);
+                            b = lx.core.blend(a[1][2], b[1][2], blend);
+                            r = Math.floor(r);
+                            g = Math.floor(g);
+                            b = Math.floor(b);
+                        }
+                        return "rgba(" + r + "," + g + "," + b + ",0.2)";
+                    }
+
+                    var dx = lx.core.random(-.2, .2);
+                    for (var y = 0; y < 30; ++y) {
+                        for (var x = 0; x < 128; ++x) {
+                            var intensity = this.fire[y + 2][x];
+                            ctx.fillStyle = mapColor(intensity);
+                            ctx.fillRect(x + dx, 28 - y, 1, 2);
+                        }
+                    }
+                    ctx.restore();
+                };
+            
+
+            $(document).ready(function () {
+
+                var effects = [];
+                for (var i = 0; i < 4; ++i)
+                    effects.push(new fireEffect());
+                                
+                $.each(effects, function(i,effect) { effect.init(); } );
+                
+
+                window.setInterval(function () {
+                    $.each(effects, function(i,effect) { 
+                        effect.update();
+                        effect.redraw();
+                    } );                    
+                }, 1000 / 60);
+            });
+        -->
+        </script>
+    </body>
+</html>

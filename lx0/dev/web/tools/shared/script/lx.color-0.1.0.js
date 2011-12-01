@@ -159,6 +159,16 @@ if (!lx.color) lx.color = {};
     _RGBA.prototype.tone = function(amount) {
         return this.mix(this._Gray, amount);
     };
+    _RGBA.prototype.red = function() {
+        return this.r;
+    };
+    _RGBA.prototype.green = function() {
+        return this.green;
+    };
+    _RGBA.prototype.blue = function() {
+        return this.b;
+    };
+
 
     lib.parse_hex7 = function(color) {
         return new _RGBA(

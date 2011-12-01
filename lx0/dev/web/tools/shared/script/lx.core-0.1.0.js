@@ -7,6 +7,9 @@ if (!lx.core) lx.core = {};
     NS.clamp = function(i, n, m) {
         return Math.max(Math.min(i, m), n);
     };
+    NS.blend = function (a, b, t) {
+        return a * (1 - t) + b * t;
+    };
     NS.random = function (min, max) {
         return Math.random() * (max - min) + min;
     };
