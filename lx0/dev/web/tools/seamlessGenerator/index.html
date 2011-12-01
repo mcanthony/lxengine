@@ -40,11 +40,30 @@
                 </p>
 
                 <table id="table-ui">
-                </table>                
+                </table>          
+                
+                <p>
+                    <b>Feedback?</b> Click <a href="http://athile.net/library/blog/?p=1113" target="_blank">here</a>.</br>
+                    Please let me know what you think!<br/>
+                </p>      
 
             </div>
             <div style="clear:both"></div>
         </div>
+        <h2>Documentation</h2>
+        <p>
+            Wait for the progress bar while the image is generating.  Once it's done, use 
+            the scroll bar to zoom in and out on the tiled image.
+        </p>
+        <h3>Future Work</h3>
+        <ul>
+            <li><b>Framework</b>: zoom out gradually from 1.0x to 3.0x tiling when generation is done</li>
+            <li><b>Grass</b>: color selection</li>
+            <li><b>Grass</b>: more variations in color</li>
+            <li><b>Grass</b>: better base dirt</li>
+            <li><b>Dirt</b>: dirt as an independent plug-in</li>
+            <li><b>Stone</b>: stone as an independent plug-in</li>
+        </ul>
         <h2>Raw Image</h2>
         <img id="image2" style="border: 1px solid #CCC;" src="" />
 
@@ -235,16 +254,24 @@
                     // these are grouped so that 80% of the time it looks like "nothing" is
                     // happening.
                     //
-                    // Todo
-                    // - Add a simple clip check to avoid drawing clusters that clearly are
-                    //   not overlapping into the main tile
-                    //
                     for (var tile = 0; tile < 9; ++tile) {                        
                         // Skip the corner tiles for performance                        
                         if (tile in { 1:1,3:1,4:1,5:1,7:1})  {
                             for (var i = 0; i < clusters.length; ++i) {   
-                                tasks.push((function(i, tile) { return function() {
-                            
+
+                                var cull = false;
+                                with (clusters[i]) {
+                                    switch (tile)
+                                    {
+                                        case 1: cull = (y > -.4); break;
+                                        case 7: cull = (y < .4); break;
+                                        case 3: cull = (x < .4); break;
+                                        case 5: cull = (x > -.4); break;                                        
+                                    };
+                                }
+
+                                if (!cull) tasks.push((function(i, tile) { return function() {                            
+                                    
                                     var cluster = clusters[i];
                                     var x = cluster.x;
                                     var y = cluster.y;
