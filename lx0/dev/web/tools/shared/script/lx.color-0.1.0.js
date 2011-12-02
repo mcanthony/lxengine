@@ -369,6 +369,18 @@ if (!lx.color) lx.color = {};
             return this;
     }
 
+    _HSVA.prototype.convert = function(type)
+    {
+        type = type.toUpperCase();
+        if (type == 'RGBA')
+        {
+            var arr = lib.hsv_to_rgb(this.h, this.s, this.v);
+            return new _RGBA(arr[0], arr[1], arr[2], this.a);
+        }
+        else 
+            return this;
+    }
+
     function delegate_to_hsv(method, args)
     {
         return function() {
@@ -379,9 +391,16 @@ if (!lx.color) lx.color = {};
     $.each(['hue', 'saturation','value'], function(i, value) {
         _RGBA.prototype[value] = delegate_to_hsv(value);
     });
+
+    _HSVA.prototype.red = function() { return this.convert('RGBA').r; },
+    _HSVA.prototype.green = function() { return this.convert('RGBA').g; },
+    _HSVA.prototype.blue = function() { return this.convert('RGBA').b; },
     
     _HSVA.prototype.hue = function(d)
     {
+        if (arguments.length == 0)
+            return this.h;
+
         if (typeof(d) == "number")
         {
             this.h = (this.h + d) % 360;
@@ -391,6 +410,9 @@ if (!lx.color) lx.color = {};
     }
     _HSVA.prototype.saturation = function(d)
     {
+        if (arguments.length == 0)
+            return this.s;
+
         if (typeof(d) == "number")
             this.s = lib._clamp(this.s + d, 0, 100);
         return this;

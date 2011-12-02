@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html>
+    <head>
+      <title>Image Effects</title>
+      <link type="text/css" href="../shared/style/default.less" rel="stylesheet/less" />
+      <link type="text/css" href="style.less" rel="stylesheet/less" />
+      
+      <script type="text/javascript" src="../shared/script/extern/less-1.1.3.min.js"></script>
+      <script type="text/javascript" src="../shared/script/extern/jquery-1.6.4.min.js"></script>
+      <script type="text/javascript" src="../shared/script/extern/seedrandom.min.js"></script>
+      <script type="text/javascript" src="../shared/script/lx.core-0.1.0.js"></script>
+      <script type="text/javascript" src="../shared/script/lx.color-0.1.0.js"></script>
+      <script type="text/javascript" src="jquery.lx.imageEffects-0.1.0.js"></script>
+    </head>
+    <body>
+       <div id="body-wrap1">
+        <h1>Image Effects</h1>
+
+        <h2>Example</h2>
+        <div>
+            <div style="float: left; margin-right: 1em;">                
+                <img class="imageEffects" style="border: 1px solid #CCC" src="image.jpg" data-imageEffects="{ effect : 'none' }"/><br />
+                <img class="imageEffects" style="border: 1px solid #CCC" src="image.jpg" data-imageEffects="{ effect : 'hueBuckets' }"/><br />
+                <img class="imageEffects" style="border: 1px solid #CCC" src="image.jpg" data-imageEffects="{ effect : 'grayscaleBiasRed' }"/><br />
+                <img class="imageEffects" style="border: 1px solid #CCC" src="image.jpg" data-imageEffects="{ effect : 'grayscaleBiasGreen' }"/><br />
+                <img class="imageEffects" style="border: 1px solid #CCC" src="image.jpg" data-imageEffects="{ effect : 'grayscaleBiasBlue' }"/><br />
+            </div>            
+            <div>               
+                <p>
+                    <b>Feedback?</b> Please e-mail a<span style="display:none">56</span>thile@athile.net!<br />
+                    Please let me know what you think!<br>
+                </p>
+            </div>
+            <div style="clear:both"></div>
+        </div>
+
+        <script type="text/javascript">
+        <!--
+            Math.seedrandom(new Date());
+
+            $(document).ready(function () {
+                $(".imageEffects").hide();
+                $(".imageEffects").imageEffects();
+                $(".imageEffects").each(function () {
+                    $(this).attr("title", $(this).attr("data-imageEffects"));
+                });
+                $(".imageEffects").fadeIn(1500);
+            });
+        -->
+        </script>
+
+        <!-- Google Analytics -->         <script type="text/javascript">
+            var _gaq = _gaq || [];
+            _gaq.push(['_setAccount', 'UA-604613-10']);
+            _gaq.push(['_trackPageview']);
+            (function () {
+                var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+                ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+                var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+            })();        </script> 
+    </body>
+</html>
