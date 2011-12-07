@@ -61,6 +61,23 @@ var tableUI =
             return tr;
         },
 
+        "string" : function (ui, options, data) 
+        {
+            var tr = $("<tr/>");
+            tr.append( this._label(data) );
+            {
+                var td = $("<td/>");
+                value = $("<input/>");
+                value.attr("type", "input");
+                value.val(options[data.label]);
+                            
+                td.append(value);
+                tr.append(td);
+
+                value.change(function () {                    var value = $(this).val();                    options[data.label] = value;                    ui.onchange(value);                });            }
+            return tr;
+        },
+
         "float" : function (ui, options, data)
         {
             var tr = $("<tr/>");
