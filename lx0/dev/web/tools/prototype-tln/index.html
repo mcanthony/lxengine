@@ -12,7 +12,7 @@
        <div id="body-wrap1">
         <h1>LxWeb Prototype</h1>
 
-        <h2>Tides of Dust: Neutron</h2>
+        <h2>Kepler's Tide: Neutron</h2>
 
         <div>
             <div id="div" style="width: 512px; height: 288px; border: 1px solid #333; box-shadow: 3px 3px 6px #EEE; padding: 0; margin: 0em auto 0em auto;">
@@ -39,6 +39,44 @@
 
         <script type="text/javascript">
         <!--
+
+        // Credit: http://stackoverflow.com/questions/4954403/can-jquery-keypress-detect-more-than-one-key-at-the-same-time
+        (function($) {
+
+            var data =
+            {
+                keyState : { },
+            };
+
+            var methods =
+            {
+                init : function() {
+                    var state = data.keyState;
+                    $(this).keydown(function(event) { state[event.which] = true; });
+                    $(this).keyup(function(event) { delete state[event.which]; });
+                    $(this).data('keyState', data);                
+                },
+
+                state : function() {                
+                    var data = $(this).data('keyState');
+                    return data.keyState;
+                },
+            };
+
+            $.fn.keyState = function(method) {
+                
+                method = method || "init";
+
+                var inner;
+                var ret = this.each(function() {
+                    inner = methods[method].apply(this, []);
+                });
+                return inner ? inner : ret;
+            };
+
+        })(jQuery);
+
+
 
 
         function importLibCore (NS) {
@@ -146,7 +184,10 @@
             lib.each(this._stars, function() {
                 this.y += this.speed;
                 if (this.y > _starField._height)
+                {
+                  this.x = Math.random() * _starField._width;
                   this.y = 0;
+                }
             });
           },
 
@@ -162,6 +203,8 @@
 
         var Ship = function() 
         {
+            this.x = 512/2 - 16;
+            this.y = 288 - 32 - 16;
         };
         $.extend(Ship.prototype, Entity.prototype);
         $.extend(Ship.prototype, {
@@ -173,7 +216,7 @@
           draw : function(ctx, gtime)
           {
             ctx.fillStyle="blue";
-            ctx.fillRect(512/2 - 16, 288 - 32 - 16, 32, 32);
+            ctx.fillRect(this.x, this.y, 32, 32);
           }
 
         });
@@ -191,9 +234,10 @@
               this._width = $("#div").width();
               this._height = $("#div").height();
 
+              this._ship = new Ship();
               this._entities.push(
                 new StarField(this._width, this._height),
-                new Ship()
+                this._ship
               );
 
               // Construct the GUI
@@ -206,6 +250,17 @@
             },
 
             update: function (gametime) {
+
+              if (engine._keyState[65] /*a*/)
+              {
+                this._ship.x -= 2;
+              }
+              if (engine._keyState[68] /*d*/)
+              {
+                this._ship.x += 2;
+              }
+
+
               lib.each(this._entities, function() {
                 this.update(gametime);
               });
@@ -258,7 +313,11 @@
 
 
         $(document).ready(function () {
+
+            $(document).keyState();
+
             engine._state = state;
+            engine._keyState = $(document).keyState('state');
             engine.run();
         });
         -->
