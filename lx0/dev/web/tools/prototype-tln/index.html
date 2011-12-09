@@ -203,8 +203,10 @@
 
         var Ship = function() 
         {
-            this.x = 512/2 - 16;
-            this.y = 288 - 32 - 16;
+            this.width = 32;
+            this.height = 32;
+            this.x = 512/2 - this.width / 2;
+            this.y = 288 - this.height / 2 - 16;
         };
         $.extend(Ship.prototype, Entity.prototype);
         $.extend(Ship.prototype, {
@@ -216,10 +218,55 @@
           draw : function(ctx, gtime)
           {
             ctx.fillStyle="blue";
-            ctx.fillRect(this.x, this.y, 32, 32);
+            ctx.fillRect(this.x - this.width / 2, this.y - this.height / 2, this.width, this.height);
           }
 
         });
+
+        var Enemy = function()
+        {
+            this.width = 16;
+            this.height = 24;
+            this.x = 256 + 224 * (Math.random() - .5);
+            this.y = -2000 * Math.random() - 288;
+        };
+        $.extend(Enemy.prototype, Entity.prototype);
+        $.extend(Enemy.prototype, {
+          
+          collidable : true,
+
+          update : function(gtime) 
+          {
+            this.y += 2;
+          },
+
+          draw : function(ctx, gtime)
+          {
+            ctx.fillStyle = "cyan";
+            ctx.fillRect(this.x - this.width / 2, this.y - this.height / 2, this.width, this.height);
+          }
+
+        });
+
+        var physics =
+        {
+            update : function (ship, entities)
+            {
+                lib.each(entities, function() {
+                    if (this.collidable)
+                    {   
+                        function intersect(enemy)
+                        {                    
+                            return Math.abs(ship.x - enemy.x) < (ship.width + enemy.width) / 2 
+                                && Math.abs(ship.y - enemy.y) < (ship.height + enemy.height) /2;
+                        }
+
+                        if (intersect(this))
+                            this.dead = true;
+                    }
+                });
+            }
+        };
 
 
         var stateStarfield = new State({
@@ -239,6 +286,9 @@
                 new StarField(this._width, this._height),
                 this._ship
               );
+
+              for (var i = 0; i < 32; ++i)
+                this._entities.push(new Enemy());
 
               // Construct the GUI
               var gui = $("<canvas/>");
@@ -261,9 +311,20 @@
               }
 
 
+              
               lib.each(this._entities, function() {
                 this.update(gametime);
               });
+              physics.update(this._ship, this._entities);
+
+
+              var entities = [];
+              lib.each(this._entities, function() {
+                if (!this.dead)
+                    entities.push(this);
+              });
+              this._entities = entities;
+
             },
 
             draw: function (gametime) {
