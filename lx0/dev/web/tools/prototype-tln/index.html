@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html>
+    <head>
+      <title>LxWeb Prototype</title>
+      <link type="text/css" href="../shared/style/default.less" rel="stylesheet/less" />
+      <link type="text/css" href="style.less" rel="stylesheet/less" />
+      
+      <script type="text/javascript" src="../shared/script/extern/less-1.1.3.min.js"></script>
+      <script type="text/javascript" src="../shared/script/extern/jquery-1.6.4.min.js"></script>
+    </head>
+    <body>
+       <div id="body-wrap1">
+        <h1>LxWeb Prototype</h1>
+
+        <h2>Tides of Dust: Neutron</h2>
+
+        <div>
+            <div id="div" style="width: 512px; height: 288px; border: 1px solid #333; box-shadow: 3px 3px 6px #EEE; padding: 0; margin: 0em auto 0em auto;">
+            </div>
+        </div>
+
+
+        <style>
+        .menuHover
+        {
+          color : #C00;
+          cursor:default;
+        }
+        </style>
+        <div id="mainMenu" style="display:none;">
+          <ul>
+            <li id="mainMenu-new">New</li>
+            <li id="mainMenu-load">Load</li>
+            <li id="mainMenu-highScores">High Scores</li>
+            <li id="mainMenu-exit">Exit</li>
+          </ul>
+        </div>
+
+
+        <script type="text/javascript">
+        <!--
+
+
+        function importLibCore (NS) {
+          
+            NS.easeIn = function (x) { return Math.sin(x * Math.PI / 2); }
+            NS.easeIn2 = function (x) { NS.easeIn(NS.easeIn(x)); }
+
+            NS.each = function(x, f) { 
+              for (var i in x) {
+                f.call(x[i], i, x[i]);
+              }
+            };
+        }
+
+        var lib = { };
+        importLibCore(lib);
+
+        var engine = {};
+        engine._state = null;
+        engine._actionQueue = [];
+
+
+        engine.setTimeout = function(code, delay) {
+          return window.setTimeout(code, delay);
+        };
+
+        engine.changeState = function(state) {
+          this._actionQueue.push(function() {
+            this._state = state;
+            this._state.init();
+          });
+        };
+
+        engine.run = function () {
+            var gametime = 0;
+            var gametick = 20;
+
+            this._state.init(gametime);
+            
+            var _this = this;
+            (function gameLoop() {
+
+                lib.each(_this._actionQueue, function() {
+                  this.call(_this);
+                });
+                _this._actionQueue = [];
+
+                _this._state.update(gametime);
+                _this._state.draw(gametime);
+                gametime += gametick;
+                _this.setTimeout(gameLoop, gametick);
+            })();
+        };
+
+
+        var State = function(options) {
+          $.extend(this, options);
+        };
+        $.extend(State.prototype, {
+          init : function(gtime) {},
+          update : function(gtime) {},
+          draw : function(gtime) {},
+          shutdown : function(gtime) {}
+        });
+
+        var Entity = function(options) {
+          $.extend(this, options);
+        };
+        $.extend(Entity.prototype, {
+          update : function(gtime) {},
+          draw : function(ctx, gtime) { },
+        });
+
+
+        var StarField = function(width, height) 
+        {
+          this._width = width;
+          this._height = height;
+          this._stars = [];
+
+          for (var i = 0; i < 64; ++i)
+            this._stars.push(this._generateStar());
+        };
+        $.extend(StarField.prototype, Entity.prototype);
+        $.extend(StarField.prototype, {
+
+          _generateStar : function() {
+              return {
+                  x : Math.random() * this._width,
+                  y : Math.random() * this._height, 
+                  speed : Math.random() * 3 + .1,
+                  color : Math.floor(32 + Math.random() * 127),
+              };
+          },
+
+          init : function()
+          {
+            for (var i = 0; i < 128; ++i)
+              this._stars.push(this._generateStar());
+          },
+
+          update : function(gtime) 
+          {
+            _starField = this;
+            lib.each(this._stars, function() {
+                this.y += this.speed;
+                if (this.y > _starField._height)
+                  this.y = 0;
+            });
+          },
+
+          draw : function(ctx, gtime)
+          {
+            lib.each(this._stars, function() {
+              ctx.fillStyle = "rgb(" + this.color + "," + this.color + "," + this.color + ")";
+              ctx.fillRect(this.x, this.y, 2, 2);
+            });
+          }
+
+        });
+
+        var Ship = function() 
+        {
+        };
+        $.extend(Ship.prototype, Entity.prototype);
+        $.extend(Ship.prototype, {
+
+          update : function(gtime) 
+          {
+          },
+
+          draw : function(ctx, gtime)
+          {
+            ctx.fillStyle="blue";
+            ctx.fillRect(512/2 - 16, 288 - 32 - 16, 32, 32);
+          }
+
+        });
+
+
+        var stateStarfield = new State({
+          _ctx : null,
+          _width : 0,
+          _height : 0,
+
+          _entities : [],
+
+          init: function (gametime) {
+              
+              this._width = $("#div").width();
+              this._height = $("#div").height();
+
+              this._entities.push(
+                new StarField(this._width, this._height),
+                new Ship()
+              );
+
+              // Construct the GUI
+              var gui = $("<canvas/>");
+              gui.attr("width", this._width);
+              gui.attr("height", this._height);
+              $("#div").html( gui.show() );
+             
+              this._ctx = gui[0].getContext('2d');
+            },
+
+            update: function (gametime) {
+              lib.each(this._entities, function() {
+                this.update(gametime);
+              });
+            },
+
+            draw: function (gametime) {
+              var ctx = this._ctx;
+              var width = this._width;
+              var height = this._height;
+
+              ctx.clearRect(0, 0, width, height);
+              ctx.fillStyle = "black";
+              ctx.fillRect(0, 0, width, height);
+
+              lib.each(this._entities, function() {
+                this.draw(ctx, gametime);
+              });
+            },
+        });
+
+        var state =
+        {
+            init: function (gametime) {
+              
+              // Construct the GUI
+              var gui = $("#mainMenu").clone();
+              gui.find("li").each(function() {
+                $(this).hover(function() {
+                  $(this).addClass("menuHover");
+                },                 
+                function() { 
+                  $(this).removeClass("menuHover");                
+                });
+              });
+              gui.find("#mainMenu-new").click(function() {
+                engine.changeState(stateStarfield);
+              });
+
+              $("#div").html( gui.show() );
+             
+            },
+            update: function (gametime) {
+            },
+            draw: function (gametime) {
+            },
+        };
+
+
+
+
+
+        $(document).ready(function () {
+            engine._state = state;
+            engine.run();
+        });
+        -->
+        </script>
+
+        <!-- Google Analytics -->         <script type="text/javascript">
+            var _gaq = _gaq || [];
+            _gaq.push(['_setAccount', 'UA-604613-10']);
+            _gaq.push(['_trackPageview']);
+            (function () {
+                var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+                ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+                var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+            })();        </script> 
+
+    </body>
+</html>
