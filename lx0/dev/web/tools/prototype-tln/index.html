@@ -125,15 +125,16 @@
         engine.changeState = function(state) {
           this._actionQueue.push(function() {
             this._state = state;
-            this._state.init();
+            this.gametime = 0;
+            this._state.init(this._gametime);
           });
         };
 
         engine.run = function () {
-            var gametime = 0;
+            this.gametime = 0;
             var gametick = 20;
 
-            this._state.init(gametime);
+            this._state.init(this.gametime);
             
             var _this = this;
             (function gameLoop() {
@@ -143,9 +144,9 @@
                 });
                 _this._actionQueue = [];
 
-                _this._state.update(gametime);
-                _this._state.draw(gametime);
-                gametime += gametick;
+                _this._state.update(_this.gametime);
+                _this._state.draw(_this.gametime);
+                _this.gametime += gametick;
                 _this.setTimeout(gameLoop, gametick);
             })();
         };
@@ -229,6 +230,7 @@
 
             this.energyBurst = 1000;
             this.energy = 1000;
+            this.shields = 1000;
 
             this.score = 0;
         };
@@ -303,13 +305,22 @@
                 && Math.abs(ship.y - enemy.y) < (ship.height + enemy.height) /2;
         }
 
-        var HudEnergyBar = function(ship)
+        var HudEnergyBar = function(ship, property, offset, color, width)
         {
             this._ship = ship;
+            this._prop = property;
+            this._offset = offset;
+            this._color = color;
+            this._width = width;
             this._last = this._ship.energy;
         };
         $.extend(HudEnergyBar.prototype, Entity.prototype,
         {
+            _value : function ()
+            {
+                return this._ship[this._prop];
+            },
+
             update : function (ctx, gtime)
             {
             },
@@ -317,15 +328,15 @@
             draw : function (ctx, gtime)
             {
                 ctx.strokeStyle = "#777";
-                ctx.strokeRect(512 - 16, 288 - 108, 6, 102);
+                ctx.strokeRect(512 - this._offset, 288 - 108, this._width, 102);
 
-                energy = lib.blend(this._ship.energy, this._last, .8);
+                energy = lib.blend(this._value(), this._last, .8);
                 energy /= 10;
 
                 ctx.fillStyle = "#93413d";
-                ctx.fillRect(512 - 15, 288 - 107, 4, 100 - energy);
-                ctx.fillStyle = "#99e76f";
-                ctx.fillRect(512 - 15, 288 - 107 + (100 - energy), 4, energy);
+                ctx.fillRect(513 - this._offset, 288 - 107, this._width - 2, 100 - energy);
+                ctx.fillStyle = this._color;
+                ctx.fillRect(513 - this._offset, 288 - 107 + (100 - energy), this._width - 2, energy);
                 this._last = energy * 10;
             },            
         });
@@ -344,7 +355,7 @@
             {
                 ctx.font = "small-caps 32px Serif";
                 ctx.textAlign = "right";
-                ctx.fillStyle = "rgba(255,255,255," + 255 + ")";
+                ctx.fillStyle = "#f0f3d8";
                 ctx.fillText(this._ship.score, 512 - 6, 36);
             },            
         });
@@ -357,7 +368,10 @@
                     if (this.collidable)
                     {   
                         if (intersect(ship, this))
+                        {
                             this.dead = true;
+                            ship.shields -= 50;
+                        }
                     }
                 });
 
@@ -376,6 +390,39 @@
                 });
             }
         };
+
+        var levels =
+        {
+            1 : [ ],
+        };
+
+            
+        function addWave(level, timeOffset, offsetX)
+        {
+            var time;
+            for (var i = 0; i < 5; i ++)
+            {
+                var x = offsetX + 48 * i;
+                time = timeOffset + 350 * i;
+                level.push(["Enemy", time, x]);
+            }
+            return time;
+        }
+
+        var time = 1000;
+        time = addWave(levels[1], 1000, 128);
+        time = addWave(levels[1], time + 1000, 196);
+        time = addWave(levels[1], time + 1000, 32);
+        time = addWave(levels[1], time + 1200, 128);
+        time = addWave(levels[1], time + 200, 200);
+        
+        time = addWave(levels[1], time + 1700, 200);
+        time = addWave(levels[1], time + 200, 150);
+        time = addWave(levels[1], time + 200, 125);
+
+        time = addWave(levels[1], time + 3000, 200);
+        time = addWave(levels[1], time + 200, 150);
+        time = addWave(levels[1], time + 200, 125);
 
         function cleanList(list)
         {
@@ -404,12 +451,13 @@
               this._entities.push(
                 new StarField(this._width, this._height),
                 this._ship,
-                new HudEnergyBar(this._ship),
+                new HudEnergyBar(this._ship, "energy", 16, "#358e37", 6),
+                new HudEnergyBar(this._ship, "shields", 32, "#4fe51b", 12),
                 new HudScore(this._ship)
               );
 
-              for (var i = 0; i < 32; ++i)
-                this._entities.push(new Enemy());
+              /*for (var i = 0; i < 32; ++i)
+                this._entities.push(new Enemy());*/
 
               // Construct the GUI
               var gui = $("<canvas/>");
@@ -441,6 +489,24 @@
                     this._entities.push(missile);
                 }
               }
+
+              
+              (function () {
+                while (levels[1].length > 0) 
+                {
+                    var next = levels[1][0];
+                    if (next[1] <= gametime)
+                    {
+                        eval("var ent = new " + next[0] + "();");
+                        ent.x = next[2];
+                        ent.y = -ent.height;
+                        this._entities.push(ent);
+                        levels[1].shift();
+                    }
+                    else 
+                        return;
+                }
+              }).call(this);
 
               
               lib.each(this._entities, function() {
