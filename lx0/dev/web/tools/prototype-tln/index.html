@@ -12,12 +12,18 @@
        <div id="body-wrap1">
         <h1>LxWeb Prototype</h1>
 
-        <h2>Kepler's Tide: Neutron</h2>
+        <h2>Gravity Tide: Neutron</h2>
 
         <div>
             <div id="div" style="width: 512px; height: 288px; border: 1px solid #333; box-shadow: 3px 3px 6px #EEE; padding: 0; margin: 0em auto 0em auto;">
             </div>
         </div>
+
+        <h2>Todo</h2>
+        <ul>
+            <li>Energy bar HUD</li>
+            <li>Score</li>
+        </ul>
 
 
         <style>
@@ -45,15 +51,24 @@
 
             var data =
             {
+                _ignore : 
+                {
+                    116 /*F5*/ : true,      // Allow web page refresh
+                },
+
                 keyState : { },
             };
 
             var methods =
             {
+                
+
                 init : function() {
+                    var _this = this;
                     var state = data.keyState;
-                    $(this).keydown(function(event) { state[event.which] = true; });
-                    $(this).keyup(function(event) { delete state[event.which]; });
+                    var ignore = data._ignore;
+                    $(this).keydown(function(event) { state[event.which] = true; return ignore[event.which] !== undefined; });
+                    $(this).keyup(function(event) { delete state[event.which]; return ignore[event.which] !== undefined; });
                     $(this).data('keyState', data);                
                 },
 
@@ -81,8 +96,12 @@
 
         function importLibCore (NS) {
           
-            NS.easeIn = function (x) { return Math.sin(x * Math.PI / 2); }
-            NS.easeIn2 = function (x) { NS.easeIn(NS.easeIn(x)); }
+            NS.blend = function (a, b, t) {
+                return a * (1 - t) + b * t;
+            };
+
+            NS.easeIn = function (x) { return Math.sin(x * Math.PI / 2); };
+            NS.easeIn2 = function (x) { NS.easeIn(NS.easeIn(x)); };
 
             NS.each = function(x, f) { 
               for (var i in x) {
@@ -207,12 +226,19 @@
             this.height = 32;
             this.x = 512/2 - this.width / 2;
             this.y = 288 - this.height / 2 - 16;
+
+            this.energyBurst = 1000;
+            this.energy = 1000;
+
+            this.score = 0;
         };
         $.extend(Ship.prototype, Entity.prototype);
         $.extend(Ship.prototype, {
 
           update : function(gtime) 
           {
+            this.energyBurst = Math.min(1000, this.energyBurst + 1);
+            this.energy = Math.min(1000, this.energy + 4);
           },
 
           draw : function(ctx, gtime)
@@ -221,6 +247,29 @@
             ctx.fillRect(this.x - this.width / 2, this.y - this.height / 2, this.width, this.height);
           }
 
+        });
+
+        var Missile = function(x, y)
+        {
+            this.x = x;
+            this.y = y;
+            this.width = 4;
+            this.height = 8;
+        };
+        $.extend(Missile.prototype, Entity.prototype);
+        $.extend(Missile.prototype, {
+            update : function (gtime)
+            {
+                this.y -= 6;
+                if (this.y < -this.height)
+                    this.dead = true;
+            },
+
+            draw : function(ctx, gtime)
+            {
+                ctx.fillStyle = "yellow";
+                ctx.fillRect(this.x - this.width / 2, this.y - this.height / 2, this.width, this.height);
+            }
         });
 
         var Enemy = function()
@@ -248,25 +297,94 @@
 
         });
 
+        function intersect(ship, enemy)
+        {                    
+            return Math.abs(ship.x - enemy.x) < (ship.width + enemy.width) / 2 
+                && Math.abs(ship.y - enemy.y) < (ship.height + enemy.height) /2;
+        }
+
+        var HudEnergyBar = function(ship)
+        {
+            this._ship = ship;
+            this._last = this._ship.energy;
+        };
+        $.extend(HudEnergyBar.prototype, Entity.prototype,
+        {
+            update : function (ctx, gtime)
+            {
+            },
+
+            draw : function (ctx, gtime)
+            {
+                ctx.strokeStyle = "#777";
+                ctx.strokeRect(512 - 16, 288 - 108, 6, 102);
+
+                energy = lib.blend(this._ship.energy, this._last, .8);
+                energy /= 10;
+
+                ctx.fillStyle = "#93413d";
+                ctx.fillRect(512 - 15, 288 - 107, 4, 100 - energy);
+                ctx.fillStyle = "#99e76f";
+                ctx.fillRect(512 - 15, 288 - 107 + (100 - energy), 4, energy);
+                this._last = energy * 10;
+            },            
+        });
+
+        var HudScore = function(ship)
+        {
+            this._ship = ship;
+        };
+        $.extend(HudScore.prototype, Entity.prototype,
+        {
+            update : function (ctx, gtime)
+            {
+            },
+
+            draw : function (ctx, gtime)
+            {
+                ctx.font = "small-caps 32px Serif";
+                ctx.textAlign = "right";
+                ctx.fillStyle = "rgba(255,255,255," + 255 + ")";
+                ctx.fillText(this._ship.score, 512 - 6, 36);
+            },            
+        });
+
         var physics =
         {
-            update : function (ship, entities)
+            update : function (ship, entities, missiles)
             {
                 lib.each(entities, function() {
                     if (this.collidable)
                     {   
-                        function intersect(enemy)
-                        {                    
-                            return Math.abs(ship.x - enemy.x) < (ship.width + enemy.width) / 2 
-                                && Math.abs(ship.y - enemy.y) < (ship.height + enemy.height) /2;
-                        }
-
-                        if (intersect(this))
+                        if (intersect(ship, this))
                             this.dead = true;
                     }
                 });
+
+                lib.each(missiles, function() {
+                    var missile = this;
+                    lib.each(entities, function() {
+                        var enemy = this;
+                        if (enemy.collidable) {                            
+                            if (intersect(missile, enemy)) {
+                                enemy.dead = true;
+                                missile.dead = true;
+                                ship.score += 10;
+                            }
+                        }
+                    });
+                });
             }
         };
+
+        function cleanList(list)
+        {
+            var clean = [];
+            for (var i = 0; i < list.length; ++i)
+                if (!list[i].dead)
+                    clean.push(list[i]);
+            return clean;
+        }
 
 
         var stateStarfield = new State({
@@ -275,16 +393,19 @@
           _height : 0,
 
           _entities : [],
+          _missiles : [],
 
           init: function (gametime) {
               
               this._width = $("#div").width();
               this._height = $("#div").height();
 
-              this._ship = new Ship();
+              this._ship = new Ship();          
               this._entities.push(
                 new StarField(this._width, this._height),
-                this._ship
+                this._ship,
+                new HudEnergyBar(this._ship),
+                new HudScore(this._ship)
               );
 
               for (var i = 0; i < 32; ++i)
@@ -309,22 +430,26 @@
               {
                 this._ship.x += 2;
               }
-
+              if (engine._keyState[32] /*SPACE*/)
+              {
+                if (this._ship.energyBurst >= 5 && this._ship.energy >= 50)
+                {
+                    this._ship.energyBurst = 0;
+                    this._ship.energy -= 50;
+                    var missile = new Missile(this._ship.x, this._ship.y - this._ship.height - 2);
+                    this._missiles.push(missile);
+                    this._entities.push(missile);
+                }
+              }
 
               
               lib.each(this._entities, function() {
                 this.update(gametime);
               });
-              physics.update(this._ship, this._entities);
+              physics.update(this._ship, this._entities, this._missiles);
 
-
-              var entities = [];
-              lib.each(this._entities, function() {
-                if (!this.dead)
-                    entities.push(this);
-              });
-              this._entities = entities;
-
+              this._missiles = cleanList(this._missiles);
+              this._entities = cleanList(this._entities);
             },
 
             draw: function (gametime) {
