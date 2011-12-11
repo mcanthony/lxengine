@@ -7,6 +7,12 @@
       
       <script type="text/javascript" src="../shared/script/extern/less-1.1.3.min.js"></script>
       <script type="text/javascript" src="../shared/script/extern/jquery-1.6.4.min.js"></script>
+
+      <script type="text/javascript" src="jquery.lx.keystate-0.5.0.js"></script>
+      <script type="text/javascript" src="lx.keycodes.js"></script>
+      <script type="text/javascript" src="lx.libCore.js"></script>
+      <script type="text/javascript" src="lx.engine.js"></script>
+
     </head>
     <body>
        <div id="body-wrap1">
@@ -54,123 +60,15 @@
 
             <div style="font-size: 150%; font-weight: bold">Credits</div>
             <div>Produced using LxEngine (LxWeb)</div>
+            <div style="margin-top: 1em">Press &lt;enter&gt; to continue</div>
         </div>
 
 
         <script type="text/javascript">
         <!--
 
-        // Credit: http://stackoverflow.com/questions/4954403/can-jquery-keypress-detect-more-than-one-key-at-the-same-time
-        (function($) {
-
-            var data =
-            {
-                _default : 
-                {
-                },
-
-                keyState : { },
-            };
-
-            var methods =
-            {
-                init : function() {
-                    var _this = this;
-                    var state = data.keyState;
-                    var _default = data._default;
-                    $(this).keydown(function(event) { state[event.which] = true; return _default[event.which] !== undefined; });
-                    $(this).keyup(function(event) { delete state[event.which]; return _default[event.which] !== undefined; });
-                    $(this).data('keyState', data);                
-                },
-
-                state : function() {                
-                    var data = $(this).data('keyState');
-                    return data.keyState;
-                },
-
-                defaultBehavior : function(keyCodes) {
-                    $.each(keyCodes, function(i, value) {
-                        data._default[value] = true;
-                    });
-                },
-            };
-
-            $.fn.keyState = function(method) {
-                
-                var args = Array.prototype.slice.call(arguments, 0);
-                if (typeof method == "string")
-                    args.shift();
-                else
-                    method = method || "init";
-
-                var inner;
-                var ret = this.each(function() {
-                    inner = methods[method].apply(this, args);
-                });
-                return inner || ret;
-            };
-
-        })(jQuery);
-
-
-
-
-        function importLibCore (NS) {
-          
-            NS.blend = function (a, b, t) {
-                return a * (1 - t) + b * t;
-            };
-
-            NS.easeIn = function (x) { return Math.sin(x * Math.PI / 2); };
-            NS.easeIn2 = function (x) { NS.easeIn(NS.easeIn(x)); };
-
-            NS.each = function(x, f) { 
-              for (var i in x) {
-                f.call(x[i], i, x[i]);
-              }
-            };
-        }
-
         var lib = { };
-        importLibCore(lib);
-
-        var engine = {};
-        engine._state = null;
-        engine._actionQueue = [];
-
-
-        engine.setTimeout = function(code, delay) {
-          return window.setTimeout(code, delay);
-        };
-
-        engine.changeState = function(state) {
-          this._actionQueue.push(function() {
-            this._state = state;
-            this.gametime = 0;
-            this._state.init(this._gametime);
-          });
-        };
-
-        engine.run = function () {
-            this.gametime = 0;
-            var gametick = 20;
-
-            this._state.init(this.gametime);
-            
-            var _this = this;
-            (function gameLoop() {
-
-                lib.each(_this._actionQueue, function() {
-                  this.call(_this);
-                });
-                _this._actionQueue = [];
-
-                _this._state.update(_this.gametime);
-                _this._state.draw(_this.gametime);
-                _this.gametime += gametick;
-                _this.setTimeout(gameLoop, gametick);
-            })();
-        };
+        import_libCore(lib);
 
 
         var State = function(options) {
@@ -201,8 +99,7 @@
           for (var i = 0; i < 64; ++i)
             this._stars.push(this._generateStar());
         };
-        $.extend(StarField.prototype, Entity.prototype);
-        $.extend(StarField.prototype, {
+        $.extend(StarField.prototype, Entity.prototype, {
 
           _generateStar : function() {
               return {
@@ -212,13 +109,7 @@
                   color : Math.floor(32 + Math.random() * 127),
               };
           },
-
-          init : function()
-          {
-            for (var i = 0; i < 128; ++i)
-              this._stars.push(this._generateStar());
-          },
-
+          
           update : function(gtime) 
           {
             _starField = this;
@@ -302,7 +193,7 @@
         {
             update : function(gtime)
             {
-                engine.changeState(stateCredits);
+                engine.changeState(new States.Credits());
             },
         });
 
@@ -484,33 +375,29 @@
             return clean;
         }
 
+        var States = {};
 
-        var stateStarfield = new State({
-          _ctx : null,
-          _width : 0,
-          _height : 0,
 
-          _queue : [],
-          _entities : [],
-          _missiles : [],
-
-          init: function (gametime) {
+        States.GameLoop = function() {
+            this._width = $("#div").width();
+            this._height = $("#div").height();
+            
+            this._queue = levels[1].slice(0);     // Shallow clone
+            this._ship = new Ship();
               
-              this._width = $("#div").width();
-              this._height = $("#div").height();
-
-              this._queue = levels[1].slice(0);     // Shallow clone
-
-              this._ship = new Ship();
-              
-              this._missiles = [];
-              this._entities = [
+            this._missiles = [];
+            this._entities = [
                 new StarField(this._width, this._height),
                 this._ship,
                 new HudEnergyBar(this._ship, "energy", 16, "#358e37", 6),
                 new HudEnergyBar(this._ship, "shields", 32, "#4fe51b", 12),
                 new HudScore(this._ship)
-              ];
+            ];
+        };
+        $.extend(States.GameLoop.prototype, State.prototype, {
+        
+          init: function (gametime) {
+              
               
 
               // Construct the GUI
@@ -552,7 +439,6 @@
                     ship.lastFire = gametime;
                 }
               }
-
 
               if (engine._keyState[ keyCodes.NUM4 ] )
               {
@@ -618,7 +504,9 @@
             },
         });
 
-        var state =
+
+        States.MainMenu = function() {}
+        $.extend(States.MainMenu.prototype, State.prototype, 
         {
             init: function (gametime) {
               
@@ -633,7 +521,7 @@
                 });
               });
               gui.find("#mainMenu-new").click(function() {
-                engine.changeState(stateStarfield);
+                engine.changeState(new States.GameLoop());
               });
 
               $("#div").html( gui.show() );
@@ -643,53 +531,10 @@
             },
             draw: function (gametime) {
             },
-        };
+        });
 
-        var keyCodes =
-        {
-            ENTER : 13,
-            
-            A : 65,
-            B : 66,
-            C : 67,
-            D : 68,
-            E : 69,
-            F : 70,
-            G : 71,
-            H : 72,
-            I : 73,
-            J : 74,
-            K : 75,
-            L : 76,
-            M : 77,
-            N : 78,
-            O : 79,
-            P : 80,
-            Q : 81,
-            R : 82,
-            S : 83,
-            T : 84,
-            U : 85,
-            V : 86,
-            W : 87,
-            X : 88,
-            Y : 89,
-            Z : 90,
-
-            NUM4 : 100,
-            NUM5 : 101,
-            NUM6 : 102,
-
-            F1 : 112,
-            F2 : 113,
-            F3 : 114,
-            F4 : 115,
-            F5 : 116,
-
-        };
-
-
-        var stateCredits =
+        States.Credits = function() {}
+        $.extend(States.Credits.prototype, State.prototype, 
         {
             init: function (gametime) {
               // Construct the GUI
@@ -699,14 +544,11 @@
             },
             update: function (gametime) {
                 if (engine._keyState[keyCodes.ENTER])
-                    engine.changeState(state);
+                    engine.changeState(new States.MainMenu());
             },
             draw: function (gametime) {
             },
-        };
-
-
-
+        });
 
 
         $(document).ready(function () {
@@ -714,7 +556,7 @@
             $(document).keyState();
             $(document).keyState('defaultBehavior', [ keyCodes.F5 ] );
 
-            engine._state = state;
+            engine._state = new States.MainMenu();
             engine._keyState = $(document).keyState('state');
             engine.run();
         });
