@@ -49,6 +49,13 @@
           </ul>
         </div>
 
+        <div id="credits" style="display:none; text-align: center">
+            <div style="font-size: 150%; font-weight: bold; margin: .5em 0em 1em 0em">Gravity Tide</div>
+
+            <div style="font-size: 150%; font-weight: bold">Credits</div>
+            <div>Produced using LxEngine (LxWeb)</div>
+        </div>
+
 
         <script type="text/javascript">
         <!--
@@ -58,9 +65,8 @@
 
             var data =
             {
-                _ignore : 
+                _default : 
                 {
-                    116 /*F5*/ : true,      // Allow web page refresh
                 },
 
                 keyState : { },
@@ -68,14 +74,12 @@
 
             var methods =
             {
-                
-
                 init : function() {
                     var _this = this;
                     var state = data.keyState;
-                    var ignore = data._ignore;
-                    $(this).keydown(function(event) { state[event.which] = true; return ignore[event.which] !== undefined; });
-                    $(this).keyup(function(event) { delete state[event.which]; return ignore[event.which] !== undefined; });
+                    var _default = data._default;
+                    $(this).keydown(function(event) { state[event.which] = true; return _default[event.which] !== undefined; });
+                    $(this).keyup(function(event) { delete state[event.which]; return _default[event.which] !== undefined; });
                     $(this).data('keyState', data);                
                 },
 
@@ -83,17 +87,27 @@
                     var data = $(this).data('keyState');
                     return data.keyState;
                 },
+
+                defaultBehavior : function(keyCodes) {
+                    $.each(keyCodes, function(i, value) {
+                        data._default[value] = true;
+                    });
+                },
             };
 
             $.fn.keyState = function(method) {
                 
-                method = method || "init";
+                var args = Array.prototype.slice.call(arguments, 0);
+                if (typeof method == "string")
+                    args.shift();
+                else
+                    method = method || "init";
 
                 var inner;
                 var ret = this.each(function() {
-                    inner = methods[method].apply(this, []);
+                    inner = methods[method].apply(this, args);
                 });
-                return inner ? inner : ret;
+                return inner || ret;
             };
 
         })(jQuery);
@@ -281,6 +295,17 @@
             }
         });
 
+        var Credits = function()
+        {
+        };
+        $.extend(Credits.prototype, Entity.prototype,
+        {
+            update : function(gtime)
+            {
+                engine.changeState(stateCredits);
+            },
+        });
+
         var Enemy = function()
         {
             this.width = 16;
@@ -448,6 +473,8 @@
         time = addWave(levels[1], time + 200, 150, { delay : 200 } );
         time = addWave(levels[1], time + 200, 125, { delay : 200 } );
 
+        levels[1].push(["Credits", time + 8000, 0]);
+
         function cleanList(list)
         {
             var clean = [];
@@ -463,6 +490,7 @@
           _width : 0,
           _height : 0,
 
+          _queue : [],
           _entities : [],
           _missiles : [],
 
@@ -471,17 +499,19 @@
               this._width = $("#div").width();
               this._height = $("#div").height();
 
-              this._ship = new Ship();          
-              this._entities.push(
+              this._queue = levels[1].slice(0);     // Shallow clone
+
+              this._ship = new Ship();
+              
+              this._missiles = [];
+              this._entities = [
                 new StarField(this._width, this._height),
                 this._ship,
                 new HudEnergyBar(this._ship, "energy", 16, "#358e37", 6),
                 new HudEnergyBar(this._ship, "shields", 32, "#4fe51b", 12),
                 new HudScore(this._ship)
-              );
-
-              /*for (var i = 0; i < 32; ++i)
-                this._entities.push(new Enemy());*/
+              ];
+              
 
               // Construct the GUI
               var gui = $("<canvas/>");
@@ -505,6 +535,23 @@
                     ship.lastFire = gametime;
                 }
               }
+              function fireSecondary(state, ship, delay, energy)
+              {
+                if (gametime - ship.lastFire > delay && ship.energy >= energy)
+                {
+                    ship.energy -= energy;
+                    
+                    var missile = new Missile(ship.x - 8, ship.y - ship.height - 2);
+                    state._missiles.push(missile);
+                    state._entities.push(missile);
+
+                    var missile = new Missile(ship.x + 8, ship.y - ship.height - 2);
+                    state._missiles.push(missile);
+                    state._entities.push(missile);
+
+                    ship.lastFire = gametime;
+                }
+              }
 
 
               if (engine._keyState[100] /*numpad 4*/)
@@ -523,19 +570,23 @@
               {
                 firePrimary(this, this._ship, 120, 50);
               }
+              if (engine._keyState[keyCodes.Q])
+              {
+                fireSecondary(this, this._ship, 150, 110);
+              }
 
               
               (function () {
-                while (levels[1].length > 0) 
+                while (this._queue.length > 0) 
                 {
-                    var next = levels[1][0];
+                    var next = this._queue[0];
                     if (next[1] <= gametime)
                     {
                         eval("var ent = new " + next[0] + "();");
                         ent.x = next[2];
                         ent.y = -ent.height;
                         this._entities.push(ent);
-                        levels[1].shift();
+                        this._queue.shift();
                     }
                     else 
                         return;
@@ -594,6 +645,36 @@
             },
         };
 
+        var keyCodes =
+        {
+            ENTER : 13,
+            
+            A : 65,
+            B : 66,
+
+            Q : 81,
+            R : 82,
+            S : 83,
+            T : 84
+        };
+
+
+        var stateCredits =
+        {
+            init: function (gametime) {
+              // Construct the GUI
+              var gui = $("#credits").clone();
+              $("#div").html( gui.show() );
+             
+            },
+            update: function (gametime) {
+                if (engine._keyState[keyCodes.ENTER])
+                    engine.changeState(state);
+            },
+            draw: function (gametime) {
+            },
+        };
+
 
 
 
@@ -601,6 +682,7 @@
         $(document).ready(function () {
 
             $(document).keyState();
+            $(document).keyState('defaultBehavior', [ 116 /*F5*/ ] );
 
             engine._state = state;
             engine._keyState = $(document).keyState('state');
