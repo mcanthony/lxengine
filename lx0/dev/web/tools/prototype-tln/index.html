@@ -554,19 +554,19 @@
               }
 
 
-              if (engine._keyState[100] /*numpad 4*/)
+              if (engine._keyState[ keyCodes.NUM4 ] )
               {
                 this._ship.x -= 2;
               }
-              if (engine._keyState[102] /*numpad 6*/)
+              if (engine._keyState[ keyCodes.NUM6 ] )
               {
                 this._ship.x += 2;
               }
-              if (engine._keyState[69] /*E*/)
+              if (engine._keyState[ keyCodes.E ] )
               {
                 firePrimary(this, this._ship, 50, 60);
               }
-              if (engine._keyState[87] /*W*/)
+              if (engine._keyState[ keyCodes.W ] )
               {
                 firePrimary(this, this._ship, 120, 50);
               }
@@ -651,11 +651,41 @@
             
             A : 65,
             B : 66,
-
+            C : 67,
+            D : 68,
+            E : 69,
+            F : 70,
+            G : 71,
+            H : 72,
+            I : 73,
+            J : 74,
+            K : 75,
+            L : 76,
+            M : 77,
+            N : 78,
+            O : 79,
+            P : 80,
             Q : 81,
             R : 82,
             S : 83,
-            T : 84
+            T : 84,
+            U : 85,
+            V : 86,
+            W : 87,
+            X : 88,
+            Y : 89,
+            Z : 90,
+
+            NUM4 : 100,
+            NUM5 : 101,
+            NUM6 : 102,
+
+            F1 : 112,
+            F2 : 113,
+            F3 : 114,
+            F4 : 115,
+            F5 : 116,
+
         };
 
 
@@ -682,7 +712,7 @@
         $(document).ready(function () {
 
             $(document).keyState();
-            $(document).keyState('defaultBehavior', [ 116 /*F5*/ ] );
+            $(document).keyState('defaultBehavior', [ keyCodes.F5 ] );
 
             engine._state = state;
             engine._keyState = $(document).keyState('state');
