@@ -19,6 +19,13 @@
             </div>
         </div>
 
+        <h2>Controls</h2>
+        <table class="clean-table">
+            <tr><td>Numpad 4,6</td><td>move left, right</td></tr>
+            <tr><td>W</td><td>fire primary weapon, normal rate</td></tr>
+            <tr><td>E</td><td>fire primary weapon, burst rate (greater energy drain)</td></tr>
+        </table>
+
         <h2>Todo</h2>
         <ul>
             <li>Energy bar HUD</li>
@@ -228,7 +235,7 @@
             this.x = 512/2 - this.width / 2;
             this.y = 288 - this.height / 2 - 16;
 
-            this.energyBurst = 1000;
+            this.lastFire = 0;
             this.energy = 1000;
             this.shields = 1000;
 
@@ -239,8 +246,8 @@
 
           update : function(gtime) 
           {
-            this.energyBurst = Math.min(1000, this.energyBurst + 1);
             this.energy = Math.min(1000, this.energy + 4);
+            this.shields = Math.min(1000, this.shields + .1);
           },
 
           draw : function(ctx, gtime)
@@ -371,6 +378,7 @@
                         {
                             this.dead = true;
                             ship.shields -= 50;
+                            ship.score += 10;
                         }
                     }
                 });
@@ -397,22 +405,28 @@
         };
 
             
-        function addWave(level, timeOffset, offsetX)
+        function addWave(level, timeOffset, offsetX, options)
         {
+            var options = $.extend({
+                delay : 350,
+                distance : 48,
+            }, options);
+
             var time;
             for (var i = 0; i < 5; i ++)
             {
-                var x = offsetX + 48 * i;
-                time = timeOffset + 350 * i;
+                var x = offsetX + options.distance * i;
+                time = timeOffset + options.delay * i;
                 level.push(["Enemy", time, x]);
             }
             return time;
         }
 
-        var time = 1000;
-        time = addWave(levels[1], 1000, 128);
+        var time = 0;
+                
+        time = addWave(levels[1], time + 1000, 128, { delay : 500 });
         time = addWave(levels[1], time + 1000, 196);
-        time = addWave(levels[1], time + 1000, 32);
+        time = addWave(levels[1], time + 1600, 32);
         time = addWave(levels[1], time + 1200, 128);
         time = addWave(levels[1], time + 200, 200);
         
@@ -420,9 +434,19 @@
         time = addWave(levels[1], time + 200, 150);
         time = addWave(levels[1], time + 200, 125);
 
-        time = addWave(levels[1], time + 3000, 200);
-        time = addWave(levels[1], time + 200, 150);
-        time = addWave(levels[1], time + 200, 125);
+        time += 3000;
+        time = addWave(levels[1], time, 80, { delay : 0, distance : 64 } );
+        time = addWave(levels[1], time + 600, 80 + 32, { delay : 0, distance : 64 } );
+        time = addWave(levels[1], time + 600, 80 + 64, { delay : 0, distance : 64 } );
+
+        time += 2500;
+        time = addWave(levels[1], time, 80 + 64, { delay : 0, distance : 64 } );
+        time = addWave(levels[1], time + 600, 80 + 96, { delay : 0, distance : 64 } );
+        time = addWave(levels[1], time + 600, 80 + 128, { delay : 0, distance : 64 } );
+
+        time = addWave(levels[1], time + 3000, 200, { delay : 200 } );
+        time = addWave(levels[1], time + 200, 150, { delay : 200 } );
+        time = addWave(levels[1], time + 200, 125, { delay : 200 } );
 
         function cleanList(list)
         {
@@ -470,24 +494,34 @@
 
             update: function (gametime) {
 
-              if (engine._keyState[65] /*a*/)
+              function firePrimary(state, ship, delay, energy)
+              {
+                if (gametime - ship.lastFire > delay && ship.energy >= energy)
+                {
+                    ship.energy -= energy;
+                    var missile = new Missile(ship.x, ship.y - ship.height - 2);
+                    state._missiles.push(missile);
+                    state._entities.push(missile);
+                    ship.lastFire = gametime;
+                }
+              }
+
+
+              if (engine._keyState[100] /*numpad 4*/)
               {
                 this._ship.x -= 2;
               }
-              if (engine._keyState[68] /*d*/)
+              if (engine._keyState[102] /*numpad 6*/)
               {
                 this._ship.x += 2;
               }
-              if (engine._keyState[32] /*SPACE*/)
+              if (engine._keyState[69] /*E*/)
               {
-                if (this._ship.energyBurst >= 5 && this._ship.energy >= 50)
-                {
-                    this._ship.energyBurst = 0;
-                    this._ship.energy -= 50;
-                    var missile = new Missile(this._ship.x, this._ship.y - this._ship.height - 2);
-                    this._missiles.push(missile);
-                    this._entities.push(missile);
-                }
+                firePrimary(this, this._ship, 50, 60);
+              }
+              if (engine._keyState[87] /*W*/)
+              {
+                firePrimary(this, this._ship, 120, 50);
               }
 
               
