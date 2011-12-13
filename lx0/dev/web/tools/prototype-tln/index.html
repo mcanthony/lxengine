@@ -61,6 +61,11 @@
             <div style="font-size: 150%; font-weight: bold">Credits</div>
             <div>Produced using LxEngine (LxWeb)</div>
             <div style="margin-top: 1em">Press &lt;enter&gt; to continue</div>
+            <div style="margin: 1em 0em 1em 0em; font-size: 70%;">
+              Stats<br />
+              Enemies destroyed: <span id="enemiesDestroyed"></span><br />
+              Enemies escaped: <span id="enemiesEscaped"></span><br />
+            </div>
         </div>
 
 
@@ -193,6 +198,7 @@
         {
             update : function(gtime)
             {
+                console.log(12);
                 engine.changeState(new States.Credits());
             },
         });
@@ -212,6 +218,11 @@
           update : function(gtime) 
           {
             this.y += 2;
+            if (this.y > 288 + this.height)
+            {
+              this.dead = true;
+              engine.data.state.stats.enemiesEscaped++;
+            }
           },
 
           draw : function(ctx, gtime)
@@ -264,6 +275,37 @@
             },            
         });
 
+        function defineClass(parent, ctor, members)
+        {
+          $.extend(ctor.prototype, parent.prototype, members);
+          return ctor;
+        };
+
+        var HudFps = defineClass(Entity, 
+        function ()
+        {
+          this._realTime = new Date().valueOf();
+          this._gameTime = 0;
+          this._fps = 0;
+        },
+        {
+          update: function (gtime) {
+            var realTime = new Date().valueOf();
+            var rtDelta = realTime - this._realTime;
+            var gtDelta = gtime - this._gameTime;
+
+            this._fps = Math.floor(100 * gtDelta / rtDelta);
+            this._realTime = realTime;
+            this._gameTime = gtime;
+          },
+          draw : function(ctx, gtime) {
+                ctx.font = "small-caps 12px Serif";
+                ctx.textAlign = "right";
+                ctx.fillStyle = "#CCC";
+                ctx.fillText(this._fps, 512 - 6, 50);
+          },
+        });
+
         var HudScore = function(ship)
         {
             this._ship = ship;
@@ -295,6 +337,7 @@
                             this.dead = true;
                             ship.shields -= 50;
                             ship.score += 10;
+                            engine.data.state.stats.enemiesDestroyed++;
                         }
                     }
                 });
@@ -308,6 +351,7 @@
                                 enemy.dead = true;
                                 missile.dead = true;
                                 ship.score += 10;
+                                engine.data.state.stats.enemiesDestroyed++;
                             }
                         }
                     });
@@ -333,12 +377,20 @@
             {
                 var x = offsetX + options.distance * i;
                 time = timeOffset + options.delay * i;
-                level.push(["Enemy", time, x]);
+                level.push([time, "Enemy", x]);
             }
             return time;
         }
 
         var time = 0;
+
+        levels[1].push([time, function() { 
+          engine.data.state.stats =
+          {
+            enemiesDestroyed : 0,
+            enemiesEscaped : 0,
+          };
+        }]);
                 
         time = addWave(levels[1], time + 1000, 128, { delay : 500 });
         time = addWave(levels[1], time + 1000, 196);
@@ -364,7 +416,7 @@
         time = addWave(levels[1], time + 200, 150, { delay : 200 } );
         time = addWave(levels[1], time + 200, 125, { delay : 200 } );
 
-        levels[1].push(["Credits", time + 8000, 0]);
+        levels[1].push([time + 8000, "Credits", 0]);
 
         function cleanList(list)
         {
@@ -391,14 +443,13 @@
                 this._ship,
                 new HudEnergyBar(this._ship, "energy", 16, "#358e37", 6),
                 new HudEnergyBar(this._ship, "shields", 32, "#4fe51b", 12),
-                new HudScore(this._ship)
+                new HudScore(this._ship),
+                new HudFps()
             ];
         };
         $.extend(States.GameLoop.prototype, State.prototype, {
         
           init: function (gametime) {
-              
-              
 
               // Construct the GUI
               var gui = $("<canvas/>");
@@ -466,12 +517,19 @@
                 while (this._queue.length > 0) 
                 {
                     var next = this._queue[0];
-                    if (next[1] <= gametime)
+                    if (next[0] <= gametime)
                     {
-                        eval("var ent = new " + next[0] + "();");
-                        ent.x = next[2];
-                        ent.y = -ent.height;
-                        this._entities.push(ent);
+                        if (typeof next[1] == "string")
+                        { 
+                          eval("var ent = new " + next[1] + "();");
+                          ent.x = next[2];
+                          ent.y = -ent.height;
+                          this._entities.push(ent);
+                        }
+                        else if (typeof next[1] == "function")
+                        {
+                          next[1]();
+                        }
                         this._queue.shift();
                     }
                     else 
@@ -528,6 +586,10 @@
              
             },
             update: function (gametime) {
+              if (engine._keyState[ keyCodes.N ] )
+              {
+                $("#mainMenu-new").trigger('click');
+              }
             },
             draw: function (gametime) {
             },
@@ -539,6 +601,10 @@
             init: function (gametime) {
               // Construct the GUI
               var gui = $("#credits").clone();
+              
+              gui.find("#enemiesDestroyed").text( engine.data.state.stats.enemiesDestroyed );
+              gui.find("#enemiesEscaped").text( engine.data.state.stats.enemiesEscaped );
+
               $("#div").html( gui.show() );
              
             },

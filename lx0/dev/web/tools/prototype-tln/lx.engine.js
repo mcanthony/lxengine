@@ -3,6 +3,15 @@ var engine = {};
 engine._state = null;
 engine._actionQueue = [];
 
+engine.data =
+{
+    server: {},
+    client: {},
+    user: {},
+    state: {},
+    session: {},
+};
+
 engine.setTimeout = function (code, delay) {
     return window.setTimeout(code, delay);
 };
