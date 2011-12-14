@@ -302,7 +302,60 @@
                 ctx.font = "small-caps 12px Serif";
                 ctx.textAlign = "right";
                 ctx.fillStyle = "#CCC";
-                ctx.fillText(this._fps, 512 - 6, 50);
+                ctx.fillText(this._fps + "%", 512 - 6, 50);
+          },
+        });
+
+        var TextEntity = defineClass(Entity, 
+        function (options)
+        {
+            options = $.extend({
+                x : 0,
+                y : 0,
+                text : "<undefined>",
+                font : "12px Sans-Serif",
+                align : "left",
+                speed : [ 0, 0],
+                duration : undefined,
+                fade : 500,
+            }, options);
+            
+            var _this = this;
+            lib.each(options, function(key, value) {
+                _this["_" + key] = value;
+            });
+        },
+        {
+          update : function(gtime) {
+            this._startTime = gtime;
+            this._alpha = 1.0;
+            this.update = this.update2;
+          },
+          update2 : function (gtime) {
+            this._x += this._speed[0];
+            this._y += this._speed[1];
+
+            if (this._duration)
+            {
+                var lifetime = gtime - this._startTime;
+                if (lifetime <= this._duration)
+                    this._alpha = 1.0;                
+                else 
+                    this._alpha = 1.0 - ((lifetime - this._duration) / this._fade);
+
+                if (this._alpha < 0)
+                {
+                    this._alpha = 0;
+                    this.dead = true;
+                }
+            }
+            
+          },
+          draw : function(ctx, gtime) {
+                ctx.font = this._font;
+                ctx.textAlign = this._align;
+                ctx.fillStyle = "rgba(255,255,255," + this._alpha + ")";
+                ctx.fillText(this._text, this._x, this._y);
           },
         });
 
@@ -391,6 +444,8 @@
             enemiesEscaped : 0,
           };
         }]);
+
+        levels[1].push([time, "TextEntity", { x : 256, y : 144, text : "Level 1", font : "24px Sans-Serif", align : "center", duration : 1000 }]);
                 
         time = addWave(levels[1], time + 1000, 128, { delay : 500 });
         time = addWave(levels[1], time + 1000, 196);
@@ -416,7 +471,10 @@
         time = addWave(levels[1], time + 200, 150, { delay : 200 } );
         time = addWave(levels[1], time + 200, 125, { delay : 200 } );
 
-        levels[1].push([time + 8000, "Credits", 0]);
+        time += 4000;
+        levels[1].push([time, "TextEntity", { x : 256, y : 144, text : "Stage Complete", font : "24px Sans-Serif", align : "center", duration : 2000 }]);
+
+        levels[1].push([time + 4000, "Credits", 0]);
 
         function cleanList(list)
         {
@@ -440,7 +498,7 @@
             this._missiles = [];
             this._entities = [
                 new StarField(this._width, this._height),
-                this._ship,
+                this._ship,                
                 new HudEnergyBar(this._ship, "energy", 16, "#358e37", 6),
                 new HudEnergyBar(this._ship, "shields", 32, "#4fe51b", 12),
                 new HudScore(this._ship),
@@ -521,10 +579,18 @@
                     {
                         if (typeof next[1] == "string")
                         { 
-                          eval("var ent = new " + next[1] + "();");
-                          ent.x = next[2];
-                          ent.y = -ent.height;
-                          this._entities.push(ent);
+                            if (typeof next[2] == "number")
+                            {
+                              eval("var ent = new " + next[1] + "();");
+                              ent.x = next[2];
+                              ent.y = -ent.height;
+                            }
+                            else
+                            {
+                                var options = next[2];
+                                eval("var ent = new " + next[1] + "(options);");
+                            }
+                            this._entities.push(ent);
                         }
                         else if (typeof next[1] == "function")
                         {

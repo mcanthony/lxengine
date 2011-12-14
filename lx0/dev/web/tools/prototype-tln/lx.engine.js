@@ -32,7 +32,7 @@ engine.changeState = function (state) {
 
 engine.run = function () {
     this.gametime = 0;
-    var gametick = 20;
+    this.gametick = 20;
 
     this._state.init(this.gametime);
 
@@ -46,8 +46,8 @@ engine.run = function () {
 
         _this._state.update(_this.gametime);
         _this._state.draw(_this.gametime);
-        _this.gametime += gametick;
-        _this.setTimeout(gameLoop, gametick);
+        _this.gametime += _this.gametick;
+        _this.setTimeout(gameLoop, _this.gametick);
     })();
 };
 
