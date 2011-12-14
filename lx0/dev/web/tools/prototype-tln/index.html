@@ -745,6 +745,24 @@
         States.Credits = function() {}
         $.extend(States.Credits.prototype, State.prototype, 
         {
+            _audioFade : function()
+            {
+                var audio = $("#audio")[0];
+                var volume = audio.volume;
+                if (volume > 0)
+                {
+                    volume -= .01;
+                    audio.volume = Math.max(volume, 0);                    
+                    var _this = this;
+                    audioFade = setTimeout(function() { _this._audioFade(); }, 80);   
+                }
+                else
+                {
+                    audio.pause();
+                    audio.volume = 1.0;
+                }
+            },
+
             init: function (gametime) {
               // Construct the GUI
               var gui = $("#credits").clone();
@@ -753,7 +771,9 @@
               gui.find("#enemiesEscaped").text( engine.data.state.stats.enemiesEscaped );
 
               $("#div").html( gui.show() );
-             
+
+              var _this = this;
+              setTimeout(function() { _this._audioFade(); }, 500);             
             },
             update: function (gametime) {
                 if (engine._keyState[keyCodes.ENTER])
