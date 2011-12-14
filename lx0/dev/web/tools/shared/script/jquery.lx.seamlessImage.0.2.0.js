@@ -30,6 +30,13 @@
 
     var util = 
     {
+        supportsInputTypeRange : function()
+        {
+            // Credits to: http://pietschsoft.com/post/2010/11/22/HTML5-Day-6-New-Range-Input-Type-3cinput-type3drange-3e.aspx
+            var slider = document.createElement("input");
+            slider.setAttribute("type", "range");
+            return slider.type == "range";
+        }
     };
     
     var methods =
@@ -167,8 +174,20 @@
                 }
             }
 
+            //@todo This should not be hard-coded to call 'init'!
             methods.init(this, options);
         });
 
     };
+
+    //
+    // Convert the plug-in to a no-op if the range element isn't supported.
+    // Theoretically could use a JQuery slider instead, if desired.
+    //
+    if (!util.supportsInputTypeRange())
+    {
+        $.fn.seamlessImage = function() {            
+        };
+    }
+
 })(jQuery);
