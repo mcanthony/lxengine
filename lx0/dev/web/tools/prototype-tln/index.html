@@ -41,13 +41,6 @@
             <li><strong>Music</strong>: <a href="http://opengameart.org/content/xeon-theme-remastered">&quot;Xeon Theme Remastered&quot; by bart</a> on <a href="http://opengameart.org">opengameart.org</a></li>
         </ul>
 
-        <h2>Todo</h2>
-        <ul>
-            <li>Energy bar HUD</li>
-            <li>Score</li>
-        </ul>
-
-
         <style>
         .menuHover
         {
@@ -83,6 +76,11 @@
         var lib = { };
         import_libCore(lib);
 
+        function defineClass(parent, ctor, members)
+        {
+          $.extend(ctor.prototype, parent.prototype, members);
+          return ctor;
+        };
 
         var State = function(options) {
           $.extend(this, options);
@@ -102,7 +100,13 @@
           update : function(gtime) {},
           draw : function(ctx, gtime) { },
         });
+        -->
+        </script>
 
+        <script type="text/javascript" src="game.enemies.js"></script>
+
+        <script type="text/javascript">
+        <!--
 
         var StarField = function(width, height) 
         {
@@ -189,6 +193,7 @@
             this.y = y;
             this.width = 4;
             this.height = 8;
+            this.energy = 10;
         };
         $.extend(Missile.prototype, Entity.prototype);
         $.extend(Missile.prototype, {
@@ -215,40 +220,6 @@
             {
                 engine.changeState(new States.Credits());
             },
-        });
-
-        var Enemy = function()
-        {
-            this.width = 16;
-            this.height = 24;
-            this.x = 256 + 224 * (Math.random() - .5);
-            this.y = -2000 * Math.random() - 288;
-
-            this.image = new Image();
-            this.image.src = "enemy16x24.png";
-        };
-        $.extend(Enemy.prototype, Entity.prototype);
-        $.extend(Enemy.prototype, {
-          
-          collidable : true,
-
-          update : function(gtime) 
-          {
-            this.y += 2;
-            if (this.y > 288 + this.height)
-            {
-              this.dead = true;
-              engine.data.state.stats.enemiesEscaped++;
-            }
-          },
-
-          draw : function(ctx, gtime)
-          {
-            ctx.fillStyle = "cyan";
-            //ctx.fillRect(this.x - this.width / 2, this.y - this.height / 2, this.width, this.height);
-            ctx.drawImage(this.image, this.x - this.width / 2, this.y - this.height / 2);
-          }
-
         });
 
         function intersect(ship, enemy)
@@ -293,11 +264,7 @@
             },            
         });
 
-        function defineClass(parent, ctor, members)
-        {
-          $.extend(ctor.prototype, parent.prototype, members);
-          return ctor;
-        };
+
 
         var HudFps = defineClass(Entity, 
         function ()
@@ -451,11 +418,8 @@
                     lib.each(entities, function() {
                         var enemy = this;
                         if (enemy.collidable) {                            
-                            if (intersect(missile, enemy)) {
-                                enemy.dead = true;
-                                missile.dead = true;
-                                ship.score += 10;
-                                engine.data.state.stats.enemiesDestroyed++;
+                            if (intersect(missile, enemy)) {                                
+                                this.oncollide(ship, missile);                                
                             }
                         }
                     });
@@ -498,7 +462,7 @@
 
         levels[1].push([time + 350, "TextEntity", { x : 256, y : 144, text : "Level 1", font : "24px Sans-Serif", align : "center", duration : 1000 }]);
         levels[1].push([time + 250, function() { $("#audio")[0].currentTime = 0; $("#audio")[0].play(); }]);
-
+     
         (function() {
             var ent = new ImageEntity({ url : "planet-004.png", zOrder: 32, x : 32, y : -128, speed : .4, scale : .25});
             levels[1].push([time, ent]);
@@ -510,6 +474,9 @@
         time = addWave(levels[1], time + 1200, 128);
         time = addWave(levels[1], time + 200, 200);
 
+        time += 900;
+        levels[1].push([time + 350, "Enemy2", { x : 256 } ]);
+        
         
         time = addWave(levels[1], time + 1700, 200);
         time = addWave(levels[1], time + 200, 150);
