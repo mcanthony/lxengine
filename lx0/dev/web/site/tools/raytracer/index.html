@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html>
+    <head>
+      <title>Raytracer</title>
+      <link type="text/css" href="../shared/style/default.less" rel="stylesheet/less" />
+      <link type="text/css" href="style.less" rel="stylesheet/less" />
+      
+      <script type="text/javascript" src="../shared/script/extern/less-1.1.3.min.js"></script>
+      <script type="text/javascript" src="../shared/script/extern/jquery-1.6.4.min.js"></script>
+
+    </head>
+    <body>
+       <div id="body-wrap1">
+        <h1>Ray Tracer</h1>
+
+        <h2>About</h2>
+
+        <h2>Canvas</h2>
+
+        <div>
+            <canvas id="canvas" width="256" height="256" style="border: 1px solid #333; box-shadow: 3px 3px 6px #888;">
+            </canvas>
+        </div>
+        <div>
+            <span id="renderTime"></span>
+            &nbsp;&nbsp;&nbsp;&nbsp;
+            <a id="download">download</a>
+        </div>
+
+        <script type="text/javascript">
+        <!--
+            var lib =
+            {
+                _debug : true,
+
+                cross: function (u, v) {
+                    return [
+                        u[1] * v[2] - v[1] * u[2],
+                        u[2] * v[0] - v[2] * u[0],
+                        u[0] * v[1] - v[0] * u[1],
+                    ];
+                },
+
+                length : function(u) {
+                    return Math.sqrt(u[0] * u[0] + u[1] * u[1] + u[2] * u[2]);
+                },
+
+                lengthSqrd : function(u) {
+                    return (u[0] * u[0] + u[1] * u[1] + u[2] * u[2]);
+                },
+
+                normalize: function (u) {
+                    var len = lib.length(u);
+                    return [
+                        u[0] / len,
+                        u[1] / len,
+                        u[2] / len
+                    ];    
+                },
+
+                sub : function(u, v) {
+                    return  [
+                        u[0] - v[0],
+                        u[1] - v[1],
+                        u[2] - v[2]
+                    ];
+                },
+
+                addVec : function () {
+                    var sum = arguments[0].slice(0);
+                    for (var i = 1; i < arguments.length; ++i)
+                    {
+                        sum[0] += arguments[i][0];
+                        sum[1] += arguments[i][1];
+                        sum[2] += arguments[i][2];
+                    }
+                    return sum;
+                },
+
+                mulScalar : function (u, s) {
+                    return [
+                        u[0] * s,
+                        u[1] * s,
+                        u[2] * s,
+                    ];
+                },
+
+                valid : function(u) {
+                    for (var i = 0; i < 3; ++i)
+                    {
+                        if (isNaN(u[i]))
+                            return false;
+                    }
+                    return true;
+                },
+
+                assertValid : function(u) {
+                    var ok = lib.valid(u);
+                    if (!ok)
+                    {
+                        alert("Assertion failed: " + u);
+                    }
+                },
+
+                dot : function (u, v) {
+                    return u[0] * v[0] + u[1] * v[1] + u[2] * v[2];
+                },
+
+
+                intersectSphere : function(ray, sphere) {
+                
+                    var u = lib.sub(sphere.center, ray.origin);
+                    var v = lib.normalize(ray.direction);
+
+
+                    var dotUV = lib.dot(u, v);
+                    if (dotUV < 0)
+                        return false;
+
+                    var d_sqrd = lib.lengthSqrd(u) - dotUV * dotUV;
+                    var r_sqrd = sphere.radius * sphere.radius;
+                   
+                    if (d_sqrd > r_sqrd)
+                        return false;
+
+                    var dp = Math.sqrt(r_sqrd - d_sqrd);
+
+                    var dr = [
+                        dotUV - dp,
+                        dotUV + dp
+                    ];
+
+                    function hit (d) 
+                    {
+                        var intersect = {};
+                        intersect.distance = d;
+                        intersect.position = lib.addVec(ray.origin, lib.mulScalar(ray.direction, d));
+                        intersect.normal = lib.normalize(intersect.position);
+                        return intersect;
+                    }
+
+                    if (dr[0] < 0)
+                        if (dr[1] < 0)
+                            return false;
+                        else
+                            return hit(dr[1]);
+                    else
+                        if (dr[1] < 0)
+                            return hit(dr[0]);
+                        else
+                            return hit(Math.min(dr[0], dr[1]));
+                }
+
+            };
+
+            function calculateFrustum(
+                worldPosition,
+                viewForward,
+                worldUp,
+                nearDistance,
+                fieldOfView,
+                aspectRatio) 
+            {
+                var forward = lib.normalize(viewForward);
+                var right = lib.normalize(lib.cross(viewForward, worldUp));
+                var up = lib.normalize(lib.cross(right, forward));
+
+                var width = 2 * nearDistance * Math.tan(fieldOfView / 2);
+                var height = width / aspectRatio;
+
+                var f = 
+                {
+                    eye : worldPosition,
+                    xAxis : lib.mulScalar(right, width),
+                    yAxis : lib.mulScalar(up, height),
+                };
+                f.origin = lib.addVec(
+                    worldPosition, 
+                    lib.mulScalar(forward, nearDistance), 
+                    lib.mulScalar(right, -width / 2),
+                    lib.mulScalar(up, -height / 2)
+                );
+
+                return f;
+            }
+
+
+            $(document).ready(function () {
+
+                $("#canvas").each(function () {
+                    var ctx = this.getContext('2d');
+
+                    var stats = {};
+                    stats.renderStart = new Date().valueOf();
+
+                    var sphere = {
+                        center : [0, 0, 0],
+                        radius : 1,
+                    };
+
+                    var frustum = calculateFrustum([5, 5, 5], [-1, -1, -1], [0, 0, 1], .01, Math.PI / 4, 1);
+
+                    for (var y = 0; y < this.height; ++y) {
+                        var rowData = ctx.createImageData(this.width, 1);
+                        var pixels = rowData.data;
+                        for (var x = 0; x < this.width; ++x) {
+
+                            var ray = {};
+                            ray.origin = frustum.eye;                            
+                            ray.destination = lib.addVec(
+                                frustum.origin,
+                                lib.mulScalar(frustum.xAxis, x / (this.width - 1)),
+                                lib.mulScalar(frustum.yAxis, y / (this.height- 1))
+                            );
+                            ray.direction = lib.normalize( lib.sub(ray.destination, ray.origin) );
+                            
+
+                            var c;
+                            if ((x + y) % 2 == 0)
+                                c = [127, 127, 127];
+                            else
+                                c = [255, 0, 0];
+
+                            c[0] = Math.floor(Math.abs(ray.direction[0]) * 255);
+                            c[1] = Math.floor(Math.abs(ray.direction[1]) * 255);
+                            c[2] = Math.floor(Math.abs(ray.direction[2]) * 255);     
+                            
+                            var isect;
+                            if (isect = lib.intersectSphere(ray, sphere))
+                            {
+                                var L = lib.sub([10, 10, 5], isect.position);
+                                var d = lib.length(L);
+                                L = lib.mulScalar(L, 1/d);
+
+                                var nDotL = lib.dot(isect.normal, L);
+                                var diffuse = Math.max(0, nDotL);
+
+                                c[0] = Math.floor(Math.abs(diffuse) * 255);
+                                c[1] = Math.floor(Math.abs(diffuse) * 255);
+                                c[2] = Math.floor(Math.abs(diffuse) * 255); 
+                            }
+
+                            pixels[x * 4 + 0] = c[0];
+                            pixels[x * 4 + 1] = c[1];
+                            pixels[x * 4 + 2] = c[2];
+                            pixels[x * 4 + 3] = 255;
+                        }
+                        ctx.putImageData(rowData, 0, y);
+                    }
+
+                    stats.renderEnd = new Date().valueOf();
+                    $("#renderTime").text("Render time: " + (stats.renderEnd - stats.renderStart) + "ms");
+
+                    var dataHRef = this.toDataURL("image/png");                    $("#download").attr("href", dataHRef);
+                });
+
+            });
+        -->
+        </script>
+
+        <!-- Google Analytics -->         <script type="text/javascript">
+            var _gaq = _gaq || [];
+            _gaq.push(['_setAccount', 'UA-604613-10']);
+            _gaq.push(['_trackPageview']);
+            (function () {
+                var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+                ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+                var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+            })();        </script> 
+
+    </body>
+</html>
