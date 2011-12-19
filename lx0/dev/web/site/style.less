@@ -47,7 +47,6 @@ h2
 p,ul,table
 {
     font-size: 1.0em;
-    font-family: sans-serif;
     color: #555;
     line-height: 1.6em;
     letter-spacing: 0px;
@@ -117,30 +116,53 @@ a
     Other Styles
  =============================================================================*/
 
-.tableOfContents
+.nav-table
 {
-    background-color: rgba(255,255,255,.33);
-    border: 1px solid #AAA; 
-    border-radius: 8px; 
-    padding: .5em 2em;
-    display: inline-block;
-    min-width: 32em; 
-}
-
-
-
-.clean-table
-{
-	width: inherit;
+	width: 100%;
 	border: 1px solid #EEE;
 	border-radius: 6px;
-	padding: .5em 2em .5em 1em;
+	padding: .5em .5em .5em 1em;
 	background-color: rgba(0, 0, 0, .02);
-	margin-top: 2em;
 }
 
-.clean-table tr > td:first-child
+.nav-table tr 
 {
-	font-weight: bold;
+	padding: .5em 2em .5em 1em;
+}
+
+.nav-table a
+{
+	border-bottom: none;
+}
+
+.nav-table tr > td
+{
+	font-size: 9pt;
+	padding-right: 2em;
+}
+
+.nav-table tr > td:first-child
+{	
 	padding-right: 1em;
+
+	font-size: 11pt;
+	font-weight: bold;
+	white-space: nowrap;
+	width: 12em;
+}
+
+.nav-table tr > td:nth-child(2)
+{	
+	width: 2em;
+}
+
+.nav-table tr > td:nth-child(3)
+{	
+	padding-right: 0px;
+}
+
+.trigger
+{
+	line-height: 1.4em;
+	width: 100%;
 }

@@ -17,45 +17,96 @@
         <div style="border-bottom: 4px solid #777; margin-top: 6px; box-shadow: 2px 2px 4px rgba(0,0,0,.25); margin-left: -3em; margin-right: -1em">
         </div>
 
-        <p style="margin-top: 2em;">
-            Athile Technologies is a technology consulting company. We focus on intellectually challenging problems in 
-            visualization space both on the web and the desktop.  The team is composed of software engineers with a 
-            passion or technology both in its theory and practice and commited to delivering well-designed, elegant 
-            solutions.
-        </p>
-        <p>
-            Prospective project? <a style="font-weight: bold" href="mailto:athile@athile.net">Contact us</a>.
-        </p>
+        <div style="margin: 3em 0em 3em 0em">
+            <p>
+                Athile Technologies is a technology consulting company. We focus on intellectually challenging problems in 
+                visualization both on the web and the desktop.  The team is composed of software engineers with a 
+                passion for technology both in its theory and practice who are committed to delivering only well-designed, elegant 
+                solutions.
+            </p>
+            <p>
+                Prospective project or request?<br />
+                Please <a style="font-weight: bold" href="mailto:athile@athile.net">contact us</a>.
+            </p>
+        </div>
 
         <h2>Tools & Technologies</h2>
         <div>
-            <div style="width: 55%; float: left;">
+            <div style="width: 67%; float: left;">
                 <h3>JQuery Plug-ins</h3>
-                <table>                    
+                <table class="nav-table">                    
                     <tr>
-                        <td>Seamless Image View</td>
-                        <td>v0.1.0</td>
+                        <td><a href="tools/seamlessImage" target="_blank">Seamless Image View</a></td>
+                        <td>v0.2.0</td>
+                        <td>
+                            <div class="trigger">
+                            Replaces a standard &lt;IMG&gt; element with a tiled view of the
+                            image that can be manipulated via zooming or panning.
+                            </div>
+                        </td>
                     </tr>
                     <tr>
-                        <td>Image Effects</td>
-                        <td>v0.1.0</td>
+                        <td><a href="tools/imageEffects" target="_blank">Image Effects</a></td>
+                        <td>v0.0.0</td>
+                        <td>
+                            <div class="trigger">
+                            Runs various configurable image filters on &lt;IMG&gt; elements within
+                            a page.  Grayscale, desaturation, and hue shifts are example operations.
+                            </div>
+                        </td>
                     </tr>                    
                     <tr>
-                        <td>Fire Effect</td>
+                        <td><a href="tools/fire" target="_blank">Fire Effect</a></td>
                         <td>v0.1.0</td>
+                        <td>
+                            <div class="trigger" style="display: none">
+                                A classic fire effect implemented with an HTML5 &lt;CANVAS&gt; element.
+                            </div>
+                        </td>
                     </tr>
                 </table>
 
-                <h3>Procedural Generators</h3>
-                <table>                    
+               <h3>Development Libraries</h3>
+                <table class="nav-table">
                     <tr>
-                        <td>Seamless Image Generator</td>
+                        <td><a href="library/wiki/index.php/Tech/GLGeom" target="_blank">GLGeom</a></td>
+                        <td>v0.0.5</td>
+                        <td>
+                            <div class="trigger">
+                            A C++ template library built upon GLM that provides common
+                            graphics geometry classes and functions.
+                            </div>
+                        </td>
+                    </tr>                    
+                </table>
+
+                <h3>Procedural Generators</h3>
+                <table class="nav-table">                    
+                    <tr>
+                        <td><a href="tools/seamlessGenerator" target="_blank">Seamless 2D Tiles</a></td>
                         <td>v0.1.0</td>
+                        <td>
+                            <div class="trigger" style="display: none">
+                                Generates seamless PNG files.
+                            </div>                        
+                        </td>
                     </tr>
                 </table>
 
             </div>
-            <div style="width: 40%" float: right">
+            <div style="width: 30%; float: right; font-style: italic; font-family: Serif;">
+                <p>
+                    These are the freely available tools and technologies from 
+                    Athile Technologies.  They are all at various stages of 
+                    development and completeness.  If you have interest in any 
+                    particular technology, please contact us to suggest features,
+                    design changes, documentation improvements, or the mere polish 
+                    necessary to make the tool more readily useable for your 
+                    particular project.
+                </p>
+                <p>
+                    We are anxious to improve tools that we know are being used!
+                </p>
             </div>
             <div style="clear: both;"></div>
         </div>
@@ -63,57 +114,124 @@
         <h2>Research & Labs Projects</h2>
 
         <div>
-            <div style="width: 55%; float: left;">
+            <div style="width: 67%; float: left;">
+
                 <h3>Simulation Engines</h3>
-                <table>
+                <table class="nav-table">
                     <tr>
-                        <td>LxEngine</td>
-                        <td>in development</td>
+                        <td><a href="library/wiki/index.php/Tech/LxEngine" target="_blank">LxEngine</a></td>
+                        <td>WIP</td>
+                        <td>
+                            <div class="trigger">
+                            A desktop visualization & simulation engine based on a XML and Javascript
+                            technologies, while written in C++ for performance.
+                            </div>
+                        </td>
                     </tr>
                     <tr>
-                        <td>Gravity Tide</td>
-                        <td>in development</td>
-                    </tr>
-                    <tr>
-                        <td>Night's Return</td>
-                        <td>in development</td>
+                        <td>LxWeb</td>
+                        <td>WIP</td>
+                        <td>
+                            <div class="trigger">
+                            The entirely web-based version of LxEngine.  Written entirely in Javascript.
+                            </div>
+                        </td>
                     </tr>
                 </table>
 
-                <h3>Development Libraries</h3>
-                <table>
+                <h3>Component Technologies</h3>
+                <table class="nav-table">
                     <tr>
-                        <td>GLGeom</td>
-                        <td>v0.0.5</td>
-                    </tr>                    
+                        <td>Shader Builder</td>
+                        <td>WIP</td>
+                        <td>
+                            <div class="trigger">
+                            A web-based shader builder targeting GLSL, C++ based ray-tracers, and
+                            Javascript ray-tracers with presets & customization for 
+                            immediate compatiblity with various engines.
+                            </div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>BlenderLoad</td>
+                        <td>WIP</td>
+                        <td>
+                            <div class="trigger">
+                            A web-based Javascript Blender file (.blend) importer and translator.
+                            Targets WebGL and custom targets.
+                            </div>
+                        </td>
+                    </tr>
                 </table>
 
                 <h3>Asset and Information Management</h3>
-                <table>
+                <table class="nav-table">
                     <tr>
                         <td>PIM0</td>
-                        <td>in development</td>
+                        <td>WIP</td>
+                        <td>
+                            <div class="trigger">
+                            A personal information management system.  In research.
+                            </div>
+                        </td>
                     </tr>
                     <tr>
                         <td>AIMS</td>
-                        <td>in development</td>
+                        <td>WIP</td>
+                        <td>
+                            <div class="trigger">
+                            Asset Index Management System (AIMS).  A web-based, "type-aware" overlay of
+                            a git respository with automatic asset previews, data format conversions,
+                            and packaging.
+                            </div>
+                        </td>
                     </tr>
                 </table>
 
                 <h3>Proof-of-Concept Applications</h3>
-                <table>
+                <table class="nav-table">
+                    <tr>
+                        <td>Ray Tracer</td>
+                        <td>WIP</td>
+                        <td>
+                            <div class="trigger">
+                            A web-based ray-tracer demonstrating the graphical capabilities
+                            of LxWeb and various graphical component technologies.
+                            </div>
+                        </td>
+                    </tr>
                     <tr>
                         <td>Gravity Tide</td>
-                        <td>in development</td>
+                        <td>WIP</td>
+                        <td>
+                            <div class="trigger">
+                            A simple proof-of-concept game demonstrating LxWeb.  Focuses on
+                            animations, audio, and timelining.
+                            </div>
+                        </td>
                     </tr>
                     <tr>
                         <td>Night's Return</td>
-                        <td>in development</td>
+                        <td>WIP</td>
+                        <td>
+                            <div class="trigger">
+                            A proof-of-concept game demonstrating LxEngine on the desktop with 
+                            a particular focus on multi-user and networking support.
+                            </div>
+                        </td>
                     </tr>
                 </table>
 
             </div>
-            <div style="width: 40%" float: right">
+            <div style="width: 30%; float: right; font-style: italic; font-family: Serif;">
+                <p>
+                    The research and labs projects within Athile Technologies represent
+                    more ambituous, more volatile, and often less complete projects within the
+                    company. 
+                </p>
+                <p>
+                    Information available on these projects is highly subject to change.
+                </p>
             </div>
             <div style="clear: both;"></div>
         </div>
@@ -133,10 +251,45 @@
 
 
         <div style="text-align: center; margin-top: 6em; font-size: 10pt; color: #777">
+            <div style="margin-bottom: .5em">
+                <a href="library/blog" style="border-bottom: none; text-decoration: underline; color: #777">blog</a>
+                &nbsp;&nbsp;|&nbsp;&nbsp;
+                <a href="library/wiki" style="border-bottom: none; text-decoration: underline; color: #777">wiki</a>
+                &nbsp;&nbsp;|&nbsp;&nbsp;
+                <a href="library/forums" style="border-bottom: none; text-decoration: underline; color: #777">forums</a>
+            </div>
             <div>&copy; Athile Technologies 2011</div>
         </div>
 
         </div>
         </div>
+
+        <script type="text/javascript">
+        <!--
+            $(document).ready(function () {
+                $(".trigger").each(function () {
+                    var trigger = $("<a>more info...</a>");
+                    trigger.attr("href", "#");
+                    trigger.click(function () {
+                        $(this).next().slideToggle();
+                        return false;
+                    });
+                    $(this).css("display", "none");
+                    $(this).before(trigger);
+                });
+            });
+        -->
+        </script>
+
+        <!-- Google Analytics -->         <script type="text/javascript">
+            var _gaq = _gaq || [];
+            _gaq.push(['_setAccount', 'UA-604613-10']);
+            _gaq.push(['_trackPageview']);
+            (function () {
+                var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+                ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+                var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+            })();        </script> 
+
     </body>
 </html>
