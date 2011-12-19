@@ -1,0 +1,146 @@
+
+/*=============================================================================
+    Base HTML styles
+ =============================================================================*/
+
+body
+{
+    margin: 0px;
+    padding: 0px;
+
+	font-family: sans-serif;
+
+	background-color: gray;
+}
+
+h1,h2,h3
+{
+	font-family: serif;
+}
+
+h1
+{
+	margin: 0em 0em 0em -1em;
+
+	font-style: italic;
+	font-size: 36pt;
+	letter-spacing: .15em;
+
+	text-shadow: 1px 1px 4px rgba(128,128,128,.5);
+}
+h1:first-letter
+{
+	font-size: 140%;
+}
+
+h2
+{
+    margin-left: -1.2em;
+    border-bottom: 1px solid rgba(120,200,255,.7);
+    border-radius: 8px;
+    padding: 8px;
+    box-shadow: 2px 2px 4px rgba(0,0,0,.05);
+	text-shadow: 1px 1px 2px rgba(128,128,128,.25);
+	letter-spacing: .05em;
+}
+
+p,ul,table
+{
+    font-size: 1.0em;
+    font-family: sans-serif;
+    color: #555;
+    line-height: 1.6em;
+    letter-spacing: 0px;
+    text-shadow: 1px 1px 4px rgba(0,0,0,.05);
+    margin-bottom: 2em;
+}
+
+p
+{
+	max-width: 50em;
+}
+
+a
+{
+	color: #5173c1;
+
+	text-decoration: none;
+	border-bottom: 2px dotted #0847d4;
+
+}
+
+
+/*=============================================================================
+    Layout Styles
+ =============================================================================*/
+
+ .clear
+ {
+    clear: both;
+ }
+
+.layout-row
+{
+}
+.layout-row > div
+{
+    display: inline-block;
+    vertical-align: top;
+    margin: 0em .5em;
+}
+
+/*=============================================================================
+    Sections
+ =============================================================================*/
+
+#body-wrapper-outer
+{
+	max-width : 68em;
+	margin: 1em auto 1em auto;
+
+	background-color: white;
+
+	border: 1px solid #555;
+	border-radius: .5em;
+}
+
+#body-wrapper
+{
+	max-width : 55em;
+	margin: 0em auto 2em auto;
+
+	background-color: white;
+}
+
+
+/*=============================================================================
+    Other Styles
+ =============================================================================*/
+
+.tableOfContents
+{
+    background-color: rgba(255,255,255,.33);
+    border: 1px solid #AAA; 
+    border-radius: 8px; 
+    padding: .5em 2em;
+    display: inline-block;
+    min-width: 32em; 
+}
+
+
+
+.clean-table
+{
+	width: inherit;
+	border: 1px solid #EEE;
+	border-radius: 6px;
+	padding: .5em 2em .5em 1em;
+	background-color: rgba(0, 0, 0, .02);
+	margin-top: 2em;
+}
+
+.clean-table tr > td:first-child
+{
+	font-weight: bold;
+	padding-right: 1em;
+}
