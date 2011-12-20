@@ -154,10 +154,28 @@
             });
         },
 
+        scanlineGrayscale : function (pixels, width, height) {
+            effects._perpixelposition(pixels, width, height, function(x, y, r, g, b, a) {
+                if (y % 2 == 1) 
+                    return effects._ops.grayscale(r, g, b, a);
+                else
+                    return [r, g, b, a];
+            });
+        },
+
         scanlineBlack : function (pixels, width, height) {
             effects._perpixelposition(pixels, width, height, function(x, y, r, g, b, a) {
                 if (y % 2 == 1) 
                     return [0, 0, 0, 255];
+                else
+                    return [r, g, b, a];
+            });
+        },
+
+        scanlineWhite : function (pixels, width, height) {
+            effects._perpixelposition(pixels, width, height, function(x, y, r, g, b, a) {
+                if (y % 2 == 1) 
+                    return [255, 255, 255, 255];
                 else
                     return [r, g, b, a];
             });
