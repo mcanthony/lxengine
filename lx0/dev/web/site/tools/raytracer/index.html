@@ -33,6 +33,10 @@
 
         <script type="text/javascript">
         <!--
+
+            var core = {};
+            import_libCore(core);
+
             var lib =
             {
                 _debug : true,
@@ -157,6 +161,9 @@
 
             };
 
+            // Temporary hack until there's a better strategy for JS namespacing...
+            lib.each = core.each;
+
             function calculateFrustum(
                 worldPosition,
                 viewForward,
@@ -189,74 +196,118 @@
             }
 
 
-            $(document).ready(function () {
+            var RenderLoop = core.buildClass(State, function() { }, {
+                
+                _canvas : null,
+                _ctx : null,
+                _width : null,
+                _height : null,
 
-                $("#canvas").each(function () {
-                    var ctx = this.getContext('2d');
+                _renderRow : function(frustum, y) {
 
-                    var stats = {};
-                    stats.renderStart = new Date().valueOf();
+                    var ctx = this._ctx;
+                    var sphere = this._sphere;
 
-                    var sphere = {
+                    var rowData = ctx.createImageData(this._width, 1);
+                    var pixels = rowData.data;
+
+                    for (var x = 0; x < this._width; ++x) {
+
+                        var ray = {};
+                        ray.origin = frustum.eye;                            
+                        ray.destination = lib.addVec(
+                            frustum.origin,
+                            lib.mulScalar(frustum.xAxis, x / (this._width - 1)),
+                            lib.mulScalar(frustum.yAxis, y / (this._height- 1))
+                        );
+                        ray.direction = lib.normalize( lib.sub(ray.destination, ray.origin) );
+                            
+                        var c = [];
+                        c[0] = Math.floor(Math.abs(ray.direction[0]) * 255);
+                        c[1] = Math.floor(Math.abs(ray.direction[1]) * 255);
+                        c[2] = Math.floor(Math.abs(ray.direction[2]) * 255);     
+                            
+                        var isect;
+                        if (isect = lib.intersectSphere(ray, sphere))
+                        {
+                            var L = lib.sub([10, 10, 5], isect.position);
+                            var d = lib.length(L);
+                            L = lib.mulScalar(L, 1/d);
+
+                            var nDotL = lib.dot(isect.normal, L);
+                            var diffuse = Math.max(0, nDotL);
+
+                            c[0] = Math.floor(Math.abs(diffuse) * 255);
+                            c[1] = Math.floor(Math.abs(diffuse) * 255);
+                            c[2] = Math.floor(Math.abs(diffuse) * 255); 
+                        }
+
+                        pixels[x * 4 + 0] = c[0];
+                        pixels[x * 4 + 1] = c[1];
+                        pixels[x * 4 + 2] = c[2];
+                        pixels[x * 4 + 3] = 255;
+                    }
+                    ctx.putImageData(rowData, 0, y);
+
+                },
+
+                init : function (wtime) {
+
+                    this._canvas = $("#canvas")[0];                    
+                    this._ctx    = this._canvas.getContext('2d');
+                    this._height = this._canvas.height;
+                    this._width  = this._canvas.width;
+
+                    this._stats = {};
+                    this._stats.renderStart = new Date().valueOf();
+
+                    this._sphere = {
                         center : [0, 0, 0],
                         radius : 1,
                     };
 
                     var frustum = calculateFrustum([5, 5, 5], [-1, -1, -1], [0, 0, 1], .01, Math.PI / 4, 1);
 
-                    for (var y = 0; y < this.height; ++y) {
-                        var rowData = ctx.createImageData(this.width, 1);
-                        var pixels = rowData.data;
-                        for (var x = 0; x < this.width; ++x) {
+                    this._tasks = [];
 
-                            var ray = {};
-                            ray.origin = frustum.eye;                            
-                            ray.destination = lib.addVec(
-                                frustum.origin,
-                                lib.mulScalar(frustum.xAxis, x / (this.width - 1)),
-                                lib.mulScalar(frustum.yAxis, y / (this.height- 1))
-                            );
-                            ray.direction = lib.normalize( lib.sub(ray.destination, ray.origin) );
-                            
-
-                            var c;
-                            if ((x + y) % 2 == 0)
-                                c = [127, 127, 127];
-                            else
-                                c = [255, 0, 0];
-
-                            c[0] = Math.floor(Math.abs(ray.direction[0]) * 255);
-                            c[1] = Math.floor(Math.abs(ray.direction[1]) * 255);
-                            c[2] = Math.floor(Math.abs(ray.direction[2]) * 255);     
-                            
-                            var isect;
-                            if (isect = lib.intersectSphere(ray, sphere))
-                            {
-                                var L = lib.sub([10, 10, 5], isect.position);
-                                var d = lib.length(L);
-                                L = lib.mulScalar(L, 1/d);
-
-                                var nDotL = lib.dot(isect.normal, L);
-                                var diffuse = Math.max(0, nDotL);
-
-                                c[0] = Math.floor(Math.abs(diffuse) * 255);
-                                c[1] = Math.floor(Math.abs(diffuse) * 255);
-                                c[2] = Math.floor(Math.abs(diffuse) * 255); 
-                            }
-
-                            pixels[x * 4 + 0] = c[0];
-                            pixels[x * 4 + 1] = c[1];
-                            pixels[x * 4 + 2] = c[2];
-                            pixels[x * 4 + 3] = 255;
-                        }
-                        ctx.putImageData(rowData, 0, y);
+                    var _this = this;
+                    for (var y = 0; y < this._height; ++y) {
+                        this._tasks.push( (function(y) {  return function() { 
+                            _this._renderRow(frustum, y); 
+                        };})(y) );
                     }
+                },
 
-                    stats.renderEnd = new Date().valueOf();
-                    $("#renderTime").text("Render time: " + (stats.renderEnd - stats.renderStart) + "ms");
+                update : function (wtime) {
+                
+                    if (this._tasks.length)
+                    {
+                        for (var i = 0 ; i < 8 && this._tasks.length; ++i)
+                            (this._tasks.shift())();
+                    }
+                    else
+                        engine.changeState(null);
+                },
 
-                    var dataHRef = this.toDataURL("image/png");                    $("#download").attr("href", dataHRef);
-                });
+                draw : function (wtime) {
+                },
+
+                shutdown : function(wtime) {
+
+                    this._stats.renderEnd = new Date().valueOf();
+                    $("#renderTime").text("Render time: " + (this._stats.renderEnd - this._stats.renderStart) + "ms");
+
+                    var dataHRef = this._canvas.toDataURL("image/png");                    $("#download").attr("href", dataHRef);
+                },
+
+
+            });
+
+
+            $(document).ready(function () {
+
+                engine.gametick = 0;
+                engine.run(new RenderLoop());
 
             });
         -->

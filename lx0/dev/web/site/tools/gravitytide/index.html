@@ -83,17 +83,7 @@
           $.extend(ctor.prototype, parent.prototype, members);
           return ctor;
         };
-
-        var State = function(options) {
-          $.extend(this, options);
-        };
-        $.extend(State.prototype, {
-          init : function(gtime) {},
-          update : function(gtime) {},
-          draw : function(gtime) {},
-          shutdown : function(gtime) {}
-        });
-
+                
         var Entity = function(options) {
           $.extend(this, options);
         };
@@ -757,10 +747,9 @@
 
             $(document).keyState();
             $(document).keyState('defaultBehavior', [ keyCodes.F5 ] );
-
-            engine._state = new States.MainMenu();
+            
             engine._keyState = $(document).keyState('state');
-            engine.run();
+            engine.run(new States.MainMenu());
         });
         -->
         </script>
