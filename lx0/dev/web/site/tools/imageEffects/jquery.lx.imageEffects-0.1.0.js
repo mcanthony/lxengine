@@ -28,6 +28,9 @@
 */
 (function ($) {
 
+    //
+    // Stand-alone utility functions used by the plug-in
+    //
     var util =
     {
         elementOptions: function (elem, name) {
@@ -45,8 +48,13 @@
         }
     };
 
+    //
+    // The individual image functions 
+    //
     var effects =
     {
+        // Helper function for effects applied locally on a per-pixel
+        // function
         _perpixel: function (pixels, width, height, op) {
             for (var y = 0; y < height; ++y) {
                 for (var x = 0; x < width; ++x) {
@@ -56,6 +64,23 @@
                     var b = pixels[offset + 2];
                     var a = pixels[offset + 3];
                     var rgba = op(r,g,b,a);
+                    pixels[offset+0] = rgba[0];
+                    pixels[offset+1] = rgba[1];
+                    pixels[offset+2] = rgba[2];
+                    pixels[offset+3] = rgba[3];
+                }
+            }
+        },
+
+        _perpixelposition: function (pixels, width, height, op) {
+            for (var y = 0; y < height; ++y) {
+                for (var x = 0; x < width; ++x) {
+                    var offset = ((y * width) + x) * 4;
+                    var r = pixels[offset + 0];
+                    var g = pixels[offset + 1];
+                    var b = pixels[offset + 2];
+                    var a = pixels[offset + 3];
+                    var rgba = op(x, y, r,g,b,a);
                     pixels[offset+0] = rgba[0];
                     pixels[offset+1] = rgba[1];
                     pixels[offset+2] = rgba[2];
@@ -85,6 +110,7 @@
                 gray[2] = (gray[2] + b) / 2;
                 return gray;
             },
+
         },
 
         none : function() { },
@@ -100,6 +126,42 @@
                 return [hsv.red(), hsv.green(), hsv.blue(), a];
             });
         },
+
+        checkerGrayscale : function (pixels, width, height) {
+            effects._perpixelposition(pixels, width, height, function(x, y, r, g, b, a) {
+                if ((x + y) % 2 == 1) 
+                    return effects._ops.grayscale(r, g, b, a);
+                else
+                    return [r, g, b, a];
+            });
+        },
+
+        checkerBlack : function (pixels, width, height) {
+            effects._perpixelposition(pixels, width, height, function(x, y, r, g, b, a) {
+                if ((x + y) % 2 == 1) 
+                    return [0, 0, 0, 255];
+                else
+                    return [r, g, b, a];
+            });
+        },
+
+        checkerWhite : function (pixels, width, height) {
+            effects._perpixelposition(pixels, width, height, function(x, y, r, g, b, a) {
+                if ((x + y) % 2 == 1) 
+                    return [255, 255, 255, 255];
+                else
+                    return [r, g, b, a];
+            });
+        },
+
+        scanlineBlack : function (pixels, width, height) {
+            effects._perpixelposition(pixels, width, height, function(x, y, r, g, b, a) {
+                if (y % 2 == 1) 
+                    return [0, 0, 0, 255];
+                else
+                    return [r, g, b, a];
+            });
+        },
     }
 
     //
@@ -111,6 +173,34 @@
         };
     });
 
+    var workers =
+    {
+        applyEffect : function(elem, options, img)
+        {
+            var canvas = $("<canvas/>");
+            canvas.attr("width", img.width);
+            canvas.attr("height", img.height);
+
+            var ctx = canvas[0].getContext('2d');
+            ctx.drawImage(img, 0, 0, img.width, img.height);
+
+            var imageData = ctx.getImageData(0, 0, img.width, img.height);
+            effects[options.effect](imageData.data, img.width, img.height);
+
+            ctx.putImageData(imageData, 0, 0);
+                
+            var src = canvas[0].toDataURL("image/png");
+            $(elem).attr("src", src);
+
+            if (options.imageLink)
+            {
+                var link = $("<a/>");
+                link.attr("href", src);
+                $(elem).wrap(link);
+            }
+        },
+    };
+
 
     var methods =
     {
@@ -121,39 +211,30 @@
             //
             var state =
             {
-        }
-        $.data(elem, "imageEffects", state);
+            }
+            $.data(elem, "imageEffects", state);
 
-        var src = $(elem).attr("src");
+            var src = $(elem).attr("src");
 
-        //
-        // Wait until the onload() callback is called to start doing anything
-        // in order to ensure the img.width / img.height info is accurate.
-        //
-        var img = new Image();
-        img.onload = function () {
-
-            var canvas = $("<canvas/>");
-            canvas.attr("width", this.width);
-            canvas.attr("height", this.height);
-
-            var ctx = canvas[0].getContext('2d');
-            ctx.drawImage(this, 0, 0, this.width, this.height);
-
-            var imageData = ctx.getImageData(0, 0, this.width, this.height);
-            effects[options.effect](imageData.data, this.width, this.height);
-
-            ctx.putImageData(imageData, 0, 0);
-            $(elem).attr("src", canvas[0].toDataURL("image/png"));
-        };
-        img.src = src;
-    },
-};
+            //
+            // Wait until the onload() callback is called to start doing anything
+            // in order to ensure the img.width / img.height info is accurate.
+            //
+            var img = new Image();
+            img.onload = function () {
+                window.setTimeout(function() {
+                    workers.applyEffect(elem, options, img);                
+                }, 0);
+            };
+            img.src = src;
+        },
+    };
 
     $.fn.imageEffects = function () {
 
         var defaultOptions = {
             'effect' : 'grayscale',
+            'imageLink' : 'true',
         };
         var userOptions = arguments[0];
 
