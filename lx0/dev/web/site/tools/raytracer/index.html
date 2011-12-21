@@ -12,6 +12,8 @@
       <script type="text/javascript" src="../shared/script/lx.libCore.js"></script>
       <script type="text/javascript" src="../shared/script/lx.engine.js"></script>
 
+      <script type="text/javascript" src="lx.vec.js"></script>
+
     </head>
     <body>
        <div id="body-wrap1">
@@ -34,135 +36,8 @@
         <script type="text/javascript">
         <!--
 
-            var core = {};
-            import_libCore(core);
-
-            var lib =
-            {
-                _debug : true,
-
-                cross: function (u, v) {
-                    return [
-                        u[1] * v[2] - v[1] * u[2],
-                        u[2] * v[0] - v[2] * u[0],
-                        u[0] * v[1] - v[0] * u[1],
-                    ];
-                },
-
-                length : function(u) {
-                    return Math.sqrt(u[0] * u[0] + u[1] * u[1] + u[2] * u[2]);
-                },
-
-                lengthSqrd : function(u) {
-                    return (u[0] * u[0] + u[1] * u[1] + u[2] * u[2]);
-                },
-
-                normalize: function (u) {
-                    var len = lib.length(u);
-                    return [
-                        u[0] / len,
-                        u[1] / len,
-                        u[2] / len
-                    ];    
-                },
-
-                sub : function(u, v) {
-                    return  [
-                        u[0] - v[0],
-                        u[1] - v[1],
-                        u[2] - v[2]
-                    ];
-                },
-
-                addVec : function () {
-                    var sum = arguments[0].slice(0);
-                    for (var i = 1; i < arguments.length; ++i)
-                    {
-                        sum[0] += arguments[i][0];
-                        sum[1] += arguments[i][1];
-                        sum[2] += arguments[i][2];
-                    }
-                    return sum;
-                },
-
-                mulScalar : function (u, s) {
-                    return [
-                        u[0] * s,
-                        u[1] * s,
-                        u[2] * s,
-                    ];
-                },
-
-                valid : function(u) {
-                    for (var i = 0; i < 3; ++i)
-                    {
-                        if (isNaN(u[i]))
-                            return false;
-                    }
-                    return true;
-                },
-
-                assertValid : function(u) {
-                    var ok = lib.valid(u);
-                    if (!ok)
-                    {
-                        alert("Assertion failed: " + u);
-                    }
-                },
-
-                dot : function (u, v) {
-                    return u[0] * v[0] + u[1] * v[1] + u[2] * v[2];
-                },
-
-
-                intersectSphere : function(ray, sphere) {
-                
-                    var u = lib.sub(sphere.center, ray.origin);
-                    var v = lib.normalize(ray.direction);
-
-
-                    var dotUV = lib.dot(u, v);
-                    if (dotUV < 0)
-                        return false;
-
-                    var d_sqrd = lib.lengthSqrd(u) - dotUV * dotUV;
-                    var r_sqrd = sphere.radius * sphere.radius;
-                   
-                    if (d_sqrd > r_sqrd)
-                        return false;
-
-                    var dp = Math.sqrt(r_sqrd - d_sqrd);
-
-                    var dr = [
-                        dotUV - dp,
-                        dotUV + dp
-                    ];
-
-                    function hit (d) 
-                    {
-                        var intersect = {};
-                        intersect.distance = d;
-                        intersect.position = lib.addVec(ray.origin, lib.mulScalar(ray.direction, d));
-                        intersect.normal = lib.normalize(intersect.position);
-                        return intersect;
-                    }
-
-                    if (dr[0] < 0)
-                        if (dr[1] < 0)
-                            return false;
-                        else
-                            return hit(dr[1]);
-                    else
-                        if (dr[1] < 0)
-                            return hit(dr[0]);
-                        else
-                            return hit(Math.min(dr[0], dr[1]));
-                }
-
-            };
-
-            // Temporary hack until there's a better strategy for JS namespacing...
-            lib.each = core.each;
+            var lib = {};
+            import_libCore(lib);
 
             function calculateFrustum(
                 worldPosition,
@@ -172,9 +47,9 @@
                 fieldOfView,
                 aspectRatio) 
             {
-                var forward = lib.normalize(viewForward);
-                var right = lib.normalize(lib.cross(viewForward, worldUp));
-                var up = lib.normalize(lib.cross(right, forward));
+                var forward = lx.vec.normalize(viewForward);
+                var right = lx.vec.normalize(lx.vec.cross(viewForward, worldUp));
+                var up = lx.vec.normalize(lx.vec.cross(right, forward));
 
                 var width = 2 * nearDistance * Math.tan(fieldOfView / 2);
                 var height = width / aspectRatio;
@@ -182,21 +57,21 @@
                 var f = 
                 {
                     eye : worldPosition,
-                    xAxis : lib.mulScalar(right, width),
-                    yAxis : lib.mulScalar(up, height),
+                    xAxis : lx.vec.mulScalar(right, width),
+                    yAxis : lx.vec.mulScalar(up, height),
                 };
-                f.origin = lib.addVec(
+                f.origin = lx.vec.addVec(
                     worldPosition, 
-                    lib.mulScalar(forward, nearDistance), 
-                    lib.mulScalar(right, -width / 2),
-                    lib.mulScalar(up, -height / 2)
+                    lx.vec.mulScalar(forward, nearDistance), 
+                    lx.vec.mulScalar(right, -width / 2),
+                    lx.vec.mulScalar(up, -height / 2)
                 );
 
                 return f;
             }
 
 
-            var RenderLoop = core.buildClass(State, function() { }, {
+            var RenderLoop = lib.buildClass(State, function() { }, {
                 
                 _canvas : null,
                 _ctx : null,
@@ -206,7 +81,8 @@
                 _renderRow : function(frustum, y) {
 
                     var ctx = this._ctx;
-                    var sphere = this._sphere;
+                    var objects = this._objects;
+
 
                     var rowData = ctx.createImageData(this._width, 1);
                     var pixels = rowData.data;
@@ -215,26 +91,35 @@
 
                         var ray = {};
                         ray.origin = frustum.eye;                            
-                        ray.destination = lib.addVec(
+                        ray.destination = lx.vec.addVec(
                             frustum.origin,
-                            lib.mulScalar(frustum.xAxis, x / (this._width - 1)),
-                            lib.mulScalar(frustum.yAxis, y / (this._height- 1))
+                            lx.vec.mulScalar(frustum.xAxis, x / (this._width - 1)),
+                            lx.vec.mulScalar(frustum.yAxis, y / (this._height- 1))
                         );
-                        ray.direction = lib.normalize( lib.sub(ray.destination, ray.origin) );
+                        ray.direction = lx.vec.normalize( lx.vec.sub(ray.destination, ray.origin) );
                             
                         var c = [];
                         c[0] = Math.floor(Math.abs(ray.direction[0]) * 255);
                         c[1] = Math.floor(Math.abs(ray.direction[1]) * 255);
                         c[2] = Math.floor(Math.abs(ray.direction[2]) * 255);     
                             
-                        var isect;
-                        if (isect = lib.intersectSphere(ray, sphere))
-                        {
-                            var L = lib.sub([10, 10, 5], isect.position);
-                            var d = lib.length(L);
-                            L = lib.mulScalar(L, 1/d);
 
-                            var nDotL = lib.dot(isect.normal, L);
+                        var isect = undefined;
+                        for (var i = 0; i < objects.length; ++i)
+                        {
+                          var isect2 = objects[i].intersect(ray);
+                          if (isect2 && (!isect || isect2.distance < isect.distance)) {
+                            isect = isect2;
+                          }
+                        }
+
+                        if (isect)
+                        {
+                            var L = lx.vec.sub([10, 10, 5], isect.position);
+                            var d = lx.vec.length(L);
+                            L = lx.vec.mulScalar(L, 1/d);
+
+                            var nDotL = lx.vec.dot(isect.normal, L);
                             var diffuse = Math.max(0, nDotL);
 
                             c[0] = Math.floor(Math.abs(diffuse) * 255);
@@ -247,7 +132,7 @@
                         pixels[x * 4 + 2] = c[2];
                         pixels[x * 4 + 3] = 255;
                     }
-                    ctx.putImageData(rowData, 0, y);
+                    ctx.putImageData(rowData, 0, this._height - y - 1);
 
                 },
 
@@ -261,10 +146,13 @@
                     this._stats = {};
                     this._stats.renderStart = new Date().valueOf();
 
-                    this._sphere = {
-                        center : [0, 0, 0],
-                        radius : 1,
-                    };
+                    this._objects = [];
+                    this._objects.push(
+                      new lx.vec.Sphere({ radius : 1, center : [1, 1, 1]}),
+                      new lx.vec.Plane({ normal : [ 1, 0, 0 ] }),
+                      new lx.vec.Plane({ normal : [ 0, 1, 0 ] }),
+                      new lx.vec.Plane({ normal : [ 0, 0, 1 ] })
+                    );
 
                     var frustum = calculateFrustum([5, 5, 5], [-1, -1, -1], [0, 0, 1], .01, Math.PI / 4, 1);
 
@@ -273,7 +161,7 @@
                     var _this = this;
                     for (var y = 0; y < this._height; ++y) {
                         this._tasks.push( (function(y) {  return function() { 
-                            _this._renderRow(frustum, y); 
+                            _this._renderRow(frustum, _this._height - y - 1); 
                         };})(y) );
                     }
                 },

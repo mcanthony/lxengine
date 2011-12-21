@@ -1,9 +1,10 @@
 
 try { eval("lx"); } catch (e) { lx = {}; }
-if (!lx.core) lx.core = {};
 
-(function (NS) {
+lx.core = (function () {
    
+    var NS = {};
+
     NS.clamp = function(i, n, m) {
         return Math.max(Math.min(i, m), n);
     };
@@ -77,5 +78,7 @@ if (!lx.core) lx.core = {};
         return tasks;
     };
 
-})(lx.core);
+    return NS;
+
+})();
 
