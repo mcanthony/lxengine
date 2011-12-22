@@ -75,6 +75,23 @@ function length (vec3 u) -> var
           var Context = function(text) 
           {
               this.source = text;
+              this.symbols = [ {} ];
+          };
+          Context.prototype.pushSymbolTable = function()
+          {
+            this.symbols.push({});
+          };
+          Context.prototype.popSymbolTable = function()
+          {
+            this.symbols.pop();
+          };
+          Context.prototype.isSymbol = function(a)
+          {
+            for (var i = this.symbols.length - 1; i >= 0; --i)
+              if (this.symbols[i][a])
+                return true;
+
+            return false;
           };
           Context.prototype.empty = function()
           {
@@ -184,9 +201,31 @@ function length (vec3 u) -> var
               return arg;
             },
 
+            parseExpression : function(ctx)
+            {
+              var name = ctx.consume("@name")[0];
+            },
+
+            parseReturnExpression : function(ctx)
+            {
+              ctx.consume("return", "@ws");
+              this.parseExpression(ctx);
+            },
+
             parseStatementSet : function (ctx)
             {
+              ctx.consume("@ws?");
+              while (!ctx.peek("}")) {
               
+                ctx.consume("@ws?");
+                
+                var name = ctx.peek("@name")[0];
+                if (name == "return")
+                  console.log(name);
+
+                else 
+                  throw "Could not parse statement around '" + ctx.source.substr(0, 80) + "'";
+              }
             },
 
             parseFunction : function(ctx)
@@ -207,6 +246,7 @@ function length (vec3 u) -> var
               ctx.consume("@ws?", "->", "@ws?");
               f.returnType = ctx.consume("@name", "@ws?")[0];
               ctx.consume("{", "@ws?");
+              this.parseReturnExpression(ctx);
               ctx.consume("}");
 
               this._functions.push(f);
