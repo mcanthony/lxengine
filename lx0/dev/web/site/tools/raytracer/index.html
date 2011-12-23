@@ -20,18 +20,62 @@
         <h1>Ray Tracer</h1>
 
         <h2>About</h2>
+        <p>
+            The ray tracer is currently a work-in-progress for testing and demonstrating LxWeb, a javascript engine for visualization 
+            and simulation.
+        </p>
 
         <h2>Canvas</h2>
 
-        <div>
-            <canvas id="canvas" width="256" height="256" style="border: 1px solid #333; box-shadow: 3px 3px 6px #888;">
-            </canvas>
+        <div class="layout-row">
+            <div>
+                <canvas id="canvas" width="256" height="256" style="border: 1px solid #333; box-shadow: 3px 3px 6px #888; margin-right: 64px;"></canvas>
+                <div>
+                    <span id="renderTime"></span>
+                    &nbsp;&nbsp;&nbsp;&nbsp;
+                    <a id="download">download</a>
+                </div>
+            </div>
+            <div>
+                <p class="warning">
+                    These options are <strong>placeholders</strong> and are not yet functional.
+                </p>
+                <form>
+                    <fieldset style="border-radius: 4px">
+                        <legend>Options</legend>
+                        <table>
+                            <tr>
+                                <td>Presets</td>
+                                <td>
+                                    <select>
+                                        <option>Quick</option>
+                                        <option selected>Draft</option>
+                                        <option>High-Quality</option>
+                                        <option>Ultra</option>
+                                    </select>
+                                </td>
+                            </tr>
+
+                            <tr>
+                                <td>Sample Count</td>
+                                <td>
+                                    <select>
+                                        <option>1</option>
+                                        <option>2</option>
+                                        <option>4</option>
+                                        <option>8</option>
+                                        <option>16</option>
+                                        <option>32</option>
+                                    </select>
+                                </td>
+                            </tr>
+                        </table>
+                        
+                    </fieldset>
+                </form>
+            </div>
         </div>
-        <div>
-            <span id="renderTime"></span>
-            &nbsp;&nbsp;&nbsp;&nbsp;
-            <a id="download">download</a>
-        </div>
+
 
         <script type="text/javascript">
         <!--

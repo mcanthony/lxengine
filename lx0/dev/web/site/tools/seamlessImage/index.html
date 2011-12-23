@@ -13,14 +13,54 @@
        <div id="body-wrap1">
           <h1>Seamless Image</h1>
           <h2>About</h2>
-          <p>
-            The <strong>jquery.lx.seamlessImage</strong> plug-in is a JQuery plug-in that replaces a given &lt;IMG&gt;
-            tag with a dynamic, tiled display of the image.  This is useful for previewing seamless textures at various
-            resolutions.
-          </p>
-          <p>
-            <strong>Download</strong> : <a href="../shared/script/jquery.lx.seamlessImage.0.2.0.js">v0.2.0</a>
-          </p>
+          <div>
+                      
+            <div style="float: left; width: 40em">
+                <p>
+                    The <strong>jquery.lx.seamlessImage</strong> plug-in is a JQuery plug-in that replaces a given &lt;IMG&gt;
+                    tag with a dynamic, tiled display of the image.  This is useful for previewing seamless textures at various
+                    resolutions.
+                </p>
+                <p>
+                    <strong>Download</strong> : <a href="../shared/script/jquery.lx.seamlessImage.0.2.0.js">v0.2.0</a>
+                </p>
+            </div>
+ 
+            <div style="float: left;">
+                <div style="border: 1px solid #CCC; border-radius: 6px; padding: 8px 2em 8px 8px;  width: 12em; margin-left: 2em">
+                    <strong style="color: #777">Table of Contents</strong>
+                    <div id="toc"></div>
+                </div>
+                <script>
+                    $(document).ready(function () {
+                        $("#toc").each(function () {
+                            var anchorNames = [];
+                            $("h2").each(function (i) {
+                                var anchor = $("<a/>");
+                                var name = "toc_" + i;
+                                anchor.attr("name", name);
+                                anchorNames.push([name, $(this).text()]);
+                                $(this).before(anchor);
+                            });
+
+                            var list = $("<ol/>");
+                            $.each(anchorNames, function (i, value) {
+                                var item = $("<li/>");
+                                var link = $("<a/>");
+                                link.text(value[1]);
+                                console.log(value);
+                                link.attr("href", "#" + value[0]);
+                                item.html(link);
+                                list.append(item);
+                            });
+                            $(this).html(list);
+                        });
+                    });
+                </script>
+            </div>  
+
+            <div style="clear:both"></div>
+          </div>
 
           <h2>Demonstration</h2>
           <div class="layout-row">
@@ -40,6 +80,65 @@
             </div>
           </div>
           <div style="clear: both"></div>
+
+          <h2>Usage</h2>
+
+          <h3>Basic Usage</h3>
+          <div>
+              <p>
+                Insert a regular IMG in the HTML.
+              </p>
+              <pre>
+&lt;img class="seamlessImage" src="test-image.png" /&gt;              
+              </pre>
+              <p>
+                Similar to most JQuery plug-ins, then call the <code>seamlessImage()</code> function on the selected element(s) to 
+                add the tileable image UI.
+              </p>
+              <pre>
+$(".seamlessImage").seamlessImage();
+              </pre>
+          </div>
+          
+          <h3>Options</h3>
+          <p>
+            Also similar to most JQuery plug-ins, an associative array may be passed in as options.
+          </p>
+          <pre>
+$(".seamlessImage").seamlessImage({ count : 4 });
+          </pre>
+          <p>
+            The currently available options are as follows:
+          </p>
+
+
+          <h4>count</h4>
+          <div class="indent">
+            <p>
+                The number of tiles to display in the canvas along one axis.  <code>1</code> would display the
+                image "regularly" within the canvas.  A value of <code>2</code> would display the image at 50%
+                resolution such that it would tile twice horizontally and vertically to fill the canvas.
+                The default value is <code>1</code>.
+            </p>
+          </div>
+          
+          <h4>sliderMax</h4>
+          <div class="indent">
+            <p>
+                Controls the maxium number of tiles (i.e. <code>count</code>) to allow for on the inserted UI slider.
+                The default value is <code>4</code>.
+            </p>
+          </div>
+          
+          <h4>ui</h4>
+          <div class="indent">
+          <p>
+            Controls whether or not the UI slider is generated.  This is mainly useful for displaying a <em>static</em>
+            tiled image, thus the <code>count</code> option will likely be set to a value of than <code>1</code> when
+            setting this option to <code>false</code>.  The default value is <code>true</code>.
+          </p>
+          </div>
+
 
           <h2>Future Work</h2>
           <ul>

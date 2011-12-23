@@ -12,7 +12,15 @@ body
 {
     margin: 0px;
     padding: 0px;
+
+	font-family: sans-serif;
 }
+
+h1, h2, h3, h4, h5, h6
+{
+	font-family: serif;
+}
+
 h1
 {
     font-size: 3em;
@@ -40,12 +48,17 @@ h2
 h3
 {
     margin-left: -.25em;
-    letter-spacing: 2px;
-    color: #666;
-    text-shadow: 1px 1px 4px rgba(128,128,128,.10);
+    
+	letter-spacing: 2px;
+	color: #666;
+	text-shadow: 1px 1px 4px rgba(128,128,128,.10);
 }
 h4
 {
+	margin-left: -.15em;
+	color: #669;
+	font-size: 110%;
+	letter-spacing: 1px;
 }
 h5
 {
@@ -58,6 +71,21 @@ p, blockquote
 {
     letter-spacing: 1px;
 }
+
+p
+{
+	max-width: 52em;
+}
+
+ol, ul
+{
+	font-family: sans-serif;
+}
+li
+{
+	padding: .15em 0;
+}
+
 canvas
 {
 }
