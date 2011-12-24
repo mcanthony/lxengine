@@ -55,6 +55,7 @@ engine.changeState = function (state) {
 
 engine.gametick = 20;
 engine.run = function (initialState) {
+    
     this.gametime = 0;
 
     this._state = initialState;
@@ -63,7 +64,7 @@ engine.run = function (initialState) {
     var _this = this;
     (function mainLoop() {
 
-        lib.each(_this._actionQueue, function () {
+        lx.core.each(_this._actionQueue, function () {
             this.call(_this);
         });
         _this._actionQueue = [];

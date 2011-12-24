@@ -9,10 +9,11 @@
       <script type="text/javascript" src="../shared/script/extern/jquery-1.6.4.min.js"></script>
 
       <script type="text/javascript" src="../shared/script/lx.keycodes.js"></script>
-      <script type="text/javascript" src="../shared/script/lx.libCore.js"></script>
+      <script type="text/javascript" src="../shared/script/lx.core-0.1.1.js"></script>
       <script type="text/javascript" src="../shared/script/lx.engine.js"></script>
 
       <script type="text/javascript" src="lx.vec.js"></script>
+      <script type="text/javascript" src="raytracer.js"></script>
 
     </head>
     <body>
@@ -29,7 +30,7 @@
 
         <div class="layout-row">
             <div>
-                <canvas id="canvas" width="256" height="256" style="border: 1px solid #333; box-shadow: 3px 3px 6px #888; margin-right: 64px;"></canvas>
+                <canvas id="canvas" width="320" height="320" style="border: 1px solid #333; box-shadow: 3px 3px 6px #888; margin-right: 64px;"></canvas>
                 <div>
                     <span id="renderTime"></span>
                     &nbsp;&nbsp;&nbsp;&nbsp;
@@ -76,170 +77,19 @@
             </div>
         </div>
 
+        <h2>Todo</h2>
+        <ul>
+          <li>Samples</li>
+          <li>Tiles</li>
+        </ul>
+
 
         <script type="text/javascript">
         <!--
-
-            var lib = {};
-            import_libCore(lib);
-
-            function calculateFrustum(
-                worldPosition,
-                viewForward,
-                worldUp,
-                nearDistance,
-                fieldOfView,
-                aspectRatio) 
-            {
-                var forward = lx.vec.normalize(viewForward);
-                var right = lx.vec.normalize(lx.vec.cross(viewForward, worldUp));
-                var up = lx.vec.normalize(lx.vec.cross(right, forward));
-
-                var width = 2 * nearDistance * Math.tan(fieldOfView / 2);
-                var height = width / aspectRatio;
-
-                var f = 
-                {
-                    eye : worldPosition,
-                    xAxis : lx.vec.mulScalar(right, width),
-                    yAxis : lx.vec.mulScalar(up, height),
-                };
-                f.origin = lx.vec.addVec(
-                    worldPosition, 
-                    lx.vec.mulScalar(forward, nearDistance), 
-                    lx.vec.mulScalar(right, -width / 2),
-                    lx.vec.mulScalar(up, -height / 2)
-                );
-
-                return f;
-            }
-
-
-            var RenderLoop = lib.buildClass(State, function() { }, {
-                
-                _canvas : null,
-                _ctx : null,
-                _width : null,
-                _height : null,
-
-                _renderRow : function(frustum, y) {
-
-                    var ctx = this._ctx;
-                    var objects = this._objects;
-
-
-                    var rowData = ctx.createImageData(this._width, 1);
-                    var pixels = rowData.data;
-
-                    for (var x = 0; x < this._width; ++x) {
-
-                        var ray = {};
-                        ray.origin = frustum.eye;                            
-                        ray.destination = lx.vec.addVec(
-                            frustum.origin,
-                            lx.vec.mulScalar(frustum.xAxis, x / (this._width - 1)),
-                            lx.vec.mulScalar(frustum.yAxis, y / (this._height- 1))
-                        );
-                        ray.direction = lx.vec.normalize( lx.vec.sub(ray.destination, ray.origin) );
-                            
-                        var c = [];
-                        c[0] = Math.floor(Math.abs(ray.direction[0]) * 255);
-                        c[1] = Math.floor(Math.abs(ray.direction[1]) * 255);
-                        c[2] = Math.floor(Math.abs(ray.direction[2]) * 255);     
-                            
-
-                        var isect = undefined;
-                        for (var i = 0; i < objects.length; ++i)
-                        {
-                          var isect2 = objects[i].intersect(ray);
-                          if (isect2 && (!isect || isect2.distance < isect.distance)) {
-                            isect = isect2;
-                          }
-                        }
-
-                        if (isect)
-                        {
-                            var L = lx.vec.sub([10, 10, 5], isect.position);
-                            var d = lx.vec.length(L);
-                            L = lx.vec.mulScalar(L, 1/d);
-
-                            var nDotL = lx.vec.dot(isect.normal, L);
-                            var diffuse = Math.max(0, nDotL);
-
-                            c[0] = Math.floor(Math.abs(diffuse) * 255);
-                            c[1] = Math.floor(Math.abs(diffuse) * 255);
-                            c[2] = Math.floor(Math.abs(diffuse) * 255); 
-                        }
-
-                        pixels[x * 4 + 0] = c[0];
-                        pixels[x * 4 + 1] = c[1];
-                        pixels[x * 4 + 2] = c[2];
-                        pixels[x * 4 + 3] = 255;
-                    }
-                    ctx.putImageData(rowData, 0, this._height - y - 1);
-
-                },
-
-                init : function (wtime) {
-
-                    this._canvas = $("#canvas")[0];                    
-                    this._ctx    = this._canvas.getContext('2d');
-                    this._height = this._canvas.height;
-                    this._width  = this._canvas.width;
-
-                    this._stats = {};
-                    this._stats.renderStart = new Date().valueOf();
-
-                    this._objects = [];
-                    this._objects.push(
-                      new lx.vec.Sphere({ radius : 1, center : [1, 1, 1]}),
-                      new lx.vec.Plane({ normal : [ 1, 0, 0 ] }),
-                      new lx.vec.Plane({ normal : [ 0, 1, 0 ] }),
-                      new lx.vec.Plane({ normal : [ 0, 0, 1 ] })
-                    );
-
-                    var frustum = calculateFrustum([5, 5, 5], [-1, -1, -1], [0, 0, 1], .01, Math.PI / 4, 1);
-
-                    this._tasks = [];
-
-                    var _this = this;
-                    for (var y = 0; y < this._height; ++y) {
-                        this._tasks.push( (function(y) {  return function() { 
-                            _this._renderRow(frustum, _this._height - y - 1); 
-                        };})(y) );
-                    }
-                },
-
-                update : function (wtime) {
-                
-                    if (this._tasks.length)
-                    {
-                        for (var i = 0 ; i < 8 && this._tasks.length; ++i)
-                            (this._tasks.shift())();
-                    }
-                    else
-                        engine.changeState(null);
-                },
-
-                draw : function (wtime) {
-                },
-
-                shutdown : function(wtime) {
-
-                    this._stats.renderEnd = new Date().valueOf();
-                    $("#renderTime").text("Render time: " + (this._stats.renderEnd - this._stats.renderStart) + "ms");
-
-                    var dataHRef = this._canvas.toDataURL("image/png");                    $("#download").attr("href", dataHRef);
-                },
-
-
-            });
-
-
             $(document).ready(function () {
 
                 engine.gametick = 0;
-                engine.run(new RenderLoop());
+                engine.run(new raytracer.RenderLoop());
 
             });
         -->

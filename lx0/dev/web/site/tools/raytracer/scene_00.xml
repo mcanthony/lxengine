@@ -1,0 +1,31 @@
+<Scene>
+  <Objects>
+
+    <Light>
+      {
+        position : [6, 11, 10],
+        intensity : 1,
+      }
+    </Light>
+
+    <Light>
+      {
+      position : [1, 1, 18],
+      intensity : .1,
+      }
+    </Light>    
+    
+    <Plane>{ normal : [ 1, 0, 0 ], diffuse : [ 1, .95, .95] }</Plane>
+    <Plane>{ normal : [ 0, 1, 0 ], diffuse : [ .95, 1, .95] }</Plane>
+    <Plane>{ normal : [ 0, 0, 1 ], diffuse : [ .75, .75, 1] }</Plane>    
+    
+    <Sphere>
+      {
+        center : [ 1, 1, 1 ],
+        radius : 1,
+        diffuse : [ .95, .75, .6],
+      }
+    </Sphere>
+
+  </Objects>
+</Scene>
