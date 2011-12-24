@@ -41,6 +41,21 @@ lx.core = lx.core || {};
         }
     };
 
+    NS.shuffle = function (a) {        
+        
+        // Randomly resort the indices
+        var b = [];
+        for (var i = 0; i < a.length; ++i)
+            b.push([ Math.random(), i ]);
+        b.sort(function(i, j) { return i[0] - j[0]; });
+
+        // Copy the input into a new re-index array
+        var c = [];
+        for (var i = 0; i < a.length; ++i)
+            c.push(a[b[i][1]]);
+        return c;
+    };
+
     //=======================================================================//
     // Code Generation
     //=======================================================================//

@@ -29,28 +29,31 @@ engine.setTimeout = function (code, delay) {
 };
 
 engine.changeState = function (state) {
-    this._actionQueue.push(function () {
-             
+    if (!this._state)
+        engine.run(state);
+    else {
+        this._actionQueue.push(function () {
         
-        if (this._state)
-        {
-            this._state.shutdown(this._gametime);
-        }
-
-        this._state = state;
-
-        if (state) 
-        {
-            try {            
-                this.gametime = 0;
-                this._state.init(this._gametime);
-            } catch (e) {
-                console.log(e);
-                console.log(state);
-                throw e;
+            if (this._state)
+            {
+                this._state.shutdown(this._gametime);
             }
-        }
-    });
+
+            this._state = state;
+
+            if (state) 
+            {
+                try {            
+                    this.gametime = 0;
+                    this._state.init(this._gametime);
+                } catch (e) {
+                    console.log(e);
+                    console.log(state);
+                    throw e;
+                }
+            }
+        });
+    }
 };
 
 engine.gametick = 20;

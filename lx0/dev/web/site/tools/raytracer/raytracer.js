@@ -174,6 +174,8 @@ var raytracer = {};
             this._height = this._canvas.height;
             this._width  = this._canvas.width;
 
+            this._ctx.clearRect(0, 0, this._width, this._height);
+
             
             this._stats = {};
             this._objects = [];
@@ -210,7 +212,7 @@ var raytracer = {};
             
             this._stats.renderStart = new Date().valueOf();
 
-            var frustum = NS.calculateFrustum([5, 5, 5], [-1, -1, -1], [0, 0, 1], .01, Math.PI / 4, 1);
+            var frustum = NS.calculateFrustum([5, 5, 5], [-1, -1, -1], [0, 0, 1], .01, Math.PI / 8, this._width / this._height);
 
             this._tasks = [];
 

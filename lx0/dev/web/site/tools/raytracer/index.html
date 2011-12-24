@@ -30,7 +30,7 @@
 
         <div class="layout-row">
             <div>
-                <canvas id="canvas" width="320" height="320" style="border: 1px solid #333; box-shadow: 3px 3px 6px #888; margin-right: 64px;"></canvas>
+                <canvas id="canvas" width="256" height="512" style="border: 1px solid #555; box-shadow: 3px 3px 6px #888; margin-right: 64px;"></canvas>
                 <div>
                     <span id="renderTime"></span>
                     &nbsp;&nbsp;&nbsp;&nbsp;
@@ -71,8 +71,10 @@
                                 </td>
                             </tr>
                         </table>
-                        
                     </fieldset>
+                    <div>
+                        <a href="#" id="rerender">Render</a>
+                    </div>
                 </form>
             </div>
         </div>
@@ -87,6 +89,11 @@
         <script type="text/javascript">
         <!--
             $(document).ready(function () {
+
+                $("#rerender").click(function () {
+                    engine.changeState(new raytracer.RenderLoop());
+                    return false;
+                });
 
                 engine.gametick = 0;
                 engine.run(new raytracer.RenderLoop());
