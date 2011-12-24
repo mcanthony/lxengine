@@ -168,6 +168,11 @@ lx.vec = (function () {
     // Types
     //===========================================================================//
 
+    NS.Light = function (opts) {
+        if (opts) for (var key in opts)
+            this[key] = opts[key];
+    };
+
     NS.Sphere = function (opts) {
         this.radius = 0;
         this.center = [0, 0, 0];

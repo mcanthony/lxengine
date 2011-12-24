@@ -95,9 +95,12 @@ var raytracer = {};
                     var mat = {};
                     mat.diffuse = isect.object.diffuse || [1, 1, 1];
 
-                    var diffuse = shaders.diffuse(isect.position, isect.normal, [10, 10, 5]);
-                    var c = lx.vec.mulScalar(mat.diffuse, diffuse);
-                    color = lx.vec.addVec(color, c);
+                    for (var i = 0; i < lights.length; ++i)
+                    {
+                        var diffuse = shaders.diffuse(isect.position, isect.normal, lights[i].position);
+                        var c = lx.vec.mulScalar(mat.diffuse, diffuse);
+                        color = lx.vec.addVec(color, c);
+                    }
                 }
                 color = lx.vec.clamp(color, 0.0, 1.0);
                 color = lx.vec.floor( lx.vec.mulScalar(color, 255) );
@@ -110,35 +113,56 @@ var raytracer = {};
             ctx.putImageData(rowData, 0, this._height - y - 1);
 
         },
-
+            
         init : function (wtime) {
+
+
 
             this._canvas = $("#canvas")[0];                    
             this._ctx    = this._canvas.getContext('2d');
             this._height = this._canvas.height;
             this._width  = this._canvas.width;
 
+            
             this._stats = {};
-            this._stats.renderStart = new Date().valueOf();
-
             this._objects = [];
-            this._objects.push(
-                new lx.vec.Sphere({ radius : 1, center : [1, 1, 1], diffuse : [ .95, .75, .6] }),
-                new lx.vec.Plane({ normal : [ 1, 0, 0 ], diffuse : [ 1, .95, .95] }),
-                new lx.vec.Plane({ normal : [ 0, 1, 0 ], diffuse : [ .95, 1, .95] }),
-                new lx.vec.Plane({ normal : [ 0, 0, 1 ], diffuse : [ .75, .75, 1] })
-            );
-
             this._lights = [];
-            this._lights.push(
-                [10, 10, 5]
-            );
+
+            var _this = this;
+            $.ajax("scene_00.xml", {
+                dataType : "xml",
+                async : false,
+                success : function(xml) {
+                    $(xml).find("Objects").children().each(function() {
+                        switch (this.tagName)
+                        {
+                        case "Plane":
+                        case "Sphere":
+                            {
+                                eval("var options = " + $(this).text() + ";");
+                                _this._objects.push(new lx.vec[this.tagName](options));
+                            }
+                            break;
+                        case "Light":
+                            {
+                                eval("var options = " + $(this).text() + ";");
+                                _this._lights.push(new lx.vec[this.tagName](options));
+                            }
+                            break;
+                        default:
+                            console.log("Unrecognized Object type '" + this.tagName + "'");        
+                        }
+                    });
+                },
+            });
+
+            
+            this._stats.renderStart = new Date().valueOf();
 
             var frustum = NS.calculateFrustum([5, 5, 5], [-1, -1, -1], [0, 0, 1], .01, Math.PI / 4, 1);
 
             this._tasks = [];
 
-            var _this = this;
             for (var y = 0; y < this._height; ++y) {
                 this._tasks.push( (function(y) {  return function() { 
                     _this._renderRow(frustum, _this._height - y - 1); 
