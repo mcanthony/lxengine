@@ -51,6 +51,20 @@ var raytracer = {};
         }(),
     };
 
+    function intersect(ray, objects)
+    {
+        var isect = undefined;
+        for (var i = 0; i < objects.length; ++i)
+        {
+            var isect2 = objects[i].intersect(ray);
+            if (isect2 && (!isect || isect2.distance < isect.distance)) {
+                isect = isect2;
+                isect.object = objects[i];
+            }
+        }
+        return isect;
+    } 
+
 
     NS.RenderLoop = lx.core.buildClass(State, function() { }, {
                 
@@ -59,49 +73,88 @@ var raytracer = {};
         _width : null,
         _height : null,
 
+        _traceRay : function (ray) {
+
+            var objects = this._objects;
+            var lights = this._lights;
+
+            var color = [ 0, 0, 0 ];
+
+            var isect = intersect(ray, objects);
+            if (isect)
+            {
+                var mat = {};
+                mat.diffuse = isect.object.diffuse || [1, 1, 1];
+
+                for (var i = 0; i < lights.length; ++i)
+                {
+                    var light = lights[i];
+                    var lightRay = {
+                        origin : isect.position,
+                        direction : lx.vec.normalize( lx.vec.sub(lights[i].position, isect.position) ),
+                    };
+                    lightRay.origin = lx.vec.addVec(lightRay.origin, lx.vec.mulScalar(lightRay.direction, 0.01));
+
+                    var lightSect = intersect(lightRay, objects);
+                    var shadowTerm = (!lightSect || (lightSect.distance > isect.distance)) ? 1 : 0.2;
+
+                    var intensity = light.intensity || 1.0;
+
+                    var diffuse = shadowTerm * intensity * shaders.diffuse(isect.position, isect.normal, lights[i].position);
+                    var c = lx.vec.mulScalar(mat.diffuse, diffuse);
+                    color = lx.vec.addVec(color, c);
+                }
+            }
+
+            return color;
+        },
+
+        _renderSample : function(frustum, x, y) {
+            var ray = {};
+            ray.origin = frustum.eye;                            
+            ray.destination = lx.vec.addVec(
+                frustum.origin,
+                lx.vec.mulScalar(frustum.xAxis, x / (this._width - 1)),
+                lx.vec.mulScalar(frustum.yAxis, y / (this._height- 1))
+            );
+            ray.direction = lx.vec.normalize( lx.vec.sub(ray.destination, ray.origin) );
+                
+            return this._traceRay(ray);
+        },
+
+        _renderPixel : function(frustum, x, y) {
+
+            var sampleSet = [
+                [ -.25, -.25 ],
+                [ -.25, .25 ],
+                [ .25, -.25 ],
+                [ .25, .25 ],
+                [ 0, 0, ]
+            ];
+
+            var color = [ 0, 0, 0];
+            for (var j = 0; j < sampleSet.length; ++j)
+            {
+                var dx = sampleSet[j][0];
+                var dy = sampleSet[j][1];
+                               
+                var sampleColor = this._renderSample(frustum, x + dx, y + dy);
+                color = lx.vec.addVec(color, sampleColor);
+            }
+            return lx.vec.mulScalar(color, 1 / sampleSet.length);
+        },
+
         _renderRow : function(frustum, y) {
 
             var ctx = this._ctx;
-            var objects = this._objects;
-            var lights = this._lights;
+
 
             var rowData = ctx.createImageData(this._width, 1);
             var pixels = rowData.data;
 
             for (var x = 0; x < this._width; ++x) {
 
-                var ray = {};
-                ray.origin = frustum.eye;                            
-                ray.destination = lx.vec.addVec(
-                    frustum.origin,
-                    lx.vec.mulScalar(frustum.xAxis, x / (this._width - 1)),
-                    lx.vec.mulScalar(frustum.yAxis, y / (this._height- 1))
-                );
-                ray.direction = lx.vec.normalize( lx.vec.sub(ray.destination, ray.origin) );
-
-                var isect = undefined;
-                for (var i = 0; i < objects.length; ++i)
-                {
-                    var isect2 = objects[i].intersect(ray);
-                    if (isect2 && (!isect || isect2.distance < isect.distance)) {
-                    isect = isect2;
-                    isect.object = objects[i];
-                    }
-                }
-
-                var color = [ 0, 0, 0 ];
-                if (isect)
-                {
-                    var mat = {};
-                    mat.diffuse = isect.object.diffuse || [1, 1, 1];
-
-                    for (var i = 0; i < lights.length; ++i)
-                    {
-                        var diffuse = shaders.diffuse(isect.position, isect.normal, lights[i].position);
-                        var c = lx.vec.mulScalar(mat.diffuse, diffuse);
-                        color = lx.vec.addVec(color, c);
-                    }
-                }
+                var color = this._renderPixel(frustum, x, y);
                 color = lx.vec.clamp(color, 0.0, 1.0);
                 color = lx.vec.floor( lx.vec.mulScalar(color, 255) );
 
@@ -115,8 +168,6 @@ var raytracer = {};
         },
             
         init : function (wtime) {
-
-
 
             this._canvas = $("#canvas")[0];                    
             this._ctx    = this._canvas.getContext('2d');
@@ -174,7 +225,7 @@ var raytracer = {};
                 
             if (this._tasks.length)
             {
-                for (var i = 0 ; i < 8 && this._tasks.length; ++i)
+                for (var i = 0 ; i < 4 && this._tasks.length; ++i)
                     (this._tasks.shift())();
             }
             else
