@@ -84,6 +84,18 @@ lx.vec = (function () {
         return u[0] * v[0] + u[1] * v[1] + u[2] * v[2];
     };
 
+    NS.floor = function (u) {
+        return [Math.floor(u[0]), Math.floor(u[1]), Math.floor(u[2])];
+    };
+
+    NS.clamp = function (u, min, max) {
+        return [
+            Math.min(max, Math.max(u[0], min)),
+            Math.min(max, Math.max(u[1], min)),
+            Math.min(max, Math.max(u[2], min))
+        ];
+    };
+
     //===========================================================================//
     // Intersection Functions
     //===========================================================================//
@@ -169,7 +181,7 @@ lx.vec = (function () {
         this.normal = [0, 0, 1];
         this.d = 0;
 
-        if (opts) for (var key in opts) 
+        if (opts) for (var key in opts)
             this[key] = opts[key];
     };
 
