@@ -125,7 +125,7 @@
           update : function(gtime) 
           {
             _starField = this;
-            lib.each(this._stars, function() {
+            lx.core.each(this._stars, function() {
                 this.y += this.speed;
                 if (this.y > _starField._height)
                 {
@@ -137,7 +137,7 @@
 
           draw : function(ctx, gtime)
           {
-            lib.each(this._stars, function() {
+            lx.core.each(this._stars, function() {
               ctx.fillStyle = "rgb(" + this.color + "," + this.color + "," + this.color + ")";
               ctx.fillRect(this.x, this.y, 2, 2);
             });
@@ -245,7 +245,7 @@
                 ctx.strokeStyle = "#777";
                 ctx.strokeRect(512 - this._offset, 288 - 108, this._width, 102);
 
-                energy = lib.blend(this._value(), this._last, .8);
+                energy = lx.core.blend(this._value(), this._last, .8);
                 energy /= 10;
 
                 ctx.fillStyle = "#93413d";
@@ -292,7 +292,7 @@
             }, options);
 
             var _this = this;
-            lib.each(options, function(key, value) {
+            lx.core.each(options, function(key, value) {
                 _this[key] = value;
             });
 
@@ -331,7 +331,7 @@
             }, options);
             
             var _this = this;
-            lib.each(options, function(key, value) {
+            lx.core.each(options, function(key, value) {
                 _this["_" + key] = value;
             });
         },
@@ -392,7 +392,7 @@
         {
             update : function (ship, entities, missiles)
             {
-                lib.each(entities, function() {
+                lx.core.each(entities, function() {
                     if (this.collidable)
                     {   
                         if (intersect(ship, this))
@@ -405,9 +405,9 @@
                     }
                 });
 
-                lib.each(missiles, function() {
+                lx.core.each(missiles, function() {
                     var missile = this;
-                    lib.each(entities, function() {
+                    lx.core.each(entities, function() {
                         var enemy = this;
                         if (enemy.collidable) {                            
                             if (intersect(missile, enemy)) {                                
@@ -635,7 +635,7 @@
               }).call(this);
 
               
-              lib.each(this._entities, function() {
+              lx.core.each(this._entities, function() {
                 this.update(gametime);
               });
               physics.update(this._ship, this._entities, this._missiles);
@@ -658,7 +658,7 @@
                 return a.zOrder - b.zOrder;
               });
 
-              lib.each(entities, function() {
+              lx.core.each(entities, function() {
                 this.draw(ctx, gametime);
               });
             },

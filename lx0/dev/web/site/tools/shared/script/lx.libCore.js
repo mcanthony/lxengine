@@ -1,5 +1,7 @@
+try { eval("lx"); } catch (e) { lx = {}; }
+lx.core = lx.core || {};
 
-function import_libCore(NS) {
+(function (NS) {
 
     //=======================================================================//
     // Math functions
@@ -44,14 +46,20 @@ function import_libCore(NS) {
     //=======================================================================//
 
     NS.buildClass = function (parent, ctor, members) {
-            
-        NS.each(parent.prototype, function(key, value) {
+
+        NS.each(parent.prototype, function (key, value) {
             ctor.prototype[key] = value;
         });
-        NS.each(members, function(key, value) {
+        NS.each(members, function (key, value) {
             ctor.prototype[key] = value;
         });
 
         return ctor;
-    };  
-}
+    };
+
+    import_libCore = function (NS) {
+        return NS;
+    };
+
+})(lx.core);
+
