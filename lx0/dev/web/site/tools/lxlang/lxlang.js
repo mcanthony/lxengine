@@ -21,9 +21,13 @@ var lxlang2 = (function() {
             _RETable : 
             {
                 ws : /^\s+/,
+                
                 number : /^[0-9][0-9]*/,
+                
                 operator : /^\+|\-|\*|\//,
-                name : /^[A-Za-z_][A-Za-z_0-9]*/,
+                
+                name        : /^[A-Za-z_][A-Za-z_0-9]*/,
+                complexName : /^[A-Za-z_][A-Za-z_0-9\.]*/,
             },
 
             //
@@ -98,6 +102,11 @@ var lxlang2 = (function() {
             seek : function (s)
             {
                 this._text = s;
+            },
+
+            empty : function()
+            {
+                return this._text.length == 0;
             },
 
         };
@@ -198,7 +207,7 @@ var lxlang2 = (function() {
             {
                 var s = lex.tell();
                 lex.consume("@ws?");
-                var first = this.parseValue(lex);
+                var first = this._parse(lex, 'functionCall') || this.parseValue(lex);
                 
                 if (first)
                 {                
@@ -214,10 +223,127 @@ var lxlang2 = (function() {
                 lex.seek(s);
             },
 
+            _parsers : 
+            {
+                translationUnit : function(lex)
+                {
+                    var m = this._parse(lex, 'module');
+                    var funcs = [];
+
+                    var f = this._parse(lex, 'function');
+                    while (f)
+                    {
+                        console.log(JSON.stringify(f, null, "\t"));
+                        funcs.push(f);
+                        f = this._parse(lex, 'function');
+                    }
+                    lex.consume("@ws?");
+
+                    if (!lex.empty())
+                        this._error(lex, "Expected end of translationUnit");
+
+                    if (m && lex.empty())
+                        return { type : "translationUnit", module : m, functions : funcs };
+                },
+
+
+                module : function(lex)
+                {
+                    var r = lex.consume("@ws?", "module", "@ws", "@complexName", "@ws?", ";");
+                    if (r)
+                        return { type : "module", value : r[3] };
+                },
+
+                functionCall : function (lex)
+                {
+                    var r = lex.consume("@ws?", "@name", "@ws?", "(");
+                    if (!r) return;
+
+                    console.log("R:" , r);
+
+                    var args = [];
+
+                    var a = this.parseExpression(0, lex);
+                    while (a)
+                    {
+                        args.push(a);
+                        if (lex.consume("@ws?", ",", "@ws?"))
+                            a = this.parseExpression(0, lex);
+                        else
+                            a = undefined;
+                    }
+                    console.log(args);
+                    var b = lex.consume("@ws?", ")", "@ws?");
+                    if (r && b)
+                        return { type : "functionCall", value : r[1], args: args };
+                },
+
+                variableDeclaration : function(lex)
+                {
+                    var dec = lex.consume("@ws?", "@name", "@ws", "@name");
+                    if (dec) 
+                        return { type : "variableDeclaration", type : dec[1], name : dec[2] };
+                },
+
+                argumentList : function (lex)
+                {
+                    var list = [];
+                    var dec = this._parse(lex, 'variableDeclaration');
+                    while (lex.consume(","))
+                    {
+                        list.push(dec);
+                        dec = this._parse(lex, 'variableDeclaration');
+                    }
+                    return { type : "argumentList", list : list };
+                },
+
+                "function" : function (lex)
+                {
+                    var hdr = lex.consume("@ws?", "function", "@ws", "@name", "@ws?", "(");
+                    if (!hdr) return;
+
+
+                    var argList = this._parse(lex, 'argumentList');
+                    if (!argList) return;
+
+                    var retList = lex.consume("@ws?", ")", "@ws?", "->", "@ws?", "@name", "@ws?", "{");
+                    if (!retList) return;
+
+                    var body = this._parse(lex, 'returnExpression');
+                    if (!body) return;
+
+                    var end = lex.consume("@ws?", "}");
+                    if (!end) return;
+
+                    return { type : "function", name : hdr[3], body : body };
+                },
+
+                returnExpression : function(lex)
+                {
+                    if (!lex.consume("@ws?", "return", "@ws?")) return;
+                    var value = this.parseExpression(0, lex);
+                    lex.consume("@ws?", ";", "@ws?");
+                    if (value)
+                        return { type: "returnExpression", value : value };
+                },
+            },
+
+            _parse : function (lex, nonterminal)
+            {
+                var save = lex.tell();
+                var result = this._parsers[nonterminal].call(this, lex);
+                if (result)
+                    return result;
+                lex.seek(save);
+            },
+
+            //
+            // Entry point for the translation unit
+            //
             parse : function(text)
             {
                 var lexer = new NS.Lexer(text);
-                var result = this.parseExpression(0, lexer);
+                var result = this._parse(lexer, 'translationUnit');
                 return result;
             },
 
