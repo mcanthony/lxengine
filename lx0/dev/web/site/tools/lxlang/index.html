@@ -72,13 +72,13 @@ function length (vec3 u) -> var
 
         <script type="text/javascript">
         <!--
-
-
-
           $(document).ready(function () {
 
+            var text = "u[0] * v[0] + u[1] * v[1] + u[2] * v[2]";
             var parser2 = new lxlang2.Parser();
-            parser2.parse("2 + 17");
+            var result = parser2.parse(text);
+            console.log("SRC:", text);
+            console.log("AST:", JSON.stringify(result, null, "    "));
 
 
             $("#view").css("white-space", "pre");

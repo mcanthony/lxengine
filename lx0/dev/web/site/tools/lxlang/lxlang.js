@@ -3,20 +3,45 @@ var lxlang2 = (function() {
       
     var NS = {};
 
+    //
+    // The lexical analyzer.  A glorified regular expression matcher that advances along a source
+    // string as matches are made.
+    //
     NS.Lexer = (function() {
+
         var ctor = function(text) {
             this._text = text;
         };
 
         var methods = {
 
+            //
+            // Table of terminal symbols, as defined by regular expressions
+            //
             _RETable : 
             {
                 ws : /^\s+/,
-                number : /^[1-9][0-9]*/,
+                number : /^[0-9][0-9]*/,
                 operator : /^\+|\-|\*|\//,
+                name : /^[A-Za-z_][A-Za-z_0-9]*/,
             },
 
+            //
+            // Takes an array of arguments, each specifying a terminal to consume.
+            //
+            // If the terminal name begins with "@", the name will be looked up in the 
+            // regular expression table.
+            //
+            // If the terminal name ends with "?", the terminal is considered optional
+            // and will be consumed if it is there.
+            //
+            // The return value is an array of the matched terminals literal values;
+            // in the case of optional terminals, if they are not present, the value
+            // for that terminal in the array will be undefined.
+            //
+            // If any non-optional terminals were not matched, the return value will be
+            // undefined.
+            //
             consume : function()
             {
                 var matches = [];
@@ -31,7 +56,7 @@ var lxlang2 = (function() {
                     if (regExpr) pattern = pattern.substr(1);
                     if (optional) pattern = pattern.substr(0, pattern.length - 1);
 
-                    var match;
+                    var match = undefined;
                     if (regExpr)
                     {
                         var re = this._RETable[pattern];
@@ -45,6 +70,7 @@ var lxlang2 = (function() {
                             match = pattern;
                     }
 
+                    // Consume the element by advancing in the text string
                     if (match)
                         this._text = this._text.substr(match.length);
 
@@ -63,6 +89,17 @@ var lxlang2 = (function() {
                 var matches = this.consume.apply(this, arguments);
                 this._text = previous;
             },
+
+            tell : function()
+            {
+                return this._text;
+            },
+
+            seek : function (s)
+            {
+                this._text = s;
+            },
+
         };
 
         for (var key in methods)
@@ -70,14 +107,19 @@ var lxlang2 = (function() {
         return ctor;
     })();
 
+    //
+    // The grammar parser that builds an AST (Abstract Syntax Tree) for later conversion to
+    // a target language.
+    //
     NS.Parser = (function() {
         var ctor = function() {
         };
 
         var methods = {
 
-            _error : function(msg)
+            _error : function(lex, msg)
             {
+                msg = "Parse error: '" + msg + "' around '" + lex._text.substr(0, 20) + "'";
                 throw msg;
             },
 
@@ -85,37 +127,98 @@ var lxlang2 = (function() {
             {
                 var number = lex.consume("@number");
                 if (number) 
-                    return parseFloat(number[0]);
-            },
-            parseOperator : function(lex)
-            {
-                var op = lex.consume("@operator")[0];
-                return op;
+                    return { type: "number", value: parseFloat(number[0]) };
             },
 
-            parseExpression : function(lex)
+            parseName : function(lex)
             {
-                lex.consume("@ws?");
-                var first = this.parseNumber(lex) || this._error("Expected number!");
+                var name = lex.consume("@name");
+                if (name) 
+                    return { type : "name", value: name[0] };
+            },
+
+            parseMember : function(lex)
+            {
+                var s0 = lex.tell();
+                var name = this.parseName(lex);
+                if (name)
+                {
+                    var r = lex.consume("@ws?", "[", "@ws?");
+                    var v = this.parseValue(lex);
+                    var t = lex.consume("@ws?", "]", "@ws?");
+                    if (r && v && t)
+                        return { type : "member", variable : name, index : v };
+                }
+                lex.seek(s0);
+            },
+
+            parseValue : function(lex)
+            {
+                return this.parseNumber(lex) 
+                    || this.parseMember(lex)
+                    || this.parseName(lex);
+            },
+
+            _operatorPrecedence :
+            {
+                '*' : 8,
+                '/' : 8,
+                '+' : 4,
+                '-' : 4,
+            },
+
+            parseOperator : function(lex)
+            {
+                var op = lex.consume("@operator");
+                var precedence = this._operatorPrecedence[op];
+
+                if (op)
+                    return { type : "operator", value : op[0], precedence : precedence };
+            },
+
+            parseExpressionR : function(first, precedence, lex)
+            {
+                var s0 = lex.tell();
                 
-                lex.consume("@ws?");
                 var operator = this.parseOperator(lex);
                 if (operator)
                 {
-                    lex.consume("@ws?");
-                    var second = this.parseNumber(lex);
-
-                    return [first, operator, second];
+                    if (operator.precedence >= precedence) 
+                    {
+                        lex.consume("@ws?");
+                        var second = this.parseExpression(operator.precedence, lex);
+                        if (second)
+                            return { type : "infix", operator : operator.value, valueA : first, valueB : second };
+                    }
                 }
-                else
+                lex.seek(s0);
+            },
+
+            parseExpression : function(precedence, lex)
+            {
+                var s = lex.tell();
+                lex.consume("@ws?");
+                var first = this.parseValue(lex);
+                
+                if (first)
+                {                
+                    lex.consume("@ws?");
+                    var second = this.parseExpressionR(first, precedence, lex);
+                    while (second)
+                    {
+                        first = second;
+                        second = this.parseExpressionR(first, precedence, lex);
+                    }
                     return first;
+                }
+                lex.seek(s);
             },
 
             parse : function(text)
             {
                 var lexer = new NS.Lexer(text);
-                var result = this.parseExpression(lexer);
-                console.log(result);
+                var result = this.parseExpression(0, lexer);
+                return result;
             },
 
         };
