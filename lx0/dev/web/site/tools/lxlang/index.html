@@ -41,7 +41,7 @@
         <h2>Demonstration</h2>
 
         <p>
-          Note: the below translations are generated dynamically by the Javascript code.
+          The below translations are generated dynamically by a recursive descent parser implemented in Javascript.
         </p>
 
         <script id="source" type="text/lxlang">
@@ -60,19 +60,20 @@ function length (vec3 u) -> var
  
         <style>
         .codeview { padding: 1em 2em; border: 1px solid #CCC; border-radius: .5em; font-family: Monospace; font-size: 9pt; min-height: 6em; overflow: auto; white-space: pre; max-height: 40em;}
+        .wip { font-family: serif; font-size: 12pt; color: #C00; letter-spacing: 1px; font-style: italic; }
         </style>
  
         <h3>Source</h3>
         <div id="view" class="codeview"></div>
 
         <h3>Generated Javascript</h3>
-        <div id="Div1" class="codeview"></div>
+        <div id="Div1" class="codeview"><span class="wip">Still in development...</span></div>
 
         <h3>Generated C++</h3>
-        <div id="Div2" class="codeview"></div>
+        <div id="Div2" class="codeview"><span class="wip">Still in development...</span></div>
 
         <h3>Generated GLSL</h3>
-        <div id="Div3" class="codeview"></div>
+        <div id="Div3" class="codeview"><span class="wip">Still in development...</span></div>
 
         <h3>Generated AST (Abstract Syntax Tree)</h3>
         <div id="ast" class="codeview"></div>
