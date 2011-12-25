@@ -66,8 +66,16 @@ var raytracer = {};
     } 
 
 
-    NS.RenderLoop = lx.core.buildClass(State, function() { }, {
-                
+    NS.RenderLoop = lx.core.buildClass(State, function(options) 
+    {
+        this._sampleCount = options.sampleCount; 
+
+        if (this._sampleCount > 1)
+            this._renderPixel = NS.RenderLoop.prototype._renderPixel5;
+        else
+            this._renderPixel = NS.RenderLoop.prototype._renderSample;
+    }, 
+    {
         _canvas : null,
         _ctx : null,
         _width : null,
@@ -123,6 +131,10 @@ var raytracer = {};
         },
 
         _renderPixel : function(frustum, x, y) {
+            return this._renderSample(frustum, x, y);
+        },
+
+        _renderPixel5 : function(frustum, x, y) {
 
             var sampleSet = [
                 [ -.25, -.25 ],

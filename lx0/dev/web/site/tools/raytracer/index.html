@@ -60,7 +60,7 @@
                             <tr>
                                 <td>Sample Count</td>
                                 <td>
-                                    <select>
+                                    <select id="ui-sampleCount">
                                         <option>1</option>
                                         <option>2</option>
                                         <option>4</option>
@@ -88,15 +88,30 @@
 
         <script type="text/javascript">
         <!--
+            var options =
+            {
+              sampleCount : 2,
+            };
+
+
             $(document).ready(function () {
 
+                for (var key in options)
+                {
+                  $("#ui-" + key).val(options[key]);
+                  $("#ui-" + key).change(function() {
+                    options[key] = parseFloat($(this).val()); 
+                  });
+                }
+
+
                 $("#rerender").click(function () {
-                    engine.changeState(new raytracer.RenderLoop());
+                    engine.changeState(new raytracer.RenderLoop(options));
                     return false;
                 });
 
                 engine.gametick = 0;
-                engine.run(new raytracer.RenderLoop());
+                engine.run(new raytracer.RenderLoop(options));
 
             });
         -->
