@@ -282,7 +282,7 @@ var lxlang2 = (function() {
                 {
                     var dec = lex.consume("@ws?", "@name", "@ws", "@name");
                     if (dec) 
-                        return { type : "variableDeclaration", type : dec[1], name : dec[2] };
+                        return { type : "variableDeclaration", type : dec[1], name : dec[3] };
                 },
 
                 argumentList : function (lex)
@@ -294,6 +294,7 @@ var lxlang2 = (function() {
                         list.push(dec);
                         dec = this._parse(lex, 'variableDeclaration');
                     }
+                    list.push(dec);
                     return { type : "argumentList", list : list };
                 },
 
@@ -315,7 +316,7 @@ var lxlang2 = (function() {
                     var end = lex.consume("@ws?", "}");
                     if (!end) return;
 
-                    return { type : "function", name : hdr[3], body : body };
+                    return { type : "function", name : hdr[3], argumentList : argList.list, returnType: retList[5], body : body };
                 },
 
                 returnExpression : function(lex)
@@ -355,217 +356,94 @@ var lxlang2 = (function() {
         return ctor;
     })();
 
+    NS.GenerateCpp = (function() {
+        var ctor = function() {
+            this._body = "";
+            this._indent = 0;
+        };
+
+        var _typeMap = {
+            vec3 : "glm::vec3",
+            "var" : "float",
+        };
+
+        var methods =
+        {
+            incIndent : function()
+            {
+                this._indent += 4;
+                for (var i = 0; i < this._indent; ++i)
+                    this._body += " ";
+            },
+
+            decIndent : function()
+            {
+                this._indent -= 4;
+                this._body = this._body.replace(/\ +$/, this.indentWs());
+            },
+
+            indentWs : function()
+            {
+                var ws = "";
+                for (var i = 0; i < this._indent; ++i)
+                    ws += " ";
+                return ws;
+            },
+
+            append : function (s)
+            {
+                var ws = this.indentWs();
+                this._body += s.replace("\n", "\n" + ws);
+            },
+
+            translateFunction : function (ast)
+            {
+                this.append( _typeMap[ast.returnType] + " " + ast.name + " (" );
+                for (var i = 0; i < ast.argumentList.length; ++i)
+                {
+                    var arg = ast.argumentList[i];
+                    this.append( _typeMap[arg.type] + " " + arg.name );
+
+                    if (i + 1 < ast.argumentList.length)
+                        this.append( ", " );
+                    else
+                        this.append( ")\n" );
+                }
+                this.append( "{\n" );
+                this.append( "}\n" );
+                this.append( "\n" );
+            },
+
+            translate : function (ast) 
+            {
+                var module = ast.module.value.split(".");
+                for (var i in module) {
+                    this._body += "namespace " + module[i] + " { ";
+                } 
+
+                this._body += "\n";  
+                this._body += "\n";
+
+                this.incIndent();
+                for (var i in ast.functions)                
+                    this.translateFunction(ast.functions[i]);
+                this.decIndent();
+
+                for (var i in module)
+                    this._body += "}";
+                this._body += "\n";
+
+                return this._body;
+            },
+        };
+
+        for (var key in methods) {
+            ctor.prototype[key] = methods[key];
+        };
+        return ctor;
+    })();
+
+
     return NS;
 })();
 
-
-
-var Context = function(text) 
-{
-    this.source = text;
-    this.symbols = [ {} ];
-};
-Context.prototype.pushSymbolTable = function()
-{
-this.symbols.push({});
-};
-Context.prototype.popSymbolTable = function()
-{
-this.symbols.pop();
-};
-Context.prototype.isSymbol = function(a)
-{
-for (var i = this.symbols.length - 1; i >= 0; --i)
-    if (this.symbols[i][a])
-    return true;
-
-return false;
-};
-Context.prototype.empty = function()
-{
-return this.source.length == 0;
-};
-Context.prototype.skipWhitespace = function()
-{
-this.source = this.source.replace(/^\s+/, "");
-};
-Context.prototype.parseText = function(text, consume)
-{
-if (this.source.substr(0, text.length) == text) {
-    if (consume)
-    this.source = this.source.substr(text.length);
-    return text;
-}
-else
-    throw "Did not find expected text: '" + text + "' around '" + this.source.substr(0, 80) + "'";
-};
-Context.prototype.parseRE = function(name, re, consume)
-{
-var m;
-if (m = this.source.match(re)) {
-    if (consume)
-    this.source = this.source.substr(m[0].length);
-    return m[0];
-}
-else
-    throw "Expected "+ name + " at '" + this.source.substr(0, 80) + "'";  
-};
-Context.prototype._RETable = 
-{
-    ws : /^\s+/,
-    name : /^[_A-Za-z][_A-Za-z0-9]*/,
-    complexName : /^[_A-Za-z][_A-Za-z0-9\.]*/,
-};
-Context.prototype._parseWorker = function(type, consume)
-{
-var optional = type.match(/\?$/);
-if (optional)
-    type = type.substr(0, type.length - 1);
-
-try 
-{
-    if (type.substr(0,1) == "@")
-    {
-    var re = this._RETable[type.substr(1)];
-    return this.parseRE(type, re, consume);
-    }
-    else {
-    return this.parseText(type, consume);
-    }
-} catch (e)
-{
-    if (!optional)
-    throw e;
-}
-};
-Context.prototype._parseWorker2 = function(types, consume)
-{
-    var a = [];
-    for (var i = 0; i < types.length; ++i)
-    a[i] = this._parseWorker(types[i], consume);
-    return a;
-};
-Context.prototype.skip = function(type)
-{
-// This is not the best method of implementation for 'skip'!
-try {
-    this._parseWorker(type, true);
-} catch (e) 
-{
-}
-};
-Context.prototype.consume = function()
-{
-    return this._parseWorker2(arguments, true);
-};
-Context.prototype.peek = function()
-{
-try {
-    return this._parseWorker2(arguments, false);
-    } catch(e) {}
-};
-
-         
-
-var Parser = function () { 
-    this._module = null;
-    this._functions = [];
-};
-
-var methods =
-{
-    parseModule : function(ctx)
-    {
-        this._module = ctx.consume("module", "@ws", "@complexName")[2];
-        ctx.skip("@ws");
-        ctx.consume(";");
-    },
-
-    parseArg : function (ctx)
-    {
-        var arg = {};
-        arg.type = ctx.consume("@name", "@ws")[0];
-        arg.name = ctx.consume("@name", "@ws?")[0];
-        return arg;
-    },
-
-    parseExpression : function(ctx)
-    {
-        var name = ctx.consume("@name")[0];
-    },
-
-    parseReturnExpression : function(ctx)
-    {
-        ctx.consume("return", "@ws");
-        this.parseExpression(ctx);
-    },
-
-    parseStatementSet : function (ctx)
-    {
-        ctx.consume("@ws?");
-        while (!ctx.peek("}")) {
-              
-        ctx.consume("@ws?");
-                
-        var name = ctx.peek("@name")[0];
-        if (name == "return")
-            console.log(name);
-
-        else 
-            throw "Could not parse statement around '" + ctx.source.substr(0, 80) + "'";
-        }
-    },
-
-    parseFunction : function(ctx)
-    {
-        var f = {};
-        f.args = [];
-        f.name = ctx.consume("function", "@ws", "@name", "@ws?", "(")[2];
-        ctx.consume("@ws?");
-        while (!ctx.peek(")")) {
-        f.args.push( this.parseArg(ctx) );
-        if (ctx.peek(",")) {
-            ctx.consume(",");
-            ctx.consume("@ws?");
-        }
-        };
-        ctx.consume(")");
-
-        ctx.consume("@ws?", "->", "@ws?");
-        f.returnType = ctx.consume("@name", "@ws?")[0];
-        ctx.consume("{", "@ws?");
-        this.parseReturnExpression(ctx);
-        ctx.consume("}");
-
-        this._functions.push(f);
-    },
-
-    parseDefinition : function(ctx)
-    {
-        while (!ctx.empty())
-        {
-        var keyword = ctx.peek("@name")[0];
-        switch (keyword)
-        {
-        case "function":
-            this.parseFunction(ctx);
-            break;
-        default: 
-            throw "Unrecognized keyword '" + keyword + "' around '" + ctx.source.substr(0, 80)+ "'";
-        }
-        ctx.consume("@ws?");
-        }
-    },
-
-    parse : function (text) {
-        var ctx = new Context(text);
-
-        ctx.skip("@ws");
-        this.parseModule(ctx);
-        ctx.skip("@ws");
-        this.parseDefinition(ctx);
-    },
-};
-
-for (var key in methods)
-    Parser.prototype[key] = methods[key];
