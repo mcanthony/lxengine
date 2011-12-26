@@ -233,7 +233,6 @@ var lxlang2 = (function() {
                     var f = this._parse(lex, 'function');
                     while (f)
                     {
-                        console.log(JSON.stringify(f, null, "\t"));
                         funcs.push(f);
                         f = this._parse(lex, 'function');
                     }
@@ -259,8 +258,6 @@ var lxlang2 = (function() {
                     var r = lex.consume("@ws?", "@name", "@ws?", "(");
                     if (!r) return;
 
-                    console.log("R:" , r);
-
                     var args = [];
 
                     var a = this.parseExpression(0, lex);
@@ -272,7 +269,6 @@ var lxlang2 = (function() {
                         else
                             a = undefined;
                     }
-                    console.log(args);
                     var b = lex.consume("@ws?", ")", "@ws?");
                     if (r && b)
                         return { type : "functionCall", value : r[1], args: args };
@@ -356,17 +352,11 @@ var lxlang2 = (function() {
         return ctor;
     })();
 
-    NS.GenerateCpp = (function() {
+    NS.GenerateBase = (function() {
         var ctor = function() {
             this._body = "";
             this._indent = 0;
         };
-
-        var _typeMap = {
-            vec3 : "glm::vec3",
-            "var" : "float",
-        };
-
         var methods =
         {
             incIndent : function()
@@ -390,56 +380,253 @@ var lxlang2 = (function() {
                 return ws;
             },
 
-            append : function (s)
+            _printformatted : function()
             {
-                var ws = this.indentWs();
-                this._body += s.replace("\n", "\n" + ws);
-            },
+                var s = arguments[0];
 
-            translateFunction : function (ast)
-            {
-                this.append( _typeMap[ast.returnType] + " " + ast.name + " (" );
-                for (var i = 0; i < ast.argumentList.length; ++i)
-                {
-                    var arg = ast.argumentList[i];
-                    this.append( _typeMap[arg.type] + " " + arg.name );
-
-                    if (i + 1 < ast.argumentList.length)
-                        this.append( ", " );
-                    else
-                        this.append( ")\n" );
+                for (var j = 1; j < arguments.length; ++j) {
+                    var pattern = "%" + j + "%";
+                    var value = "" + arguments[j];
+            
+                    var i = s.indexOf(pattern);
+                    while (i != -1)
+                    {
+                        s = s.substr(0, i) + value + s.substr(i + pattern.length);
+                        i = s.indexOf(pattern, i + value.length);
+                    }           
                 }
-                this.append( "{\n" );
-                this.append( "}\n" );
-                this.append( "\n" );
+                return s;
             },
 
+            append : function ()
+            {
+                var s = this._printformatted.apply(this, arguments);
+                this._body += s.replace(/\n/g, "\n" + this.indentWs());                
+            },
+
+            _translators :
+            {
+                name : function (ast)
+                {
+                    this.append(ast.value);
+                },
+
+                member : function (ast)
+                {
+                    this.append(ast.variable.value);
+                    this.append("[" + ast.index.value + "]");
+                },
+
+                infix : function (ast)
+                {
+                    this._translate(ast.valueA);
+                    this.append(" " + ast.operator + " ");
+                    this._translate(ast.valueB);
+                },
+
+                functionCall : function (ast)
+                {
+                    this.append(ast.value + "(");
+                    for (var i = 0; i < ast.args.length; ++i)
+                    {
+                        this._translate(ast.args[i]);
+                        if (i + 1 < ast.args.length)
+                            this.append(", ");
+                    }
+                    this.append(")");
+                },
+
+                returnExpression : function (ast)
+                {
+                    this.append("return ");
+                    this._translate(ast.value);
+                    this.append(";\n");
+                },
+            },
+
+            _translate : function (ast)
+            {
+                var tr = this._translators[ast.type];
+                if (!tr)
+                {
+                    console.log("No translator available for '" + ast.type + "'");
+                    this.append("UNKNOWN_AST_" + ast.type);
+                }
+                else
+                    tr.call(this, ast);
+            },
+            
             translate : function (ast) 
             {
-                var module = ast.module.value.split(".");
-                for (var i in module) {
-                    this._body += "namespace " + module[i] + " { ";
-                } 
-
-                this._body += "\n";  
-                this._body += "\n";
-
-                this.incIndent();
-                for (var i in ast.functions)                
-                    this.translateFunction(ast.functions[i]);
-                this.decIndent();
-
-                for (var i in module)
-                    this._body += "}";
-                this._body += "\n";
-
+                
+                this._translate(ast);
                 return this._body;
-            },
+            },                      
         };
 
         for (var key in methods) {
             ctor.prototype[key] = methods[key];
         };
+        return ctor;
+    })();
+
+    NS.GenerateJavascript = (function() {
+        var ctor = function() {
+            NS.GenerateBase.call(this);
+        };
+
+        var methods = {
+
+            _translators : 
+            {
+
+                infix : function(ast)
+                {
+
+                    this.append("INFIX_OP('%1%', ", ast.operator);
+                    this._translate(ast.valueA);
+                    this.append(", ");
+                    this._translate(ast.valueB);
+                    this.append(")");
+                },
+
+                "function" : function (ast)
+                {
+                    this.append("NS.%1% = function(", ast.name);
+                    for (var i = 0; i < ast.argumentList.length; ++i)
+                    {
+                        var arg = ast.argumentList[i];
+                        this.append("var " + arg.name );
+
+                        if (i + 1 < ast.argumentList.length)
+                            this.append( ", " );
+                        else
+                            this.append( ")\n" );
+                    }
+                    this.append( "{\n" );
+                    this.incIndent();
+                    this._translate(ast.body);
+                    this.decIndent();
+                    this.append( "};\n" );
+                    this.append( "\n" );
+                },
+
+                translationUnit : function(ast)
+                {
+                    var module = ast.module.value.split(".");
+
+                    this.append("// Ensure the namespace exists\n");
+                    this.append("try { eval(\"%1%\"); } catch ( %1% = {} );\n", module[0]);
+
+                    for (var i = 1; i < module.length; ++i) {
+                        this.append("if (!");
+                        for (var j = 0; j < i; ++j)
+                            this.append("%1%.", module[j]);
+                        this.append("%1%", module[i]);
+                        this.append(") ");
+
+                        for (var j = 0; j < i; ++j)
+                            this.append("%1%.", module[j]);                        
+                        this.append("%1% = {};\n", module[i]);
+                    } 
+                    this.append("\n");
+
+                    this.append("(function(NS) {\n\n");                   
+                    this.incIndent();                  
+                    for (var i in ast.functions)                
+                        this._translate(ast.functions[i]);
+                    this.decIndent();
+                    this.append("})(%1%);\n", ast.module.value);
+
+                },
+            }
+        };
+
+        for (var key in NS.GenerateBase.prototype) {
+            ctor.prototype[key] = NS.GenerateBase.prototype[key];
+        }
+        for (var key in methods) {
+            ctor.prototype[key] = methods[key];
+        }
+
+        for (var key in NS.GenerateBase.prototype._translators) {
+            if (!ctor.prototype._translators[key])
+                ctor.prototype._translators[key] = NS.GenerateBase.prototype._translators[key];
+        }
+        
+        return ctor;
+    })();
+
+    NS.GenerateCpp = (function() {
+        var ctor = function() {
+            NS.GenerateBase.call(this);
+        };
+
+        var _typeMap = {
+            vec3 : "glm::vec3",
+            "var" : "float",
+        };
+
+        var methods =
+        {
+            _translators :
+            {            
+                "function" : function (ast)
+                {
+                    this.append( _typeMap[ast.returnType] + " " + ast.name + " (" );
+                    for (var i = 0; i < ast.argumentList.length; ++i)
+                    {
+                        var arg = ast.argumentList[i];
+                        this.append( _typeMap[arg.type] + " " + arg.name );
+
+                        if (i + 1 < ast.argumentList.length)
+                            this.append( ", " );
+                        else
+                            this.append( ")\n" );
+                    }
+                    this.append( "{\n" );
+                    this.incIndent();
+                    this._translate(ast.body);
+                    this.decIndent();
+                    this.append( "}\n" );
+                    this.append( "\n" );
+                },
+
+                translationUnit : function(ast)
+                {
+                    var module = ast.module.value.split(".");
+                    for (var i in module) {
+                        this._body += "namespace " + module[i] + " { ";
+                    } 
+
+                    this._body += "\n";  
+                    this._body += "\n";
+
+                    this.incIndent();
+                    for (var i in ast.functions)                
+                        this._translate(ast.functions[i]);
+                    this.decIndent();
+
+                    for (var i in module)
+                        this._body += "}";
+                    this._body += "\n";
+                },
+            },
+        };
+
+        for (var key in NS.GenerateBase.prototype) {
+            ctor.prototype[key] = NS.GenerateBase.prototype[key];
+        }
+        for (var key in methods) {
+            ctor.prototype[key] = methods[key];
+        };
+        for (var key in NS.GenerateBase.prototype._translators) {
+            ctor.prototype._translators[key] = NS.GenerateBase.prototype._translators[key];
+        }
+        for (var key in methods._translators) {
+            ctor.prototype._translators[key] = methods._translators[key];
+        }
+
         return ctor;
     })();
 

@@ -67,13 +67,13 @@ function length (vec3 u) -> var
         <div id="view" class="codeview"></div>
 
         <h3>Generated Javascript</h3>
-        <div id="Div1" class="codeview"><span class="wip">Still in development...</span></div>
+        <div id="javascript" class="codeview"><span class="wip">Still in development...</span></div>
 
         <h3>Generated C++</h3>
         <div id="cpp" class="codeview"><span class="wip">Still in development...</span></div>
 
         <h3>Generated GLSL</h3>
-        <div id="Div3" class="codeview"><span class="wip">Still in development...</span></div>
+        <div id="glsl" class="codeview"><span class="wip">Still in development...</span></div>
 
         <h3>Generated AST (Abstract Syntax Tree)</h3>
         <div id="ast" class="codeview"></div>
@@ -89,12 +89,13 @@ function length (vec3 u) -> var
             var text = $("#source").text();
             var parser2 = new lxlang2.Parser();
             var ast = parser2.parse(text);
-            console.log("SRC:", text);
 
-            var gen = new lxlang2.GenerateCpp();
+            var genCpp = new lxlang2.GenerateCpp();
+            var genJs = new lxlang2.GenerateJavascript();
 
             $("#ast").text(JSON.stringify(ast, null, "    "));
-            $("#cpp").text( gen.translate(ast) );
+            $("#cpp").text(genCpp.translate(ast));
+            $("#javascript").text(genJs.translate(ast));
 
 
           });
