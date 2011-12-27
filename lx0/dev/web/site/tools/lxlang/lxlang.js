@@ -563,6 +563,7 @@ var lxlang2 = (function() {
             _predefinedFunctions :
             {
                 "sqrt" : "Math.sqrt",
+                "vec3" : "new Array",
             },
 
             resolveFunctionName : function(name)
