@@ -32,14 +32,34 @@ var raytracer = {};
         return f;
     }
 
-    var shaders =
-    {
-        diffuse : function() {
-                
-            var _v = lx.vec;
-            Object.freeze(_v);
+    var shaders = (function() {
+        
+        var _v = lx.vec;
+        Object.freeze(_v);
 
-            return function (fragPosition, fragNormal, lightPosition)
+        return {
+            attenuation : function(fragPosition, lightPosition, scale)
+            {
+                var L = _v.sub(lightPosition, fragPosition);
+                var d = _v.length(L);
+                
+                return 1.0 / _v.dot(scale, [ 1, d, d*d ]);
+            },
+            
+            specular : function(eyePosition, fragPosition, fragNormal, lightPosition, specularEx) {
+
+                var L = _v.sub(lightPosition, fragPosition);
+                var d = _v.length(L);
+                L = _v.mulScalar(L, 1/d);
+
+                var V = _v.normalize( _v.sub(eyePosition, fragPosition) );
+                var H = _v.normalize( _v.add(L, V) );
+                var term = Math.pow(Math.max(_v.dot(fragNormal,H), 0.0), specularEx);
+                
+                return term;
+            },
+
+            diffuse : function (fragPosition, fragNormal, lightPosition)
             {
                 var L = _v.sub(lightPosition, fragPosition);
                 var d = _v.length(L);
@@ -47,9 +67,9 @@ var raytracer = {};
 
                 var nDotL = _v.dot(fragNormal, L);
                 return Math.max(0, nDotL);
-            };
-        }(),
-    };
+            }
+        };
+    })();
 
     function intersect(ray, objects)
     {
@@ -93,6 +113,8 @@ var raytracer = {};
             {
                 var mat = {};
                 mat.diffuse = isect.object.diffuse || [1, 1, 1];
+                mat.specular = isect.object.specular || [1, 1, 1];
+                mat.specEx = isect.object.specularExponent || 32.0;
 
                 for (var i = 0; i < lights.length; ++i)
                 {
@@ -108,9 +130,20 @@ var raytracer = {};
 
                     var intensity = light.intensity || 1.0;
 
-                    var diffuse = shadowTerm * intensity * shaders.diffuse(isect.position, isect.normal, lights[i].position);
-                    var c = lx.vec.mulScalar(mat.diffuse, diffuse);
-                    color = lx.vec.addVec(color, c);
+                    if (shadowTerm > 0)
+                    {
+                        var attenuationScale = [1, 0, 0];
+                        var attenuation = shaders.attenuation(isect.position, lights[i].position, attenuationScale);
+
+                        var diffuse = shaders.diffuse(isect.position, isect.normal, lights[i].position);
+                        var specular = shaders.specular(ray.origin, isect.position, isect.normal, lights[i].position, mat.specEx); 
+                        var c = lx.vec.add( 
+                            lx.vec.mul(mat.diffuse, diffuse), 
+                            lx.vec.mul([1, 1, 0], specular) 
+                        );
+                        c = lx.vec.mul(c, shadowTerm * intensity * attenuation);
+                        color = lx.vec.addVec(color, c);
+                    }
                 }
             }
 
@@ -224,7 +257,13 @@ var raytracer = {};
             
             this._stats.renderStart = new Date().valueOf();
 
-            var frustum = NS.calculateFrustum([5, 5, 5], [-1, -1, -1], [0, 0, 1], .01, Math.PI / 8, this._width / this._height);
+            var cam =
+            {
+                position : [5, 5, 3.5],
+                target : [0, 0, -1.6],
+            };
+            var direction = lx.vec.sub(cam.target, cam.position);
+            var frustum = NS.calculateFrustum(cam.position, direction, [0, 0, 1], .01, Math.PI / 6, this._width / this._height);
 
             this._tasks = [];
 

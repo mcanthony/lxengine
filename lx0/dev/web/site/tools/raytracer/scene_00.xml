@@ -24,8 +24,32 @@
         center : [ 1, 1, 1 ],
         radius : 1,
         diffuse : [ .95, .75, .6],
+        specular : [1 , 1, 0],
+        specularExponent : 1024.0,
       }
     </Sphere>
+
+    <Sphere>
+      {
+      center : [ 2.0, 2.0, .5 ],
+      radius : .5,
+      diffuse : [ .95, .35, .12],
+      }
+    </Sphere>
+    <Sphere>
+      {
+      center : [ 1.2, 2.5, .5 ],
+      radius : .5,
+      diffuse : [ .35, .95, .12],
+      }
+    </Sphere>
+    <Sphere>
+      {
+      center : [ 2.5, 1.2, .5 ],
+      radius : .5,
+      diffuse : [ .35, .12, .95],
+      }
+    </Sphere>    
 
   </Objects>
 </Scene>

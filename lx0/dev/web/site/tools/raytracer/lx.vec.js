@@ -57,6 +57,8 @@ lx.vec = (function () {
         return sum;
     };
 
+    NS.add = NS.addVec;
+
     NS.mulScalar = function (u, s) {
         return [
             u[0] * s,
@@ -64,6 +66,8 @@ lx.vec = (function () {
             u[2] * s,
         ];
     };
+
+    NS.mul = NS.mulScalar;
 
     NS.valid = function (u) {
         for (var i = 0; i < 3; ++i) {
