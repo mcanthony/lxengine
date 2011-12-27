@@ -122,9 +122,32 @@ var lxlang2 = (function() {
     //
     NS.Parser = (function() {
         var ctor = function() {
+
+            this._symbolStack = [{}];
         };
 
         var methods = {
+
+            _pushSymbols : function() 
+            {
+                this._symbolStack.push({});
+            },
+            _popSymbols : function()
+            {
+                this._symbolStack.pop();
+            },
+            _symbolInfo : function(symbol)
+            {
+                var info;
+                for (var i = this._symbolStack.length - 1; !info && i >= 0; --i)
+                    info = this._symbolStack[i][symbol];
+                return info;
+            },
+            _addSymbol : function(symbol, info)
+            {
+                this._symbolStack[this._symbolStack.length - 1][symbol] = info;
+            },
+
 
             _error : function(lex, msg)
             {
@@ -136,14 +159,16 @@ var lxlang2 = (function() {
             {
                 var number = lex.consume("@number");
                 if (number) 
-                    return { type: "number", value: parseFloat(number[0]) };
+                    return { type: "number", value: parseFloat(number[0]), rttype : "float" };
             },
 
             parseName : function(lex)
             {
                 var name = lex.consume("@name");
-                if (name) 
-                    return { type : "name", value: name[0] };
+                if (name) {
+                    var info = this._symbolInfo(name[0]);
+                    return { type : "name", value: name[0], rttype : info.type };
+                }
             },
 
             parseMember : function(lex)
@@ -156,7 +181,7 @@ var lxlang2 = (function() {
                     var v = this.parseValue(lex);
                     var t = lex.consume("@ws?", "]", "@ws?");
                     if (r && v && t)
-                        return { type : "member", variable : name, index : v };
+                        return { type : "member", variable : name, index : v, rttype : "float" };
                 }
                 lex.seek(s0);
             },
@@ -197,7 +222,7 @@ var lxlang2 = (function() {
                         lex.consume("@ws?");
                         var second = this.parseExpression(operator.precedence, lex);
                         if (second)
-                            return { type : "infix", operator : operator.value, valueA : first, valueB : second };
+                            return { type : "infix", operator : operator.value, valueA : first, valueB : second, rttype : first.rttype };
                     }
                 }
                 lex.seek(s0);
@@ -296,23 +321,38 @@ var lxlang2 = (function() {
 
                 "function" : function (lex)
                 {
-                    var hdr = lex.consume("@ws?", "function", "@ws", "@name", "@ws?", "(");
-                    if (!hdr) return;
+                    var retVal;
 
+                    this._pushSymbols();
+                    do
+                    {
+                        var hdr = lex.consume("@ws?", "function", "@ws", "@name", "@ws?", "(");
+                        if (!hdr) break;
 
-                    var argList = this._parse(lex, 'argumentList');
-                    if (!argList) return;
+                        var argList = this._parse(lex, 'argumentList');
+                        if (!argList) break;
 
-                    var retList = lex.consume("@ws?", ")", "@ws?", "->", "@ws?", "@name", "@ws?", "{");
-                    if (!retList) return;
+                        for (var i in argList.list)
+                        {
+                            var arg = argList.list[i];
+                            this._addSymbol(arg.name, { type : arg.type } );
+                        }
 
-                    var body = this._parse(lex, 'returnExpression');
-                    if (!body) return;
+                        var retList = lex.consume("@ws?", ")", "@ws?", "->", "@ws?", "@name", "@ws?", "{");
+                        if (!retList) break;
 
-                    var end = lex.consume("@ws?", "}");
-                    if (!end) return;
+                        var body = this._parse(lex, 'returnExpression');
+                        if (!body) break;
 
-                    return { type : "function", name : hdr[3], argumentList : argList.list, returnType: retList[5], body : body };
+                        var end = lex.consume("@ws?", "}");
+                        if (!end) break;
+
+                        retVal = { type : "function", name : hdr[3], argumentList : argList.list, returnType: retList[5], body : body };
+                    
+                    } while (false);
+                    this._popSymbols();
+                    
+                    return retVal;
                 },
 
                 returnExpression : function(lex)
@@ -480,10 +520,18 @@ var lxlang2 = (function() {
             _translators : 
             {
 
+                _op_name :
+                {
+                    "*" : "mul",
+                    "/" : "div",
+                    "+" : "add",
+                    "-" : "sub",
+                },
+
                 infix : function(ast)
                 {
 
-                    this.append("INFIX_OP('%1%', ", ast.operator);
+                    this.append("infix_%1%_%2%(", this._translators._op_name[ast.operator], ast.rttype);
                     this._translate(ast.valueA);
                     this.append(", ");
                     this._translate(ast.valueB);
