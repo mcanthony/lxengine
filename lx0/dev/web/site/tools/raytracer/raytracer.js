@@ -89,6 +89,9 @@ var raytracer = {};
     NS.RenderLoop = lx.core.buildClass(State, function(options) 
     {
         this._sampleCount = options.sampleCount; 
+        this._sceneUrl = options.sceneUrl || "scene_00.xml";
+
+        console.log(options);
 
         if (this._sampleCount > 1)
             this._renderPixel = NS.RenderLoop.prototype._renderPixel5;
@@ -227,7 +230,7 @@ var raytracer = {};
             this._lights = [];
 
             var _this = this;
-            $.ajax("scene_00.xml", {
+            $.ajax(this._sceneUrl, {
                 dataType : "xml",
                 async : false,
                 success : function(xml) {

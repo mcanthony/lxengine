@@ -39,7 +39,7 @@
             </div>
             <div>
                 <p class="warning">
-                    These options are <strong>placeholders</strong> and are not yet functional.
+                    These options are <strong>in development</strong> and are only partly functional.
                 </p>
                 <form>
                     <fieldset style="border-radius: 4px">
@@ -58,9 +58,19 @@
                             </tr>
 
                             <tr>
+                                <td>Scene</td>
+                                <td>
+                                    <select id="ui-sceneUrl">
+                                        <option selected>scene_00.xml</option>
+                                        <option>scene_01.xml</option>
+                                    </select>
+                                </td>
+                            </tr>
+
+                            <tr>
                                 <td>Sample Count</td>
                                 <td>
-                                    <select id="ui-sampleCount">
+                                    <select id="ui-sampleCount" data-type="float">
                                         <option>1</option>
                                         <option>2</option>
                                         <option>4</option>
@@ -91,6 +101,7 @@
             var options =
             {
               sampleCount : 2,
+              sceneUrl : "scene_00.xml",
             };
 
 
@@ -100,7 +111,12 @@
                 {
                   $("#ui-" + key).val(options[key]);
                   $("#ui-" + key).change(function() {
-                    options[key] = parseFloat($(this).val()); 
+                    var value = $(this).val();
+
+                    if ($(this).attr("data-type") == "float")
+                      value = parseFloat(value);
+
+                    options[key] = value;
                   });
                 }
 
