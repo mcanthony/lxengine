@@ -40,22 +40,56 @@
 
         <h2>Demonstration</h2>
 
+
         <p>
           The below translations are generated dynamically by a recursive descent parser implemented in Javascript.
         </p>
+        <div style="text-align: center">
+          <a href="#source">Source</a> &nbsp;&nbsp;&nbsp;
+          <a href="#javascript">Javascript</a> &nbsp;&nbsp;&nbsp;
+          <a href="#cpp">C++</a> &nbsp;&nbsp;&nbsp;
+          <a href="#glsl">GLSL</a> &nbsp;&nbsp;&nbsp;
+          <a href="#ast">AST</a>
+        </div>
 
         <script id="source" type="text/lxlang">
 module lx.glgeom;
-        
-function dot (vec3 u, vec3 v) -> vec3
-{
-  return u[0] * v[0] + u[1] * v[1] + u[2] * v[2];
-}
 
 function length (vec3 u) -> var
 {
   return sqrt( dot(u, u) );
 }
+
+function lengthSqrd (vec3 u) -> var
+{
+  return dot(u, u);
+}
+      
+function mul (vec3 u, var s) -> vec3
+{
+  return vec3( u[0] * s, u[1] * s, u[2] * s );
+}      
+        
+function div (vec3 u, var s) -> vec3
+{
+  return vec3( u[0] / s, u[1] / s, u[2] / s );
+}
+
+function dot (vec3 u, vec3 v) -> vec3
+{
+  return u[0] * v[0] + u[1] * v[1] + u[2] * v[2];
+}
+
+function cross(vec3 u, vec3 v) -> vec3
+{
+  return vec3(
+        u[1] * v[2] - v[1] * u[2],
+        u[2] * v[0] - v[2] * u[0],
+        u[0] * v[1] - v[0] * u[1],
+    );
+}
+
+
         </script>
  
         <style>

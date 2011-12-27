@@ -24,7 +24,7 @@ var lxlang2 = (function() {
                 
                 number : /^[0-9][0-9]*/,
                 
-                operator : /^\+|\-|\*|\//,
+                operator : /^[\+\*\-\/]/,
                 
                 name        : /^[A-Za-z_][A-Za-z_0-9]*/,
                 complexName : /^[A-Za-z_][A-Za-z_0-9\.]*/,
@@ -147,6 +147,10 @@ var lxlang2 = (function() {
             {
                 this._symbolStack[this._symbolStack.length - 1][symbol] = info;
             },
+            _eraseSymbol : function(symbol)
+            {
+                delete this._symbolStack[this._symbolStack.length - 1];
+            },
 
 
             _error : function(lex, msg)
@@ -205,9 +209,8 @@ var lxlang2 = (function() {
             {
                 var op = lex.consume("@operator");
                 var precedence = this._operatorPrecedence[op];
-
-                if (op)
-                    return { type : "operator", value : op[0], precedence : precedence };
+                if (op) 
+                    return { type : "operator", value : op[0], precedence : precedence }
             },
 
             parseExpressionR : function(first, precedence, lex)
@@ -221,8 +224,17 @@ var lxlang2 = (function() {
                     {
                         lex.consume("@ws?");
                         var second = this.parseExpression(operator.precedence, lex);
-                        if (second)
-                            return { type : "infix", operator : operator.value, valueA : first, valueB : second, rttype : first.rttype };
+                        if (second) {
+                            first.parentType = "infix";
+                            second.parentType = "infix";
+                            return { 
+                                type : "infix", 
+                                operator : operator.value, 
+                                valueA : first, 
+                                valueB : second, 
+                                rttype : first.rttype 
+                            };
+                        }
                     }
                 }
                 lex.seek(s0);
@@ -323,11 +335,18 @@ var lxlang2 = (function() {
                 {
                     var retVal;
 
-                    this._pushSymbols();
+                    var name;
+                    var pushed = false;
+                    
                     do
                     {
                         var hdr = lex.consume("@ws?", "function", "@ws", "@name", "@ws?", "(");
                         if (!hdr) break;
+                        name = hdr[3];
+
+                        this._addSymbol(name, { type : "function" });
+                        pushed = true;
+                        this._pushSymbols();
 
                         var argList = this._parse(lex, 'argumentList');
                         if (!argList) break;
@@ -350,7 +369,11 @@ var lxlang2 = (function() {
                         retVal = { type : "function", name : hdr[3], argumentList : argList.list, returnType: retList[5], body : body };
                     
                     } while (false);
-                    this._popSymbols();
+
+                    if (pushed)
+                        this._popSymbols();
+                    if (!retVal)
+                        this._eraseSymbol(name);
                     
                     return retVal;
                 },
@@ -381,7 +404,18 @@ var lxlang2 = (function() {
             {
                 var lexer = new NS.Lexer(text);
                 var result = this._parse(lexer, 'translationUnit');
+
+                if (result)
+                    this._decorate(result);
+
                 return result;
+            },
+
+            _decorate : function(ast)
+            {
+                ast.functionNameTable = {};
+                for (var i in ast.functions)
+                    ast.functionNameTable[ast.functions[i].name] = ast.functions[i]; 
             },
 
         };
@@ -444,6 +478,11 @@ var lxlang2 = (function() {
                 this._body += s.replace(/\n/g, "\n" + this.indentWs());                
             },
 
+            resolveFunctionName : function(name)
+            {
+                return name;
+            },
+
             _translators :
             {
                 name : function (ast)
@@ -464,9 +503,13 @@ var lxlang2 = (function() {
                     this._translate(ast.valueB);
                 },
 
+                
+
                 functionCall : function (ast)
                 {
-                    this.append(ast.value + "(");
+                    var functionName = this.resolveFunctionName(ast.value);
+
+                    this.append(functionName + "(");
                     for (var i = 0; i < ast.args.length; ++i)
                     {
                         this._translate(ast.args[i]);
@@ -498,7 +541,7 @@ var lxlang2 = (function() {
             
             translate : function (ast) 
             {
-                
+                this._astRoot = ast;
                 this._translate(ast);
                 return this._body;
             },                      
@@ -517,6 +560,23 @@ var lxlang2 = (function() {
 
         var methods = {
 
+            _predefinedFunctions :
+            {
+                "sqrt" : "Math.sqrt",
+            },
+
+            resolveFunctionName : function(name)
+            {
+                if (this._astRoot.functionNameTable[name])
+                    return  "NS." + name;
+                
+                var predefined = this._predefinedFunctions[name];
+                if (predefined)
+                    return predefined;
+
+                return name;
+            },
+
             _translators : 
             {
 
@@ -530,12 +590,20 @@ var lxlang2 = (function() {
 
                 infix : function(ast)
                 {
-
-                    this.append("infix_%1%_%2%(", this._translators._op_name[ast.operator], ast.rttype);
-                    this._translate(ast.valueA);
-                    this.append(", ");
-                    this._translate(ast.valueB);
-                    this.append(")");
+                    if (ast.rttype == "float")
+                    {
+                        this._translate(ast.valueA);
+                        this.append(" %1% ", ast.operator);
+                        this._translate(ast.valueB);
+                    }
+                    else
+                    {
+                        this.append("infix_%1%_%2%(", this._translators._op_name[ast.operator], ast.rttype);
+                        this._translate(ast.valueA);
+                        this.append(", ");
+                        this._translate(ast.valueB);
+                        this.append(")");
+                    }
                 },
 
                 "function" : function (ast)
