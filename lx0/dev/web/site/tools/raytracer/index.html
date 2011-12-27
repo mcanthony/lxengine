@@ -110,14 +110,14 @@
                 for (var key in options)
                 {
                   $("#ui-" + key).val(options[key]);
-                  $("#ui-" + key).change(function() {
+                  $("#ui-" + key).change((function (key) { return function() {
                     var value = $(this).val();
 
                     if ($(this).attr("data-type") == "float")
                       value = parseFloat(value);
 
                     options[key] = value;
-                  });
+                  };})(key) );
                 }
 
 
