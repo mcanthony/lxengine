@@ -46,14 +46,19 @@
       {
       center : [ 1.2, 2.5, .5 ],
       radius : .5,
-      diffuse : [ .35, .95, .12],
+      diffuse : "return shaders.checker( shaders.spherical(fragment.position, [32, 32]) ) ? [ .96, 1.0, .96 ] : [ .35, .95, .12];",
       }
     </Sphere>
     <Sphere>
       {
       center : [ 2.5, 1.2, .5 ],
       radius : .5,
-      diffuse : [ .35, .12, .95],
+      diffuse : 
+        <Text>
+          return shaders.checker( shaders.spherical(fragment.position, [128, 128]) ) 
+            ? [ .38, .12, 1.00 ] 
+            : [ .35, .12, .95];
+        </Text>
       }
     </Sphere>    
 

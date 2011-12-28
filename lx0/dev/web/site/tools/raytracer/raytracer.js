@@ -19,8 +19,8 @@ var raytracer = {};
         var f = 
         {
             eye : worldPosition,
-            xAxis : lx.vec.mulScalar(right, width),
-            yAxis : lx.vec.mulScalar(up, height),
+            xAxis : lx.vec.scale(right, width),
+            yAxis : lx.vec.scale(up, height),
         };
         f.origin = lx.vec.addVec(
             worldPosition, 
@@ -54,7 +54,7 @@ var raytracer = {};
             checker : function (uv)
             {
                 var t = _v.abs( _v.fract(uv) );
-                var s = _v.floor(_v.mul(t, 2));
+                var s = _v.floor(_v.scale(t, 2));
                 return Math.floor((s[0] + s[1]) % 2);
             },
 
@@ -70,7 +70,7 @@ var raytracer = {};
 
                 var L = _v.sub(lightPosition, fragPosition);
                 var d = _v.length(L);
-                L = _v.mulScalar(L, 1/d);
+                L = _v.scale(L, 1/d);
 
                 var V = _v.normalize( _v.sub(eyePosition, fragPosition) );
                 var H = _v.normalize( _v.add(L, V) );
@@ -83,7 +83,7 @@ var raytracer = {};
             {
                 var L = _v.sub(lightPosition, fragPosition);
                 var d = _v.length(L);
-                L = _v.mulScalar(L, 1/d);
+                L = _v.scale(L, 1/d);
 
                 var nDotL = _v.dot(fragNormal, L);
                 return Math.max(0, nDotL);
@@ -121,20 +121,63 @@ var raytracer = {};
         _ctx : null,
         _width : null,
         _height : null,
+        _cache : {},
+
+        _acquireShader : (function()
+        {
+            var cache = {};
+            return function(text) {
+                var compiled = cache[text]; 
+                if (!(text in cache))
+                {
+                    var source = text;
+                    source = source.replace(/fragment\./g, "state.fragment.");
+                    eval("compiled = function(state) { " + source + " };");
+                    cache[text] = compiled;
+                }
+                return compiled; 
+            };
+        })(),
 
         _traceRay : function (ray) {
 
+            var scene = {};
             var objects = this._objects;
             var lights = this._lights;
 
             var color = [ 0, 0, 0 ];
 
+            var state = {
+                scene : null,
+                style : null,
+                object : null,
+                material : null,
+                fragment : {
+                    position : null,
+                    normal : null,
+                },
+                context : {
+                },
+                program : {
+                },
+            };
+            
+
+
             var isect = intersect(ray, objects);
             if (isect)
             {
+                state.scene = scene;
+                state.object = isect.object;
+                state.fragment.position = isect.position;
+                state.fragment.normal = isect.normal;
+
+                state.context.diffuse = state.object.diffuse || state.scene.diffuse || [1, 1, 1];
+                if (typeof state.context.diffuse == "string") state.context.diffuse = this._acquireShader(state.context.diffuse)(state);
+
                 var mat = {};
-                mat.diffuse = isect.object.diffuse || [1, 1, 1];
-                mat.diffuse = shaders.checker( shaders.spherical(isect.position, [32, 32]) ) ? [ 1, 1, 1 ] : mat.diffuse;
+                mat.diffuse = state.context.diffuse;
+
                 mat.specular = isect.object.specular || mat.diffuse || [1, 1, 1];
                 mat.specEx = isect.object.specularExponent || 32.0;
 
@@ -160,10 +203,10 @@ var raytracer = {};
                         var diffuse = shaders.diffuse(isect.position, isect.normal, lights[i].position);
                         var specular = shaders.specular(ray.origin, isect.position, isect.normal, lights[i].position, mat.specEx); 
                         var c = lx.vec.add( 
-                            lx.vec.mul(mat.diffuse, diffuse), 
-                            lx.vec.mul(mat.specular, specular) 
+                            lx.vec.scale(mat.diffuse, diffuse), 
+                            lx.vec.scale(mat.specular, specular) 
                         );
-                        c = lx.vec.mul(c, shadowTerm * intensity * attenuation);
+                        c = lx.vec.scale(c, shadowTerm * intensity * attenuation);
                         color = lx.vec.addVec(color, c);
                     }
                 }
@@ -177,8 +220,8 @@ var raytracer = {};
             ray.origin = frustum.eye;                            
             ray.destination = lx.vec.addVec(
                 frustum.origin,
-                lx.vec.mulScalar(frustum.xAxis, x / (this._width - 1)),
-                lx.vec.mulScalar(frustum.yAxis, y / (this._height- 1))
+                lx.vec.scale(frustum.xAxis, x / (this._width - 1)),
+                lx.vec.scale(frustum.yAxis, y / (this._height- 1))
             );
             ray.direction = lx.vec.normalize( lx.vec.sub(ray.destination, ray.origin) );
                 
@@ -208,7 +251,7 @@ var raytracer = {};
                 var sampleColor = this._renderSample(frustum, x + dx, y + dy);
                 color = lx.vec.addVec(color, sampleColor);
             }
-            return lx.vec.mulScalar(color, 1 / sampleSet.length);
+            return lx.vec.scale(color, 1 / sampleSet.length);
         },
 
         _renderRow : function(frustum, y) {
@@ -223,7 +266,7 @@ var raytracer = {};
 
                 var color = this._renderPixel(frustum, x, y);
                 color = lx.vec.clamp(color, 0.0, 1.0);
-                color = lx.vec.floor( lx.vec.mulScalar(color, 255) );
+                color = lx.vec.floor( lx.vec.scale(color, 255) );
 
                 pixels[x * 4 + 0] = color[0];
                 pixels[x * 4 + 1] = color[1];
@@ -254,6 +297,13 @@ var raytracer = {};
                 dataType : "xml",
                 async : false,
                 success : function(xml) {
+                    $(xml).find("Text").each(function() {
+                        var text = $(this).text();
+                        text = text.replace(/\n/g, " ");
+                        text = text.replace(/\"/g, "\\\"");
+                        text = "\"" + text + "\""; 
+                        $(this).replaceWith(text);
+                    });
                     $(xml).find("Objects").children().each(function() {
                         switch (this.tagName)
                         {
