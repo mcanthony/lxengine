@@ -1,6 +1,13 @@
 <Scene>
   <Objects>
 
+    <Camera>
+      {
+      position : [5, 5, 5],
+      target : [0, 0, .5],
+      }
+    </Camera>    
+    
     <Light>
       {
         position : [6, 11, 10],

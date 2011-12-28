@@ -38,6 +38,26 @@ var raytracer = {};
         Object.freeze(_v);
 
         return {
+
+            spherical : function (fragPositionOc, scale)
+            {
+                var r = _v.length(fragPositionOc);
+                var phi = Math.atan2(fragPositionOc[1], fragPositionOc[0]);
+                var theta = Math.acos(fragPositionOc[2] / r);
+
+                return [
+                    scale[0] * (phi + Math.PI) / (2 * Math.PI),
+                    scale[1] * theta / Math.PI,
+                ];
+            },
+
+            checker : function (uv)
+            {
+                var t = _v.abs( _v.fract(uv) );
+                var s = _v.floor(_v.mul(t, 2));
+                return Math.floor((s[0] + s[1]) % 2);
+            },
+
             attenuation : function(fragPosition, lightPosition, scale)
             {
                 var L = _v.sub(lightPosition, fragPosition);
@@ -91,8 +111,6 @@ var raytracer = {};
         this._sampleCount = options.sampleCount; 
         this._sceneUrl = options.sceneUrl || "scene_00.xml";
 
-        console.log(options);
-
         if (this._sampleCount > 1)
             this._renderPixel = NS.RenderLoop.prototype._renderPixel5;
         else
@@ -116,7 +134,8 @@ var raytracer = {};
             {
                 var mat = {};
                 mat.diffuse = isect.object.diffuse || [1, 1, 1];
-                mat.specular = isect.object.specular || [1, 1, 1];
+                mat.diffuse = shaders.checker( shaders.spherical(isect.position, [32, 32]) ) ? [ 1, 1, 1 ] : mat.diffuse;
+                mat.specular = isect.object.specular || mat.diffuse || [1, 1, 1];
                 mat.specEx = isect.object.specularExponent || 32.0;
 
                 for (var i = 0; i < lights.length; ++i)
@@ -142,7 +161,7 @@ var raytracer = {};
                         var specular = shaders.specular(ray.origin, isect.position, isect.normal, lights[i].position, mat.specEx); 
                         var c = lx.vec.add( 
                             lx.vec.mul(mat.diffuse, diffuse), 
-                            lx.vec.mul([1, 1, 0], specular) 
+                            lx.vec.mul(mat.specular, specular) 
                         );
                         c = lx.vec.mul(c, shadowTerm * intensity * attenuation);
                         color = lx.vec.addVec(color, c);
@@ -226,17 +245,24 @@ var raytracer = {};
 
             
             this._stats = {};
+            this._camera = {};
             this._objects = [];
             this._lights = [];
 
             var _this = this;
-            $.ajax(this._sceneUrl, {
+            $.ajax(this._sceneUrl + "?rand=" + Math.random(), {
                 dataType : "xml",
                 async : false,
                 success : function(xml) {
                     $(xml).find("Objects").children().each(function() {
                         switch (this.tagName)
                         {
+                        case "Camera":
+                            {
+                                eval("var options = " + $(this).text() + ";");
+                                _this._camera = options;
+                            }
+                            break;
                         case "Plane":
                         case "Sphere":
                             {
@@ -260,11 +286,7 @@ var raytracer = {};
             
             this._stats.renderStart = new Date().valueOf();
 
-            var cam =
-            {
-                position : [5, 5, 3.5],
-                target : [0, 0, -1.6],
-            };
+            var cam = this._camera;
             var direction = lx.vec.sub(cam.target, cam.position);
             var frustum = NS.calculateFrustum(cam.position, direction, [0, 0, 1], .01, Math.PI / 6, this._width / this._height);
 

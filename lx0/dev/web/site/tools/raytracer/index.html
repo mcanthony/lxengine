@@ -12,8 +12,17 @@
       <script type="text/javascript" src="../shared/script/lx.core-0.1.1.js"></script>
       <script type="text/javascript" src="../shared/script/lx.engine.js"></script>
 
-      <script type="text/javascript" src="lx.vec.js"></script>
-      <script type="text/javascript" src="raytracer.js"></script>
+      <script type="text/javascript">
+      <!--
+        var scriptFiles =[ "lx.vec.js", "raytracer.js" ];
+        for (var i in scriptFiles) {
+          var s = "<script type='text/javascript' src='";
+          s += scriptFiles[i] + "?rand=" + Math.random();
+          s += "'></script>";
+          document.writeln(s);
+        }
+      -->
+      </script>
 
     </head>
     <body>
@@ -45,6 +54,17 @@
                     <fieldset style="border-radius: 4px">
                         <legend>Options</legend>
                         <table>
+
+                            <tr>
+                                <td>Scene</td>
+                                <td>
+                                    <select id="ui-sceneUrl">
+                                        <option selected>scene_00.xml</option>
+                                        <option>scene_01.xml</option>
+                                    </select>
+                                </td>
+                            </tr>
+
                             <tr>
                                 <td>Presets</td>
                                 <td>
@@ -58,25 +78,11 @@
                             </tr>
 
                             <tr>
-                                <td>Scene</td>
-                                <td>
-                                    <select id="ui-sceneUrl">
-                                        <option selected>scene_00.xml</option>
-                                        <option>scene_01.xml</option>
-                                    </select>
-                                </td>
-                            </tr>
-
-                            <tr>
                                 <td>Sample Count</td>
                                 <td>
                                     <select id="ui-sampleCount" data-type="float">
                                         <option>1</option>
-                                        <option>2</option>
-                                        <option>4</option>
-                                        <option>8</option>
-                                        <option>16</option>
-                                        <option>32</option>
+                                        <option selected>5</option>
                                     </select>
                                 </td>
                             </tr>
@@ -100,7 +106,7 @@
         <!--
             var options =
             {
-              sampleCount : 2,
+              sampleCount : 5,
               sceneUrl : "scene_00.xml",
             };
 

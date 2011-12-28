@@ -1,6 +1,13 @@
 <Scene>
   <Objects>
 
+    <Camera>
+      {
+        position : [5, 5, 3.5],
+        target : [0, 0, -1.6],
+      }
+    </Camera>
+
     <Light>
       {
         position : [6, 11, 10],
@@ -24,7 +31,6 @@
         center : [ 1, 1, 1 ],
         radius : 1,
         diffuse : [ .95, .75, .6],
-        specular : [1 , 1, 0],
         specularExponent : 1024.0,
       }
     </Sphere>

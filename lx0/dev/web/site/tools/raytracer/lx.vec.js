@@ -69,6 +69,30 @@ lx.vec = (function () {
 
     NS.mul = NS.mulScalar;
 
+    NS.abs = function (u) {
+        return [
+            Math.abs(u[0]),
+            Math.abs(u[1]),
+            Math.abs(u[2]),
+        ];
+    };
+
+    NS.floor = function (u) {
+        return [
+            Math.floor(u[0]),
+            Math.floor(u[1]),
+            Math.floor(u[2]),
+        ];
+    };
+
+    NS.fract = function (u) {
+        return [
+            u[0] % 1,
+            u[1] % 1,
+            u[2] % 1
+        ];
+    };
+
     NS.valid = function (u) {
         for (var i = 0; i < 3; ++i) {
             if (isNaN(u[i]))
