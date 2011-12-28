@@ -67,7 +67,14 @@ lx.vec = (function () {
         ];
     };
 
-    NS.mul = NS.mulScalar;
+    NS.scale = NS.mulScalar;
+    NS.mul = function (u, v) {
+        return [
+            u[0] * v[0],
+            u[1] * v[1],
+            u[2] * v[2],
+        ];
+    };
 
     NS.abs = function (u) {
         return [
