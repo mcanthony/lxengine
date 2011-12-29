@@ -11,6 +11,7 @@
       <script type="text/javascript" src="../shared/script/extern/less-1.1.3.min.js"></script>
       <script type="text/javascript" src="../shared/script/extern/jquery-1.6.4.min.js"></script>      
       <script type="text/javascript" src="../shared/script/jquery.lx.seamlessImage.0.2.0.js"></script>
+      <script type="text/javascript" src="../shared/script/lx.webUtil-0.1.0.js"></script>
     </head>
     <body>
        <div id="body-wrap1">
@@ -34,32 +35,6 @@
                     <strong style="color: #777">Table of Contents</strong>
                     <div id="toc"></div>
                 </div>
-                <script>
-                    $(document).ready(function () {
-                        $("#toc").each(function () {
-                            var anchorNames = [];
-                            $("h2").each(function (i) {
-                                var anchor = $("<a/>");
-                                var name = "toc_" + i;
-                                anchor.attr("name", name);
-                                anchorNames.push([name, $(this).text()]);
-                                $(this).before(anchor);
-                            });
-
-                            var list = $("<ol/>");
-                            $.each(anchorNames, function (i, value) {
-                                var item = $("<li/>");
-                                var link = $("<a/>");
-                                link.text(value[1]);
-                                console.log(value);
-                                link.attr("href", "#" + value[0]);
-                                item.html(link);
-                                list.append(item);
-                            });
-                            $(this).html(list);
-                        });
-                    });
-                </script>
             </div>  
 
             <div style="clear:both"></div>
@@ -143,7 +118,7 @@ $(".seamlessImage").seamlessImage({ count : 4 });
           </div>
 
           <h2>Source</h2>
-          <div id="source"></div>
+          <div id="source" data-source="../shared/script/jquery.lx.seamlessImage.0.2.0.js"></div>
 
           <h2>Future Work</h2>
           <ul>
@@ -159,19 +134,9 @@ $(".seamlessImage").seamlessImage({ count : 4 });
         <script type="text/javascript">
         <!--
             $(document).ready(function () {
+                $("#toc").tableOfContents();
+                $("#source").includeSource();
                 $(".seamlessImage").seamlessImage();
-
-
-                $.ajax("../shared/script/jquery.lx.seamlessImage.0.2.0.js" + "?rand=" + Math.random(), {
-                    dataType : "text",
-                    async : false,
-                    success : function(text) {
-                        $("#source").text(text);
-
-                        $("#source").after("<p><em>Source highlighting provided by <a href='http://softwaremaniacs.org/soft/highlight/en/'>highlight.js</a></em></p>");
-                        $("#source").wrap("<code/>").wrap("<pre class='codeview language-javascript'/>").each(function(i, e) { hljs.highlightBlock(e, '    ', true); });
-                    },
-                });
             });
         -->
         </script>
