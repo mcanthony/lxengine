@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html>
+    <head>
+      <title>Patterns</title>
+      <link type="text/css" href="../shared/style/default.less" rel="stylesheet/less" />
+      <link type="text/css" href="style.less" rel="stylesheet/less" />
+
+      <script src="http://yandex.st/highlightjs/6.1/highlight.min.js"></script>
+      <link rel="stylesheet" href="http://yandex.st/highlightjs/6.1/styles/github.css">
+      
+      <script type="text/javascript" src="../shared/script/extern/less-1.1.3.min.js"></script>
+      <script type="text/javascript" src="../shared/script/extern/jquery-1.6.4.min.js"></script>
+      <script type="text/javascript">
+      <!--
+        var scriptFiles = [ 
+          "../shared/script/lx.core-0.1.1.js",
+          "../shared/script/lx.vec.js",
+          "../shared/script/lx.webUtil-0.1.0.js",
+          "lx.patterns.js" 
+        ];
+        for (var i in scriptFiles) {
+          var s = "<script type='text/javascript' src='";
+          s += scriptFiles[i] + "?rand=" + Math.random();
+          s += "'></script>";
+          document.writeln(s);
+        }
+      -->
+      </script>
+
+    </head>
+    <body>
+       <div id="body-wrap1">
+        <h1>Patterns</h1>
+
+        <h2>About</h2>
+        <p>
+            A collection of pattern functions primarily designed for creating procedurals with the ShaderBuilder.
+        </p>
+
+        <h2>Patterns</h2>
+
+        <h3>Checker</h3>
+        <div class="layout-row">
+            <div>
+                <canvas class="pattern" width="256" height="256" data-pattern="return lx.patterns.checker(uv);"></canvas>
+            </div>
+            <div><div class="source" data-function="lx.patterns.checker"></div>
+        </div>
+
+        <h3>Spot</h3>
+        <div class="layout-row">
+            <div>
+                <canvas class="pattern" width="256" height="256" data-pattern="return lx.patterns.spot(uv);"></canvas>
+            </div>
+            <div><div class="source" data-function="lx.patterns.spot"></div></div>
+        </div>
+
+        <h3>Tile</h3>
+        <div class="layout-row">
+            <div>
+                <canvas class="pattern" width="256" height="256" data-pattern="return lx.patterns.tile(uv);"></canvas>
+            </div>
+            <div><div class="source" data-function="lx.patterns.tile"></div></div>
+        </div>
+
+        <h3>Test Pattern</h3>
+        <div class="layout-row">
+            <div>
+                <canvas class="pattern" width="256" height="256" data-pattern="return lx.patterns.test(uv);"></canvas>
+            </div>
+            <div><div class="source" data-function="lx.patterns.test"></div></div>
+        </div>
+
+
+        <script type="text/javascript">
+        <!--
+            
+            (function ($) {
+              $.fn.pattern = function (options) {
+
+                options = $.extend({}, options);
+
+                return this.each(function () {
+
+                  var func = options.func;
+                  var dataFunc = $(this).attr("data-pattern");
+                  if (dataFunc)
+                    eval("func = function(uv) { " + dataFunc + " };");
+
+                  var ctx = this.getContext('2d');
+                  for (var y = 0; y < this.height; ++y) {
+                    var rowData = ctx.createImageData(this.width, 1);
+                    var pixels = rowData.data;
+                    for (var x = 0; x < this.width; ++x) {
+                      var uv = [
+                        (x / (this.width)) * 3 - 1,
+                        (y / (this.height)) * 3 - 1,
+                        0
+                      ];
+
+                      var g = func(uv);
+                      var c;
+                      if (g >= 0 && g <= 1) {
+                        var gp = Math.floor(Math.max(Math.min(g, 1), 0) * 255);
+                        c = [gp, gp, gp];
+                      }
+                      else {
+                        c = [255, 0, 0];
+                      }
+
+                      pixels[x * 4 + 0] = c[0];
+                      pixels[x * 4 + 1] = c[1];
+                      pixels[x * 4 + 2] = c[2];
+                      pixels[x * 4 + 3] = 255;
+                    }
+                    ctx.putImageData(rowData, 0, y);
+                  }
+
+                });
+              };
+            })(jQuery);
+
+            $(document).ready(function () {
+
+              $(".pattern").pattern();
+              $(".source").includeSource();
+
+            });
+        -->
+        </script>
+
+        <!-- Google Analytics -->         <script type="text/javascript">
+            var _gaq = _gaq || [];
+            _gaq.push(['_setAccount', 'UA-604613-10']);
+            _gaq.push(['_trackPageview']);
+            (function () {
+                var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+                ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+                var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+            })();        </script> 
+
+    </body>
+</html>

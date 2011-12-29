@@ -23,11 +23,17 @@ lx.vec = (function () {
     };
 
     NS.length = function (u) {
-        return Math.sqrt(u[0] * u[0] + u[1] * u[1] + u[2] * u[2]);
+        if (u[2] > -Infinity && u[2] < Infinity)
+            return Math.sqrt(u[0] * u[0] + u[1] * u[1] + u[2] * u[2]);
+        else
+            return Math.sqrt(u[0] * u[0] + u[1] * u[1]);
     };
 
     NS.lengthSqrd = function (u) {
-        return (u[0] * u[0] + u[1] * u[1] + u[2] * u[2]);
+        if (u[2] > -Infinity && u[2] < Infinity)
+            return (u[0] * u[0] + u[1] * u[1] + u[2] * u[2]);
+        else
+            return (u[0] * u[0] + u[1] * u[1]);
     };
 
     NS.normalize = function (u) {
@@ -94,9 +100,9 @@ lx.vec = (function () {
 
     NS.fract = function (u) {
         return [
-            u[0] % 1,
-            u[1] % 1,
-            u[2] % 1
+            u[0] - Math.floor(u[0]),
+            u[1] - Math.floor(u[1]),
+            u[2] - Math.floor(u[2])
         ];
     };
 

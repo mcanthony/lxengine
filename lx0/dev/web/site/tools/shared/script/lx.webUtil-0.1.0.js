@@ -41,17 +41,29 @@
 
             var elem = this;
             var url = $(this).attr("data-source");
-            $.ajax(url + "?rand=" + Math.random(), {
-                dataType : "text",
-                async : true,
-                success : function(text) {
-                    $(elem).text(text);
-                    $(elem).after("<p><em>Source highlighting provided by <a href='http://softwaremaniacs.org/soft/highlight/en/'>highlight.js</a></em></p>");
-                    $(elem).wrap("<code/>").wrap("<pre class='codeview language-javascript'/>").each(function(i, e) { 
-                        hljs.highlightBlock(e, '    ', false); 
-                    });
-                },
-            });
+            var func = $(this).attr("data-function");
+
+            if (url) 
+            {
+                $.ajax(url + "?rand=" + Math.random(), {
+                    dataType : "text",
+                    async : true,
+                    success : function(text) {
+                        $(elem).text(text);
+                        $(elem).after("<p><em>Source highlighting provided by <a href='http://softwaremaniacs.org/soft/highlight/en/'>highlight.js</a></em></p>");
+                        $(elem).wrap("<code/>").wrap("<pre class='codeview language-javascript'/>").each(function(i, e) { 
+                            hljs.highlightBlock(e, '    ', false); 
+                        });
+                    },
+                });
+            }
+            else {
+                eval("var text = " + func + ".toString();");
+                $(elem).text(text);
+                $(elem).wrap("<code/>").wrap("<pre class='codeview language-javascript'/>").each(function(i, e) { 
+                    hljs.highlightBlock(e, '    ', false); 
+                });
+            }
 
         });
     };
