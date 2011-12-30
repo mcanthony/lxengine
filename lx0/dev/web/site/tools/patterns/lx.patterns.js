@@ -50,6 +50,17 @@ if (!lx.patterns) lx.patterns = {};
         return (uv[1] < .15) ? 0 : 1;
     };
 
+    NS.spotwave = function(uv)
+    {
+        return NS.spot(uv) * NS.wave(uv);
+    };
+
+    NS.spotdiamondxor= function(uv)
+    {
+        var t = NS.spot(_v.scale(uv, 2)) + NS.diamond(uv);
+        return (t != 1) ? 1 : 0;
+    };
+
     NS.star = function(uv)
     {
         var uv = _v.abs( _v.sub([.5,.5], _v.fract(uv) ) );
@@ -60,13 +71,30 @@ if (!lx.patterns) lx.patterns = {};
         return uv[0] * uv[1] > r * r ? 0 : 1;
     };
     
-    NS.test = function(uv)
+    NS.ribbon = function(uv)
+    {
+        uv = _v.fract(uv);
+
+        uv[1] += .15 * Math.sin(2 * uv[0] * Math.PI);
+        uv = _v.abs(_v.sub([.5, .5], uv));
+
+        var r = (uv[0] + .1) * .15;
+        return (uv[1] < r) ? 0 : 1;
+    }
+
+    NS.misc1 = function(uv)
     {
         var uv = _v.abs( _v.sub([.5,.5], _v.fract(uv) ) );
         uv[0] = Math.pow((Math.abs(uv[0]) + .5), .7);
         uv[1] = Math.pow((Math.abs(uv[1]) + .5), 1.5);
         return uv[0] * uv[1] > .65 * Math.cos(uv[0]) ? 0 : 1;
     };
+
+    NS.test = function(uv)
+    {
+        var t = NS.tile(_v.scale(uv, 1)) || NS.spot(_v.scale(uv, 8));
+        return t;
+    }
 
     return NS;
 })(lx.patterns);

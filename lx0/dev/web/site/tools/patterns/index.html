@@ -69,6 +69,15 @@
         <h2>Basic Patterns</h2>
         <div id="basic"></div>
 
+        <h2>Variation Patterns</h2>
+        <div id="variation"></div>
+
+        <h2>Compound Patterns</h2>
+        <div id="compound"></div>
+
+        <h2>Miscellaneous Patterns</h2>
+        <div id="misc"></div>
+
         <h2>Sandbox Patterns</h2>
         <div id="sandbox"></div>
 
@@ -159,7 +168,7 @@
                     tasks.push(task);
                   }
 
-                  tasks.push( function() { $(_this).seamlessImage({ sliderMax : 8, count : 2.5 }); } );
+                  tasks.push( function() { $(_this).seamlessImage({ sliderMax : 8, count : 5 }); } );
 
                   lx.core.run_tasks(tasks, 0, { groupSize: 4 });
                 },
@@ -192,7 +201,10 @@
             $(document).ready(function () {
 
               showPatterns("#basic", ["checker", "spot", "tile", "diamond", "wave" ]);
-              showPatterns("#sandbox", [ "star", "test" ]);
+              showPatterns("#variation", [ "ribbon" ]);
+              showPatterns("#compound", "spotwave, spotdiamondxor".split(","));
+              showPatterns("#misc", [ "star", "misc1" ]);
+              showPatterns("#sandbox", [ "test" ]);
 
               $("#toc").tableOfContents();
 
