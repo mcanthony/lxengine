@@ -76,6 +76,11 @@
           </div>
         </div>
 
+        <h2>Example</h2>
+        <p>Example of a complex pattern.</p>
+        <div id="example"></div>
+        
+
         <h2>Basic Patterns</h2>
         <div id="basic"></div>
 
@@ -87,6 +92,9 @@
 
         <h2>Miscellaneous Patterns</h2>
         <div id="misc"></div>
+
+        <h2>Complex Patterns</h2>
+        <div id="complex"></div>
 
         <h2>Sandbox Patterns</h2>
         <div id="sandbox"></div>
@@ -113,7 +121,6 @@
               var arr = scheme.split('|');
               eval("white = " + arr[0] + ";");
               eval("black = " + arr[1] + ";");
-              console.log(white, black, arr);
             }
           }
 
@@ -230,13 +237,15 @@
               $("#colorScheme").change(function() {
                 var scheme = $(this).val();
                 $.cookie('colorScheme', scheme);
-                window.location = window.location;
+                window.location.reload(true);
               });
 
+              showPatterns("#example", [ "weave" ]);
               showPatterns("#basic", ["checker", "spot", "tile", "diamond", "wave" ]);
               showPatterns("#variation", [ "ribbon" ]);
               showPatterns("#compound", "spotwave, spotdiamondxor".split(","));
               showPatterns("#misc", [ "star", "misc1" ]);
+              showPatterns("#complex", [ "weave" ]);
               showPatterns("#sandbox", [ "test" ]);
 
               $("#toc").tableOfContents();

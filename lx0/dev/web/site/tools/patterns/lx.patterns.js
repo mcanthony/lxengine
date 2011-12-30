@@ -90,6 +90,54 @@ if (!lx.patterns) lx.patterns = {};
         return uv[0] * uv[1] > .65 * Math.cos(uv[0]) ? 0 : 1;
     };
 
+    NS.weave = function(uv)
+    {
+        var s = uv[0] * 2;
+        var t = uv[1] * 2;
+
+        // Extract the fractional and integer parts
+        var fs = s - Math.floor(s);
+        var ft = t - Math.floor(t);
+        var is = s - fs;
+        var it = t - ft;
+
+        // Switch the fractional part to a distance
+        // from the tile center
+        fs = Math.abs(.5 - fs);
+        ft = Math.abs(.5 - ft);
+
+        // Create a smooth curve from .5 to 1.0
+        ds = Math.cos(fs * Math.PI);
+        ds = Math.pow(ds, .75);
+        ds = .5 + ds / 2.0;
+
+        dt = Math.cos(ft * Math.PI);
+        dt = Math.pow(dt, .75);
+        dt = .5 + dt / 2.0;
+
+        // Invert the over/under on every other tile
+        if ((is + it) % 2 == 0) {
+            var tmp = fs;
+            fs = ft;
+            ft = tmp;
+
+            tmp = ds;
+            ds = dt;
+            dt = tmp;
+
+        }
+
+        // Invert the color of the lower strip
+        ds = 1.0 - ds;
+
+        if (fs < .4)
+            return 1 - dt;
+        else if (ft < .4)
+            return 1 - ds;
+        else
+            return 1;
+    }
+
     NS.test = function(uv)
     {
         var t = NS.tile(_v.scale(uv, 1)) || NS.spot(_v.scale(uv, 8));
