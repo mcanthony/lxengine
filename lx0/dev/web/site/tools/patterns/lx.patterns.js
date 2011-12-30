@@ -36,7 +36,8 @@ if (!lx.patterns) lx.patterns = {};
         var t = _v.fract(uv);
         t = _v.abs(_v.sub([.5, .5], t));
 
-        return (t[0] + t[1] > .4) ? 0 : 1;
+        var r = .4;
+        return (t[0] + t[1] > r) ? 0 : 1;
     };
 
     NS.wave = function(uv)
@@ -54,15 +55,17 @@ if (!lx.patterns) lx.patterns = {};
         var uv = _v.abs( _v.sub([.5,.5], _v.fract(uv) ) );
         uv[0] = Math.log(Math.E * (Math.abs(uv[0]) + .5));
         uv[1] = Math.log(Math.E * (Math.abs(uv[1]) + .5));
-        return uv[0] * uv[1] > .2 ? 0 : 1;
+        
+        var r = .52;
+        return uv[0] * uv[1] > r * r ? 0 : 1;
     };
     
     NS.test = function(uv)
     {
         var uv = _v.abs( _v.sub([.5,.5], _v.fract(uv) ) );
-        uv[0] = Math.log(Math.E * (Math.abs(uv[0]) + .5));
-        uv[1] = Math.log(Math.E * (Math.abs(uv[1]) + .5));
-        return uv[0] * uv[1] > .2 ? 0 : 1;
+        uv[0] = Math.pow((Math.abs(uv[0]) + .5), .7);
+        uv[1] = Math.pow((Math.abs(uv[1]) + .5), 1.5);
+        return uv[0] * uv[1] > .65 * Math.cos(uv[0]) ? 0 : 1;
     };
 
     return NS;

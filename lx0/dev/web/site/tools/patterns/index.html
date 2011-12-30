@@ -16,6 +16,7 @@
           "../shared/script/lx.core-0.1.1.js",
           "../shared/script/lx.vec.js",
           "../shared/script/lx.webUtil-0.1.0.js",
+          "../shared/script/jquery.lx.seamlessImage-current.js",
           "lx.patterns.js" 
         ];
         for (var i in scriptFiles) {
@@ -39,7 +40,12 @@
                 A collection of pattern functions primarily designed for creating procedurals with the ShaderBuilder.
             </p>
             <p>
-              Download <a href="lx.patterns.js">lx.patterns.js</a>.
+              <strong>Download</strong> <a href="lx.patterns.js">lx.patterns.js</a>.
+            </p>
+            <p>
+              (The patterns below are all dynamically generated with multi-sampling. The pattern images then use
+              the <a href="../tools/seamlessImage">JQuery seamless image plug-in</a> animate and allow user control over 
+              zooming in and out on the pattern.)
             </p>
           </div>
             <div>
@@ -63,8 +69,15 @@
         <h2>Basic Patterns</h2>
         <div id="basic"></div>
 
-        <h2>Sandbox</h2>
+        <h2>Sandbox Patterns</h2>
         <div id="sandbox"></div>
+
+        <h2>Future Work</h2>
+        <ul>
+          <li>Rewrite pattern functions in LxLang (i.e. GLSL)</li>
+          <li>Parameterization of patterns</li>
+          <li>Color patterns (gradients, etc.)</li>
+        </ul>
 
         <script type="text/javascript">
         <!--
@@ -80,14 +93,14 @@
                     for (var x = 0; x < this.width; ++x) {
 
                       var uv = [
-                        (x / (this.width)) * 3 - 1,
-                        (y / (this.height)) * 3 - 1,
+                        (x / (this.width)),
+                        (y / (this.height)),
                         0
                       ];
 
                       
-                      var dx = (1.5 / this.width);
-                      var dy = (1.5 / this.height);
+                      var dx = (.5 / this.width);
+                      var dy = (.5 / this.height);
 
                       var g = 2 * func(uv);
                       g += func([uv[0] - dx, uv[1] - dy, 0]);
@@ -101,8 +114,9 @@
                       g /= 10;
                       
                       var c;
+                      function cb(g) { return Math.floor(Math.max(Math.min(g, 1), 0) * 255); }
                       if (g >= 0 && g <= 1) {
-                        var gp = Math.floor(Math.max(Math.min(g, 1), 0) * 255);
+                        var gp = cb(g);
                         c = [gp, gp, gp];
                       }
                       else if (g == NaN) {
@@ -144,6 +158,8 @@
                     var task = (function(y) { return function() { util.drawRow.call(_this, ctx, y, func); } })(y); 
                     tasks.push(task);
                   }
+
+                  tasks.push( function() { $(_this).seamlessImage({ sliderMax : 8, count : 2.5 }); } );
 
                   lx.core.run_tasks(tasks, 0, { groupSize: 4 });
                 },
