@@ -37,7 +37,7 @@
             A collection of pattern functions primarily designed for creating procedurals with the ShaderBuilder.
         </p>
 
-        <h2>Patterns</h2>
+        <h2>Basic Patterns</h2>
 
         <h3>Checker</h3>
         <div class="layout-row">
@@ -63,6 +63,24 @@
             <div><div class="source" data-function="lx.patterns.tile"></div></div>
         </div>
 
+        <h3>Diamond</h3>
+        <div class="layout-row">
+            <div>
+                <canvas class="pattern" width="256" height="256" data-pattern="return lx.patterns.diamond(uv);"></canvas>
+            </div>
+            <div><div class="source" data-function="lx.patterns.diamond"></div></div>
+        </div>
+
+        <h3>Wave</h3>
+        <div class="layout-row">
+            <div>
+                <canvas class="pattern" width="256" height="256" data-pattern="return lx.patterns.wave(uv);"></canvas>
+            </div>
+            <div><div class="source" data-function="lx.patterns.wave"></div></div>
+        </div>
+
+        <h2>Sandbox</h2>
+
         <h3>Test Pattern</h3>
         <div class="layout-row">
             <div>
@@ -74,14 +92,13 @@
 
         <script type="text/javascript">
         <!--
-            
-            (function ($) {
-              $.fn.pattern = function (options) {
 
-                options = $.extend({}, options);
+          (function ($) {
 
-                return this.each(function () {
-
+              var methods =
+              {
+                draw : function(options)
+                {
                   var func = options.func;
                   var dataFunc = $(this).attr("data-pattern");
                   if (dataFunc)
@@ -92,13 +109,28 @@
                     var rowData = ctx.createImageData(this.width, 1);
                     var pixels = rowData.data;
                     for (var x = 0; x < this.width; ++x) {
+
                       var uv = [
                         (x / (this.width)) * 3 - 1,
                         (y / (this.height)) * 3 - 1,
                         0
                       ];
 
-                      var g = func(uv);
+                      
+                      var dx = (1.5 / this.width);
+                      var dy = (1.5 / this.height);
+
+                      var g = 2 * func(uv);
+                      g += func([uv[0] - dx, uv[1] - dy, 0]);
+                      g += func([uv[0] + dx, uv[1] - dy, 0]);
+                      g += func([uv[0] + dx, uv[1] + dy, 0]);
+                      g += func([uv[0] - dx, uv[1] + dy, 0]);
+                      g += func([uv[0] - dx, uv[1], 0]);
+                      g += func([uv[0] + dx, uv[1], 0]);
+                      g += func([uv[0], uv[1] + dy, 0]);
+                      g += func([uv[0], uv[1] + dy, 0]);
+                      g /= 10;
+                      
                       var c;
                       if (g >= 0 && g <= 1) {
                         var gp = Math.floor(Math.max(Math.min(g, 1), 0) * 255);
@@ -115,7 +147,19 @@
                     }
                     ctx.putImageData(rowData, 0, y);
                   }
+                },
+              };
 
+
+              $.fn.pattern = function (options) {
+
+                options = $.extend({}, options);
+
+                var t = 0;
+                return this.each(function () {
+                  var elem = this;
+                  window.setTimeout(function() { methods.draw.call(elem, options); }, t);
+                  t += 0;
                 });
               };
             })(jQuery);
