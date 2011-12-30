@@ -132,7 +132,8 @@
                     });
                     state.onDraw.push(function() {
                         var count = $.data(canvas, "seamlessImage").count;
-                        text.text(count);
+                        var textCount = Math.floor(count * 100) / 100;
+                        text.text(textCount);
                         slider.val(count * 100);
                     });
 

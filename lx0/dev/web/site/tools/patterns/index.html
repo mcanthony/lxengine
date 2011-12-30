@@ -10,6 +10,7 @@
       
       <script type="text/javascript" src="../shared/script/extern/less-1.1.3.min.js"></script>
       <script type="text/javascript" src="../shared/script/extern/jquery-1.6.4.min.js"></script>
+      <script type="text/javascript" src="../shared/script/extern/jquery.cookie.js"></script>
       <script type="text/javascript">
       <!--
         var scriptFiles = [ 
@@ -46,6 +47,15 @@
               (The patterns below are all dynamically generated with multi-sampling. The pattern images then use
               the <a href="../seamlessImage">JQuery seamless image plug-in</a> to animate and allow user control over 
               zooming in and out on the pattern.)
+            </p>
+            <p>
+              <strong>Color scheme:</strong>
+                <select id="colorScheme">
+                  <option value="[0,0,0]|[255,255,255]">black &amp; white</option>
+                  <option value="[255,255,255]|[0,0,0]">white &amp; black</option>
+                  <option value="[206,40,40]|[249,217,95]">red &amp; gold</option>
+                  <option value="[13,50,55]|[45,176,59]">blue &amp; green</option>
+                </select>
             </p>
           </div>
             <div>
@@ -91,6 +101,22 @@
         <script type="text/javascript">
         <!--
 
+          var white = [255, 255, 255 ];
+          var black = [ 0, 0, 0 ];
+
+          function checkCookies()
+          {
+            var scheme = $.cookie('colorScheme');
+            if (scheme)
+            {
+              $("#colorScheme").val(scheme);
+              var arr = scheme.split('|');
+              eval("white = " + arr[0] + ";");
+              eval("black = " + arr[1] + ";");
+              console.log(white, black, arr);
+            }
+          }
+
           (function ($) {
 
               var util =
@@ -106,7 +132,6 @@
                         (y / (this.height)),
                         0
                       ];
-
                       
                       var dx = (.5 / this.width);
                       var dy = (.5 / this.height);
@@ -126,7 +151,7 @@
                       function cb(g) { return Math.floor(Math.max(Math.min(g, 1), 0) * 255); }
                       if (g >= 0 && g <= 1) {
                         var gp = cb(g);
-                        c = [gp, gp, gp];
+                        c = cb(g) ? black : white;
                       }
                       else if (g == NaN) {
                         c = [255, 0, 255];
@@ -199,6 +224,14 @@
             }
 
             $(document).ready(function () {
+
+              checkCookies();
+
+              $("#colorScheme").change(function() {
+                var scheme = $(this).val();
+                $.cookie('colorScheme', scheme);
+                window.location = window.location;
+              });
 
               showPatterns("#basic", ["checker", "spot", "tile", "diamond", "wave" ]);
               showPatterns("#variation", [ "ribbon" ]);
