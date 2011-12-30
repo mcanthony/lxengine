@@ -48,13 +48,21 @@ if (!lx.patterns) lx.patterns = {};
 
         return (uv[1] < .15) ? 0 : 1;
     };
+
+    NS.star = function(uv)
+    {
+        var uv = _v.abs( _v.sub([.5,.5], _v.fract(uv) ) );
+        uv[0] = Math.log(Math.E * (Math.abs(uv[0]) + .5));
+        uv[1] = Math.log(Math.E * (Math.abs(uv[1]) + .5));
+        return uv[0] * uv[1] > .2 ? 0 : 1;
+    };
     
     NS.test = function(uv)
     {
         var uv = _v.abs( _v.sub([.5,.5], _v.fract(uv) ) );
-        uv[0] = Math.log(18 * uv[0] + 1);
-        uv[1] = Math.log(18 * uv[1] + 1);
-        return uv[0] * uv[1] > 1.20 ? 1 : 0;
+        uv[0] = Math.log(Math.E * (Math.abs(uv[0]) + .5));
+        uv[1] = Math.log(Math.E * (Math.abs(uv[1]) + .5));
+        return uv[0] * uv[1] > .2 ? 0 : 1;
     };
 
     return NS;

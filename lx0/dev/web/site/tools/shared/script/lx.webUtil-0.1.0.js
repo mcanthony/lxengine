@@ -59,7 +59,7 @@
             }
             else {
                 eval("var text = " + func + ".toString();");
-                $(elem).text(text);
+                $(elem).text(func + " = " + text);
                 $(elem).wrap("<code/>").wrap("<pre class='codeview language-javascript'/>").each(function(i, e) { 
                     hljs.highlightBlock(e, '    ', false); 
                 });

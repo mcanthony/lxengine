@@ -33,79 +33,48 @@
         <h1>Patterns</h1>
 
         <h2>About</h2>
-        <p>
-            A collection of pattern functions primarily designed for creating procedurals with the ShaderBuilder.
-        </p>
+        <div class="layout-row">
+          <div style="max-width: 40em">
+            <p>
+                A collection of pattern functions primarily designed for creating procedurals with the ShaderBuilder.
+            </p>
+            <p>
+              Download <a href="lx.patterns.js">lx.patterns.js</a>.
+            </p>
+          </div>
+            <div>
+                <div style="border: 1px solid #CCC; border-radius: 6px; padding: 8px 2em 8px 8px;  width: 12em; margin-left: 2em">
+                    <strong style="color: #777">Table of Contents</strong>
+                    <div id="toc"></div>
+                </div>
+            </div>  
+        </div>
+
+        <div id="pattern-template" style="display: none">
+          <h3 class="pattern-name"></h3>
+          <div  class="layout-row">
+              <div>
+                  <canvas class="pattern" width="256" height="256" data-pattern="return lx.patterns.test(uv);"></canvas>
+              </div>
+              <div><div class="source" data-function="lx.patterns.test"></div></div>
+          </div>
+        </div>
 
         <h2>Basic Patterns</h2>
-
-        <h3>Checker</h3>
-        <div class="layout-row">
-            <div>
-                <canvas class="pattern" width="256" height="256" data-pattern="return lx.patterns.checker(uv);"></canvas>
-            </div>
-            <div><div class="source" data-function="lx.patterns.checker"></div>
-        </div>
-
-        <h3>Spot</h3>
-        <div class="layout-row">
-            <div>
-                <canvas class="pattern" width="256" height="256" data-pattern="return lx.patterns.spot(uv);"></canvas>
-            </div>
-            <div><div class="source" data-function="lx.patterns.spot"></div></div>
-        </div>
-
-        <h3>Tile</h3>
-        <div class="layout-row">
-            <div>
-                <canvas class="pattern" width="256" height="256" data-pattern="return lx.patterns.tile(uv);"></canvas>
-            </div>
-            <div><div class="source" data-function="lx.patterns.tile"></div></div>
-        </div>
-
-        <h3>Diamond</h3>
-        <div class="layout-row">
-            <div>
-                <canvas class="pattern" width="256" height="256" data-pattern="return lx.patterns.diamond(uv);"></canvas>
-            </div>
-            <div><div class="source" data-function="lx.patterns.diamond"></div></div>
-        </div>
-
-        <h3>Wave</h3>
-        <div class="layout-row">
-            <div>
-                <canvas class="pattern" width="256" height="256" data-pattern="return lx.patterns.wave(uv);"></canvas>
-            </div>
-            <div><div class="source" data-function="lx.patterns.wave"></div></div>
-        </div>
+        <div id="basic"></div>
 
         <h2>Sandbox</h2>
-
-        <h3>Test Pattern</h3>
-        <div class="layout-row">
-            <div>
-                <canvas class="pattern" width="256" height="256" data-pattern="return lx.patterns.test(uv);"></canvas>
-            </div>
-            <div><div class="source" data-function="lx.patterns.test"></div></div>
-        </div>
-
+        <div id="sandbox"></div>
 
         <script type="text/javascript">
         <!--
 
           (function ($) {
 
-              var methods =
+              var util =
               {
-                draw : function(options)
+                drawRow : function (ctx, y, func)
                 {
-                  var func = options.func;
-                  var dataFunc = $(this).attr("data-pattern");
-                  if (dataFunc)
-                    eval("func = function(uv) { " + dataFunc + " };");
-
-                  var ctx = this.getContext('2d');
-                  for (var y = 0; y < this.height; ++y) {
                     var rowData = ctx.createImageData(this.width, 1);
                     var pixels = rowData.data;
                     for (var x = 0; x < this.width; ++x) {
@@ -136,6 +105,15 @@
                         var gp = Math.floor(Math.max(Math.min(g, 1), 0) * 255);
                         c = [gp, gp, gp];
                       }
+                      else if (g == NaN) {
+                        c = [255, 0, 255];
+                      }
+                      else if (g === undefined) {
+                        c = [255, 255, 0];
+                      }
+                      else if (g === Infinity || g === -Infinity) {
+                        c = [0, 255, 255];
+                      }
                       else {
                         c = [255, 0, 0];
                       }
@@ -146,7 +124,28 @@
                       pixels[x * 4 + 3] = 255;
                     }
                     ctx.putImageData(rowData, 0, y);
+                },
+              };
+
+              var methods =
+              {
+
+                draw : function(options)
+                {
+                  var _this = this;
+                  var func = options.func;
+                  var dataFunc = $(this).attr("data-pattern");
+                  if (dataFunc)
+                    eval("func = function(uv) { " + dataFunc + " };");
+
+                  var ctx = this.getContext('2d');
+                  var tasks = [];
+                  for (var y = 0; y < this.height; ++y) {
+                    var task = (function(y) { return function() { util.drawRow.call(_this, ctx, y, func); } })(y); 
+                    tasks.push(task);
                   }
+
+                  lx.core.run_tasks(tasks, 0, { groupSize: 4 });
                 },
               };
 
@@ -154,19 +153,34 @@
               $.fn.pattern = function (options) {
 
                 options = $.extend({}, options);
-
-                var t = 0;
+                
                 return this.each(function () {
-                  var elem = this;
-                  window.setTimeout(function() { methods.draw.call(elem, options); }, t);
-                  t += 0;
+                  methods.draw.call(this, options);
                 });
               };
             })(jQuery);
 
+            function showPatterns(section, names)
+            {
+              $.each(names, function(i, value) {
+                var div = $("#pattern-template").clone();
+                div.attr("id", "");
+                div.find(".pattern-name").text(value);
+                div.find(".pattern").attr("data-pattern", "return lx.patterns." + value + "(uv);");
+                div.find(".source").attr("data-function", "lx.patterns." + value);
+                $(section).append(div);
+                div.show();
+              });
+            }
+
             $(document).ready(function () {
 
-              $(".pattern").pattern();
+              showPatterns("#basic", ["checker", "spot", "tile", "diamond", "wave" ]);
+              showPatterns("#sandbox", [ "star", "test" ]);
+
+              $("#toc").tableOfContents();
+
+              window.setTimeout(function() { $(".pattern").pattern(); }, 500);
               $(".source").includeSource();
 
             });
