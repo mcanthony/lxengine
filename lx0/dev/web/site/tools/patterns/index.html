@@ -147,11 +147,11 @@
                       g += func([uv[0], uv[1] + dy, 0]);
                       g /= 10;
                       
-                      var c;
-                      function cb(g) { return Math.floor(Math.max(Math.min(g, 1), 0) * 255); }
+                      var c = [0, 0, 0];
                       if (g >= 0 && g <= 1) {
-                        var gp = cb(g);
-                        c = cb(g) ? black : white;
+                        var gp = Math.max(Math.min(g, 1), 0);
+                        for (var i = 0; i < 3; ++i)
+                          c[i] = Math.floor(lx.core.blend(black[i], white[i], gp));
                       }
                       else if (g == NaN) {
                         c = [255, 0, 255];
