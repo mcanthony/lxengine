@@ -42,7 +42,7 @@
                 A collection of pattern functions primarily designed for creating procedurals with the ShaderBuilder.
             </p>
             <p>
-              <strong>Download</strong> <a href="lx.patterns.js">lx.patterns.js</a>.<br />              
+              <strong>Download</strong> <a id="download-link" href="lx.patterns.js">lx.patterns.js</a>.<br />              
             </p>
             <p>&nbsp;</p>
             <p>
@@ -241,7 +241,8 @@
                 div.show();
               });
             }
-
+            
+            var lxlangSource;
             function loadLxLang()
             {
                 var parser2 = new lxlang2.Parser();
@@ -254,10 +255,8 @@
                                                     
                             var ast = parser2.parse(text);
                             var code = genJs.translate(ast);
-                            console.log(code);
+                            lxlangSource = code;
                             eval(code);
-                            //eval(jsname + ".source = text;");
-                        
                     },
                 });
             }
@@ -273,6 +272,9 @@
                 $.cookie('colorScheme', scheme);
                 window.location.reload(true);
               });
+
+              var dataUri = 'data:text/plain,' + escape(lxlangSource);
+              $("#download-link").attr("href", dataUri).attr("target", "_blank");
 
               showPatterns("#example", [ "weave" ]);
               showPatterns("#basic", ["checker", "spot", "tile", "diamond", "wave" ]);
