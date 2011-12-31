@@ -42,22 +42,21 @@
                 A collection of pattern functions primarily designed for creating procedurals with the ShaderBuilder.
             </p>
             <p>
-              <strong>Download</strong> <a href="lx.patterns.js">lx.patterns.js</a>.
+              <strong>Download</strong> <a href="lx.patterns.js">lx.patterns.js</a>.<br />              
             </p>
+            <p>&nbsp;</p>
             <p>
-              (The patterns below are all dynamically generated with multi-sampling. The pattern images then use
+              The patterns below are all dynamically generated with multi-sampling. The pattern images then use
               the <a href="../seamlessImage">JQuery seamless image plug-in</a> to animate and allow user control over 
-              zooming in and out on the pattern.)
+              zooming in and out on the pattern.
             </p>
             <p>
-              <strong>Color scheme:</strong>
-                <select id="colorScheme">
-                  <option selected value="[0,0,0]|[255,255,255]">black &amp; white</option>
-                  <option value="[255,255,255]|[0,0,0]">white &amp; black</option>
-                  <option value="[206,40,40]|[249,217,95]">red &amp; gold</option>
-                  <option value="[13,50,55]|[45,176,59]">blue &amp; green</option>
-                </select>
+              <strong>Work in progress:</strong> the source code for the pattern functions themselves is being
+              converted from pure Javascript to <a href="../lxlang">LxLang</a> generated Javascript (since LxLang
+              allows for a more GLSL-like syntax including overloaded operators and functions).  The work in progress
+              lxlang source is available here: <a href="../shared/script/lx.patterns.lxlang">lx.patterns.lxlang</a>.
             </p>
+
           </div>
             <div>
                 <div style="border: 1px solid #CCC; border-radius: 6px; padding: 8px 2em 8px 8px;  width: 12em; margin-left: 2em">
@@ -66,6 +65,18 @@
                 </div>
             </div>  
         </div>
+
+        <h2>Settings</h2>
+        <p>
+            <strong>Color scheme:</strong>
+            <select id="colorScheme">
+                <option selected value="[0,0,0]|[255,255,255]">black &amp; white</option>
+                <option value="[255,255,255]|[0,0,0]">white &amp; black</option>
+                <option value="[206,40,40]|[249,217,95]">red &amp; gold</option>
+                <option value="[13,50,55]|[45,176,59]">blue &amp; green</option>
+            </select>
+        </p>
+
 
         <div id="pattern-template" style="display: none">
           <h3 class="pattern-name"></h3>
@@ -236,7 +247,7 @@
                 var parser2 = new lxlang2.Parser();
                 var genJs = new lxlang2.GenerateJavascript();
 
-                $.ajax("../shared/script/lx.vec.lxlang" + "?rand=" + Math.random(), {
+                $.ajax("../shared/script/lx.patterns.lxlang" + "?rand=" + Math.random(), {
                     dataType : "text",
                     async : false,
                     success : function(text) {
