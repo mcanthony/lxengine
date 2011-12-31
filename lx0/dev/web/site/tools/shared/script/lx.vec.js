@@ -257,8 +257,11 @@ lx.vec = (function () {
 
     _lxbb_fract_vec2 = function(v) { return [ v[0] - Math.floor(v[0]), v[1] - Math.floor(v[1]) ]; }
 
+    _lxbb_sub_vec2       = function (u, v) { return [ u[0] - v[0], u[1] - v[1] ]; }
     _lxbb_mul_vec2_float = function (v, s) { return [ v[0] * s, v[1] * s ]; }
     _lxbb_mul_float_vec2 = function (v, s) { return [ v[0] * s, v[1] * s ]; }
+
+    _lxbb_lengthSqrd_vec2 = function(v) { return v[0] * v[0] + v[1] * v[1]; }
 
 })();
 

@@ -1,0 +1,18 @@
+module lx.patterns;
+
+function checker (vec2 uv) -> float
+{
+  vec2 t = abs( fract(uv) );
+  ivec2 s = floor(t * 2);
+  return floor(s[0] + s[1]) % 2;
+}
+
+function spot (vec2 uv) -> float
+{
+  float r = .4;
+
+  vec2 t = abs( fract(uv) );
+  vec2 s = vec2(.5,.5) - t;
+  
+  return (lengthSqrd(s) < r * r) ? 0 : 1;
+}
