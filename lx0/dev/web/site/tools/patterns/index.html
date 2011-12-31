@@ -236,18 +236,17 @@
                 var parser2 = new lxlang2.Parser();
                 var genJs = new lxlang2.GenerateJavascript();
 
-                $.ajax("../shared/script/lx.vec.xml" + "?rand=" + Math.random(), {
-                    dataType : "xml",
+                $.ajax("../shared/script/lx.vec.lxlang" + "?rand=" + Math.random(), {
+                    dataType : "text",
                     async : false,
-                    success : function(xml) {
-                        $(xml).find("function").each(function() {
-                            var jsname = $(this).attr("name");
-                            var text = $(this).text();
-                            var ast = parser2.parse(text, "function");
-                            var code = jsname + " = " + genJs.translate(ast) + ";";
+                    success : function(text) {
+                                                    
+                            var ast = parser2.parse(text);
+                            var code = genJs.translate(ast);
+                            console.log(code);
                             eval(code);
-                            eval(jsname + ".source = text;");
-                        });
+                            //eval(jsname + ".source = text;");
+                        
                     },
                 });
             }

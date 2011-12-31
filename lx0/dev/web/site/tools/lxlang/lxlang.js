@@ -29,6 +29,7 @@ var lxlang2 = (function() {
     NS.Lexer = (function() {
 
         var ctor = function(text) {
+            this._source = text;
             this._text = text;
         };
 
@@ -41,9 +42,9 @@ var lxlang2 = (function() {
             {
                 ws : /^\s+/,
                 
-                number : /^[0-9][0-9]*/,
+                number : /^[0-9\.][0-9]*/,
                 
-                operator : /^[\+\*\-\/\%]/,
+                operator : /^[\+\*\-\/\%\<\>]/,
                 
                 name        : /^[A-Za-z_][A-Za-z_0-9]*/,
                 complexName : /^[A-Za-z_][A-Za-z_0-9\.]*/,
@@ -74,7 +75,7 @@ var lxlang2 = (function() {
                 {
                     var pattern = arguments[i];
                     var regExpr = (pattern.substr(0,1) == "@");
-                    var optional = (pattern.substr(pattern.length - 1, 1) == "?");
+                    var optional = (pattern.length > 1 && pattern.substr(pattern.length - 1, 1) == "?");
                     
                     if (regExpr) pattern = pattern.substr(1);
                     if (optional) pattern = pattern.substr(0, pattern.length - 1);
@@ -245,6 +246,8 @@ var lxlang2 = (function() {
                 '+' : 4,
                 '-' : 4,
                 '%' : 2,
+                '<' : 1,
+                '>' : 1,
             },          
 
             parseOperator : function(lex)
@@ -298,14 +301,29 @@ var lxlang2 = (function() {
                         }
                     }
                 }
+
+                var choice = lex.peek("@ws?", "?", "@ws?");
+                if (choice)
+                {
+                    choice = this._parse(lex, 'choiceExpression');
+                    if (choice) return {
+                        type : 'choice',
+                        testExpr : first,
+                        valueA : choice.valueA,
+                        valueB : choice.valueB,
+                    };
+                }
+
                 lex.seek(s0);
             },
 
-            parseExpression : function(precedence, lex)
+            parseInfixExpression : function(lex, precedence)
             {
+                precedence = precedence || 0;
+
                 var s = lex.tell();
                 lex.consume("@ws?");
-                var first = this._parse(lex, 'functionCall') || this.parseValue(lex);
+                var first = this._parse(lex, 'functionCall') || this._parse(lex, 'parenthetical') || this.parseValue(lex);
                 
                 if (first)
                 {                
@@ -319,6 +337,13 @@ var lxlang2 = (function() {
                     return first;
                 }
                 lex.seek(s);
+            },
+
+            
+
+            parseExpression : function(precedence, lex)
+            {
+                return this.parseInfixExpression(lex, 0);
             },
 
             _parsers : 
@@ -346,6 +371,19 @@ var lxlang2 = (function() {
 
                     if (m && lex.empty())
                         return { type : "translationUnit", module : m, functions : funcs };
+                },
+
+                parenthetical : function(lex)
+                {
+                    if (!lex.consume("@ws?", "(", "@ws?")) return;
+                    var expr = this.parseExpression(0, lex);
+                    var end = lex.consume("@ws?", ")", "@ws?");
+
+                    if (expr && end)
+                        return {
+                            type : "parenthetical",
+                            value : expr
+                        };
                 },
 
 
@@ -384,7 +422,7 @@ var lxlang2 = (function() {
                         if (!info)
                         {
                             console.log("Symbol stack:", this._symbolStack);
-                            this._warn(lex, "E1003 No symbol info for '%1%'", fullName);
+                            this._warn(lex, "E1003 No symbol info for '%1%'.  Expected function name.", fullName);
                         }
                         if (!info.rttype)
                         {
@@ -474,7 +512,13 @@ var lxlang2 = (function() {
                             break;
                         }
 
-                        retVal = { type : "function", name : name, argumentList : argList.list, returnType: retList[5], body : body };
+                        retVal = { 
+                            type : "function", 
+                            name : name, 
+                            argumentList : argList.list, 
+                            returnType: retList[5], 
+                            body : body,
+                        };
                     
                     } while (false);
 
@@ -502,6 +546,20 @@ var lxlang2 = (function() {
 
                     if (value)
                         return { type: "returnExpression", value : value };
+                },
+
+                choiceExpression : function(lex)
+                {
+                    if (!lex.consume("@ws?", "?", "@ws?")) return;
+
+                    var left = this.parseExpression(0, lex);
+
+                    if (!lex.consume("@ws?", ":", "@ws?")) return;
+
+                    var right = this.parseExpression(0, lex);
+
+                    if (left && right)
+                        return { type: "choiceExpression", valueA : left, valueB : right };
                 },
 
                 assignment : function(lex)
@@ -579,7 +637,11 @@ var lxlang2 = (function() {
 
                 this._addSymbol("*$vec2$float", { rttype : "vec2" });
                 this._addSymbol("dot$vec3$vec3", { rttype : "float" });
+                this._addSymbol("length$vec2", { rttype : "float" });
+                this._addSymbol("lengthSqrd$vec2", { rttype : "float" });
+                this._addSymbol("vec2$float$float", { rttype : "vec2" });
                 this._addSymbol("vec3$float$float$float", { rttype : "vec3" });
+                this._addSymbol("vec4$float$float$float$float", { rttype : "vec4" });
 
                 var result = this._parse(lexer, nonterminal);
 
@@ -685,6 +747,22 @@ var lxlang2 = (function() {
                     this.append(")");
                 },
 
+                choice : function(ast)
+                {
+                    this._translate(ast.testExpr);
+                    this.append(" ? ");
+                    this._translate(ast.valueA);
+                    this.append(" : ");
+                    this._translate(ast.valueB);
+                },
+
+                parenthetical : function (ast)
+                {
+                    this.append("(");
+                    this._translate(ast.value);
+                    this.append(")");
+                },
+
                 returnExpression : function (ast)
                 {
                     this.append("return ");
@@ -746,6 +824,7 @@ var lxlang2 = (function() {
                 "sqrt" : "Math.sqrt",
                 "floor" : "Math.floor",
                 "abs" : "Math.abs",
+                "vec2" : "new Array",
                 "vec3" : "new Array",
             },
 
@@ -772,6 +851,8 @@ var lxlang2 = (function() {
                 if (predefined)
                     return predefined;
 
+                name = "_lxbb_" +  type.replace(/\$/g, "_");
+
                 return name;
             },
 
@@ -785,6 +866,8 @@ var lxlang2 = (function() {
                     "+" : "add",
                     "-" : "sub",
                     "%" : "mod",
+                    "<" : "lt",
+                    ">" : "gt",
                 },
 
                 infix : function(ast)
@@ -840,7 +923,7 @@ var lxlang2 = (function() {
                     var module = ast.module.value.split(".");
 
                     this.append("// Ensure the namespace exists\n");
-                    this.append("try { eval(\"%1%\"); } catch ( %1% = {} );\n", module[0]);
+                    this.append("try { eval(\"%1%\"); } catch (e) { %1% = {}; };\n", module[0]);
 
                     for (var i = 1; i < module.length; ++i) {
                         this.append("if (!");
