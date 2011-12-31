@@ -55,22 +55,29 @@
         <script id="source" type="text/lxlang">
 module lx.glgeom;
 
-function length (vec3 u) -> var
+function checker (vec2 uv) -> float
+{
+    vec2 t = abs( fract(uv) );
+    ivec2 s = floor(t * 2);
+    return floor(s[0] + s[1]) % 2;
+}
+
+function length (vec3 u) -> float
 {
   return sqrt( dot(u, u) );
 }
 
-function lengthSqrd (vec3 u) -> var
+function lengthSqrd (vec3 u) -> float
 {
   return dot(u, u);
 }
       
-function mul (vec3 u, var s) -> vec3
+function mul (vec3 u, float s) -> vec3
 {
   return vec3( u[0] * s, u[1] * s, u[2] * s );
 }      
         
-function div (vec3 u, var s) -> vec3
+function div (vec3 u, float s) -> vec3
 {
   return vec3( u[0] / s, u[1] / s, u[2] / s );
 }
