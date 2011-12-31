@@ -18,7 +18,8 @@
           "../shared/script/lx.vec.js",
           "../shared/script/lx.webUtil-0.1.0.js",
           "../shared/script/jquery.lx.seamlessImage-current.js",
-          "lx.patterns.js" 
+          "lx.patterns.js",
+          "../lxlang/lxlang.js",
         ];
         for (var i in scriptFiles) {
           var s = "<script type='text/javascript' src='";
@@ -51,7 +52,7 @@
             <p>
               <strong>Color scheme:</strong>
                 <select id="colorScheme">
-                  <option value="[0,0,0]|[255,255,255]">black &amp; white</option>
+                  <option selected value="[0,0,0]|[255,255,255]">black &amp; white</option>
                   <option value="[255,255,255]|[0,0,0]">white &amp; black</option>
                   <option value="[206,40,40]|[249,217,95]">red &amp; gold</option>
                   <option value="[13,50,55]|[45,176,59]">blue &amp; green</option>
@@ -109,8 +110,8 @@
         <script type="text/javascript">
         <!--
 
-          var white = [255, 255, 255 ];
-          var black = [ 0, 0, 0 ];
+          var white = [ 0, 0, 0 ];
+          var black = [ 255, 255, 255 ];
 
           function checkCookies()
           {
@@ -230,8 +231,31 @@
               });
             }
 
-            $(document).ready(function () {
+            function loadLxLang()
+            {
+                var parser2 = new lxlang2.Parser();
+                var genJs = new lxlang2.GenerateJavascript();
 
+                $.ajax("../shared/script/lx.vec.xml" + "?rand=" + Math.random(), {
+                    dataType : "xml",
+                    async : false,
+                    success : function(xml) {
+                        $(xml).find("function").each(function() {
+                            var jsname = $(this).attr("name");
+                            var text = $(this).text();
+                            var ast = parser2.parse(text, "function");
+                            var code = jsname + " = " + genJs.translate(ast) + ";";
+                            eval(code);
+                            eval(jsname + ".source = text;");
+                        });
+                    },
+                });
+            }
+
+
+            $(document).ready(function () {
+ 
+              loadLxLang();
               checkCookies();
 
               $("#colorScheme").change(function() {

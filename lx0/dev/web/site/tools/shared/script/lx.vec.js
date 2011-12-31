@@ -235,3 +235,30 @@ lx.vec = (function () {
 
     return NS;
 })();
+
+
+(function () {
+
+    function addBasicFunction(name)
+    {
+        var code = "";
+        code += "_lxbb_%name%_vec2 = function (v) { return [ Math.%name%(v[0]), Math.%name%(v[1]) ]; };".replace(/%name%/g, name);
+        code += "_lxbb_%name%_vec3 = function (v) { return [ Math.%name%(v[0]), Math.%name%(v[1]), Math.%name%(v[2]) ]; };".replace(/%name%/g, name);
+        code += "_lxbb_%name%_vec4 = function (v) { return [ Math.%name%(v[0]), Math.%name%(v[1]), Math.%name%(v[2]), Math.%name%(v[3]) ]; };".replace(/%name%/g, name);
+        eval(code);
+    }
+    function addBasicFunctions(nameList)
+    {
+        var names = nameList.split(',');
+        for (var i = 0; i < names.length; ++i)
+            addBasicFunction(names[i]);
+    }
+    addBasicFunctions("abs,floor,sqrt");
+
+    _lxbb_fract_vec2 = function(v) { return [ v[0] - Math.floor(v[0]), v[1] - Math.floor(v[1]) ]; }
+
+    _lxbb_mul_vec2_float = function (v, s) { return [ v[0] * s, v[1] * s ]; }
+    _lxbb_mul_float_vec2 = function (v, s) { return [ v[0] * s, v[1] * s ]; }
+
+})();
+

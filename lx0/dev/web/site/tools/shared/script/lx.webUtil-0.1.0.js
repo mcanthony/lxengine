@@ -58,8 +58,14 @@
                 });
             }
             else {
-                eval("var text = " + func + ".toString();");
-                $(elem).text(func + " = " + text);
+                eval("var text = " + func + ".source;");
+                
+                if (!text) {                    
+                    eval("text = " + func + ".toString();");
+                    text = func + " = " + text;
+                }
+
+                $(elem).text(text);
                 $(elem).wrap("<code/>").wrap("<pre class='codeview language-javascript'/>").each(function(i, e) { 
                     hljs.highlightBlock(e, '    ', false); 
                 });

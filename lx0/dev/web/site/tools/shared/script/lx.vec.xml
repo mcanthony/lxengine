@@ -1,0 +1,10 @@
+<Library>
+  <function name="lx.patterns.checker">
+    function checker (vec2 uv) -> float
+    {
+      vec2 t = abs( fract(uv) );
+      ivec2 s = floor(t * 2);
+      return floor(s[0] + s[1]) % 2;
+    }
+  </function>
+</Library>

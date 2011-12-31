@@ -558,8 +558,10 @@ var lxlang2 = (function() {
             //
             // Entry point for the translation unit
             //
-            parse : function(text)
+            parse : function(text, nonterminal)
             {
+                nonterminal = nonterminal || 'translationUnit';
+
                 var lexer = new NS.Lexer(text);
 
                 this._pushSymbols();
@@ -579,7 +581,7 @@ var lxlang2 = (function() {
                 this._addSymbol("dot$vec3$vec3", { rttype : "float" });
                 this._addSymbol("vec3$float$float$float", { rttype : "vec3" });
 
-                var result = this._parse(lexer, 'translationUnit');
+                var result = this._parse(lexer, nonterminal);
 
                 this._popSymbols();
 
@@ -761,7 +763,6 @@ var lxlang2 = (function() {
                 
                 if (type)
                 {
-                    console.log("function", name, ":", type);
                     var predefined2 = this._predefinedFunctions2[type];
                     if (predefined2)
                         return predefined2;
@@ -796,7 +797,8 @@ var lxlang2 = (function() {
                     }
                     else
                     {
-                        this.append("_lxbb_%1%_%2%(", this._translators._op_name[ast.operator], ast.rttype);
+                        var rttype = (ast.valueA.rttype == ast.valueB.rttype) ? ast.valueA.rttype : ast.valueA.rttype + "_" + ast.valueB.rttype;
+                        this.append("_lxbb_%1%_%2%(", this._translators._op_name[ast.operator], rttype);
                         this._translate(ast.valueA);
                         this.append(", ");
                         this._translate(ast.valueB);
@@ -806,11 +808,14 @@ var lxlang2 = (function() {
 
                 "function" : function (ast)
                 {
-                    this.append("NS.%1% = function(", ast.name);
+                    if (this._astRoot.type != "function")
+                        this.append("NS.%1% = ", ast.name);
+
+                    this.append("function(");
                     for (var i = 0; i < ast.argumentList.length; ++i)
                     {
                         var arg = ast.argumentList[i];
-                        this.append("var " + arg.name );
+                        this.append(arg.name );
 
                         if (i + 1 < ast.argumentList.length)
                             this.append( ", " );
@@ -821,8 +826,13 @@ var lxlang2 = (function() {
                     this.incIndent();
                     this._translate(ast.body);
                     this.decIndent();
-                    this.append( "};\n" );
-                    this.append( "\n" );
+                    this.append( "}");
+                    
+                    if (this._astRoot.type != "function")
+                    {
+                        this.append( ";\n" );
+                        this.append( "\n" );
+                    }
                 },
 
                 translationUnit : function(ast)
