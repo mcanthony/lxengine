@@ -42,18 +42,27 @@
                 A collection of pattern functions primarily designed for creating procedurals with the ShaderBuilder.
             </p>
             <p>
-              <strong>Download</strong> <a id="download-link" href="lx.patterns.js">lx.patterns.js</a>.<br />              
+              <strong>Download</strong> <a id="download-link" href="lx.patterns.js">lx.patterns.js</a> (currently 
+              this links only to the generated Javascript code).<br />              
             </p>
             <p>&nbsp;</p>
+            
+            <h4>Implementation</h4>
             <p>
               The patterns below are all dynamically generated with multi-sampling. The pattern images then use
               the <a href="../seamlessImage">JQuery seamless image plug-in</a> to animate and allow user control over 
               zooming in and out on the pattern.
             </p>
+            <h4>LxLang</h4>
             <p>
               <strong>Work in progress:</strong> the source code for the pattern functions themselves is being
               converted from pure Javascript to <a href="../lxlang">LxLang</a> generated Javascript (since LxLang
-              allows for a more GLSL-like syntax including overloaded operators and functions).  The work in progress
+              allows for a more GLSL-like syntax including overloaded operators and functions).  Since it is a work
+              in progress, this page currently displays a mix of Javascript and LxLang code as the source
+              for each pattern function.
+            </p>
+            <p>
+              The work in progress
               lxlang source is available here: <a href="../shared/script/lx.patterns.lxlang">lx.patterns.lxlang</a>.
             </p>
 
@@ -121,8 +130,8 @@
         <script type="text/javascript">
         <!--
 
-          var white = [ 0, 0, 0 ];
-          var black = [ 255, 255, 255 ];
+          var color0 = [ 0, 0, 0 ];
+          var color1 = [ 255, 255, 255 ];
 
           function checkCookies()
           {
@@ -131,8 +140,8 @@
             {
               $("#colorScheme").val(scheme);
               var arr = scheme.split('|');
-              eval("white = " + arr[0] + ";");
-              eval("black = " + arr[1] + ";");
+              eval("color0 = " + arr[0] + ";");
+              eval("color1 = " + arr[1] + ";");
             }
           }
 
@@ -170,7 +179,7 @@
                       if (g >= 0 && g <= 1) {
                         var gp = Math.max(Math.min(g, 1), 0);
                         for (var i = 0; i < 3; ++i)
-                          c[i] = Math.floor(lx.core.blend(black[i], white[i], gp));
+                          c[i] = Math.floor(lx.core.blend(color0[i], color1[i], gp));
                       }
                       else if (g == NaN) {
                         c = [255, 0, 255];
@@ -277,7 +286,7 @@
               $("#download-link").attr("href", dataUri).attr("target", "_blank");
 
               showPatterns("#example", [ "weave" ]);
-              showPatterns("#basic", ["checker", "spot", "tile", "diamond", "wave" ]);
+              showPatterns("#basic", ["checker", "spot", "stripe", "tile", "diamond", "wave" ]);
               showPatterns("#variation", [ "ribbon" ]);
               showPatterns("#compound", "spotwave, spotdiamondxor".split(","));
               showPatterns("#misc", [ "star", "misc1" ]);

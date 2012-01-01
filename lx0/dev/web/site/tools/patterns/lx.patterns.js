@@ -131,11 +131,11 @@ if (!lx.patterns) lx.patterns = {};
         ds = 1.0 - ds;
 
         if (fs < .4)
-            return 1 - dt;
+            return dt;
         else if (ft < .4)
-            return 1 - ds;
+            return ds;
         else
-            return 1;
+            return 0;
     }
 
     NS.test = function(uv)

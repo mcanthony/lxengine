@@ -9,10 +9,25 @@ function checker (vec2 uv) -> float
 
 function spot (vec2 uv) -> float
 {
+  //
+  // Parameters
+  //
   float r = .4;
 
-  vec2 t = abs( fract(uv) );
-  vec2 s = vec2(.5,.5) - t;
-  
+  // Find the x and y distance from the center of the tile.
+  //
+  // (It is a signed distance, but this does not matter as the
+  // length will square each component.)
+  //
+  vec2 s = vec2(.5,.5) - fract(uv);    
   return (lengthSqrd(s) < r * r) ? 1 : 0;
 }
+
+function stripe (vec2 uv) -> float
+{
+	float r = .30;
+
+	float s = abs(.5 - fract(uv[0]));
+	return (s < r) ? 1 : 0;
+}
+

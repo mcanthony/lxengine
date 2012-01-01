@@ -31,6 +31,7 @@ var lxlang2 = (function() {
         var ctor = function(text) {
             this._source = text;
             this._text = text;
+            this._location = 0;
         };
 
         var methods = {
@@ -41,13 +42,28 @@ var lxlang2 = (function() {
             _RETable : 
             {
                 ws : /^\s+/,
+                comment : /^\/\/[^\n]*\n\s*/,
                 
                 number : /^[0-9\.][0-9]*/,
                 
-                operator : /^[\+\*\-\/\%\<\>]/,
+                operator : /^[\+\*\-\/\%\<\>]|\|\|/,
                 
                 name        : /^[A-Za-z_][A-Za-z_0-9]*/,
                 complexName : /^[A-Za-z_][A-Za-z_0-9\.]*/,
+            },
+
+            //
+            //
+            _skipComments : function()
+            {
+                var re = this._RETable["comment"];
+                var m = this._text.match(re);
+                while (m) 
+                {
+                    this._text = this._text.substr(m[0].length);
+                    this._location += m[0].length;
+                    m = this._text.match(re);
+                }
             },
 
             //
@@ -73,6 +89,8 @@ var lxlang2 = (function() {
 
                 for (var i = 0; i < arguments.length;++i)
                 {
+                    this._skipComments();
+
                     var pattern = arguments[i];
                     var regExpr = (pattern.substr(0,1) == "@");
                     var optional = (pattern.length > 1 && pattern.substr(pattern.length - 1, 1) == "?");
@@ -96,33 +114,43 @@ var lxlang2 = (function() {
 
                     // Consume the element by advancing in the text string
                     if (match)
+                    {
                         this._text = this._text.substr(match.length);
+                        this._location += match.length;
+                    }
 
                     if (!optional && !match)
                         valid = false;
 
                     matches.push(match);
                 }
+
                 return valid ? matches : undefined;
             },
-
+            
             peek : function() 
             {
                 // Saving the full string is likely inefficient for large bodies of text.
                 var previous = this._text;
+                var prevloc = this._location;
+
                 var matches = this.consume.apply(this, arguments);
+                
                 this._text = previous;
+                this._location = prevloc;
+
                 return matches;
             },
 
             tell : function()
             {
-                return this._text;
+                return [ this._text, this._location ];
             },
 
             seek : function (s)
             {
-                this._text = s;
+                this._text = s[0];
+                this._location = s[1];
             },
 
             empty : function()
@@ -179,7 +207,7 @@ var lxlang2 = (function() {
                 var args = Array.prototype.slice.call(arguments, 1);
                 var s = _printformatted.apply(null, args);
                 
-                msg = "ERROR: " + s + ", around:\n---> " + lex._text.substr(0, 80) + "'";
+                msg = "ERROR: " + s + ", around:\n---> '" + lex._text.substr(0, 80) + "'";
                 throw msg;
             },
 
@@ -204,7 +232,7 @@ var lxlang2 = (function() {
                     var info = this._symbolInfo(name[0]);
                     if (!info)
                     {
-                        console.log("Symbol stack:", this._symbolStack);
+                        console.log("Symbol stack:", this._symbolStack);                        
                         this._error(lex, "E1001 No symbol info for variable named '%1%'", name[0]);                        
                     }
                     if (!info.rttype)
@@ -245,9 +273,10 @@ var lxlang2 = (function() {
                 '/' : 8,
                 '+' : 4,
                 '-' : 4,
-                '%' : 2,
-                '<' : 1,
-                '>' : 1,
+                '%' : 3,
+                '<' : 2,
+                '>' : 2,
+                '||' : 1,
             },          
 
             parseOperator : function(lex)
@@ -463,7 +492,11 @@ var lxlang2 = (function() {
                     
                     do
                     {
-                        var funcdecl = lex.consume("@ws?", "function");
+                        lex.consume("@ws?");
+
+                        var startLocation = lex._location;
+
+                        var funcdecl = lex.consume("function");
                         if (!funcdecl) break;
 
                         var hdr = lex.consume("@ws", "@name", "@ws?", "(");
@@ -512,12 +545,17 @@ var lxlang2 = (function() {
                             break;
                         }
 
+                        var endLocation = lex._location;
+
+                        var source = lex._source.substr(startLocation, endLocation - startLocation);
+
                         retVal = { 
                             type : "function", 
                             name : name, 
                             argumentList : argList.list, 
                             returnType: retList[5], 
                             body : body,
+                            source : source,
                         };
                     
                     } while (false);
@@ -564,6 +602,8 @@ var lxlang2 = (function() {
 
                 assignment : function(lex)
                 {
+                    var start = lex.tell()[0].substr(0, 40) + "\n";
+
                     var lvalue = lex.consume("@ws?", "@name", "@ws", "@name", "@ws", "=");
                     if (!lvalue)
                         return;
@@ -573,11 +613,17 @@ var lxlang2 = (function() {
                     this._addSymbol(name, { rttype : type });
 
                     var expr = this.parseExpression(0, lex);
-                    
-                    lex.consume("@ws?", ";", "@ws?");
+                    var close = lex.consume("@ws?", ";", "@ws?");
                     
                     if (lvalue && expr)
+                    {
+                        if (!close)
+                        {
+                            this._error(lex, "Expected ';' to end statement. Around '%1%'", start);
+                        }
+
                         return { type : "assignment", rttype : type, name : name, value : expr };
+                    }
                 },
 
                 statement : function(lex)
@@ -914,7 +960,8 @@ var lxlang2 = (function() {
                     if (this._astRoot.type != "function")
                     {
                         this.append( ";\n" );
-                        this.append( "\n" );
+                        
+                        this.append("NS.%1%.source = %2%;\n\n", ast.name, JSON.stringify(ast.source));
                     }
                 },
 

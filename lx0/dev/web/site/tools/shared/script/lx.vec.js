@@ -255,6 +255,7 @@ lx.vec = (function () {
     }
     addBasicFunctions("abs,floor,sqrt");
 
+    _lxbb_fract_float = function(v) { return v - Math.floor(v); }
     _lxbb_fract_vec2 = function(v) { return [ v[0] - Math.floor(v[0]), v[1] - Math.floor(v[1]) ]; }
 
     _lxbb_sub_vec2       = function (u, v) { return [ u[0] - v[0], u[1] - v[1] ]; }
