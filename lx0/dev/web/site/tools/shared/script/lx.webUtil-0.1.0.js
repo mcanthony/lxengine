@@ -81,13 +81,19 @@
                     },
                 });
             }
-            else {
+            else if (func) {
                 
                 var customSource; 
                 var javascriptSource;
 
                 eval("customSource = " + func + ".source;");                
                 eval("javascriptSource = " + func + ".toString();");
+
+                if (!javascriptSource)
+                {
+                    console.log("Could not get source for function: ", func);
+                    return;
+                }
 
                 javascriptSource = removeLeftIndent(javascriptSource);
 

@@ -162,6 +162,11 @@ var lxlang2 = (function() {
                 return matches;
             },
 
+            location : function()
+            {
+                return this._location;
+            }, 
+
             tell : function()
             {
                 return [ this._text, this._location ];
@@ -373,6 +378,7 @@ var lxlang2 = (function() {
                     choice = this._parse(lex, 'choiceExpression');
                     if (choice) return {
                         type : 'choice',
+                        rttype : choice.rttype,
                         testExpr : first,
                         valueA : choice.valueA,
                         valueB : choice.valueB,
@@ -400,10 +406,17 @@ var lxlang2 = (function() {
 
                     lex.consume("@ws?");
                     var second = this.parseExpressionR(first, precedence, lex);
+                    
+                    var nesting = 0;
                     while (second)
                     {
+                        nesting ++;
+
                         first = second;
                         second = this.parseExpressionR(first, precedence, lex);
+
+                        if (nesting > 1024)
+                            this._error(lex, "Infinite loop!");
                     }
                     return first;
                 }
@@ -451,11 +464,19 @@ var lxlang2 = (function() {
                     var end = lex.consume("@ws?", ")", "@ws?");
 
                     if (expr && end)
+                    {
+                        if (!expr.rttype)
+                        {
+                            console.log(expr);
+                            this._error(lex, "E1008 Parenthetical expression does not have a type");
+                        }
+
                         return {
                             type : "parenthetical",
                             rttype : expr.rttype,
                             value : expr
                         };
+                    }
                 },
 
 
@@ -647,7 +668,7 @@ var lxlang2 = (function() {
                 choiceExpression : function(lex)
                 {
                     if (!lex.consume("@ws?", "?", "@ws?")) return;
-
+                    
                     var left = this.parseExpression(0, lex);
 
                     if (!lex.consume("@ws?", ":", "@ws?")) return;
@@ -655,49 +676,67 @@ var lxlang2 = (function() {
                     var right = this.parseExpression(0, lex);
 
                     if (left && right)
-                        return { type: "choiceExpression", valueA : left, valueB : right };
+                    {
+                        if (left.rttype != right.rttype)
+                        {
+                            this._error(lex, "E1007 First and second values in choice are not of the same type");
+                        }
+
+                        return { type: "choiceExpression", valueA : left, valueB : right, rttype : left.rttype };
+                    }
                 },
 
                 assignment : function(lex)
                 {
                     var start = lex.tell()[0].substr(0, 40) + "\n";
                     
-                    var lvalue = lex.consume("@ws?", "@name", "@ws", "@name", "@ws?", "@assignment") 
-                        || lex.consume("@ws?", "@name", "@ws?", "[", "@number", "]", "@ws?", "@assignment") 
-                        || lex.consume("@ws?", "@name", "@ws", "@assignment");
-                    
+                    var lvalue;
                     var declare = false;
                     var op;
                     var name;
                     var rttype;
 
-                    if (!lvalue)
+                    do
                     {
+                        if (lvalue = lex.consume("@ws?", "@name", "@ws?", "["))
+                        {
+                            //var expr = this.parseExpression(0, lex);
+                            var expr = lex.consume("@number");
+                            var close = lex.consume("]", "@ws?", "@assignment");
+
+                            if (expr && close)
+                            {
+                                var name = lvalue[1] + "[" + expr[0] + "]";
+                                rttype = "float";
+                                op = close[2];
+                                break;
+                            }
+                        }
+
+                        if (lvalue = lex.consume("@ws?", "@name", "@ws", "@name", "@ws?", "@assignment") )
+                        {
+                            declare = true;
+                            var name = lvalue[3];
+                            rttype = lvalue[1];
+                            op = lvalue[5];
+
+                            this._addSymbol(name, { rttype : rttype });
+                            break;
+                        }
+                    
+                        if (lvalue = lex.consume("@ws?", "@name", "@ws", "@assignment"))
+                        {
+                            var name = lvalue[1];
+                            var info = this._symbolInfo(name);
+                            rttype = info.rttype;
+                            op = lvalue[3];
+                            break;
+                        }
+                        
                         this._error(lex, "Expected an assignment statement around '" + start + "'");
                         return;
                     }
-                    else if (lvalue.length == 8)
-                    {
-                        var name = lvalue[1] + "[" + lvalue[4] + "]";
-                        rttype = "float";
-                        op = lvalue[7];
-                    }
-                    else if (lvalue.length == 6)
-                    {
-                        declare = true;
-                        var name = lvalue[3];
-                        rttype = lvalue[1];
-                        op = lvalue[5];
-
-                        this._addSymbol(name, { rttype : rttype });
-                    }
-                    else 
-                    {
-                        var name = lvalue[1];
-                        var info = this._symbolInfo(name);
-                        rttype = info.rttype;
-                        op = lvalue[3];
-                    }
+                    while (false);
 
                     var expr = this.parseExpression(0, lex);
                     var close = lex.consume("@ws?", ";", "@ws?");

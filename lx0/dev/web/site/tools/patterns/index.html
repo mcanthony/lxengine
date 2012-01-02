@@ -18,7 +18,6 @@
           "../shared/script/lx.vec.js",
           "../shared/script/lx.webUtil-0.1.0.js",
           "../shared/script/jquery.lx.seamlessImage-current.js",
-          "lx.patterns.js",
           "../lxlang/lxlang.js",
         ];
         for (var i in scriptFiles) {
@@ -61,7 +60,10 @@
                 </tr>
                 <tr>
                     <td>Compiled Javascript</td>
-                    <td><a id="compiled-link" href="#" target="_blank">lx.patterns.js</a><strong>*</strong></td>
+                    <td>
+                        <a id="compiled-link" href="#" target="_blank">lx.patterns.js</a><strong>*</strong> | 
+                        (<a href="../shared/script/lx.patterns-0.1.0.js" target="_blank">0.1.0</a>)
+                    </td>
                 </tr>
                 <tr>
                     <td>Unoptimized Javascript</td>
@@ -115,9 +117,9 @@
           <h3 class="pattern-name"></h3>
           <div  class="layout-row">
               <div>
-                  <canvas class="pattern" width="256" height="256" data-pattern="return lx.patterns.test(uv);"></canvas>
+                  <canvas class="pattern" width="256" height="256" data-pattern=""></canvas>
               </div>
-              <div style="max-width: 580px"><div class="source" data-function="lx.patterns.test"></div></div>
+              <div style="max-width: 580px"><div class="source" data-function=""></div></div>
           </div>
         </div>
 
@@ -135,18 +137,14 @@
         <h2>Compound Patterns</h2>
         <div id="compound"></div>
 
-        <h2>Miscellaneous Patterns</h2>
-        <div id="misc"></div>
-
         <h2>Complex Patterns</h2>
         <div id="complex"></div>
 
-        <h2>Sandbox Patterns</h2>
-        <div id="sandbox"></div>
-
         <h2>Future Work</h2>
         <ul>
-          <li>Rewrite pattern functions in LxLang (i.e. GLSL)</li>
+          <li>Add if statement support to LxLang</li>
+          <li>Better stability in LxLang</li>
+          <li>Indexing expressions in l-values for LxLang</li>
           <li>Parameterization of patterns</li>
           <li>Color patterns (gradients, etc.)</li>
         </ul>
@@ -238,21 +236,24 @@
                   if (dataFunc)
                     eval("func = function(uv) { " + dataFunc + " };");
 
-                  var ctx = this.getContext('2d');
-                  var tasks = [];
-                  for (var y = 0; y < this.height; ++y) {
-                    var task = (function(y) { return function() { util.drawRow.call(_this, ctx, y, func); } })(y); 
-                    tasks.push(task);
+                  if (func)
+                  {
+                      var ctx = this.getContext('2d');
+                      var tasks = [];
+                      for (var y = 0; y < this.height; ++y) {
+                        var task = (function(y) { return function() { util.drawRow.call(_this, ctx, y, func); } })(y); 
+                        tasks.push(task);
+                      }
+
+                      tasks.push( function() { $(_this).seamlessImage({ sliderMax : 8, count : 5 }); } );
+
+                      //
+                      // run_tasks will loop through the array of functions using setTimeout so that
+                      // it does not grab the focus entirely from the browser (i.e. the browse is
+                      // still usable by the user).
+                      //
+                      lx.core.run_tasks(tasks, 0, { groupSize: 4 });
                   }
-
-                  tasks.push( function() { $(_this).seamlessImage({ sliderMax : 8, count : 5 }); } );
-
-                  //
-                  // run_tasks will loop through the array of functions using setTimeout so that
-                  // it does not grab the focus entirely from the browser (i.e. the browse is
-                  // still usable by the user).
-                  //
-                  lx.core.run_tasks(tasks, 0, { groupSize: 4 });
                 },
               };
 
@@ -348,11 +349,9 @@
 
               showPatterns("#example", [ "weave" ]);
               showPatterns("#basic", ["checker", "spot", "stripe", "tile", "diamond", "wave" ]);
-              showPatterns("#variation", [ "circle", "roundedTile", "ribbon" ]);
-              showPatterns("#compound", "spotwave, spotdiamondxor".split(","));
-              showPatterns("#misc", [ "star", "misc1" ]);
+              showPatterns("#variation", [ "star", "ribbon", "checkerSmooth" ]);
+              showPatterns("#compound", "circle,roundedTile,spotwave,spotdiamondxor,gridBump".split(","));
               showPatterns("#complex", [ "weave" ]);
-              showPatterns("#sandbox", [ "test" ]);
 
               $("#toc").tableOfContents();
 
