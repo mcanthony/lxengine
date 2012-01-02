@@ -36,6 +36,30 @@
 
 (function ($) {
 
+    function removeLeftIndent(s)
+    {
+        
+        var lines = s.replace(/^\t/g, "    ").split("\n");
+        var count = lines[0].length; 
+        for (var i = 1; i < lines.length; ++i)
+        {
+            var m = lines[i].match(/^\s*/);
+            if (lines[i].length > m[0].length)
+            {
+                count = Math.min(count, m[0].length);
+            }
+        }
+        if (count > 0)
+        {
+            for (var i = 1; i < lines.length; ++i)
+            {
+                lines[i] = lines[i].substr(count);
+            }
+        }
+        
+        return lines.join("\n");
+    }
+
     $.fn.includeSource = function () {
         return this.each(function() {
 
@@ -58,12 +82,23 @@
                 });
             }
             else {
-                eval("var text = " + func + ".source;");
                 
-                if (!text) {                    
-                    eval("text = " + func + ".toString();");
-                    text = func + " = " + text;
+                var customSource; 
+                var javascriptSource;
+
+                eval("customSource = " + func + ".source;");                
+                eval("javascriptSource = " + func + ".toString();");
+
+                javascriptSource = removeLeftIndent(javascriptSource);
+
+                var text;
+                if (customSource)
+                {
+                    text = customSource + "\n\n// ==== Javascript translation ====\n\n" + func + " = " + javascriptSource;
                 }
+                else
+                    text = javascriptSource;
+
 
                 $(elem).text(text);
                 $(elem).wrap("<code/>").wrap("<pre class='codeview language-javascript'/>").each(function(i, e) { 

@@ -46,10 +46,12 @@ var lxlang2 = (function() {
                 
                 number : /^[0-9\.][0-9]*/,
                 
-                operator : /^[\+\*\-\/\%\<\>]|\|\|/,
+                operator : /^[\+\*\-\/\%\<\>]/,
                 
                 name        : /^[A-Za-z_][A-Za-z_0-9]*/,
                 complexName : /^[A-Za-z_][A-Za-z_0-9\.]*/,
+
+                assignment : [ "+=", "=" ],
             },
 
             //
@@ -86,6 +88,7 @@ var lxlang2 = (function() {
             {
                 var matches = [];
                 var valid = true;
+                var save = this.tell();
 
                 for (var i = 0; i < arguments.length;++i)
                 {
@@ -102,9 +105,20 @@ var lxlang2 = (function() {
                     if (regExpr)
                     {
                         var re = this._RETable[pattern];
-                        var m = this._text.match(re);
-                        if (m) 
-                            match = m[0];
+                        if (!re[0])
+                        {
+                            var m = this._text.match(re);
+                            if (m) 
+                                match = m[0];
+                        }
+                        else
+                        {
+                            for (var j = 0; j < re.length && !match; ++j)
+                            {
+                                if (this._text.substr(0, re[j].length) == re[j])
+                                    match = re[j];
+                            }
+                        }
                     }
                     else
                     {
@@ -125,7 +139,13 @@ var lxlang2 = (function() {
                     matches.push(match);
                 }
 
-                return valid ? matches : undefined;
+                if (!valid)
+                {
+                    this.seek(save);
+                    matches = undefined;
+                }
+
+                return matches;
             },
             
             peek : function() 
@@ -275,13 +295,26 @@ var lxlang2 = (function() {
                 '-' : 4,
                 '%' : 3,
                 '<' : 2,
+                '<=' : 2,
                 '>' : 2,
+                '>=' : 2,
                 '||' : 1,
+                '&&' : 1,
             },          
 
             parseOperator : function(lex)
             {
-                var op = lex.consume("@operator");
+                var ops = [];
+                for (key in this._operatorPrecedence)
+                    ops.push(key);
+                ops.sort(function(a,b) { return b.length - a.length; });
+
+                var op;
+                for (var i = 0; !op && i < ops.length; ++i)
+                {
+                    op = lex.consume(ops[i]);
+                }
+                
                 var precedence = this._operatorPrecedence[op];
                 if (op) 
                     return { type : "operator", value : op[0], precedence : precedence }
@@ -506,10 +539,7 @@ var lxlang2 = (function() {
                             break;
                         }
                         name = hdr[1];
-
-                        this._addSymbol(name, { rttype : "function" });
-                        pushed = true;
-                        this._pushSymbols();
+                        var fullName = name;
 
                         var argList = this._parse(lex, 'argumentList');
                         if (!argList) 
@@ -522,14 +552,19 @@ var lxlang2 = (function() {
                         {
                             var arg = argList.list[i];
                             this._addSymbol(arg.name, { rttype : arg.type } );
+                            fullName += "$" + arg.type;
                         }
 
                         var retList = lex.consume("@ws?", ")", "@ws?", "->", "@ws?", "@name", "@ws?", "{");
                         if (!retList)
                         {
-                            this._error(lex, "Error parsing function");
+                            this._error(lex, "Error parsing function.  Was return value properly specificed?");
                             break;
                         }
+
+                        this._addSymbol(fullName, { rttype : retList[5] });
+                        pushed = true;
+                        this._pushSymbols();
 
                         var body = this._parse(lex, 'statementSet');
                         if (!body)
@@ -603,46 +638,74 @@ var lxlang2 = (function() {
                 assignment : function(lex)
                 {
                     var start = lex.tell()[0].substr(0, 40) + "\n";
+                    
+                    var lvalue = lex.consume("@ws?", "@name", "@ws", "@name", "@ws?", "@assignment") 
+                        || lex.consume("@ws?", "@name", "@ws?", "[", "@number", "]", "@ws?", "@assignment") 
+                        || lex.consume("@ws?", "@name", "@ws", "@assignment");
+                    
+                    var declare = false;
+                    var op;
+                    var name;
+                    var rttype;
 
-                    var lvalue = lex.consume("@ws?", "@name", "@ws", "@name", "@ws", "=");
                     if (!lvalue)
+                    {
+                        this._error(lex, "Expected an assignment statement around '" + start + "'");
                         return;
-                    var name = lvalue[3];
-                    var type = lvalue[1];
+                    }
+                    else if (lvalue.length == 8)
+                    {
+                        var name = lvalue[1] + "[" + lvalue[4] + "]";
+                        rttype = "float";
+                        op = lvalue[7];
+                    }
+                    else if (lvalue.length == 6)
+                    {
+                        declare = true;
+                        var name = lvalue[3];
+                        rttype = lvalue[1];
+                        op = lvalue[5];
 
-                    this._addSymbol(name, { rttype : type });
+                        this._addSymbol(name, { rttype : rttype });
+                    }
+                    else 
+                    {
+                        var name = lvalue[1];
+                        var info = this._symbolInfo(name);
+                        rttype = info.rttype;
+                        op = lvalue[3];
+                    }
 
                     var expr = this.parseExpression(0, lex);
                     var close = lex.consume("@ws?", ";", "@ws?");
-                    
-                    if (lvalue && expr)
+
+                    if (expr)
                     {
                         if (!close)
                         {
                             this._error(lex, "Expected ';' to end statement. Around '%1%'", start);
                         }
 
-                        return { type : "assignment", rttype : type, name : name, value : expr };
+                        return { type : "assignment", declaration : declare, op : op, rttype : rttype, name : name, value : expr };
                     }
                 },
 
                 statement : function(lex)
                 {
-                    if (lex.peek("@ws?", "@name", "@ws", "@name", "@ws?", "="))
-                        return this._parse(lex, "assignment");
-                    else if (lex.peek("@ws?", "return"))
+                    if (lex.peek("@ws?", "return"))
                         return this._parse(lex, "returnExpression");
+                    else
+                        return this._parse(lex, "assignment");
 
                 },
 
                 statementSet : function (lex)
                 {
                     var set = [];
-                    var statement = this._parse(lex, 'statement');
-                    while (statement)
+                    while (!lex.peek("}"))
                     {
+                        var statement = this._parse(lex, 'statement');
                         set.push(statement);
-                        statement = this._parse(lex, 'statement');
                     }
                     return { type : 'statementSet', value : set };
                 },
@@ -651,10 +714,17 @@ var lxlang2 = (function() {
             _parse : function (lex, nonterminal)
             {
                 var save = lex.tell();
-
+                
                 var result = this._parsers[nonterminal].call(this, lex);                    
                 if (result)
+                {
+                    if (false)
+                    {
+                        var code = lex._source.substr(save[1], lex.tell()[1] - save[1]);
+                        console.log("'" + nonterminal + "':", code);
+                    }
                     return result;
+                }
                 
                 lex.seek(save);
             },
@@ -676,10 +746,13 @@ var lxlang2 = (function() {
                         this._addSymbol(name + "$" + type, { rttype : type });
                     }
                 }
-                var standardFunctions = "abs,floor,fract,sqrt";
+                var standardFunctions = "abs,floor,fract,sqrt,sin,cos";
                 add1to1.call(this, "float", standardFunctions);
                 add1to1.call(this, "vec2", standardFunctions);
                 add1to1.call(this, "vec3", standardFunctions);
+
+                
+                this._addSymbol("PI", { rttype : "float" } );
 
                 this._addSymbol("*$vec2$float", { rttype : "vec2" });
                 this._addSymbol("dot$vec3$vec3", { rttype : "float" });
@@ -817,7 +890,10 @@ var lxlang2 = (function() {
 
                 assignment : function(ast)
                 {
-                    this.append("%1% %2% = ", "var", ast.name);
+                    if (ast.declaration)
+                        this.append("%1% %2% %3% ", "var", ast.name, ast.op);
+                    else
+                        this.append("%1% %2% ", ast.name, ast.op);
                     this._translate(ast.value);
                 },
 
@@ -864,9 +940,15 @@ var lxlang2 = (function() {
 
         var methods = {
 
+            _predefinedVariables :
+            {
+                "PI" : "Math.PI",
+            },
 
             _predefinedFunctions :
             {
+                "sin" : "Math.sin",
+                "cos" : "Math.cos",
                 "sqrt" : "Math.sqrt",
                 "floor" : "Math.floor",
                 "abs" : "Math.abs",
@@ -914,6 +996,17 @@ var lxlang2 = (function() {
                     "%" : "mod",
                     "<" : "lt",
                     ">" : "gt",
+                    "<=" : "lte",
+                    ">=" : "gte",
+                },
+
+                name : function(ast)
+                {
+                    var tr = this._predefinedVariables[ast.value];
+                    if (tr)
+                        this.append(tr);
+                    else
+                        NS.GenerateBase.prototype._translators.name.call(this, ast);
                 },
 
                 infix : function(ast)

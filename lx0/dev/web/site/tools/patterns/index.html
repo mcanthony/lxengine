@@ -93,7 +93,7 @@
               <div>
                   <canvas class="pattern" width="256" height="256" data-pattern="return lx.patterns.test(uv);"></canvas>
               </div>
-              <div><div class="source" data-function="lx.patterns.test"></div></div>
+              <div style="max-width: 580px"><div class="source" data-function="lx.patterns.test"></div></div>
           </div>
         </div>
 
@@ -265,7 +265,14 @@
                             var ast = parser2.parse(text);
                             var code = genJs.translate(ast);
                             lxlangSource = code;
-                            eval(code);
+                            try {
+                                eval(code);
+                            } catch (e)
+                            {
+                                console.log(code);
+                                console.log("Error in translated LxLang code");
+                                throw e;
+                            }
                     },
                 });
             }

@@ -31,3 +31,33 @@ function stripe (vec2 uv) -> float
 	return (s < r) ? 1 : 0;
 }
 
+function tile (vec2 uv) -> float
+{
+	float r = .45;
+
+	vec2 s = abs(vec2(.5,.5) - fract(uv));
+	return (s[0] < r && s[1] < r) ? 1 : 0;
+}
+
+function diamond (vec2 uv) -> float
+{
+	float r = .4;
+    float t = abs( vec2(.5, .5) - fract(uv) );
+    
+    return (t[0] + t[1] <= r) ? 1 : 0;
+}
+
+
+function wave (vec2 uv) -> float
+{
+	//
+	// The wave pattern is a variation of the stripe pattern where
+	// the u coordinate is shifted according to sin curve along the
+	// v access.
+	//
+    uv = fract(uv);
+	uv[0] += .15 * sin(2 * uv[1] * PI);	
+	uv[0] = abs(.5 - uv[0]);
+	return (uv[0] < .25) ? 1 : 0;
+}
+
