@@ -61,3 +61,107 @@ function wave (vec2 uv) -> float
 	return (uv[0] < .25) ? 1 : 0;
 }
 
+function circle (vec2 uv) -> float
+{
+  //
+  // Parameters
+  //
+  float r1 = .4;
+  float r2 = .3;
+
+  vec2 s = vec2(.5,.5) - fract(uv);    
+  float r = lengthSqrd(s);
+  return (r < r1 * r1  && r > r2 * r2) ? 1 : 0;
+}
+
+function roundedTile (vec2 uv) -> float
+{
+	vec2 s = vec2(.5,.5) - fract(uv);    
+	float c = (lengthSqrd(s) < .25) ? 1 : 0;
+
+	return  tile(uv) * c;
+}
+
+function ribbon (vec2 uv) -> float
+{
+	uv = fract(uv);
+    uv[1] += .15 * sin(2 * uv[0] * PI);
+    uv = abs(vec2(.5, .5) - uv);
+
+    float r = (uv[0] + .1) * .15;
+	return (uv[1] < r) ? 0 : 1;
+}
+
+function spotwave (vec2 uv) -> float
+{
+	return spot(uv) * wave(uv);
+}
+
+function spotdiamondxor (vec2 uv) -> float
+{
+    float t = spot(uv * 2) + diamond(uv);
+    return (t != 1) ? 1 : 0;
+}
+
+function star(vec2 uv) -> float
+{
+    uv = abs( vec2(.5,.5) - fract(uv) );
+    uv = log(E * abs(uv + vec2(.5,.5)));
+    
+    float r = .52;
+    return (uv[0] * uv[1] > r * r) ? 0 : 1;
+}
+
+function misc1(vec2 uv) -> float
+{
+	uv = abs( vec2(.5,.5) - fract(uv) ) + vec2(.5, .5);
+    uv[0] = pow(uv[0], .7);
+    uv[1] = pow(uv[1], 1.5);
+    return (uv[0] * uv[1] > .65 * cos(uv[0])) ? 0 : 1;
+}
+
+
+function test(vec2 uv) -> float
+{
+	return tile(uv + vec2(.5, .5)) || spot(uv * 8);
+}
+
+function weave_WIP(vec2 uv) -> float
+{
+	uv = 2 * uv;
+
+    // Extract the fractional and integer parts
+    vec2 f = fract(uv);
+	vec2 i = uv - f;
+	
+    // Switch the fractional part to a distance
+    // from the tile center
+    f = abs(vec2(.5, .5) - f);
+
+    // Create a smooth curve from .5 to 1.0
+    vec2 d = vec2(.5,.5) + pow(cos(f * PI), .75) / 2.0;
+
+    // Invert the over/under on every other tile
+    //if ((i[0] + i[1]) % 2 == 0) {
+        float tmp = f[0];
+        f[0] = f[1];
+        f[1] = tmp;
+
+        tmp = d[0];
+        d[0] = d[1];
+        d[1] = tmp;
+    //}
+
+	return d[0];
+
+
+    // Invert the color of the lower strip
+    d[0] = 1.0 - d[0];
+
+    //if (f[0] < .4)
+    //	  return d[1];
+    //else if (f[1] < .4)
+    //    return d[0];
+    //else
+    //    return 0;
+}

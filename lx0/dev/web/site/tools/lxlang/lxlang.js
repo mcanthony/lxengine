@@ -44,7 +44,7 @@ var lxlang2 = (function() {
                 ws : /^\s+/,
                 comment : /^\/\/[^\n]*\n\s*/,
                 
-                number : /^[0-9\.][0-9]*/,
+                number : /^[0-9\.][\.0-9]*/,
                 
                 operator : /^[\+\*\-\/\%\<\>]/,
                 
@@ -298,6 +298,7 @@ var lxlang2 = (function() {
                 '<=' : 2,
                 '>' : 2,
                 '>=' : 2,
+                '!=' : 2,
                 '||' : 1,
                 '&&' : 1,
             },          
@@ -348,7 +349,9 @@ var lxlang2 = (function() {
                                 if (!info || !info.rttype)
                                 {
                                     console.log("Symbol stack:", this._symbolStack);
-                                    this._error(lex, "No symbol information for '%1%'", symbol);
+                                    console.log("Operator: ", operator, "Left: ", first, "Right: ", second);
+                                    console.log("Operator: ", operator.value, "Left Type: ", first.rttype, "Right Type:", second.rttype);
+                                    this._error(lex, "E1005 No symbol information for '%1%'", symbol);
                                 }
                                 rttype = info.rttype;
                             }
@@ -389,6 +392,12 @@ var lxlang2 = (function() {
                 
                 if (first)
                 {                
+                    if (!first.rttype)
+                    {
+                        console.log("Untyped Expression:", first);
+                        this._error(lex, "E1006 Parsed expression but could not determine type");
+                    }
+
                     lex.consume("@ws?");
                     var second = this.parseExpressionR(first, precedence, lex);
                     while (second)
@@ -444,6 +453,7 @@ var lxlang2 = (function() {
                     if (expr && end)
                         return {
                             type : "parenthetical",
+                            rttype : expr.rttype,
                             value : expr
                         };
                 },
@@ -458,6 +468,8 @@ var lxlang2 = (function() {
 
                 functionCall : function (lex)
                 {
+                    var start = lex.tell()[0];
+
                     var r = lex.consume("@ws?", "@name", "@ws?", "(");
                     if (!r) return;
 
@@ -473,6 +485,12 @@ var lxlang2 = (function() {
                             a = undefined;
                     }
                     var b = lex.consume("@ws?", ")", "@ws?");
+                    if (!b)
+                    {
+                        console.log(r, args, b);
+                        this._error(lex, "Could not find function call close");
+                    }
+
                     if (r && b)
                     {
                         var fullName = [ r[1] ];
@@ -493,6 +511,11 @@ var lxlang2 = (function() {
                         }
 
                         return { type : "functionCall", value : r[1], fullName: fullName, args: args, rttype : info.rttype };
+                    }
+                    else
+                    {
+                        console.log(r, args, b);
+                        this._error(lex, "Expected function call around '%1%'", start.substr(0, 40));
                     }
                 },
 
@@ -746,15 +769,21 @@ var lxlang2 = (function() {
                         this._addSymbol(name + "$" + type, { rttype : type });
                     }
                 }
-                var standardFunctions = "abs,floor,fract,sqrt,sin,cos";
+                var standardFunctions = "abs,floor,fract,sqrt,sin,cos,log";
                 add1to1.call(this, "float", standardFunctions);
                 add1to1.call(this, "vec2", standardFunctions);
                 add1to1.call(this, "vec3", standardFunctions);
 
                 
                 this._addSymbol("PI", { rttype : "float" } );
+                this._addSymbol("E", { rttype : "float" } );
+
+                this._addSymbol("pow$float$float", { rttype : "float" });
+                this._addSymbol("pow$vec2$float", { rttype : "vec2" });
 
                 this._addSymbol("*$vec2$float", { rttype : "vec2" });
+                this._addSymbol("/$vec2$float", { rttype : "vec2" });
+                this._addSymbol("*$float$vec2", { rttype : "vec2" });
                 this._addSymbol("dot$vec3$vec3", { rttype : "float" });
                 this._addSymbol("length$vec2", { rttype : "float" });
                 this._addSymbol("lengthSqrd$vec2", { rttype : "float" });
@@ -788,9 +817,10 @@ var lxlang2 = (function() {
     })();
 
     NS.GenerateBase = (function() {
-        var ctor = function() {
+        var ctor = function(options) {
             this._body = "";
             this._indent = 0;
+            this._options = options || {};
         };
         var methods =
         {
@@ -919,10 +949,19 @@ var lxlang2 = (function() {
                     tr.call(this, ast);
             },
             
-            translate : function (ast) 
+            translate : function (ast, options) 
             {
+                var baseOptions = this._options;
+
+                this._body = "";
+                this._indent = 0;
+                this._options = options || baseOptions || {};
+
                 this._astRoot = ast;
                 this._translate(ast);
+
+                this._options = baseOptions;
+
                 return this._body;
             },                      
         };
@@ -934,8 +973,8 @@ var lxlang2 = (function() {
     })();
 
     NS.GenerateJavascript = (function() {
-        var ctor = function() {
-            NS.GenerateBase.call(this);
+        var ctor = function(options) {
+            NS.GenerateBase.call(this, options);
         };
 
         var methods = {
@@ -943,6 +982,7 @@ var lxlang2 = (function() {
             _predefinedVariables :
             {
                 "PI" : "Math.PI",
+                "E" : "Math.E"
             },
 
             _predefinedFunctions :
@@ -951,7 +991,9 @@ var lxlang2 = (function() {
                 "cos" : "Math.cos",
                 "sqrt" : "Math.sqrt",
                 "floor" : "Math.floor",
+                "log" : "Math.log",
                 "abs" : "Math.abs",
+                "pow" : "Math.pow",
                 "vec2" : "new Array",
                 "vec3" : "new Array",
             },
@@ -961,6 +1003,9 @@ var lxlang2 = (function() {
                 "abs$vec2" : "_lxbb_abs_vec2",
                 "floor$vec2" : "_lxbb_floor_vec2",
                 "fract$vec2" : "_lxbb_fract_vec2",
+                "log$vec2" : "_lxbb_log_vec2",
+                "pow$vec2$float" : "_lxbb_pow_vec2_float",
+                "cos$vec2" : "_lxbb_cos_vec2",
             },
 
             resolveFunctionName : function(name, type)
@@ -998,6 +1043,7 @@ var lxlang2 = (function() {
                     ">" : "gt",
                     "<=" : "lte",
                     ">=" : "gte",
+                    "!=" : "neq"
                 },
 
                 name : function(ast)
@@ -1030,8 +1076,11 @@ var lxlang2 = (function() {
 
                 "function" : function (ast)
                 {
+                    //
+                    // Use string literals to avoid Google closure compiler from renaming the function
+                    // 
                     if (this._astRoot.type != "function")
-                        this.append("NS.%1% = ", ast.name);
+                        this.append("NS['%1%'] = ", ast.name);
 
                     this.append("function(");
                     for (var i = 0; i < ast.argumentList.length; ++i)
@@ -1053,8 +1102,11 @@ var lxlang2 = (function() {
                     if (this._astRoot.type != "function")
                     {
                         this.append( ";\n" );
-                        
-                        this.append("NS.%1%.source = %2%;\n\n", ast.name, JSON.stringify(ast.source));
+
+                        if (this._options.includeSource)
+                        {                        
+                            this.append("NS['%1%']['source'] = %2%;\n\n", ast.name, JSON.stringify(ast.source));
+                        }
                     }
                 },
 
@@ -1065,16 +1117,22 @@ var lxlang2 = (function() {
                     this.append("// Ensure the namespace exists\n");
                     this.append("try { eval(\"%1%\"); } catch (e) { %1% = {}; };\n", module[0]);
 
-                    for (var i = 1; i < module.length; ++i) {
+                    // Ensure the last portion of the module uses a string property look-up
+                    // rather than the "dot" member notation: this prevents Google Closure
+                    // Compiler from renaming the member. 
+                    // (http://code.google.com/closure/compiler/docs/api-tutorial3.html#export)
+                    //
+                    for (var i = 1; i < module.length; ++i) {                        
                         this.append("if (!");
-                        for (var j = 0; j < i; ++j)
-                            this.append("%1%.", module[j]);
-                        this.append("%1%", module[i]);
+                        this.append("%1%", module[0]);
+                        for (var j = 1; j <= i; ++j)
+                            this.append("[\"%1%\"]", module[j]);
                         this.append(") ");
 
-                        for (var j = 0; j < i; ++j)
-                            this.append("%1%.", module[j]);                        
-                        this.append("%1% = {};\n", module[i]);
+                        this.append("%1%", module[0]);
+                        for (var j = 1; j <= i; ++j)
+                            this.append("[\"%1%\"]", module[j]);
+                        this.append("= {};\n", module[i]);                      
                     } 
                     this.append("\n");
 
@@ -1083,7 +1141,11 @@ var lxlang2 = (function() {
                     for (var i in ast.functions)                
                         this._translate(ast.functions[i]);
                     this.decIndent();
-                    this.append("})(%1%);\n", ast.module.value);
+                    this.append("})(");
+                    this.append("%1%", module[0]);
+                    for (var i = 1; i < module.length; ++i)
+                        this.append("[\"%1%\"]", module[i]);
+                    this.append(");\n");
 
                 },
             }

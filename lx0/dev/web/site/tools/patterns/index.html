@@ -39,13 +39,41 @@
         <div class="layout-row">
           <div style="max-width: 40em">
             <p>
+                <strong>Project Status:</strong>&nbsp;&nbsp;
+                <span style="font-size: 80%; color: #CCC">
+                    <span style="color: #37A; font-weight: bold; text-shadow: #DDD 0px 0px 2px">Prototype</span> |
+                    Development |
+                    Alpha |
+                    Beta |
+                    Production 
+                </span>
+            </p>
+            
+            <p>
                 A collection of pattern functions primarily designed for creating procedurals with the ShaderBuilder.
             </p>
-            <p>
-              <strong>Download</strong> <a id="download-link" href="lx.patterns.js">lx.patterns.js</a> (currently 
-              this links only to the generated Javascript code).<br />              
+            
+
+            <table class="clean-table">
+                <tr>
+                    <td>LxLang Source</td>
+                    <td><a href="../shared/script/lx.patterns.lxlang">lx.patterns.lxlang</a></td>
+                </tr>
+                <tr>
+                    <td>Compiled Javascript</td>
+                    <td><a id="compiled-link" href="#" target="_blank">lx.patterns.js</a><strong>*</strong></td>
+                </tr>
+                <tr>
+                    <td>Unoptimized Javascript</td>
+                    <td><a id="download-link" href="#" target="_blank">lx.patterns.js</a></td>
+                </tr>
+            </table>
+
+            <p style="font-style: italic; font-size: 9pt">
+                <strong>*</strong> This links to the dynamically generated Javascript after it has been
+                run through the <a href="http://code.google.com/closure/compiler/docs/gettingstarted_api.html">Google Closure Compiler</a>.
+                Currently, the generated Javascript code has a dependency on <a href="../shared/script/lx.vec.js">lx.vec.js</a>.
             </p>
-            <p>&nbsp;</p>
             
             <h4>Implementation</h4>
             <p>
@@ -60,10 +88,6 @@
               allows for a more GLSL-like syntax including overloaded operators and functions).  Since it is a work
               in progress, this page currently displays a mix of Javascript and LxLang code as the source
               for each pattern function.
-            </p>
-            <p>
-              The work in progress
-              lxlang source is available here: <a href="../shared/script/lx.patterns.lxlang">lx.patterns.lxlang</a>.
             </p>
 
           </div>
@@ -223,6 +247,11 @@
 
                   tasks.push( function() { $(_this).seamlessImage({ sliderMax : 8, count : 5 }); } );
 
+                  //
+                  // run_tasks will loop through the array of functions using setTimeout so that
+                  // it does not grab the focus entirely from the browser (i.e. the browse is
+                  // still usable by the user).
+                  //
                   lx.core.run_tasks(tasks, 0, { groupSize: 4 });
                 },
               };
@@ -252,6 +281,7 @@
             }
             
             var lxlangSource;
+            var lxlangSource2;
             function loadLxLang()
             {
                 var parser2 = new lxlang2.Parser();
@@ -262,21 +292,40 @@
                     async : false,
                     success : function(text) {
                                                     
-                            var ast = parser2.parse(text);
-                            var code = genJs.translate(ast);
-                            lxlangSource = code;
-                            try {
-                                eval(code);
-                            } catch (e)
-                            {
-                                console.log(code);
-                                console.log("Error in translated LxLang code");
-                                throw e;
-                            }
-                    },
+                        var ast = parser2.parse(text);
+                        var code = genJs.translate(ast, { includeSource : true });
+                        lxlangSource = code;
+                        lxlangSource2 = genJs.translate(ast);
+                        try {
+                            eval(code);
+                        } catch (e)
+                        {
+                            console.log(code);
+                            console.log("Error in translated LxLang code");
+                            throw e;
+                        }
+                    }
                 });
             }
 
+            function compileWithGoogleClosureCompiler(source)
+            {
+                var form = $("<form/>");
+                form.attr("method", "post");
+                form.attr("action", "http://closure-compiler.appspot.com/compile");
+                form.attr("target", "_blank");
+
+                var src = $("<input type='hidden' name='js_code' />");
+                src.val( source );
+
+                form.append( src );
+                form.append( $("<input type='hidden' name='output_format' value='text'/>") );
+                form.append( $("<input type='hidden' name='output_info' value='compiled_code'/>") );
+                form.append( $("<input type='hidden' name='compilation_level' value='ADVANCED_OPTIMIZATIONS'/>") );
+
+                $("body").append(form);
+                form.submit();
+            }
 
             $(document).ready(function () {
  
@@ -292,9 +341,14 @@
               var dataUri = 'data:text/plain,' + escape(lxlangSource);
               $("#download-link").attr("href", dataUri).attr("target", "_blank");
 
+              $("#compiled-link").click(function() {
+                compileWithGoogleClosureCompiler(lxlangSource2);
+                return false;
+              });
+
               showPatterns("#example", [ "weave" ]);
               showPatterns("#basic", ["checker", "spot", "stripe", "tile", "diamond", "wave" ]);
-              showPatterns("#variation", [ "ribbon" ]);
+              showPatterns("#variation", [ "circle", "roundedTile", "ribbon" ]);
               showPatterns("#compound", "spotwave, spotdiamondxor".split(","));
               showPatterns("#misc", [ "star", "misc1" ]);
               showPatterns("#complex", [ "weave" ]);
