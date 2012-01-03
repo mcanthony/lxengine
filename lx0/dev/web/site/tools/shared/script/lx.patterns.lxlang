@@ -94,7 +94,7 @@ function ribbon (vec2 uv) -> float
 
 function spotwave (vec2 uv) -> float
 {
-	return spot(uv) * wave(uv);
+	return spot(uv) * wave(uv + vec2(.5, .5));
 }
 
 function spotdiamondxor (vec2 uv) -> float
@@ -129,17 +129,6 @@ function gateLattice (vec2 uv) -> float
   
   return abs(x + y) < .1;
 }
-
-function eyeLattice (vec2 uv) -> float
-{
-  vec2 t = abs(vec2(.5, .5) - fract(uv));
-  float a = t[0] * 1 * PI;
-  float x = t[0] * cos(a) - t[1] * sin(a);
-  float y = t[1] * cos(a) + t[0] * sin(a);
-  
-  return (tile(vec2(x * .5, y * 2)) > 0) ? 1 : 0;
-}
-
 
 function gridBump(vec2 uv) -> float
 {

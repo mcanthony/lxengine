@@ -51,6 +51,10 @@
             <p>
                 A collection of pattern functions primarily designed for creating procedurals with the ShaderBuilder.
             </p>
+            <p>
+              The functions for generating the patterns are available for download below, or the click on the image
+              examples to download a static image version of the pattern.
+            </p>
             
 
             <table class="clean-table">
@@ -102,16 +106,51 @@
         </div>
 
         <h2>Settings</h2>
-        <p>
-            <strong>Color scheme:</strong>
-            <select id="colorScheme">
-                <option selected value="[0,0,0]|[255,255,255]">black &amp; white</option>
-                <option value="[255,255,255]|[0,0,0]">white &amp; black</option>
-                <option value="[206,40,40]|[249,217,95]">red &amp; gold</option>
-                <option value="[13,50,55]|[45,176,59]">blue &amp; green</option>
-            </select>
-        </p>
 
+        <table class="clean-table">
+          <tr>
+            <td>Color scheme</td>
+            <td>
+              <select id="colorScheme">
+                  <option selected value="[0,0,0]|[255,255,255]">black &amp; white</option>
+                  <option value="[255,255,255]|[0,0,0]">white &amp; black</option>
+                  <option value="[206,40,40]|[249,217,95]">red &amp; gold</option>
+                  <option value="[13,50,55]|[45,176,59]">blue &amp; green</option>
+              </select>
+            </td>
+          </tr>
+          
+          <tr>
+            <td>Resolution</td>
+            <td>
+              <select id="resolution">
+                <option selected value="512,512">512 x 512</option>
+                <option selected value="256,256">256 x 256</option>
+                <option value="128,128">128 x 128</option>
+                <option value="64,64">64 x 64</option>
+                <option value="32,32">32 x 32</option>
+                <option value="16,16">16 x 16</option>
+                <option value="8,8">8 x 8</option>
+                <option value="4,4">4 x 4</option>
+            </select>
+            </td>
+          </tr>
+
+          <tr>
+            <td>Multi-sample</td>
+            <td>
+              <select id="Select1">
+                <option selected value="true">yes</option>
+                <option value="false">no</option>
+            </select>
+            </td>
+          </tr>
+
+        </table>
+        <p style="font-style:italic">
+          These settings control how the patterns are rendered below.  The page will automatically reload on a
+          change to the settings.
+        </p>
 
         <div id="pattern-template" style="display: none">
           <h3 class="pattern-name"></h3>
@@ -154,7 +193,7 @@
 
           var color0 = [ 0, 0, 0 ];
           var color1 = [ 255, 255, 255 ];
-
+          
           function checkCookies()
           {
             var scheme = $.cookie('colorScheme');
@@ -165,13 +204,20 @@
               eval("color0 = " + arr[0] + ";");
               eval("color1 = " + arr[1] + ";");
             }
+            var multisample = $.cookie('multisample');
+            if (multisample)
+              $("#multisample").val(multisample);
+           
+            var resolution = $.cookie('resolution');
+            if (resolution)
+              $("#resolution").val(resolution);
           }
 
           (function ($) {
 
               var util =
               {
-                drawRow : function (ctx, y, func)
+                drawRow : function (ctx, y, func, multisample)
                 {
                     var rowData = ctx.createImageData(this.width, 1);
                     var pixels = rowData.data;
@@ -186,16 +232,22 @@
                       var dx = (.5 / this.width);
                       var dy = (.5 / this.height);
 
-                      var g = 2 * func(uv);
-                      g += func([uv[0] - dx, uv[1] - dy, 0]);
-                      g += func([uv[0] + dx, uv[1] - dy, 0]);
-                      g += func([uv[0] + dx, uv[1] + dy, 0]);
-                      g += func([uv[0] - dx, uv[1] + dy, 0]);
-                      g += func([uv[0] - dx, uv[1], 0]);
-                      g += func([uv[0] + dx, uv[1], 0]);
-                      g += func([uv[0], uv[1] + dy, 0]);
-                      g += func([uv[0], uv[1] + dy, 0]);
-                      g /= 10;
+                      var g;
+                      if (multisample)
+                      {
+                        g = 2 * func(uv);
+                        g += func([uv[0] - dx, uv[1] - dy, 0]);
+                        g += func([uv[0] + dx, uv[1] - dy, 0]);
+                        g += func([uv[0] + dx, uv[1] + dy, 0]);
+                        g += func([uv[0] - dx, uv[1] + dy, 0]);
+                        g += func([uv[0] - dx, uv[1], 0]);
+                        g += func([uv[0] + dx, uv[1], 0]);
+                        g += func([uv[0], uv[1] + dy, 0]);
+                        g += func([uv[0], uv[1] + dy, 0]);
+                        g /= 10;
+                      }
+                      else
+                        g = func(uv);
                       
                       var c = [0, 0, 0];
                       if (g >= 0 && g <= 1) {
@@ -231,6 +283,8 @@
                 draw : function(options)
                 {
                   var _this = this;
+                  var multisample = options.multisample;
+
                   var func = options.func;
                   var dataFunc = $(this).attr("data-pattern");
                   if (dataFunc)
@@ -241,7 +295,7 @@
                       var ctx = this.getContext('2d');
                       var tasks = [];
                       for (var y = 0; y < this.height; ++y) {
-                        var task = (function(y) { return function() { util.drawRow.call(_this, ctx, y, func); } })(y); 
+                        var task = (function(y) { return function() { util.drawRow.call(_this, ctx, y, func, multisample); } })(y); 
                         tasks.push(task);
                       }
 
@@ -260,7 +314,9 @@
 
               $.fn.pattern = function (options) {
 
-                options = $.extend({}, options);
+                options = $.extend({
+                  multisample : true,
+                }, options);
                 
                 return this.each(function () {
                   methods.draw.call(this, options);
@@ -338,6 +394,20 @@
                 $.cookie('colorScheme', scheme);
                 window.location.reload(true);
               });
+              $("#multisample").change(function() {
+                $.cookie('multisample', $(this).val());
+                window.location.reload(true);
+              });
+              $("#resolution").change(function() {
+                $.cookie('resolution', $(this).val());
+                window.location.reload(true);
+              });
+
+              var resolution = $("#resolution").val().split(",");
+              var canvasWidth = parseInt(resolution[0]);
+              var canvasHeight = parseInt(resolution[0]);
+              $(".pattern").attr("width", canvasWidth).attr("height", canvasHeight);
+
 
               var dataUri = 'data:text/plain,' + escape(lxlangSource);
               $("#download-link").attr("href", dataUri).attr("target", "_blank");
@@ -349,13 +419,16 @@
 
               showPatterns("#example", [ "weave" ]);
               showPatterns("#basic", ["checker", "spot", "stripe", "tile", "diamond", "wave" ]);
-              showPatterns("#variation", [ "star", "ribbon", "checkerSmooth", "gateLattice", "eyeLattice" ]);
+              showPatterns("#variation", [ "star", "ribbon", "checkerSmooth", "gateLattice" ]);
               showPatterns("#compound", "circle,roundedTile,spotwave,spotdiamondxor,gridBump".split(","));
               showPatterns("#complex", [ "weave" ]);
 
               $("#toc").tableOfContents();
 
-              window.setTimeout(function() { $(".pattern").pattern(); }, 500);
+              var options = {};
+              options.multisample = ($("#multisample").val() == "true");
+
+              window.setTimeout(function() { $(".pattern").pattern(options); }, 500);
               $(".source").includeSource();
 
             });

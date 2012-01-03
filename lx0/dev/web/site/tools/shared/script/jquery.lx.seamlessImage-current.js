@@ -102,10 +102,21 @@
                 //
                 // Set up the HTML UI elements
                 //
+                var outerMostElem = canvas;
+                
+                if (options.link)
+                {
+                    var link = $("<a/>");
+                    link.attr("href", src);
+                    link.attr("target", "_blank");
+                    link.append(outerMostElem);
+                    outerMostElem = link;
+                }
+
                 if (options.ui)
                 {
                     var div = $("<div/>");
-                    div.append(canvas);
+                    div.append(outerMostElem);
                 
                     var inner = $("<div/>");
                     inner.css("width", img.width + "px");
@@ -137,11 +148,11 @@
                         slider.val(count * 100);
                     });
 
-                    $(elem).replaceWith(div);
+                    outerMostElem = div;
                 }
-                else
-                    $(elem).replaceWith(canvas);
                 
+                $(elem).replaceWith(outerMostElem);
+
                 // The HTML is set up, so go ahead and draw the tiled images
 
                 if (options.animate)
@@ -213,6 +224,7 @@
             'sliderMax' : 4,
             'ui' : true,
             'animate' : true,
+            'link' : true,
         }, userOptions);
 
         return this.each(function () {
