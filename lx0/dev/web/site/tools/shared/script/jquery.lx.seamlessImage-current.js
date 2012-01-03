@@ -94,7 +94,9 @@
                 var state = 
                 {
                     count : parseFloat(options.count),
+                    rotation : parseFloat(options.rotation),
                     image : img,
+                    allowAnimate : true,
                     onDraw : [],
                 }
                 $.data(canvas, "seamlessImage", state);
@@ -119,16 +121,30 @@
                     div.append(outerMostElem);
                 
                     var inner = $("<div/>");
+                    var horzSlider, vertSlider;
                     inner.css("width", img.width + "px");
                     {
-                        var slider = $("<input/>");
-                        slider.attr("type", "range");
-                        slider.attr("min", 25);
-                        slider.attr("max", options.sliderMax * 100);
-                        slider.attr("value", 100);
-                        slider.attr("step", 1);
-                        slider.css("width", elem.width + "px");
-                        inner.append(slider);
+                        vertSlider = $("<input/>");
+                        vertSlider.attr("type", "range");
+                        vertSlider.attr("min", -180);
+                        vertSlider.attr("max", 180);
+                        vertSlider.attr("value", 0);
+                        vertSlider.attr("step", 1);
+                        vertSlider.css("width", "32px");
+                        vertSlider.css("height", elem.height + "px");
+                        vertSlider.css("-webkit-appearance", "slider-vertical");
+                        vertSlider.css("float", "left");
+                        outerMostElem.css("float", "left");
+                        outerMostElem.after(vertSlider);
+
+                        horzSlider = $("<input/>");
+                        horzSlider.attr("type", "range");
+                        horzSlider.attr("min", 25);
+                        horzSlider.attr("max", options.sliderMax * 100);
+                        horzSlider.attr("value", 100);
+                        horzSlider.attr("step", 1);
+                        horzSlider.css("width", elem.width + "px");
+                        inner.append(horzSlider);
 
                         var text = $("<div/>");
                         text.css("text-align", "center");
@@ -137,8 +153,14 @@
                     }
                     div.append(inner);
 
-                    slider.change(function() {
+                    horzSlider.change(function() {
+                        state.allowAnimate = false;
                         state.count = parseFloat($(this).val()) / 100;
+                        methods.draw(canvas);
+                    });
+                    vertSlider.change(function() {
+                        state.allowAnimate = false;
+                        state.rotation = parseFloat($(this).val());
                         methods.draw(canvas);
                     });
                     state.onDraw.push(function() {
@@ -161,7 +183,7 @@
                     state.count = 1;
                     var worker = function() {
                         var diff = target - state.count;
-                        if (Math.abs(diff) > .01) {
+                        if (Math.abs(diff) > .01 && state.allowAnimate) {
                             if (diff < 0) diff = Math.max(diff, -0.05);
                             else diff = Math.min(diff, 0.05);
                             state.count += diff;
@@ -183,7 +205,7 @@
             img.src = src;     
         },
 
-        draw: function (elem) {
+        draw : function (elem) {
             var state = $.data(elem, "seamlessImage");
             var scale = 1.0 / state.count;
             var img = state.image;
@@ -193,6 +215,7 @@
             ctx.save();
             ctx.translate(img.width / 2, img.height / 2);
             ctx.scale(scale, scale);
+            ctx.rotate(state.rotation * Math.PI / 180);
 
             var pattern = ctx.createPattern(img, 'repeat');  
             var dx = elem[0].width / 2;
@@ -222,6 +245,7 @@
         var settings = $.extend({
             'count' : 1,
             'sliderMax' : 4,
+            'rotation' : 0,
             'ui' : true,
             'animate' : true,
             'link' : true,
