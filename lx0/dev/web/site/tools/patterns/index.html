@@ -139,7 +139,7 @@
           <tr>
             <td>Multi-sample</td>
             <td>
-              <select id="Select1">
+              <select id="multisample">
                 <option selected value="true">yes</option>
                 <option value="false">no</option>
             </select>
@@ -224,18 +224,18 @@
                     for (var x = 0; x < this.width; ++x) {
 
                       var uv = [
-                        (x / (this.width)),
-                        (y / (this.height)),
+                        ((x + .5) / (this.width)),
+                        ((y + .5) / (this.height)),
                         0
                       ];
                       
-                      var dx = (.5 / this.width);
-                      var dy = (.5 / this.height);
+                      var dx = (.33 / this.width);
+                      var dy = (.33 / this.height);
 
                       var g;
                       if (multisample)
                       {
-                        g = 2 * func(uv);
+                        g = func(uv);
                         g += func([uv[0] - dx, uv[1] - dy, 0]);
                         g += func([uv[0] + dx, uv[1] - dy, 0]);
                         g += func([uv[0] + dx, uv[1] + dy, 0]);
@@ -244,7 +244,7 @@
                         g += func([uv[0] + dx, uv[1], 0]);
                         g += func([uv[0], uv[1] + dy, 0]);
                         g += func([uv[0], uv[1] + dy, 0]);
-                        g /= 10;
+                        g /= 9;
                       }
                       else
                         g = func(uv);
