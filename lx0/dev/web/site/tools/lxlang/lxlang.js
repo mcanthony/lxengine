@@ -728,6 +728,12 @@ var lxlang2 = (function() {
                         {
                             var name = lvalue[1];
                             var info = this._symbolInfo(name);
+                            
+                            if (!info)
+                            {
+                                this._error(lex, "E1009 No symbol information for '" + name + "'");
+                            }
+                            
                             rttype = info.rttype;
                             op = lvalue[3];
                             break;
@@ -819,6 +825,7 @@ var lxlang2 = (function() {
 
                 this._addSymbol("pow$float$float", { rttype : "float" });
                 this._addSymbol("pow$vec2$float", { rttype : "vec2" });
+                this._addSymbol("atan$float$float", { rttype : "float" });
 
                 this._addSymbol("*$vec2$float", { rttype : "vec2" });
                 this._addSymbol("/$vec2$float", { rttype : "vec2" });
@@ -1033,8 +1040,9 @@ var lxlang2 = (function() {
                 "log" : "Math.log",
                 "abs" : "Math.abs",
                 "pow" : "Math.pow",
+                "atan" : "Math.atan2",
                 "vec2" : "new Array",
-                "vec3" : "new Array",
+                "vec3" : "new Array"
             },
 
             _predefinedFunctions2 :

@@ -267,6 +267,7 @@ lx.vec = (function () {
     _lxbb_pow_vec2_float = function(u, e) { return [Math.pow(u[0], e),  Math.pow(u[1], e) ]; }
 
     _lxbb_dot_vec2_vec2 = function(u, v) { return u[0] * v[0] + u[1] * v[1]; }
+    _lxbb_length_vec2 = function(v) { return Math.sqrt(v[0] * v[0] + v[1] * v[1]); }
     _lxbb_lengthSqrd_vec2 = function(v) { return v[0] * v[0] + v[1] * v[1]; }
 
 })();

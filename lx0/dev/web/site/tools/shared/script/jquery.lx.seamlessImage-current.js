@@ -38,6 +38,8 @@
             return slider.type == "range";
         }
     };
+
+    var allowUi = util.supportsInputTypeRange();
     
     var methods =
     {
@@ -115,7 +117,7 @@
                     outerMostElem = link;
                 }
 
-                if (options.ui)
+                if (options.ui && allowUi)
                 {
                     var div = $("<div/>");
                     div.append(outerMostElem);
@@ -272,15 +274,5 @@
         });
 
     };
-
-    //
-    // Convert the plug-in to a no-op if the range element isn't supported.
-    // Theoretically could use a JQuery slider instead, if desired.
-    //
-    if (!util.supportsInputTypeRange())
-    {
-        $["fn"]["seamlessImage"] = function() {            
-        };
-    }
 
 })(jQuery);
