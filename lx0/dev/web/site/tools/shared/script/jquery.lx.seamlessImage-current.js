@@ -97,7 +97,7 @@
                     rotation : parseFloat(options.rotation),
                     image : img,
                     allowAnimate : true,
-                    onDraw : [],
+                    onDraw : []
                 }
                 $.data(canvas, "seamlessImage", state);
 
@@ -167,7 +167,7 @@
                         var count = $.data(canvas, "seamlessImage").count;
                         var textCount = Math.floor(count * 100) / 100;
                         text.text(textCount);
-                        slider.val(count * 100);
+                        horzSlider.val(count * 100);
                     });
 
                     outerMostElem = div;
@@ -231,7 +231,7 @@
         }
     };
 
-    $.fn.seamlessImage = function () {
+    $["fn"]["seamlessImage"] = function () {
 
         var command = "draw";
         var userOptions = arguments[0];
@@ -248,7 +248,7 @@
             'rotation' : 0,
             'ui' : true,
             'animate' : true,
-            'link' : true,
+            'link' : true
         }, userOptions);
 
         return this.each(function () {
@@ -279,7 +279,7 @@
     //
     if (!util.supportsInputTypeRange())
     {
-        $.fn.seamlessImage = function() {            
+        $["fn"]["seamlessImage"] = function() {            
         };
     }
 

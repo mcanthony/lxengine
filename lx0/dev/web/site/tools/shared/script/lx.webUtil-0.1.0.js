@@ -116,3 +116,45 @@
     };
 
 })(jQuery);
+
+
+function compileWithGoogleClosureCompiler(source, options)
+{
+    options = $.extend({
+        compilation_level : "ADVANCED_OPTIMIZATIONS",
+    }, options);
+
+    function submitForm(source)
+    {
+        var form = $("<form/>");
+        form.attr("method", "post");
+        form.attr("action", "http://closure-compiler.appspot.com/compile");
+        form.attr("target", "_blank");
+
+        var src = $("<input type='hidden' name='js_code' />");
+        src.val( source );
+        console.log(source);
+
+        form.append( src );
+        form.append( $("<input type='hidden' name='output_format' value='text'/>") );
+        form.append( $("<input type='hidden' name='output_info' value='compiled_code'/>") );
+        form.append( $("<input type='hidden' name='compilation_level' value='" + options.compilation_level + "'/>") );
+
+        $("body").append(form);
+        form.submit();
+    }
+
+    if (source.match(/\.js$/i))
+    {
+        
+        $.ajax(source + "?rand=" + Math.random(), {
+            dataType : "text",
+            async : true,
+            success : function(text) {
+                submitForm(text);
+            }
+        });
+    }
+    else
+        submitForm(source);
+}

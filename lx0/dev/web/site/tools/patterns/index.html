@@ -365,25 +365,6 @@
                 });
             }
 
-            function compileWithGoogleClosureCompiler(source)
-            {
-                var form = $("<form/>");
-                form.attr("method", "post");
-                form.attr("action", "http://closure-compiler.appspot.com/compile");
-                form.attr("target", "_blank");
-
-                var src = $("<input type='hidden' name='js_code' />");
-                src.val( source );
-
-                form.append( src );
-                form.append( $("<input type='hidden' name='output_format' value='text'/>") );
-                form.append( $("<input type='hidden' name='output_info' value='compiled_code'/>") );
-                form.append( $("<input type='hidden' name='compilation_level' value='ADVANCED_OPTIMIZATIONS'/>") );
-
-                $("body").append(form);
-                form.submit();
-            }
-
             $(document).ready(function () {
  
               loadLxLang();

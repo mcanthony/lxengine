@@ -27,7 +27,10 @@
                 </p>
                 <p>
                     <strong>Download</strong> : 
-                      <a href="../shared/script/jquery.lx.seamlessImage-current.js">current</a> |
+                      <a href="../shared/script/jquery.lx.seamlessImage-current.js">current</a> 
+                      (<a id="compiled-link" href="../shared/script/jquery.lx.seamlessImage-current.js">compiled</a>)
+                      | 
+                      <a href="../shared/script/jquery.lx.seamlessImage-0.2.1.js">0.2.1</a>,
                       <a href="../shared/script/jquery.lx.seamlessImage.0.2.0.js">0.2.0</a>
                 </p>
             </div>
@@ -101,12 +104,11 @@ $(".seamlessImage").seamlessImage({ count : 4 });
                 The default value is <code>1</code>.
             </p>
           </div>
-          
-          <h4>sliderMax</h4>
+
+          <h4>rotation</h4>
           <div class="indent">
             <p>
-                Controls the maxium number of tiles (i.e. <code>count</code>) to allow for on the inserted UI slider.
-                The default value is <code>4</code>.
+                The rotation, in degrees, to display the tiled image at.  The default is <code>0</code>.
             </p>
           </div>
           
@@ -117,6 +119,14 @@ $(".seamlessImage").seamlessImage({ count : 4 });
             tiled image, thus the <code>count</code> option will likely be set to a value of than <code>1</code> when
             setting this option to <code>false</code>.  The default value is <code>true</code>.
           </p>
+          </div>
+
+          <h4>sliderMax</h4>
+          <div class="indent">
+            <p>
+                Controls the maxium number of tiles (i.e. <code>count</code>) to allow for on the inserted UI slider.
+                The default value is <code>4</code>.
+            </p>
           </div>
 
           <h4>animate</h4>
@@ -148,6 +158,12 @@ $(".seamlessImage").seamlessImage({ count : 4 });
                 $("#toc").tableOfContents();
                 $("#source").includeSource();
                 $(".seamlessImage").seamlessImage();
+
+                $("#compiled-link").click(function () {
+                  var url = $(this).attr("href");
+                  compileWithGoogleClosureCompiler(url, { compilation_level : "SIMPLE_OPTIMIZATIONS" });
+                  return false;
+                });
             });
         -->
         </script>
