@@ -120,6 +120,26 @@ function checkerSmooth(vec2 uv) -> float
     return (uv[0] * uv[1] > .65 * cos(uv[0])) ? 0 : 1;
 }
 
+function gateLattice (vec2 uv) -> float
+{
+  vec2 t = abs( vec2(.5, .5) - fract(uv) );
+  float a = t[1] * PI;
+  float x = t[0] * cos(a) - t[1] * sin(a);
+  float y = t[1] * cos(a) + t[0] * sin(a);
+  
+  return abs(x + y) < .1;
+}
+
+function eyeLattice (vec2 uv) -> float
+{
+  vec2 t = abs(vec2(.5, .5) - fract(uv));
+  float a = t[0] * 1 * PI;
+  float x = t[0] * cos(a) - t[1] * sin(a);
+  float y = t[1] * cos(a) + t[0] * sin(a);
+  
+  return (tile(vec2(x * .5, y * 2)) > 0) ? 1 : 0;
+}
+
 
 function gridBump(vec2 uv) -> float
 {
