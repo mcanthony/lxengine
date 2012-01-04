@@ -46,7 +46,7 @@
       {
       center : [ 1.2, 2.5, .5 ],
       radius : .5,
-      diffuse : "return shaders.checker( shaders.spherical(fragment.position, [32, 32]) ) ? [ .96, 1.0, .96 ] : [ .35, .95, .12];",
+      diffuse : "return lx.patterns.checker( shaders.spherical(fragment.position, [32, 32]) ) ? [ .96, 1.0, .96 ] : [ .35, .95, .12];",
       }
     </Sphere>
     <Sphere>
@@ -55,8 +55,8 @@
       radius : .5,
       diffuse : 
         <Text>
-          return shaders.checker( shaders.spherical(fragment.position, [128, 128]) ) 
-            ? [ .38, .12, 1.00 ] 
+          return lx.patterns.spot ( shaders.spherical(fragment.position, [128, 128]) ) 
+            ? [ .68, .12, 1.00 ] 
             : [ .35, .12, .95];
         </Text>
       }
