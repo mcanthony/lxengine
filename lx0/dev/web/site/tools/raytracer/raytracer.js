@@ -51,13 +51,6 @@ var raytracer = {};
                 ];
             },
 
-            checker : function (uv)
-            {
-                var t = _v.abs( _v.fract(uv) );
-                var s = _v.floor(_v.scale(t, 2));
-                return Math.floor((s[0] + s[1]) % 2);
-            },
-
             attenuation : function(fragPosition, lightPosition, scale)
             {
                 var L = _v.sub(lightPosition, fragPosition);
@@ -150,7 +143,10 @@ var raytracer = {};
             var state = {
                 scene : null,
                 style : null,
-                object : null,
+                object : {
+                    ref : null,
+                    center : null,
+                },
                 material : null,
                 fragment : {
                     position : null,
@@ -167,12 +163,19 @@ var raytracer = {};
             var isect = intersect(ray, objects);
             if (isect)
             {
+                var obj = isect.object;
+
                 state.scene = scene;
-                state.object = isect.object;
+                
+                state.object.ref = isect.object;
+                state.object.center = isect.object.center();
+
                 state.fragment.position = isect.position;
+                state.fragment.positionWc = isect.position;
+                state.fragment.positionOc = _lxbb_sub_vec3(state.fragment.positionWc, state.object.center);
                 state.fragment.normal = isect.normal;
 
-                state.context.diffuse = state.object.diffuse || state.scene.diffuse || [1, 1, 1];
+                state.context.diffuse = obj.diffuse || state.scene.diffuse || [1, 1, 1];
                 if (typeof state.context.diffuse == "string") state.context.diffuse = this._acquireShader(state.context.diffuse)(state);
 
                 var mat = {};
@@ -191,7 +194,7 @@ var raytracer = {};
                     lightRay.origin = lx.vec.addVec(lightRay.origin, lx.vec.mulScalar(lightRay.direction, 0.01));
 
                     var lightSect = intersect(lightRay, objects);
-                    var shadowTerm = (!lightSect || (lightSect.distance > isect.distance)) ? 1 : 0.2;
+                    var shadowTerm = (!lightSect || (lightSect.distance > isect.distance)) ? 1 : 0.25;
 
                     var intensity = light.intensity || 1.0;
 

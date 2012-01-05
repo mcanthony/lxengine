@@ -20,8 +20,15 @@
       position : [1, 1, 18],
       intensity : .1,
       }
-    </Light>    
-    
+    </Light>
+
+    <Light>
+      {
+      position : [9, 3, .15],
+      intensity : .125,
+      }
+    </Light>
+
     <Plane>{ normal : [ 1, 0, 0 ], diffuse : [ 1, .65, .55] }</Plane>
     <Plane>{ normal : [ 0, 1, 0 ], diffuse : [ .95, 1, .95] }</Plane>
     <Plane>{ normal : [ 0, 0, 1 ], diffuse : [ .75, .75, 1] }</Plane>    
@@ -46,18 +53,20 @@
       {
       center : [ 1.2, 2.5, .5 ],
       radius : .5,
-      diffuse : "return lx.patterns.checker( shaders.spherical(fragment.position, [32, 32]) ) ? [ .96, 1.0, .96 ] : [ .35, .95, .12];",
+      diffuse : "return lx.patterns.checker( shaders.spherical(fragment.positionOc, [8, 8]) ) ? [ .56, .82, .96 ] : [ .35, .75, .12];",
       }
     </Sphere>
     <Sphere>
       {
       center : [ 2.5, 1.2, .5 ],
       radius : .5,
-      diffuse : 
-        <Text>
-          return lx.patterns.spot ( shaders.spherical(fragment.position, [128, 128]) ) 
-            ? [ .68, .12, 1.00 ] 
-            : [ .35, .12, .95];
+      specular : [1, 1, 0],
+      specularExponent : 256.0,
+      diffuse :
+      <Text>
+          return lx.patterns.spot ( shaders.spherical(fragment.positionOc, [16, 8]) ) 
+            ? [ .56, .52, .60 ] 
+            : [ .35, .32, .55];
         </Text>
       }
     </Sphere>    

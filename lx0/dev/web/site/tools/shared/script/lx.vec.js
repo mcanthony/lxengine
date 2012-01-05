@@ -165,7 +165,7 @@ lx.vec = (function () {
 
     NS.intersectSphere = function (ray, sphere) {
 
-        var u = NS.sub(sphere.center, ray.origin);
+        var u = NS.sub(sphere._center, ray.origin);
         var v = NS.normalize(ray.direction);
 
         var dotUV = NS.dot(u, v);
@@ -173,7 +173,7 @@ lx.vec = (function () {
             return false;
 
         var d_sqrd = NS.lengthSqrd(u) - dotUV * dotUV;
-        var r_sqrd = sphere.radius * sphere.radius;
+        var r_sqrd = sphere._radius * sphere._radius;
 
         if (d_sqrd > r_sqrd)
             return false;
@@ -215,13 +215,16 @@ lx.vec = (function () {
     };
 
     NS.Sphere = function (opts) {
-        this.radius = 0;
-        this.center = [0, 0, 0];
+        this._radius = opts.radius || 0;
+        this._center = opts.center || [0, 0, 0];
 
-        if (opts) for (var key in opts)
-            this[key] = opts[key];
+        if (opts) for (var key in opts) {
+            if (key != "center" && key != "radius")
+                this[key] = opts[key];
+        }
     };
     NS.Sphere.prototype.intersect = function (ray) { return NS.intersectSphere(ray, this); };
+    NS.Sphere.prototype.center = function () { return this._center; }
 
     NS.Plane = function (opts) {
         this.normal = [0, 0, 1];
@@ -232,6 +235,9 @@ lx.vec = (function () {
     };
 
     NS.Plane.prototype.intersect = function (ray) { return NS.intersectPlane(ray, this); };
+    NS.Plane.prototype.center = function () {
+        return _lxbb_mul_vec2_float(this.normal, -this.d);
+    };
 
     return NS;
 })();
@@ -255,19 +261,27 @@ lx.vec = (function () {
     }
     addBasicFunctions("abs,floor,sqrt,log,sin,cos");
 
+    _lxbb_copy_vec2 = function (v) { return [v[0], v[1]]; }
+    _lxbb_copy_vec3 = function (v) { return [v[0], v[1], v[2]]; }
+
     _lxbb_fract_float = function(v) { return v - Math.floor(v); }
     _lxbb_fract_vec2 = function(v) { return [ v[0] - Math.floor(v[0]), v[1] - Math.floor(v[1]) ]; }
 
     _lxbb_add_vec2       = function (u, v) { return [ u[0] + v[0], u[1] + v[1] ]; }
     _lxbb_sub_vec2       = function (u, v) { return [ u[0] - v[0], u[1] - v[1] ]; }
+    _lxbb_sub_vec3       = function (u, v) { return [ u[0] - v[0], u[1] - v[1], u[2] - v[2] ]; }
     _lxbb_mul_vec2_float = function (v, s) { return [ v[0] * s, v[1] * s ]; }
     _lxbb_mul_float_vec2 = function (s, v) { return [ v[0] * s, v[1] * s ]; }
     _lxbb_div_vec2_float = function (v, s) { return [ v[0] / s, v[1] / s ]; }
 
     _lxbb_pow_vec2_float = function(u, e) { return [Math.pow(u[0], e),  Math.pow(u[1], e) ]; }
 
+    _lxbb_normalize_vec2 = function(v) { var d = _lxbb_length_vec2(v); return [v[0]/d,v[1]/d]; }
+    _lxbb_normalize_vec3 = function(v) { var d = _lxbb_length_vec3(v); return [v[0]/d,v[1]/d,v[2]/d]; }
+
     _lxbb_dot_vec2_vec2 = function(u, v) { return u[0] * v[0] + u[1] * v[1]; }
     _lxbb_length_vec2 = function(v) { return Math.sqrt(v[0] * v[0] + v[1] * v[1]); }
+    _lxbb_length_vec3 = function(v) { return Math.sqrt(v[0] * v[0] + v[1] * v[1], + v[2] * v[2]); }
     _lxbb_lengthSqrd_vec2 = function(v) { return v[0] * v[0] + v[1] * v[1]; }
 
 })();
