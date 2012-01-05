@@ -259,7 +259,7 @@ lx.vec = (function () {
         for (var i = 0; i < names.length; ++i)
             addBasicFunction(names[i]);
     }
-    addBasicFunctions("abs,floor,sqrt,log,sin,cos");
+    addBasicFunctions("abs,floor,sqrt,log,sin,cos,tan,asin,acos");
 
     _lxbb_copy_vec2 = function (v) { return [v[0], v[1]]; }
     _lxbb_copy_vec3 = function (v) { return [v[0], v[1], v[2]]; }
@@ -270,6 +270,7 @@ lx.vec = (function () {
     _lxbb_add_vec2       = function (u, v) { return [ u[0] + v[0], u[1] + v[1] ]; }
     _lxbb_sub_vec2       = function (u, v) { return [ u[0] - v[0], u[1] - v[1] ]; }
     _lxbb_sub_vec3       = function (u, v) { return [ u[0] - v[0], u[1] - v[1], u[2] - v[2] ]; }
+    _lxbb_mul_vec2       = function (v, u) { return [ v[0] * u[0], v[1] * u[1] ]; }    
     _lxbb_mul_vec2_float = function (v, s) { return [ v[0] * s, v[1] * s ]; }
     _lxbb_mul_float_vec2 = function (s, v) { return [ v[0] * s, v[1] * s ]; }
     _lxbb_div_vec2_float = function (v, s) { return [ v[0] / s, v[1] / s ]; }
@@ -281,7 +282,7 @@ lx.vec = (function () {
 
     _lxbb_dot_vec2_vec2 = function(u, v) { return u[0] * v[0] + u[1] * v[1]; }
     _lxbb_length_vec2 = function(v) { return Math.sqrt(v[0] * v[0] + v[1] * v[1]); }
-    _lxbb_length_vec3 = function(v) { return Math.sqrt(v[0] * v[0] + v[1] * v[1], + v[2] * v[2]); }
+    _lxbb_length_vec3 = function(v) { return Math.sqrt(v[0] * v[0] + v[1] * v[1] + v[2] * v[2]); }
     _lxbb_lengthSqrd_vec2 = function(v) { return v[0] * v[0] + v[1] * v[1]; }
 
 })();

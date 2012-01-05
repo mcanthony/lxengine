@@ -158,3 +158,49 @@ function compileWithGoogleClosureCompiler(source, options)
     else
         submitForm(source);
 }
+
+function includeScriptFiles ()
+{   
+    var lxparser;
+    var jsgenerator;
+
+
+    for (var i = 0; i < arguments.length; ++i)
+    {
+        var url = arguments[i];
+        var script = url + "?rand=" + Math.random();
+
+        if (url.match(/.\lxlang$/i))
+        {
+            lxparser = lxparser || new lxlang2.Parser();
+            jsgenerator = jsgenerator || new lxlang2.GenerateJavascript();
+
+            $.ajax(script, {
+                    dataType : "text",
+                    async : false,
+                    success : function(text) {
+                                                    
+                        var ast = lxparser.parse(text);
+                        var jscode = jsgenerator.translate(ast);
+                        
+                        try {
+                            eval(jscode);
+                        } catch (e)
+                        {
+                            console.log(jscode);
+                            console.log("ERROR: Error in translated LxLang code");
+                            throw e;
+                        }
+                    }
+                });
+        }
+        else
+        {
+            var s = "<script type='text/javascript' src='";
+            s += script;
+            s += "'></script>";
+            $("head").append(s);
+        }
+    }
+
+}

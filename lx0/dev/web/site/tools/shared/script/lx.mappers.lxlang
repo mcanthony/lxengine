@@ -1,0 +1,28 @@
+module lx.mappers;
+
+function spherical (vec3 fragPositionOc, vec2 scale) -> vec2
+{
+    float r = length(fragPositionOc);
+    float phi = atan(fragPositionOc[1], fragPositionOc[0]);
+    float theta = acos(fragPositionOc[2] / r);
+
+    return vec2(
+        scale[0] * (phi + PI) / (2 * PI),
+        scale[1] * theta / PI
+    );
+}
+
+function planarXY (vec3 fragPositionOc, vec2 scale) -> vec2
+{
+    return scale * vec2(fragPositionOc[0], fragPositionOc[1]);
+}
+
+function planarYZ (vec3 fragPositionOc, vec2 scale) -> vec2
+{
+    return scale * vec2(fragPositionOc[1], fragPositionOc[2]);
+}
+
+function planarXZ (vec3 fragPositionOc, vec2 scale) -> vec2
+{
+    return scale * vec2(fragPositionOc[0], fragPositionOc[2]);
+}

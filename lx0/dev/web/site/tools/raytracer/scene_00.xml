@@ -29,15 +29,21 @@
       }
     </Light>
 
-    <Plane>{ normal : [ 1, 0, 0 ], diffuse : [ 1, .65, .55] }</Plane>
+    <Plane>{ normal : [ 1, 0, 0 ], diffuse : "return lx.patterns.stripe( lx.mappers.planarYZ(fragment.positionWc, [3, 1]) ) ? [ .99, .30, .35 ] : [ 1.00, .15, .15];" }</Plane>
     <Plane>{ normal : [ 0, 1, 0 ], diffuse : [ .95, 1, .95] }</Plane>
-    <Plane>{ normal : [ 0, 0, 1 ], diffuse : [ .75, .75, 1] }</Plane>    
+    <Plane>
+      {
+      normal : [ 0, 0, 1 ],
+      diffuse : "return lx.patterns.roundedTile( lx.mappers.planarXY(fragment.positionWc, [4, 4]) ) ? [ .75, .75, 1.0 ] : [ 0.97, .97, 1.0];"
+      }
+    </Plane>    
     
     <Sphere>
       {
         center : [ 1, 1, 1 ],
         radius : 1,
-        diffuse : [ .95, .75, .6],
+        diffuse1 : [ .95, .75, .6],
+        diffuse : "return lx.patterns.star( lx.mappers.spherical(fragment.positionOc, [12, 12]) ) ? [ .95, .55, .3] : [ .95, .85, .12];",
         specularExponent : 1024.0,
       }
     </Sphere>
@@ -46,14 +52,15 @@
       {
       center : [ 2.0, 2.0, .5 ],
       radius : .5,
-      diffuse : [ .95, .35, .12],
+      diffuse1 : [ .95, .35, .12],
+      diffuse : "return lx.patterns.wave( lx.mappers.spherical(fragment.positionOc, [32, 8]) ) ? [ .95, .35, .12] : [ .35, .15, .12];",
       }
     </Sphere>
     <Sphere>
       {
       center : [ 1.2, 2.5, .5 ],
       radius : .5,
-      diffuse : "return lx.patterns.checker( shaders.spherical(fragment.positionOc, [8, 8]) ) ? [ .56, .82, .96 ] : [ .35, .75, .12];",
+      diffuse : "return lx.patterns.checker( lx.mappers.spherical(fragment.positionOc, [8, 8]) ) ? [ .56, .82, .96 ] : [ .35, .75, .12];",
       }
     </Sphere>
     <Sphere>
@@ -64,10 +71,10 @@
       specularExponent : 256.0,
       diffuse :
       <Text>
-          return lx.patterns.spot ( shaders.spherical(fragment.positionOc, [16, 8]) ) 
-            ? [ .56, .52, .60 ] 
-            : [ .35, .32, .55];
-        </Text>
+        return lx.patterns.spot ( lx.mappers.spherical(fragment.positionOc, [16, 8]) )
+        ? [ .56, .52, .60 ]
+        : [ .35, .32, .55];
+      </Text>
       }
     </Sphere>    
 

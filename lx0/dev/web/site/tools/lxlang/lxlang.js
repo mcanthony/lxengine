@@ -1,4 +1,3 @@
-
 var lxlang2 = (function() {
       
     var NS = {};
@@ -826,12 +825,14 @@ var lxlang2 = (function() {
                 this._addSymbol("pow$float$float", { rttype : "float" });
                 this._addSymbol("pow$vec2$float", { rttype : "vec2" });
                 this._addSymbol("atan$float$float", { rttype : "float" });
+                this._addSymbol("acos$float", { rttype : "float" });
 
                 this._addSymbol("*$vec2$float", { rttype : "vec2" });
                 this._addSymbol("/$vec2$float", { rttype : "vec2" });
                 this._addSymbol("*$float$vec2", { rttype : "vec2" });
                 this._addSymbol("dot$vec3$vec3", { rttype : "float" });
                 this._addSymbol("length$vec2", { rttype : "float" });
+                this._addSymbol("length$vec3", { rttype : "float" });
                 this._addSymbol("lengthSqrd$vec2", { rttype : "float" });
                 this._addSymbol("vec2$float$float", { rttype : "vec2" });
                 this._addSymbol("vec3$float$float$float", { rttype : "vec3" });
@@ -1035,6 +1036,8 @@ var lxlang2 = (function() {
             {
                 "sin" : "Math.sin",
                 "cos" : "Math.cos",
+                "asin" : "Math.asin",
+                "acos" : "Math.acos",
                 "sqrt" : "Math.sqrt",
                 "floor" : "Math.floor",
                 "log" : "Math.log",
@@ -1058,7 +1061,7 @@ var lxlang2 = (function() {
             resolveFunctionName : function(name, type)
             {
                 if (this._astRoot.functionNameTable[name])
-                    return  "NS." + name;
+                    return  "NS['" + name + "']";
                 
                 if (type)
                 {

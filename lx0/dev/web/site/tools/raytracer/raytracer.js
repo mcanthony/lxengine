@@ -39,18 +39,6 @@ var raytracer = {};
 
         return {
 
-            spherical : function (fragPositionOc, scale)
-            {
-                var r = _v.length(fragPositionOc);
-                var phi = Math.atan2(fragPositionOc[1], fragPositionOc[0]);
-                var theta = Math.acos(fragPositionOc[2] / r);
-
-                return [
-                    scale[0] * (phi + Math.PI) / (2 * Math.PI),
-                    scale[1] * theta / Math.PI,
-                ];
-            },
-
             attenuation : function(fragPosition, lightPosition, scale)
             {
                 var L = _v.sub(lightPosition, fragPosition);
