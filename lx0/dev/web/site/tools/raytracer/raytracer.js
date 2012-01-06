@@ -87,10 +87,15 @@ var raytracer = {};
     } 
 
 
-    NS.RenderLoop = lx.core.buildClass(State, function(options) 
+    NS.RenderLoop = lx.core.buildClass(State, function(canvasElem, scene, options) 
     {
+        this._canvas = canvasElem;
+        this._scene = scene;
+
         this._sampleCount = options.sampleCount; 
         this._sceneUrl = options.sceneUrl || "scene_00.xml";
+        this._resolution = options.resolution;
+        this._oncomplete = options.oncomplete;
 
         if (this._sampleCount > 1)
             this._renderPixel = NS.RenderLoop.prototype._renderPixel5;
@@ -269,9 +274,21 @@ var raytracer = {};
         },
             
         init : function (wtime) {
-
-            this._canvas = $("#canvas")[0];                    
+                   
             this._ctx    = this._canvas.getContext('2d');
+
+            //
+            // Resize the CANVAS element to the desired resolution.
+            //
+            //@todo Should the ray tracer be modifying HTML elements?  Or should
+            // the host be responsible for setting up the resolution?
+            //
+            if (this._resolution)
+            {
+                this._canvas.width = this._resolution[0];
+                this._canvas.height = this._resolution[1];
+            }
+            
             this._height = this._canvas.height;
             this._width  = this._canvas.width;
 
@@ -283,47 +300,9 @@ var raytracer = {};
             this._objects = [];
             this._lights = [];
 
-            var _this = this;
-            $.ajax(this._sceneUrl + "?rand=" + Math.random(), {
-                dataType : "xml",
-                async : false,
-                success : function(xml) {
-                    $(xml).find("Text").each(function() {
-                        var text = $(this).text();
-                        text = text.replace(/\n/g, " ");
-                        text = text.replace(/\"/g, "\\\"");
-                        text = "\"" + text + "\""; 
-                        $(this).replaceWith(text);
-                    });
-                    $(xml).find("Objects").children().each(function() {
-                        switch (this.tagName)
-                        {
-                        case "Camera":
-                            {
-                                eval("var options = " + $(this).text() + ";");
-                                _this._camera = options;
-                            }
-                            break;
-                        case "Plane":
-                        case "Sphere":
-                            {
-                                eval("var options = " + $(this).text() + ";");
-                                _this._objects.push(new lx.vec[this.tagName](options));
-                            }
-                            break;
-                        case "Light":
-                            {
-                                eval("var options = " + $(this).text() + ";");
-                                _this._lights.push(new lx.vec[this.tagName](options));
-                            }
-                            break;
-                        default:
-                            console.log("Unrecognized Object type '" + this.tagName + "'");        
-                        }
-                    });
-                },
-            });
-
+            this._camera = this._scene.camera;
+            this._lights = this._scene.lights;
+            this._objects = this._scene.objects;
             
             this._stats.renderStart = new Date().valueOf();
 
@@ -333,6 +312,7 @@ var raytracer = {};
 
             this._tasks = [];
 
+            var _this = this;
             for (var y = 0; y < this._height; ++y) {
                 this._tasks.push( (function(y) {  return function() { 
                     _this._renderRow(frustum, _this._height - y - 1); 
@@ -357,9 +337,11 @@ var raytracer = {};
         shutdown : function(wtime) {
 
             this._stats.renderEnd = new Date().valueOf();
-            $("#renderTime").text("Render time: " + (this._stats.renderEnd - this._stats.renderStart) + "ms");
+            this._stats.renderTime = (this._stats.renderEnd - this._stats.renderStart);
+            this._stats.dataUri = this._canvas.toDataURL("image/png");
 
-            var dataHRef = this._canvas.toDataURL("image/png");            $("#download").attr("href", dataHRef);
+            if (this._oncomplete)
+                this._oncomplete(this._stats);
         },
     });
 

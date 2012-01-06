@@ -118,6 +118,28 @@
 })(jQuery);
 
 
+(function($) {
+
+    $.fn.tableOfContentsMenu = function () {
+        return this.each(function() {
+            var parent = $("<div/>");
+            parent.addClass("layout-row");
+
+            var tocHolder = $("<div style='border: 1px solid #CCC; border-radius: 6px; padding: 8px 2em 8px 8px;  width: 16em; margin-left: 1em' />");
+            tocHolder.append("<strong style='color: #777'>Table of Contents</strong>");
+            var tocElem = $("<div/>");
+            tocHolder.append(tocElem);
+            
+            $(this).css("max-width", "38em");
+            parent.append($(this).clone());
+            parent.append(tocHolder);
+            $(this).replaceWith(parent);
+
+            tocElem.tableOfContents();
+        });
+    };
+})(jQuery);
+
 function compileWithGoogleClosureCompiler(source, options)
 {
     options = $.extend({

@@ -19,7 +19,8 @@
           "../lxlang/lxlang.js",
           "../shared/script/lx.patterns-0.1.0.js",
           "../shared/script/lx.mappers.lxlang",
-          "raytracer.js" 
+          "raytracer.js",
+          "loadscene.js"
         );
       -->
       </script>
@@ -31,11 +32,28 @@
 
         <h2>About</h2>
         <p>
-            The ray tracer is currently a work-in-progress for testing and demonstrating LxWeb, a javascript engine for visualization 
-            and simulation.
-        </p>
+                <strong>Project Status:</strong>&nbsp;&nbsp;
+                <span style="font-size: 80%; color: #CCC">
+                    <span style="color: #37A; font-weight: bold; text-shadow: #DDD 0px 0px 2px">Prototype</span> |
+                    Development |
+                    Alpha |
+                    Beta |
+                    Production 
+                </span>
+            </p>
+        <div id="insert-toc">
+          <p>
+              The ray tracer is currently a work-in-progress for testing and demonstrating LxWeb, a javascript engine for visualization 
+              and simulation.
+          </p>
+          <p class="note" style="margin-top: 2em">
+            <span style="color: Red; font-style: italic">Warning:</span>&nbsp;
+            As this is most definitely in the prototype stage, it has only been tested on the latest version of 
+            <strong>Google Chrome</strong>.
+          </p>
+        </div>
 
-        <h2>Canvas</h2>
+        <h2>Demonstration</h2>
 
         <div class="layout-row">
             <div>
@@ -59,8 +77,8 @@
                                 <td>Scene</td>
                                 <td>
                                     <select id="ui-sceneUrl">
-                                        <option selected>scene_00.xml</option>
-                                        <option>scene_01.xml</option>
+                                        <option selected value="'scene_00.xml'">scene_00.xml</option>
+                                        <option value="'scene_01.xml'">scene_01.xml</option>
                                     </select>
                                 </td>
                             </tr>
@@ -73,6 +91,21 @@
                                         <option selected>Draft</option>
                                         <option>High-Quality</option>
                                         <option>Ultra</option>
+                                    </select>
+                                </td>
+                            </tr>
+
+                            <tr>
+                                <td>Resolution</td>
+                                <td>
+                                    <select id="ui-resolution" data-type="ivec2">
+                                        <option value="[1024,1024]">1024 x 1024</option>
+                                        <option value="[1024,256]">1024 x 256</option>
+                                        <option value="[960,240]">960 x 240</option>
+                                        <option value="[512,512]">512 x 512</option>
+                                        <option value="[256,512]">256 x 512</option>
+                                        <option selected value="[256,384]">256 x 384</option>
+                                        <option value="[128,128]">128 x 128</option>
                                     </select>
                                 </td>
                             </tr>
@@ -95,10 +128,11 @@
             </div>
         </div>
 
+        <h2>Architecture &amp; Implementation</h2>
+
         <h2>Todo</h2>
         <ul>
-          <li>Samples</li>
-          <li>Tiles</li>
+          <li>Many things</li>
         </ul>
 
 
@@ -108,32 +142,41 @@
             {
               sampleCount : 5,
               sceneUrl : "scene_00.xml",
+              resolution : [ 256, 384 ]
             };
-
 
             $(document).ready(function () {
 
-                for (var key in options)
-                {
-                  $("#ui-" + key).val(options[key]);
-                  $("#ui-" + key).change((function (key) { return function() {
-                    var value = $(this).val();
+              $("#insert-toc").tableOfContentsMenu();
 
-                    if ($(this).attr("data-type") == "float")
-                      value = parseFloat(value);
+              for (var key in options) {
+                $("#ui-" + key).val(JSON.stringify(options[key]));
+                $("#ui-" + key).change((function (key) {
+                  return function () {
+                    try {
+                      var value;
+                      eval("value = " + $(this).val() + ";");
+                      options[key] = value;
+                    } catch (e) {
+                      console.log("ERROR: Evaluation error in ui option");
+                    }
+                  };
+                })(key));
+              }
 
-                    options[key] = value;
-                  };})(key) );
-                }
+              options.oncomplete = function (stats) {
+                $("#renderTime").text("Render time: " + stats.renderTime +"ms");
+                $("#download").attr("href", stats.dataUri);
+              }
 
+              $("#rerender").click(function () {
+                var scene = loadScene(options.sceneUrl);
+                engine.changeState(new raytracer.RenderLoop($("#canvas")[0], scene, options));
+                return false;
+              });
 
-                $("#rerender").click(function () {
-                    engine.changeState(new raytracer.RenderLoop(options));
-                    return false;
-                });
-
-                engine.gametick = 0;
-                engine.run(new raytracer.RenderLoop(options));
+              engine.gametick = 0;
+              engine.run(new raytracer.RenderLoop($("#canvas")[0], loadScene(options.sceneUrl), options));
 
             });
         -->
