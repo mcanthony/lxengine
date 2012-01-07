@@ -57,7 +57,7 @@ var Enemy2 = defineClass(Entity,
         }, options);
 
         var _this = this;
-        lib.each(options, function(key,value) {
+        lx.core.each(options, function(key,value) {
             _this[key] = value;
         });        
 

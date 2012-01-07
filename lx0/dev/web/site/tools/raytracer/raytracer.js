@@ -273,8 +273,9 @@ var raytracer = {};
 
         },
             
-        init : function (wtime) {
+        init : function (wtime, engine) {
                    
+            this._engine = engine;
             this._ctx    = this._canvas.getContext('2d');
 
             //
@@ -328,7 +329,7 @@ var raytracer = {};
                     (this._tasks.shift())();
             }
             else
-                engine.changeState(null);
+                this._engine.changeState(null);
         },
 
         draw : function (wtime) {

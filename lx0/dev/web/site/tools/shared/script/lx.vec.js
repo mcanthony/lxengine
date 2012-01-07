@@ -285,5 +285,7 @@ lx.vec = (function () {
     _lxbb_length_vec3 = function(v) { return Math.sqrt(v[0] * v[0] + v[1] * v[1] + v[2] * v[2]); }
     _lxbb_lengthSqrd_vec2 = function(v) { return v[0] * v[0] + v[1] * v[1]; }
 
+    _lxbb_mix_vec3_vec3_float = function(x, y, t) { var s = 1 - t; return [ x[0] * s + y[0] * t, x[1] * s + y[1] * t, x[2] * s + y[2] * t ]; }
+
 })();
 

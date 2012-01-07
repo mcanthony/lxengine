@@ -1,4 +1,4 @@
-function loadScene (url)
+function loadScene (url, substitutes)
 {
     var scene = 
     {
@@ -33,24 +33,35 @@ function loadScene (url)
 
 
             $(xml).find("Objects").children().each(function() {
+                
+                var text = $(this).text();
+                if (substitutes)
+                {
+                    for (var key in substitutes)
+                    {
+                        var re = new RegExp("%" + key + "%", "g");
+                        text = text.replace(re, JSON.stringify(substitutes[key]));
+                    }
+                }
+                
                 switch (this.tagName)
                 {
                 case "Camera":
                     {
-                        eval("var options = " + $(this).text() + ";");
+                        eval("var options = " + text + ";");
                         scene.camera = options;
                     }
                     break;
                 case "Plane":
                 case "Sphere":
                     {
-                        eval("var options = " + $(this).text() + ";");
+                        eval("var options = " + text + ";");
                         scene.objects.push(new lx.vec[this.tagName](options));
                     }
                     break;
                 case "Light":
                     {
-                        eval("var options = " + $(this).text() + ";");
+                        eval("var options = " + text + ";");
                         scene.lights.push(new lx.vec[this.tagName](options));
                     }
                     break;

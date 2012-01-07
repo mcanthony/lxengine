@@ -3,34 +3,34 @@ var State = function(options) {
     $.extend(this, options);
 };
 $.extend(State.prototype, {
-    init : function(gtime) {},
+    init : function(gtime, engine) {},
     update : function(gtime) {},
     draw : function(gtime) {},
     shutdown : function(gtime) {}
 });
 
-
-var engine = {};
-
-engine._state = null;
-engine._actionQueue = [];
-
-engine.data =
+var Engine = function()
 {
-    server: {},
-    client: {},
-    user: {},
-    state: {},
-    session: {},
-};
+    this._state = null;
+    this._actionQueue = [];
 
-engine.setTimeout = function (code, delay) {
+    this.data =
+    {
+        server: {},
+        client: {},
+        user: {},
+        state: {},
+        session: {},
+    };
+}
+
+Engine.prototype.setTimeout = function (code, delay) {
     return window.setTimeout(code, delay);
 };
 
-engine.changeState = function (state) {
+Engine.prototype.changeState = function (state) {
     if (!this._state)
-        engine.run(state);
+        this.run(state);
     else {
         this._actionQueue.push(function () {
         
@@ -45,7 +45,7 @@ engine.changeState = function (state) {
             {
                 try {            
                     this.gametime = 0;
-                    this._state.init(this._gametime);
+                    this._state.init(this._gametime, this);
                 } catch (e) {
                     console.log(e);
                     console.log(state);
@@ -56,13 +56,13 @@ engine.changeState = function (state) {
     }
 };
 
-engine.gametick = 20;
-engine.run = function (initialState) {
-    
+Engine.prototype.gametick = 20;
+Engine.prototype.run = function (initialState) {
+
     this.gametime = 0;
 
     this._state = initialState;
-    this._state.init(this.gametime);
+    this._state.init(this.gametime, this);
 
     var _this = this;
     (function mainLoop() {

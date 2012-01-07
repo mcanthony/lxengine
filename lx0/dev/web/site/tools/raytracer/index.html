@@ -20,7 +20,8 @@
           "../shared/script/lx.patterns-0.1.0.js",
           "../shared/script/lx.mappers.lxlang",
           "raytracer.js",
-          "loadscene.js"
+          "loadscene.js",
+          "jquery.lx.raytracer-current.js"
         );
       -->
       </script>
@@ -46,10 +47,13 @@
               The ray tracer is currently a work-in-progress for testing and demonstrating LxWeb, a javascript engine for visualization 
               and simulation.
           </p>
+          <p>
+              It is composed of a JQuery plug-in, an LxWeb based tracing engine, and a few support libraries.
+          </p>
           <p class="note" style="margin-top: 2em">
             <span style="color: Red; font-style: italic">Warning:</span>&nbsp;
             As this is most definitely in the prototype stage, it has only been tested on the latest version of 
-            <strong>Google Chrome</strong>.
+            <strong>Google Chrome</strong>. 
           </p>
         </div>
 
@@ -57,7 +61,7 @@
 
         <div class="layout-row">
             <div>
-                <canvas id="canvas" width="256" height="512" style="border: 1px solid #555; box-shadow: 3px 3px 6px #888; margin-right: 64px;"></canvas>
+                <canvas id="canvas" class="raytrace" width="256" height="512"></canvas>
                 <div>
                     <span id="renderTime"></span>
                     &nbsp;&nbsp;&nbsp;&nbsp;
@@ -128,6 +132,150 @@
             </div>
         </div>
 
+        <h2>Simple Examples</h2>
+
+        <h3>Multisampling</h3>
+        <div class="layout-row">
+          <div>
+            <canvas class="raytrace simple" width="128" height="128" data-src="scene_01.xml" title="Default options"></canvas>
+            <canvas class="raytrace simple" width="128" height="128" data-src="scene_01.xml" data-options="{ sampleCount : 1 }" title="Multisampling disabled"></canvas>
+          </div>
+          <div style="max-width: 30em">
+            <p>
+              The first image is rendered with multisampling enabled; the second has multisampling disabled.
+            </p>
+          </div>
+        </div>
+
+        <h3>Procedural Patterns</h3>
+        <p>
+          <canvas class="raytrace simple" width="128" height="128" data-src="scene_02.xml">
+            { 
+              DIFFUSE : "return lx.patterns.checker( lx.mappers.spherical(fragment.positionOc, [8, 4]) ) ? [ .15, .15, .15] : [ .85, .85, .90];"
+            }
+          </canvas>
+
+          <canvas class="raytrace simple" width="128" height="128" data-src="scene_02.xml">
+            { 
+              DIFFUSE : "return lx.patterns.spot( lx.mappers.spherical(fragment.positionOc, [8, 4]) ) ? [ .15, .35, .92] : [ .35, .55, .65];"
+            }
+          </canvas>
+
+          <canvas class="raytrace simple" width="128" height="128" data-src="scene_02.xml">
+            { 
+              DIFFUSE : "return lx.patterns.stripe( lx.mappers.spherical(fragment.positionOc, [32, 8]) ) ? [ .15, .19, .92] : [ .65, .65, .02];"
+            }
+          </canvas>
+
+          <canvas class="raytrace simple" width="128" height="128" data-src="scene_02.xml">
+            { 
+              DIFFUSE : "return lx.patterns.tile( lx.mappers.spherical(fragment.positionOc, [12, 6]) ) ? [ .95, .19, .52] : [ .65, .05, .22];"
+            }
+          </canvas>
+        </p>
+        <p>
+          <canvas class="raytrace simple" width="128" height="128" data-src="scene_02.xml">
+            { 
+              DIFFUSE : "return lx.patterns.diamond( lx.mappers.spherical(fragment.positionOc, [32, 8]) ) ? [ .15, .89, .32] : [ .65, .95, .02];"
+            }
+          </canvas>
+
+          <canvas class="raytrace simple" width="128" height="128" data-src="scene_02.xml">
+            { 
+              DIFFUSE : "return lx.patterns.wave( lx.mappers.spherical(fragment.positionOc, [32, 8]) ) ? [ .95, .35, .12] : [ .35, .15, .12];"
+            }
+          </canvas>
+
+
+          <canvas class="raytrace simple" width="128" height="128" data-src="scene_02.xml">
+            { 
+              DIFFUSE : "return lx.patterns.star( lx.mappers.spherical(fragment.positionOc, [12, 12]) ) ? [ .95, .99, .88] : [ .05, .05, .12];"
+            }
+          </canvas>
+
+          <canvas class="raytrace simple" width="128" height="128" data-src="scene_02.xml">
+            { 
+              DIFFUSE : "return lx.patterns.ribbon( lx.mappers.spherical(fragment.positionOc, [12, 12]) ) ? [ .25, .25, .52] : [ .51, .51, .82];"
+            }
+          </canvas>
+        </p>
+
+        <p>
+          <canvas class="raytrace simple" width="128" height="128" data-src="scene_02.xml">
+            { 
+              DIFFUSE : "return lx.patterns.checkerSmooth( lx.mappers.spherical(fragment.positionOc, [8, 4]) ) ? [ .99, .00, .10] : [ .99, .99, .89];"
+            }
+          </canvas>
+
+          <canvas class="raytrace simple" width="128" height="128" data-src="scene_02.xml">
+            { 
+              DIFFUSE : "return lx.patterns.gateLattice( lx.mappers.spherical(fragment.positionOc, [16, 8]) ) ? [ .92, .95, .42] : [ .05, .05, .12];"
+            }
+          </canvas>
+
+
+          <canvas class="raytrace simple" width="128" height="128" data-src="scene_02.xml">
+            { 
+              DIFFUSE : "return lx.patterns.circlepattern( lx.mappers.spherical(fragment.positionOc, [6, 3]) ) ? [ .00, .99, .38] : [ .85, .95, .72];"
+            }
+          </canvas>
+
+          <canvas class="raytrace simple" width="128" height="128" data-src="scene_02.xml">
+            { 
+              DIFFUSE : "return lx.patterns.mirrortau( lx.mappers.spherical(fragment.positionOc, [12, 12]) ) ? [ .85, .85, .99] : [ .11, .21, .12];"
+            }
+          </canvas>
+        </p>
+
+        <p>
+          <canvas class="raytrace simple" width="128" height="128" data-src="scene_02.xml">
+            { 
+              DIFFUSE : "return lx.patterns.fatlattice( lx.mappers.spherical(fragment.positionOc, [10, 5]) ) ? [ .85, .89, .72] : [ .95, .45, .42];"
+            }
+          </canvas>
+
+          <canvas class="raytrace simple" width="128" height="128" data-src="scene_02.xml">
+            { 
+              DIFFUSE : "return lx.patterns.circle( lx.mappers.spherical(fragment.positionOc, [32, 16]) ) ? [ .65, .35, .22] : [ .35, .35, .62];"
+            }
+          </canvas>
+
+
+          <canvas class="raytrace simple" width="128" height="128" data-src="scene_02.xml">
+            { 
+              DIFFUSE : "return lx.patterns.roundedTile( lx.mappers.spherical(fragment.positionOc, [24, 12]) ) ? [ .95, .99, .78] : [ .05, .05, .12];"
+            }
+          </canvas>
+
+          <canvas class="raytrace simple" width="128" height="128" data-src="scene_02.xml">
+            { 
+              DIFFUSE : "return lx.patterns.spotwave( lx.mappers.spherical(fragment.positionOc, [16, 8]) ) ? [ .25, .25, .72] : [ .18, .11, .12];"
+            }
+          </canvas>
+        </p>
+
+        <p>
+          <canvas class="raytrace simple" width="128" height="128" data-src="scene_02.xml">
+            { 
+              DIFFUSE : "return lx.patterns.spotdiamondxor( lx.mappers.spherical(fragment.positionOc, [12, 6]) ) ? [ .65, .69, .32] : [ .96, .90, .02];"
+            }
+          </canvas>
+
+          <canvas class="raytrace simple" width="128" height="128" data-src="scene_02.xml">
+            { 
+              DIFFUSE : "return lx.patterns.gridBump( lx.mappers.spherical(fragment.positionOc, [8, 4]) ) ? [ .95, .05, .12] : [ 1.0, .50, .50];"
+            }
+          </canvas>
+
+
+          <canvas class="raytrace simple" width="128" height="128" data-src="scene_02.xml">
+            { 
+              DIFFUSE : "return _lxbb_mix_vec3_vec3_float([ .00, .10, .02], [ .05, .35, .99], lx.patterns.weave( lx.mappers.spherical(fragment.positionOc, [8, 4])) );"
+            }
+          </canvas>
+
+        </p>
+
         <h2>Architecture &amp; Implementation</h2>
 
         <h2>Todo</h2>
@@ -147,6 +295,7 @@
 
             $(document).ready(function () {
 
+
               $("#insert-toc").tableOfContentsMenu();
 
               for (var key in options) {
@@ -165,18 +314,24 @@
               }
 
               options.oncomplete = function (stats) {
-                $("#renderTime").text("Render time: " + stats.renderTime +"ms");
+                $("#renderTime").text("Render time: " + stats.renderTime + "ms");
                 $("#download").attr("href", stats.dataUri);
               }
 
               $("#rerender").click(function () {
-                var scene = loadScene(options.sceneUrl);
-                engine.changeState(new raytracer.RenderLoop($("#canvas")[0], scene, options));
+                $("#canvas").raytracer(options);
                 return false;
-              });
+              }).trigger('click');
 
-              engine.gametick = 0;
-              engine.run(new raytracer.RenderLoop($("#canvas")[0], loadScene(options.sceneUrl), options));
+              var delay = 1500;
+              $(".simple").each(function () {
+                (function (elem, delay) {
+                  window.setTimeout(function () { 
+                    $(elem).raytracer({ sampleCount: 5 }); 
+                  }, delay);
+                })(this, delay);
+                delay += 1000;
+              });
 
             });
         -->

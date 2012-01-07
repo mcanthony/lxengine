@@ -9,7 +9,7 @@
       <script type="text/javascript" src="../shared/script/extern/jquery-1.6.4.min.js"></script>
 
       <script type="text/javascript" src="../shared/script/lx.keycodes.js"></script>
-      <script type="text/javascript" src="../shared/script/lx.libCore.js"></script>
+      <script type="text/javascript" src="../shared/script/lx.core-0.1.1.js"></script>
       <script type="text/javascript" src="../shared/script/lx.engine.js"></script>
 
       <script type="text/javascript" src="jquery.lx.keystate-0.5.0.js"></script>
@@ -75,8 +75,7 @@
         <script type="text/javascript">
         <!--
 
-        var lib = { };
-        import_libCore(lib);
+        var engine = new Engine();
 
         function defineClass(parent, ctor, members)
         {
