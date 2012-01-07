@@ -152,6 +152,17 @@ function cross(vec3 u, vec3 v) -> vec3
         <script type="text/lxlang3.parser" data-nonterminal="expression">1 + 4 * 3</script>
         <script type="text/lxlang3.parser" data-nonterminal="expression">1 * 4 + 3</script>
         <script type="text/lxlang3.parser" data-nonterminal="statement">var alpha = 1 * 4 + 3;</script>
+        <script type="text/lxlang3.parser" data-nonterminal="statementSet">
+var alpha = 34;
+var beta = 45;
+        </script>
+        <script type="text/lxlang3.parser" data-nonterminal="function">
+function dot (vec3 u, vec3 v) -> float
+{
+  var alpha = 34;
+  var beta = 45;
+}
+        </script>
 
         <h3>Lexer</h3>
         <script type="text/lxlang3.lexer">var alpha = 1;</script>
@@ -212,8 +223,6 @@ function spherical (vec3 fragPositionOc, vec2 scale) -> vec2
 
           $(document).ready(function () {
 
-            //alert(buildRegEx("@name('.'@name)*"));
-            //alert(buildRegEx("@number(','@number)*"));
             $("#toc").tableOfContents();
 
             $("#view").css("white-space", "pre");
@@ -235,7 +244,7 @@ function spherical (vec3 fragPositionOc, vec2 scale) -> vec2
             $("script[type='text/lxlang3.lexer']").each(function () {
 
               var text = $(this).text();
-              var lexer3 = new lx.lxlang3.Lexer(text);
+              var lexer3 = new lx.lxlang3.Lexer( lx.lxlang3.tokenize(text));
 
               var row = $("<div class='layout-row'>");
               var code = $("<div class='codeview' style='width: 40em'>").text(text);
@@ -268,21 +277,19 @@ function spherical (vec3 fragPositionOc, vec2 scale) -> vec2
 
             $("script[type='text/lxlang3.parser']").each(function () {
               var text = $(this).text();
-              var lexer3 = new lx.lxlang3.Lexer(text);
-              var parser3 = new lx.lxlang3.Parser(lexer3);
               var nonterminal = $(this).attr("data-nonterminal") || "translationUnit";
 
               var div = $("<div class='codeview' style='width: 25em'/>");
 
               var text2;
-              try {
-                var ast = parser3.parse(nonterminal);
+              //try {
+                var ast = lx.lxlang3.parse(text, nonterminal);
                 text2 = JSON.stringify(ast, null, "    ");
-              }
-              catch (e) {
-                text2 = e.toString();
-                div.css('color', 'red');
-              }
+              //}
+              //catch (e) {
+              //  text2 = e.toString();
+              //  div.css('color', 'red');
+              //}
 
               var row = $("<div class='layout-row'>");
               var code = $("<div class='codeview' style='width: 40em'>").text(text);
