@@ -181,23 +181,98 @@ function compileWithGoogleClosureCompiler(source, options)
         submitForm(source);
 }
 
+function acquireCache (name)
+{
+    var Cache = (function() {
+
+        var ctor = function(name) {
+            this.data = {};
+            this._name = name;
+        };
+
+        var util = {
+            tryEval : function (json, def)
+            {
+                if (json) {
+                    try {
+                        var value;
+                        eval("value = " + json + ";");
+                        if (value !== undefined)
+                            return value;
+                    }
+                    catch (e) {
+                        console.log("Exception evaluating '" + json + "'");
+                    }
+                }
+                return def;
+            }
+        };
+
+        var publicMethods = {
+            load : function () 
+            {
+                this.data = util.tryEval(localStorage[this._name], {});
+            },
+            save : function () 
+            {
+                localStorage[this._name] = JSON.stringify(this.data);
+            },
+            clear : function() 
+            {                
+                delete localStorage[this._name];
+                this.data = {};
+            }
+        };
+
+        for (var name in publicMethods)
+            ctor.prototype[name] = publicMethods[name];
+        return ctor;
+    })();
+
+    if (localStorage !== undefined)
+    {
+        var cache = new Cache(name);
+        cache.load();
+        return cache;
+    } 
+    else
+        return undefined;
+};
+
 function includeScriptFiles ()
 {   
+    function evalScript(text)
+    {
+        try {
+            eval(text);
+        } catch (e)
+        {
+            console.log(text);
+            console.log("ERROR: Error in evaluating code");
+            throw e;
+        }
+    }
+    
     var lxparser;
     var jsgenerator;
 
-
+    var cache = acquireCache('genericScriptCache');
     for (var i = 0; i < arguments.length; ++i)
     {
-        var url = arguments[i];
-        var script = url + "?rand=" + Math.random();
+        var script = arguments[i];
 
-        if (url.match(/.\lxlang$/i))
+        if (cache && cache.data[script])
+        {
+            console.log("Using cached translation for '" + script + "'");
+            evalScript(cache.data[script].jscode);
+        }
+        else if (script.match(/.\lxlang$/i))
         {
             lxparser = lxparser || new lxlang2.Parser();
             jsgenerator = jsgenerator || new lxlang2.GenerateJavascript();
 
-            $.ajax(script, {
+            var url = script + "?rand=" + Math.random();
+            $.ajax(url, {
                     dataType : "text",
                     async : false,
                     success : function(text) {
@@ -205,14 +280,10 @@ function includeScriptFiles ()
                         var ast = lxparser.parse(text);
                         var jscode = jsgenerator.translate(ast);
                         
-                        try {
-                            eval(jscode);
-                        } catch (e)
-                        {
-                            console.log(jscode);
-                            console.log("ERROR: Error in translated LxLang code");
-                            throw e;
-                        }
+                        console.log("Compiling script for '" + script + "'");
+                        evalScript(jscode);
+                        if (cache)
+                            cache.data[script] = { jscode : jscode };
                     }
                 });
         }
@@ -225,4 +296,6 @@ function includeScriptFiles ()
         }
     }
 
+    if (cache)
+        cache.save();
 }
