@@ -342,7 +342,7 @@
                 if (!cached) {
                   (function (elem, delay) {
                     window.setTimeout(function () {
-                      $(elem).raytracer({ sampleCount: 5 });
+                      $(elem).raytracer({ sampleCount: 5, linkToImage: true });
                     }, delay);
                   })(this, traceDelay);
                   traceDelay += 1000;
@@ -350,7 +350,7 @@
                 else {
                   (function (elem, delay) {
                     window.setTimeout(function () {
-                      $(elem).raytracer();
+                      $(elem).raytracer({ linkToImage: true });
                     }, delay);
                   })(this, drawDelay);
                   drawDelay += 50;

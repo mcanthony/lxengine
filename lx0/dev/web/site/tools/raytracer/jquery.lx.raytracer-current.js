@@ -29,22 +29,55 @@
             var engine = $.data(this, "raytracer-engine") || new Engine();
             $.data(this, "raytracer-engine", engine);
 
+            //
+            if (options.linkToImage)
+            {
+                var next = options.oncomplete || function () { };
+                options.oncomplete = (function (next, elem) {
+                    return function(stats) { 
+                        methods._ensureLink.call(elem); 
+                        next(stats); 
+                    };
+                })(next, this);
+            }
+
             var scene = options.scene || loadScene(options.sceneUrl, options.template);
 
             engine.gametick = 0;
             engine.run(new raytracer.RenderLoop(this, scene, options));
         },
 
+        _ensureLink : function() {
+            var parent = $(this).parent();
+            if (parent.tagName != "A") {
+                parent = $("<A/>");
+                $(this).wrap(parent);
+                parent = $(this).parent();
+            }
+
+            parent.attr("target", "_blank");
+            parent.attr("href", this.toDataURL("image/png"));
+        },
+
         init: function (options) {
 
+            // If there's a cacheId associated with this element, then 
+            // check if there's a cached image that can be drawn directly;
+            // otherwise, set up the options to save the image to the cache when the
+            // ray-tracing is done.
+            //
             if (options.cacheId) {
                 var id = options.cacheId;
 
                 if (imageCache.data[id]) {
                     var ctx = this.getContext('2d');
                     var img = new Image();
+                    var elem = this;
                     img.onload = function () {
                         ctx.drawImage(this, 0, 0);
+                        
+                        if (options.linkToImage)
+                            methods._ensureLink.call(elem);
                     };
                     img.src = imageCache.data[id];
                 }
@@ -54,12 +87,11 @@
                         return function (stats) {
                             imageCache.data[id] = stats.dataUri;
                             imageCache.save();
-                            next();
+                            next(stats);
                         }
                     })(next, id);
 
                     methods._raytrace.call(this, options);
-
                 }
             }
             else
@@ -68,12 +100,14 @@
 
         queryCache: function (options) {
             var id = options.cacheId;
-            return (id && imageCache && imageCache.data[id] != undefined);
+            return (id && imageCache.data[id] != undefined);
         },
 
         extendOptions: function (baseOptions) {
 
-            var defaultOptions = {};
+            var defaultOptions = {
+                linkToImage : false,
+            };
             var inlineOptions = _tryEval($(this).attr("data-options"), {});
             var options = $.extend(defaultOptions, baseOptions, inlineOptions);
 

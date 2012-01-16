@@ -236,7 +236,13 @@ function acquireCache (name)
         return cache;
     } 
     else
-        return undefined;
+    {
+        var cache = new Cache(name);
+        cache.load = function() {};
+        cache.save = function() {};
+        cache.clear = function() { this.data = {}; }
+        return cache;
+    }
 };
 
 function includeScriptFiles ()
@@ -261,7 +267,7 @@ function includeScriptFiles ()
     {
         var script = arguments[i];
 
-        if (cache && cache.data[script])
+        if (cache.data[script])
         {
             console.log("Using cached translation for '" + script + "'");
             evalScript(cache.data[script].jscode);
@@ -282,8 +288,7 @@ function includeScriptFiles ()
                         
                         console.log("Compiling script for '" + script + "'");
                         evalScript(jscode);
-                        if (cache)
-                            cache.data[script] = { jscode : jscode };
+                        cache.data[script] = { jscode : jscode };
                     }
                 });
         }
@@ -296,6 +301,5 @@ function includeScriptFiles ()
         }
     }
 
-    if (cache)
-        cache.save();
+    cache.save();
 }
