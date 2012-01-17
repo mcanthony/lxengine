@@ -75,19 +75,22 @@
         <script id="shader-fs" type="x-shader/x-fragment">
 precision mediump float;
 
-void main(void) {
-    gl_FragColor = vec4(1.0, 0.0, 1.0, 1.0);
+void main (void) 
+{
+    gl_FragColor = vec4(0.200, 0.467, 0.667, 1.0);
 }
         </script>
 
         <script id="shader-vs" type="x-shader/x-vertex">
-attribute vec3 aVertexPosition;
+attribute vec3 vertPosition;
 
-uniform mat4 uMVMatrix;
-uniform mat4 uPMatrix;
+uniform mat4 unifModelMatrix;
+uniform mat4 unifViewMatrix;
+uniform mat4 unifProjMatrix;
 
-void main(void) {
-    gl_Position = uPMatrix * uMVMatrix * vec4(aVertexPosition, 1.0);
+void main (void) 
+{
+    gl_Position = unifProjMatrix * unifViewMatrix * unifModelMatrix * vec4(vertPosition, 1.0);
 }
         </script>
 
@@ -154,12 +157,15 @@ void main(void) {
                     //
                     // Create some view paramaters
                     //
+                   
                     var projectionMat = mat4.create();
-                    var modelViewMat = mat4.create();
+                    var viewMat = mat4.create();
+                    var modelMat = mat4.create();
 
                     mat4.perspective(90, this.width / this.height, 0.1, 100.0, projectionMat);
-                    mat4.identity(modelViewMat);
-                    mat4.translate(modelViewMat, [0.0, 0.0, -1.5]);
+                    mat4.identity(viewMat);
+                    mat4.translate(viewMat, [0.0, 0.0, -1.5]);
+                    mat4.identity(modelMat);
 
                     //
                     // Enable and draw
@@ -171,12 +177,13 @@ void main(void) {
                     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
                     gl.useProgram(shaderProgram);
-                    gl.uniformMatrix4fv(gl.getUniformLocation(shaderProgram, "uPMatrix"), false, projectionMat);
-                    gl.uniformMatrix4fv(gl.getUniformLocation(shaderProgram, "uMVMatrix"), false, modelViewMat);
+                    gl.uniformMatrix4fv(gl.getUniformLocation(shaderProgram, "unifProjMatrix"), false, projectionMat);
+                    gl.uniformMatrix4fv(gl.getUniformLocation(shaderProgram, "unifViewMatrix"), false, viewMat);
+                    gl.uniformMatrix4fv(gl.getUniformLocation(shaderProgram, "unifModelMatrix"), false, modelMat);
 
                     gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
-                    gl.enableVertexAttribArray(gl.getAttribLocation(shaderProgram, "aVertexPosition"));
-                    gl.vertexAttribPointer(gl.getAttribLocation(shaderProgram, "aVertexPosition"), 3, gl.FLOAT, false, 0, 0);
+                    gl.enableVertexAttribArray(gl.getAttribLocation(shaderProgram, "vertPosition"));
+                    gl.vertexAttribPointer(gl.getAttribLocation(shaderProgram, "vertPosition"), 3, gl.FLOAT, false, 0, 0);
 
                     gl.drawArrays(gl.TRIANGLES, 0, 3);
                 });
