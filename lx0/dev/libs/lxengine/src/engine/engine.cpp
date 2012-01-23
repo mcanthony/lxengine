@@ -301,18 +301,15 @@ namespace lx0 { namespace engine { namespace dom_ns {
             info["sizes"]["std::string"] =     (int)sizeof(std::string);
             info["sizes"]["Document"] =        (int)sizeof(Document);
             info["sizes"]["Element"] =         (int)sizeof(Element);
+            info["sizes"]["lxvar"] =           (int)sizeof(lxvar);
 
             info["system"] = lxvar::ordered_map();
             info["system"]["current_time"] = lx_ctime();
-
-            // Credit to the Quake 2 source code (Swap_Init) for this test
-            {
-                lx0::uint8 bytes[2] = { 1, 0 };
-                info["system"]["endian"] = (*(short*)bytes == 1) ? "little" : "big";
-            }
+            info["system"]["endian"] = lx_little_endian() ? "little" : "big";
 
             info["system"]["operating_system"] = lxvar::ordered_map();
             lx_operating_system_info(info["system"]["operating_system"]);
+            lx_display_info(info["system"]["display"]);
             
             info["lxengine"] = lxvar::ordered_map();
             info["lxengine"]["version"] = boost::str( boost::format("%d.%d.%d") % versionMajor() % versionMinor() % versionRevision() ); 

@@ -100,6 +100,7 @@ namespace lx0 { namespace core { namespace log_ns {
     detail::_exception_base&
     detail::_exception_base::detail (const char* msg)
     {
+        lx0::lx_debugger_message(boost::str(boost::format("lx0:error_exception (%p) details: %s\n") % this % msg));
         lx_log("lx0::error_exception (%p) detail: %s", this, msg);
         mWhat += msg;
         mWhat += "\n";

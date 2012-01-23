@@ -49,6 +49,7 @@ namespace lx0 { namespace util { namespace misc {
             std::string         lx_itoa                 (size_t i);
             std::string         lx_ctime                (void);
             std::string         lx_timestring           (void);
+            bool                lx_little_endian        (void);
 
             unsigned int        lx_milliseconds         (void);
             void                lx_message_box          (std::string caption, std::string message);
@@ -62,6 +63,7 @@ namespace lx0 { namespace util { namespace misc {
             void                _lx_reposition_console  (void);
 
             void                lx_operating_system_info (lxvar& map);
+            void                lx_display_info          (lxvar& map);
 
 
             class Timer

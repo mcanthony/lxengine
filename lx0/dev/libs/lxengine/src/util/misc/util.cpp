@@ -183,6 +183,14 @@ namespace lx0 { namespace util { namespace misc {
         return s;
     }
 
+    bool 
+    lx_little_endian (void)
+    {
+        // Credit to the Quake 2 source code (Swap_Init) for this test
+        lx0::uint8 bytes[2] = { 1, 0 };
+        return (*(short*)bytes == 1) ? true  : false; 
+    }
+
     namespace 
     {
         class RandomUnit

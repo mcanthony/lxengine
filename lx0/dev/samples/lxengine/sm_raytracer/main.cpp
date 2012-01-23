@@ -47,6 +47,30 @@ glgeom::abbox2i imgRegion;
 std::vector<std::function<void()>> preShutdown;
 
 //===========================================================================//
+//   L O C A L   F U N C T I O N S
+//===========================================================================//
+
+namespace 
+{
+    void
+    validateConfiguration (lx0::EnginePtr spEngine)
+    {
+        const auto& config = spEngine->globals();
+
+        lx_check_error( config.find("width").is_int(), "Invalid configuration for image width.  Not parseable as an integer." );
+        lx_check_error( config.find("height").is_int(), "Invalid configuration for image height.  Not parseable as an integer." );
+
+        const auto file = config.find("file");
+        if (file.is_undefined())
+            throw lx_error_exception("Argument 'file' undefined");
+        if (!file.is_string())
+            throw lx_error_exception("Argument 'file' not parseable as a string.");
+    }
+
+}
+
+
+//===========================================================================//
 //   E N T R Y - P O I N T
 //===========================================================================//
 
@@ -60,15 +84,21 @@ main (int argc, char** argv)
     try
     {
         EnginePtr   spEngine   = Engine::acquire();
-        
+     
+        //
+        // Set up global options prior to parsing the command line
+        //
         spEngine->globals().add("file",     eAcceptsString, lx0::validate_filename());
         spEngine->globals().add("output",   eAcceptsString, lx0::validate_string());
         spEngine->globals().add("width",    eAcceptsInt,    lx0::validate_int_range(1, 16 * 1024), 512);
         spEngine->globals().add("height",   eAcceptsInt,    lx0::validate_int_range(1, 16 * 1024), 512);
         spEngine->globals().add("sampler",  eAcceptsString, lx0::validate_string(), "adaptive");
 
+        // Parse the command line (specifying "file" as the default unnamed argument)
         if (spEngine->parseCommandLine(argc, argv, "file"))
-        {
+        {	
+            validateConfiguration(spEngine);
+
             spEngine->attachComponent(lx0::createJavascriptSubsystem());
             spEngine->attachComponent(createScriptHandler());
 
