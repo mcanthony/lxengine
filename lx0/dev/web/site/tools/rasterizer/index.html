@@ -107,6 +107,50 @@ void main (void)
                 return gl;
             }
 
+            //
+            // Create a primitive buffer sphere
+            //
+            function generateSphere(verticalCount, horizontalCount) {
+                var prim =
+                {
+                    position : [],
+                    normal : [],
+                    indices : [],
+                };
+
+                for (var i = 0; i < verticalCount; ++i)
+                {
+                    var phi = i * Math.PI / (verticalCount - 1);
+
+                    for (var j = 0; j < horizontalCount; ++j)
+                    {
+                        var theta = j * 2 * Math.PI / horizontalCount;
+
+                        var x = Math.cos(theta) * Math.sin(phi);
+                        var y = Math.sin(theta) * Math.sin(phi);
+                        var z = Math.cos(phi);
+
+                        prim.position.push([x,y,z]);
+                        prim.normal.push([x,y,z]);
+                    }
+                }
+
+                for (var i = 0; i < verticalCount - 1; ++i)
+                {
+                    for (var j = 0; j < horizontalCount; ++j)
+                    {
+                        var r0 = (i * horizontalCount) + j;
+                        var r1 = r0 + horizontalCount;                       
+
+                        prim.indices.push( [r0, r1, r0 + 1] );
+                        prim.indices.push( [r1, r1 + 1, r0 + 1] );
+                    }
+                }
+
+                console.log(prim);
+            }
+
+
             $(document).ready(function () {
 
                 $("#insert-toc").tableOfContentsMenu();
@@ -153,6 +197,8 @@ void main (void)
                     var vertexBuffer = gl.createBuffer();
                     gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
                     gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.STATIC_DRAW);
+
+                    generateSphere(4, 4);
 
                     //
                     // Create some view paramaters
