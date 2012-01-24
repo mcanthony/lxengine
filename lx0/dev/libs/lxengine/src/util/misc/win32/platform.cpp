@@ -133,34 +133,56 @@ namespace lx0 { namespace util { namespace misc {
             % info.wServicePackMinor) );
     }
 
+    lxvar
+    _lx_monitor_info ()
+    {
+        // 
+        // Hide the boilerplate of the WIN32 callback in an hidden class
+        //
+        class _MonitorInfo
+        {
+        public:
+            _MonitorInfo()
+            {
+                index = 0;
+                ::EnumDisplayMonitors(NULL, NULL, enumMonitorsCallback, (LPARAM)this);
+            }
+
+            int     index;
+            lxvar   data;
+
+        protected:
+            static
+            BOOL CALLBACK
+            enumMonitorsCallback (HMONITOR hMonitor, HDC hdcMonitor, LPRECT lprcMonitor, LPARAM dwData)
+            {
+                _MonitorInfo& monitorInfo = *reinterpret_cast<_MonitorInfo*>(dwData);
+
+                auto& info = monitorInfo.data[monitorInfo.index];
+                info["offset"][0] = lprcMonitor->left;
+                info["offset"][1] = lprcMonitor->top;
+                info["size"][0] = lprcMonitor->right - lprcMonitor->left;
+                info["size"][1] = lprcMonitor->bottom - lprcMonitor->top;
+
+                monitorInfo.index++;
+                return TRUE;
+            }
+        };
+
+        _MonitorInfo info;
+        return info.data;
+    }
+
     void 
     lx_display_info (lxvar& map)
     {
-        // Modified from code at http://forums.devshed.com/c-programming-42/using-enumdisplaydevices-to-list-all-monitors-698908.html
-
-        DISPLAY_DEVICE dd;
-        ::memset(&dd, 0, sizeof(dd));
-        dd.cb = sizeof(dd);
-
-        int deviceIndex = 0;
-        int monitorCount = 0;
-        while (::EnumDisplayDevices(NULL, deviceIndex, &dd, 0))
-        {
-            if (dd.StateFlags & DISPLAY_DEVICE_ATTACHED_TO_DESKTOP)
-            {
-                //@todo Need to record the monitor resolution for each device
-                map["monitors"][deviceIndex] = dd.DeviceName;
-                monitorCount ++;
-            }
-            deviceIndex++;
-        }
-
-        map["monitorCount"] = ::GetSystemMetrics(SM_CMONITORS);
-
         map["primaryResolution"][0] = ::GetSystemMetrics(SM_CXSCREEN);
         map["primaryResolution"][1] = ::GetSystemMetrics(SM_CYSCREEN);
         map["virtualResolution"][0] = ::GetSystemMetrics(SM_CXVIRTUALSCREEN);
         map["virtualResolution"][1] = ::GetSystemMetrics(SM_CYVIRTUALSCREEN);
+
+        map["monitorCount"] = ::GetSystemMetrics(SM_CMONITORS);
+        map["monitors"]     = _lx_monitor_info();
     }
 
 }}}
