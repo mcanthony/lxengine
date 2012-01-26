@@ -89,9 +89,7 @@ namespace lx0 {
 
             protected:
                 int                  mIdCounter;
-                FunctionList         mPrologue;
                 FunctionList         mBody;
-                FunctionList         mEpilogue;
 
             private:
                     // Expand out a tuple of arguments into a list for a function call
@@ -128,9 +126,7 @@ namespace lx0 {
                 template <typename Tuple>
                 void invoke(Tuple& t)
                 {
-                    invokeList(mPrologue, t);
                     invokeList(mBody, t);
-                    invokeList(mEpilogue, t);
                 }
             };
         }
