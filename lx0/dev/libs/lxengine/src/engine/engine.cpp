@@ -522,6 +522,8 @@ namespace lx0 { namespace engine { namespace dom_ns {
 	int
 	Engine::run()
 	{
+        slotRunBegin();
+
         const lx0::uint64 start = lx0::lx_milliseconds();
         mFrameNum = 0;
 
@@ -584,6 +586,8 @@ namespace lx0 { namespace engine { namespace dom_ns {
             (*it)->endRun();
 
         incPerformanceCounter("Engine>run", lx0::lx_milliseconds() - start);
+
+        slotRunEnd();
 
 		return 0;
 	}

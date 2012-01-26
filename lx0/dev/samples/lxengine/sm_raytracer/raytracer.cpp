@@ -4,7 +4,7 @@
 
     LICENSE
 
-    Copyright (c) 2010-2011 athile@athile.net (http://www.athile.net)
+    Copyright (c) 2010-2012 athile@athile.net (http://www.athile.net)
 
     Permission is hereby granted, free of charge, to any person obtaining a 
     copy of this software and associated documentation files (the "Software"), 
@@ -60,9 +60,6 @@ using namespace glgeom;
 
 extern glgeom::image3f img;
 extern glgeom::abbox2i imgRegion;
-extern std::vector<std::function<void()>> preShutdown;
-
-
 
 template <typename T>
 class lxarray
@@ -600,9 +597,9 @@ public:
             auto final = [=]() { std::cout << "Done (" << lx0::lx_milliseconds() - mRenderTime << " ms)." << std::endl; };
 
             quickBarrier = run_tasks(8, tasks, final);
-            preShutdown.push_back([]() {
+            Engine::acquire()->slotRunEnd += []() {
                 const_cast<controller_t&>(quickBarrier).cancel();
-            });        
+            };        
         });
 
         auto varOutputFile = Engine::acquire()->globals().find("output");

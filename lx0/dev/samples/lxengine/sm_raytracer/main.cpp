@@ -4,7 +4,7 @@
 
     LICENSE
 
-    Copyright (c) 2010-2011 athile@athile.net (http://www.athile.net)
+    Copyright (c) 2010-2012 athile@athile.net (http://www.athile.net)
 
     Permission is hereby granted, free of charge, to any person obtaining a 
     copy of this software and associated documentation files (the "Software"), 
@@ -43,8 +43,6 @@
 
 glgeom::image3f img;
 glgeom::abbox2i imgRegion;
-
-std::vector<std::function<void()>> preShutdown;
 
 //===========================================================================//
 //   L O C A L   F U N C T I O N S
@@ -118,8 +116,6 @@ main (int argc, char** argv)
             spView->show(options);
 
             exitCode = spEngine->run();
-            for (auto it = preShutdown.begin(); it != preShutdown.end(); ++it)
-                (*it)();
         }
         spEngine->shutdown();
     }
