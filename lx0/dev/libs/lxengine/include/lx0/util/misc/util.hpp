@@ -36,6 +36,7 @@
 
 namespace lx0 { namespace util { namespace misc {
 
+            bool                lx_in_debugger          (void);
             void                lx_break_if_debugging   (void);
 
             bool                file_exists             (std::string filename);

@@ -299,12 +299,15 @@ namespace lx0 { namespace engine { namespace dom_ns {
             info["sizes"]["std::shared_ptr"] = (int)sizeof(std::shared_ptr<int>);
             info["sizes"]["std::weak_ptr"] =   (int)sizeof(std::weak_ptr<int>);
             info["sizes"]["std::string"] =     (int)sizeof(std::string);
+            info["sizes"]["std::vector"] =     (int)sizeof(std::vector<int>);
             info["sizes"]["Document"] =        (int)sizeof(Document);
             info["sizes"]["Element"] =         (int)sizeof(Element);
             info["sizes"]["lxvar"] =           (int)sizeof(lxvar);
+            info["sizes"]["lx0::slot"] =       (int)sizeof(lx0::slot<void()>);
 
             info["system"] = lxvar::ordered_map();
             info["system"]["current_time"] = lx_ctime();
+            info["system"]["debugger_active"] = lx_in_debugger() ? 1 : 0;
             info["system"]["endian"] = lx_little_endian() ? "little" : "big";
 
             info["system"]["operating_system"] = lxvar::ordered_map();
