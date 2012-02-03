@@ -4,7 +4,7 @@
 
     LICENSE
 
-    Copyright (c) 2010-2011 athile@athile.net (http://www.athile.net)
+    Copyright (c) 2010-2012 athile@athile.net (http://www.athile.net)
 
     Permission is hereby granted, free of charge, to any person obtaining a 
     copy of this software and associated documentation files (the "Software"), 
@@ -46,6 +46,9 @@ namespace lx0
                 noticeably faster and half the size of std::shared_ptr<>.  For a
                 small, performance sensitive object like lxvar, using a custom
                 class is warranted.
+
+                Expects the type used to have _incRef() and _decRef() methods to modify
+                the object's internal reference count.
 
                 In all other cases, use a std::shared_ptr.  Keep it simple, standard, and
                 recognizable to other developers.
