@@ -423,28 +423,6 @@ namespace lx0 { namespace core { namespace lxvar_ns {
         return mValue->isHandle();
     }
 
-    /*!
-        This method is sub-optimal in terms of design: it is effectively introducing
-        a new type system, as each natively wrapped object needs to be given a unique
-        name - which may or may not correspond to the name it is given in C++ or
-        Javascript.
-
-        Yet - do something more automated requires adding a dependency between lxvar and
-        the runtime type system, which is possibly worse since this is supposed to be a
-        small, isolated, encapsulated class.
-     */
-    std::string
-    lxvar::handleType (void) const
-    {
-        return mValue->handleType();
-    }
-
-    void*
-    lxvar::unwrap (void)
-    {
-        return mValue->unwrap();
-    }
-
     bool
     lxvar::has_key (const char* key) const
     {

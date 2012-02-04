@@ -152,6 +152,8 @@ namespace lx0
                     static lxvar    decorated_map   (void);                 //!< Return an empty decorated map
                     static lxvar    array           (void);                 //!< Return an empty array
                     
+                    bool            isHandle        (void) const;
+
                     template <typename T>
                     static lxvar    wrap            (const T& native);
                     
@@ -160,6 +162,9 @@ namespace lx0
 
                     template <typename T>
                     T&              unwrap2         (void);
+
+                    template <typename T>
+                    T*              unwrap3         (void);
 
 
                     static lxvar    parse           (const char* s);
@@ -194,10 +199,6 @@ namespace lx0
                     bool            is_string        (void) const;
                     bool            is_array         (void) const;
                     bool            is_map           (void) const;
-        
-                    bool            isHandle        (void) const;
-                    std::string     handleType      (void) const;
-                    void*           unwrap          (void);
 
                     bool            __isBinary      (void) const;           //!< Reserved for future binary blob support (specialization of an array)
                     //@}
@@ -294,9 +295,6 @@ namespace lx0
                     virtual lxvalue*    clone       (void) const = 0;                   //!< Deep clone of the value
             
                     virtual bool        isHandle    (void) const                { return false; }
-                    virtual std::string handleType  (void) const                { _invalid(); return ""; }
-                    virtual void*       unwrap      (void)                      { return nullptr; }
-
 
                     virtual bool        is_undefined(void) const            { return false; }
                     virtual bool        is_bool     (void) const            { return false; }
@@ -404,13 +402,21 @@ namespace lx0
                         return lx0::lxvar(pImp);
                     }
                 }
+
+                /*!
+                 */
+                template <typename T>
+                T* lxvar::unwrap3 (void)
+                {
+                    return reinterpret_cast<T*>( mValue->as2(typeid(T)) );
+                }
                 
                 /*!
                     Returns a reference to the underlying native type, of type T.
 
                     A dynamic_cast is used internally such that the address of the
                     return value will be null on a type mismatch; however, the
-                    expecation is that this method is used only for efficency when 
+                    expectation is that this method is used only for efficency when 
                     the type is known.
                  */
                 template <typename T>

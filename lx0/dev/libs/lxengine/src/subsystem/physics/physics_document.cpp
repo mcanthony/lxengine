@@ -238,22 +238,11 @@ PhysicsDoc::_applyCollisonActions (DocumentPtr spDocument)
                 // Objects like the ground plane are not in the Document.
                 if (spElemA.get() && spElemB.get())
                 {
-                    struct Wrapper : public lx0::core::lxvar_ns::detail::lxvalue
-                    {
-                        virtual lx0::core::lxvar_ns::detail::lxvalue* clone  (void) const    { auto p = new Wrapper; p->mspValue = mspValue; return p; } 
-                        virtual bool        isHandle    (void) const    { return true; }
-                        virtual std::string handleType  (void) const    { return "Element"; }
-                        virtual void*       unwrap      (void)          { return mspValue.get(); }
-                        ElementPtr mspValue;
-                    };
-
-                    Wrapper* wrapper = new Wrapper;
-                    wrapper->mspValue = spElemB;
                     std::vector<lxvar> args;
-                    args.push_back( lxvar(wrapper) );
+                    args.push_back( lxvar::wrap(spElemB) );
 
                     spElemA->call("onCollision", args);
-                    wrapper->mspValue = spElemA;
+                    args[0] = lxvar::wrap(spElemA);
                     spElemB->call("onCollision", args);
                 }
             }

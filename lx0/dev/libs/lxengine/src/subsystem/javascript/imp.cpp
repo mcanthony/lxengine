@@ -1159,14 +1159,16 @@ namespace {
                         Context::Scope context_scope(spJDoc->mContext);
                         HandleScope handle_scope;
                         Handle<Object> recv = _wrapObject(spJDoc->mElementCtor, spElem.get());
+                        
                         Handle<Value> callArgs[8];
                         size_t i;
                         for (i = 0; i < args.size(); ++i)
                         {
                             if (args[i].isHandle())
                             {
-                                if (args[i].handleType() == "Element")
-                                    callArgs[i] = _wrapObject(spJDoc->mElementCtor, args[i].unwrap());
+                                lx0::ElementPtr* pspElem = args[i].unwrap3<ElementPtr>();
+                                if (pspElem)
+                                    callArgs[i] = _wrapSharedObject(spJDoc->mElementCtor, *pspElem, sizeof(lx0::ElementPtr));
                                 else
                                 {
                                     lx_warn("Dispatching function call to Javascript with unknown native handle.");
@@ -1176,7 +1178,9 @@ namespace {
                             else
                                 callArgs[i] = _marshal(args[i]);
                         }
+                        
                         mFunc->Call(recv, i, callArgs);
+                        args.clear();
                     }
                     else
                         throw lx_error_exception("Callback wrapper set with an empty JS function!");

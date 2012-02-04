@@ -122,7 +122,7 @@ namespace {
         virtual const char* name() const { return "ogre"; }
 
         RefElem (Ogre::SceneManager* mpSceneMgr, ElementPtr spElem) 
-            : mpEntity(nullptr) 
+            : mpEntity  (nullptr) 
         {
             lx_check_error(spElem->tagName() == "Ref");
 
@@ -147,7 +147,8 @@ namespace {
         }
         RefElem::~RefElem()
         {
-            _node()->getParent()->removeChild(_node());
+            auto pNode = _node();
+            pNode->getParent()->removeChild(pNode);
         }
 
         virtual lx0::uint32 flags               (void) const { return eSkipUpdate; }
