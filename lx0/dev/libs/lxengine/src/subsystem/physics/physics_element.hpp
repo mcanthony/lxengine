@@ -85,6 +85,7 @@ namespace lx0
                     void            _setRestitution (lxvar value);
                     void            _addImpulseFunc (ElementPtr spElem, std::vector<lxvar>& args) ;
 
+                    virtual lx0::uint32 flags               (void) const { return eSkipUpdate; }
                     virtual void    onAttributeChange(ElementPtr spElem, std::string name, lxvar value);
                     virtual void    addImpulse (const glgeom::vector3f& v) ;
                     void            _addToWorld();

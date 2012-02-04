@@ -114,7 +114,8 @@ namespace lx0 { namespace core { namespace detail {
 
         virtual const char* name () const { return "sound"; }
 
-        virtual void    onAttributeChange   (ElementPtr spElem, std::string name, lxvar value);
+        virtual lx0::uint32 flags               (void) const { return eSkipUpdate; }
+        virtual void        onAttributeChange   (ElementPtr spElem, std::string name, lxvar value);
 
         ALuint  buffer          (void) const { return mBuffer; }
     
@@ -139,7 +140,8 @@ namespace lx0 { namespace core { namespace detail {
 
         virtual const char* name () const { return "sound"; }
 
-        virtual void    onAttributeChange   (ElementPtr spElem, std::string name, lxvar value);
+        virtual lx0::uint32 flags               (void) const { return eSkipUpdate; }
+        virtual void        onAttributeChange   (ElementPtr spElem, std::string name, lxvar value);
 
     protected:
         void    _release        (void);

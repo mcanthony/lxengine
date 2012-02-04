@@ -140,6 +140,7 @@ namespace lx0 { namespace core { namespace log_ns {
     void _lx_warn_imp    (const char* file, int line, const std::string& s)
     {
         _lx_write_to_log("warn", "WARN", s.c_str());
+        lx_debugger_message("LX WARNING: " + s + "\n");
         std::cerr << "WARNING: " << s << std::endl;
     }
 

@@ -401,7 +401,13 @@ namespace lx0 { namespace engine { namespace dom_ns {
             else
             {
                 if (!(compFlags & ElementComponent::eSkipUpdate))
+                {
+                    auto compName = pComponent->name();
+                    auto className = typeid(*pComponent).name();
+                    lx_warn("Invalid flags() implementation on component class '%1%' (\"%2%\").", className, compName);
+                    lx_break_if_debugging();
                     throw lx_error_exception("Component needs to explicitly return either eSkipUpdate or eCallUpdate from flags() implementation!");
+                }
             }
         }
 

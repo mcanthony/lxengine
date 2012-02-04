@@ -4,7 +4,7 @@
 
     LICENSE
 
-    Copyright (c) 2010-2011 athile@athile.net (http://www.athile.net)
+    Copyright (c) 2010-2012 athile@athile.net (http://www.athile.net)
 
     Permission is hereby granted, free of charge, to any person obtaining a 
     copy of this software and associated documentation files (the "Software"), 
@@ -81,6 +81,7 @@ namespace {
 
         SceneElem   (ElementPtr spElem);
 
+        virtual lx0::uint32 flags               (void) const { return eSkipUpdate; }
         virtual void onAttributeChange(ElementPtr spElem, std::string name, lxvar value);
 
     protected:
@@ -101,6 +102,7 @@ namespace {
 
         CameraElem   (ElementPtr spElem, Ogre::Camera* pCamera);
 
+        virtual lx0::uint32 flags               (void) const { return eSkipUpdate; }
         virtual void onValueChange(ElementPtr spElem);
 
     protected:
@@ -147,6 +149,8 @@ namespace {
         {
             _node()->getParent()->removeChild(_node());
         }
+
+        virtual lx0::uint32 flags               (void) const { return eSkipUpdate; }
 
         void _setTranslation (lxvar& v)
         {

@@ -46,6 +46,8 @@ namespace lx0
                     virtual const char* name() const { return "physics"; }
 
                                     SceneElem           (DocumentPtr spDocument, ElementPtr spElem, PhysicsDoc* pPhysics);
+
+                    virtual lx0::uint32 flags               (void) const { return eSkipUpdate; }
                     virtual void    onAttributeChange   (ElementPtr spElem, std::string name, lxvar value);
                     void            _reset              (ElementPtr spElem);
 
