@@ -142,6 +142,9 @@ main (int argc, char** argv)
 
     int exitCode = -1;
     
+    std::cout << "LxEngineApp.exe prototype" << std::endl;
+    std::cout << "================================================================================" << std::endl;
+
     try
     {
         EnginePtr   spEngine   = Engine::acquire();
@@ -157,7 +160,18 @@ main (int argc, char** argv)
             spEngine->attachComponent(lx0::createJavascriptSubsystem());
 
             processManifest("../dev/samples/manifest/raytracer2/manifest.lx");
-        
+
+            //
+            //
+            //
+            DocumentPtr spDocument = spEngine->createDocument();
+            auto spJavascriptDoc = spDocument->getComponent<lx0::IJavascriptDoc>();
+            std::string source = lx0::string_from_file("../dev/samples/manifest/raytracer2/main.js");
+            spJavascriptDoc->run(source);
+
+            spEngine->sendTask( [&](void) -> void { spJavascriptDoc->run("main();"); } );
+            spEngine->sendEvent("quit");
+
             exitCode = spEngine->run();
         }
         spEngine->shutdown();

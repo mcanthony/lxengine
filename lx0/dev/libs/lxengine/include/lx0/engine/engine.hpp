@@ -152,6 +152,7 @@ namespace lx0
                 const std::vector<DocumentPtr>& documents (void) { return mDocuments; }
 
                 void                sendEvent           (const char* evt);
+                void                sendTask            (std::function<void()> f);
                 int	                run                 (void);
                 lx0::slot<void()>   slotRunBegin;
                 lx0::slot<void()>   slotRunEnd;
@@ -197,6 +198,12 @@ namespace lx0
                 template <typename T> friend std::shared_ptr<T> lx0::detail::acquireSingleton (std::weak_ptr<T>&);
                 static std::weak_ptr<Engine> s_wpEngine;
 
+                struct Event
+                {
+                    std::string             message;
+                    std::function<void()>   task;
+                };
+
                 Engine();
                 ~Engine(); 
 
@@ -218,7 +225,7 @@ namespace lx0
 
                 Environment                 mEnvironment;
                 std::vector<DocumentPtr>    mDocuments;
-                std::deque<std::string>     m_messageQueue;
+                std::deque<Event>           m_eventQueue;
 
                 lx0::uint32                 mFrameNum;
                 lx0::uint32                 mFrameStartMs;

@@ -508,7 +508,17 @@ namespace lx0 { namespace engine { namespace dom_ns {
         if (strcmp("quit", message) == 0)
             lx_debug("Message 'quit' sent to Engine");
 
-        m_messageQueue.push_back(message);
+        Event evt;
+        evt.message = message;
+        m_eventQueue.push_back(evt);
+    }
+
+	void   
+	Engine::sendTask (std::function<void()> f)
+    {
+        Event evt;
+        evt.task = f;
+        m_eventQueue.push_back(evt);
     }
 
     void        
@@ -546,13 +556,30 @@ namespace lx0 { namespace engine { namespace dom_ns {
 
             _throwPostponedException();
 
-            while (!m_messageQueue.empty())
+            while (!m_eventQueue.empty())
             {
-                std::string msg = m_messageQueue.front();
-                m_messageQueue.pop_front();
+                Event evt = m_eventQueue.front();
+                m_eventQueue.pop_front();
 
-                if (msg == "quit")
-                    bDone = true;
+                int validity = (evt.message.empty() ? 0 : 1) + (evt.task ? 1 : 0);
+                switch (validity)
+                {
+                case 0:
+                    lx_warn("Ignoring empty event (neither a message or task is set)");
+                    break;
+                case 2:
+                    throw lx_error_exception("Overspecified event! Both a message and a task are set on the event.");
+                    break;
+
+                case 1:
+                    {
+                        if (evt.message == "quit")
+                            bDone = true;
+                        if (evt.task)
+                            evt.task();
+                    }
+                    break;
+                }
             }
 
 
