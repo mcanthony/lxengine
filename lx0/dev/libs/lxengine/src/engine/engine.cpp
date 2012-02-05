@@ -530,9 +530,7 @@ namespace lx0 { namespace engine { namespace dom_ns {
         const lx0::uint64 start = lx0::lx_milliseconds();
         mFrameNum = 0;
 
-#ifndef NDEBUG
         _lx_reposition_console();
-#endif
 
         //
         // Signal to the Document components that the main loop is about

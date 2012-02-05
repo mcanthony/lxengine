@@ -1,0 +1,14 @@
+{
+    main : "main.js",
+
+    commandLine : {
+        options : [
+            [ "file",    "string", validate.filename() ],
+            [ "output",  "string", validate.string() ],
+            [ "width",   "int",    validate.range(1, 16 * 1024) ],
+            [ "height",  "int",    validate.range(1, 16 * 1024) ],
+            [ "sampler", "string", validate.string(), "adaptive" ],
+        ],
+        defaultOption : "file",
+    },
+}

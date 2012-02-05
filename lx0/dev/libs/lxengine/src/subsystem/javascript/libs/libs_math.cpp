@@ -414,5 +414,5 @@ Handle<v8::Object> create_javascript_math()
     //
     // Instaniate the object
     //
-    return templ->GetFunction()->NewInstance() ;
+    return templ->GetFunction()->NewInstance();
 }

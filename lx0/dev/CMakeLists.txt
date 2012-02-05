@@ -13,7 +13,9 @@ ENDIF(MSVC)
 
 
 #
-# Look for prebuilt binaries
+# Look for prebuilt binaries.  LxEngine is designed to automatically
+# build the dependent libraries into a uniform directory structure:
+# this code is looking for those built binaries.
 #
 IF(${MSVC10})
     SET(DEPS_SDK ${CMAKE_SOURCE_DIR}/dependencies/sdk/msvc10)
@@ -106,6 +108,8 @@ macro(copy_media_directory FOLDER)
 endmacro(copy_media_directory)
 
 #
+# MACRO: lx_glob_sources
+#
 # Recursively searches the BASE directory for *.c, *.cpp, *.h, *.hpp and
 # appends matching files to the SOURCES variable.
 #
@@ -176,6 +180,7 @@ add_subdirectory( libs/lxengine/unittest )
 add_subdirectory( libs/glgeom/unittest )
 add_subdirectory( libs/glgeom/benchmarks )
 
+recurse_subdirectories(apps)
 recurse_subdirectories(benchmarks)
 recurse_subdirectories(samples)
 recurse_subdirectories(sandbox)
@@ -186,6 +191,8 @@ recurse_subdirectories(unittest)
 # Organize projects into folders
 #
 SET_PROPERTY(GLOBAL PROPERTY USE_FOLDERS ON)
+
+SET_PROPERTY(TARGET lxengineapp             PROPERTY FOLDER "Apps/LxEngineApp")
 
 SET_PROPERTY(TARGET lxengine                PROPERTY FOLDER "Libs/LxEngine")
 SET_PROPERTY(TARGET glgeom_benchmark        PROPERTY FOLDER "Libs/GLGeom")

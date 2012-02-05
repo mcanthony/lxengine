@@ -61,8 +61,6 @@ namespace {
 
     using v8::Object;
 
-
-
     //===========================================================================//
     // Local Helpers
     //===========================================================================//
@@ -305,6 +303,7 @@ namespace {
         virtual void        onUpdate            (DocumentPtr spDocument);
 
 
+        virtual void        addObject           (const char* name, void* pointerToHandleToObject);
         virtual lx0::lxvar  run                 (const std::string& source);
         
         
@@ -521,6 +520,19 @@ namespace {
             Handle<Object> recv = mContext->Global();
             mOnUpdate->Call(recv, 0, 0);
         }
+    }
+
+    /*!
+        Add a V8 object to the document context
+     */
+    void
+    JavascriptDoc::addObject (const char* name, void* pointerToHandleToObject)
+    {
+        //
+        // The reinterpret_cast is used to avoid polluting the namespace with V8 symbols.
+        //
+        Handle<Object>& handle = *reinterpret_cast< Handle<Object>* >( pointerToHandleToObject );
+        mContext->Global()->Set(String::New(name), handle);
     }
 
     /*!

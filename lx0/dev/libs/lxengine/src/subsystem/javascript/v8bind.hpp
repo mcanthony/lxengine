@@ -4,7 +4,7 @@
 
     LICENSE
 
-    Copyright (c) 2010 athile@athile.net (http://www.athile.net)
+    Copyright (c) 2010-2012 athile@athile.net (http://www.athile.net)
 
     Permission is hereby granted, free of charge, to any person obtaining a 
     copy of this software and associated documentation files (the "Software"), 
@@ -180,7 +180,7 @@ namespace lx0 { namespace core { namespace v8bind
     }
 
     /*!
-        Utility method for extracing the "this" pointer for a JS method call, assuming
+        Utility method for extracting the "this" pointer for a JS method call, assuming
         the JS object has been set up with the native pointer in internal field 0.
      */
     template <typename NativeType>

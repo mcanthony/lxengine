@@ -26,6 +26,7 @@
 */
 //===========================================================================//
 
+#include <lx0/engine/engine.hpp>
 #include <lx0/util/misc/util.hpp>
 #include <boost/format.hpp>
 #include <boost/algorithm/string.hpp>
@@ -90,10 +91,19 @@ namespace lx0 { namespace util { namespace misc {
     void
     _lx_reposition_console()
     {
+        lxvar sysinfo = lx0::Engine::acquire()->getSystemInfo()["system"]["display"];
+
+        int winX = 960;
+
+        if (lx_in_debugger() && sysinfo["monitorCount"].as<int>() > 1)
+        {
+            winX = sysinfo["monitors"][1]["offset"][0];
+        }
+
         // Windows specific hack 
         //
-        // Get the console window in a good default position for debugging
-        ::MoveWindow(::GetConsoleWindow(), 960, 0, 880, 1024, TRUE);
+        // Get the console window in a good default position for debugging       
+        ::MoveWindow(::GetConsoleWindow(), winX, 0, 880, 1024, TRUE);
 
 	    CONSOLE_FONT_INFOEX lpConsoleCurrentFontEx;
 	    lpConsoleCurrentFontEx.cbSize = sizeof(CONSOLE_FONT_INFOEX);

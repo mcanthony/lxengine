@@ -5,7 +5,7 @@
     LICENSE
     * MIT License (http://www.opensource.org/licenses/mit-license.php)
 
-    Copyright (c) 2010-2011 athile@athile.net (http://www.athile.net)
+    Copyright (c) 2010-2012 athile@athile.net (http://www.athile.net)
 
     Permission is hereby granted, free of charge, to any person obtaining a 
     copy of this software and associated documentation files (the "Software"), 
@@ -36,63 +36,62 @@
 
 namespace lx0 { namespace util { namespace misc {
 
-            bool                lx_in_debugger          (void);
-            void                lx_break_if_debugging   (void);
+    bool                    lx_in_debugger          (void);
+    void                    lx_break_if_debugging   (void);
 
-            bool                file_exists             (std::string filename);
-            bool                file_is_open            (std::string filename);
-            void                find_files_in_directory (std::vector<std::string>& files, const char* path, const char* extension);
-            void                for_files_in_directory  (const char* path, const char* extension, std::function<void (std::string)>);
+    bool                    file_exists             (std::string filename);
+    bool                    file_is_open            (std::string filename);
+    void                    find_files_in_directory (std::vector<std::string>& files, const char* path, const char* extension);
+    void                    for_files_in_directory  (const char* path, const char* extension, std::function<void (std::string)>);
 
-            std::string         string_from_file        (std::string filename);
-            lx0::lxvar          lxvar_from_file         (std::string filename);
+    std::string             string_from_file        (std::string filename);
+    lx0::lxvar              lxvar_from_file         (std::string filename);
 
-            std::string         lx_itoa                 (size_t i);
-            std::string         lx_ctime                (void);
-            std::string         lx_timestring           (void);
-            bool                lx_little_endian        (void);
+    std::string             lx_itoa                 (size_t i);
+    std::string             lx_ctime                (void);
+    std::string             lx_timestring           (void);
+    bool                    lx_little_endian        (void);
 
-            unsigned int        lx_milliseconds         (void);
-            void                lx_message_box          (std::string caption, std::string message);
-            void                lx_debugger_message     (std::string message);
+    unsigned int            lx_milliseconds         (void);
+    void                    lx_message_box          (std::string caption, std::string message);
+    void                    lx_debugger_message     (std::string message);
 
-            float                   random_unit         (void);
-            glgeom::vector3f        random_vector3f     (void);
-            std::function<float()>  random_die_f        (float min, float max, int seed);
-            std::function<int()>    random_die_i        (int min, int max, int seed);
+    float                   random_unit         (void);
+    glgeom::vector3f        random_vector3f     (void);
+    std::function<float()>  random_die_f        (float min, float max, int seed);
+    std::function<int()>    random_die_i        (int min, int max, int seed);
 
-            void                _lx_reposition_console  (void);
+    void                    _lx_reposition_console  (void);
 
-            void                lx_operating_system_info (lxvar& map);
-            void                lx_display_info          (lxvar& map);
+    void                    lx_operating_system_info (lxvar& map);
+    void                    lx_display_info          (lxvar& map);
 
 
-            class Timer
-            {
-            public:
-                            Timer() : mCount(0), mTotal(0) {}
+    class Timer
+    {
+    public:
+                    Timer() : mCount(0), mTotal(0) {}
 
-            void            start       (void)      { mStart = _ticks(); }
-            void            stop        (void)      { mTotal += _ticks() - mStart; mCount++; mStart = 0; }
-            lx0::uint32     reset       (void)      { stop(); lx0::uint32 total = totalMs(); *this = Timer(); return total; }
+    void            start       (void)      { mStart = _ticks(); }
+    void            stop        (void)      { mTotal += _ticks() - mStart; mCount++; mStart = 0; }
+    lx0::uint32     reset       (void)      { stop(); lx0::uint32 total = totalMs(); *this = Timer(); return total; }
 
-            int             count       (void) const { return mCount; }
-            double          averageMs   (void) const { return (lx0::uint32)(mTotal * 1000 / (_ticksPerSec() * mCount)); } 
-            lx0::uint32     totalMs     (void) const { return (lx0::uint32)(mTotal * 1000 / _ticksPerSec()); }
-            lx0::int64      totalTicks  (void) const { return mTotal; }
+    int             count       (void) const { return mCount; }
+    double          averageMs   (void) const { return (lx0::uint32)(mTotal * 1000 / (_ticksPerSec() * mCount)); } 
+    lx0::uint32     totalMs     (void) const { return (lx0::uint32)(mTotal * 1000 / _ticksPerSec()); }
+    lx0::int64      totalTicks  (void) const { return mTotal; }
             
-            static lx0::uint32 ticksToMs (lx0::int64 ticks) { return (lx0::uint32)(ticks * 1000 / _ticksPerSec()); }
+    static lx0::uint32 ticksToMs (lx0::int64 ticks) { return (lx0::uint32)(ticks * 1000 / _ticksPerSec()); }
 
-            protected:
-                static  lx0::int64  _ticks();
-                static  lx0::int64  _ticksPerSec();
+    protected:
+        static  lx0::int64  _ticks();
+        static  lx0::int64  _ticksPerSec();
 
-                int         mCount;
-                lx0::int64  mStart;
-                lx0::int64  mTotal;
-            };
+        int         mCount;
+        lx0::int64  mStart;
+        lx0::int64  mTotal;
+    };
 
-        }
-    }
+    }}
     using namespace lx0::util::misc;
 }

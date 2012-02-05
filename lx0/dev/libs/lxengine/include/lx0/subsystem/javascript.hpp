@@ -49,6 +49,8 @@ namespace lx0
             public:
                 static  const char* s_name  (void)       { return "javascript"; }
                 virtual const char* name    (void) const { return s_name(); }
+                
+                virtual void        addObject (const char* name, void* pointerToHandleToObject) = 0;
 
                 //! Executes a string of Javascript code in the context of the Document
                 virtual lx0::lxvar  run     (const std::string& source) = 0;
