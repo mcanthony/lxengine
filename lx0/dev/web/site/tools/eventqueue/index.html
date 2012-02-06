@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html>
+    <head>
+      <title>Event Queue</title>
+      <link type="text/css" href="../shared/style/default.less" rel="stylesheet/less" />
+      <link type="text/css" href="style.less" rel="stylesheet/less" />
+            
+      <script type="text/javascript" src="../shared/script/extern/less-1.1.3.min.js"></script>
+      <script type="text/javascript" src="../shared/script/extern/jquery-1.6.4.min.js"></script>
+      <script type="text/javascript" src="../shared/script/extern/jquery.cookie.js"></script>
+
+      <script src="http://yandex.st/highlightjs/6.1/highlight.min.js"></script>
+      <link rel="stylesheet" href="http://yandex.st/highlightjs/6.1/styles/github.css">
+
+      <script type="text/javascript">
+      <!--
+        var scriptFiles = [ 
+          "../shared/script/lx.core-0.1.1.js",
+          "../shared/script/lx.webUtil-0.1.0.js",
+          "engine.js",
+          "script.js",
+        ];
+        for (var i in scriptFiles) {
+          var s = "<script type='text/javascript' src='";
+          s += scriptFiles[i] + "?rand=" + Math.random();
+          s += "'></script>";
+          document.writeln(s);
+        }
+      -->
+      </script>
+    </head>
+    <body>
+       <div id="body-wrap1">
+        <h1>Event Queue</h1>
+
+        <h2>About</h2>
+        <div class="layout-row">
+          <div style="max-width: 40em">
+            <p>
+                <strong>Project Status:</strong>&nbsp;&nbsp;
+                <span style="font-size: 80%; color: #CCC">
+                    <span style="color: #37A; font-weight: bold; text-shadow: #DDD 0px 0px 2px">Prototype</span> |
+                    Development |
+                    Alpha |
+                    Beta |
+                    Production 
+                </span>
+            </p>
+            
+            <p>
+                A prototype of the LxEngine event queue.
+            </p>
+            <p>
+                The prototype event queue here demostrates how "events" can be chained together to create
+                complex series of actions based on a specific time-line without relying on any busy-waiting
+                or global dependencies between events.
+            </p>         
+            <p>
+                In short, the event queue is simply a sorted queue of key, object pairs where the key is 
+                a time at which to process the object and the object itself is a simple functor (i.e. stateful 
+                function).  By chaining and compositing events via "repeat", "sequence", "wait", and other 
+                meta-events complex behaior can be intuitively defined.
+            </p>
+
+          </div>
+            <div>
+                <div style="border: 1px solid #CCC; border-radius: 6px; padding: 8px 2em 8px 8px;  width: 12em; margin-left: 2em">
+                    <strong style="color: #777">Table of Contents</strong>
+                    <div id="toc"></div>
+                </div>
+            </div>  
+        </div>
+
+        <h2>Demo</h2>
+        <div class="layout-row">
+          <div style="max-width: 40em">
+            <pre id="output" style="border-radius: 6px; border: 1px solid #ccc; padding: 1em; min-height: 26em; width: 30em"></pre>
+          </div>
+          <div style="max-width: 30em">
+            <p>
+              The demo creates a two complex events: one that counts even numbers (once per second) and one that counts odd numbers
+              (once per second).
+            </p>
+            <p>
+              The even and odd counters do not directly interact and instead rely on the event queue to properly time the events 
+              such that they are effectively interleaved.
+            </p>
+          </div>
+        </div>
+
+        <h2>Source</h2>
+
+        <h4>engine.js</h4>
+        <div class="source" data-source="engine.js"></div>
+
+        <h4>script.js</h4>
+        <div class="source" data-source="script.js"></div>
+
+        <script type="text/javascript">
+        <!--
+            $(document).ready(function () {
+                $("#toc").tableOfContents();
+
+                $(".source").includeSource();
+
+                main();
+            });
+        -->
+        </script>
+
+        <!-- Google Analytics -->         <script type="text/javascript">
+            var _gaq = _gaq || [];
+            _gaq.push(['_setAccount', 'UA-604613-10']);
+            _gaq.push(['_trackPageview']);
+            (function () {
+                var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+                ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+                var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+            })();        </script> 
+
+    </body>
+</html>
