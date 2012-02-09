@@ -4,7 +4,7 @@
 
     LICENSE
 
-    Copyright (c) 2010 athile@athile.net (http://www.athile.net)
+    Copyright (c) 2010-2012 athile@athile.net (http://www.athile.net)
 
     Permission is hereby granted, free of charge, to any person obtaining a 
     copy of this software and associated documentation files (the "Software"), 
@@ -60,6 +60,7 @@ main (int argc, char** argv)
     try
     {
         EnginePtr   spEngine   = Engine::acquire();
+        spEngine->registerBuiltInPlugins();
         {
             spEngine->attachComponent( lx0::createJavascriptSubsystem());
             spEngine->attachComponent( lx0::createProcessScriptElement());

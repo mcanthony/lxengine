@@ -66,6 +66,8 @@ namespace lx0 { namespace util { namespace misc {
     void                    lx_operating_system_info (lxvar& map);
     void                    lx_display_info          (lxvar& map);
 
+    void                    lx_load_plugin           (std::string pluginName);
+
 
     class Timer
     {

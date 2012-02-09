@@ -96,6 +96,17 @@ namespace lx0 { namespace engine { namespace dom_ns {
             mTimeScale = s;
     }
 
+    EnginePtr 
+    Engine::acquire (void) 
+    {
+        std::weak_ptr<Engine>* _lx_get_engine_singleton();
+
+        static std::weak_ptr<Engine>* pwpEngine = NULL;
+        if (!pwpEngine)
+            pwpEngine = _lx_get_engine_singleton();
+        
+        return lx0::detail::acquireSingleton<Engine>(*pwpEngine); 
+    }
 
     Engine::Engine()
         : mGlobals (lxvar::decorated_map())
@@ -116,39 +127,35 @@ namespace lx0 { namespace engine { namespace dom_ns {
         mGlobals["load_builtins"].add("Ogre",       0, validate_bool(), true);
 
         lxvar info = getSystemInfo();
-        lx_debug("%s", lx0::format_tabbed(info).c_str());
-
-        ///@todo These should not be included by default
-        // Secondly, the notify mechanism crashes since it's called in the ctor before
-        // the Engine shared_ptr<> is created (i.e. shared_from_this() will crash).
-        mWorkaround_disableNotifyAttached = true;
-        _registerBuiltInPlugins();
-        mWorkaround_disableNotifyAttached = false;
+        lx_debug("%s", lx0::format_tabbed(info).c_str());       
     }
 
     /*!
         
      */
     void
-    Engine::_registerBuiltInPlugins (void)
+    Engine::registerBuiltInPlugins (void)
     {
+        mWorkaround_disableNotifyAttached = true;
+
         // Forward declarations inlined here to avoid pulling in 
         // complex headers that don't really belong in engine.cpp
         //
         // Obviously, this needs future clean-up...
         //
-        lx0::Engine::Component* _hidden_createSound           (void);
         lx0::ViewImp*           _hidden_createCanvasViewImp   (lx0::View* pView);
         lx0::ViewImp*           _hidden_createViewImpOgre     (lx0::View* pView);
 
         auto& var = mGlobals["load_builtins"];
 
         if (var["sound"].as<bool>())
-            attachComponent(_hidden_createSound() );
+            lx_load_plugin("soundal");
         if (var["Canvas"].as<bool>())
             addViewPlugin("Canvas", _hidden_createCanvasViewImp);
         if (var["Ogre"])
             addViewPlugin("OGRE", _hidden_createViewImpOgre);
+
+        mWorkaround_disableNotifyAttached = false;
     }
 
     void

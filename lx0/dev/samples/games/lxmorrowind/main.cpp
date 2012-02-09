@@ -81,7 +81,8 @@ main (int argc, char** argv)
     try
     {
         EnginePtr   spEngine   = Engine::acquire();
-        
+        spEngine->registerBuiltInPlugins();
+
         spEngine->globals().add("startingCell", lx0::eAcceptsString, lx0::validate_string());
 
         if (spEngine->parseCommandLine(argc, argv, "startingCell"))

@@ -6,3 +6,4 @@ lx_glob_sources("src")
 
 include_directories( src )
 add_library( soundal SHARED ${SOURCES} )
+target_link_libraries( soundal ${LX_ALL_LIBS}) 

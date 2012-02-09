@@ -51,6 +51,7 @@ main (int argc, char** argv)
     try
     {
         EnginePtr   spEngine   = Engine::acquire();
+        spEngine->registerBuiltInPlugins();
         
         DocumentPtr spDocument = spEngine->loadDocument("media2/appdata/sm_lxcraft/scene-000.xml");
         spDocument->addController( create_controller(spDocument) );

@@ -201,4 +201,37 @@ namespace lx0 { namespace util { namespace misc {
         map["monitors"]     = _lx_monitor_info();
     }
 
+    void
+    lx_load_plugin (std::string pluginName)
+    {
+#ifdef NDEBUG
+        std::string filename = std::string() + "plugins/" + pluginName + "/Release/" + pluginName + ".dll"; 
+#else 
+        std::string filename = std::string() + "plugins/" + pluginName + "/Debug/" + pluginName + ".dll"; 
+#endif
+
+        typedef void (*InitializePlugin)(void);
+
+        HMODULE hDLL = ::LoadLibraryA(filename.c_str());
+        InitializePlugin pfInitialize = reinterpret_cast<InitializePlugin>( ::GetProcAddress(hDLL, "initializePlugin") );
+
+        if (pfInitialize)
+            (*pfInitialize)();
+        else
+            throw lx_error_exception("Could not load plugin '%1%'", pluginName);
+    }
+
 }}}
+
+
+_declspec(dllexport) void* _gwpEngine = NULL;
+
+std::weak_ptr<lx0::Engine>*
+_lx_get_engine_singleton()
+{
+    HMODULE hHandle = ::GetModuleHandle(NULL);
+    auto pData = (std::weak_ptr<lx0::Engine>**)::GetProcAddress(hHandle, "?_gwpEngine@@3PAXA");
+    if (!*pData)
+        *pData = new std::weak_ptr<lx0::Engine>;
+    return *pData;
+}

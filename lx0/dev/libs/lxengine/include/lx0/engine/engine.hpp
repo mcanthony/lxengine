@@ -105,6 +105,7 @@ namespace lx0
 
             }
 
+
             //===========================================================================//
             //!
             /*!
@@ -136,7 +137,9 @@ namespace lx0
                 ///@}
 
                 //! Acquire the Singleton for the Engine
-                static EnginePtr    acquire             (void) { return lx0::detail::acquireSingleton<Engine>(s_wpEngine); }
+                static EnginePtr    acquire             (void);
+
+                void                registerBuiltInPlugins (void);
         
                 void                shutdown            (void);
 
@@ -209,8 +212,6 @@ namespace lx0
 
                 DocumentPtr _loadDocument           (bool bCreate, std::string filename);
                 ElementPtr  _loadDocumentRoot       (DocumentPtr spDocument, std::string filename);
-
-                void        _registerBuiltInPlugins (void);
         
                 void        _throwPostponedException (void);
                 bool        _handlePlatformMessages  (void);

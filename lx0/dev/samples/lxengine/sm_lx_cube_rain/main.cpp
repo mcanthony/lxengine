@@ -114,6 +114,7 @@ main (int argc, char** argv)
     try
     {
         EnginePtr spEngine( Engine::acquire() );
+        spEngine->registerBuiltInPlugins();
 
         lxvar options;
         if ( parseOptions(argc, argv, options) )
