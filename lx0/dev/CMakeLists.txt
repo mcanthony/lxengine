@@ -181,6 +181,7 @@ add_subdirectory( libs/glgeom/unittest )
 add_subdirectory( libs/glgeom/benchmarks )
 
 recurse_subdirectories(apps)
+recurse_subdirectories(plugins)
 recurse_subdirectories(benchmarks)
 recurse_subdirectories(samples)
 recurse_subdirectories(sandbox)
@@ -197,6 +198,8 @@ SET_PROPERTY(TARGET lxengineapp             PROPERTY FOLDER "Apps/LxEngineApp")
 SET_PROPERTY(TARGET lxengine                PROPERTY FOLDER "Libs/LxEngine")
 SET_PROPERTY(TARGET glgeom_benchmark        PROPERTY FOLDER "Libs/GLGeom")
 SET_PROPERTY(TARGET glgeom_unittest         PROPERTY FOLDER "Libs/GLGeom")
+
+SET_PROPERTY(TARGET soundal                 PROPERTY FOLDER "Plugins/SoundAL")
 
 SET_PROPERTY(TARGET sm_lx_cube_asteriods    PROPERTY FOLDER "Samples/LxEngine")
 SET_PROPERTY(TARGET sm_lx_cube_rain         PROPERTY FOLDER "Samples/LxEngine")
