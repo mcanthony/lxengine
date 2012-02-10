@@ -62,6 +62,7 @@ namespace lx0 { namespace util { namespace misc {
     std::function<int()>    random_die_i        (int min, int max, int seed);
 
     void                    _lx_reposition_console  (void);
+    std::weak_ptr<lx0::Engine>* _lx_get_engine_singleton    (void);
 
     void                    lx_operating_system_info (lxvar& map);
     void                    lx_display_info          (lxvar& map);

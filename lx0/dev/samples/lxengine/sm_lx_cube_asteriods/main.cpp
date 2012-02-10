@@ -60,7 +60,10 @@ main (int argc, char** argv)
     try
     {
         EnginePtr   spEngine   = Engine::acquire();
+        
         spEngine->registerBuiltInPlugins();
+        spEngine->loadPlugin("OgreView");
+
         {
             spEngine->attachComponent( lx0::createJavascriptSubsystem());
             spEngine->attachComponent( lx0::createProcessScriptElement());

@@ -87,6 +87,8 @@ namespace lx0 { namespace core { namespace log_ns {
         lx_log("lx0::error_exception (%p) created ", this);
         mWhat.reserve(512);
         location(file, line);
+
+        lx_break_if_debugging();
     }
 
     void 
@@ -112,6 +114,17 @@ namespace lx0 { namespace core { namespace log_ns {
     detail::_exception_base::what() const 
     {
         return mWhat.c_str();
+    }
+
+    error_exception::error_exception (const char* file, int line) 
+        : detail::_exception_base(file, line) 
+    {        
+    }
+
+    error_exception::error_exception (const char* file, int line, const char* s) 
+        : detail::_exception_base(file, line) 
+    { 
+        detail("%1%", s);         
     }
 
     void _lx_message_imp (const char* file, int line, const std::string& s)

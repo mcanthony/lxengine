@@ -93,9 +93,8 @@ namespace lx0
             class error_exception : public detail::_exception_base
             {
             public:
-                error_exception (const char* file, int line) : detail::_exception_base(file, line) {}
-                   
-                error_exception (const char* file, int line, const char* s) : detail::_exception_base(file, line) { detail("%1%", s); }
+                error_exception (const char* file, int line);
+                error_exception (const char* file, int line, const char* s);
 
                 template <typename T0>
                 error_exception (const char* file, int line, const char* format, T0 a0) : detail::_exception_base(file, line) { detail(format, a0); }

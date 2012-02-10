@@ -59,14 +59,19 @@ link_directories(${Boost_LIBRARY_DIRS})
 include_directories( ${CMAKE_SOURCE_DIR}/libs/lxengine/src/extern/gl3w/include )
 
 # OGRE
+#
 message(STATUS "Ogre include dir: ${OGRE_INCLUDE_DIR}")
 include_directories(${OGRE_INCLUDE_DIR})
 link_directories (${OGRE_LIB_DIR}) 
+
 file(GLOB ASSETS "$ENV{OGRE_HOME}/bin/debug/*.dll")
 INSTALL(FILES ${ASSETS} DESTINATION ${PROJECT_BINARY_DIR}/Debug)
 file(GLOB ASSETS "$ENV{OGRE_HOME}/bin/Release/*.dll")
 INSTALL(FILES ${ASSETS} DESTINATION ${PROJECT_BINARY_DIR}/Release)
 
+#
+# Additional info
+#
 message(STATUS "CMAKE_CXX_FLAGS_DEBUG=${CMAKE_CXX_FLAGS_DEBUG}")
 message(STATUS "CMAKE_CXX_FLAGS_RELEASE=${CMAKE_CXX_FLAGS_RELEASE}")
 message(STATUS "CMAKE_CXX_FLAGS_RELWITHDEBINFO=${CMAKE_CXX_FLAGS_RELWITHDEBINFO}")
@@ -78,12 +83,9 @@ message(STATUS "CMAKE_EXE_LINKER_FLAGS=${CMAKE_EXE_LINKER_FLAGS}")
 
 set( LX_ALL_LIBS 
     lxengine
-    ${OGRE_LIBRARIES} 
     ${V8_LIBS} 
     ${BULLET_LIBS} 
-    ${OIS_LIBS} 
-    ${OPENAL_LIBS} 
-    ${VORBIS_LIBS}
+    ${OIS_LIBS}     
     opengl32.lib
     glu32.lib
     )
@@ -199,7 +201,8 @@ SET_PROPERTY(TARGET lxengine                PROPERTY FOLDER "Libs/LxEngine")
 SET_PROPERTY(TARGET glgeom_benchmark        PROPERTY FOLDER "Libs/GLGeom")
 SET_PROPERTY(TARGET glgeom_unittest         PROPERTY FOLDER "Libs/GLGeom")
 
-SET_PROPERTY(TARGET soundal                 PROPERTY FOLDER "Plugins/SoundAL")
+SET_PROPERTY(TARGET SoundAL                 PROPERTY FOLDER "Plugins/SoundAL")
+SET_PROPERTY(TARGET OgreView                PROPERTY FOLDER "Plugins/OgreView")
 
 SET_PROPERTY(TARGET sm_lx_cube_asteriods    PROPERTY FOLDER "Samples/LxEngine")
 SET_PROPERTY(TARGET sm_lx_cube_rain         PROPERTY FOLDER "Samples/LxEngine")

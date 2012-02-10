@@ -217,21 +217,28 @@ namespace lx0 { namespace util { namespace misc {
 
         if (pfInitialize)
             (*pfInitialize)();
-        else
-            throw lx_error_exception("Could not load plugin '%1%'", pluginName);
+        else 
+        {
+            bool bExists = file_exists(filename);
+
+            if (!bExists)
+                throw lx_error_exception("Could not load plugin '%1%'.  File '%2%' does not exist.", pluginName, filename);
+            else
+                throw lx_error_exception("Could not load plugin '%1%'", pluginName);
+        }
+    }  
+
+    _declspec(dllexport) void* _gwpEngine = NULL;
+
+    std::weak_ptr<lx0::Engine>*
+    _lx_get_engine_singleton()
+    {
+        HMODULE hHandle = ::GetModuleHandle(NULL);
+        auto pData = (std::weak_ptr<lx0::Engine>**)::GetProcAddress(hHandle, "?_gwpEngine@misc@util@lx0@@3PAXA");
+        if (!*pData)
+            *pData = new std::weak_ptr<lx0::Engine>;
+        return *pData;
     }
 
 }}}
 
-
-_declspec(dllexport) void* _gwpEngine = NULL;
-
-std::weak_ptr<lx0::Engine>*
-_lx_get_engine_singleton()
-{
-    HMODULE hHandle = ::GetModuleHandle(NULL);
-    auto pData = (std::weak_ptr<lx0::Engine>**)::GetProcAddress(hHandle, "?_gwpEngine@@3PAXA");
-    if (!*pData)
-        *pData = new std::weak_ptr<lx0::Engine>;
-    return *pData;
-}

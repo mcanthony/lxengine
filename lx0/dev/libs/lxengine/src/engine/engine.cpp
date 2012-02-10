@@ -80,8 +80,6 @@ namespace lx0 { namespace engine { namespace dom_ns {
 
     using namespace detail;
 
-    std::weak_ptr<Engine> Engine::s_wpEngine;
-
     Engine::Environment::Environment ()
         : mTimeScale (1.0f)
     {
@@ -99,8 +97,14 @@ namespace lx0 { namespace engine { namespace dom_ns {
     EnginePtr 
     Engine::acquire (void) 
     {
-        std::weak_ptr<Engine>* _lx_get_engine_singleton();
-
+        //
+        // Get the pointer to the singleton using the helper _lx_get_engine_singleton() so that
+        // singleton is unique across the entire *process* rather than unique across each 
+        // module.  (See http://athile.net/library/blog/?p=1346).
+        //
+        // Keep a per-module copy of pointer simply for efficiency.  Engine::acquire() is called
+        // with relative frequency.
+        //        
         static std::weak_ptr<Engine>* pwpEngine = NULL;
         if (!pwpEngine)
             pwpEngine = _lx_get_engine_singleton();
@@ -110,7 +114,6 @@ namespace lx0 { namespace engine { namespace dom_ns {
 
     Engine::Engine()
         : mGlobals (lxvar::decorated_map())
-        , mWorkaround_disableNotifyAttached (true)
     {
         lx_init();
         lx_log("lx::core::Engine ctor");
@@ -124,7 +127,7 @@ namespace lx0 { namespace engine { namespace dom_ns {
         mGlobals["load_builtins"].add("sound",      0, validate_bool(), true);
         mGlobals["load_builtins"].add("javascript", 0, validate_bool(), true);
         mGlobals["load_builtins"].add("Canvas",     0, validate_bool(), true);
-        mGlobals["load_builtins"].add("Ogre",       0, validate_bool(), true);
+        mGlobals["load_builtins"].add("Ogre",       0, validate_bool(), false);
 
         lxvar info = getSystemInfo();
         lx_debug("%s", lx0::format_tabbed(info).c_str());       
@@ -136,33 +139,33 @@ namespace lx0 { namespace engine { namespace dom_ns {
     void
     Engine::registerBuiltInPlugins (void)
     {
-        mWorkaround_disableNotifyAttached = true;
-
         // Forward declarations inlined here to avoid pulling in 
         // complex headers that don't really belong in engine.cpp
         //
         // Obviously, this needs future clean-up...
         //
         lx0::ViewImp*           _hidden_createCanvasViewImp   (lx0::View* pView);
-        lx0::ViewImp*           _hidden_createViewImpOgre     (lx0::View* pView);
 
         auto& var = mGlobals["load_builtins"];
 
         if (var["sound"].as<bool>())
-            lx_load_plugin("soundal");
+            loadPlugin("SoundAL");
         if (var["Canvas"].as<bool>())
             addViewPlugin("Canvas", _hidden_createCanvasViewImp);
         if (var["Ogre"])
-            addViewPlugin("OGRE", _hidden_createViewImpOgre);
+            loadPlugin("OgreView");
+    }
 
-        mWorkaround_disableNotifyAttached = false;
+    void 
+    Engine::loadPlugin (const char* pszName)
+    {
+        lx_load_plugin(pszName);
     }
 
     void
     Engine::notifyAttached (ComponentPtr spComponent) 
     { 
-        if (!mWorkaround_disableNotifyAttached)
-            spComponent->onAttached(shared_from_this()); 
+        spComponent->onAttached(shared_from_this()); 
     }
 
     void 

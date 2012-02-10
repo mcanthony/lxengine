@@ -140,6 +140,7 @@ namespace lx0
                 static EnginePtr    acquire             (void);
 
                 void                registerBuiltInPlugins (void);
+                void                loadPlugin          (const char* pszName);
         
                 void                shutdown            (void);
 
@@ -199,7 +200,6 @@ namespace lx0
 
             protected:
                 template <typename T> friend std::shared_ptr<T> lx0::detail::acquireSingleton (std::weak_ptr<T>&);
-                static std::weak_ptr<Engine> s_wpEngine;
 
                 struct Event
                 {
