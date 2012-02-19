@@ -87,8 +87,6 @@ namespace lx0 { namespace core { namespace log_ns {
         lx_log("lx0::error_exception (%p) created ", this);
         mWhat.reserve(512);
         location(file, line);
-
-        lx_break_if_debugging();
     }
 
     void 
@@ -102,10 +100,13 @@ namespace lx0 { namespace core { namespace log_ns {
     detail::_exception_base&
     detail::_exception_base::detail (const char* msg)
     {
-        lx0::lx_debugger_message(boost::str(boost::format("lx0:error_exception (%p) details: %s\n") % this % msg));
+        lx0::lx_debugger_message(boost::str(boost::format("lx0:error_exception (%p) details:\n%s\n") % this % msg));
         lx_log("lx0::error_exception (%p) detail: %s", this, msg);
         mWhat += msg;
         mWhat += "\n";
+
+        lx_break_if_debugging();
+
         return *this;
     }
 

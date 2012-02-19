@@ -356,6 +356,7 @@ main (int argc, char** argv)
             {
                 // Temp
                 {
+                    lx_message("Generating sky map...");
                     generateSkyMap();
                     //generateNoiseCubeMap();
                 }

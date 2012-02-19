@@ -138,10 +138,10 @@ namespace lx0
 
                 //! Acquire the Singleton for the Engine
                 static EnginePtr    acquire             (void);
-
-                void                registerBuiltInPlugins (void);
+             
                 void                loadPlugin          (const char* pszName);
         
+                void                initialize          (void);
                 void                shutdown            (void);
 
                 lxvar               getSystemInfo       (void);
@@ -210,14 +210,14 @@ namespace lx0
                 Engine();
                 ~Engine(); 
 
-                DocumentPtr _loadDocument           (bool bCreate, std::string filename);
-                ElementPtr  _loadDocumentRoot       (DocumentPtr spDocument, std::string filename);
-        
-                void        _throwPostponedException (void);
-                bool        _handlePlatformMessages  (void);
+                void        _registerBuiltInPlugins     (void);
 
-                bool                        mWorkaround_disableNotifyAttached;
-                
+                DocumentPtr _loadDocument               (bool bCreate, std::string filename);
+                ElementPtr  _loadDocumentRoot           (DocumentPtr spDocument, std::string filename);
+        
+                void        _throwPostponedException    (void);
+                bool        _handlePlatformMessages     (void);
+
                 lxvar                       mSystemInfo;
                 
                 typedef std::map<std::string,std::function<void(lx0::lxvar)>> FunctionMap;

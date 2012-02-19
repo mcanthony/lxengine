@@ -137,7 +137,7 @@ namespace lx0 { namespace engine { namespace dom_ns {
         
      */
     void
-    Engine::registerBuiltInPlugins (void)
+    Engine::_registerBuiltInPlugins (void)
     {
         // Forward declarations inlined here to avoid pulling in 
         // complex headers that don't really belong in engine.cpp
@@ -179,6 +179,12 @@ namespace lx0 { namespace engine { namespace dom_ns {
         }
         else
             m_perfCounters.insert(std::make_pair(name, PerfCounter(1, t))); 
+    }
+
+    void
+    Engine::initialize()
+    {
+        _registerBuiltInPlugins();
     }
 
     /*!
@@ -402,15 +408,15 @@ namespace lx0 { namespace engine { namespace dom_ns {
 
         for (auto it = mGlobals.begin(); it != mGlobals.end(); ++it)
         {
-            std::string name = it.key();
-            const lx0::uint32 flags = mGlobals.flags(name.c_str());
+            const char*       name  = it.key().c_str();
+            const lx0::uint32 flags = mGlobals.flags(name);
 
-            if (vars.count(name.c_str()) > 0)
+            if (vars.count(name) > 0)
             {
                 if (flags & eAcceptsString)
-                    mGlobals[name.c_str()] = vars[name.c_str()].as<std::string>();
+                    mGlobals[name] = vars[name].as<std::string>();
                 else if (flags & eAcceptsInt)
-                    mGlobals[name.c_str()] = vars[name.c_str()].as<int>();
+                    mGlobals[name] = vars[name].as<int>();
             }
         }
 

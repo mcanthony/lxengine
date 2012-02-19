@@ -114,7 +114,7 @@ main (int argc, char** argv)
     try
     {
         EnginePtr spEngine( Engine::acquire() );
-        spEngine->registerBuiltInPlugins();
+        spEngine->initialize();
         spEngine->loadPlugin("OgreView");
 
         lxvar options;

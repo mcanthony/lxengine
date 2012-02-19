@@ -4,7 +4,7 @@
 
     LICENSE
 
-    Copyright (c) 2011 athile@athile.net (http://www.athile.net)
+    Copyright (c) 2011-2012 athile@athile.net (http://www.athile.net)
 
     Permission is hereby granted, free of charge, to any person obtaining a 
     copy of this software and associated documentation files (the "Software"), 
@@ -289,7 +289,7 @@ protected:
 
     void _addGeometry (const std::string& modelFilename)
     {
-        std::cout << "Loading '" << modelFilename << "'" << std::endl;            
+        lx_message("Loading '%1%'", modelFilename);
         lx0::GeometryPtr spModel = lx0::geometry_from_blendfile(mspRasterizer, modelFilename.c_str());
         mGeometry.push_back(spModel);
     }
@@ -321,6 +321,8 @@ main (int argc, char** argv)
     try
     {
         lx0::EnginePtr spEngine = lx0::Engine::acquire();
+
+        spEngine->initialize();
 
         //
         // Add several global configuration variables.  These will be exported as 

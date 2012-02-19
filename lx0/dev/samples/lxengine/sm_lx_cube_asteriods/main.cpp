@@ -61,7 +61,7 @@ main (int argc, char** argv)
     {
         EnginePtr   spEngine   = Engine::acquire();
         
-        spEngine->registerBuiltInPlugins();
+        spEngine->initialize();
         spEngine->loadPlugin("OgreView");
 
         {

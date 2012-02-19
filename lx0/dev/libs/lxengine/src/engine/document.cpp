@@ -205,7 +205,8 @@ namespace lx0 { namespace engine { namespace dom_ns {
     /*!
         @todo This eventually needs to be cached, but for simplicity prior to v1.0,
         just naively walk the whole document and return the first matching
-        element.
+        element.  The caching of course will need to respond to Element additions,
+        removals, and modifications...
      */
     ElementPtr
     Document::getElementById (std::string id)

@@ -4,7 +4,7 @@
 
     LICENSE
 
-    Copyright (c) 2011 athile@athile.net (http://www.athile.net)
+    Copyright (c) 2011-2012 athile@athile.net (http://www.athile.net)
 
     Permission is hereby granted, free of charge, to any person obtaining a 
     copy of this software and associated documentation files (the "Software"), 
@@ -44,6 +44,7 @@ main (int argc, char** argv)
     try
     {
         lx0::EnginePtr spEngine = lx0::Engine::acquire();
+        spEngine->initialize();
         {
             //
             // Load up the Document containing the application data

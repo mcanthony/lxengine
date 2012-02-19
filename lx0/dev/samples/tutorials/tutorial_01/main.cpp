@@ -83,6 +83,8 @@ main (int argc, char** argv)
     try
     {
         lx0::EnginePtr spEngine = lx0::Engine::acquire();
+
+        spEngine->initialize();
         {
             lx0::DocumentPtr spDocument = spEngine->createDocument();
 
