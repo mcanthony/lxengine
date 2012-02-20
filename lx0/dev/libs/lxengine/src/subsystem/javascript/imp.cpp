@@ -487,12 +487,29 @@ namespace {
         }
     }
 
+    /*
+        Persistent handle callbacks may need to be called.
+
+        Credit: http://www.my-ride-home.com/2011/01/v8-garbage-collection/
+     */
+    static void 
+    _forceGarbageCollection()
+    {
+        for (unsigned int i = 0; i < 4096; ++i)
+        {
+            if (v8::V8::IdleNotification())
+                break;
+        }
+    }
+
     JavascriptDoc::~JavascriptDoc()
     {
         mElementCtor.Dispose();
         mKeyEventCtor.Dispose();
         mWindowOnKeyDown.Dispose();
         mContext.Dispose();
+
+        _forceGarbageCollection();
     }
 
     void

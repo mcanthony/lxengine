@@ -131,6 +131,175 @@ processManifest (std::string filename)
     return;
 }
 
+
+//-----------------------------------------------------------------------//
+//! Wrap a native object that does not have reference counting
+/*!
+    Stores the pointer to the native object in the "0" internal field of
+    the JS object.
+
+    \param ctor         JS Function for creating a JS object that will
+        wrap the native object
+
+    \param pNative      Pointer to the native object
+        
+    \param nativeBytes  The approximate weight of the native object, which
+        the Javascript garbage collector will use as a hint for when to
+        collect the object.
+    */
+static v8::Handle<v8::Object>
+_wrapObject (v8::Handle<v8::Function>& ctor, void* pNative, size_t nativeBytes = 0)
+{
+    // Give V8 a hint about the native object size so that it invokes the garbage
+    // collector at the right time.
+    if (nativeBytes > 0)
+    {
+        #ifdef _DEBUG
+        // Put more pressure on the GC in _DEBUG
+        nativeBytes *= 32;          
+        #endif
+
+        v8::V8::AdjustAmountOfExternalAllocatedMemory(nativeBytes);
+    }
+
+    // Allocate the JS object wrapper and assign the native object to its
+    // internal field.
+    v8::Handle<v8::Object> obj = ctor->NewInstance();
+    obj->SetInternalField(0, v8::External::New(pNative));
+
+    return obj;
+}
+
+//=========================================================================
+// V8 Ref-Counted Object Wrapper
+//=========================================================================
+
+class _SharedObjectWrapper
+{
+public:
+    virtual ~_SharedObjectWrapper() {}
+};
+
+template <typename T>
+class _SharedObjectWrapperImp : public _SharedObjectWrapper
+{
+public:
+    _SharedObjectWrapperImp(T& t) : mValue(t) {}
+    T mValue;
+};
+
+//-----------------------------------------------------------------------//
+//! Wrap a native object that needs to be reference counted.
+/*!
+    The purpose of this method is to maintain a native shared pointer to the object as
+    long as there is a JS reference to the object.  This ensures the JS and native 
+    reference counts on the shared object stay in sync.
+
+    The wrapper on shared object works as follows:
+
+    1) Create a PersitentHandle<>.  This has a method MakeWeak(), which takes a callback
+        function which is called when the V8 garbage collector is releasing the JS object.
+        This is where the native object can be freed.
+
+    2) Store a pointer to a new object that holds the shared reference in the parameters
+        field of the PersistentHandle<> callback.
+
+    3) Set up a generic callback function that deletes the wrapper object when called;
+        this implicitly will release the shared reference owned by that object and thus
+        handle reference counting on that object correctly.
+
+    The advantange of this approach is that it's simple.  The disadvantage is it requires
+    an additional heap object for every persistent, shared object.
+    */
+template <typename T>
+static v8::Persistent<v8::Object>
+_wrapSharedObject (v8::Handle<v8::Function>& ctor, T sharedPtr, size_t nativeBytes)
+{
+    struct L
+    {
+        static void releaseObj (v8::Persistent<v8::Value> persistentObj, void* pData)
+        {
+            // Release the native object by deleteing the object holding the
+            // shared reference.
+            auto pShared = reinterpret_cast<_SharedObjectWrapper*>(pData);
+            delete pShared;
+        
+            // Clear out the object fields.  Technically not necessary, but just in case.
+            v8::Local<v8::Object> obj( v8::Object::Cast(*persistentObj) );
+            obj->SetInternalField(0, v8::Null());
+
+            // Manually dispose of the PersistentHandle
+            persistentObj.Dispose();
+            persistentObj.Clear();
+        }
+    };
+
+    v8::Persistent<v8::Object> obj( v8::Persistent<v8::Object>::New( _wrapObject(ctor, sharedPtr.get(), nativeBytes) ));
+    obj.MakeWeak(new _SharedObjectWrapperImp<T>(sharedPtr), L::releaseObj);
+
+    return obj;
+}
+
+static std::map<std::string,v8::Persistent<v8::Function>> constructors;
+    
+using namespace lx0::core::v8bind;   
+
+static void
+addLxDOMtoContext (lx0::DocumentPtr spDocument)
+{
+    using namespace v8;
+
+    //
+    // The wrappers need to be added inside the proper context
+    //
+    auto spJavascriptDoc = spDocument->getComponent<lx0::IJavascriptDoc>();
+    spJavascriptDoc->runInContext([&]() {
+        
+        {
+            Handle<FunctionTemplate> templ = FunctionTemplate::New();
+            Local<ObjectTemplate> objInst = templ->InstanceTemplate();
+            objInst->SetInternalFieldCount(1);
+
+            v8::Persistent<v8::Function> ctor ( v8::Persistent<v8::Function>::New(templ->GetFunction()) );
+            constructors.insert(std::make_pair("document", ctor));
+        }                
+        
+        //
+        // Create a function-local "namespace" for the wrappers
+        //
+        struct W
+        {
+            static v8::Handle<v8::Value> 
+            loadDocument (const v8::Arguments& args)
+            {
+                lx0::Engine* pThis    = _nativeThis<lx0::Engine>(args);
+                std::string  filename = _marshal(args[0]);
+ 
+                auto spDocument = pThis->loadDocument(filename); 
+                return _wrapSharedObject(constructors["document"], spDocument, sizeof(lx0::Document));
+            }
+        };
+
+        // Create the "Engine" JS class.  Note that it is anonymous and thus inaccessible
+        // since we only want to expose the singleton.
+        Handle<FunctionTemplate> templ = FunctionTemplate::New();
+        Local<ObjectTemplate> objInst = templ->InstanceTemplate();
+        objInst->SetInternalFieldCount(1);
+
+        Local<Template> proto_t = templ->PrototypeTemplate();
+        proto_t->Set("loadDocument",  FunctionTemplate::New(W::loadDocument));
+        
+        // Create the JS object, associate it with the native object, and name it in the context
+        //
+        Handle<Function> ctor = templ->GetFunction();
+ 
+        // Create a name for the object in the global namespace (i.e. global variable).
+        //
+        auto obj = _wrapSharedObject(ctor, lx0::Engine::acquire(), sizeof(lx0::Engine));
+        spJavascriptDoc->addObject("engine", &obj);
+    });
+}
+
 //===========================================================================//
 //   E N T R Y - P O I N T
 //===========================================================================//
@@ -166,6 +335,8 @@ main (int argc, char** argv)
             //
             DocumentPtr spDocument = spEngine->createDocument();
             auto spJavascriptDoc = spDocument->getComponent<lx0::IJavascriptDoc>();
+
+            addLxDOMtoContext(spDocument);
             std::string source = lx0::string_from_file("../dev/samples/manifest/raytracer2/main.js");
             spJavascriptDoc->run(source);
 

@@ -570,10 +570,14 @@ namespace lx0 { namespace engine { namespace dom_ns {
         {
             mFrameStartMs = lx0::lx_milliseconds();
 
+            bool bIdle = true;
+
             _throwPostponedException();
 
             while (!m_eventQueue.empty())
             {
+                bIdle = false;
+
                 Event evt = m_eventQueue.front();
                 m_eventQueue.pop_front();
 
@@ -598,11 +602,11 @@ namespace lx0 { namespace engine { namespace dom_ns {
                 }
             }
 
-
-            if (!bDone)
-                bDone = _handlePlatformMessages();
-            
+            _handlePlatformMessages(bDone, bIdle);
             _throwPostponedException();
+
+            if (bIdle)
+                slotIdle();
 
             ///@todo Devise a better way to hand time-slices from the main loop to the individual documents
             /// for updates.  Also consider multi-threading.

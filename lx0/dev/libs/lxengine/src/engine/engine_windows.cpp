@@ -36,21 +36,19 @@
 
 using namespace lx0::engine::dom_ns;
 
-bool
-Engine::_handlePlatformMessages (void)
+void
+Engine::_handlePlatformMessages (bool& bDone, bool& bIdle)
 {
-    bool bDone = false;
-
     // Handle Windows messages
     MSG uMsg;
     while (::PeekMessage(&uMsg, 0, 0, 0, PM_REMOVE))
     {
+        bIdle = false;
+
         ::TranslateMessage(&uMsg);
         ::DispatchMessage(&uMsg);
 
         if (uMsg.message == WM_QUIT)
             bDone = true;
     }
-
-    return bDone;
 }

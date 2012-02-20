@@ -157,10 +157,10 @@ namespace lx0 { namespace core { namespace v8bind
         // the object was set with exactly one internal field of type T.   It is difficult to
         // verify these assumptions at runtime, so this is a somewhat dangerous function.
         //
-        Local<Object> self = args.Holder();
+        v8::Local<v8::Object> self = args.Holder();
 
         lx_check_error(self->InternalFieldCount() == 1);
-        Local<External> wrap = Local<External>::Cast(self->GetInternalField(0));
+        v8::Local<v8::External> wrap = v8::Local<v8::External>::Cast(self->GetInternalField(0));
         lx_check_error(!wrap.IsEmpty(), 
             "Internal field of Javascript object is null.  Is this a valid wrapped object?");
         
@@ -176,7 +176,7 @@ namespace lx0 { namespace core { namespace v8bind
     static NativeType*
     _nativeThis (const v8::Arguments& args)
     {
-        return _nativeThisImp<NativeType,Arguments>(args);
+        return _nativeThisImp<NativeType,v8::Arguments>(args);
     }
 
     /*!

@@ -160,6 +160,7 @@ namespace lx0
                 int	                run                 (void);
                 lx0::slot<void()>   slotRunBegin;
                 lx0::slot<void()>   slotRunEnd;
+                lx0::slot<void()>   slotIdle;
 
                 lxvar&              globals             (void) { return mGlobals; }
 
@@ -216,7 +217,7 @@ namespace lx0
                 ElementPtr  _loadDocumentRoot           (DocumentPtr spDocument, std::string filename);
         
                 void        _throwPostponedException    (void);
-                bool        _handlePlatformMessages     (void);
+                void        _handlePlatformMessages     (bool& bDone, bool& bIdle);
 
                 lxvar                       mSystemInfo;
                 
