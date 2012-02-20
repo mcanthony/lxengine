@@ -28,7 +28,7 @@
 
 #pragma once
 
-#include <lx0/subsystem/physics.hpp>
+#include <lx0/plugins/bulletphysics.hpp>
 #include "shape_cache.hpp"
 
 namespace lx0

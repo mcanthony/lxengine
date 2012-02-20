@@ -28,7 +28,7 @@
 
 #include <lx0/lxengine.hpp>
 #include <lx0/engine/mesh.hpp>
-#include <lx0/subsystem/physics.hpp>
+#include <lx0/plugins/bulletphysics.hpp>
 #include <lx0/util/misc/lxvar_convert.hpp>
 
 #include "physics_element.hpp"

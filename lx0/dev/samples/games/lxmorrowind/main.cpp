@@ -39,7 +39,7 @@
 #include <boost/filesystem.hpp>
 
 #include <lx0/lxengine.hpp>
-#include <lx0/subsystem/physics.hpp>
+#include <lx0/plugins/bulletphysics.hpp>
 #include "tes3loader.hpp"
 #include "physics/mwphysics.hpp"
 
@@ -87,7 +87,7 @@ main (int argc, char** argv)
 
         if (spEngine->parseCommandLine(argc, argv, "startingCell"))
         {
-            spEngine->attachComponent(lx0::createPhysicsSubsystem());
+            spEngine->loadPlugin("LxPlugin-BulletPhysics");
             
             //
             // A bit of a hack at the moment...

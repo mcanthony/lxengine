@@ -34,7 +34,7 @@
 #include <boost/algorithm/string.hpp>
 #include <lx0/lxengine.hpp>
 #include <lx0/util/misc.hpp>
-#include <lx0/subsystem/physics.hpp>
+#include <lx0/plugins/bulletphysics.hpp>
 #include "physics/mwphysics.hpp"
 
 #include <bullet/btBulletDynamicsCommon.h>

@@ -84,7 +84,6 @@ message(STATUS "CMAKE_EXE_LINKER_FLAGS=${CMAKE_EXE_LINKER_FLAGS}")
 set( LX_ALL_LIBS 
     lxengine
     ${V8_LIBS} 
-    ${BULLET_LIBS} 
     ${OIS_LIBS}     
     opengl32.lib
     glu32.lib
@@ -167,16 +166,31 @@ macro(recurse_subdirectories BASEDIR)
       get_filename_component(FILE ${FILE} PATH)
       if (NOT ${FILE} EQUAL "")
          message(STATUS "    Adding ${FILE}")
+         include_directories( "${FILE}/include" )
          add_subdirectory( "${FILE}" )
       endif()
    endforeach(FILE)
 endmacro(recurse_subdirectories BASEDIR)
 
+
+macro(recurse_subdirectories_includes BASEDIR)
+   message(STATUS "Recursively adding includes for: ${BASEDIR}")
+   file(GLOB_RECURSE SUBFILES RELATIVE "${CMAKE_CURRENT_SOURCE_DIR}" "${CMAKE_CURRENT_SOURCE_DIR}/${BASEDIR}/*/CMakeLists.txt")
+   foreach(FILE ${SUBFILES})
+      get_filename_component(FILE ${FILE} PATH)
+      if (EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/${FILE}/include/")
+         message(STATUS "    Including ${FILE}/include")
+         include_directories( "${FILE}/include" )
+      endif()
+   endforeach(FILE)
+endmacro(recurse_subdirectories_includes BASEDIR)
+
 #
 # Sub-projects
 #
 
-#recurse_subdirectories(libs)
+recurse_subdirectories_includes(plugins)
+
 add_subdirectory( libs/lxengine )
 add_subdirectory( libs/lxengine/unittest )
 add_subdirectory( libs/glgeom/unittest )
@@ -203,6 +217,7 @@ SET_PROPERTY(TARGET glgeom_unittest         PROPERTY FOLDER "Libs/GLGeom")
 
 SET_PROPERTY(TARGET SoundAL                 PROPERTY FOLDER "Plugins/SoundAL")
 SET_PROPERTY(TARGET OgreView                PROPERTY FOLDER "Plugins/OgreView")
+SET_PROPERTY(TARGET LxPlugin-BulletPhysics  PROPERTY FOLDER "Plugins/BulletPhysics")
 
 SET_PROPERTY(TARGET sm_lx_cube_asteriods    PROPERTY FOLDER "Samples/LxEngine")
 SET_PROPERTY(TARGET sm_lx_cube_rain         PROPERTY FOLDER "Samples/LxEngine")

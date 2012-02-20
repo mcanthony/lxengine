@@ -60,7 +60,7 @@ namespace lx0 { namespace util { namespace misc {
     bool
     lx_in_debugger (void)
     {
-        return ::IsDebuggerPresent();
+        return !!::IsDebuggerPresent();
     }
 
     void

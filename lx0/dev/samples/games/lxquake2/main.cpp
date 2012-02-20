@@ -83,18 +83,22 @@ main (int argc, char** argv)
     try
     {
         lx0::EnginePtr spEngine = lx0::Engine::acquire();
-        lx0::DocumentPtr spDocument = spEngine->createDocument();
 
-        lx0::ViewPtr spView = spDocument->createView("Canvas", "view", new Renderer );
-        spView->addUIBinding( new UIBindingImp );
+        spEngine->initialize();
+        {
+            lx0::DocumentPtr spDocument = spEngine->createDocument();
 
-        lx0::lxvar options;
-        options.insert("title", "Tutorial 01");
-        options.insert("width", 640);
-        options.insert("height", 480);
-        spView->show(options);
+            lx0::ViewPtr spView = spDocument->createView("Canvas", "view", new Renderer );
+            spView->addUIBinding( new UIBindingImp );
 
-        exitCode = spEngine->run();
+            lx0::lxvar options;
+            options.insert("title", "LxQuake2");
+            options.insert("width", 640);
+            options.insert("height", 480);
+            spView->show(options);
+
+            exitCode = spEngine->run();
+        }
         spEngine->shutdown();
     }
     catch (std::exception& e)

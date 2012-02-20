@@ -153,7 +153,7 @@ namespace lx0 { namespace engine { namespace dom_ns {
         if (var["Canvas"].as<bool>())
             addViewPlugin("Canvas", _hidden_createCanvasViewImp);
         if (var["Ogre"])
-            loadPlugin("OgreView");
+            loadPlugin("OgreView");        
     }
 
     void 

@@ -28,7 +28,7 @@
 
 #pragma once
 
-#include <lx0/subsystem/physics.hpp>
+#include <lx0/plugins/bulletphysics.hpp>
 #include <bullet/btBulletDynamicsCommon.h>
 #include "shape_cache.hpp"
 

@@ -37,7 +37,7 @@
 #include <boost/format.hpp>
 
 #include <lx0/lxengine.hpp>
-#include <lx0/subsystem/physics.hpp>
+#include <lx0/plugins/bulletphysics.hpp>
 #include <lx0/util/misc.hpp>
 #include <glgeom/ext/primitive_buffer.hpp>
 #include <bullet/btBulletDynamicsCommon.h>

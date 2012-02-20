@@ -27,7 +27,7 @@
 //===========================================================================//
 
 #include <lx0/lxengine.hpp>
-#include <lx0/subsystem/physics.hpp>
+#include <lx0/plugins/bulletphysics.hpp>
 #include "physics_engine.hpp"
 
 using namespace lx0::subsystem::physics_ns;
@@ -42,11 +42,12 @@ IPhysicsEngine::findElementComponentCtor (std::string tag)
         return IPhysicsEngine::Constructor();
 }
 
-
-lx0::Engine::Component* 
-lx0::subsystem::physics_ns::createPhysicsSubsystem()
+extern "C" _declspec(dllexport) void initializePlugin()
 {
-    return new lx0::subsystem::physics_ns::detail::PhysicsEngine;
+    auto pComponent = new lx0::subsystem::physics_ns::detail::PhysicsEngine;
+
+    auto spEngine = lx0::Engine::acquire();
+    spEngine->attachComponent(pComponent);
 }
 
 

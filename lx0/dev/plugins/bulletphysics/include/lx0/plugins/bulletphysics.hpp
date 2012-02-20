@@ -74,9 +74,6 @@ namespace lx0
                 std::map<std::string, Constructor>   mComponentCtors;
             };
 
-            lx0::Engine::Component* createPhysicsSubsystem();
-
-
             template <typename T>
             void IPhysicsEngine::addElementComponent (std::string tag)
             {

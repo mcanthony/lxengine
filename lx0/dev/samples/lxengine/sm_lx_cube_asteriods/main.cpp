@@ -44,7 +44,7 @@
 
 // Lx0 headers
 #include <lx0/lxengine.hpp>
-#include <lx0/subsystem/physics.hpp>
+#include <lx0/plugins/bulletphysics.hpp>
 #include <lx0/subsystem/javascript.hpp>
 
 using namespace lx0;
@@ -67,7 +67,7 @@ main (int argc, char** argv)
         {
             spEngine->attachComponent( lx0::createJavascriptSubsystem());
             spEngine->attachComponent( lx0::createProcessScriptElement());
-            spEngine->attachComponent( lx0::createPhysicsSubsystem());
+            spEngine->loadPlugin("LxPlugin-BulletPhysics");
 
             DocumentPtr spDocument = spEngine->loadDocument("data/sm_lx_cube_asteriods/level00.xml");
             ViewPtr     spView     = spDocument->createView("OGRE", "view");

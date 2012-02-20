@@ -15,7 +15,7 @@ extern PFNGLUSEPROGRAMPROC gl3wUseProgram;
 #include <bullet/LinearMath/btIDebugDraw.h>
 
 #include <lx0/lxengine.hpp>
-#include <lx0/subsystem/physics.hpp>
+#include <lx0/plugins/bulletphysics.hpp>
 
 class DebugDraw : public btIDebugDraw
 {
