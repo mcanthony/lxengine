@@ -144,6 +144,8 @@ namespace lx0
                 void                initialize          (void);
                 void                shutdown            (void);
 
+                lx0::uint32         generateId          (void);
+
                 lxvar               getSystemInfo       (void);
                 bool                parseCommandLine    (int argc, char** argv, const char* defArgumentName = nullptr);
 
@@ -231,6 +233,8 @@ namespace lx0
 
                 lx0::uint32                 mFrameNum;
                 lx0::uint32                 mFrameStartMs;
+
+                lx0::uint32                 mIdCounter;
 
                 std::deque<lx0::error_exception>            m_postponedExceptions;
                 std::map<std::string, detail::ObjectCount>  m_objectCounts;

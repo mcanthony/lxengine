@@ -150,6 +150,7 @@ namespace lx0
 
         bool                        _walkElements       (std::function<bool (ElementPtr)> f);
 
+        lx0::uint32                     m_documentId;
         TrWList                         m_openTransactions;     //!< Not currently implemented
         ElementPtr                      m_spRoot;
         std::map<std::string, ViewPtr>  m_views;

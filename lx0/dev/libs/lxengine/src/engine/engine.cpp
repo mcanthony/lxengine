@@ -113,7 +113,8 @@ namespace lx0 { namespace engine { namespace dom_ns {
     }
 
     Engine::Engine()
-        : mGlobals (lxvar::decorated_map())
+        : mGlobals   (lxvar::decorated_map())
+        , mIdCounter (0)
     {
         lx_init();
         lx_log("lx::core::Engine ctor");
@@ -184,6 +185,10 @@ namespace lx0 { namespace engine { namespace dom_ns {
     void
     Engine::initialize()
     {
+        // Convenience code to reset the working path automatically.
+        if (lx_in_debugger())
+            _lx_change_current_path_to_lx_root();
+
         _registerBuiltInPlugins();
     }
 
@@ -245,6 +250,13 @@ namespace lx0 { namespace engine { namespace dom_ns {
             lx0::lx_break_if_debugging();
         }
     }
+
+    lx0::uint32
+    Engine::generateId (void)
+    {
+        return ++mIdCounter;
+    }
+
 
     /*!
         @todo This method is inefficient; but it is simple.  Until 1.0 is complete, simplicity

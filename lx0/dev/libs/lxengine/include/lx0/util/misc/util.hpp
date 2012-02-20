@@ -61,6 +61,7 @@ namespace lx0 { namespace util { namespace misc {
     std::function<float()>  random_die_f        (float min, float max, int seed);
     std::function<int()>    random_die_i        (int min, int max, int seed);
 
+    void                    _lx_change_current_path_to_lx_root (void);
     void                    _lx_reposition_console  (void);
     std::weak_ptr<lx0::Engine>* _lx_get_engine_singleton    (void);
 

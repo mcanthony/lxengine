@@ -39,9 +39,14 @@
 namespace lx0 { namespace engine { namespace dom_ns {
 
     Document::Document()
-        : m_spRoot ( new Element )
+        : m_spRoot     ( new Element )
+        , m_documentId (0)
     {
-        Engine::acquire()->incObjectCount("Document");
+        auto spEngine = Engine::acquire();
+        spEngine->incObjectCount("Document");
+        m_documentId = spEngine->generateId();
+
+        lx_log("Constructed Document %1%", m_documentId);
 
         m_spRoot->notifyAdded(this);
     }
@@ -52,6 +57,8 @@ namespace lx0 { namespace engine { namespace dom_ns {
         m_spRoot->removeAll();
         _clearComponents();
         m_spRoot->notifyRemoved(this);
+
+        lx_log("Destructed Document %1%", m_documentId);
 
         Engine::acquire()->decObjectCount("Document");
     }

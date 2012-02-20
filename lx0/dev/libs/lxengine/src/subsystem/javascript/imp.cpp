@@ -507,9 +507,14 @@ namespace {
         mElementCtor.Dispose();
         mKeyEventCtor.Dispose();
         mWindowOnKeyDown.Dispose();
-        mContext.Dispose();
+        
+        {
+            Context::Scope    context_scope(mContext);
+            HandleScope       handle_scope;
+            _forceGarbageCollection();
+        }
 
-        _forceGarbageCollection();
+        mContext.Dispose();
     }
 
     void

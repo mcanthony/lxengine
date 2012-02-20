@@ -148,6 +148,7 @@ namespace lx0 { namespace core { namespace log_ns {
 
     void _lx_log_imp     (const char* file, int line, const std::string& s)
     {
+        lx0::lx_debugger_message(boost::str(boost::format("LOG %s:%d: %s\n") % file % line % s));;
         _lx_write_to_log("log", "LOG", s.c_str());
     }
 

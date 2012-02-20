@@ -74,16 +74,22 @@ namespace lx0 { namespace util { namespace misc {
     {
         using namespace boost::filesystem;
 
-        std::string ext = boost::str( boost::format(".%1%") % extension );
-
-        for (directory_iterator dit(directory); dit != directory_iterator(); ++dit)
+        //
+        // Silently ignore non-existent directories
+        //
+        if (exists(directory))
         {
-            if (is_regular_file(dit->status()))
+            std::string ext = boost::str( boost::format(".%1%") % extension );
+
+            for (directory_iterator dit(directory); dit != directory_iterator(); ++dit)
             {
-                path filepath = dit->path();
-                if (boost::ends_with(filepath.filename().string(), ext))
+                if (is_regular_file(dit->status()))
                 {
-                    files.push_back( filepath.normalize().string() );
+                    path filepath = dit->path();
+                    if (boost::ends_with(filepath.filename().string(), ext))
+                    {
+                        files.push_back( filepath.normalize().string() );
+                    }
                 }
             }
         }
@@ -283,6 +289,46 @@ namespace lx0 { namespace util { namespace misc {
     {
         RandomInt die(seed, min, max);
         return [die]() { return die(); };
+    }
+
+    /*
+        A hack for convenience: Visual Studio wants to run projects from the 
+        directory cmake builds them to - but LxEngine is setup to use 
+        a common run location so shared media can be readily accessed.
+        
+        Reset the current path automatically since this is such a common case.
+
+        The exception (not enforced) is that this would only be called after a 
+        lx_in_debugger() check.
+     */
+    void
+    _lx_change_current_path_to_lx_root (void)
+    {
+        using namespace boost::filesystem;
+
+        // Practically wins out here...check for fixed path names to determine
+        // the redirect
+        if (!is_directory("media2"))
+        {
+            lx_log("Cannot find media2 directory.  Attempting to find correct path.");
+            lx_log("Current path is: %1%", current_path().string() );
+
+            // Try up to 6 levels of nesting
+            std::string prefix = "..";
+            for (int i = 0; i < 6; ++i)
+            {
+                if (!is_directory(prefix + "/media2"))
+                {
+                    prefix += "/..";
+                }
+                else
+                { 
+                    current_path(prefix);
+                    lx_log( "Current path changed to: %1%", current_path().string() );
+                    break;
+                }
+            }
+        }
     }
 
 }}}
