@@ -138,9 +138,9 @@ processManifest (std::string filename)
 namespace L
 {
     template <typename T>
-    static void releaseObj (v8::Persistent<v8::Value> persistentObj, void*)
+    static void releaseObj (v8::Persistent<v8::Value> persistentObj, void* pData)
     {
-        auto pspNative = _marshal(persistentObj).pointer<std::shared_ptr<T>>();
+        auto pspNative = reinterpret_cast<std::shared_ptr<T>*>(pData);
         pspNative->reset();
         delete pspNative;
         
@@ -168,11 +168,19 @@ _wrapSharedPtr (v8::Handle<v8::Function>& ctor, std::shared_ptr<T>& sharedPtr, s
 
     // Allocate the JS object wrapper and assign the native object to its
     // internal field.
+    //
+    // We store the raw, native pointer on the V8 object to avoid a double redirection 
+    // (i.e. both reading the internal field and then dereferencing the shared pointer).
+    //
     v8::Handle<v8::Object> obj = ctor->NewInstance();
-    obj->SetInternalField(0, v8::External::New(new std::shared_ptr<T>(sharedPtr)));
+    obj->SetInternalField(0, v8::External::New(sharedPtr.get()));
 
+    // Then store a new shared_ptr as the data for the MakeWeak callback which will be
+    // deleted when the JS object is garbage collected.  This will ensure handle the 
+    // reference counting is correctly managed.
+    //
     v8::Persistent<v8::Object> persistentObj( v8::Persistent<v8::Object>::New(obj));
-    persistentObj.MakeWeak(nullptr, L::releaseObj<T>);
+    persistentObj.MakeWeak(new std::shared_ptr<T>(sharedPtr), L::releaseObj<T>);
 
     return persistentObj;
 }
@@ -209,7 +217,7 @@ addLxDOMtoContext (lx0::DocumentPtr spDocument)
             static v8::Handle<v8::Value> 
             loadDocument (const v8::Arguments& args)
             {
-                lx0::Engine* pThis  = _nativeThis<lx0::EnginePtr>(args)->get();
+                lx0::Engine* pThis  = _nativeThis<lx0::Engine>(args);
                 std::string  filename = _marshal(args[0]);
  
                 auto spDocument = pThis->loadDocument(filename); 

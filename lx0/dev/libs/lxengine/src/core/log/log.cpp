@@ -134,28 +134,34 @@ namespace lx0 { namespace core { namespace log_ns {
         std::cout << s << std::endl;
     }
 
-    void _lx_debug_imp   (const char* file, int line, const std::string& s)
+    static void 
+    _debugger_message (const char* prefix, const char* file, int line, const std::string& s)
     {
-        _lx_write_to_log("debug", "DBG", s.c_str());
-
         boost::filesystem::path filePath(file);
         std::string filename = filePath.filename().string();
         if (filename.front() == '\"' && filename.back() == '\"')
             filename = filename.substr(1, filename.length() - 2);
 
-        lx0::lx_debugger_message(boost::str(boost::format("DEBUG %s:%d: %s\n") % filename % line % s));;
+        auto fmt = boost::format("%16s:%4d %5s:    %s\n") % filename % line % prefix % s;
+        lx0::lx_debugger_message(boost::str(fmt));;
+    }
+
+    void _lx_debug_imp   (const char* file, int line, const std::string& s)
+    {
+        _lx_write_to_log("debug", "DBG", s.c_str());
+        _debugger_message("DEBUG", file, line, s);
     }
 
     void _lx_log_imp     (const char* file, int line, const std::string& s)
     {
-        lx0::lx_debugger_message(boost::str(boost::format("LOG %s:%d: %s\n") % file % line % s));;
         _lx_write_to_log("log", "LOG", s.c_str());
+        _debugger_message("LOG", file, line, s);
     }
 
     void _lx_warn_imp    (const char* file, int line, const std::string& s)
     {
         _lx_write_to_log("warn", "WARN", s.c_str());
-        lx_debugger_message("LX WARNING: " + s + "\n");
+        _debugger_message("WARN", file, line, s);
         std::cerr << "WARNING: " << s << std::endl;
     }
 
