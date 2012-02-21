@@ -206,6 +206,64 @@ namespace lx0 { namespace core { namespace v8bind
 
     //===========================================================================//
     //!
+    /*!        
+     */
+
+    namespace detail
+    {
+        template <typename T>
+        void _releaseSharedPtr (v8::Persistent<v8::Value> persistentObj, void* pData)
+        {        
+            //
+            // Assume this function is used exclusively by _wrapSharedPtr() and thus
+            // pData is always a pointer to a std::shared_ptr<>.  This shared_ptr was
+            // created at the time the JS wrapper for the object was created - and thus
+            // should be disposed when the JS object is disposed in order to keep the
+            // reference count on the native object correct.
+            //
+            auto pspNative = reinterpret_cast<std::shared_ptr<T>*>(pData);
+            delete pspNative;
+        
+            // Manually dispose of the Persistent handle
+            persistentObj.Dispose();
+            persistentObj.Clear();
+        }
+    }
+
+    template <typename T>
+    v8::Persistent<v8::Object>
+    _wrapSharedPtr (v8::Handle<v8::Function>& ctor, std::shared_ptr<T>& sharedPtr, size_t nativeBytes = 0)
+    {
+        // Give V8 a hint about the native object size so that it invokes the garbage
+        // collector more effectively.
+        //
+        if (nativeBytes > 0)
+        {
+            v8::V8::AdjustAmountOfExternalAllocatedMemory(nativeBytes);
+        }
+        
+        // Allocate the JS object wrapper and assign the native object to its
+        // internal field.
+        //
+        // We store the raw, native pointer on the V8 object to avoid a double redirection 
+        // (i.e. both reading the internal field and then dereferencing the shared pointer)
+        // on every method that needs the native pointer.
+        //
+        v8::Handle<v8::Object> obj = ctor->NewInstance();
+        obj->SetInternalField(0, v8::External::New(sharedPtr.get()));
+
+        // Then store a new shared_ptr as the data for the MakeWeak callback which will be
+        // deleted when the JS object is garbage collected.  This will ensure handle the 
+        // reference counting is correctly synchronized.
+        //
+        v8::Persistent<v8::Object> persistentObj( v8::Persistent<v8::Object>::New(obj));
+        persistentObj.MakeWeak(new std::shared_ptr<T>(sharedPtr), detail::_releaseSharedPtr<T>);
+
+        return persistentObj;
+    }
+
+    //===========================================================================//
+    //!
     /*!
         Simple wrapper on v8::Context with a few utility methods for convenience.
      */
