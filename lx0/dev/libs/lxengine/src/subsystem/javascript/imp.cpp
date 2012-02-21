@@ -587,7 +587,7 @@ namespace {
                 Handle<Value> exception = trycatch.Exception();
                 
                 String::AsciiValue exception_str(exception);
-                lx_warn("Javascript Exception: %s\n", *exception_str);
+                lx_warn("Javascript V8 Exception: %s", *exception_str);
             }
             else
             {

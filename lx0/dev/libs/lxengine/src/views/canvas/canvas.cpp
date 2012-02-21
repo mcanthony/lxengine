@@ -38,6 +38,8 @@ using namespace lx0;
 class LxCanvasImp : public ViewImp
 {
 public:
+                        LxCanvasImp     (void);
+
     virtual void        createWindow    (View* pHostView, size_t& handle, unsigned int& width, unsigned int& height, lxvar options);
     virtual void        destroyWindow   (void);
     virtual void        show            (View* pHostView, Document* pDocument);
@@ -63,6 +65,11 @@ protected:
    
     std::vector<std::shared_ptr<lx0::UIBinding>> mBindings;
 };
+
+LxCanvasImp::LxCanvasImp()
+    : mpHostView (nullptr)
+{
+}
 
 void 
 LxCanvasImp::createWindow (View* pHostView, size_t& handle, unsigned int& width, unsigned int& height, lxvar options)
@@ -119,6 +126,8 @@ LxCanvasImp::swapBuffers (void)
 void 
 LxCanvasImp::updateFrame (DocumentPtr spDocument) 
 {
+    lx_check_error(mpHostView, "Host view not set!");
+
     for (auto it = mBindings.begin(); it != mBindings.end(); ++it)
         (*it)->updateFrame( mpHostView->shared_from_this(), mspWin->keyboard() );
 

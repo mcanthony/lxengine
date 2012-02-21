@@ -131,6 +131,47 @@ processManifest (std::string filename)
     return;
 }
 
+using namespace v8;
+using namespace lx0::core::v8bind;
+
+class V8Class
+{   
+public:
+    V8Class (const char* name)
+        : mName (name)
+    {
+        mTempl  = FunctionTemplate::New();
+        mObject = mTempl->InstanceTemplate();
+        mProto  = mTempl->PrototypeTemplate();            
+    }
+
+    void constant (const char* name, lx0::lxvar value)
+    {
+        mObject->SetAccessor( String::New(name), _genericConstant, 0, _marshal(value) );
+    }
+
+    void addToContext(std::shared_ptr<lx0::IJavascriptDoc> spJavascriptDoc)
+    {
+        Handle<Function>   ctor = mTempl->GetFunction();
+        Handle<v8::Object> obj  = ctor->NewInstance();
+
+        spJavascriptDoc->addObject(mName.c_str(), &obj);
+    }
+
+protected:
+    static v8::Handle<Value> 
+    _genericConstant (Local<String> prop, const AccessorInfo& info)
+    {
+        return info.Data();
+    }
+
+    Handle<FunctionTemplate> mTempl;
+    Handle<ObjectTemplate>   mObject;
+    Handle<Template>         mProto;
+    std::string              mName;
+       
+};
+
 
 static std::map<std::string,v8::Persistent<v8::Function>> constructors;
     
@@ -147,13 +188,121 @@ addLxDOMtoContext (lx0::DocumentPtr spDocument)
     auto spJavascriptDoc = spDocument->getComponent<lx0::IJavascriptDoc>();
     spJavascriptDoc->runInContext([&]() {
         
+        struct View
+        {
+            static v8::Handle<v8::Value>
+            show (const v8::Arguments& args)
+            {
+                auto pThis         = _nativeThis<lx0::View>(args);
+                lx0::lxvar options = _marshal(args[0]);
+                
+                pThis->show(options);
+                return v8::Undefined(); 
+            }
+
+            static v8::Handle<v8::Value>
+            sendEvent (const v8::Arguments& args)
+            {
+                auto pThis         = _nativeThis<lx0::View>(args);
+                std::string evt    = _marshal(args[0]);
+                lx0::lxvar params  = _marshal(args[1]);
+                
+                pThis->sendEvent(evt, params);
+                return v8::Undefined(); 
+            }
+
+            static v8::Handle<v8::Value>
+            addUIBinding (const v8::Arguments& args)
+            {                               
+                class Imp : public lx0::UIBinding
+                {
+                public:
+                    virtual void onKeyDown (lx0::ViewPtr spView, int keyCode) 
+                    {
+                        auto spJavascriptDoc = spView->document()->getComponent<lx0::IJavascriptDoc>();
+                        spJavascriptDoc->runInContext([&]() {
+                            if (!mOnKeyDown->IsUndefined())
+                            {
+                                HandleScope handle_scope;                        
+                        
+                                Handle<Value> callArgs[2];                                       
+                                callArgs[0] = _wrapSharedPtr(constructors["View"], spView);
+                                callArgs[1] = _marshal(keyCode);
+
+                                Handle<Object> recv = v8::Object::New();
+                                mOnKeyDown->Call(recv, 2, callArgs);
+                            }
+                        });   
+                    }
+
+                    virtual void updateFrame (lx0::ViewPtr spView, const lx0::KeyboardState& keyboard)
+                    {
+                        auto spJavascriptDoc = spView->document()->getComponent<lx0::IJavascriptDoc>();
+                        spJavascriptDoc->runInContext([&]() {
+                            if (!mUpdateFrame->IsUndefined())
+                            {
+                                // TODO: Add KeyboardState wrapper
+                            }
+                        }); 
+                    }
+
+                    v8::Persistent<v8::Function>    mOnKeyDown;
+                    v8::Persistent<v8::Function>    mUpdateFrame;
+                };
+                
+                auto pThis                = _nativeThis<lx0::View>(args);
+                v8::Local<v8::Object> obj = v8::Object::Cast(*args[0]);
+                
+                auto pImp = new Imp;
+                pImp->mOnKeyDown   = Persistent<Function>::New(Handle<Function>::Cast( obj->Get(v8::String::New("onKeyDown")) )); 
+                pImp->mUpdateFrame = Persistent<Function>::New(Handle<Function>::Cast( obj->Get(v8::String::New("updateFrame")) ));
+                pThis->addUIBinding(pImp);
+                return v8::Undefined(); 
+            }
+
+            static void 
+            _construct ()
+            {
+                Handle<FunctionTemplate> templ = FunctionTemplate::New();
+                Local<Template> proto_t = templ->PrototypeTemplate();
+                proto_t->Set("show",            FunctionTemplate::New(show));
+                proto_t->Set("sendEvent",       FunctionTemplate::New(sendEvent));
+                proto_t->Set("addUIBinding",    FunctionTemplate::New(addUIBinding));
+            
+                Local<ObjectTemplate> objInst = templ->InstanceTemplate();
+                objInst->SetInternalFieldCount(1);
+
+                v8::Persistent<v8::Function> ctor ( v8::Persistent<v8::Function>::New(templ->GetFunction()) );
+                constructors.insert(std::make_pair("View", ctor));
+            }
+        };
+
+        struct D
+        {
+            static v8::Handle<v8::Value>
+            createView (const v8::Arguments& args)
+            {
+                auto pThis         = _nativeThis<lx0::Document>(args);
+                std::string plugin = _marshal(args[0]);
+                std::string name   = _marshal(args[1]);
+ 
+                auto spView = pThis->createView(plugin, name);
+                return _wrapSharedPtr(constructors["View"], spView);
+            }
+        };
+
+        View::_construct();
+
         {
             Handle<FunctionTemplate> templ = FunctionTemplate::New();
+            Local<Template> proto_t = templ->PrototypeTemplate();
+            proto_t->Set("createView",  FunctionTemplate::New(D::createView));
+            
             Local<ObjectTemplate> objInst = templ->InstanceTemplate();
             objInst->SetInternalFieldCount(1);
 
             v8::Persistent<v8::Function> ctor ( v8::Persistent<v8::Function>::New(templ->GetFunction()) );
-            constructors.insert(std::make_pair("document", ctor));
+            constructors.insert(std::make_pair("Document", ctor));
         }                
         
         //
@@ -168,9 +317,21 @@ addLxDOMtoContext (lx0::DocumentPtr spDocument)
                 std::string  filename = _marshal(args[0]);
  
                 auto spDocument = pThis->loadDocument(filename); 
-                return _wrapSharedPtr(constructors["document"], spDocument, sizeof(lx0::Document));
+                return _wrapSharedPtr(constructors["Document"], spDocument, sizeof(lx0::Document));
+            }
+
+            static v8::Handle<v8::Value>
+            sendEvent (const v8::Arguments& args)
+            {
+                auto pThis         = _nativeThis<lx0::Engine>(args);
+                std::string evt    = _marshal(args[0]);
+                
+                pThis->sendEvent(evt.c_str());                
+                return v8::Undefined(); 
             }
         };
+
+
 
         // Create the "Engine" JS class.  Note that it is anonymous and thus inaccessible
         // since we only want to expose the singleton.
@@ -180,6 +341,7 @@ addLxDOMtoContext (lx0::DocumentPtr spDocument)
 
         Local<Template> proto_t = templ->PrototypeTemplate();
         proto_t->Set("loadDocument",  FunctionTemplate::New(W::loadDocument));
+        proto_t->Set("sendEvent",     FunctionTemplate::New(W::sendEvent));
         
         // Create the JS object, associate it with the native object, and name it in the context
         //
@@ -189,6 +351,53 @@ addLxDOMtoContext (lx0::DocumentPtr spDocument)
         //
         auto obj = _wrapSharedPtr(ctor, lx0::Engine::acquire(), sizeof(lx0::Engine));
         spJavascriptDoc->addObject("engine", &obj);
+
+        V8Class lx ("lx0");
+        lx.constant("KC_UNASSIGNED", lx0::KC_UNASSIGNED);
+        lx.constant("KC_1", lx0::KC_1);
+        lx.constant("KC_2", lx0::KC_2);
+        lx.constant("KC_3", lx0::KC_3);
+        lx.constant("KC_4", lx0::KC_4);
+        lx.constant("KC_5", lx0::KC_5);
+        lx.constant("KC_6", lx0::KC_6);
+        lx.constant("KC_7", lx0::KC_7);
+        lx.constant("KC_8", lx0::KC_8);
+        lx.constant("KC_9", lx0::KC_9);
+        lx.constant("KC_0", lx0::KC_0);
+		lx.constant("KC_A", lx0::KC_A);
+        lx.constant("KC_B", lx0::KC_B);
+        lx.constant("KC_C", lx0::KC_C);
+        lx.constant("KC_D", lx0::KC_D);
+        lx.constant("KC_E", lx0::KC_E);
+        lx.constant("KC_F", lx0::KC_F);
+        lx.constant("KC_G", lx0::KC_G);
+        lx.constant("KC_H", lx0::KC_H);
+        lx.constant("KC_I", lx0::KC_I);
+        lx.constant("KC_J", lx0::KC_J);
+        lx.constant("KC_K", lx0::KC_K);
+        lx.constant("KC_L", lx0::KC_L);
+        lx.constant("KC_M", lx0::KC_M);
+        lx.constant("KC_N", lx0::KC_N);
+        lx.constant("KC_O", lx0::KC_O);
+        lx.constant("KC_P", lx0::KC_P);
+        lx.constant("KC_Q", lx0::KC_Q);
+        lx.constant("KC_R", lx0::KC_R);
+        lx.constant("KC_S", lx0::KC_S);
+        lx.constant("KC_T", lx0::KC_T);
+        lx.constant("KC_U", lx0::KC_U);
+        lx.constant("KC_V", lx0::KC_V);
+        lx.constant("KC_W", lx0::KC_W);
+        lx.constant("KC_X", lx0::KC_X);
+        lx.constant("KC_Y", lx0::KC_Y);
+        lx.constant("KC_Z", lx0::KC_Z);
+        lx.constant("KC_ESCAPE", lx0::KC_ESCAPE);
+        lx.constant("KC_SPACE", lx0::KC_SPACE);
+        lx.constant("KC_SHIFT", lx0::KC_SHIFT);
+        lx.constant("KC_LSHIFT", lx0::KC_LSHIFT);
+        lx.constant("KC_RSHIFT", lx0::KC_RSHIFT);
+        lx.constant("KC_COUNT", lx0::KC_COUNT);
+
+        lx.addToContext(spJavascriptDoc);
     });
 }
 
@@ -235,7 +444,7 @@ main (int argc, char** argv)
             spJavascriptDoc->run(source);
 
             spEngine->sendTask( [&](void) -> void { spJavascriptDoc->run("main();"); } );
-            spEngine->sendEvent("quit");
+            //spEngine->sendEvent("quit");
 
             exitCode = spEngine->run();
         }
