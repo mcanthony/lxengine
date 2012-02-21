@@ -157,7 +157,7 @@ namespace lx0
         
                 const std::vector<DocumentPtr>& documents (void) { return mDocuments; }
 
-                void                sendEvent           (const char* evt);
+                void                sendEvent           (std::string evt);
                 void                sendTask            (std::function<void()> f);
                 int	                run                 (void);
                 lx0::slot<void()>   slotRunBegin;

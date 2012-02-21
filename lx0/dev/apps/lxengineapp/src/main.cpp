@@ -177,6 +177,25 @@ static std::map<std::string,v8::Persistent<v8::Function>> constructors;
     
 using namespace lx0::core::v8bind;   
 
+template <typename T, typename A0, void (T::*Method)(A0)>
+v8::Handle<v8::Value> _genericV1 (const v8::Arguments& args)
+{
+    T* pThis = _nativeThis<T>(args);
+    A0 a0    = _marshal(args[0]);        
+    (pThis->*Method)(a0);
+    return v8::Undefined(); 
+}
+
+template <typename T, typename A0, typename A1, void (T::*Method)(A0,A1)>
+v8::Handle<v8::Value> _genericV2 (const v8::Arguments& args)
+{
+    T* pThis = _nativeThis<T>(args);
+    A0 a0    = _marshal(args[0]);
+    A1 a1    = _marshal(args[1]);                
+    (pThis->*Method)(a0, a1);
+    return v8::Undefined(); 
+}
+
 static void
 addLxDOMtoContext (lx0::DocumentPtr spDocument)
 {
@@ -191,34 +210,13 @@ addLxDOMtoContext (lx0::DocumentPtr spDocument)
         struct View
         {
             static v8::Handle<v8::Value>
-            show (const v8::Arguments& args)
-            {
-                auto pThis         = _nativeThis<lx0::View>(args);
-                lx0::lxvar options = _marshal(args[0]);
-                
-                pThis->show(options);
-                return v8::Undefined(); 
-            }
-
-            static v8::Handle<v8::Value>
-            sendEvent (const v8::Arguments& args)
-            {
-                auto pThis         = _nativeThis<lx0::View>(args);
-                std::string evt    = _marshal(args[0]);
-                lx0::lxvar params  = _marshal(args[1]);
-                
-                pThis->sendEvent(evt, params);
-                return v8::Undefined(); 
-            }
-
-            static v8::Handle<v8::Value>
             addUIBinding (const v8::Arguments& args)
             {                               
                 class Imp : public lx0::UIBinding
                 {
                 public:
                     virtual void onKeyDown (lx0::ViewPtr spView, int keyCode) 
-                    {
+                    {                        
                         auto spJavascriptDoc = spView->document()->getComponent<lx0::IJavascriptDoc>();
                         spJavascriptDoc->runInContext([&]() {
                             if (!mOnKeyDown->IsUndefined())
@@ -265,8 +263,8 @@ addLxDOMtoContext (lx0::DocumentPtr spDocument)
             {
                 Handle<FunctionTemplate> templ = FunctionTemplate::New();
                 Local<Template> proto_t = templ->PrototypeTemplate();
-                proto_t->Set("show",            FunctionTemplate::New(show));
-                proto_t->Set("sendEvent",       FunctionTemplate::New(sendEvent));
+                proto_t->Set("show",            FunctionTemplate::New( _genericV1<lx0::View, lx0::lxvar, &lx0::View::show> ) );
+                proto_t->Set("sendEvent",       FunctionTemplate::New( _genericV2<lx0::View, std::string, lx0::lxvar, &lx0::View::sendEvent> ) );
                 proto_t->Set("addUIBinding",    FunctionTemplate::New(addUIBinding));
             
                 Local<ObjectTemplate> objInst = templ->InstanceTemplate();
@@ -319,19 +317,7 @@ addLxDOMtoContext (lx0::DocumentPtr spDocument)
                 auto spDocument = pThis->loadDocument(filename); 
                 return _wrapSharedPtr(constructors["Document"], spDocument, sizeof(lx0::Document));
             }
-
-            static v8::Handle<v8::Value>
-            sendEvent (const v8::Arguments& args)
-            {
-                auto pThis         = _nativeThis<lx0::Engine>(args);
-                std::string evt    = _marshal(args[0]);
-                
-                pThis->sendEvent(evt.c_str());                
-                return v8::Undefined(); 
-            }
         };
-
-
 
         // Create the "Engine" JS class.  Note that it is anonymous and thus inaccessible
         // since we only want to expose the singleton.
@@ -341,7 +327,7 @@ addLxDOMtoContext (lx0::DocumentPtr spDocument)
 
         Local<Template> proto_t = templ->PrototypeTemplate();
         proto_t->Set("loadDocument",  FunctionTemplate::New(W::loadDocument));
-        proto_t->Set("sendEvent",     FunctionTemplate::New(W::sendEvent));
+        proto_t->Set("sendEvent",     FunctionTemplate::New( _genericV1<lx0::Engine, std::string, &lx0::Engine::sendEvent> ) );
         
         // Create the JS object, associate it with the native object, and name it in the context
         //
