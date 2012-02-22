@@ -139,7 +139,7 @@ namespace lx0
                 //! Acquire the Singleton for the Engine
                 static EnginePtr    acquire             (void);
              
-                void                loadPlugin          (const char* pszName);
+                void                loadPlugin          (std::string name);
         
                 void                initialize          (void);
                 void                shutdown            (void);
@@ -176,8 +176,11 @@ namespace lx0
 
                 ///@name Engine plug-ins
                 ///@{
-                void                addViewPlugin       (std::string name, std::function<ViewImp*(View*)> ctor);
-                ViewImp*            _createViewImp      (std::string name, View* pView);
+                void                addViewPlugin           (std::string name, std::function<ViewImp*(View*)> ctor);
+                ViewImp*            _createViewImp          (std::string name, View* pView);
+                
+                void                registerViewComponent   (std::string name, std::function<lx0::ViewComponent*()> ctor);
+                lx0::ViewComponent* createViewComponent     (std::string name);
         
                 void                addDocumentComponent (std::string name, std::function<DocumentComponent* ()> ctor);
         
@@ -250,6 +253,7 @@ namespace lx0
                 std::map<std::string, std::function<ViewImp*(View*)>>                   mViewImps;
                 std::map<std::string, std::function<DocumentComponent* ()>>             mDocumentComponents;
                 ElementComponentMap                                                     mElementComponents;
+                std::map<std::string, std::function<lx0::ViewComponent*()>>             mViewComponents;
 
                 std::map<std::string, std::vector<std::function<bool(std::string)>>>    m_psuedoAttributes;
                 std::map<std::string, std::vector<std::function<lxvar(std::string)>>>   m_attributeParsers;

@@ -158,9 +158,9 @@ namespace lx0 { namespace engine { namespace dom_ns {
     }
 
     void 
-    Engine::loadPlugin (const char* pszName)
+    Engine::loadPlugin (std::string name)
     {
-        lx_load_plugin(pszName);
+        lx_load_plugin(name.c_str());
     }
 
     void
@@ -680,6 +680,20 @@ namespace lx0 { namespace engine { namespace dom_ns {
             throw lx_error_exception("No View plug-in with name '%s' found.", name.c_str()); 
             return nullptr;
         }
+    }
+
+    void 
+    Engine::registerViewComponent (std::string name, std::function<lx0::ViewComponent*()> ctor)
+    {
+        mViewComponents.insert( std::make_pair(name, ctor) );
+    }
+
+    lx0::ViewComponent*
+    Engine::createViewComponent (std::string name)
+    {
+        auto it = mViewComponents.find(name);
+        auto pComponent = (it->second)();
+        return pComponent;
     }
 
     /*!

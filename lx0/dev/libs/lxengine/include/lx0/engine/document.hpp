@@ -106,6 +106,7 @@ namespace lx0
 
         ViewPtr                 createView      (std::string type, std::string name);
         ViewPtr                 createView      (std::string type, std::string name, lx0::ViewComponent* pRenderer);
+        ViewPtr                 createView      (std::string type, std::string name, std::string rendererName);
         void                    destroyView     (std::string name);
 
         ViewPtr                 view            (int index);

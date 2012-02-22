@@ -72,6 +72,9 @@ RasterizerGL::~RasterizerGL()
         lx_warn("RasterizerGL::shutdown() not called!");
 }
 
+
+extern "C" int gl3wInit(void);
+
 void RasterizerGL::initialize()
 {
     lx_log("%s", __FUNCTION__);
@@ -80,6 +83,16 @@ void RasterizerGL::initialize()
 
     // Initialization
     //
+    // Note: we need to call glw3Init() from here because RasterizerGL is part of the lxengine.lib 
+    // static library.  This means that the gl3w data members (i.e. the GL function pointers) get
+    // copied into every DLL that uses them: i.e. these pointers need to be initialized by every
+    // DLL that uses them. This does not seem like the cleanest approach: it would be better to 
+    // (a) have an interface of virtual functions calling into lxengine.exe or (b) put the gl3wInit
+    // call into a common location such that all DLLs automatically get access to the GL functions
+    // (rather than putting the call in each specific location such as RasterizerGL::initialize()).
+    //
+    gl3wInit();
+    
     lx_log("Using OpenGL v%s", (const char*)glGetString(GL_VERSION));
     lx_log("Using GLSL v%s", (const char*)glGetString(GL_SHADING_LANGUAGE_VERSION));
 

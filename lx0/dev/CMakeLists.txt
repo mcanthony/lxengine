@@ -234,6 +234,7 @@ SET_PROPERTY(TARGET tutorial_00             PROPERTY FOLDER "Samples/Tutorials")
 SET_PROPERTY(TARGET tutorial_01             PROPERTY FOLDER "Samples/Tutorials")
 SET_PROPERTY(TARGET tutorial_02             PROPERTY FOLDER "Samples/Tutorials")
 SET_PROPERTY(TARGET tutorial_03             PROPERTY FOLDER "Samples/Tutorials")
+SET_PROPERTY(TARGET tutorial_04             PROPERTY FOLDER "Samples/Tutorials")
 
 SET_PROPERTY(TARGET sm_ogre_minimal         PROPERTY FOLDER "Samples/Misc")
 SET_PROPERTY(TARGET sm_v8_basic             PROPERTY FOLDER "Samples/Misc")

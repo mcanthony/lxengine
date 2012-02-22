@@ -99,6 +99,13 @@ namespace lx0 { namespace engine { namespace dom_ns {
         spView->attachComponent(pRenderer);
         return spView;
     }
+
+    ViewPtr 
+    Document::createView (std::string type, std::string name, std::string rendererName)
+    {
+        auto pRenderer = Engine::acquire()->createViewComponent(rendererName);
+        return createView(type, name, pRenderer);
+    }
     
     void
     Document::destroyView (std::string name)

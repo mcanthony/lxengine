@@ -30,6 +30,8 @@
 //   H E A D E R S   &   D E C L A R A T I O N S 
 //===========================================================================//
 
+#include <iostream>
+
 #include <lx0/lxengine.hpp>
 #include <lx0/subsystem/javascript.hpp>
 #include <lx0/util/misc/util.hpp>
@@ -217,6 +219,17 @@ v8::Handle<v8::Value> _genericR2 (const v8::Arguments& args)
     return _marshal(ret); 
 }
 
+template <typename R, typename T, typename A0, typename A1, typename A2, R (T::*Method)(A0,A1,A2)>
+v8::Handle<v8::Value> _genericR3 (const v8::Arguments& args)
+{
+    T* pThis = _nativeThis<T>(args);
+    A0 a0    = _marshal(args[0]);
+    A1 a1    = _marshal(args[1]);                
+    A2 a2    = _marshal(args[2]);                
+    R  ret   = (pThis->*Method)(a0, a1, a2);
+    return _marshal(ret); 
+}
+
 static void
 addLxDOMtoContext (lx0::DocumentPtr spDocument)
 {
@@ -303,7 +316,7 @@ addLxDOMtoContext (lx0::DocumentPtr spDocument)
         {
             Handle<FunctionTemplate> templ = FunctionTemplate::New();
             Local<Template> proto_t = templ->PrototypeTemplate();
-            proto_t->Set("createView",  FunctionTemplate::New( _genericR2<lx0::ViewPtr, lx0::Document, std::string, std::string, &lx0::Document::createView> ) );
+            proto_t->Set("createView",  FunctionTemplate::New( _genericR3<lx0::ViewPtr, lx0::Document, std::string, std::string, std::string, &lx0::Document::createView> ) );
             
             Local<ObjectTemplate> objInst = templ->InstanceTemplate();
             objInst->SetInternalFieldCount(1);
@@ -321,6 +334,7 @@ addLxDOMtoContext (lx0::DocumentPtr spDocument)
         Local<Template> proto_t = templ->PrototypeTemplate();
         proto_t->Set("loadDocument",  FunctionTemplate::New( _genericR1<lx0::DocumentPtr, lx0::Engine, std::string, &lx0::Engine::loadDocument> ));
         proto_t->Set("sendEvent",     FunctionTemplate::New( _genericV1<lx0::Engine, std::string, &lx0::Engine::sendEvent> ));
+        proto_t->Set("loadPlugin",    FunctionTemplate::New( _genericV1<lx0::Engine, std::string, &lx0::Engine::loadPlugin> ));
         
         // Create the JS object, associate it with the native object, and name it in the context
         //
@@ -423,7 +437,6 @@ main (int argc, char** argv)
             spJavascriptDoc->run(source);
 
             spEngine->sendTask( [&](void) -> void { spJavascriptDoc->run("main();"); } );
-            //spEngine->sendEvent("quit");
 
             exitCode = spEngine->run();
         }
