@@ -30,8 +30,6 @@ var uiBinding =
 
 function main()
 {
-    engine.loadPlugin("tutorial_04");
-
     var document = engine.loadDocument("media2/appdata/tutorial_03/document.xml");
     var view = document.createView("Canvas", "view", "Renderer");
     view.show({

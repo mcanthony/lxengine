@@ -43,61 +43,7 @@
 //   L O C A L   F U N C T I O N S
 //===========================================================================//
 
-static v8::Handle<v8::Object>
-addValidators ()
-{
-    using namespace v8;
-    using namespace lx0::core::v8bind;
-
-    struct W
-    {
-        static Handle<Value> _modifyCallbackWrapper (lx0::ModifyCallback cb)
-        {
-            Handle<FunctionTemplate> templ( FunctionTemplate::New() );
-            Handle<ObjectTemplate> objInst( templ->InstanceTemplate() );
-            objInst->SetInternalFieldCount(1);
-
-            lx0::ModifyCallback* func = new lx0::ModifyCallback;
-            *func = cb;
-
-            Handle<Object> obj( templ->GetFunction()->NewInstance() );
-            obj->SetInternalField(0, External::New(func));
-            return obj;
-        }
-
-        static Handle<Value> filename (const Arguments& args)
-        {
-            return _modifyCallbackWrapper( lx0::validate_filename() );
-        }
-
-        static Handle<Value> string (const Arguments& args)
-        {
-            return _modifyCallbackWrapper( lx0::validate_string() );
-        }
-
-        static Handle<Value> range (const Arguments& args)
-        {
-            int mn = _marshal(args[0]);
-            int mx = _marshal(args[1]);
-            return _modifyCallbackWrapper( lx0::validate_int_range(mn, mx) );
-        }
-    };
-
-
-    Handle<FunctionTemplate>    templ( FunctionTemplate::New() );
-    Handle<ObjectTemplate>      objInst( templ->InstanceTemplate() );
-    objInst->SetInternalFieldCount(1);
-
-    Handle<Template> proto_t( templ->PrototypeTemplate() );
-
-    proto_t->Set("filename", FunctionTemplate::New(W::filename) );
-    proto_t->Set("string", FunctionTemplate::New(W::string) );
-    proto_t->Set("range", FunctionTemplate::New(W::range) );
-
-    return templ->GetFunction()->NewInstance();
-}
-
-static void
+static lx0::lxvar
 processManifest (std::string filename)
 {
     lx_log("Processing manifest");
@@ -115,22 +61,14 @@ processManifest (std::string filename)
     //
     auto spJavascriptDoc = spDocument->getComponent<lx0::IJavascriptDoc>();
 
-    spJavascriptDoc->runInContext([&]() {
-        spJavascriptDoc->addObject("validate", &addValidators());
-    });   
-
-    //
-    // Grab the source
-    //
-    std::string source = lx0::string_from_file(filename);
-    source = "var _manifest = " + source + ";";
-
     //
     // Process the manifest
     //
-    spJavascriptDoc->run(source);
+    std::string source = lx0::string_from_file(filename);
+    source = "(function() { return " + source + "; })();";
+    lx0::lxvar manifest = spJavascriptDoc->run(source);
 
-    return;
+    return manifest;
 }
 
 using namespace v8;
@@ -424,7 +362,17 @@ main (int argc, char** argv)
         {	
             spEngine->attachComponent(lx0::createJavascriptSubsystem());
 
-            processManifest("../dev/samples/manifest/raytracer2/manifest.lx");
+            lx0::lxvar  manifest   = processManifest("media2/appdata/tutorial_04/manifest.lx");
+            std::string mainScript = manifest["mainScript"].as<std::string>();
+
+            //
+            // Load specified plug-ins
+            //
+            for (auto it = manifest["plugins"].begin(); it != manifest["plugins"].end(); ++it)
+            {
+                std::string name = (*it).as<std::string>();
+                spEngine->loadPlugin(name);
+            }
 
             //
             //
@@ -433,7 +381,7 @@ main (int argc, char** argv)
             auto spJavascriptDoc = spDocument->getComponent<lx0::IJavascriptDoc>();
 
             addLxDOMtoContext(spDocument);
-            std::string source = lx0::string_from_file("../dev/samples/manifest/raytracer2/main.js");
+            std::string source = lx0::string_from_file(std::string("media2/appdata/tutorial_04/") + mainScript);
             spJavascriptDoc->run(source);
 
             spEngine->sendTask( [&](void) -> void { spJavascriptDoc->run("main();"); } );
