@@ -36,6 +36,7 @@ using v8::Object;
 
 namespace lx0 { namespace core { namespace v8bind
 {
+    ConstructorMap* _marshalActiveConstructorMap = nullptr;
 
     _marshal::_marshal (const glm::vec3& v)
     {

@@ -173,7 +173,9 @@ protected:
 };
 
 
-static std::map<std::string,v8::Persistent<v8::Function>> constructors;
+
+
+ConstructorMap constructors;
     
 using namespace lx0::core::v8bind;   
 
@@ -186,6 +188,15 @@ v8::Handle<v8::Value> _genericV1 (const v8::Arguments& args)
     return v8::Undefined(); 
 }
 
+template <typename R, typename T, typename A0, R (T::*Method)(A0)>
+v8::Handle<v8::Value> _genericR1 (const v8::Arguments& args)
+{
+    T* pThis = _nativeThis<T>(args);
+    A0 a0    = _marshal(args[0]); 
+    R  ret   = (pThis->*Method)(a0);
+    return _marshal(ret);
+}
+
 template <typename T, typename A0, typename A1, void (T::*Method)(A0,A1)>
 v8::Handle<v8::Value> _genericV2 (const v8::Arguments& args)
 {
@@ -196,10 +207,22 @@ v8::Handle<v8::Value> _genericV2 (const v8::Arguments& args)
     return v8::Undefined(); 
 }
 
+template <typename R, typename T, typename A0, typename A1, R (T::*Method)(A0,A1)>
+v8::Handle<v8::Value> _genericR2 (const v8::Arguments& args)
+{
+    T* pThis = _nativeThis<T>(args);
+    A0 a0    = _marshal(args[0]);
+    A1 a1    = _marshal(args[1]);                
+    R  ret   = (pThis->*Method)(a0, a1);
+    return _marshal(ret); 
+}
+
 static void
 addLxDOMtoContext (lx0::DocumentPtr spDocument)
 {
     using namespace v8;
+
+    _marshalActiveConstructorMap = &constructors;
 
     //
     // The wrappers need to be added inside the proper context
@@ -224,7 +247,7 @@ addLxDOMtoContext (lx0::DocumentPtr spDocument)
                                 HandleScope handle_scope;                        
                         
                                 Handle<Value> callArgs[2];                                       
-                                callArgs[0] = _wrapSharedPtr(constructors["View"], spView);
+                                callArgs[0] = _marshal(spView);
                                 callArgs[1] = _marshal(keyCode);
 
                                 Handle<Object> recv = v8::Object::New();
@@ -271,21 +294,7 @@ addLxDOMtoContext (lx0::DocumentPtr spDocument)
                 objInst->SetInternalFieldCount(1);
 
                 v8::Persistent<v8::Function> ctor ( v8::Persistent<v8::Function>::New(templ->GetFunction()) );
-                constructors.insert(std::make_pair("View", ctor));
-            }
-        };
-
-        struct D
-        {
-            static v8::Handle<v8::Value>
-            createView (const v8::Arguments& args)
-            {
-                auto pThis         = _nativeThis<lx0::Document>(args);
-                std::string plugin = _marshal(args[0]);
-                std::string name   = _marshal(args[1]);
- 
-                auto spView = pThis->createView(plugin, name);
-                return _wrapSharedPtr(constructors["View"], spView);
+                constructors.insert<lx0::View>(ctor);
             }
         };
 
@@ -294,30 +303,14 @@ addLxDOMtoContext (lx0::DocumentPtr spDocument)
         {
             Handle<FunctionTemplate> templ = FunctionTemplate::New();
             Local<Template> proto_t = templ->PrototypeTemplate();
-            proto_t->Set("createView",  FunctionTemplate::New(D::createView));
+            proto_t->Set("createView",  FunctionTemplate::New( _genericR2<lx0::ViewPtr, lx0::Document, std::string, std::string, &lx0::Document::createView> ) );
             
             Local<ObjectTemplate> objInst = templ->InstanceTemplate();
             objInst->SetInternalFieldCount(1);
 
             v8::Persistent<v8::Function> ctor ( v8::Persistent<v8::Function>::New(templ->GetFunction()) );
-            constructors.insert(std::make_pair("Document", ctor));
+            constructors.insert<lx0::Document>(ctor);
         }                
-        
-        //
-        // Create a function-local "namespace" for the wrappers
-        //
-        struct W
-        {
-            static v8::Handle<v8::Value> 
-            loadDocument (const v8::Arguments& args)
-            {
-                lx0::Engine* pThis  = _nativeThis<lx0::Engine>(args);
-                std::string  filename = _marshal(args[0]);
- 
-                auto spDocument = pThis->loadDocument(filename); 
-                return _wrapSharedPtr(constructors["Document"], spDocument, sizeof(lx0::Document));
-            }
-        };
 
         // Create the "Engine" JS class.  Note that it is anonymous and thus inaccessible
         // since we only want to expose the singleton.
@@ -326,8 +319,8 @@ addLxDOMtoContext (lx0::DocumentPtr spDocument)
         objInst->SetInternalFieldCount(1);
 
         Local<Template> proto_t = templ->PrototypeTemplate();
-        proto_t->Set("loadDocument",  FunctionTemplate::New(W::loadDocument));
-        proto_t->Set("sendEvent",     FunctionTemplate::New( _genericV1<lx0::Engine, std::string, &lx0::Engine::sendEvent> ) );
+        proto_t->Set("loadDocument",  FunctionTemplate::New( _genericR1<lx0::DocumentPtr, lx0::Engine, std::string, &lx0::Engine::loadDocument> ));
+        proto_t->Set("sendEvent",     FunctionTemplate::New( _genericV1<lx0::Engine, std::string, &lx0::Engine::sendEvent> ));
         
         // Create the JS object, associate it with the native object, and name it in the context
         //
