@@ -91,14 +91,15 @@ main (int argc, char** argv)
         //
         // Set up global options prior to parsing the command line
         //
-        spEngine->globals().add("manifest",     eAcceptsString, lx0::validate_filename());
+        spEngine->globals().add("base_directory",     eAcceptsString, lx0::validate_filename());
 
-        // Parse the command line (specifying "file" as the default unnamed argument)
-        if (spEngine->parseCommandLine(argc, argv, "manifest"))
+        // Parse the command line (specifying "base_directory" as the default unnamed argument)
+        if (spEngine->parseCommandLine(argc, argv, "base_directory"))
         {	
             spEngine->attachComponent(lx0::createJavascriptSubsystem());
 
-            lx0::lxvar  manifest   = processManifest("media2/appdata/tutorial_04/manifest.lx");
+            std::string baseDir    = spEngine->globals()["base_directory"];
+            lx0::lxvar  manifest   = processManifest(baseDir + "/manifest.lx");
             std::string mainScript = manifest["mainScript"].as<std::string>();
 
             //
@@ -118,7 +119,7 @@ main (int argc, char** argv)
 
             void addLxDOMtoContext (lx0::DocumentPtr spDocument);
             addLxDOMtoContext(spDocument);
-            std::string source = lx0::string_from_file(std::string("media2/appdata/tutorial_04/") + mainScript);
+            std::string source = lx0::string_from_file(baseDir + "/" + mainScript);
             spJavascriptDoc->run(source);
 
             spEngine->sendTask( [&](void) -> void { spJavascriptDoc->run("main();"); } );

@@ -420,8 +420,9 @@ namespace lx0 { namespace engine { namespace dom_ns {
 
         for (auto it = mGlobals.begin(); it != mGlobals.end(); ++it)
         {
-            const char*       name  = it.key().c_str();
-            const lx0::uint32 flags = mGlobals.flags(name);
+            std::string       nameStr  = it.key();              // Keep a copy so the c_str() doesn't expire!
+            const char*       name     = nameStr.c_str();
+            const lx0::uint32 flags    = mGlobals.flags(name);
 
             if (vars.count(name) > 0)
             {

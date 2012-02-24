@@ -1,0 +1,371 @@
+<Document>
+  <Library>
+    <!-- Geomtrey -->
+    <Geometry src="media2/models/unit_cube-000.blend" />
+    <Geometry src="media2/models/unit_hemisphere-000.blend" />
+    <Geometry src="media2/models/unit_sphere-000.blend" />
+    <Geometry src="media2/models/space-ship-ship_00/ship_00-nomodifiers.blend" />
+    <Geometry src="media2/models/standard/suzanne/suzanne_subdivided.blend" />
+    <Geometry src="media2/models/standard/stanford_bunny/bunny-000.blend" />
+    <Geometry src="media2/models/unit_geometry/unit_cone-000.blend" />
+    <Geometry src="media2/models/unit_geometry/unit_cylinder-000.blend" />
+    <Geometry src="media2/models/unit_geometry/unit_cylinder-001.blend" />
+    <Geometry src="media2/models/unit_geometry/teapot/teapot-000.blend" />
+
+    <!-- Lights -->
+    <Light>
+      {
+        position : [10, -10, 10],
+        color    : [ 1, 1, 1 ],
+      }
+    </Light>
+    <Light>
+      {
+        position : [ 10, 10, 10 ],
+        color    : [ .6, .6, 1 ],
+      }
+    </Light>
+
+    <!-- Materials -->
+    
+    <Material id="solid_default">
+      {
+        graph : {
+          _type : "spot",
+        },
+      }
+    </Material> 
+    <Material id="solid_blue">
+      {
+        graph : {
+          _type : "solid",
+          color : [ 0, 0, .7 ],
+        },
+      }
+    </Material>
+    <Material id="solid_red">
+      {
+        graph : {
+          _type : "solid",
+          color : [ .7, 0, 0 ],
+        },
+      }
+    </Material>       
+    
+    <Material id="phong_defaults">
+      {
+      graph : {
+        _type : "phong",
+        },
+      }
+    </Material>
+    <Material id="phong_checker">
+      {
+        graph : {
+          _type : "phong",
+          diffuse : {
+            _type : "checker",
+            color0 : [ 0, 0, 0],
+            color1 : [ 1, 1, 1],
+            uv : {
+              _type : "spherical",
+              scale : [ 4, 4 ],
+            },
+          },
+        },
+      }
+    </Material>
+
+    <Material id="phong_checker_complex">
+      {
+        graph : {
+          _type : "checker",
+          color0 : { 
+            _type : "phong",
+            diffuse : [ 1, 0, 0 ],
+            specular : [ 1, 1, 0 ],
+          },
+          color1 : { 
+            _type : "phong",
+            diffuse : [ 1, 1, 1 ],
+            specular : [ 0, 0, 0 ],
+          },
+          uv : {
+            _type : "spherical",
+            scale : [ 4, 4 ],
+          },
+        },
+      }
+    </Material>       
+    
+    <Material id="phong_checker_complex2">
+      {
+        graph : {
+          _type : "checker",
+          color0 : { 
+            _type : "phong",
+            diffuse : [ 1, 0, 0 ],
+            specular : [ 1, 1, 0 ],
+          },
+          color1 : { 
+            _type : "phong",
+            diffuse : [ 1, 1, 1 ],
+            specular : {
+              _type : "square",
+              color0 : [ 1, 1, 0],
+              color1 : [ 10, 5, 0 ],
+              width : .475,
+              uv : {
+                _type : "spherical",
+                scale : [ 8, 8 ],
+              },
+            },
+            specularEx : 2,
+          },
+          uv : {
+            _type : "spherical",
+            scale : [ 4, 4 ],
+          },
+        },
+      }
+    </Material>    
+    
+    <Material id="star_simple">
+      {
+        graph : {
+          _type : "star",
+          color0 : [ .835, .835, .010 ],
+          color1 : [ .200, .100, .100 ],
+          width : .04,
+          uv : { 
+            _type : "cube",
+            scale : [ 8, 8 ],
+          },
+        },
+      }
+    </Material>         
+    <Material id="wave_simple">
+      {
+        graph : {
+          _type : "wave",
+          color0 : [ .835, .823, .790 ],
+          color1 : [ .261, .191, .720 ],
+          width : .15,
+          uv : { 
+            _type : "cube",
+            scale : [ 8, 8 ],
+          },
+        },
+      }
+    </Material>       
+    
+    <Material id="diamond_simple">
+      {
+        graph : {
+          _type : "diamond",
+          color0 : [ .235, .723, .290 ],
+          color1 : [ .161, .191, .320 ],
+          width : .49,
+          uv : { 
+            _type : "spherical",
+            scale : [ 8, 8 ],
+          },
+        },
+      }
+    </Material>      
+    <Material id="tile_simple">
+      {
+        graph : {
+          _type : "tile",
+          color0 : [ .435, .423, .290 ],
+          color1 : [ .161, .231, .220 ],
+          width : .4,
+          uv : { 
+            _type : "cube",
+            scale : [ 5, 5 ],
+          },
+        },
+      }
+    </Material>    
+    <Material id="spot_simple">
+      {
+        graph : {
+          _type : "spot",
+          color0 : [ .447, .145, .557 ],
+          color1 : [ 1, 1, .839 ],
+          radius : .45,
+          uv : { 
+            _type : "spherical",
+            scale : [ 16, 16 ],
+          },
+        },
+      }
+    </Material>  
+   
+    <Material id="gradient">
+      {
+        graph : {
+          _type : "gradient",
+          c00 : [ 1, .6, 0 ],
+          c01 : [ 0.4, 1, 0 ],
+          c10 : [ 0, 0.4, 1 ],
+          c11 : [ 1, 1, 1 ], 
+          uv : { _type : "cube" },
+        },
+      }
+    </Material>
+     <Material id="checker_simple">
+      {
+        graph : {
+          _type : "checker",
+          color0 : [ 1, 1, 1 ],
+          color1 : [ .4, .4, .4 ],
+          uv : { 
+            _type : "radialxy",
+          },
+        },
+      }
+    </Material>       
+     <Material id="checker_redblack">
+      {
+        graph : {
+          _type : "checker",
+          color0 : [ 1, 0, 0 ],
+          color1 : [ .1, .1, 0 ],
+          uv : { 
+            _type : "spherical",
+            scale : [ 9, 14 ],
+          },
+        },
+      }
+    </Material>   
+    <Material id="checker_scaled">
+      {
+        graph : {
+          _type : "checker",
+          color0 : [ 1, 1, 0.6 ],
+          color1 : {
+            _type : "wave",
+            color0 : [ .835, .823, .790 ],
+            color1 : [ 0, .7, 1 ],
+            width : .15,
+            uv : { 
+              _type : "spherical",
+              scale : [ 64, 64 ],
+            }, 
+          },
+          uv : { 
+            _type : "spherical",
+            scale : [ 16, 16 ],
+          },
+        },
+      }
+    </Material> 
+    <Material id="checker_nested">
+      {
+        graph : {
+          _type : "checker",
+          color0 : {
+            _type : "checker",
+            color0 : [ 1, 0, 0 ],
+            color1 : [ 0, 0, 0 ],
+            uv : { 
+              _type : "spherical",
+              scale : [ 8, 8 ],
+            },
+          },
+          color1 : [ 1, 1, .8 ],
+          uv : { 
+            _type : "spherical",
+            scale : [ 2, 2 ],
+          },
+        },
+      }
+    </Material>     
+    <Material id="checker_weave">
+      {
+        graph : {
+          _type : "weave",
+          color0 : {
+            _type : "checker",
+            color0 : [ 1, 0, 0 ],
+            color1 : [ 1.0, 0.5, 0 ],
+            uv : { 
+              _type : "spherical",
+              scale : [ 16, 16 ],
+            },
+          },
+          color1 : [ 0, 0, 0 ],
+          uv : { 
+            _type : "spherical",
+            scale : [ 8, 8 ],
+          },
+        },
+      }
+    </Material>   
+    <Material id="checker_weave_cube">
+      {
+        graph : {
+          _type : "weave",
+          color0 : {
+            _type : "checker",
+            color0 : [ 0, 0.4, 0.6 ],
+            color1 : [ 0.2, 0.6, 0.4 ],
+            uv : { 
+              _type : "cube",
+              scale : [ 12, 12 ],
+            },
+          },
+          color1 : {
+            _type : "checker",
+            color0 : [ 1, 0, 0],
+            color1 : [ 1, 1, 0],
+            uv : { 
+              _type : "cube",
+              scale : [ 3, 3 ],
+            },
+          },
+          uv : { 
+            _type : "cube",
+            scale : [ 6, 6 ],
+          },
+        },
+      }
+    </Material>
+    
+    <Material id="phong_weave">
+      {
+        graph : {
+          _type : "phong",
+          diffuse : {
+            _type : "weave",
+            color0 : {
+              _type : "checker",
+              color0 : [ 1, 0, 0 ],
+              color1 : [ 1.0, 0.5, 0 ],
+              uv : { 
+                _type : "spherical",
+                scale : [ 16, 16 ],
+              },
+            },
+            color1 : [ 0, 0, 0 ],
+            uv : { 
+              _type : "spherical",
+              scale : [ 8, 8 ],
+            },
+          },
+          specular : {
+            _type : "weave",
+            color0 : [ .5, .5, .5 ],
+            color1 : [ 0, 0, 0],
+            uv : { 
+              _type : "spherical",
+              scale : [ 8, 8 ],
+            },            
+          },
+        }
+      }
+    </Material>      
+    
+  </Library>
+</Document>
