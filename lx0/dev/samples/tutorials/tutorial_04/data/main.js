@@ -30,7 +30,12 @@ var uiBinding =
 
 function main()
 {
+    lx0.log("Beginning main script");
+
+    lx0.message("Loading document...");
     var document = engine.loadDocument("media2/appdata/tutorial_03/document.xml");
+
+    lx0.message("Creating view...");
     var view = document.createView("Canvas", "view", "Renderer");
     view.show({
         title : "Tutorial 4",
@@ -38,7 +43,8 @@ function main()
         height : 512
     });
 
-    __lx_print("Press ESCAPE to quit");
+    lx0.message("\n");
+    lx0.message("Press ESCAPE to quit");
 
     view.addUIBinding(uiBinding);
 }

@@ -120,6 +120,13 @@ namespace lx0 { namespace core { namespace v8bind
             return it->second;
         }
 
+        v8::Persistent<v8::Function>& 
+        getFromHash (const size_t hash)
+        {
+            auto it = mMap.find(hash);
+            return it->second;
+        }
+
     protected:
         std::map<size_t,v8::Persistent<v8::Function>> mMap;
     };
@@ -188,6 +195,8 @@ namespace lx0 { namespace core { namespace v8bind
             : mValue ( _wrapSharedPtr( _marshalActiveConstructorMap->get(spObject), spObject) )                
         {
         }
+                    
+
 
         _marshal(bool b)                    : mValue( v8::Boolean::New(b) ) {}
         _marshal(int i)                     : mValue( v8::Integer::New(i) ) {}

@@ -50,6 +50,13 @@ namespace lx0
                 static  const char* s_name  (void)       { return "javascript"; }
                 virtual const char* name    (void) const { return s_name(); }
                 
+                template <typename T>
+                void                addObject (const char* name, std::shared_ptr<T>& spObject)
+                {
+                    auto pspObject = new std::shared_ptr<T>(spObject);
+                    auto dtor = [&]() -> void { delete pspObject; };
+                    _addObject(name, typeid(T).hash_code(), spObject.get(), dtor);
+                }
                 virtual void        addObject (const char* name, void* pointerToHandleToObject) = 0;
 
                 //! Executes a string of Javascript code in the context of the Document
@@ -67,6 +74,7 @@ namespace lx0
                 }
 
             protected:
+                virtual void        _addObject           (const char* objectName,  size_t type_hash, void* pObject, std::function<void()> dtor) = 0;
                 virtual void        _acquireFunction     (const char* functionName, boost::any& func) = 0;
 
 

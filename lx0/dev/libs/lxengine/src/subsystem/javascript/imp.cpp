@@ -304,9 +304,10 @@ namespace {
 
 
         virtual void        addObject           (const char* name, void* pointerToHandleToObject);
-        virtual lx0::lxvar  run                 (const std::string& source);
+        virtual lx0::lxvar  run                 (const std::string& source);        
         
-        
+        virtual void        _addObject           (const char* objectName,  size_t type_hash, void* pObject, std::function<void()> dtor);
+
         template <typename R, typename T0, typename T1>
         void _acquireFunction (const char* functionName, std::function<R(T0,T1)>& func);
 
@@ -542,6 +543,53 @@ namespace {
             Handle<Object> recv = mContext->Global();
             mOnUpdate->Call(recv, 0, 0);
         }
+    }
+
+    void        
+    JavascriptDoc::_addObject (const char* objectName, size_t hash, void* pObject, std::function<void()> dtor)
+    {
+        //
+        // First, we need to allocate a JS object of the right type.  The JS wrapper 
+        // constructors are stored in a table of native type_info hash -> V8 constructor.
+        //
+        // Then allocate the object and link to the native object by setting the 
+        // "internal field" to point to that object.
+        //
+        v8::Persistent<v8::Function> ctor = _marshalActiveConstructorMap->getFromHash(hash);
+        v8::Handle<v8::Object> obj = ctor->NewInstance();
+        obj->SetInternalField(0, v8::External::New(pObject));
+        
+        //
+        // Now, to keep the reference counting in sync, we create a Persistent handle
+        // that will call Release::apply when the V8 garbage collector is about to 
+        // dispose of the JS wrapper on the object (i.e. the object is no longer 
+        // referenced in the script).
+        //
+        // The "dtor" argument is called when the GC would occur.  A copy of the dtor 
+        // argument is made on the heap.
+        //
+        struct Release
+        {
+            static void apply(v8::Persistent<v8::Value> persistentObj, void* pData)
+            {
+                auto pFunc = reinterpret_cast<std::function<void()>*>(pData);
+                (*pFunc)();
+                delete pFunc;
+
+                persistentObj.Dispose();
+                persistentObj.Clear();
+            }
+        };
+
+        v8::Persistent<v8::Object> persistentObj( v8::Persistent<v8::Object>::New(obj));        
+        auto pFunctor = new std::function<void()>(dtor);
+        persistentObj.MakeWeak(pFunctor, &Release::apply);
+
+        //
+        // Lastly, now that the object is created and the proper clean-up callback is in place,
+        // we add the object to the current context under the specified name.
+        //
+        mContext->Global()->Set(String::New(objectName), obj);
     }
 
     /*!
