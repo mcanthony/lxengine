@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html>
+    <head>
+      <title>Mesh Types</title>
+      <link type="text/css" href="../shared/style/default.less" rel="stylesheet/less" />
+      <link type="text/css" href="style.less" rel="stylesheet/less" />
+            
+      <script type="text/javascript" src="../shared/script/extern/less-1.1.3.min.js"></script>
+      <script type="text/javascript" src="../shared/script/extern/jquery-1.6.4.min.js"></script>
+      <script type="text/javascript" src="../shared/script/extern/jquery.cookie.js"></script>
+
+      <script src="http://yandex.st/highlightjs/6.1/highlight.min.js"></script>
+      <link rel="stylesheet" href="http://yandex.st/highlightjs/6.1/styles/github.css">
+
+      <script type="text/javascript">
+      <!--
+        var scriptFiles = [ 
+          "../shared/script/lx.core-0.1.1.js",
+          "../shared/script/lx.webUtil-0.1.0.js",
+          "script.js",
+        ];
+        for (var i in scriptFiles) {
+          var s = "<script type='text/javascript' src='";
+          s += scriptFiles[i] + "?rand=" + Math.random();
+          s += "'></script>";
+          document.writeln(s);
+        }
+      -->
+      </script>
+    </head>
+    <body>
+       <div id="body-wrap1">
+        <h1>Mesh Types</h1>
+
+        <h2>About</h2>
+        <div class="layout-row">
+          <div style="max-width: 40em">
+            <p>
+                <strong>Project Status:</strong>&nbsp;&nbsp;
+                <span style="font-size: 80%; color: #CCC">
+                    <span style="color: #37A; font-weight: bold; text-shadow: #DDD 0px 0px 2px">Prototype</span> |
+                    Development |
+                    Alpha |
+                    Beta |
+                    Production 
+                </span>
+            </p>
+            
+            <p>
+                A prototype of the Javascript-based LxEngine mesh types. 
+            </p>
+            <p>
+                The most interesting part of this page is most likely the <a href="#source-listing">source listing</a>.
+            </p>
+
+          </div>
+            <div>
+                <div style="border: 1px solid #CCC; border-radius: 6px; padding: 8px 2em 8px 8px;  width: 12em; margin-left: 2em">
+                    <strong style="color: #777">Table of Contents</strong>
+                    <div id="toc"></div>
+                </div>
+            </div>  
+        </div>
+
+        <h2>Demo</h2>
+        <div class="layout-row">
+          <div style="max-width: 40em">
+            <pre id="output" style="border-radius: 6px; border: 1px solid #ccc; padding: 1em; min-height: 26em; width: 30em"></pre>
+          </div>
+          <div style="max-width: 30em">
+            <p>
+            </p>
+          </div>
+        </div>
+
+        <h2 id="source-listing">Source</h2>
+
+        <h4>script.js</h4>
+        <div class="source" data-source="script.js"></div>
+
+        <script type="text/javascript">
+        <!--
+            $(document).ready(function () {
+                $("#toc").tableOfContents();
+                $(".source").includeSource();
+
+                main();
+            });
+        -->
+        </script>
+
+        <!-- Google Analytics -->         <script type="text/javascript">
+            var _gaq = _gaq || [];
+            _gaq.push(['_setAccount', 'UA-604613-10']);
+            _gaq.push(['_trackPageview']);
+            (function () {
+                var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+                ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+                var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+            })();        </script> 
+
+    </body>
+</html>

@@ -1,0 +1,158 @@
+//===========================================================================//
+// QuadMesh
+//===========================================================================//
+
+function QuadMesh()
+{
+    this._vertices = [];
+    this._faces = [];
+}
+
+QuadMesh.prototype.addVertex = function (x,y,z)
+{
+    this._vertices.push([x,y,z]);
+}
+QuadMesh.prototype.addFace = function(i0,i1,i2,i3)
+{
+    this._faces.push([i0,i1,i2,i3]);
+}
+
+//===========================================================================//
+// HalfEdgeMesh
+//===========================================================================//
+
+var HalfEdgeMesh = (function () {
+
+    function Face() {
+        this.edge = null;
+    }
+    function Edge() {
+        this.vertex = null;
+        this.face = null;
+        this.next = null;
+        this.opposite = null;
+    }
+    function Vertex(x, y, z) {
+        this.position = [x, y, z];
+        this.edge = null;
+    }
+
+    function convertFromQuadMesh(mesh) {
+
+        for (var vi = 0; vi < mesh._vertices.length; ++vi) {
+            var v = mesh._vertices[vi];
+            this._vertices.push(new Vertex(v[0], v[1], v[2]));
+        }
+
+        for (var fi = 0; fi < mesh._faces.length; ++fi) {
+            this._faces.push(new Face());
+
+            var face = mesh._faces[fi];
+            var edges = [];
+            for (var vi = 0; vi < face.length; ++vi)
+                edges.push(new Edge());
+
+            for (var vi = 0; vi < face.length; ++vi) {
+                var vj = (vi + 1) % face.length;
+                edges[vi].vertex = this._vertices[face[vi]];
+                edges[vi].face = this._faces[fi];
+                edges[vi].next = edges[vj];
+                edges[vi].opposite = null;
+
+                edges[vi].vertex.edge = edges[vi];
+            }
+            for (var i = 0; i < edges.length; ++i)
+                this._edges.push(edges[i]);
+
+            this._faces[fi].edge = edges[0];
+        }
+
+        var edges = this._edges.slice(0);
+        for (var i = 0; i < edges.length; i += 2) {
+            for (var j = i + 1; j < edges.length; ++j) {
+                if (edges[i].vertex === edges[j].next.vertex) {
+                    edges[i].opposite = edges[j];
+                    edges[j].opposite = edges[i];
+                    edges[j] = edges[i + 1];
+                    break;
+                }
+            }
+        }
+    }
+
+    function HalfEdgeMesh(mesh) {
+        this._faces = [];
+        this._edges = [];
+        this._vertices = [];
+
+        if (/function QuadMesh/.test(mesh.constructor))
+            convertFromQuadMesh.call(this, mesh);
+        else
+            throw "Unknown mesh type";
+    }
+
+    HalfEdgeMesh.prototype.integrityCheck = function () {
+        for (var i = 0; i < this._faces.length; ++i) {
+            if (this._faces[i].edge.face !== this._faces[i]) {
+                throw "Edge face incorrect";
+            }
+        }
+
+        for (var i = 0; i < this._edges.length; ++i) {
+            if (this._edges[i].opposite.opposite !== this._edges[i]) {
+                throw "Edge opposite incorrect";
+            }
+        }
+
+        for (var i = 0; i < this._vertices.length; ++i) {
+            if (this._vertices[i].edge.vertex !== this._vertices[i] && this._vertices[i].edge.next.vertex !== this._vertices[i]) {
+                throw "Edge vertex incorrect";
+            }
+        }
+    }
+
+    return HalfEdgeMesh;
+})();
+
+
+//===========================================================================//
+// Helpers
+//===========================================================================//
+
+function createBox()
+{
+    var m = new QuadMesh();
+
+    m.addVertex(-0.5, -0.5, -0.5);
+    m.addVertex( 0.5, -0.5, -0.5);
+    m.addVertex( 0.5,  0.5, -0.5);
+    m.addVertex(-0.5,  0.5, -0.5);
+    m.addVertex(-0.5, -0.5,  0.5);
+    m.addVertex( 0.5, -0.5,  0.5);
+    m.addVertex( 0.5,  0.5,  0.5);
+    m.addVertex(-0.5,  0.5,  0.5);
+
+    m.addFace(1, 2, 6, 5);  // +X = 0
+    m.addFace(0, 4, 7, 3);  // -X = 1
+    m.addFace(2, 3, 7, 6);  // +Y = 2
+    m.addFace(0, 1, 5, 4);  // -Y = 3
+    m.addFace(4, 5, 6, 7);  // +Z = 4
+    m.addFace(3, 2, 1, 0);  // -Z = 5
+
+    return m;
+}
+
+//
+// Entry-point
+//
+function main() {
+
+    $("#output").append("Creating mesh...\n");
+    var mesh = new HalfEdgeMesh(createBox());
+
+    $("#output").append("Checking mesh integrity...\n");
+    mesh.integrityCheck();
+
+    $("#output").append("Done.\n");
+    console.log(mesh);
+}
