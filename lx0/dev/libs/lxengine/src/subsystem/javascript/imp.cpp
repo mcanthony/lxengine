@@ -206,7 +206,7 @@ namespace {
         addAttributeParser (const v8::Arguments& args)
         {
             auto                 pThis = lx0::core::v8bind::_nativeThis<JsEngineContext>(args);
-            std::string          attr  = lx0::core::v8bind::_marshal(args[0]); 
+            auto                 attr  = lx0::core::v8bind::_marshal2<std::string>(args[0]); 
             Persistent<Function> func  = Persistent<Function>::New( Handle<Function>::Cast(args[1]) ); 
                 
             auto wrapper = [pThis, func] (std::string value) -> lxvar { 

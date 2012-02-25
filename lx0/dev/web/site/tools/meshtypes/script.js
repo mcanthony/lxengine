@@ -2,8 +2,8 @@
 // QuadMesh
 //===========================================================================//
 
-function QuadMesh()
-{
+function QuadMesh() {
+    this._meshType = "QuadMesh";
     this._vertices = [];
     this._faces = [];
 }
@@ -81,6 +81,7 @@ var HalfEdgeMesh = (function () {
     }
 
     function HalfEdgeMesh(mesh) {
+        this._meshType = "HalfEdgeMesh";
         this._faces = [];
         this._edges = [];
         this._vertices = [];
@@ -97,13 +98,11 @@ var HalfEdgeMesh = (function () {
                 throw "Edge face incorrect";
             }
         }
-
         for (var i = 0; i < this._edges.length; ++i) {
             if (this._edges[i].opposite.opposite !== this._edges[i]) {
                 throw "Edge opposite incorrect";
             }
         }
-
         for (var i = 0; i < this._vertices.length; ++i) {
             if (this._vertices[i].edge.vertex !== this._vertices[i] && this._vertices[i].edge.next.vertex !== this._vertices[i]) {
                 throw "Edge vertex incorrect";
@@ -111,8 +110,59 @@ var HalfEdgeMesh = (function () {
         }
     }
 
+    HalfEdgeMesh.prototype.iterateFaces = function (f) {
+        for (var i = 0; i < this._faces.length; ++i) {
+            f(this._faces[i]);
+        }
+    }
+
+    HalfEdgeMesh.prototype.iterateFaceVertices = function (face, f) {
+        var edge = face.edge;
+        do {
+            f(edge.vertex);
+            edge = edge.next;
+        } while (edge != face.edge);
+    }
+
     return HalfEdgeMesh;
 })();
+
+//===========================================================================//
+// Add-Ins
+//===========================================================================//
+
+HalfEdgeMesh.prototype.createQuadMesh = function () {
+    var h = this;
+    var m = new QuadMesh();
+
+    for (var i = 0; i < h._vertices.length; ++i) {
+        var v = h._vertices[i];
+        var p = v.position;
+
+        m.addVertex(p[0], p[1], p[2]);
+
+        // Create a temporary property on the vertex to allow a lookup table
+        // to be built.  
+        //
+        // The runtime cost of doing this unclear; V8 optimizes for
+        // objects with a fixed set of properties.
+        v._index = i;
+    }
+
+    h.iterateFaces(function (face) {
+        var indices = [];
+        h.iterateFaceVertices(face, function (v) {
+            indices.push(v._index);
+        });
+        m.addFace.apply(m, indices);
+    });
+
+    // Remove the temporary property
+    for (var i = 0; i < h._vertices.length; ++i)
+        delete h._vertices[i]._index;
+
+    return m;
+}
 
 
 //===========================================================================//
@@ -155,4 +205,6 @@ function main() {
 
     $("#output").append("Done.\n");
     console.log(mesh);
+
+    console.log(mesh.createQuadMesh());
 }

@@ -133,6 +133,76 @@ namespace lx0 { namespace core { namespace v8bind
 
     extern ConstructorMap* _marshalActiveConstructorMap;
 
+    namespace detail
+    {
+        template <typename T>
+        struct _marshalImp
+        {
+        };
+
+
+
+        template <> struct _marshalImp< v8::Handle<v8::Value> > {
+            static inline v8::Handle<v8::Value> convert (v8::Handle<v8::Value>& value) {
+                return value;
+            }
+        };
+
+        template <> struct _marshalImp< v8::Handle<v8::Function> > {
+            static inline v8::Handle<v8::Function> convert (v8::Handle<v8::Value>& value) {
+                return v8::Handle<v8::Function>::Cast(value);
+            }
+        };
+
+        template <> struct _marshalImp< std::string > {
+            static inline std::string convert (v8::Handle<v8::Value>& value) {
+                lx_check_error( value->IsString() );
+                return *v8::String::AsciiValue(value);  
+            }
+        };
+
+        template <> struct _marshalImp<int> {
+            static inline int convert (v8::Handle<v8::Value>& value) {
+                return value->Int32Value();
+            }
+        };
+
+        template <> struct _marshalImp<float> {
+            static inline float convert (v8::Handle<v8::Value>& value) {
+                return float( value->NumberValue() );
+            }
+        };
+
+        glm::vec2   _marshalGlmVec2(v8::Handle<v8::Value>& value);
+        template <> struct _marshalImp<glm::vec2 > {
+            static inline glm::vec2  convert (v8::Handle<v8::Value>& value) {
+                return _marshalGlmVec2(value);
+            }
+        };
+
+        glm::vec3   _marshalGlmVec3(v8::Handle<v8::Value>& value);
+        template <> struct _marshalImp<glm::vec3> {
+            static inline glm::vec3 convert (v8::Handle<v8::Value>& value) {
+                return _marshalGlmVec3(value);
+            }
+        };
+
+        lx0::lxvar  _marshalLxVar(v8::Handle<v8::Value>& value);
+        template <> struct _marshalImp<lx0::lxvar> {
+            static inline lx0::lxvar convert (v8::Handle<v8::Value>& value) {
+                return _marshalLxVar(value);
+            }
+        };
+        
+    }
+
+    template <typename T> T _marshal2(v8::Handle<v8::Value>& value) { return T(); }
+    
+    template <> inline  std::string _marshal2<std::string> (v8::Handle<v8::Value>& value) {
+        lx_check_error( value->IsString() );
+        return *v8::String::AsciiValue(value);  
+    }    
+
     // --------------------------------------------------------------------- //
     //! Utility class for converting JS objects to and from native C++ types
     /*
@@ -219,7 +289,7 @@ namespace lx0 { namespace core { namespace v8bind
         operator glm::vec3 ();
         operator lxvar ();
 
-        template <typename T>
+         template <typename T>
         T* pointer ()
         {
             using namespace v8;
