@@ -74,6 +74,9 @@ var HalfEdgeMesh = (function () {
             this._faces[fi].edge = edges[0];
         }
 
+        //
+        // O(N^2) algorithm here: we could do better.
+        //
         var edges = this._edges.slice(0);
         for (var i = 0; i < edges.length; i += 2) {
             for (var j = i + 1; j < edges.length; ++j) {
@@ -115,21 +118,117 @@ var HalfEdgeMesh = (function () {
                 throw "Edge vertex incorrect";
             }
         }
-    }
+    };
+    
+    //
+    // Interpolates outward from the half-edge's base vertex.
+    //
+    // A value of 0 returns the position of the base vertex; a 
+    // value of 1 will be a duplicate of the position of the 
+    // opposing vertex.
+    //
+    Edge.prototype.interpolatePosition = function (t) {
+      var v = this.position;
+      var u = this.opposite.position;
+      var s = (1 - t);
+      return [
+        v[0] * s + u[0] * t,
+        v[1] * s + u[1] * t,
+        v[2] * s + u[2] * t,
+      ]; 
+    };
+    
+    //
+    // Iterate all half-edges that have this vertex as a base.
+    //
+    Vertex.prototype.iterateEdges = function (f) {
+        var edge = this.edge;
+        do {
+            f(edge);
+            edge = edge.opposite.next;
+        } while (edge != this.edge);
+    };
+    
+    //
+    // Iterate the vertices of a face in CCW order.
+    //    
+    Face.prototype.iterateVertices = function(f)
+    {
+        var edge = this.edge;
+        do {
+            f(edge.vertex);
+            edge = edge.next;
+        } while (edge != this.edge);
+    };
 
     HalfEdgeMesh.prototype.iterateFaces = function (f) {
         for (var i = 0; i < this._faces.length; ++i) {
             f(this._faces[i]);
         }
-    }
+    };
+    
+    
+    //
+    // WIP
+    // 
+    // Take a vertex and "smooth" the corner by creating a face at 
+    // that vertex.  
+    //
+    HalfEdgeMesh.prototype.smoothVertex = function (vertex, amount) {
+            
+        var vertices = [];
+        var vertexEdges = [];
+        
+        // Create the new vertices
+        vertex.iterateEdges(function(edge) {
+            vertexEdges.push(edge);
+            
+            var p = edge.interpolatePosition(amount);
+            var vertex = new Vertex(p[0], p[1], p[2]);           
+            vertices.push(vertex);
+        });
+        
+        //
+        // Create the edges
+        //        
+        var faceEdges = [];
+        var stitchEdges = [];        
+        for (var i = 0; i < vertices.length; ++i) {
+            faceEdges.push(new Edge());
+            stitchEdges.push(new Edge());
+        }
 
-    HalfEdgeMesh.prototype.iterateFaceVertices = function (face, f) {
-        var edge = face.edge;
-        do {
-            f(edge.vertex);
-            edge = edge.next;
-        } while (edge != face.edge);
-    }
+        //
+        // Create the face
+        //
+        var face = new Face();       
+        
+        //
+        // Link everything up
+        //
+        face.edge = faceEdges[0];
+        
+        for (var i = 0; i < vertices.length; ++i) {
+            var j = (i + 1) % vertices.length;
+
+            faceEdges[i].face = face;
+            faceEdges[i].vertex = vertices[i];
+            faceEdges[i].next = faceEdges[j];
+            faceEdges[i].opposite = stitchEdges[i];
+            
+            stitchEdges[i].face = vertexEdges[j].face;
+            stitchEdges[i].vertex = vertices[j];
+            stitchEdges[i].next = vertexEdges[i];
+            stitchEdges[i].opposite = faceEdges[i];
+
+            vertexEdges[i].face.vertex = vertices[i];                                 
+            vertexEdges[i].vertex = vertices[i];
+            vertexEdges[i].opposite.next = stitchEdges[i];
+            
+            vertices[i].edge = vertexEdges[i];
+        }
+        
+    };
 
     return HalfEdgeMesh;
 })();
@@ -160,7 +259,7 @@ HalfEdgeMesh.prototype.createQuadMesh = function () {
 
     h.iterateFaces(function (face) {
         var indices = [];
-        h.iterateFaceVertices(face, function (v) {
+        face.iterateVertices(function (v) {
             indices.push(v._index);
         });
         m.addFace.apply(m, indices);
