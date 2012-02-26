@@ -707,7 +707,8 @@ RasterizerGL::createQuadList (std::vector<unsigned short>& quadIndices,
 {
     check_glerror();
 
-    lx_check_error(quadIndices.size() == faceFlags.size() * 4, 
+    lx_check_error(!positions.empty(), "Invalid request to create empty quad list");
+    lx_check_error(quadIndices.size() == faceFlags.size() * 4 || faceFlags.empty(), 
         "Expected a single flag per quad.  Count mismatch (%u indicies, %u flags).",
         quadIndices.size(), faceFlags.size());
 
@@ -751,7 +752,7 @@ RasterizerGL::createQuadList (std::vector<unsigned short>& quadIndices,
     GLuint texFlags;
     GLuint faceCount;
 
-    if (faceFlags.size() <= 2048)
+    if (!faceFlags.empty() && faceFlags.size() <= 2048)
     {
         std::vector<lx0::uint8> flags(faceFlags.size() * 2);
         for (size_t i = 0; i < faceFlags.size(); ++i)

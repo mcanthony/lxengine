@@ -108,7 +108,8 @@ public:
         mProto  = mTempl->PrototypeTemplate();        
 
         // Internal Field 0 = pointer to the native object
-        mObject->SetInternalFieldCount(1);
+        // Internal Field 1 = typeof(T).hash_code() OR "full::typename"
+        mObject->SetInternalFieldCount(2);
     }
 
     void constant (const char* name, lx0::lxvar value)
@@ -156,72 +157,6 @@ protected:
     Handle<Template>         mProto;      
 };
     
-//===========================================================================//
-//   L O C A L   F U N C T I O N S
-//===========================================================================//
-
-namespace lx0 { namespace core { namespace v8bind
-{
-            template <typename T> T _marshal2(v8::Handle<v8::Value>& value);
-
-            template <> glgeom::primitive_buffer _marshal2<glgeom::primitive_buffer> (v8::Handle<v8::Value>& value) {
-                
-                lx_check_error (value->IsObject());
-                v8::Handle<v8::Object> obj( v8::Handle<v8::Object>::Cast(value) );
-
-                //
-                // If it has an internal field then, by convention, we assume the 
-                // internal field holds a raw pointer to a native C++ object and
-                // make a copy of that object
-                //
-                if (obj->InternalFieldCount() == 1)
-                {
-                    v8::Local<v8::External> wrap = v8::Local<v8::External>::Cast(obj->GetInternalField(0));
-                    auto pNative = reinterpret_cast<glgeom::primitive_buffer*>( wrap->Value() );
-                    return *pNative;
-                }
-                else 
-                {
-                    //
-                    // Otherwise, we assume this is a JSON description of a primitive_buffer and convert manually
-                    //
-
-                    // Do an intermediate conversion to an lxvar for convenience; less efficient, but easier.
-                    lx0::lxvar json = _marshal(value);
-                    
-                    const int faceCount = json["faces"].size();
-                    const int vertexCount = json["vertices"].size();
-
-                    glgeom::primitive_buffer prim;
-                    prim.type = "quadlist";     // TODO: temporary assumption
-                    
-                    prim.vertex.positions.reserve(vertexCount);
-                    prim.vertex.normals.reserve(vertexCount);                    
-                    for (int i = 0; i < vertexCount; ++i)
-                    {
-                        lxvar v = json["vertices"][i];
-                        prim.vertex.positions.push_back( v["position"].convert() );
-                        prim.vertex.normals.push_back( v["normal"].convert() );
-                    }
-
-                    prim.indices.reserve(faceCount * 4);
-                    for (int i = 0; i < faceCount; ++i)
-                    {
-                        lxvar f = json["faces"][i];
-                        prim.indices.push_back((int)f[0]);
-                        prim.indices.push_back((int)f[1]);
-                        prim.indices.push_back((int)f[2]);
-                        prim.indices.push_back((int)f[3]);
-                    }
-
-                    return prim;
-                }
-            }
-
-        }
-    }
-}
-
 //===========================================================================//
 //   L O C A L   F U N C T I O N S
 //===========================================================================//
@@ -384,7 +319,18 @@ namespace
     construct_Engine ()
     {
         V8Class c;
-        c.function("loadDocument",  _genericR1<lx0::DocumentPtr, lx0::Engine, std::string, &lx0::Engine::loadDocument>);
+        c.function("loadDocument",  [](const v8::Arguments& args) -> v8::Handle<v8::Value> {
+            auto pEngine = _nativeThis<lx0::Engine>(args);
+            std::string filename = _marshal(args[0]);
+
+            lx0::DocumentPtr spDocument = pEngine->loadDocument(filename);
+            void addLxDOMtoContext (lx0::DocumentPtr spDocument);
+            addLxDOMtoContext(spDocument);
+
+            return _marshal(spDocument);
+        });
+
+        //_genericR1<lx0::DocumentPtr, lx0::Engine, std::string, &lx0::Engine::loadDocument>);
         c.function("sendEvent",     _genericV1<lx0::Engine, std::string, &lx0::Engine::sendEvent>);
         c.function("loadPlugin",    _genericV1<lx0::Engine, std::string, &lx0::Engine::loadPlugin>);
         return c.getConstructor();

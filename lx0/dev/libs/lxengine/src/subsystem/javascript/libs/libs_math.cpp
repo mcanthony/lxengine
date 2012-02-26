@@ -345,7 +345,7 @@ Handle<v8::Object> create_javascript_math()
     //
     Handle<FunctionTemplate>    templ( FunctionTemplate::New() );
     Handle<ObjectTemplate>      objInst( templ->InstanceTemplate() );
-    objInst->SetInternalFieldCount(1);
+    objInst->SetInternalFieldCount(2);
     //obj->SetInternalField(0, External::New(new Math));
 
     Handle<Template> proto_t( templ->PrototypeTemplate() );

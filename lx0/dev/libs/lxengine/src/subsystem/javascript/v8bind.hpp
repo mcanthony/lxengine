@@ -51,7 +51,7 @@ namespace lx0 { namespace core { namespace v8bind
     namespace detail
     {
         template <typename T>
-        void _releaseSharedPtr (v8::Persistent<v8::Value> persistentObj, void* pData)
+        void _releaseSharedPtr (v8::Persistent<v8::Value> persistent, void* pData)
         {        
             //
             // Assume this function is used exclusively by _wrapSharedPtr() and thus
@@ -60,12 +60,13 @@ namespace lx0 { namespace core { namespace v8bind
             // should be disposed when the JS object is disposed in order to keep the
             // reference count on the native object correct.
             //
-            auto pspNative = reinterpret_cast<std::shared_ptr<T>*>(pData);
+            v8::Handle<v8::Object> obj( v8::Handle<v8::Object>::Cast(persistent) );
+            auto pspNative = reinterpret_cast<std::shared_ptr<T>*>( obj->GetPointerFromInternalField(0) );
             delete pspNative;
         
             // Manually dispose of the Persistent handle
-            persistentObj.Dispose();
-            persistentObj.Clear();
+            persistent.Dispose();
+            persistent.Clear();
         }
     }
 
@@ -88,15 +89,19 @@ namespace lx0 { namespace core { namespace v8bind
         // (i.e. both reading the internal field and then dereferencing the shared pointer)
         // on every method that needs the native pointer.
         //
+        size_t hashCode = typeid(T).hash_code();
+
         v8::Handle<v8::Object> obj = ctor->NewInstance();
-        obj->SetInternalField(0, v8::External::New(sharedPtr.get()));
+        obj->SetPointerInInternalField(0, new std::shared_ptr<T>(sharedPtr));
+        obj->SetPointerInInternalField(1, reinterpret_cast<void*>(hashCode));
+
 
         // Then store a new shared_ptr as the data for the MakeWeak callback which will be
         // deleted when the JS object is garbage collected.  This will ensure handle the 
         // reference counting is correctly synchronized.
         //
         v8::Persistent<v8::Object> persistentObj( v8::Persistent<v8::Object>::New(obj));
-        persistentObj.MakeWeak(new std::shared_ptr<T>(sharedPtr), detail::_releaseSharedPtr<T>);
+        persistentObj.MakeWeak(nullptr, detail::_releaseSharedPtr<T>);
 
         return persistentObj;
     }
@@ -278,6 +283,7 @@ namespace lx0 { namespace core { namespace v8bind
 
         operator v8::Handle<v8::Value> ()   { return mValue; }
         operator v8::Handle<v8::Function> (){ return v8::Handle<v8::Function>::Cast(mValue); }
+        operator v8::Handle<v8::Object> ()  { return v8::Handle<v8::Object>::Cast(mValue); }
         operator std::string ()             
         {
             lx_check_error( mValue->IsString() );
@@ -299,7 +305,7 @@ namespace lx0 { namespace core { namespace v8bind
             // the V8 object.  This is the convention in LxEngine, but is not 
             // necessarily true in all uses of V8.
             Handle<Object> obj( Handle<Object>::Cast(mValue) );
-            lx_check_error(obj->InternalFieldCount() == 1);
+            lx_check_error(obj->InternalFieldCount() == 2);
             Local<External> wrap = Local<External>::Cast(obj->GetInternalField(0));
         
             // Assume the caller has done proper type checking and simply cast
@@ -312,6 +318,18 @@ namespace lx0 { namespace core { namespace v8bind
         v8::Handle<v8::Value> mValue;
     };
 
+    template <typename NativeType>
+    static std::shared_ptr<NativeType>*
+    _internalPointer (v8::Handle<v8::Object> obj)
+    {
+        lx_check_error(obj->InternalFieldCount() == 2);
+                
+        auto pspNative = reinterpret_cast<std::shared_ptr<NativeType>*>( obj->GetPointerFromInternalField(0) );
+        size_t hashCode = reinterpret_cast<size_t>( obj->GetPointerFromInternalField(1) );
+        lx_check_error(typeid(NativeType).hash_code() == hashCode);
+
+        return pspNative;
+    }
 
     template <typename NativeType, typename Source>
     static NativeType*
@@ -325,14 +343,7 @@ namespace lx0 { namespace core { namespace v8bind
         // verify these assumptions at runtime, so this is a somewhat dangerous function.
         //
         v8::Local<v8::Object> self = args.Holder();
-
-        lx_check_error(self->InternalFieldCount() == 1);
-        v8::Local<v8::External> wrap = v8::Local<v8::External>::Cast(self->GetInternalField(0));
-        lx_check_error(!wrap.IsEmpty(), 
-            "Internal field of Javascript object is null.  Is this a valid wrapped object?");
-        
-        NativeType* pThis = reinterpret_cast<NativeType*>( wrap->Value() );
-        return pThis;
+        return _internalPointer<NativeType>(self)->get();
     }
 
     /*!

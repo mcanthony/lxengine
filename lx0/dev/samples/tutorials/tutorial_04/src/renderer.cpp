@@ -26,11 +26,62 @@
 */
 //===========================================================================//
 
+#include <boost/algorithm/string.hpp>
+
 #include <lx0/lxengine.hpp>
 #include <lx0/subsystem/rasterizer.hpp>
 #include <lx0/subsystem/shaderbuilder.hpp>
+#include <lx0/subsystem/javascript.hpp>
 #include <lx0/util/blendload.hpp>
 #include <lx0/util/misc.hpp>
+
+#include <v8/v8.h>
+#include "../../../libs/lxengine/src/subsystem/javascript/v8bind.hpp"
+
+#include <glgeom/ext/primitive_buffer.hpp>
+#include <lx0/util/misc/lxvar_convert.hpp>
+
+
+//===========================================================================//
+//   L O C A L   F U N C T I O N S
+//===========================================================================//
+
+namespace lx0 { namespace core { namespace lxvar_ns { namespace detail {
+
+    void _convert(lxvar& json, glgeom::primitive_buffer& prim)
+    {
+        lx_check_error(json["_meshType"].as<std::string>() == "QuadMesh");
+
+        const int faceCount = json["_faces"].size();
+        const int vertexCount = json["_vertices"].size();
+
+        prim.type = "quadlist";     // TODO: temporary assumption
+                    
+        prim.vertex.positions.reserve(vertexCount);
+        prim.vertex.normals.reserve(vertexCount);                    
+        for (int i = 0; i < vertexCount; ++i)
+        {
+            lxvar v = json["_vertices"][i];
+            lxvar n = json["_normals"][i];
+            lxvar c = json["_colors"][i];
+            prim.vertex.positions.push_back( v.convert() );
+            //prim.vertex.normals.push_back( n.convert() );
+            //prim.vertex.colors.push_back( c.convert() );
+        }
+
+        prim.indices.reserve(faceCount * 4);
+        for (int i = 0; i < faceCount; ++i)
+        {
+            lxvar f = json["_faces"][i];
+            prim.indices.push_back((int)f[0]);
+            prim.indices.push_back((int)f[1]);
+            prim.indices.push_back((int)f[2]);
+            prim.indices.push_back((int)f[3]);
+        }
+
+    }
+
+}}}}
 
 //===========================================================================//
 //   R E N D E R E R
@@ -154,7 +205,7 @@ protected:
 
         if (config.find("model_filename").is_defined())
         {
-            _addGeometry(config["model_filename"]);
+            //_addGeometry(config["model_filename"]);
         }
 
         if (config.find("shader_filename").is_defined())
@@ -181,7 +232,7 @@ protected:
         //
         auto vGeometry = spDocument->getElementsByTagName("Geometry");
         for (auto it = vGeometry.begin(); it != vGeometry.end(); ++it)
-            _processGeometry(*it);
+            _processGeometry(spDocument, *it);
 
         // And once more for <Light> elements
         //
@@ -208,13 +259,13 @@ protected:
         _addMaterial(material.uniqueName, material.source, material.parameters);
     }
 
-    void _processGeometry (lx0::ElementPtr spElem)
+    void _processGeometry (lx0::DocumentPtr spDocument, lx0::ElementPtr spElem)
     {
         //
         // Extract the data from the DOM
         //
         std::string sourceFilename = spElem->attr("src").as<std::string>();
-        _addGeometry(sourceFilename);
+        _addGeometry(spDocument, sourceFilename);
     }
 
     void _processLight (lx0::ElementPtr spElem)
@@ -234,6 +285,8 @@ protected:
     //
     lx0::CameraPtr _createCamera (const glgeom::abbox3f& bbox)
     {
+        lx_check_error(!bbox.empty());
+
         const glgeom::vector3f viewDirection(-1, 2, -1.5f);
         const float            viewDistance (bbox.diagonal() * .9f);
 
@@ -249,11 +302,43 @@ protected:
         mMaterials.push_back(spMaterial);
     }
 
-    void _addGeometry (const std::string& modelFilename)
+    void _addGeometry (lx0::DocumentPtr spDocument, const std::string& filename)
     {
-        lx_message("Loading '%1%'", modelFilename);
-        lx0::GeometryPtr spModel = lx0::geometry_from_blendfile(mspRasterizer, modelFilename.c_str());
-        mGeometry.push_back(spModel);
+        if (boost::iends_with(filename, ".blend"))
+        {
+            lx_message("Loading Blender model '%1%'", filename);
+            lx0::GeometryPtr spModel = lx0::geometry_from_blendfile(mspRasterizer, filename.c_str());
+            mGeometry.push_back(spModel);
+        }
+        else if (boost::iends_with(filename, ".js"))
+        {
+            lx_message("Loading geometry script '%1%'", filename);
+
+            auto spJavascriptDoc = spDocument->getComponent<lx0::IJavascriptDoc>();
+            
+            //
+            // The result of the script is converted to an lxvar as an intermediate step.  This is
+            // a bit inefficient; but since V8 is linked to as a static library and this plug-in is
+            // not the same as the module as the EXE, mixing V8 between this module and the EXE will
+            // cause problems.
+            //
+            auto source = lx0::string_from_file(filename);     
+            lx0::lxvar result = spJavascriptDoc->run(source);
+
+            if (result.is_defined())
+            {
+                glgeom::primitive_buffer primitive = result.convert();
+                
+                glgeom::abbox3f bbox;
+                glgeom::compute_bounds(primitive, bbox);               
+
+                auto spModel = mspRasterizer->createQuadList(primitive.indices, primitive.vertex.positions);
+                spModel->mBBox = bbox;
+                mGeometry.push_back(spModel);
+            }
+            else
+                throw lx_error_exception("Script failure!");
+        }
     }
 
     lx0::ShaderBuilder            mShaderBuilder;

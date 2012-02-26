@@ -57,11 +57,10 @@ namespace lx0
                     auto dtor = [&]() -> void { delete pspObject; };
                     _addObject(name, typeid(T).hash_code(), spObject.get(), dtor);
                 }
-                virtual void        addObject (const char* name, void* pointerToHandleToObject) = 0;
+                virtual void        addObject       (const char* name, void* pointerToHandleToObject) = 0;
 
                 //! Executes a string of Javascript code in the context of the Document
-                virtual lx0::lxvar  run     (const std::string& source) = 0;
-
+                virtual lx0::lxvar  run             (const std::string& source) = 0;
                 virtual void        runInContext        (std::function<void(void)> func) = 0;
 
                 template <typename T>

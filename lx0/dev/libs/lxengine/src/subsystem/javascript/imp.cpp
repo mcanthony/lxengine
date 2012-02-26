@@ -62,119 +62,6 @@ namespace {
     using v8::Object;
 
     //===========================================================================//
-    // Local Helpers
-    //===========================================================================//
-
-
-    //-----------------------------------------------------------------------//
-    //! Wrap a native object that does not have reference counting
-    /*!
-        Stores the pointer to the native object in the "0" internal field of
-        the JS object.
-
-        \param ctor         JS Function for creating a JS object that will
-            wrap the native object
-
-        \param pNative      Pointer to the native object
-        
-        \param nativeBytes  The approximate weight of the native object, which
-            the Javascript garbage collector will use as a hint for when to
-            collect the object.
-     */
-    static v8::Handle<v8::Object>
-    _wrapObject (v8::Handle<v8::Function>& ctor, void* pNative, size_t nativeBytes = 0)
-    {
-        // Give V8 a hint about the native object size so that it invokes the garbage
-        // collector at the right time.
-        if (nativeBytes > 0)
-        {
-            #ifdef _DEBUG
-            // Put more pressure on the GC in _DEBUG
-            nativeBytes *= 32;          
-            #endif
-
-            V8::AdjustAmountOfExternalAllocatedMemory(nativeBytes);
-        }
-
-        // Allocate the JS object wrapper and assign the native object to its
-        // internal field.
-        v8::Handle<v8::Object> obj = ctor->NewInstance();
-        obj->SetInternalField(0, v8::External::New(pNative));
-
-        return obj;
-    }
-
-    //=========================================================================
-    // V8 Ref-Counted Object Wrapper
-    //=========================================================================
-
-    class _SharedObjectWrapper
-    {
-    public:
-        virtual ~_SharedObjectWrapper() {}
-    };
-
-    template <typename T>
-    class _SharedObjectWrapperImp : public _SharedObjectWrapper
-    {
-    public:
-        _SharedObjectWrapperImp(T& t) : mValue(t) {}
-        T mValue;
-    };
-
-    //-----------------------------------------------------------------------//
-    //! Wrap a native object that needs to be reference counted.
-    /*!
-        The purpose of this method is to maintain a native shared pointer to the object as
-        long as there is a JS reference to the object.  This ensures the JS and native 
-        reference counts on the shared object stay in sync.
-
-        The wrapper on shared object works as follows:
-
-        1) Create a PersitentHandle<>.  This has a method MakeWeak(), which takes a callback
-           function which is called when the V8 garbage collector is releasing the JS object.
-           This is where the native object can be freed.
-
-        2) Store a pointer to a new object that holds the shared reference in the parameters
-           field of the PersistentHandle<> callback.
-
-        3) Set up a generic callback function that deletes the wrapper object when called;
-           this implicitly will release the shared reference owned by that object and thus
-           handle reference counting on that object correctly.
-
-        The advantange of this approach is that it's simple.  The disadvantage is it requires
-        an additional heap object for every persistent, shared object.
-     */
-    template <typename T>
-    static v8::Persistent<v8::Object>
-    _wrapSharedObject (v8::Handle<v8::Function>& ctor, T sharedPtr, size_t nativeBytes)
-    {
-        struct L
-        {
-            static void releaseObj (Persistent<Value> persistentObj, void* pData)
-            {
-                // Release the native object by deleteing the object holding the
-                // shared reference.
-                auto pShared = reinterpret_cast<_SharedObjectWrapper*>(pData);
-                delete pShared;
-        
-                // Clear out the object fields.  Technically not necessary, but just in case.
-                Local<Object> obj( Object::Cast(*persistentObj) );
-                obj->SetInternalField(0, Null());
-
-                // Manually dispose of the PersistentHandle
-                persistentObj.Dispose();
-                persistentObj.Clear();
-            }
-        };
-
-        Persistent<Object> obj( Persistent<Object>::New( _wrapObject(ctor, sharedPtr.get(), nativeBytes) ));
-        obj.MakeWeak(new _SharedObjectWrapperImp<T>(sharedPtr), L::releaseObj);
-
-        return obj;
-    }
-
-    //===========================================================================//
     // Engine Context
     //===========================================================================//
 
@@ -246,7 +133,7 @@ namespace {
         Handle<FunctionTemplate> templ( FunctionTemplate::New() );
         
         Handle<ObjectTemplate> objInst( templ->InstanceTemplate() );
-        objInst->SetInternalFieldCount(1);
+        objInst->SetInternalFieldCount(2);
 
         Handle<Template> proto_t( templ->PrototypeTemplate() );
         proto_t->Set("debug",               FunctionTemplate::New(W::debug));
@@ -254,7 +141,8 @@ namespace {
 
         Handle<Function> ctor( templ->GetFunction() );
         Handle<v8::Object> obj( ctor->NewInstance() );
-        obj->SetInternalField(0, External::New(this));
+        obj->SetPointerInInternalField(0, new std::shared_ptr<JsEngineContext>(this));
+        obj->SetPointerInInternalField(1, reinterpret_cast<void*>( typeid(JsEngineContext).hash_code() ) );
 
         context->Global()->Set(String::New("engine"), obj);
     }
@@ -445,7 +333,7 @@ namespace {
                 HandleScope handle_scope;
                 Handle<Object> recv = mContext->Global();
                 Handle<Value> callArgs[1];
-                callArgs[0] = _wrapObject(this->mKeyEventCtor, &e);
+                callArgs[0] = _marshal(std::shared_ptr<KeyEvent>(new KeyEvent(e)));
                 mWindowOnKeyDown->Call(recv, 1, callArgs);
             }
         };
@@ -546,7 +434,7 @@ namespace {
     }
 
     void        
-    JavascriptDoc::_addObject (const char* objectName, size_t hash, void* pObject, std::function<void()> dtor)
+    JavascriptDoc::_addObject (const char* objectName, size_t hash, void* pspObject, std::function<void()> dtor)
     {
         //
         // First, we need to allocate a JS object of the right type.  The JS wrapper 
@@ -557,7 +445,8 @@ namespace {
         //
         v8::Persistent<v8::Function> ctor = _marshalActiveConstructorMap->getFromHash(hash);
         v8::Handle<v8::Object> obj = ctor->NewInstance();
-        obj->SetInternalField(0, v8::External::New(pObject));
+        obj->SetPointerInInternalField(0, pspObject);
+        obj->SetPointerInInternalField(1, reinterpret_cast<void*>(hash));
         
         //
         // Now, to keep the reference counting in sync, we create a Persistent handle
@@ -605,30 +494,84 @@ namespace {
         mContext->Global()->Set(String::New(name), handle);
     }
 
+    static const char* ToCString(const v8::String::Utf8Value& value) 
+    {
+     return *value ? *value : "<string conversion failed>";
+    }
+
+    //
+    // Adapted from: http://v8.googlecode.com/svn/trunk/samples/lineprocessor.cc
+    //
+    static void reportException(v8::TryCatch* try_catch) 
+    {
+        v8::HandleScope handle_scope;
+        v8::String::Utf8Value exception(try_catch->Exception());
+
+        const char* exception_string = ToCString(exception);
+
+        v8::Handle<v8::Message> message = try_catch->Message();
+        if (message.IsEmpty()) 
+        {
+            // V8 didn't provide any extra information about this error; just
+            // print the exception.
+            lx_message("V8 Exception: %s", exception_string);
+        } 
+        else 
+        {
+            // Print (filename):(line number): (message).
+            v8::String::Utf8Value filename(message->GetScriptResourceName());
+            const char* filename_string = ToCString(filename);
+            int linenum = message->GetLineNumber();
+            
+            lx_message("V8 Exception: %s:%i: %s\n", filename_string, linenum, exception_string);
+            
+            // Print line of source code.
+            v8::String::Utf8Value sourceline(message->GetSourceLine());
+            const char* sourceline_string = ToCString(sourceline);
+            
+            lx_message("%s", sourceline_string);
+
+            std::string s;
+            int start = message->GetStartColumn();
+            for (int i = 0; i < start; i++) 
+              s += " ";
+            int end = message->GetEndColumn();
+            for (int i = start; i < end; i++) 
+              s += "^";
+            lx_message("%s", s);
+        }
+    }
+
     /*!
         Run the associated source text within the context of the given document.
      */
     lx0::lxvar 
     JavascriptDoc::run (const std::string& text)
-    {
+    {      
         Context::Scope context_scope(mContext);
-
         HandleScope    handle_scope;
+
         Handle<String> source = String::New(text.c_str());
+        Handle<Value>  result;
+       
+        //
+        // Compile
+        //
+        TryCatch trycatch;
         Handle<Script> script = Script::Compile(source);
 
         if (script.IsEmpty())
         {
+            reportException(&trycatch);
             throw lx_error_exception("Javascript script failed to compile!");
-            return lxvar::undefined();
+            result = v8::Undefined();
         }
         else
         {
             // Run the script
             TryCatch trycatch;
             
-            lxvar         lxresult;
-            Handle<Value> result = script->Run();
+            result = script->Run();
             
             if (result.IsEmpty()) 
             {  
@@ -637,14 +580,10 @@ namespace {
                 String::AsciiValue exception_str(exception);
                 lx_warn("Javascript V8 Exception: %s", *exception_str);
             }
-            else
-            {
-                lxresult = _marshal(result);
-            }
-
-            return lxresult;
         }
+        return _marshal(result);
     }
+    
 
     void  JavascriptDoc::runInContext (std::function<void(void)> func)
     {
@@ -829,7 +768,7 @@ namespace {
         //
         Handle<FunctionTemplate> templ( FunctionTemplate::New() );
         Handle<ObjectTemplate> objInst( templ->InstanceTemplate() );
-        objInst->SetInternalFieldCount(1);
+        objInst->SetInternalFieldCount(2);
 
         objInst->SetAccessor(String::New("onKeyDown"), Window::get_onKeyDown, Window::set_onKeyDown, External::New(this));
 
@@ -880,7 +819,7 @@ namespace {
                 // reference to object open as long as there is a JS reference to the object.
                 // In other words, it keeps the JS and native reference counting in sync.
                 //
-                return _wrapSharedObject(pContext->mElementCtor, spElem, sizeof(Element) * 2);
+                return _marshal(spElem);
             }
 
             /*
@@ -900,7 +839,7 @@ namespace {
                 if (!spElem)
                     return Undefined();
                 else
-                    return _wrapObject(pContext->mElementCtor, spElem.get());
+                    return _marshal(spElem);
             }
 
             static v8::Handle<v8::Value> 
@@ -915,7 +854,7 @@ namespace {
                 auto elems = pDoc->getElementsByTagName(tag);
                 Local<Array> results = Array::New(elems.size()); 
                 for (int i = 0; i < int(elems.size()); ++i)
-                    results->Set(i, _wrapObject(pContext->mElementCtor, elems[i].get()) );
+                    results->Set(i, _marshal(elems[i]) );
                 
                 return results;
             }
@@ -939,7 +878,7 @@ namespace {
         // (http://code.google.com/p/v8/issues/detail?id=262).
         //
         Handle<ObjectTemplate> objInst( templ->InstanceTemplate() );
-        objInst->SetInternalFieldCount(1);
+        objInst->SetInternalFieldCount(2);
         objInst->SetAccessor(String::New("onUpdate"), L::get_onUpdate, L::set_onUpdate, External::New(this));
 
         // Access the Javascript prototype for the function - i.e. my_func.prototype - 
@@ -979,7 +918,7 @@ namespace {
             lxvar v = pThis->find(prop.c_str());
 
             std::shared_ptr<lxvar> spWrap(new lxvar(v));
-            return _wrapSharedObject(pContext->mLxVarCtor, spWrap, 0);
+            return _marshal(spWrap);
         }
 
         Handle<Value> 
@@ -1042,7 +981,7 @@ namespace {
             if (v.isSharedType())
             {
                 std::shared_ptr<lxvar> spWrap(new lxvar(v));
-                return _wrapSharedObject(pContext->mLxVarCtor, spWrap, 0);
+                return _marshal(spWrap);
             }
             else
                 return _marshal(v);
@@ -1068,7 +1007,7 @@ namespace {
 
         // Create an anonymous type which will be used for the lxvar wrapper
         Handle<ObjectTemplate> objInst( templ->InstanceTemplate() );
-        objInst->SetInternalFieldCount(1);
+        objInst->SetInternalFieldCount(2);
         objInst->SetNamedPropertyHandler(W::getNamedProperty, W::setNamedProperty, 0, 0, W::enumerateNamedProperties, External::New(this));
         objInst->SetIndexedPropertyHandler(W::getIndexedProperty, W::setIndexedProperty, 0, 0, W::enumerateIndexedProperties, External::New(this));
 
@@ -1119,7 +1058,7 @@ namespace {
             auto      pContext  = _nativeData<JavascriptDoc>(info);
             Element* pThis      = _nativeThis<Element>(info);
 
-            return _wrapObject(pContext->mElementCtor, pThis->parent().get());
+            return _marshal(pThis->parent());
         }
 
         static Handle<Value>
@@ -1139,7 +1078,7 @@ namespace {
                 pursued - is this wrapper actually adding any value or just more code?
                 */
             std::shared_ptr<lxvar> spWrapper(new lxvar(pThis->value().clone()));
-            return _wrapSharedObject(pContext->mLxVarCtor, spWrapper, 0);
+            return _marshal(spWrapper);
         }
 
         static void
@@ -1240,7 +1179,7 @@ namespace {
                     {
                         Context::Scope context_scope(spJDoc->mContext);
                         HandleScope handle_scope;
-                        Handle<Object> recv = _wrapObject(spJDoc->mElementCtor, spElem.get());
+                        Handle<Object> recv = _marshal(spElem);
                         
                         Handle<Value> callArgs[8];
                         size_t i;
@@ -1250,7 +1189,7 @@ namespace {
                             {
                                 lx0::ElementPtr* pspElem = args[i].unwrap3<ElementPtr>();
                                 if (pspElem)
-                                    callArgs[i] = _wrapSharedObject(spJDoc->mElementCtor, *pspElem, sizeof(lx0::ElementPtr));
+                                    callArgs[i] = _marshal(*pspElem);
                                 else
                                 {
                                     lx_warn("Dispatching function call to Javascript with unknown native handle.");
@@ -1283,7 +1222,7 @@ namespace {
 
         // Create an anonymous type which will be used for the Element wrapper
         Handle<ObjectTemplate> objInst( templ->InstanceTemplate() );
-        objInst->SetInternalFieldCount(1);
+        objInst->SetInternalFieldCount(2);
         objInst->SetAccessor(String::New("parentNode"),  W::get_parentNode, 0, External::New(this));
         objInst->SetAccessor(String::New("value"),       W::get_value, W::set_value, External::New(this));
         objInst->SetAccessor(String::New("onUpdate"),    W::get_onUpdate, W::set_onUpdate, External::New(this));
@@ -1342,7 +1281,7 @@ namespace {
 
         // Create an anonymous type which will be used for the Element wrapper
         Handle<ObjectTemplate> objInst( templ->InstanceTemplate() );
-        objInst->SetInternalFieldCount(1);
+        objInst->SetInternalFieldCount(2);
         objInst->SetAccessor(String::New("keyCode"),  L::get_keyCode);
         objInst->SetAccessor(String::New("keyChar"),  L::get_keyChar);
 

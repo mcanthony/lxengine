@@ -1,6 +1,8 @@
 <Document>
   <Library>
-    <!-- Geomtrey -->
+    <!-- Geometry -->
+    <Geometry src="media2/appdata/tutorial_04/cube.js" />
+
     <Geometry src="media2/models/unit_cube-000.blend" />
     <Geometry src="media2/models/unit_hemisphere-000.blend" />
     <Geometry src="media2/models/unit_sphere-000.blend" />
