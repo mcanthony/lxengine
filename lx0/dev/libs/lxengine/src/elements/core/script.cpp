@@ -46,7 +46,9 @@ _runIfScriptElement (ElementPtr spElem)
 {
     if (spElem->tagName() == "Script")
     {
-        std::string language = spElem->attr("language").as<std::string>();
+        std::string language = spElem->attr("language").is_defined() 
+            ? spElem->attr("language").as<std::string>()
+            : "";
         std::string content;
         if (spElem->value().is_defined())
         {

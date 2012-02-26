@@ -1,4 +1,9 @@
 <Document>
+  
+  <Header>
+    <Script src="media2/appdata/tutorial_04/meshlib.js"/>
+  </Header>
+  
   <Library>
     <!-- Geometry -->
     <Geometry src="media2/appdata/tutorial_04/cube.js" />

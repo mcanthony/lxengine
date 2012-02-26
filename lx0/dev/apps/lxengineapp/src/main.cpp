@@ -96,6 +96,7 @@ main (int argc, char** argv)
         if (spEngine->parseCommandLine(argc, argv, "base_directory"))
         {	
             spEngine->attachComponent(lx0::createJavascriptSubsystem());
+            spEngine->attachComponent(lx0::createProcessScriptElement());
 
             std::string baseDir    = spEngine->globals()["base_directory"];
             lx0::lxvar  manifest   = processManifest(baseDir + "/manifest.lx");
