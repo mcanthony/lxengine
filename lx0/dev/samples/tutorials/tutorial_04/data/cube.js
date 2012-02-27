@@ -1,5 +1,7 @@
 (function() {
     var mesh = new HalfEdgeMesh(createBox());
     mesh.integrityCheck();
-    return mesh.createQuadMesh();
+    mesh.smoothVertex(mesh._vertices[6], .25);
+    mesh.integrityCheck();    
+    return mesh.createPolyMesh().createTriMesh();
 })();

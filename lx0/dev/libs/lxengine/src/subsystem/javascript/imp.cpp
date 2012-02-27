@@ -579,6 +579,8 @@ namespace {
                 
                 String::AsciiValue exception_str(exception);
                 lx_warn("Javascript V8 Exception: %s", *exception_str);
+
+                reportException(&trycatch);
             }
         }
         return _marshal(result);

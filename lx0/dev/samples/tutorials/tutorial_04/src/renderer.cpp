@@ -50,33 +50,34 @@ namespace lx0 { namespace core { namespace lxvar_ns { namespace detail {
 
     void _convert(lxvar& json, glgeom::primitive_buffer& prim)
     {
-        lx_check_error(json["_meshType"].as<std::string>() == "QuadMesh");
+        lx_check_error(json["_meshType"].as<std::string>() == "TriMesh");
 
         const int faceCount = json["_faces"].size();
         const int vertexCount = json["_vertices"].size();
 
-        prim.type = "quadlist";     // TODO: temporary assumption
+        prim.type = "trilist";     // TODO: temporary assumption
                     
         prim.vertex.positions.reserve(vertexCount);
         prim.vertex.normals.reserve(vertexCount);                    
         for (int i = 0; i < vertexCount; ++i)
         {
-            lxvar v = json["_vertices"][i];
-            lxvar n = json["_normals"][i];
-            lxvar c = json["_colors"][i];
+            lxvar vertex = json["_vertices"][i];
+            lxvar v = vertex["position"];
+            lxvar n = vertex["normal"];
+            lxvar c = vertex["color"];
             prim.vertex.positions.push_back( v.convert() );
             //prim.vertex.normals.push_back( n.convert() );
             //prim.vertex.colors.push_back( c.convert() );
         }
 
-        prim.indices.reserve(faceCount * 4);
+        prim.indices.reserve(faceCount * 3);
         for (int i = 0; i < faceCount; ++i)
         {
-            lxvar f = json["_faces"][i];
+            lxvar f = json["_faces"][i]["indices"];
             prim.indices.push_back((int)f[0]);
             prim.indices.push_back((int)f[1]);
             prim.indices.push_back((int)f[2]);
-            prim.indices.push_back((int)f[3]);
+            //prim.indices.push_back((int)f[3]);
         }
 
     }
@@ -332,7 +333,7 @@ protected:
                 glgeom::abbox3f bbox;
                 glgeom::compute_bounds(primitive, bbox);               
 
-                auto spModel = mspRasterizer->createQuadList(primitive.indices, primitive.vertex.positions);
+                auto spModel = mspRasterizer->createGeometry(primitive);
                 spModel->mBBox = bbox;
                 mGeometry.push_back(spModel);
             }

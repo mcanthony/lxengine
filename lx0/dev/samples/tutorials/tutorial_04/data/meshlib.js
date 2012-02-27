@@ -1,4 +1,53 @@
 //===========================================================================//
+/*
+                                   LxEngine
+
+    LICENSE
+
+    Copyright (c) 2012 athile@athile.net (http://www.athile.net)
+
+    Permission is hereby granted, free of charge, to any person obtaining a 
+    copy of this software and associated documentation files (the "Software"), 
+    to deal in the Software without restriction, including without limitation 
+    the rights to use, copy, modify, merge, publish, distribute, sublicense, 
+    and/or sell copies of the Software, and to permit persons to whom the 
+    Software is furnished to do so, subject to the following conditions:
+
+    The above copyright notice and this permission notice shall be included in
+    all copies or substantial portions of the Software.
+
+    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+    AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+    LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
+    FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS 
+    IN THE SOFTWARE.
+*/
+//===========================================================================//
+
+
+//===========================================================================//
+// TriMesh
+//===========================================================================//
+
+function TriMesh() {
+    this._meshType = "TriMesh";
+    this._vertices = [];
+    this._faces = [];    
+}
+
+TriMesh.prototype.addVertex = function (x, y, z) {
+    var vertex = { position : [x, y, z] };
+    this._vertices.push(vertex);
+    return vertex;
+}
+TriMesh.prototype.addFace = function(i0,i1,i2)
+{
+    this._faces.push({ indices : [i0,i1,i2] });
+}
+
+//===========================================================================//
 // QuadMesh
 //===========================================================================//
 
@@ -9,19 +58,53 @@ function QuadMesh() {
 }
 
 QuadMesh.prototype.addVertex = function (x, y, z) {
-    this._vertices.push([x, y, z]);
-}
-QuadMesh.prototype.addNormal = function (x, y, z) {
-    if (this._normals === undefined) this._normals = [];
-    this._normals.push([x, y, z]);
-}
-QuadMesh.prototype.addColor = function (x, y, z) {
-    if (this._colors === undefined) this._colors = [];
-    this._colors.push([x, y, z]);
+    var vertex = { position : [x, y, z] };
+    this._vertices.push(vertex);
+    return vertex;
 }
 QuadMesh.prototype.addFace = function(i0,i1,i2,i3)
 {
-    this._faces.push([i0,i1,i2,i3]);
+    this._faces.push({ indices : [i0,i1,i2,i3] });
+}
+
+//===========================================================================//
+// PolyMesh
+//===========================================================================//
+
+function PolyMesh() {
+    this._meshType = "PolyMesh";
+    this._vertices = [];
+    this._faces = [];    
+}
+
+PolyMesh.prototype.addVertex = function (x, y, z) {
+    var vertex = { position : [x, y, z] };
+    this._vertices.push(vertex);
+    return vertex;
+}
+PolyMesh.prototype.addFace = function()
+{
+    var face = { indices : [] };    
+    for (var i = 0; i < arguments.length; ++i)
+        face.indices.push(arguments[i]);
+        
+    this._faces.push(face);
+}
+
+PolyMesh.prototype.iterateVertices = function(f)
+{
+    var vertices = this._vertices.slice(0);
+    for (var i = 0; i < vertices.length; ++i) {
+        f(vertices[i]);
+    }
+}
+
+
+PolyMesh.prototype.iterateFaces = function(f)
+{
+    for (var i = 0; i < this._faces.length; ++i) {
+        f(this._faces[i]);
+    }
 }
 
 //===========================================================================//
@@ -47,14 +130,14 @@ var HalfEdgeMesh = (function () {
     function convertFromQuadMesh(mesh) {
 
         for (var vi = 0; vi < mesh._vertices.length; ++vi) {
-            var v = mesh._vertices[vi];
+            var v = mesh._vertices[vi].position;
             this._vertices.push(new Vertex(v[0], v[1], v[2]));
         }
 
         for (var fi = 0; fi < mesh._faces.length; ++fi) {
             this._faces.push(new Face());
 
-            var face = mesh._faces[fi];
+            var face = mesh._faces[fi].indices;
             var edges = [];
             for (var vi = 0; vi < face.length; ++vi)
                 edges.push(new Edge());
@@ -80,7 +163,9 @@ var HalfEdgeMesh = (function () {
         var edges = this._edges.slice(0);
         for (var i = 0; i < edges.length; i += 2) {
             for (var j = i + 1; j < edges.length; ++j) {
-                if (edges[i].vertex === edges[j].next.vertex) {
+                if (edges[i].vertex === edges[j].next.vertex                
+                    && edges[i].next.vertex === edges[j].vertex) 
+                {
                     edges[i].opposite = edges[j];
                     edges[j].opposite = edges[i];
                     edges[j] = edges[i + 1];
@@ -109,12 +194,19 @@ var HalfEdgeMesh = (function () {
             }
         }
         for (var i = 0; i < this._edges.length; ++i) {
+            if (this._edges[i].opposite == null)
+                throw "Null opposite edge";                
             if (this._edges[i].opposite.opposite !== this._edges[i]) {
-                throw "Edge opposite incorrect";
+                throw "Edge opposite incorrect #" + i;
             }
+            
+            if (this._edges[i].face === this._edges[i].opposite.face)
+                throw "Opposing half edges share same face";            
         }
         for (var i = 0; i < this._vertices.length; ++i) {
-            if (this._vertices[i].edge.vertex !== this._vertices[i] && this._vertices[i].edge.next.vertex !== this._vertices[i]) {
+            if (this._vertices[i].edge.vertex !== this._vertices[i]
+                && this._vertices[i].edge.next.vertex !== this._vertices[i])
+            {
                 throw "Edge vertex incorrect";
             }
         }
@@ -128,8 +220,8 @@ var HalfEdgeMesh = (function () {
     // opposing vertex.
     //
     Edge.prototype.interpolatePosition = function (t) {
-      var v = this.position;
-      var u = this.opposite.position;
+      var v = this.vertex.position;
+      var u = this.opposite.vertex.position;
       var s = (1 - t);
       return [
         v[0] * s + u[0] * t,
@@ -146,7 +238,7 @@ var HalfEdgeMesh = (function () {
         do {
             f(edge);
             edge = edge.opposite.next;
-        } while (edge != this.edge);
+        } while (edge !== this.edge);
     };
     
     //
@@ -159,6 +251,13 @@ var HalfEdgeMesh = (function () {
             f(edge.vertex);
             edge = edge.next;
         } while (edge != this.edge);
+    };
+
+    HalfEdgeMesh.prototype.iterateVertices = function (f) {
+        var vertices = this._vertices.slice(0);
+        for (var i = 0; i < vertices.length; ++i) {
+            f(vertices[i]);
+        }
     };
 
     HalfEdgeMesh.prototype.iterateFaces = function (f) {
@@ -175,7 +274,7 @@ var HalfEdgeMesh = (function () {
     // that vertex.  
     //
     HalfEdgeMesh.prototype.smoothVertex = function (vertex, amount) {
-            
+                    
         var vertices = [];
         var vertexEdges = [];
         
@@ -184,9 +283,19 @@ var HalfEdgeMesh = (function () {
             vertexEdges.push(edge);
             
             var p = edge.interpolatePosition(amount);
-            var vertex = new Vertex(p[0], p[1], p[2]);           
-            vertices.push(vertex);
+            var vert = new Vertex(p[0], p[1], p[2]);           
+            vertices.push(vert);   
         });
+        this._vertices = this._vertices.concat(vertices);
+        
+        for (var i = 0; i < this._vertices.length; ++i)
+        {
+            if (this._vertices[i] === vertex)
+            {
+                this._vertices[i] = this._vertices.pop();
+                break;
+            }
+        }
         
         //
         // Create the edges
@@ -196,12 +305,14 @@ var HalfEdgeMesh = (function () {
         for (var i = 0; i < vertices.length; ++i) {
             faceEdges.push(new Edge());
             stitchEdges.push(new Edge());
-        }
+        }        
+        this._edges = this._edges.concat(faceEdges, stitchEdges);
 
         //
         // Create the face
         //
         var face = new Face();       
+        this._faces.push(face);
         
         //
         // Link everything up
@@ -237,17 +348,17 @@ var HalfEdgeMesh = (function () {
 // Add-Ins
 //===========================================================================//
 
-HalfEdgeMesh.prototype.createQuadMesh = function () {
+HalfEdgeMesh.prototype.createPolyMesh = function () {
     var h = this;
-    var m = new QuadMesh();
+    var m = new PolyMesh();
 
     for (var i = 0; i < h._vertices.length; ++i) {
         var v = h._vertices[i];
         var p = v.position;
 
-        m.addVertex(p[0], p[1], p[2]);
-        m.addNormal(1, 0, 0);
-        m.addColor(1, 1, 1);
+        var vertex = m.addVertex(p[0], p[1], p[2]);
+        vertex.normal = [ 1, 0, 0 ];
+        vertex.color = [ 1, 1, 1 ];
 
         // Create a temporary property on the vertex to allow a lookup table
         // to be built.  
@@ -270,7 +381,33 @@ HalfEdgeMesh.prototype.createQuadMesh = function () {
         delete h._vertices[i]._index;
 
     return m;
-}
+};
+
+
+PolyMesh.prototype.createTriMesh = function() {
+
+    var pmesh = this;
+    var tmesh = new TriMesh();
+
+    pmesh.iterateVertices(function(v) {
+        var p = v.position;
+
+        var vertex = tmesh.addVertex(p[0], p[1], p[2]);
+        vertex.normal = [ 1, 0, 0 ];
+        vertex.color = [ 1, 1, 1 ];
+    });
+    
+    pmesh.iterateFaces(function(face) {
+        var i0 = face.indices[0];
+        for (var i = 2; i < face.indices.length; ++i) {
+            var i1 = face.indices[i - 1];
+            var i2 = face.indices[i];            
+            tmesh.addFace(i0, i1, i2);
+        }
+    });
+
+    return tmesh;
+};
 
 
 //===========================================================================//
