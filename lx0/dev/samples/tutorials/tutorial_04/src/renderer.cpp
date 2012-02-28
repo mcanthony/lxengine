@@ -94,6 +94,7 @@ public:
     Renderer()
         : mCurrentMaterial    (0)
         , mCurrentGeometry    (0)
+        , mbRotate            (true)
     {
     }
 
@@ -162,9 +163,11 @@ public:
         //
         // Always rotate the model on every update
         //
-        mRotation = glm::rotate(mRotation, 1.0f, glm::vec3(0, 0, 1));
-        mspInstance->spTransform = mspRasterizer->createTransform(mRotation);
-
+        if (mbRotate)
+        {
+            mRotation = glm::rotate(mRotation, 1.0f, glm::vec3(0, 0, 1));
+            mspInstance->spTransform = mspRasterizer->createTransform(mRotation);
+        }
         spView->sendEvent("redraw");
     }
 
@@ -193,6 +196,10 @@ public:
             mCurrentMaterial %= mMaterials.size();
 
             mspInstance->spMaterial = mMaterials[mCurrentMaterial];
+        }
+        else if (evt == "toggle_rotation")
+        {
+            mbRotate = !mbRotate;
         }
     }
 
@@ -300,6 +307,7 @@ protected:
     void _addMaterial (std::string uniqueName, std::string source, lx0::lxvar parameters)
     {
         lx0::MaterialPtr spMaterial = mspRasterizer->createMaterial(uniqueName, source, parameters);
+        spMaterial->mWireframe = true;
         mMaterials.push_back(spMaterial);
     }
 
@@ -348,6 +356,7 @@ protected:
     lx0::LightSetPtr              mspLightSet;
     lx0::InstancePtr              mspInstance;
 
+    bool                          mbRotate;
     glm::mat4                     mRotation;
 
     size_t                        mCurrentMaterial;

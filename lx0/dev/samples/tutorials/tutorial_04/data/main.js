@@ -12,6 +12,9 @@ var uiBinding =
             view.sendEvent("next_material");
         if (keyCode == lx0.KC_N)
             view.sendEvent("prev_material");
+            
+        if (keyCode == lx0.KC_R)
+            view.sendEvent("toggle_rotation");            
 
         // Temporary code for testing
         if (keyCode == lx0.KC_ESCAPE)

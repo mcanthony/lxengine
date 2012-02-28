@@ -289,6 +289,7 @@ namespace lx0 { namespace core { namespace v8bind
             lx_check_error( mValue->IsString() );
             return *v8::String::AsciiValue(mValue);  
         }
+        operator bool ()                    { return mValue->BooleanValue(); }
         operator int ()                     { return mValue->Int32Value(); }
         operator float ()                   { return float( mValue->NumberValue() ); }
         operator glm::vec2 ();

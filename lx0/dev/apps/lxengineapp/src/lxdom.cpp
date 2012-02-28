@@ -219,6 +219,17 @@ namespace
         lx.constant("KC_RSHIFT", lx0::KC_RSHIFT);
         lx.constant("KC_COUNT", lx0::KC_COUNT);
 
+        lx.function("assert", [](const v8::Arguments& args) -> v8::Handle<v8::Value> {
+            bool b = _marshal(args[0]);
+            if (!b)
+            {
+                int lineno = args.Callee()->GetScriptLineNumber();
+                lx_message("Failed assert in Javascript script around line %1%", lineno);                
+            }
+            lx_check_error(b);
+            return v8::Undefined();
+        });
+
         lx.function("message", [](const v8::Arguments& args) -> v8::Handle<v8::Value> {
             lx_message("%s", (std::string)_marshal(args[0]));
             return v8::Undefined();
