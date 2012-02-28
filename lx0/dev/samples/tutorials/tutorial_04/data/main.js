@@ -14,7 +14,9 @@ var uiBinding =
             view.sendEvent("prev_material");
             
         if (keyCode == lx0.KC_R)
-            view.sendEvent("toggle_rotation");            
+            view.sendEvent("toggle_rotation");
+        if (keyCode == lx0.KC_W)
+            view.sendEvent("toggle_wireframe");
 
         // Temporary code for testing
         if (keyCode == lx0.KC_ESCAPE)

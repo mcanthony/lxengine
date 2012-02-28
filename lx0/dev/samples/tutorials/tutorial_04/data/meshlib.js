@@ -51,7 +51,9 @@ function vec3_cross(u, v) {
 };
 
 function vec3_normal(u,v,w) {
-    return vec3_cross(vec3_sub(v,u), vec3_sub(w,v));
+    var n = vec3_cross(vec3_sub(v,u), vec3_sub(w,v));	
+	var m = Math.sqrt(n[0] * n[0] + n[1] * n[1] + n[2] * n[2]);
+	return [ n[0] / m, n[1] / m, n[2] / m ];
 };
 
 //===========================================================================//
@@ -428,6 +430,9 @@ var HalfEdgeMesh = (function () {
     
     //
     // Iterate all half-edges that have this vertex as a base.
+	//
+	// The iteration is in *clockwise* order: this is the opposite
+	// of the face orientation, which is assumed to be counter-clockwise.
     //
     Vertex.prototype.iterateEdges = function (f) {
         var edge = this.edge;
@@ -492,7 +497,6 @@ var HalfEdgeMesh = (function () {
         {
             if (this._vertices[i] === vertex)
             {
-				lx0.message("Removing vertex " + i);
                 this._vertices[i] = this._vertices.pop();
                 break;
             }
@@ -513,22 +517,22 @@ var HalfEdgeMesh = (function () {
         // Create the face
         //
         var face = new Face();       
-        this._faces.push(face);
-		
-		for (var i = 0; i < this._faces.length; ++i)
-			this._faces[i]._index = i;
+        this._faces.push(face);		
         
 		//
 		// Integrity check
 		//
-		for (var i = 0; i < vertices.length; ++i) {
-            var j = (i + 1) % vertices.length;
-			var h = (i + vertices.length - 1) % vertices.length;			
-			
-			vertexEdges[i].checkFaceIntegrity();	
-			
-			if (vertexEdges[i].opposite.next !== vertexEdges[j]) throw "E1000";
-			if (vertexEdges[i].opposite.opposite !== vertexEdges[i]) throw "E1001";	
+		if (false)
+		{
+			for (var i = 0; i < vertices.length; ++i) {
+				var j = (i + 1) % vertices.length;
+				var h = (i + vertices.length - 1) % vertices.length;			
+				
+				vertexEdges[i].checkFaceIntegrity();	
+				
+				if (vertexEdges[i].opposite.next !== vertexEdges[j]) throw "E1000";
+				if (vertexEdges[i].opposite.opposite !== vertexEdges[i]) throw "E1001";	
+			}
 		}
 		
         //
@@ -546,14 +550,12 @@ var HalfEdgeMesh = (function () {
             faceEdges[i].opposite = stitchEdges[i];
             
             stitchEdges[i].face = vertexEdges[i].face;
-            stitchEdges[i].vertex = vertices[j];
+            stitchEdges[i].vertex = vertices[h];
             stitchEdges[i].next = vertexEdges[i];
             stitchEdges[i].opposite = faceEdges[i];		
 
             vertexEdges[i].vertex = vertices[i];			
-            vertexEdges[j].opposite.next= stitchEdges[i];		
-			lx0.message("Opp #" + vertexEdges[j].opposite.face._index);
-			lx0.message("Sit #" + stitchEdges[i].face._index);
+            vertexEdges[h].opposite.next= stitchEdges[i];		
             
             vertices[i].edge = vertexEdges[i];
         }
@@ -561,7 +563,7 @@ var HalfEdgeMesh = (function () {
 		//
 		// Integrity checking
 		//
-		if (true)
+		if (false)
 		{
 			for (var i = 0; i < vertices.length; ++i) {
 				var j = (i + 1) % vertices.length;
@@ -576,17 +578,6 @@ var HalfEdgeMesh = (function () {
 				vertexEdges[i].checkFaceIntegrity();				
 				lx0.message("Check integrity stitchEdges " + i);
 				stitchEdges[i].checkFaceIntegrity();					
-				
-				lx0.message("Check integrity assertions");
-				lx0.assert(stitchEdges[i].next.opposite.next == stitchEdges[h]);
-				lx0.assert(stitchEdges[i].next.opposite.next.next == vertexEdges[h]);
-				lx0.assert(vertexEdges[h].opposite.next == stitchEdges[g]);
-				
-				lx0.assert(stitchEdges[h].vertex === vertices[i]);
-				lx0.assert(vertexEdges[i].opposite.next.vertex === vertices[i]);					
-				lx0.assert(stitchEdges[h].next.vertex === vertices[h]);
-				lx0.assert(stitchEdges[i].opposite.vertex === vertices[i]);
-				lx0.assert(stitchEdges[h].opposite.vertex === vertices[h]);
 			}
 		
 			if (faceEdges[0].faceEdgeCount() != vertexEdges.length)

@@ -201,6 +201,12 @@ public:
         {
             mbRotate = !mbRotate;
         }
+        else if (evt == "toggle_wireframe")
+        {
+            // This should be handled as a global rendering algorithm override instead
+            for (auto it = mMaterials.begin(); it != mMaterials.end(); ++it)
+                (*it)->mWireframe = !(*it)->mWireframe;
+        }
     }
 
 protected:
@@ -307,7 +313,6 @@ protected:
     void _addMaterial (std::string uniqueName, std::string source, lx0::lxvar parameters)
     {
         lx0::MaterialPtr spMaterial = mspRasterizer->createMaterial(uniqueName, source, parameters);
-        spMaterial->mWireframe = true;
         mMaterials.push_back(spMaterial);
     }
 
