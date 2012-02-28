@@ -52,8 +52,8 @@ function vec3_cross(u, v) {
 
 function vec3_normal(u,v,w) {
     var n = vec3_cross(vec3_sub(v,u), vec3_sub(w,v));	
-	var m = Math.sqrt(n[0] * n[0] + n[1] * n[1] + n[2] * n[2]);
-	return [ n[0] / m, n[1] / m, n[2] / m ];
+    var m = Math.sqrt(n[0] * n[0] + n[1] * n[1] + n[2] * n[2]);
+    return [ n[0] / m, n[1] / m, n[2] / m ];
 };
 
 //===========================================================================//
@@ -184,8 +184,8 @@ PolyMesh.prototype.integrityCheck = function()
             
             var dot = vec3_dot(baseNormal, n);
             
-			if (dot < -.95)
-				throw "Non-planar face in PolyMesh";
+            if (dot < -.95)
+                throw "Non-planar face in PolyMesh";
             else if (dot < .9)
                 throw "Non-planar face in PolyMesh (dot = " + dot + ")";
         }
@@ -271,33 +271,50 @@ var HalfEdgeMesh = (function () {
         else
             throw "Unknown mesh type";
     }
+    
+    Edge.prototype.previous = function () {
+        var last = this;
+        this.iterateEdges(function(edge) {
+            last = edge;
+        });
+        return last;
+    };
 
-	Edge.prototype.checkFaceIntegrity = function() {		
-		var fail = false;
-		var edge = this;
-		var face = edge.face;
-		
-		if (edge.face !== face) throw "Edge depth 0 fail";
-		if (edge.next.face !== face) throw "Edge depth 1 fail";
-		if (edge.next.next.face !== face) throw "Edge depth 2 fail";
-		if (edge.next.next.next.face !== face) throw "Edge depth 3 fail";
-		if (edge.next.next.next.next.face !== face) throw "Edge depth 4 fail";
-		if (edge.next.next.next.next.next.face !== face) throw "Edge depth 5 fail";
-		if (edge.next.next.next.next.next.next.face !== face) throw "Edge depth 6 fail";
-		
-		do 
-		{
-			if (edge.face !== face) {
-				fail = true;
-			}
-			edge = edge.next;					
-		} while (edge !== this);
-		
-		if (fail)
-			throw "Edge face corrupt";
-	};
+    Edge.prototype.checkFaceIntegrity = function() {		
+        var fail = false;
+        var edge = this;
+        var face = edge.face;
+                
+        var faceIndices = [];
+        do 
+        {
+            faceIndices.push(edge.face._index);
+            if (edge.face !== face) {
+                fail = true;
+            }		
+            edge = edge.next;					
+        } while (edge !== this);
+        
+        if (fail)
+        {
+            lx0.message("ERROR Edge face loop corrupt:");
+            lx0.message("Face indices = [" + faceIndices + "]");
+            throw "Edge face corrupt";
+        }
+    };
 
     HalfEdgeMesh.prototype.integrityCheck = function () {
+    
+        var mesh = this;
+        this.indexElements();
+        
+        mesh.iterateVertices(function(vertex) {
+            if (vertex._index === undefined) throw "indexElements did not set a index for all vertices";
+            vertex.checkIntegrity();
+            vertex.iterateEdges(function(edge) {
+            });
+        });
+    
         for (var i = 0; i < this._faces.length; ++i) {
             if (this._faces[i].edge.face !== this._faces[i]) {
                 throw "Edge face incorrect.  Edges in loop do not all refer to same face.";
@@ -312,8 +329,8 @@ var HalfEdgeMesh = (function () {
             
             if (this._edges[i].face === this._edges[i].opposite.face)
                 throw "Opposing half edges share same face";            
-				
-			this._edges[i].checkFaceIntegrity();
+                
+            this._edges[i].checkFaceIntegrity();
         }
         for (var i = 0; i < this._vertices.length; ++i) {
             if (this._vertices[i].edge.vertex !== this._vertices[i]
@@ -355,48 +372,48 @@ var HalfEdgeMesh = (function () {
                 delete v._isreferenced;
             });
         });
-		
-		//
-		// Check that all the faces are planar
-		//
-		var mesh = this;
-		mesh.iterateFaces(function (face) {
-        			
-			var vertices = [];
-			face.iterateVertices(function(vertex) {
-				vertices.push(vertex.position);
-			});
-			
-			if (vertices.length < 3)
-				throw "Degenerate face detected.  Less than 3 vertices";			
-			
-			var bv0 = vertices[0];
-			var bv1 = vertices[1];
-			var bv2 = vertices[2];
-			var baseNormal = vec3_normal(bv0,bv1,bv2);
-			
-			for (var i = 3; i < vertices.length; ++i)
-			{
-				var v0 = vertices[i - 2];
-				var v1 = vertices[i - 1];
-				var v2 = vertices[i];
-				var n = vec3_normal(v0,v1,v2);
-				
-				var dot = vec3_dot(baseNormal, n);				
-				if (dot < .9)
-				{
-					lx0.message("Face vertices");
-					for (var k = 0; k < vertices.length; ++k)
-						lx0.message("V" + k + " " + vertices[k]);
-					
-					lx0.message("Offending face");					
-					lx0.message("V" + (i - 2) + " " + v0);
-					lx0.message("V" + (i - 1) + " " + v1);
-					lx0.message("V" + i + " " + v2);
-					throw "Non-planar face in HalfEdgeMesh (dot = " + dot + ")";
-				}
-			}
-		});
+        
+        //
+        // Check that all the faces are planar
+        //
+        var mesh = this;
+        mesh.iterateFaces(function (face) {
+                    
+            var vertices = [];
+            face.iterateVertices(function(vertex) {
+                vertices.push(vertex.position);
+            });
+            
+            if (vertices.length < 3)
+                throw "Degenerate face detected.  Less than 3 vertices";			
+            
+            var bv0 = vertices[0];
+            var bv1 = vertices[1];
+            var bv2 = vertices[2];
+            var baseNormal = vec3_normal(bv0,bv1,bv2);
+            
+            for (var i = 3; i < vertices.length; ++i)
+            {
+                var v0 = vertices[i - 2];
+                var v1 = vertices[i - 1];
+                var v2 = vertices[i];
+                var n = vec3_normal(v0,v1,v2);
+                
+                var dot = vec3_dot(baseNormal, n);				
+                if (dot < .9)
+                {
+                    lx0.message("Face vertices");
+                    for (var k = 0; k < vertices.length; ++k)
+                        lx0.message("V" + k + " " + vertices[k]);
+                    
+                    lx0.message("Offending face");					
+                    lx0.message("V" + (i - 2) + " " + v0);
+                    lx0.message("V" + (i - 1) + " " + v1);
+                    lx0.message("V" + i + " " + v2);
+                    throw "Non-planar face in HalfEdgeMesh (dot = " + dot + ")";
+                }
+            }
+        });
     };
            
     
@@ -417,32 +434,81 @@ var HalfEdgeMesh = (function () {
         v[2] * s + u[2] * t,
       ]; 
     };
-	
-	Edge.prototype.faceEdgeCount = function() {
-		var count = 0;
-		var edge = this;
+    
+    Edge.prototype.faceEdgeCount = function() {
+        var count = 0;
+        var edge = this;
         do {
-			count++;
+            count++;
             edge = edge.next;
         } while (edge != this);		
-		return count;
-	}
+        return count;
+    }
+    
+    Edge.prototype.iterateEdges = function(f) {
+        var edge = this;
+        do {
+            f(edge);
+            edge = edge.next;
+        } while (edge != this);
+    }
+    
+    Vertex.prototype.checkIntegrity = function() {
+                
+        var vertex = this;
+        var edgeCount = 0;
+        var edgeTotal = this.degree();
+        
+        lx0.message("Checking vertex integrity...(degree=" + edgeTotal + ")");
+        
+        this.iterateEdges(function(edge) {   
+         
+            if (edge.vertex !== vertex)
+            {
+                lx0.message("*** Corrupt vertex detected on edge " + edgeCount + " of " + edgeTotal + " of vertex:");
+                lx0.message("Vertex index = " + vertex._index + "    <" + vertex.position + ">");
+                lx0.message("Edge index = " + edge._index);
+                lx0.message("Edge vertex index = " + edge.vertex._index + "    <" + edge.vertex.position + ">");
+                lx0.message("Edge opposite vertex = " + edge.opposite.vertex._index + "    <" + edge.opposite.vertex.position + ">");
+                
+                var indices = [];
+                vertex.iterateEdges(function(edge) {
+                    indices.push(edge.vertex._index);
+                });
+                lx0.message("Vertex indices = " + indices);
+                
+                throw "Corrupt edge-vertex relationship";
+            }
+            
+            edgeCount++;
+        });
+    };
     
     //
     // Iterate all half-edges that have this vertex as a base.
-	//
-	// The iteration is in *clockwise* order: this is the opposite
-	// of the face orientation, which is assumed to be counter-clockwise.
     //
-    Vertex.prototype.iterateEdges = function (f) {
+    // The iteration is in *clockwise* order: this is the opposite
+    // of the face orientation, which is assumed to be counter-clockwise.
+    //
+    Vertex.prototype.iterateEdges = function (f) {	
         var edge = this.edge;
-        do {
-			if (edge.vertex !== this)
-				throw "Corrupt edge-vertex relationship";
-		
+        do {		
             f(edge);
             edge = edge.opposite.next;
         } while (edge !== this.edge);
+    };
+    
+    //
+    // I.e. number of edges on the vertex
+    //
+    Vertex.prototype.degree = function (f) {	
+        var edge = this.edge;
+        var count = 0;
+        do {		
+            count++;
+            edge = edge.opposite.next;
+        } while (edge !== this.edge);
+        return count;
     };
     
     //
@@ -470,9 +536,40 @@ var HalfEdgeMesh = (function () {
         }
     };
     
+    HalfEdgeMesh.prototype.indexElements = function() {
     
-    //
-    // WIP
+        //
+        // Ensure any orphaned indices are cleared out.  In a defect free
+        // program, this is unnecessary as there should be no orphans, but
+        // for robustness we'll do it as means to detect orphans.
+        // 
+        for (var i = 0; i < this._faces.length; ++i)
+        {
+            delete this._faces[i].edge._index;
+        }
+        for (var i = 0; i < this._edges.length; ++i)
+        {
+            delete this._edges[i].vertex._index;
+            delete this._edges[i].face._index;
+            delete this._edges[i].next._index;
+            delete this._edges[i].opposite._index;
+        }
+        for (var i = 0; i < this._vertices.length; ++i)
+        {
+            delete this._vertices[i].edge._index;
+        }
+    
+        //
+        // Set the indices
+        //
+        for (var i = 0; i < this._faces.length; ++i)
+            this._faces[i]._index = i;
+        for (var i = 0; i < this._edges.length; ++i)
+            this._edges[i]._index = i;
+        for (var i = 0; i < this._vertices.length; ++i)
+            this._vertices[i]._index = i;
+    };
+    
     // 
     // Take a vertex and "smooth" the corner by creating a face at 
     // that vertex.  
@@ -485,8 +582,8 @@ var HalfEdgeMesh = (function () {
         // Create the new vertices
         vertex.iterateEdges(function(edge) {
             vertexEdges.push(edge);
-			lx0.assert(edge.vertex === vertex);
-			
+            lx0.assert(edge.vertex === vertex);
+            
             var p = edge.interpolatePosition(amount);
             var vert = new Vertex(p[0], p[1], p[2]);           
             vertices.push(vert);   
@@ -519,22 +616,23 @@ var HalfEdgeMesh = (function () {
         var face = new Face();       
         this._faces.push(face);		
         
-		//
-		// Integrity check
-		//
-		if (false)
-		{
-			for (var i = 0; i < vertices.length; ++i) {
-				var j = (i + 1) % vertices.length;
-				var h = (i + vertices.length - 1) % vertices.length;			
-				
-				vertexEdges[i].checkFaceIntegrity();	
-				
-				if (vertexEdges[i].opposite.next !== vertexEdges[j]) throw "E1000";
-				if (vertexEdges[i].opposite.opposite !== vertexEdges[i]) throw "E1001";	
-			}
-		}
-		
+        //
+        // Integrity check
+        //
+        if (true)
+        {
+            lx0.message("Integrity check 1...");
+            for (var i = 0; i < vertices.length; ++i) {
+                var j = (i + 1) % vertices.length;
+                var h = (i + vertices.length - 1) % vertices.length;			
+                
+                vertexEdges[i].checkFaceIntegrity();	
+                
+                if (vertexEdges[i].opposite.next !== vertexEdges[j]) throw "E1000";
+                if (vertexEdges[i].opposite.opposite !== vertexEdges[i]) throw "E1001";	
+            }
+        }
+        
         //
         // Link everything up
         //
@@ -542,11 +640,11 @@ var HalfEdgeMesh = (function () {
         
         for (var i = 0; i < vertices.length; ++i) {
             var j = (i + 1) % vertices.length;
-			var h = (i + vertices.length - 1) % vertices.length;
+            var h = (i + vertices.length - 1) % vertices.length;
 
             faceEdges[i].face = face;
             faceEdges[i].vertex = vertices[i];
-            faceEdges[i].next = faceEdges[j];
+            faceEdges[i].next = faceEdges[h];
             faceEdges[i].opposite = stitchEdges[i];
             
             stitchEdges[i].face = vertexEdges[i].face;
@@ -555,46 +653,65 @@ var HalfEdgeMesh = (function () {
             stitchEdges[i].opposite = faceEdges[i];		
 
             vertexEdges[i].vertex = vertices[i];			
-            vertexEdges[h].opposite.next= stitchEdges[i];		
+            vertexEdges[h].opposite.next= stitchEdges[i];	// Note: vertexEdges[h] === vertexEdges[i].previous()
             
             vertices[i].edge = vertexEdges[i];
         }
-				
-		//
-		// Integrity checking
-		//
-		if (false)
-		{
-			for (var i = 0; i < vertices.length; ++i) {
-				var j = (i + 1) % vertices.length;
-				var h = (i + vertices.length - 1) % vertices.length;
-				var g = (i + vertices.length - 2) % vertices.length;
-								
-				lx0.assert(faceEdges[i].face === face);
-				
-				lx0.message("Check integrity faceEdges " + i);
-				faceEdges[i].checkFaceIntegrity();
-				lx0.message("Check integrity vertexEdges " + i);
-				vertexEdges[i].checkFaceIntegrity();				
-				lx0.message("Check integrity stitchEdges " + i);
-				stitchEdges[i].checkFaceIntegrity();					
-			}
-		
-			if (faceEdges[0].faceEdgeCount() != vertexEdges.length)
-			{
-				lx0.message("Vertex edges = " + vertexEdges.length);
-				lx0.message("Face edges = " + faceEdges[0].faceEdgeCount());				
-				throw "Incorrect face edge count";
-			}
-			
-			lx0.message("Check new face integrity");
-			faceEdges[0].checkFaceIntegrity();
-			for (var i = 0; i < stitchEdges.length; ++i)
-			{
-				lx0.message("Check stitched face " + i + " integrity");
-				stitchEdges[i].checkFaceIntegrity();
-			}
-		}
+                
+        //
+        // Integrity checking
+        //
+        if (true)
+        {
+            lx0.message("Integrity check 2...");
+            this.indexElements();
+            
+            for (var i = 0; i < vertices.length; ++i) {
+                lx0.message("New Vertex #" + i + " degree=" + vertices[i].degree());
+            }
+            
+            for (var i = 0; i < vertices.length; ++i) {
+                var j = (i + 1) % vertices.length;
+                var h = (i + vertices.length - 1) % vertices.length;
+                var g = (i + vertices.length - 2) % vertices.length;
+                
+                lx0.message("Check integrity new vertex " + i);
+                vertices[i].checkIntegrity();
+                
+                lx0.assert(faceEdges[i].face === face);
+                
+                lx0.message("Check integrity faceEdges " + i);
+                faceEdges[i].checkFaceIntegrity();
+                lx0.message("Check integrity vertexEdges " + i);
+                vertexEdges[i].checkFaceIntegrity();				
+                lx0.message("Check integrity stitchEdges " + i);
+                stitchEdges[i].checkFaceIntegrity();					
+            }
+        
+            if (faceEdges[0].faceEdgeCount() != vertexEdges.length)
+            {
+                lx0.message("Vertex edges = " + vertexEdges.length);
+                lx0.message("Face edges = " + faceEdges[0].faceEdgeCount());				
+                throw "Incorrect face edge count";
+            }
+            
+            lx0.message("Check new face integrity");
+            faceEdges[0].checkFaceIntegrity();
+            for (var i = 0; i < stitchEdges.length; ++i)
+            {
+                lx0.message("Check stitched face " + i + " integrity");
+                stitchEdges[i].checkFaceIntegrity();
+            }
+        }
+        
+        //
+        // Return the set of newly created elements
+        //
+        return {
+            face : face,
+            edges : faceEdges.concat(stitchEdges),
+            vertices : vertices
+        };
     };
 
     return HalfEdgeMesh;
