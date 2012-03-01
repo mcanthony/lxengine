@@ -41,12 +41,14 @@ namespace lx0
             {
             public:
                 Geometry()
-                    : mtbFlatShading (boost::indeterminate)
+                    : mType          (0)
+                    , mtbFlatShading (boost::indeterminate)
                 {}
                 virtual ~Geometry() {}
                 
                 virtual void activate(RasterizerGL*, GlobalPass& pass) = 0;
 
+                GLenum  mType;
                 glgeom::abbox3f mBBox;
                 boost::tribool  mtbFlatShading;
             };
@@ -61,8 +63,7 @@ namespace lx0
             {
             public:
                 GeomImp() 
-                    : mType         (0)
-                    , mVboIndices   (0)
+                    : mVboIndices   (0)
                     , mVao          (0)
                     , mVboPosition  (0)
                     , mVboNormal    (0)
@@ -79,7 +80,6 @@ namespace lx0
 
                 virtual void activate(RasterizerGL*, GlobalPass& pass);
 
-                GLenum  mType;
                 GLuint  mVao;
                 GLsizei mCount;
                 

@@ -49,7 +49,15 @@ using namespace glgeom;
 void lx0::subsystem::rasterizer_ns::check_glerror()
 {
 	GLenum errCode = glGetError();
-    lx_check_error( errCode == GL_NO_ERROR, "glError() == %d: %s", errCode, gluErrorString(errCode) );
+    
+    if (errCode != GL_NO_ERROR)
+    {
+        std::string errString = (const char*)gluErrorString(errCode);
+        lx_warn("glError() detected.");
+        lx_warn("Error Code = %1%", errCode);
+        lx_warn("Error String = %1%", errString);
+        throw lx_error_exception("glError detected: %s", errString);
+    }
 }
 
 /*!
@@ -293,6 +301,48 @@ RasterizerGL::cacheTexture (std::string name, TexturePtr spTexture)
     mTextureCache.insert( std::make_pair(name, spTexture) );
 }
 
+MaterialPtr 
+RasterizerGL::_acquireDefaultPointMaterial (void)
+{
+    static MaterialPtr spDefault;
+    if (spDefault)
+        return spDefault;
+
+    //throw lx_error_exception("Not implemented!");
+
+    //GLuint prog = _createProgram(name, GL_POINTS, fragmentSource);
+    GLuint prog;
+    {
+        check_glerror();
+
+        // Create the shader program
+        //
+        GLuint vs = _createShader("media2/shaders/glsl/vertex/basic_point_00.vert", GL_VERTEX_SHADER);
+        GLuint fs = _createShader("media2/shaders/glsl/fragment/solid_red.frag", GL_FRAGMENT_SHADER);
+
+        prog = glCreateProgram();
+        {
+            glAttachShader(prog, vs);
+            glAttachShader(prog, fs);
+        
+            check_glerror();
+            
+            glBindAttribLocation(prog, 0, "inPosition");
+        }
+        check_glerror();
+
+        _linkProgram(prog);
+    }
+
+
+    auto pMat = new GenericMaterial(prog);
+    pMat->mShaderFilename = "<default point material>";
+    pMat->mGeometryType = GL_POINTS;
+    //pMat->mParameters = parameters.clone();
+ 
+    spDefault = MaterialPtr(pMat);
+    return spDefault;
+}
 
 MaterialPtr 
 RasterizerGL::createMaterial (std::string fragShader)
@@ -306,10 +356,11 @@ RasterizerGL::createMaterial (std::string fragShader)
 MaterialPtr 
 RasterizerGL::createMaterial (std::string name, std::string fragmentSource, lx0::lxvar parameters)
 {
-    GLuint prog = _createProgram(name, fragmentSource);
+    GLuint prog = _createProgram(name, GL_TRIANGLES, fragmentSource);
     
     auto pMat = new GenericMaterial(prog);
     pMat->mShaderFilename = name;
+    pMat->mGeometryType = GL_TRIANGLES;
     pMat->mParameters = parameters.clone();
  
     return MaterialPtr(pMat);
@@ -353,11 +404,11 @@ RasterizerGL::createPhongMaterial (const glgeom::material_phong_f& mat)
 GLuint 
 RasterizerGL::_createProgramFromFile  (std::string filename)
 {
-    return _createProgram(filename, lx0::string_from_file(filename));
+    return _createProgram(filename, GL_TRIANGLES, lx0::string_from_file(filename));
 }
 
 GLuint 
-RasterizerGL::_createProgram   (std::string uniqueId, std::string& source)
+RasterizerGL::_createProgram   (std::string uniqueId, GLenum geometryType, std::string& source)
 {
     static int s_anonymousId = 0;
     if (uniqueId.empty())
@@ -568,6 +619,8 @@ RasterizerGL::createQuadList (std::vector<glgeom::point3f>& quadPositions,
     pGeom->mCount       = positions.size();
     pGeom->mVboPosition = vboPositions;
     pGeom->mVboColors   = vboColors;
+
+    lx_check_error(pGeom->mType != GL_INVALID_ENUM);
     return GeometryPtr(pGeom);
 }
 
@@ -634,8 +687,9 @@ RasterizerGL::createQuadList (std::vector<lx0::uint16>&     quadIndices,
     pGeom->mVboIndices    = vio;
     pGeom->mCount         = triIndices.size();
     pGeom->mVboPosition   = vboPositions;
-    return GeometryPtr(pGeom);
 
+    lx_check_error(pGeom->mType != GL_INVALID_ENUM);
+    return GeometryPtr(pGeom);
 }
 
 template <typename T>
@@ -689,10 +743,12 @@ RasterizerGL::createGeometry (glgeom::primitive_buffer& primitive)
         pGeom->mType          = GL_POINTS;
         pGeom->mVao           = vao;
         pGeom->mVboPosition   = _genArrayBuffer(GL_ARRAY_BUFFER, primitive.vertex.positions);
+        pGeom->mCount         = primitive.vertex.positions.size();
     }
 
     check_glerror();
 
+    lx_check_error(pGeom->mType != GL_INVALID_ENUM);
     return GeometryPtr(pGeom);
 }
 
@@ -809,6 +865,8 @@ RasterizerGL::createQuadList (std::vector<unsigned short>& quadIndices,
     pGeom->mVboColors   = vboColors;
     pGeom->mTexFlags    = texFlags;
     pGeom->mFaceCount   = faceCount;
+    
+    lx_check_error(pGeom->mType != GL_INVALID_ENUM);    
     return GeometryPtr(pGeom);
 }
 
@@ -992,6 +1050,7 @@ RasterizerGL::beginFrame (RenderAlgorithm& algorithm)
     mStats.tmScene.start();
     
     mFrameNum++;
+    mFrameData = FrameData();
     mContext.frame = FrameContext();
 
     lx_check_error( glGetError() == GL_NO_ERROR );
@@ -1112,7 +1171,14 @@ RasterizerGL::rasterizeItem (GlobalPass& pass, std::shared_ptr<Instance> spInsta
     mContext.textureUnit = 0;
     mContext.uniforms.reset();
 
+    //
     // Fill in any unspecified or overridden item variables via the current context
+    //
+    // As much of the resolution of what *will* be used should be done before any
+    // of these objects are "activated" (i.e. the GL calls to set this up are made).
+    // Knowing what we'll be attempting before attempting it helps make sure
+    // everything can and will be done correctly.
+    //
     mContext.spCamera = (spInstance->spCamera) 
         ? spInstance->spCamera
         : pass.spCamera;
@@ -1126,6 +1192,29 @@ RasterizerGL::rasterizeItem (GlobalPass& pass, std::shared_ptr<Instance> spInsta
     mContext.tbFlatShading = boost::indeterminate(spInstance->spGeometry->mtbFlatShading) 
         ? pass.tbFlatShading
         : spInstance->spGeometry->mtbFlatShading;
+
+    //
+    // Resolve incompatibilities by swapping in defaults for invalid parameters.
+    // Add warnings and errors as appropriate if there is not a reasonable default
+    // that can be substituted in.
+    //
+    lx_check_error(spInstance->spGeometry->mType != GL_INVALID_ENUM);
+    lx_check_error(mContext.spMaterial->mGeometryType != GL_INVALID_ENUM);
+
+    if (spInstance->spGeometry->mType != mContext.spMaterial->mGeometryType)
+    {
+        // The requested material does not support the type of geometry that is being
+        // rendered.  Use the default material for that geometry instead.
+        switch (spInstance->spGeometry->mType)
+        {
+        case GL_POINTS:
+            mContext.spMaterial = _acquireDefaultPointMaterial();
+            break;
+        default:
+            throw lx_error_exception("Incompatible material for geometry type.  Could not determine a alternate material to use.");
+        };
+    }
+    lx_check_error(spInstance->spGeometry->mType == mContext.spMaterial->mGeometryType);
 
     //
     // Error checking

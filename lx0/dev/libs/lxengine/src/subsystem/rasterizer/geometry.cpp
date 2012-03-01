@@ -53,6 +53,18 @@ GeomImp::activate(RasterizerGL* pRasterizer, GlobalPass& pass)
 {
     check_glerror();
 
+    auto spMaterial = pRasterizer->mContext.spMaterial;
+
+    if (spMaterial->mGeometryType != this->mType)
+        throw lx_error_exception("Material does not support this geometry type!");
+
+    switch (mType)
+    {
+    case GL_POINTS:
+        glPointSize(3);
+        break;
+    }
+
     GLint shaderProgram;
     glGetIntegerv(GL_CURRENT_PROGRAM, &shaderProgram);
 
@@ -153,6 +165,11 @@ GeomImp::activate(RasterizerGL* pRasterizer, GlobalPass& pass)
     //
     // Is this an indexed primitive or a list of vertices?
     //
+    if (mCount < 1)
+    {
+        throw lx_error_exception("Cannot render empty geometry set!");
+    }
+
     if (mVboIndices)
         glDrawElements(mType, mCount, GL_UNSIGNED_SHORT, 0);
     else

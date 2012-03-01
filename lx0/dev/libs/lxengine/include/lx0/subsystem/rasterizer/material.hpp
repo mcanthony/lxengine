@@ -44,6 +44,7 @@ namespace lx0
 
                 virtual void activate   (RasterizerGL*, GlobalPass& pass);
 
+                GLenum      mGeometryType;
                 std::string mShaderFilename;
 
                 bool        mBlend;

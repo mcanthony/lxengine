@@ -1,13 +1,19 @@
 (function() {
     lx0.message("Creating point list...");
     var mesh = new PointList();    
-    for (var z = -.5; z < .59; z += .1)
+    var step = 0.05;
+    for (var z = -.5; z < .5 + step/2; z += step)
 	{
-		for (var y = -.5; y < .59; y += .1)
+		for (var y = -.5; y < .5 + step/2; y += step)
 		{
-			for (var x = -.5; x < .59; x += .1)
+			for (var x = -.5; x < .5 + step/2; x += step)
 			{
-				mesh.addVertex(x, y, z);
+			    if (   (z < -.5 + step/2 || z > .5 - step/2)
+			        || (y < -.5 + step/2 || y > .5 - step/2)
+			        || (x < -.5 + step/2 || x > .5 - step/2) )
+			    {
+				    mesh.addVertex(x, y, z);
+				}
 			}		
 		}
 	}

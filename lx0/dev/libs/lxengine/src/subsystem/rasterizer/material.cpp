@@ -34,6 +34,7 @@ using namespace glgeom;
 
 Material::Material(GLuint id)
     : mId           (id)
+    , mGeometryType (GL_INVALID_ENUM)       // Can't use GL_NONE because GL_POINTS == GL_NONE
     , mBlend        (false)
     , mZWrite       (true)
     , mZTest        (true)
@@ -53,9 +54,11 @@ Material::activate (RasterizerGL* pRasterizer, GlobalPass& pass)
 {
     check_glerror();
 
+    pRasterizer->mFrameData.shaderProgramActivations++;
+
     // Activate the shader
     glUseProgram(mId);
-    
+        
     //
     // Set up color
     //

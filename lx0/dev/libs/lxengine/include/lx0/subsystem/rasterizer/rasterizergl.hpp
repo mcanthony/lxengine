@@ -135,6 +135,22 @@ namespace lx0
                 LayerMap    mLayers;
             };
 
+            //===========================================================================//
+            //! \ingroup lx0_subsystem_rasterizer
+            /*!
+                Data about a single frame.
+             */
+            class FrameData
+            {
+            public:
+                FrameData()
+                    : shaderProgramActivations (0)
+                {
+                }
+
+                int     shaderProgramActivations;
+            };
+
 
             //===========================================================================//
             //! \ingroup lx0_subsystem_rasterizer
@@ -147,6 +163,8 @@ namespace lx0
             class RasterizerGL
             {
             public:
+                friend class Material;
+
                                 RasterizerGL    ();
                                 ~RasterizerGL   ();
 
@@ -197,6 +215,7 @@ namespace lx0
 
                 void            refreshTextures (void);
 
+                const FrameData& frameData      (void) const { return mFrameData; }
                 void            beginFrame      (RenderAlgorithm& algorithm);
                 void            endFrame        (void);
 
@@ -266,11 +285,13 @@ namespace lx0
 
             protected:
                 GLuint      _createProgramFromFile  (std::string filename);
-                GLuint      _createProgram          (std::string uniqueId, std::string& source);
+                GLuint      _createProgram          (std::string uniqueId, GLenum geometryType, std::string& source);
                 GLuint      _createProgram2         (std::string source);
                 GLuint      _createShader           (const char* filename, GLuint type);
                 GLuint      _createShader2          (std::string& source, GLuint type);
                 void        _linkProgram            (GLuint prog, const char* pszSource = nullptr);
+
+                MaterialPtr _acquireDefaultPointMaterial    (void);
 
                 std::unique_ptr<GLInterface>      gl;
 
@@ -284,6 +305,7 @@ namespace lx0
             protected:
                 bool                            mInited;
                 bool                            mShutdown;
+                FrameData                       mFrameData;
 
                 struct
                 {
