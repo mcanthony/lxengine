@@ -48,15 +48,14 @@
 
 namespace lx0 { namespace core { namespace lxvar_ns { namespace detail {
 
-    void _convert(lxvar& json, glgeom::primitive_buffer& prim)
+    static void _convertTriMesh (lxvar& json, glgeom::primitive_buffer& prim)
     {
         lx_check_error(json["_meshType"].as<std::string>() == "TriMesh");
 
         const int faceCount = json["_faces"].size();
         const int vertexCount = json["_vertices"].size();
 
-        prim.type = "trilist";     // TODO: temporary assumption
-                    
+        prim.type = "trilist"; 
         prim.vertex.positions.reserve(vertexCount);
         prim.vertex.normals.reserve(vertexCount);                    
         for (int i = 0; i < vertexCount; ++i)
@@ -80,6 +79,37 @@ namespace lx0 { namespace core { namespace lxvar_ns { namespace detail {
             //prim.indices.push_back((int)f[3]);
         }
 
+    }
+
+    static void _convertPointList (lxvar& json, glgeom::primitive_buffer& prim)
+    {
+        lx_check_error(json["_meshType"].as<std::string>() == "PointList");
+
+        const int vertexCount = json["_vertices"].size();
+
+        prim.type = "pointlist"; 
+        prim.vertex.positions.reserve(vertexCount);
+        for (int i = 0; i < vertexCount; ++i)
+        {
+            lxvar vertex = json["_vertices"][i];
+            lxvar v = vertex["position"];
+            lxvar c = vertex["color"];
+            prim.vertex.positions.push_back( v.convert() );
+            //prim.vertex.normals.push_back( n.convert() );
+            //prim.vertex.colors.push_back( c.convert() );
+        }
+    }
+
+    void _convert (lxvar& json, glgeom::primitive_buffer& prim)
+    {
+        std::string type = json["_meshType"].as<std::string>();
+        
+        if (type == "TriMesh")
+            _convertTriMesh(json, prim);
+        else if (type == "PointList")
+            _convertPointList(json, prim);
+        else
+            throw lx_error_exception("Unrecognized _meshType '%s'", type);
     }
 
 }}}}
@@ -316,7 +346,7 @@ protected:
         mMaterials.push_back(spMaterial);
     }
 
-    void _addGeometry (lx0::DocumentPtr spDocument, const std::string& filename)
+    void _addGeometry (lx0::DocumentPtr spDocument, const std::string filename)
     {
         if (boost::iends_with(filename, ".blend"))
         {

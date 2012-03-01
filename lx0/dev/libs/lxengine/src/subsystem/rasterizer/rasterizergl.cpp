@@ -670,17 +670,27 @@ RasterizerGL::createGeometry (glgeom::primitive_buffer& primitive)
     // Create the cache to encapsulate the created OGL resources
     //
     auto pGeom = new GeomImp;
-    pGeom->mType          = GL_TRIANGLES;
-    pGeom->mVao           = vao;
-    pGeom->mVboIndices    = _genArrayBuffer(GL_ELEMENT_ARRAY_BUFFER, primitive.indices);
-    pGeom->mCount         = primitive.indices.size();
-    pGeom->mVboPosition   = _genArrayBuffer(GL_ARRAY_BUFFER, primitive.vertex.positions);
-    pGeom->mVboNormal     = _genArrayBuffer(GL_ARRAY_BUFFER, primitive.vertex.normals);
-    pGeom->mVboColors     = _genArrayBuffer(GL_ARRAY_BUFFER, primitive.vertex.colors);
-    for (int i = 0; i < 8 && i < (int)primitive.vertex.uv.size(); ++i)
-        pGeom->mVboUVs[i] = _genArrayBuffer(GL_ARRAY_BUFFER, primitive.vertex.uv[i]);
+    if (primitive.type == "trilist")
+    {
+        pGeom->mType          = GL_TRIANGLES;
+        pGeom->mVao           = vao;
+        pGeom->mVboIndices    = _genArrayBuffer(GL_ELEMENT_ARRAY_BUFFER, primitive.indices);
+        pGeom->mCount         = primitive.indices.size();
+        pGeom->mVboPosition   = _genArrayBuffer(GL_ARRAY_BUFFER, primitive.vertex.positions);
+        pGeom->mVboNormal     = _genArrayBuffer(GL_ARRAY_BUFFER, primitive.vertex.normals);
+        pGeom->mVboColors     = _genArrayBuffer(GL_ARRAY_BUFFER, primitive.vertex.colors);
+        for (int i = 0; i < 8 && i < (int)primitive.vertex.uv.size(); ++i)
+            pGeom->mVboUVs[i] = _genArrayBuffer(GL_ARRAY_BUFFER, primitive.vertex.uv[i]);
 
-    pGeom->mtbFlatShading = (pGeom->mVboNormal == 0);
+        pGeom->mtbFlatShading = (pGeom->mVboNormal == 0);
+    }
+    else if (primitive.type == "pointlist")
+    {
+        pGeom->mType          = GL_POINTS;
+        pGeom->mVao           = vao;
+        pGeom->mVboPosition   = _genArrayBuffer(GL_ARRAY_BUFFER, primitive.vertex.positions);
+    }
+
     check_glerror();
 
     return GeometryPtr(pGeom);

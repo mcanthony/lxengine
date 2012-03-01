@@ -56,6 +56,22 @@ function vec3_normal(u,v,w) {
     return [ n[0] / m, n[1] / m, n[2] / m ];
 };
 
+
+//===========================================================================//
+// PointList
+//===========================================================================//
+
+function PointList() {
+    this._meshType = "PointList";
+    this._vertices = [];
+}
+
+PointList.prototype.addVertex = function (x, y, z) {
+    var vertex = { position : [x, y, z] };
+    this._vertices.push(vertex);
+    return vertex;
+}
+
 //===========================================================================//
 // TriMesh
 //===========================================================================//
@@ -459,7 +475,7 @@ var HalfEdgeMesh = (function () {
         var edgeCount = 0;
         var edgeTotal = this.degree();
         
-        lx0.message("Checking vertex integrity...(degree=" + edgeTotal + ")");
+        //lx0.message("Checking vertex integrity...(degree=" + edgeTotal + ")");
         
         this.iterateEdges(function(edge) {   
          

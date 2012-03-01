@@ -2,7 +2,7 @@ var uiBinding =
 {
     onKeyDown : function (view, keyCode)
     {
-        __lx_print("onKeyDown called! KeyCode = " + keyCode);
+        lx0.message("onKeyDown called! KeyCode = " + keyCode);
 
         if (keyCode == lx0.KC_G)
             view.sendEvent("change_geometry", "next");
