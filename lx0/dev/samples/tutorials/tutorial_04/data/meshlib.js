@@ -489,8 +489,6 @@ var HalfEdgeMesh = (function () {
         var edgeCount = 0;
         var edgeTotal = this.degree();
         
-        //lx0.message("Checking vertex integrity...(degree=" + edgeTotal + ")");
-        
         this.iterateEdges(function(edge) {   
          
             if (edge.vertex !== vertex)
@@ -655,7 +653,7 @@ var HalfEdgeMesh = (function () {
         //
         // Integrity check
         //
-        if (true)
+        if (false)
         {
             lx0.message("Integrity check 1...");
             for (var i = 0; i < vertices.length; ++i) {
@@ -697,7 +695,7 @@ var HalfEdgeMesh = (function () {
         //
         // Integrity checking
         //
-        if (true)
+        if (false)
         {
             lx0.message("Integrity check 2...");
             this.indexElements();
@@ -711,7 +709,6 @@ var HalfEdgeMesh = (function () {
                 var h = (i + vertices.length - 1) % vertices.length;
                 var g = (i + vertices.length - 2) % vertices.length;
                 
-                lx0.message("Check integrity new vertex " + i);
                 vertices[i].checkIntegrity();
                 
                 lx0.assert(faceEdges[i].face === face);

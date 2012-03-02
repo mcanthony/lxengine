@@ -50,6 +50,52 @@ using namespace lx0::util;
 
 namespace lx0 { namespace engine { namespace dom_ns {
 
+    _WorkerThread::_WorkerThread()
+        : mDone (false)
+    {
+    }
+
+    void 
+    _WorkerThread::addTask (std::function<void()> f)
+    {
+        boost::lock_guard<boost::mutex> lock(mMutex);
+        mQueue.push_back(f);
+        mCondition.notify_one();
+    }
+    
+    void
+    _WorkerThread::start (void)
+    {
+        mpThread = new boost::thread([&]() { run(); });
+    }
+
+    void
+    _WorkerThread::run (void)
+    {
+        lx_current_thread_priority_below_normal();
+
+        while (!mDone)
+        {
+            boost::unique_lock<boost::mutex> lock(mMutex);
+            while (mQueue.empty())
+                mCondition.wait(lock);
+
+            auto f = mQueue.front();
+            mQueue.pop_front();
+
+            f();
+        }
+    }
+
+    void
+    _WorkerThread::finish (void)
+    {
+        addTask([&]() { mDone = true; });
+        mpThread->join();
+        delete mpThread;
+    }          
+
+
     namespace detail
     {
         ObjectCount::ObjectCount (void)
@@ -550,6 +596,12 @@ namespace lx0 { namespace engine { namespace dom_ns {
         m_eventQueue.push_back(evt);
     }
 
+    void 
+    Engine::sendWorkerTask (std::function<void()> f)
+    {
+        mWorkerThreads[0]->addTask(f);
+    }
+
     void        
     Engine::_throwPostponedException (void)
     {
@@ -570,6 +622,13 @@ namespace lx0 { namespace engine { namespace dom_ns {
         mFrameNum = 0;
 
         _lx_reposition_console();
+
+        //
+        // Launch the worker thread
+        //
+        auto pThread = new _WorkerThread();
+        mWorkerThreads.push_back(pThread);
+        pThread->start();
 
         //
         // Signal to the Document components that the main loop is about
@@ -649,6 +708,8 @@ namespace lx0 { namespace engine { namespace dom_ns {
         incPerformanceCounter("Engine>run", lx0::lx_milliseconds() - start);
 
         slotRunEnd();
+
+        pThread->finish();
 
 		return 0;
 	}

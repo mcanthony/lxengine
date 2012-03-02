@@ -240,5 +240,12 @@ namespace lx0 { namespace util { namespace misc {
         return *pData;
     }
 
+    void                    
+    lx_current_thread_priority_below_normal (void)
+    {
+        HANDLE handle = ::GetCurrentThread();
+        ::SetThreadPriority(handle, THREAD_PRIORITY_BELOW_NORMAL);
+    }
+
 }}}
 

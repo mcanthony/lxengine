@@ -207,11 +207,11 @@ namespace lx0
                                                  std::vector<glgeom::point3f>& positions, 
                                                  std::vector<glgeom::vector3f>& normals,
                                                  std::vector<glgeom::color3f>& colors);
-                GeometryPtr     createQuadList  (std::vector<lx0::uint16>& indices,
-                                                 std::vector<lx0::uint8>& faceFlags,
-                                                 std::vector<glgeom::point3f>& positions, 
-                                                 std::vector<glgeom::vector3f>& normals,
-                                                 std::vector<glgeom::color3f>& colors);
+                GeometryPtr     createQuadList  (const std::vector<lx0::uint16>& indices,
+                                                 const std::vector<lx0::uint8>& faceFlags,
+                                                 const std::vector<glgeom::point3f>& positions, 
+                                                 const std::vector<glgeom::vector3f>& normals,
+                                                 const std::vector<glgeom::color3f>& colors);
 
                 void            refreshTextures (void);
 

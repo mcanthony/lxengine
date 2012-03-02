@@ -39,6 +39,8 @@
 #include <vector>
 #include <map>
 
+#include <boost/thread.hpp>
+
 // Lx headers
 #include <lx0/_detail/forward_decls.hpp>
 #include <lx0/core/init/version.hpp>
@@ -105,6 +107,29 @@ namespace lx0
 
             }
 
+            //===========================================================================//
+            //!
+            /*!
+                \ingroup lx0_engine_dom
+             */
+            class _WorkerThread
+            {
+            public:
+                        _WorkerThread();
+
+                void    addTask (std::function<void()>);
+                void    start   (void);
+                void    run     (void);
+                void    finish  (void);
+
+            protected:
+                boost::thread*                    mpThread;
+                boost::condition_variable         mCondition;
+                boost::mutex                      mMutex;
+                std::deque<std::function<void()>> mQueue;
+                volatile bool                     mDone;
+            };
+
 
             //===========================================================================//
             //!
@@ -159,7 +184,11 @@ namespace lx0
 
                 void                sendEvent           (std::string evt);
                 void                sendTask            (std::function<void()> f);
+
                 int	                run                 (void);
+
+                void                sendWorkerTask      (std::function<void()> f);
+
                 lx0::slot<void()>   slotRunBegin;
                 lx0::slot<void()>   slotRunEnd;
                 lx0::slot<void()>   slotIdle;
@@ -257,6 +286,8 @@ namespace lx0
 
                 std::map<std::string, std::vector<std::function<bool(std::string)>>>    m_psuedoAttributes;
                 std::map<std::string, std::vector<std::function<lxvar(std::string)>>>   m_attributeParsers;
+
+                std::vector<_WorkerThread*>                                             mWorkerThreads;
             };
 
         }

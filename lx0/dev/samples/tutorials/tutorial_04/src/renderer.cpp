@@ -27,6 +27,7 @@
 //===========================================================================//
 
 #include <boost/algorithm/string.hpp>
+#include <boost/thread.hpp>
 
 #include <lx0/lxengine.hpp>
 #include <lx0/subsystem/rasterizer.hpp>
@@ -365,9 +366,36 @@ protected:
     {
         if (boost::iends_with(filename, ".blend"))
         {
-            lx_message("Loading Blender model '%1%'", filename);
-            lx0::GeometryPtr spModel = lx0::geometry_from_blendfile(mspRasterizer, filename.c_str());
-            mGeometry.push_back(spModel);
+            //
+            // This is executed as a task in the main thread; therefore no locks or threading 
+            // protection is necessary on the rasterizer or geometry list.
+            //
+            auto addGeometry = [this](glgeom::primitive_buffer* primitive) {
+                    auto spGeometry = mspRasterizer->createQuadList(primitive->indices, 
+                                                                    primitive->face.flags, 
+                                                                    primitive->vertex.positions, 
+                                                                    primitive->vertex.normals, 
+                                                                    primitive->vertex.colors);
+                    spGeometry->mBBox = primitive->bbox;
+                    mGeometry.push_back(spGeometry);
+                    delete primitive;
+            };
+
+            //
+            // The geometry loading uses only local data and therefore can safely be executed
+            // in a separate thread.
+            //
+            auto loadGeometry = [this,filename,addGeometry]() {
+                lx_message("Loading Blender model '%1%'", filename);
+                glgeom::primitive_buffer* primitive = new glgeom::primitive_buffer;
+                glm::mat4 scaleMat = glm::scale(glm::mat4(), glm::vec3(1, 1, 1));
+                lx0::primitive_buffer_from_blendfile(*primitive, filename.c_str(), scaleMat);
+                    
+                auto f = addGeometry;
+                lx0::Engine::acquire()->sendTask([primitive,f](){ f(primitive); });
+            };
+
+            lx0::Engine::acquire()->sendWorkerTask(loadGeometry);
         }
         else if (boost::iends_with(filename, ".js"))
         {

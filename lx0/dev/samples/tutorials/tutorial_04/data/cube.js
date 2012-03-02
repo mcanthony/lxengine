@@ -13,7 +13,6 @@
 		mesh.iterateVertices(function(vertex) {
 			if (vertex.group === 1)
 			{
-				lx0.message("Smoothing vertex...");
 				delete vertex.group;
 				mesh.smoothVertex(vertex, .35);
 				mesh.integrityCheck();

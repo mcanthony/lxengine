@@ -671,15 +671,16 @@ RasterizerGL::createQuadList (std::vector<glgeom::point3f>& quadPositions,
 // OpenGL 3.2 Core Profile does not support GL_QUADS, so convert the indices to a triangle list
 //
 static void
-createTriangleIndices (std::vector<lx0::uint16>& quadIndices, std::vector<lx0::uint16>& triIndices)
+createTriangleIndices (const std::vector<lx0::uint16>& quadIndices, 
+                       std::vector<lx0::uint16>& triIndices)
 {
     lx_check_error(quadIndices.size() % 4 == 0);
     lx_check_error(!quadIndices.empty());
 
     triIndices.resize( (quadIndices.size() * 3) / 2);
     
-    lx0::uint16* pDst = &triIndices[0];
-    lx0::uint16* pSrc = &quadIndices[0];
+    const lx0::uint16* pSrc = &quadIndices[0];
+    lx0::uint16*       pDst = &triIndices[0];    
     for (size_t i = 0; i < quadIndices.size(); i += 4)
     {
         pDst[0] = pSrc[0];  // Triangle 1
@@ -817,11 +818,11 @@ RasterizerGL::createQuadList (std::vector<unsigned short>& indices,
 }
 
 GeometryPtr
-RasterizerGL::createQuadList (std::vector<unsigned short>& quadIndices, 
-                              std::vector<lx0::uint8>& faceFlags,
-                              std::vector<glgeom::point3f>& positions, 
-                              std::vector<glgeom::vector3f>& normals,
-                              std::vector<glgeom::color3f>& colors)
+RasterizerGL::createQuadList (const std::vector<unsigned short>& quadIndices, 
+                              const std::vector<lx0::uint8>& faceFlags,
+                              const std::vector<glgeom::point3f>& positions, 
+                              const std::vector<glgeom::vector3f>& normals,
+                              const std::vector<glgeom::color3f>& colors)
 {
     check_glerror();
 
