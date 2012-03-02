@@ -55,6 +55,10 @@
     </Material>
     <Material id="solid_red">
       {
+        render : {
+            edges : true,
+            edgeColor : [ .0, .0, .7 ],
+        },      
         graph : {
           _type : "solid",
           color : [ .7, 0, 0 ],

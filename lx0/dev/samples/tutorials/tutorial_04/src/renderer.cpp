@@ -131,6 +131,33 @@ namespace lx0 { namespace core { namespace lxvar_ns { namespace detail {
 }}}}
 
 //===========================================================================//
+//   R E N D E R A B L E
+//===========================================================================//
+
+/*
+    Work-in-progress class towards a complex renderable, potentially composed of
+    multiple generated and specified meshes.
+ */
+class Renderable
+{
+public:
+    lx0::lxvar          mRenderProperties;        // e.g. shadows : { cast : true, receive : false }
+    //MeshPtr         mspGeometry;
+    //MaterialPtr     mspMaterial;
+    //InstanceCache   mInstanceCache;
+    lx0::InstancePtr    mspInstance;
+};
+
+_LX_FORWARD_DECL_PTRS(Renderable);
+
+
+struct MaterialData
+{
+    lx0::lxvar          renderProperties;
+    lx0::MaterialPtr    spMaterial;
+};
+
+//===========================================================================//
 //   R E N D E R E R
 //===========================================================================//
 
@@ -170,10 +197,11 @@ public:
         //
         // Build the renderable
         //
-        mspInstance.reset(new lx0::Instance);
-        mspInstance->spTransform = mspRasterizer->createTransform(mRotation);
-        mspInstance->spMaterial = mMaterials[mCurrentMaterial];
-        mspInstance->spGeometry = mGeometry[mCurrentGeometry];
+        mspRenderable.reset(new Renderable);
+        mspRenderable->mspInstance.reset(new lx0::Instance);
+        mspRenderable->mspInstance->spTransform = mspRasterizer->createTransform(mRotation);
+        mspRenderable->mspInstance->spMaterial = mMaterials[mCurrentMaterial].spMaterial;
+        mspRenderable->mspInstance->spGeometry = mGeometry[mCurrentGeometry];
 
         //
         // Create the camera last since it is dependent on the bounds of the geometry
@@ -194,7 +222,7 @@ public:
         algorithm.mPasses.push_back(pass);
 
         lx0::RenderList instances;
-        instances.push_back(0, mspInstance);
+        instances.push_back(0, mspRenderable->mspInstance);
 
         mspRasterizer->beginFrame(algorithm);
         for (auto it = instances.begin(); it != instances.end(); ++it)
@@ -212,7 +240,7 @@ public:
         if (mbRotate)
         {
             mRotation = glm::rotate(mRotation, 1.0f, glm::vec3(0, 0, 1));
-            mspInstance->spTransform = mspRasterizer->createTransform(mRotation);
+            mspRenderable->mspInstance->spTransform = mspRasterizer->createTransform(mRotation);
         }
         spView->sendEvent("redraw");
     }
@@ -226,13 +254,13 @@ public:
                 : (mCurrentGeometry + mGeometry.size() - 1);
             mCurrentGeometry %= mGeometry.size();
             
-            mspInstance->spGeometry = mGeometry[mCurrentGeometry];
+            mspRenderable->mspInstance->spGeometry = mGeometry[mCurrentGeometry];
             
             //
             // Recreate the camera after geometry changes since the camera position
             // is based on the bounds of the geometry being viewed.
             //
-            mspCamera           = _createCamera(mspInstance->spGeometry->mBBox);
+            mspCamera           = _createCamera(mspRenderable->mspInstance->spGeometry->mBBox);
         }
         else if (evt == "next_material" || evt == "prev_material")
         {
@@ -241,7 +269,7 @@ public:
                 : (mCurrentMaterial + mMaterials.size() - 1);
             mCurrentMaterial %= mMaterials.size();
 
-            mspInstance->spMaterial = mMaterials[mCurrentMaterial];
+            mspRenderable->mspInstance->spMaterial = mMaterials[mCurrentMaterial].spMaterial;
         }
         else if (evt == "toggle_rotation")
         {
@@ -251,7 +279,7 @@ public:
         {
             // This should be handled as a global rendering algorithm override instead
             for (auto it = mMaterials.begin(); it != mMaterials.end(); ++it)
-                (*it)->mWireframe = !(*it)->mWireframe;
+                (*it).spMaterial->mWireframe = !(*it).spMaterial->mWireframe;
         }
     }
 
@@ -275,7 +303,7 @@ protected:
                 ? lx0::lxvar_from_file( config["params_filename"] )
                 : lx0::lxvar::undefined();
 
-            _addMaterial("", source, parameters);
+            _addMaterial("", source, parameters, lx0::lxvar::undefined());
         }
     }
 
@@ -303,6 +331,7 @@ protected:
 
     void _processMaterial (lx0::ElementPtr spElem)
     {
+        lx0::lxvar  render = spElem->value().find("render");
         lx0::lxvar  graph = spElem->value().find("graph");
 
         //
@@ -316,7 +345,7 @@ protected:
         // Pass on the generated material data which the rasterizer
         // will use to compile a shader plus a parameter set.
         //
-        _addMaterial(material.uniqueName, material.source, material.parameters);
+        _addMaterial(material.uniqueName, material.source, material.parameters, render);
     }
 
     void _processGeometry (lx0::DocumentPtr spDocument, lx0::ElementPtr spElem)
@@ -331,7 +360,7 @@ protected:
     void _processLight (lx0::ElementPtr spElem)
     {
         //
-        // Extrac the data from the DOM and push it to the light set
+        // Extract the data from the DOM and push it to the light set
         //
         lx0::LightPtr spLight = mspRasterizer->createLight();
         spLight->position  = spElem->value()["position"].convert();
@@ -356,10 +385,12 @@ protected:
         return mspRasterizer->createCamera(glgeom::pi() / 3.0f, 0.01f, 1000.0f, viewMatrix);
     }
 
-    void _addMaterial (std::string uniqueName, std::string source, lx0::lxvar parameters)
+    void _addMaterial (std::string uniqueName, std::string source, lx0::lxvar parameters, lx0::lxvar render)
     {
-        lx0::MaterialPtr spMaterial = mspRasterizer->createMaterial(uniqueName, source, parameters);
-        mMaterials.push_back(spMaterial);
+        MaterialData data;
+        data.renderProperties = render;
+        data.spMaterial = mspRasterizer->createMaterial(uniqueName, source, parameters);
+        mMaterials.push_back(data);
     }
 
     void _addGeometry (lx0::DocumentPtr spDocument, const std::string filename)
@@ -432,13 +463,13 @@ protected:
     lx0::RasterizerGLPtr          mspRasterizer;
     lx0::CameraPtr                mspCamera;
     lx0::LightSetPtr              mspLightSet;
-    lx0::InstancePtr              mspInstance;
+    RenderablePtr                 mspRenderable;
 
     bool                          mbRotate;
     glm::mat4                     mRotation;
 
     size_t                        mCurrentMaterial;
-    std::vector<lx0::MaterialPtr> mMaterials;
+    std::vector<MaterialData>     mMaterials;
 
     size_t                        mCurrentGeometry;
     std::vector<lx0::GeometryPtr> mGeometry;
