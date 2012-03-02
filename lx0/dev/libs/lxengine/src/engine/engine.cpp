@@ -50,51 +50,6 @@ using namespace lx0::util;
 
 namespace lx0 { namespace engine { namespace dom_ns {
 
-    _WorkerThread::_WorkerThread()
-        : mDone (false)
-    {
-    }
-
-    void 
-    _WorkerThread::addTask (std::function<void()> f)
-    {
-        boost::lock_guard<boost::mutex> lock(mMutex);
-        mQueue.push_back(f);
-        mCondition.notify_one();
-    }
-    
-    void
-    _WorkerThread::start (void)
-    {
-        mpThread = new boost::thread([&]() { run(); });
-    }
-
-    void
-    _WorkerThread::run (void)
-    {
-        lx_current_thread_priority_below_normal();
-
-        while (!mDone)
-        {
-            boost::unique_lock<boost::mutex> lock(mMutex);
-            while (mQueue.empty())
-                mCondition.wait(lock);
-
-            auto f = mQueue.front();
-            mQueue.pop_front();
-
-            f();
-        }
-    }
-
-    void
-    _WorkerThread::finish (void)
-    {
-        addTask([&]() { mDone = true; });
-        mpThread->join();
-        delete mpThread;
-    }          
-
 
     namespace detail
     {
@@ -122,6 +77,46 @@ namespace lx0 { namespace engine { namespace dom_ns {
         {
             mCurrent--;
         }
+
+
+        WorkerThread::WorkerThread()
+            : mDone (false)
+        {
+            mpThread = new boost::thread([&]() { _run(); });
+        }
+
+        WorkerThread::~WorkerThread (void)
+        {
+            addTask([&]() { mDone = true; });
+            mpThread->join();
+            delete mpThread;
+        }          
+
+        void 
+        WorkerThread::addTask (std::function<void()> f)
+        {
+            boost::lock_guard<boost::mutex> lock(mMutex);
+            mQueue.push_back(f);
+            mCondition.notify_one();
+        }
+    
+        void
+        WorkerThread::_run (void)
+        {
+            lx_current_thread_priority_below_normal();
+
+            while (!mDone)
+            {
+                boost::unique_lock<boost::mutex> lock(mMutex);
+                while (mQueue.empty())
+                    mCondition.wait(lock);
+
+                auto f = mQueue.front();
+                mQueue.pop_front();
+
+                f();
+            }
+        }  
     }
 
     using namespace detail;
@@ -626,9 +621,7 @@ namespace lx0 { namespace engine { namespace dom_ns {
         //
         // Launch the worker thread
         //
-        auto pThread = new _WorkerThread();
-        mWorkerThreads.push_back(pThread);
-        pThread->start();
+        mWorkerThreads.push_back( new detail::WorkerThread );
 
         //
         // Signal to the Document components that the main loop is about
@@ -709,7 +702,12 @@ namespace lx0 { namespace engine { namespace dom_ns {
 
         slotRunEnd();
 
-        pThread->finish();
+        //
+        // Finish all worker threads.  The destructor will *wait* for any pending
+        // tasks to run before returning.
+        //
+        for (auto it = mWorkerThreads.begin(); it != mWorkerThreads.end(); ++it)
+            delete (*it);
 
 		return 0;
 	}

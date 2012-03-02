@@ -105,30 +105,33 @@ namespace lx0
                     virtual void        onDocumentCreated   (EnginePtr spEngine, DocumentPtr spDocument) {}
                 };
 
+                //===========================================================================//
+                //!
+                /*!
+                    \ingroup lx0_engine_dom
+                 */
+                class WorkerThread
+                {
+                public:
+                            WorkerThread();
+                            ~WorkerThread();
+
+                    void    addTask (std::function<void()>);
+                    
+
+                protected:
+                    void        _run     (void);
+
+                    boost::thread*                    mpThread;
+                    boost::condition_variable         mCondition;
+                    boost::mutex                      mMutex;
+                    std::deque<std::function<void()>> mQueue;
+                    volatile bool                     mDone;
+                };
+
             }
 
-            //===========================================================================//
-            //!
-            /*!
-                \ingroup lx0_engine_dom
-             */
-            class _WorkerThread
-            {
-            public:
-                        _WorkerThread();
-
-                void    addTask (std::function<void()>);
-                void    start   (void);
-                void    run     (void);
-                void    finish  (void);
-
-            protected:
-                boost::thread*                    mpThread;
-                boost::condition_variable         mCondition;
-                boost::mutex                      mMutex;
-                std::deque<std::function<void()>> mQueue;
-                volatile bool                     mDone;
-            };
+            
 
 
             //===========================================================================//
@@ -287,7 +290,7 @@ namespace lx0
                 std::map<std::string, std::vector<std::function<bool(std::string)>>>    m_psuedoAttributes;
                 std::map<std::string, std::vector<std::function<lxvar(std::string)>>>   m_attributeParsers;
 
-                std::vector<_WorkerThread*>                                             mWorkerThreads;
+                std::vector<detail::WorkerThread*>                                      mWorkerThreads;
             };
 
         }
