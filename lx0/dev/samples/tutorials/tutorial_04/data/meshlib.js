@@ -73,6 +73,20 @@ PointList.prototype.addVertex = function (x, y, z) {
 }
 
 //===========================================================================//
+// LineList
+//===========================================================================//
+
+function LineList() {
+    this._meshType = "LineList";
+    this._vertices = [];
+}
+
+LineList.prototype.addSegment = function (v0, v1) {
+    this._vertices.push({ position : v0.slice(0) });
+	this._vertices.push({ position : v1.slice(0) });
+}
+
+//===========================================================================//
 // TriMesh
 //===========================================================================//
 
@@ -543,6 +557,12 @@ var HalfEdgeMesh = (function () {
         var vertices = this._vertices.slice(0);
         for (var i = 0; i < vertices.length; ++i) {
             f(vertices[i]);
+        }
+    };
+
+	HalfEdgeMesh.prototype.iterateEdges = function (f) {
+        for (var i = 0; i < this._edges.length; ++i) {
+            f(this._edges[i]);
         }
     };
 

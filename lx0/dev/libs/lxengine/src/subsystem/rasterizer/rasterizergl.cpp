@@ -4,7 +4,7 @@
 
     LICENSE
 
-    Copyright (c) 2010-2011 athile@athile.net (http://www.athile.net)
+    Copyright (c) 2010-2012 athile@athile.net (http://www.athile.net)
 
     Permission is hereby granted, free of charge, to any person obtaining a 
     copy of this software and associated documentation files (the "Software"), 
@@ -338,6 +338,49 @@ RasterizerGL::_acquireDefaultPointMaterial (void)
     auto pMat = new GenericMaterial(prog);
     pMat->mShaderFilename = "<default point material>";
     pMat->mGeometryType = GL_POINTS;
+    //pMat->mParameters = parameters.clone();
+ 
+    spDefault = MaterialPtr(pMat);
+    return spDefault;
+}
+
+MaterialPtr 
+RasterizerGL::_acquireDefaultLineMaterial (void)
+{
+    static MaterialPtr spDefault;
+    if (spDefault)
+        return spDefault;
+
+    //throw lx_error_exception("Not implemented!");
+
+    //GLuint prog = _createProgram(name, GL_POINTS, fragmentSource);
+    GLuint prog;
+    {
+        check_glerror();
+
+        // Create the shader program
+        //
+        GLuint vs = _createShader("media2/shaders/glsl/vertex/basic_point_00.vert", GL_VERTEX_SHADER);
+        GLuint fs = _createShader("media2/shaders/glsl/fragment/solid_red.frag", GL_FRAGMENT_SHADER);
+
+        prog = glCreateProgram();
+        {
+            glAttachShader(prog, vs);
+            glAttachShader(prog, fs);
+        
+            check_glerror();
+            
+            glBindAttribLocation(prog, 0, "inPosition");
+        }
+        check_glerror();
+
+        _linkProgram(prog);
+    }
+
+
+    auto pMat = new GenericMaterial(prog);
+    pMat->mShaderFilename = "<default point material>";
+    pMat->mGeometryType = GL_LINES;
     //pMat->mParameters = parameters.clone();
  
     spDefault = MaterialPtr(pMat);
@@ -745,6 +788,15 @@ RasterizerGL::createGeometry (glgeom::primitive_buffer& primitive)
         pGeom->mVboPosition   = _genArrayBuffer(GL_ARRAY_BUFFER, primitive.vertex.positions);
         pGeom->mCount         = primitive.vertex.positions.size();
     }
+    else if (primitive.type == "linelist")
+    {
+        pGeom->mType          = GL_LINES;
+        pGeom->mVao           = vao;
+        pGeom->mVboPosition   = _genArrayBuffer(GL_ARRAY_BUFFER, primitive.vertex.positions);
+        pGeom->mCount         = primitive.vertex.positions.size();
+    }
+    else
+        throw lx_error_exception("Unknown primitive type '%s'", primitive.type);
 
     check_glerror();
 
@@ -1207,6 +1259,9 @@ RasterizerGL::rasterizeItem (GlobalPass& pass, std::shared_ptr<Instance> spInsta
         // rendered.  Use the default material for that geometry instead.
         switch (spInstance->spGeometry->mType)
         {
+        case GL_LINES:
+            mContext.spMaterial = _acquireDefaultLineMaterial();
+            break;
         case GL_POINTS:
             mContext.spMaterial = _acquireDefaultPointMaterial();
             break;

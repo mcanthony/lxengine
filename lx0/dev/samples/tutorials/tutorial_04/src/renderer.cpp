@@ -93,10 +93,23 @@ namespace lx0 { namespace core { namespace lxvar_ns { namespace detail {
         {
             lxvar vertex = json["_vertices"][i];
             lxvar v = vertex["position"];
-            lxvar c = vertex["color"];
             prim.vertex.positions.push_back( v.convert() );
-            //prim.vertex.normals.push_back( n.convert() );
-            //prim.vertex.colors.push_back( c.convert() );
+        }
+    }
+
+    static void _convertLineList (lxvar& json, glgeom::primitive_buffer& prim)
+    {
+        lx_check_error(json["_meshType"].as<std::string>() == "LineList");
+
+        const int vertexCount = json["_vertices"].size();
+
+        prim.type = "linelist"; 
+        prim.vertex.positions.reserve(vertexCount);
+        for (int i = 0; i < vertexCount; ++i)
+        {
+            lxvar vertex = json["_vertices"][i];
+            lxvar v = vertex["position"];
+            prim.vertex.positions.push_back( v.convert() );
         }
     }
 
@@ -108,6 +121,8 @@ namespace lx0 { namespace core { namespace lxvar_ns { namespace detail {
             _convertTriMesh(json, prim);
         else if (type == "PointList")
             _convertPointList(json, prim);
+        else if (type == "LineList")
+            _convertLineList(json, prim);
         else
             throw lx_error_exception("Unrecognized _meshType '%s'", type);
     }

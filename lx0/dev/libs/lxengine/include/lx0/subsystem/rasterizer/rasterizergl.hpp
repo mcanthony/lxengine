@@ -292,6 +292,7 @@ namespace lx0
                 void        _linkProgram            (GLuint prog, const char* pszSource = nullptr);
 
                 MaterialPtr _acquireDefaultPointMaterial    (void);
+                MaterialPtr _acquireDefaultLineMaterial     (void);
 
                 std::unique_ptr<GLInterface>      gl;
 
