@@ -79,6 +79,8 @@ namespace lx0
                          , tbFlatShading        (boost::indeterminate)
                      { }
 
+                FrameBufferPtr  spFrameBuffer;
+
                 CameraPtr       spCamera;
                 LightSetPtr     spLightSet;
 
@@ -98,6 +100,33 @@ namespace lx0
                 std::vector<GlobalPass> mPasses;
             };
 
+            //===========================================================================//
+            //! 
+            /*!
+                \ingroup lx0_subsystem_rasterizer
+
+                Reference: OpenGL 4.0 Shading Language Cookbook, Chapter 4.
+             */
+            class FrameBuffer 
+                : public std::enable_shared_from_this<FrameBuffer>
+            {
+            public:
+                enum Type
+                {
+                    eDefaultFrameBuffer = -1,
+                    eCreateFrameBuffer, 
+                };
+
+                FrameBuffer     (Type type);
+                ~FrameBuffer    (void);
+
+                void            activate();
+
+            protected:
+                GLuint  mHandle;
+                int     mWidth;
+                int     mHeight;
+            };
 
             //===========================================================================//
             /*!
@@ -173,6 +202,8 @@ namespace lx0
 
                 CameraPtr       createCamera    (glgeom::radians fov, float nearDist, float farDist, glm::mat4& viewMatrix);
                 
+                FrameBufferPtr  createFrameBuffer           (int width, int height);
+
                 LightSetPtr     createLightSet              (void);
                 LightPtr        createLight                 (void);
                 LightPtr        createLight                 (const glgeom::point_light_f& light);
@@ -307,6 +338,8 @@ namespace lx0
                 bool                            mInited;
                 bool                            mShutdown;
                 FrameData                       mFrameData;
+
+                FrameBufferPtr                  mspFBOScreen;
 
                 struct
                 {

@@ -180,6 +180,8 @@ public:
         mspRasterizer.reset( new lx0::RasterizerGL );
         mspRasterizer->initialize();
 
+        mspFBOffscreen = mspRasterizer->createFrameBuffer(512, 512);
+
         //
         // Add an empty light set; the Document will populate it
         // 
@@ -217,8 +219,12 @@ public:
         algorithm.mClearColor = glgeom::color4f(0.1f, 0.3f, 0.8f, 1.0f);
         
         lx0::GlobalPass pass;
+        pass.spFrameBuffer = mspFBOffscreen;
         pass.spCamera   = mspCamera;
         pass.spLightSet = mspLightSet;
+        algorithm.mPasses.push_back(pass);
+
+        pass.spFrameBuffer.reset();
         algorithm.mPasses.push_back(pass);
 
         lx0::RenderList instances;
@@ -461,6 +467,7 @@ protected:
 
     lx0::ShaderBuilder            mShaderBuilder;
     lx0::RasterizerGLPtr          mspRasterizer;
+    lx0::FrameBufferPtr           mspFBOffscreen;
     lx0::CameraPtr                mspCamera;
     lx0::LightSetPtr              mspLightSet;
     RenderablePtr                 mspRenderable;

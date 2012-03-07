@@ -63,6 +63,7 @@ namespace lx0
             _LX_FORWARD_DECL_PTRS(Transform);
             _LX_FORWARD_DECL_PTRS(Material);
             _LX_FORWARD_DECL_PTRS(Texture);
+            _LX_FORWARD_DECL_PTRS(FrameBuffer);
 
             _LX_FORWARD_DECL_PTRS(Instance);
 

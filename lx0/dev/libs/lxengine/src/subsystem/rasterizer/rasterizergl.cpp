@@ -60,6 +60,80 @@ void lx0::subsystem::rasterizer_ns::check_glerror()
     }
 }
 
+FrameBuffer::FrameBuffer(FrameBuffer::Type type)
+    : mHandle   (0)
+    , mWidth    (0)
+    , mHeight   (0)
+{
+    check_glerror();
+    if (type == eCreateFrameBuffer)
+    {
+        GLint prevFBO;
+        glGetIntegerv(GL_DRAW_FRAMEBUFFER_BINDING, &prevFBO);
+
+        glGenFramebuffers(1, &mHandle);
+        glBindFramebuffer(GL_FRAMEBUFFER, mHandle);
+
+        mWidth = 512;
+        mHeight = 512;
+ 
+        //
+        // Generate the color texture
+        //
+        GLuint renderTex;
+        glGenTextures(1, &renderTex);
+        glActiveTexture(GL_TEXTURE0); // Use texture unit 0
+        glBindTexture(GL_TEXTURE_2D, renderTex);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, mWidth, mHeight, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+        //
+        // Generate the depth buffer
+        // 
+        GLuint depthBuf;
+        glGenRenderbuffers(1, &depthBuf);
+        glBindRenderbuffer(GL_RENDERBUFFER, depthBuf);
+        glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT, mWidth, mHeight);
+   
+        // Bind the components to the FBO
+        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, renderTex, 0);
+        glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, depthBuf);
+    
+        check_glerror();
+        glBindFramebuffer(GL_FRAMEBUFFER, prevFBO);
+        check_glerror();
+    }
+    else
+    {
+        GLint hCurrentFBO;
+        glGetIntegerv(GL_DRAW_FRAMEBUFFER_BINDING, &hCurrentFBO);
+        lx_check_error(hCurrentFBO == 0);
+
+        GLint viewport[4];
+	    glGetIntegerv(GL_VIEWPORT, viewport);
+
+        mHandle = 0;
+        mWidth = viewport[2];
+        mHeight = viewport[3];
+    }
+}
+
+FrameBuffer::~FrameBuffer()
+{
+}
+
+void 
+FrameBuffer::activate()
+{
+    check_glerror();
+
+    glBindFramebuffer(GL_FRAMEBUFFER, mHandle);
+    glViewport(0, 0, mWidth, mHeight);
+
+    check_glerror();
+}
+
 /*!
     Creates the RasterizerGL in an uninitialized state.
 
@@ -101,12 +175,14 @@ void RasterizerGL::initialize()
     //
     gl3wInit();
     
-    lx_log("Using OpenGL v%s", (const char*)glGetString(GL_VERSION));
-    lx_log("Using GLSL v%s", (const char*)glGetString(GL_SHADING_LANGUAGE_VERSION));
+    lx_log("Using OpenGL v%s",  (const char*)glGetString(GL_VERSION));
+    lx_log("Using GLSL v%s",    (const char*)glGetString(GL_SHADING_LANGUAGE_VERSION));
 
     glClearColor(0.09f, 0.09f, 0.11f, 1.0f);
-
     glEnable(GL_DEPTH_TEST);
+
+    mspFBOScreen.reset( new FrameBuffer(FrameBuffer::eDefaultFrameBuffer) );
+    mspFBOScreen->activate();
 }
 
 static void log_timer(const char* name, const lx0::Timer& timer, const lx0::Timer& base)
@@ -138,6 +214,15 @@ void RasterizerGL::shutdown()
 
     mShutdown = true;
     mInited = false;
+}
+
+FrameBufferPtr  
+RasterizerGL::createFrameBuffer (int width, int height)
+{
+    //
+    // Ignore width/height for now, until we have something working...
+    //
+    return FrameBufferPtr( new FrameBuffer(FrameBuffer::eCreateFrameBuffer) );
 }
 
 CameraPtr       
@@ -1130,8 +1215,12 @@ RasterizerGL::rasterizeList (RenderAlgorithm& algorithm, std::vector<std::shared
 
         for (auto pass = algorithm.mPasses.begin(); pass != algorithm.mPasses.end(); ++pass)
         {
+            auto spFBO = pass->spFrameBuffer ? pass->spFrameBuffer : mspFBOScreen;
+
             mContext.itemId = 0;
             mContext.pGlobalPass = &(*pass);
+
+            spFBO->activate();
 
             for (auto it = list.begin(); it != list.end(); ++it)
             {
