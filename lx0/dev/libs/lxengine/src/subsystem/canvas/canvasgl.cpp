@@ -35,6 +35,7 @@
 #include "windowclass.hpp"
 
 #include <GL3/gl3w_modified.hpp>
+#include <lx0/subsystem/rasterizer/gl/glinterface.hpp>
 
 // Inline the WGL defines since this is the only place they're used
 #define WGL_CONTEXT_MAJOR_VERSION_ARB		        0x2091
@@ -506,6 +507,9 @@ namespace lx0 { namespace subsystem { namespace canvas_ns { namespace detail {
         else
             throw lx_error_exception("Using a pre-OpenGL 3.2 context");
     
+        lx0::OpenGlApi3_2 api;
+        api.initialize();
+
         // Check post-conditions
         //
         lx_check_error(m_hRC != 0, "Valid rendering context not created!");

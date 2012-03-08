@@ -18,7 +18,7 @@ static void close_libgl(void)
 
 static void *get_proc(const char *proc)
 {
-	void *res;
+	void *res = 0;
 
 	res = wglGetProcAddress(proc);
 	if (!res)
