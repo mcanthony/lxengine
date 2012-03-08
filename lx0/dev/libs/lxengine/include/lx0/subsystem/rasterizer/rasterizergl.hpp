@@ -74,17 +74,16 @@ namespace lx0
             {
             public:
                      GlobalPass()
-                         : bOverrideMaterial    (false)
-                         , tbWireframe          (boost::indeterminate)
+                         : tbWireframe          (boost::indeterminate)
                          , tbFlatShading        (boost::indeterminate)
                      { }
 
-                FrameBufferPtr  spFrameBuffer;
+                FrameBufferPtr  spFrameBuffer;          // optional: screen is the default
+
+                FrameBufferPtr  spSourceFBO;            // if set, will blit this as a full screen quad
 
                 CameraPtr       spCamera;
                 LightSetPtr     spLightSet;
-
-                bool            bOverrideMaterial;
                 MaterialPtr     spMaterial;
 
                 boost::tribool  tbWireframe;
@@ -117,15 +116,21 @@ namespace lx0
                     eCreateFrameBuffer, 
                 };
 
-                FrameBuffer     (Type type);
+                FrameBuffer     (Type type, int width=0, int height=0);
                 ~FrameBuffer    (void);
 
+                int             width       (void) const { return mWidth; }
+                int             height      (void) const { return mHeight; }
+                GLuint          textureId   (void) const { return mTextureHandle; }
+                
                 void            activate();
 
             protected:
-                GLuint  mHandle;
+                GLuint  mHandle;                
                 int     mWidth;
                 int     mHeight;
+
+                GLuint  mTextureHandle;
             };
 
             //===========================================================================//
@@ -223,6 +228,7 @@ namespace lx0
                 void            cacheTexture                (std::string name, TexturePtr spTexture);
 
                 TransformPtr    createTransform             (glm::mat4& mat);
+                TransformPtr    createTransform             (glm::mat4& projMat, glm::mat4& viewMat, glm::mat4& modelMat);
                 TransformPtr    createTransform             (float tx, float ty, float tz);
                 TransformPtr    createTransform             (const glgeom::vector3f& scale, const glgeom::point3f& center);
                 TransformPtr    createTransformBillboardXY  (float tx, float ty, float tz);
@@ -283,13 +289,17 @@ namespace lx0
                         : tbFlatShading     (boost::indeterminate)
                     {}
 
+                    // Global pass info
                     GlobalPass*     pGlobalPass;
+                    FrameBufferPtr  spFBO;
+
+                    // Instance Info
                     InstancePtr     spInstance;
                     unsigned int    itemId;
-
                     LightSetPtr     spLightSet;
                     CameraPtr       spCamera;
                     MaterialPtr     spMaterial;
+                    TransformPtr    spTransform;
 
                     unsigned int    textureUnit;
 
@@ -312,6 +322,9 @@ namespace lx0
 
                     } uniforms;
 
+                    // Semantic variables
+                    GLuint      sourceFBOTexture;
+
                 } mContext;
 
             protected:
@@ -321,9 +334,12 @@ namespace lx0
                 GLuint      _createShader           (const char* filename, GLuint type);
                 GLuint      _createShader2          (std::string& source, GLuint type);
                 void        _linkProgram            (GLuint prog, const char* pszSource = nullptr);
-
+                
                 MaterialPtr _acquireDefaultPointMaterial    (void);
                 MaterialPtr _acquireDefaultLineMaterial     (void);
+                MaterialPtr _acquireDefaultSurfaceMaterial  (void);
+
+                GeometryPtr _acquireFullScreenQuad          (int width, int height);
 
                 std::unique_ptr<GLInterface>      gl;
 

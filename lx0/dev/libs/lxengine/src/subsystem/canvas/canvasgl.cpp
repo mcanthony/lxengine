@@ -429,6 +429,11 @@ namespace lx0 { namespace subsystem { namespace canvas_ns { namespace detail {
                 // up the call stack, postpone the exception until the next Engine update().
                 Engine::acquire()->postponeException(e);
             }
+            catch (...)
+            {
+                lx0::lx_break_if_debugging();
+                throw;
+            }
             mRedrawActive = false;
         }
         else

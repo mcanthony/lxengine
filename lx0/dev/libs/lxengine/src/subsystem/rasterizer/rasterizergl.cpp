@@ -42,6 +42,8 @@
 #include <glm/gtc/matrix_inverse.hpp>
 
 #include <gl/glu.h>
+#include <GL3/gl3w_modified.hpp>
+
 
 using namespace lx0::subsystem::rasterizer_ns;
 using namespace glgeom;
@@ -60,10 +62,11 @@ void lx0::subsystem::rasterizer_ns::check_glerror()
     }
 }
 
-FrameBuffer::FrameBuffer(FrameBuffer::Type type)
-    : mHandle   (0)
-    , mWidth    (0)
-    , mHeight   (0)
+FrameBuffer::FrameBuffer(FrameBuffer::Type type, int width, int height)
+    : mHandle        (0)
+    , mWidth         (0)
+    , mHeight        (0)
+    , mTextureHandle (0)
 {
     check_glerror();
     if (type == eCreateFrameBuffer)
@@ -73,21 +76,11 @@ FrameBuffer::FrameBuffer(FrameBuffer::Type type)
 
         glGenFramebuffers(1, &mHandle);
         glBindFramebuffer(GL_FRAMEBUFFER, mHandle);
+        lx_check_error(mHandle != GL_NONE);
 
-        mWidth = 512;
-        mHeight = 512;
+        mWidth = width;
+        mHeight = height;
  
-        //
-        // Generate the color texture
-        //
-        GLuint renderTex;
-        glGenTextures(1, &renderTex);
-        glActiveTexture(GL_TEXTURE0); // Use texture unit 0
-        glBindTexture(GL_TEXTURE_2D, renderTex);
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, mWidth, mHeight, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-
         //
         // Generate the depth buffer
         // 
@@ -95,10 +88,27 @@ FrameBuffer::FrameBuffer(FrameBuffer::Type type)
         glGenRenderbuffers(1, &depthBuf);
         glBindRenderbuffer(GL_RENDERBUFFER, depthBuf);
         glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT, mWidth, mHeight);
-   
-        // Bind the components to the FBO
-        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, renderTex, 0);
         glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, depthBuf);
+        lx_check_error(depthBuf != GL_NONE);
+        
+        //
+        // Generate the color texture
+        //
+        GLuint renderTex;
+        glGenTextures(1, &renderTex);
+        glActiveTexture(GL_TEXTURE0); // Use texture unit 0
+        glBindTexture(GL_TEXTURE_2D, renderTex);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, mWidth, mHeight, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);        
+        glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+        glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, renderTex, 0);
+        
+        lx_check_error(renderTex != GL_NONE);
+        mTextureHandle = renderTex;
+
+        lx_check_error( glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE );
     
         check_glerror();
         glBindFramebuffer(GL_FRAMEBUFFER, prevFBO);
@@ -130,6 +140,28 @@ FrameBuffer::activate()
 
     glBindFramebuffer(GL_FRAMEBUFFER, mHandle);
     glViewport(0, 0, mWidth, mHeight);
+    
+    //GLenum drawBufs[] = {GL_COLOR_ATTACHMENT0};
+    //glDrawBuffers(1, drawBufs);
+    //check_glerror();
+
+    GLenum fboStatus = glCheckFramebufferStatus(GL_DRAW_FRAMEBUFFER);
+    switch (fboStatus)
+    {
+    case GL_FRAMEBUFFER_COMPLETE:
+        // Nothing to do - everything's fine
+        break;
+    case GL_FRAMEBUFFER_UNDEFINED:
+    case GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT:
+    case GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT:
+    case GL_FRAMEBUFFER_INCOMPLETE_DRAW_BUFFER:
+    case GL_FRAMEBUFFER_INCOMPLETE_READ_BUFFER:
+    case GL_FRAMEBUFFER_UNSUPPORTED:
+    case GL_FRAMEBUFFER_INCOMPLETE_MULTISAMPLE:
+    case GL_FRAMEBUFFER_INCOMPLETE_LAYER_TARGETS:
+    default:
+        throw lx_error_exception("Framebuffer incomplete!");
+    }  
 
     check_glerror();
 }
@@ -222,7 +254,7 @@ RasterizerGL::createFrameBuffer (int width, int height)
     //
     // Ignore width/height for now, until we have something working...
     //
-    return FrameBufferPtr( new FrameBuffer(FrameBuffer::eCreateFrameBuffer) );
+    return FrameBufferPtr( new FrameBuffer(FrameBuffer::eCreateFrameBuffer, width, height) );
 }
 
 CameraPtr       
@@ -429,6 +461,11 @@ RasterizerGL::_acquireDefaultPointMaterial (void)
     return spDefault;
 }
 
+/*
+    This was thrown together quickly and contains a lot of duplicate code.
+    A generic createMaterial method should handle the low-level details
+    used here.
+ */
 MaterialPtr 
 RasterizerGL::_acquireDefaultLineMaterial (void)
 {
@@ -471,6 +508,86 @@ RasterizerGL::_acquireDefaultLineMaterial (void)
     spDefault = MaterialPtr(pMat);
     return spDefault;
 }
+
+/*
+    This was thrown together quickly and contains a lot of duplicate code.
+    A generic createMaterial method should handle the low-level details
+    used here.
+ */
+MaterialPtr 
+RasterizerGL::_acquireDefaultSurfaceMaterial (void)
+{
+    static MaterialPtr spDefault;
+    if (spDefault)
+        return spDefault;
+
+    //throw lx_error_exception("Not implemented!");
+
+    //GLuint prog = _createProgram(name, GL_POINTS, fragmentSource);
+    GLuint prog;
+    {
+        check_glerror();
+
+        // Create the shader program
+        //
+        GLuint vs = _createShader("media2/shaders/glsl/materials/solid_texture2.vert", GL_VERTEX_SHADER);
+        GLuint fs = _createShader("media2/shaders/glsl/materials/solid_texture2.frag", GL_FRAGMENT_SHADER);
+
+        prog = glCreateProgram();
+        {
+            glAttachShader(prog, vs);
+            glAttachShader(prog, fs);
+        
+            check_glerror();
+            
+            glBindAttribLocation(prog, 0, "inPosition");
+        }
+        check_glerror();
+
+        _linkProgram(prog);
+    }
+
+
+    auto pMat = new GenericMaterial(prog);
+    pMat->mShaderFilename = "<default surface material>";
+    pMat->mGeometryType = GL_TRIANGLES;
+    pMat->mParameters.insert("unifTexture0", lx0::lxvar("sampler2D", "@sourceFBO"));
+    pMat->mBlend = false;
+    pMat->mZTest = false;
+ 
+    spDefault = MaterialPtr(pMat);
+    return spDefault;
+}
+
+GeometryPtr 
+RasterizerGL::_acquireFullScreenQuad (int width, int height)
+{
+    // Changing this from 1.0 can be helpful for debugging (i.e. blit to 80% of the screen, set to .8)
+    const float fExtent = .8f;
+
+    primitive_buffer prim;
+    prim.type = "quadlist";
+    prim.vertex.positions.reserve(4);
+    prim.vertex.positions.push_back( point3f(-fExtent, -fExtent, 0) );
+    prim.vertex.positions.push_back( point3f( fExtent, -fExtent, 0) );
+    prim.vertex.positions.push_back( point3f( fExtent,  fExtent, 0) );
+    prim.vertex.positions.push_back( point3f(-fExtent,  fExtent, 0) );
+
+    auto f = [](float u, float v) -> std::vector<point2f> {
+        std::vector<point2f> a;
+        a.push_back( point2f(u, v) );
+        return a;
+    };
+    prim.vertex.uv.reserve(4);
+    prim.vertex.uv.push_back( f(-fExtent, -fExtent) );
+    prim.vertex.uv.push_back( f( fExtent, -fExtent) );
+    prim.vertex.uv.push_back( f( fExtent,  fExtent) );
+    prim.vertex.uv.push_back( f(-fExtent,  fExtent) );
+
+    auto spGeometry = this->createGeometry(prim);
+    return spGeometry;
+}
+
 
 MaterialPtr 
 RasterizerGL::createMaterial (std::string fragShader)
@@ -642,6 +759,7 @@ RasterizerGL::_linkProgram (GLuint prog, const char* pszSource)
         //
         // Report the error
         //
+        lx_debugger_message(std::string(&log[0]));
         lx0::error_exception e(__FILE__, __LINE__);
         e.detail("GLSL shader compilation error. See lxengine_log.html for full details.");
         e.detail("\n%s", &log[0]);
@@ -881,6 +999,34 @@ RasterizerGL::createGeometry (glgeom::primitive_buffer& primitive)
         pGeom->mVboPosition   = _genArrayBuffer(GL_ARRAY_BUFFER, primitive.vertex.positions);
         pGeom->mCount         = primitive.vertex.positions.size();
     }
+    else if (primitive.type == "quadlist")
+    {
+        std::vector<glgeom::point3f> positions;
+        positions.reserve( primitive.vertex.positions.size() * 3 / 2);
+        auto it = primitive.vertex.positions.begin(); 
+        while (it != primitive.vertex.positions.end())
+        {
+            auto v0 = *it++;
+            auto v1 = *it++;
+            auto v2 = *it++;
+            auto v3 = *it++;
+
+            positions.push_back(v0);
+            positions.push_back(v1);
+            positions.push_back(v2);
+            positions.push_back(v0);
+            positions.push_back(v2);
+            positions.push_back(v3);
+        }
+
+        pGeom->mType          = GL_TRIANGLES;
+        pGeom->mVao           = vao;
+        pGeom->mVboPosition   = _genArrayBuffer(GL_ARRAY_BUFFER, positions);
+        pGeom->mCount         = positions.size();
+
+        for (int i = 0; i < 8 && i < (int)primitive.vertex.uv.size(); ++i)
+            pGeom->mVboUVs[i] = _genArrayBuffer(GL_ARRAY_BUFFER, primitive.vertex.uv[i]);
+    }
     else
         throw lx_error_exception("Unknown primitive type '%s'", primitive.type);
 
@@ -1031,6 +1177,38 @@ RasterizerGL::createTransform (glm::mat4& mat)
 {
     auto spTransform = TransformPtr(new Transform);
     spTransform->mat = mat;
+    return spTransform;
+}
+
+TransformPtr
+RasterizerGL::createTransform (glm::mat4& projMat, glm::mat4& viewMat, glm::mat4& modelMat)
+{
+    struct Class : public Transform
+    {
+        Class (glm::mat4& projMat, glm::mat4& viewMat, glm::mat4& modelMat)
+            : mProjMat  (projMat)
+            , mViewMat  (viewMat)
+            , mModelMat (modelMat)
+        {
+        }
+
+        virtual void activate(RasterizerGL* pRasterizer, CameraPtr spCamera)
+        {
+            //
+            //@todo Separate View and Model matrices in uniforms!
+            //
+            auto& uniforms = pRasterizer->mContext.uniforms;            
+            uniforms.spProjMatrix.reset(new glm::mat4(mProjMat));
+            uniforms.spViewMatrix.reset(new glm::mat4(mViewMat * mModelMat));            
+        }
+
+        glm::mat4 mProjMat;
+        glm::mat4 mViewMat;
+        glm::mat4 mModelMat;
+    };
+
+    TransformPtr spTransform(new Class(projMat, viewMat, modelMat));
+    spTransform->mat = glm::mat4();
     return spTransform;
 }
 
@@ -1211,7 +1389,7 @@ RasterizerGL::rasterizeList (RenderAlgorithm& algorithm, std::vector<std::shared
 {
     try
     {
-        mStats.tmRasterizeList.start();
+        TimeSection( mStats.tmRasterizeList );
 
         for (auto pass = algorithm.mPasses.begin(); pass != algorithm.mPasses.end(); ++pass)
         {
@@ -1219,27 +1397,47 @@ RasterizerGL::rasterizeList (RenderAlgorithm& algorithm, std::vector<std::shared
 
             mContext.itemId = 0;
             mContext.pGlobalPass = &(*pass);
+            mContext.spFBO = spFBO;
+            mContext.sourceFBOTexture = GL_NONE;
 
             spFBO->activate();
 
-            for (auto it = list.begin(); it != list.end(); ++it)
+            if (pass->spSourceFBO)
             {
-                auto spInstance = *it;
-                if (spInstance)
+                mContext.sourceFBOTexture = pass->spSourceFBO->textureId();
+
+                //
+                // Render a full screen quad textured with the given FBO
+                //
+                InstancePtr spInstance(new Instance);
+                spInstance->spGeometry = _acquireFullScreenQuad(mspFBOScreen->width(), mspFBOScreen->height());;
+                spInstance->spTransform = createTransform(glm::mat4(), glm::mat4(), glm::mat4());
+
+                rasterizeItem(*pass, spInstance);
+            }
+            else
+            {
+                //
+                // Render the list of Instances
+                //
+                for (auto it = list.begin(); it != list.end(); ++it)
                 {
-                    rasterizeItem(*pass, *it);
+                    auto spInstance = *it;
+                    if (spInstance)
+                    {
+                        rasterizeItem(*pass, spInstance);
+                    }
+                    else
+                    {
+                        throw lx_error_exception("Null Instance in rasterization list");
+                    }
+                    mContext.itemId ++;
                 }
-                else
-                {
-                    throw lx_error_exception("Null Instance in rasterization list");
-                }
-                mContext.itemId ++;
             }
 
+            mContext.spFBO.reset();
             mContext.pGlobalPass = nullptr;
         }
-
-        mStats.tmRasterizeList.stop();
     }
     catch (lx0::error_exception& e)
     {
@@ -1304,7 +1502,7 @@ void _timeCall (lx0::Timer& timer, std::function<void (void)> f)
 void 
 RasterizerGL::rasterizeItem (GlobalPass& pass, std::shared_ptr<Instance> spInstance)
 {
-    mStats.tmRasterizeItem.start();
+    TimeSection( mStats.tmRasterizeItem );
 
     lx_check_error(spInstance.get() != nullptr);
 
@@ -1327,9 +1525,10 @@ RasterizerGL::rasterizeItem (GlobalPass& pass, std::shared_ptr<Instance> spInsta
     mContext.spLightSet = (spInstance->spLightSet)
         ? spInstance->spLightSet
         : pass.spLightSet;
-    mContext.spMaterial = (pass.bOverrideMaterial) 
+    mContext.spMaterial = (pass.spMaterial) 
         ? pass.spMaterial
         : spInstance->spMaterial;
+    mContext.spTransform = spInstance->spTransform;
 
     mContext.tbFlatShading = boost::indeterminate(spInstance->spGeometry->mtbFlatShading) 
         ? pass.tbFlatShading
@@ -1340,15 +1539,20 @@ RasterizerGL::rasterizeItem (GlobalPass& pass, std::shared_ptr<Instance> spInsta
     // Add warnings and errors as appropriate if there is not a reasonable default
     // that can be substituted in.
     //
+    lx_check_error(spInstance->spGeometry);
     lx_check_error(spInstance->spGeometry->mType != GL_INVALID_ENUM);
-    lx_check_error(mContext.spMaterial->mGeometryType != GL_INVALID_ENUM);
+    lx_check_error(!mContext.spMaterial || mContext.spMaterial->mGeometryType != GL_INVALID_ENUM);
 
-    if (spInstance->spGeometry->mType != mContext.spMaterial->mGeometryType)
+    if (!mContext.spMaterial 
+        ||  spInstance->spGeometry->mType != mContext.spMaterial->mGeometryType)
     {
         // The requested material does not support the type of geometry that is being
         // rendered.  Use the default material for that geometry instead.
         switch (spInstance->spGeometry->mType)
         {
+        case GL_TRIANGLES:
+            mContext.spMaterial = _acquireDefaultSurfaceMaterial();
+            break;
         case GL_LINES:
             mContext.spMaterial = _acquireDefaultLineMaterial();
             break;
@@ -1374,6 +1578,8 @@ RasterizerGL::rasterizeItem (GlobalPass& pass, std::shared_ptr<Instance> spInsta
     //
     {
         check_glerror();
+        lx_check_error( mContext.spCamera );
+        lx_check_error( mContext.spMaterial );
 
         mContext.spCamera->activate(this);
         
@@ -1385,7 +1591,10 @@ RasterizerGL::rasterizeItem (GlobalPass& pass, std::shared_ptr<Instance> spInsta
                 mContext.spLightSet->activate(this);
         });
         
-        _timeCall(mStats.tmTransformActivate, [&]() { spInstance->spTransform->activate(this, spInstance->spCamera); });
+        _timeCall(mStats.tmTransformActivate, [&]() { 
+            if (mContext.spTransform)
+                mContext.spTransform->activate(this, spInstance->spCamera); 
+        });
 
         mContext.uniforms.activate();
         
@@ -1394,12 +1603,11 @@ RasterizerGL::rasterizeItem (GlobalPass& pass, std::shared_ptr<Instance> spInsta
         check_glerror();
     }
 
-    mContext.spCamera = nullptr;
-    mContext.spLightSet = nullptr;
-    mContext.spMaterial = nullptr;
-    mContext.spInstance = nullptr;
-
-    mStats.tmRasterizeItem.stop();
+    mContext.spCamera.reset();
+    mContext.spLightSet.reset();
+    mContext.spMaterial.reset();
+    mContext.spTransform.reset();
+    mContext.spInstance.reset();
 }
 
 

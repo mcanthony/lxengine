@@ -98,6 +98,16 @@ namespace lx0 { namespace util { namespace misc {
         lx0::int64  mTotal;
     };
 
+    class TimeSection
+    {
+    public:
+        inline TimeSection (Timer& timer) : mTimer(timer) { mTimer.start(); }
+        inline ~TimeSection ()                            { mTimer.stop(); }
+    
+    protected:
+        Timer&  mTimer;
+    };
+
     }}
     using namespace lx0::util::misc;
 }

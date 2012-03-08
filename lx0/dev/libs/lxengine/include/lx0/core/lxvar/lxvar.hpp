@@ -135,6 +135,9 @@ namespace lx0
                                     lxvar           (float a, float b, float c, float d);
                                     lxvar           (const char* s);
                                     lxvar           (std::string s);
+                                    lxvar           (const lxvar& v0, const lxvar& v1);
+                                    lxvar           (const lxvar& v0, const lxvar& v1, const lxvar& v2);
+                                    lxvar           (const lxvar& v0, const lxvar& v1, const lxvar& v2, const lxvar& v3);
 
                                     lxvar           (const std::vector<int>& v);
                                     lxvar           (const std::vector<float>& v);

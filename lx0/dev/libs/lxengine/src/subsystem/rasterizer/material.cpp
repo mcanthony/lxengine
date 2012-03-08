@@ -212,7 +212,9 @@ PhongMaterial::activate (RasterizerGL* pRasterizer, GlobalPass& pass)
 
 
 GenericMaterial::GenericMaterial (GLuint id)
-    : Material (id)
+    : Material          (id)
+    , mbNeedsCompile    (true)
+    , mParameters       (lx0::lxvar::map())
 {
 }
 
@@ -224,10 +226,80 @@ GenericMaterial::GenericMaterial (GLuint id)
     necessary).  Overall, this leads to highly flexible, highly maintainable
     code that still removes the major bottlenecks of uniform look-ups and lxvar
     conversions on every material activation.
+
+    TODO:
+
+    The instruction list should take the mContext as a parameter.  This will
+    allow instructions to be written for uniforms that pull the value out of
+    the current context, rather than via an explicit value.  We can currently
+    "cheat" and store a copy of the incoming pRasterizer in the function object
+    to accomplish this.
  */
 void
 GenericMaterial::_compile (RasterizerGL* pRasterizer)
 {
+    // 
+    // Clear the "compiled" cache
+    //
+    mInstructions.clear();
+
+    //
+    // Query the list of uniforms in the actual GLSL program
+    //
+    int uniformCount;
+    glGetProgramiv(mId, GL_ACTIVE_UNIFORMS, &uniformCount); 
+    for (int i = 0; i < uniformCount; ++i)  
+    {
+        GLenum  uniformType;
+        char    uniformName[128];
+        GLsizei uniformNameLength;
+        GLint   uniformSize;        // Array size, if an array, 1 otherwise
+
+        glGetActiveUniform(mId, GLuint(i), sizeof(uniformName), &uniformNameLength, &uniformSize, &uniformType, uniformName);
+
+        if (uniformNameLength >= sizeof(uniformName))
+        {
+            throw lx_error_exception("GLSL program contains a uniform with too long a name size!");
+        }
+        else
+        {
+            if (!mParameters.has_key(uniformName))
+            {
+                lx_log("Program contains unspecified uniform: %1%", uniformName);
+            }
+        }
+    }
+
+    //
+    // Query the list of active attributes
+    //
+    int attributeCount;
+    glGetProgramiv(mId, GL_ACTIVE_ATTRIBUTES, &attributeCount); 
+    for (int i = 0; i < attributeCount; ++i)  
+    {
+        GLenum  attribType;
+        char    attribName[128];
+        GLsizei attribNameLength;
+        GLint   attribSize;        // Array size, if an array, 1 otherwise
+
+        glGetActiveAttrib(mId, GLuint(i), sizeof(attribName), &attribNameLength, &attribSize, &attribType, attribName);
+
+        if (attribNameLength >= sizeof(attribName))
+        {
+            throw lx_error_exception("GLSL program contains an attribute with too long a name size!");
+        }
+        else
+        {
+                lx_log("Program contains active attribute: %1%", attribName);
+        }
+    }
+
+    //
+    // Cycle through the provided parameters.
+    //
+    // This list may be a superset of what's actually used in the program.
+    // (Note: does that make sense? What's the use case for the superset?)
+    //
     for (auto it = mParameters.begin(); it != mParameters.end(); ++it)
     {
         const std::string uniformName = it.key();
@@ -265,23 +337,34 @@ GenericMaterial::_compile (RasterizerGL* pRasterizer)
             }
             else if (type == "sampler2D")
             {
-                TexturePtr spTexture;
+                GLuint textureId = GL_NONE;
+                bool   bUseFBO = false;
 
                 auto name = value.as<std::string>();
-                auto it = pRasterizer->mTextureCache.find(name);                    
-                if (it == pRasterizer->mTextureCache.end()) 
+                if (name[0] != '@')
                 {
-                    spTexture = pRasterizer->createTexture(name.c_str());
-                    pRasterizer->cacheTexture(name, spTexture);
+                    TexturePtr spTexture;
+
+                    auto it = pRasterizer->mTextureCache.find(name);                    
+                    if (it == pRasterizer->mTextureCache.end()) 
+                    {
+                        spTexture = pRasterizer->createTexture(name.c_str());
+                        pRasterizer->cacheTexture(name, spTexture);
+                    }
+                    else
+                        spTexture = it->second;
+
+                    textureId = spTexture->mId;
                 }
                 else
-                    spTexture = it->second;
+                {
+                    if (name == "@sourceFBO")
+                        bUseFBO = true;
+                }
 
-                if (spTexture)
+                if (textureId)
                 {
                     // Activate the corresponding texture unit and set *that* to the GL id
-                    const GLuint texId = spTexture->mId;
-
                     mInstructions.push_back([=]() {
                         const auto unit = pRasterizer->mContext.textureUnit++;
 
@@ -290,7 +373,26 @@ GenericMaterial::_compile (RasterizerGL* pRasterizer)
                         glUniform1i(index, unit);
 
                         glActiveTexture(GL_TEXTURE0 + unit);
-                        glBindTexture(GL_TEXTURE_2D, texId);
+                        glBindTexture(GL_TEXTURE_2D, textureId);
+
+                        // Set the parameters on the texture unit
+                        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, mFilter);
+                        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, mFilter);
+                        glEnable(GL_TEXTURE_2D);
+                    });
+                }
+                else if (bUseFBO)
+                {
+                    mInstructions.push_back([this,index,pRasterizer]() {
+                        const auto textureId = pRasterizer->mContext.sourceFBOTexture;
+                        const auto unit = pRasterizer->mContext.textureUnit++;
+
+                        // Set the shader uniform to the *texture unit* containing the texture (NOT
+                        // the GL id of the texture)
+                        glUniform1i(index, unit);
+
+                        glActiveTexture(GL_TEXTURE0 + unit);
+                        glBindTexture(GL_TEXTURE_2D, textureId);
 
                         // Set the parameters on the texture unit
                         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, mFilter);
@@ -343,6 +445,11 @@ GenericMaterial::_compile (RasterizerGL* pRasterizer)
                 throw lx_error_exception("Unrecognized parameter type '%s'", type.c_str());
         }
     }
+
+    //
+    // Mark the compilation as done; no compile needed.
+    //
+    mbNeedsCompile = false;
 }
 
 
@@ -358,7 +465,7 @@ GenericMaterial::activate (RasterizerGL* pRasterizer, GlobalPass& pass)
     // Looking up uniform locations is relatively expensive: compile the
     // parameters into a set of function calls to provide a speed-up.
     //
-    if (mInstructions.empty() && mParameters.is_defined())
+    if (mbNeedsCompile)
         _compile(pRasterizer);
 
     check_glerror();

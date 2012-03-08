@@ -225,6 +225,7 @@ public:
         algorithm.mPasses.push_back(pass);
 
         pass.spFrameBuffer.reset();
+        pass.spSourceFBO = mspFBOffscreen;
         algorithm.mPasses.push_back(pass);
 
         lx0::RenderList instances;

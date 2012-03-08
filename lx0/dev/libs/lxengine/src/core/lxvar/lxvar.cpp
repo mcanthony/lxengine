@@ -188,6 +188,30 @@ namespace lx0 { namespace core { namespace lxvar_ns {
         push(d);
     }
 
+    lxvar::lxvar (const lxvar& v0, const lxvar& v1)
+        : mValue( create_lxarray() )
+    {
+        push(v0);
+        push(v1);
+    }
+
+    lxvar::lxvar (const lxvar& v0, const lxvar& v1, const lxvar& v2)
+        : mValue( create_lxarray() )
+    {
+        push(v0);
+        push(v1);
+        push(v2);
+    }
+
+    lxvar::lxvar (const lxvar& v0, const lxvar& v1, const lxvar& v2, const lxvar& v3)
+        : mValue( create_lxarray() )
+    {
+        push(v0);
+        push(v1);
+        push(v2);
+        push(v3);
+    }
+
     lxvar::lxvar(float a)
         : mValue ( create_lxfloat(a) )
     {

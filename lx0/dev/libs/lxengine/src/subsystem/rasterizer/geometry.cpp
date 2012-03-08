@@ -40,6 +40,10 @@ GeomImp::~GeomImp()
         glDeleteBuffers(1, &mVboNormal);
     if (mVboColors)
         glDeleteBuffers(1, &mVboColors);
+
+    for (int i = 0; i < 8; ++i)
+        if (mVboUVs[i])
+            glDeleteBuffers(1, &mVboUVs[i]);
 }
 
 /*!

@@ -107,6 +107,7 @@ namespace lx0
                 void            _compile        (RasterizerGL*);
 
                 lxvar                                   mParameters;
+                bool                                    mbNeedsCompile;
                 std::vector<std::function<void (void)>> mInstructions;
             };
 
