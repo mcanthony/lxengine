@@ -38,8 +38,6 @@
 #include <glgeom/prototype/material_phong.hpp>
 #include <lx0/lxengine.hpp>
 
-#include <GL3/gl3w_modified.hpp>
-
 //===========================================================================//
 // F O R W A R D   D E C L A R A T I O N S
 //===========================================================================//

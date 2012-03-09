@@ -30,20 +30,22 @@
 
 using namespace lx0;
 
+extern OpenGlApi3_2* gl;
+
 GeomImp::~GeomImp()
 {
     if (mVao)
-        glDeleteVertexArrays(1, &mVao);
+        gl->deleteVertexArrays(1, &mVao);
     if (mVboPosition)
-        glDeleteBuffers(1, &mVboPosition);
+        gl->deleteBuffers(1, &mVboPosition);
     if (mVboNormal)
-        glDeleteBuffers(1, &mVboNormal);
+        gl->deleteBuffers(1, &mVboNormal);
     if (mVboColors)
-        glDeleteBuffers(1, &mVboColors);
+        gl->deleteBuffers(1, &mVboColors);
 
     for (int i = 0; i < 8; ++i)
         if (mVboUVs[i])
-            glDeleteBuffers(1, &mVboUVs[i]);
+            gl->deleteBuffers(1, &mVboUVs[i]);
 }
 
 /*!
@@ -65,64 +67,64 @@ GeomImp::activate(RasterizerGL* pRasterizer, GlobalPass& pass)
     switch (mType)
     {
     case GL_POINTS:
-        glPointSize(3);
+        gl->pointSize(3);
         break;
     }
 
     GLint shaderProgram;
-    glGetIntegerv(GL_CURRENT_PROGRAM, &shaderProgram);
+    gl->getIntegerv(GL_CURRENT_PROGRAM, &shaderProgram);
 
-    glBindVertexArray(mVao);
+    gl->bindVertexArray(mVao);
 
     // Bind the position data
-    glBindBuffer(GL_ARRAY_BUFFER, mVboPosition);
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
-    glEnableVertexAttribArray(0);
+    gl->bindBuffer(GL_ARRAY_BUFFER, mVboPosition);
+    gl->vertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
+    gl->enableVertexAttribArray(0);
             
-    GLint normalIndex = glGetAttribLocation(shaderProgram, "vertNormal");
+    GLint normalIndex = gl->getAttribLocation(shaderProgram, "vertNormal");
     if (normalIndex != -1)
     {
         if (mVboNormal)
         {
-            glBindBuffer(GL_ARRAY_BUFFER, mVboNormal);
-            glVertexAttribPointer(normalIndex, 3, GL_FLOAT, GL_FALSE, 0, 0);
-            glEnableVertexAttribArray(normalIndex);
+            gl->bindBuffer(GL_ARRAY_BUFFER, mVboNormal);
+            gl->vertexAttribPointer(normalIndex, 3, GL_FLOAT, GL_FALSE, 0, 0);
+            gl->enableVertexAttribArray(normalIndex);
         }
         else
-            glDisableVertexAttribArray(normalIndex);
+            gl->disableVertexAttribArray(normalIndex);
     }
 
-    GLint colorIndex = glGetAttribLocation(shaderProgram, "vertColor");
+    GLint colorIndex = gl->getAttribLocation(shaderProgram, "vertColor");
     if (colorIndex != -1)
     {
         if (mVboColors)
         {
-            glBindBuffer(GL_ARRAY_BUFFER, mVboColors);
-            glVertexAttribPointer(colorIndex, 3, GL_FLOAT, GL_FALSE, 0, 0);
-            glEnableVertexAttribArray(colorIndex);
+            gl->bindBuffer(GL_ARRAY_BUFFER, mVboColors);
+            gl->vertexAttribPointer(colorIndex, 3, GL_FLOAT, GL_FALSE, 0, 0);
+            gl->enableVertexAttribArray(colorIndex);
         }
         else
-            glDisableVertexAttribArray(colorIndex);
+            gl->disableVertexAttribArray(colorIndex);
     }
 
-    GLint uvIndex = glGetAttribLocation(shaderProgram, "vertUV");
+    GLint uvIndex = gl->getAttribLocation(shaderProgram, "vertUV");
     if (uvIndex != -1)
     {
         if (mVboUVs[0])
         {
-            glBindBuffer(GL_ARRAY_BUFFER, mVboUVs[0]);
-            glVertexAttribPointer(uvIndex, 2, GL_FLOAT, GL_FALSE, 0, 0);
-            glEnableVertexAttribArray(uvIndex);
+            gl->bindBuffer(GL_ARRAY_BUFFER, mVboUVs[0]);
+            gl->vertexAttribPointer(uvIndex, 2, GL_FLOAT, GL_FALSE, 0, 0);
+            gl->enableVertexAttribArray(uvIndex);
         }
         else
-            glDisableVertexAttribArray(uvIndex);
+            gl->disableVertexAttribArray(uvIndex);
     }
 
     // Set per-primitive flags
     {
         bool texture1dUsed = false;
 
-        GLint idx = glGetUniformLocation(shaderProgram, "unifFaceFlags");
+        GLint idx = gl->getUniformLocation(shaderProgram, "unifFaceFlags");
         if (idx != -1)
         {
             if (mTexFlags)
@@ -130,37 +132,37 @@ GeomImp::activate(RasterizerGL* pRasterizer, GlobalPass& pass)
                 const auto unit = pRasterizer->mContext.textureUnit++;
 
                 // Set the shader uniform to the *texture unit* containing the texture
-                glUniform1i(idx, unit);
+                gl->uniform1i(idx, unit);
 
                 // Activate the corresponding texture unit and set *that* to the GL id
-                glActiveTexture(GL_TEXTURE0 + unit);
-                glBindTexture(GL_TEXTURE_1D, mTexFlags);
+                gl->activeTexture(GL_TEXTURE0 + unit);
+                gl->bindTexture(GL_TEXTURE_1D, mTexFlags);
 
                 texture1dUsed = true;
             }
         }
 
         if (texture1dUsed)
-            glEnable(GL_TEXTURE_1D);
+            gl->enable(GL_TEXTURE_1D);
         else
-            glDisable(GL_TEXTURE_1D);
+            gl->disable(GL_TEXTURE_1D);
     }
 
     {
-        GLint idx = glGetUniformLocation(shaderProgram, "unifFaceCount");
+        GLint idx = gl->getUniformLocation(shaderProgram, "unifFaceCount");
         if (idx != -1)
         {
-            glUniform1i(idx, mFaceCount);
+            gl->uniform1i(idx, mFaceCount);
         }
     }
 
     // Options
     {
-        GLint loc = glGetUniformLocation(shaderProgram, "unifFlatNormals");
+        GLint loc = gl->getUniformLocation(shaderProgram, "unifFlatNormals");
         if (loc != -1)
         {
             const int flatShading = (pRasterizer->mContext.tbFlatShading == true) ? 1 : 0; 
-            glUniform1i(loc, flatShading);
+            gl->uniform1i(loc, flatShading);
         }
     }
 
@@ -175,9 +177,9 @@ GeomImp::activate(RasterizerGL* pRasterizer, GlobalPass& pass)
     }
 
     if (mVboIndices)
-        glDrawElements(mType, mCount, GL_UNSIGNED_SHORT, 0);
+        gl->drawElements(mType, mCount, GL_UNSIGNED_SHORT, 0);
     else
-        glDrawArrays(mType, 0, mCount); 
+        gl->drawArrays(mType, 0, mCount); 
 
     check_glerror();
 }

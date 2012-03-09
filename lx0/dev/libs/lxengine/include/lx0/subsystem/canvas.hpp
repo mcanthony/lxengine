@@ -34,6 +34,7 @@
 #include <string>
 
 #include <lx0/engine/view.hpp>
+#include <lx0/subsystem/rasterizer/gl/glinterface.hpp>
 
 namespace lx0 { 
     
@@ -146,6 +147,11 @@ namespace lx0 {
                     lx0::slot<void(const MouseState&, const ButtonState&, KeyModifiers)> slotRMouseDrag;
                     ///@}
 
+                    ///@name OpenGL Interface
+                    ///@{
+                    std::shared_ptr<lx0::OpenGlApi3_2>  getOpenGlApi   () { return gl; }
+                    ///@}
+
                 
                 protected:
                     ///@name Event handlers for derived classes
@@ -186,6 +192,8 @@ namespace lx0 {
                     ButtonState     mLButton;
                     ButtonState     mMButton;
                     ButtonState     mRButton;
+
+                    std::shared_ptr<lx0::OpenGlApi3_2>  gl;
                 };
 
 

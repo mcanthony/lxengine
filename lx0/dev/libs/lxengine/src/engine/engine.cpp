@@ -154,8 +154,9 @@ namespace lx0 { namespace engine { namespace dom_ns {
     }
 
     Engine::Engine()
-        : mGlobals   (lxvar::decorated_map())
-        , mIdCounter (0)
+        : mGlobals            (lxvar::decorated_map())
+        , mIdCounter          (0)
+        , mbShutdownRequested (false)
     {
         lx_init();
         lx_log("lx::core::Engine ctor");
@@ -608,6 +609,12 @@ namespace lx0 { namespace engine { namespace dom_ns {
         }
     }
 
+    bool
+    Engine::isShuttingDown (void) const
+    {
+        return mbShutdownRequested;
+    }
+
 	int
 	Engine::run()
 	{
@@ -694,6 +701,8 @@ namespace lx0 { namespace engine { namespace dom_ns {
             mFrameNum++;
 
         } while (!bDone);
+
+        mbShutdownRequested = true;
 
         for(auto it = mDocuments.begin(); it != mDocuments.end(); ++it)
             (*it)->endRun();

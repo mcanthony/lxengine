@@ -30,11 +30,13 @@
 
 using namespace lx0;
 
+extern OpenGlApi3_2* gl;
+
 glm::mat4 
 Camera::projectionMatrix (void) const
 {
     int vp[4];  // x, y, width, height
-    glGetIntegerv(GL_VIEWPORT, vp);
+    gl->getIntegerv(GL_VIEWPORT, vp);
     GLfloat aspectRatio = (GLfloat)vp[2]/(GLfloat)vp[3];
 
     float fovDegrees = glgeom::degrees(fov).value;

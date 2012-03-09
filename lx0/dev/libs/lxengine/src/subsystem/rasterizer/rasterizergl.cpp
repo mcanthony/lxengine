@@ -41,20 +41,18 @@
 
 #include <glm/gtc/matrix_inverse.hpp>
 
-#include <gl/glu.h>
-#include <GL3/gl3w_modified.hpp>
-
-
 using namespace lx0::subsystem::rasterizer_ns;
 using namespace glgeom;
 
+lx0::OpenGlApi3_2* gl;
+
 void lx0::subsystem::rasterizer_ns::check_glerror()
 {
-	GLenum errCode = glGetError();
+	GLenum errCode = gl->getError();
     
     if (errCode != GL_NO_ERROR)
     {
-        std::string errString = (const char*)gluErrorString(errCode);
+        std::string errString = "";//(const char*)gluErrorString(errCode);
         lx_warn("glError() detected.");
         lx_warn("Error Code = %1%", errCode);
         lx_warn("Error String = %1%", errString);
@@ -72,56 +70,69 @@ FrameBuffer::FrameBuffer(FrameBuffer::Type type, int width, int height)
     if (type == eCreateFrameBuffer)
     {
         GLint prevFBO;
-        glGetIntegerv(GL_DRAW_FRAMEBUFFER_BINDING, &prevFBO);
+        gl->getIntegerv(GL_DRAW_FRAMEBUFFER_BINDING, &prevFBO);
 
-        glGenFramebuffers(1, &mHandle);
-        glBindFramebuffer(GL_FRAMEBUFFER, mHandle);
+        gl->genFramebuffers(1, &mHandle);
+        gl->bindFramebuffer(GL_FRAMEBUFFER, mHandle);
         lx_check_error(mHandle != GL_NONE);
 
         mWidth = width;
         mHeight = height;
- 
-        //
-        // Generate the depth buffer
-        // 
-        GLuint depthBuf;
-        glGenRenderbuffers(1, &depthBuf);
-        glBindRenderbuffer(GL_RENDERBUFFER, depthBuf);
-        glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT, mWidth, mHeight);
-        glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, depthBuf);
-        lx_check_error(depthBuf != GL_NONE);
+        
         
         //
         // Generate the color texture
         //
         GLuint renderTex;
-        glGenTextures(1, &renderTex);
-        glActiveTexture(GL_TEXTURE0); // Use texture unit 0
-        glBindTexture(GL_TEXTURE_2D, renderTex);
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, mWidth, mHeight, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);        
-        glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-        glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, renderTex, 0);
+        gl->genTextures(1, &renderTex);
+        gl->activeTexture(GL_TEXTURE0); // Use texture unit 0
+        gl->bindTexture(GL_TEXTURE_2D, renderTex);
+
+        auto die = lx0::random_die_i(0, 255, 100);
+        std::vector<unsigned char> pixels;
+        pixels.resize(mWidth * mHeight * 4);
+        for (int i = 0; i < mWidth * mHeight * 4; ++i)
+            pixels[i] = die();
+
+        gl->texImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, mWidth, mHeight, 0, GL_RGBA, GL_UNSIGNED_BYTE, &pixels[0]);
+        gl->texParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+        gl->texParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);        
+        gl->texParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+        gl->texParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+        gl->framebufferTexture2D(GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, renderTex, 0);
         
         lx_check_error(renderTex != GL_NONE);
         mTextureHandle = renderTex;
 
-        lx_check_error( glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE );
+        //
+        // Generate the depth buffer
+        // 
+        GLuint depthBuf;
+        gl->genRenderbuffers(1, &depthBuf);
+        gl->bindRenderbuffer(GL_RENDERBUFFER, depthBuf);
+        gl->renderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT, mWidth, mHeight);
+        gl->framebufferRenderbuffer(GL_DRAW_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, depthBuf);
+        lx_check_error(depthBuf != GL_NONE);
+
+        /*GLenum drawBuffers[2] = {GL_COLOR_ATTACHMENT0,GL_DEPTH_ATTACHMENT};
+        gl->drawBuffers(2, drawBuffers);*/
+
+        lx_check_error( gl->checkFramebufferStatus(GL_DRAW_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE );
     
         check_glerror();
-        glBindFramebuffer(GL_FRAMEBUFFER, prevFBO);
+        gl->bindTexture(GL_TEXTURE_2D, 0);
+        gl->bindRenderbuffer(GL_RENDERBUFFER, 0);
+        gl->bindFramebuffer(GL_FRAMEBUFFER, prevFBO);
         check_glerror();
     }
     else
     {
         GLint hCurrentFBO;
-        glGetIntegerv(GL_DRAW_FRAMEBUFFER_BINDING, &hCurrentFBO);
+        gl->getIntegerv(GL_DRAW_FRAMEBUFFER_BINDING, &hCurrentFBO);
         lx_check_error(hCurrentFBO == 0);
 
         GLint viewport[4];
-	    glGetIntegerv(GL_VIEWPORT, viewport);
+	    gl->getIntegerv(GL_VIEWPORT, viewport);
 
         mHandle = 0;
         mWidth = viewport[2];
@@ -138,14 +149,13 @@ FrameBuffer::activate()
 {
     check_glerror();
 
-    glBindFramebuffer(GL_FRAMEBUFFER, mHandle);
-    glViewport(0, 0, mWidth, mHeight);
-    
-    //GLenum drawBufs[] = {GL_COLOR_ATTACHMENT0};
-    //glDrawBuffers(1, drawBufs);
-    //check_glerror();
+    const bool bValidFbo = mHandle == 0 || gl->isFramebuffer(mHandle);
+    lx_check_error(bValidFbo);
 
-    GLenum fboStatus = glCheckFramebufferStatus(GL_DRAW_FRAMEBUFFER);
+    gl->bindFramebuffer(GL_FRAMEBUFFER, mHandle);
+    gl->viewport(0, 0, mWidth, mHeight);
+    
+    GLenum fboStatus = gl->checkFramebufferStatus(GL_DRAW_FRAMEBUFFER);
     switch (fboStatus)
     {
     case GL_FRAMEBUFFER_COMPLETE:
@@ -163,7 +173,11 @@ FrameBuffer::activate()
         throw lx_error_exception("Framebuffer incomplete!");
     }  
 
-    check_glerror();
+    check_glerror();    
+
+    GLint handle;
+    gl->getIntegerv(GL_FRAMEBUFFER_BINDING, &handle);
+    lx_check_error(handle == mHandle);
 }
 
 /*!
@@ -173,8 +187,7 @@ FrameBuffer::activate()
     available and made current.
  */
 RasterizerGL::RasterizerGL()
-    : gl        (new GLInterface)
-    , mInited   (false)
+    : mInited   (false)
     , mShutdown (false)
     , mFrameNum (0)
 {
@@ -186,32 +199,24 @@ RasterizerGL::~RasterizerGL()
         lx_warn("RasterizerGL::shutdown() not called!");
 }
 
-
-extern "C" int gl3wInit(void);
-
 void RasterizerGL::initialize()
 {
     lx_log("%s", __FUNCTION__);
     mInited = true;
     mStats.tmLifetime.start();
 
+    //
     // Initialization
     //
-    // Note: we need to call glw3Init() from here because RasterizerGL is part of the lxengine.lib 
-    // static library.  This means that the gl3w data members (i.e. the GL function pointers) get
-    // copied into every DLL that uses them: i.e. these pointers need to be initialized by every
-    // DLL that uses them. This does not seem like the cleanest approach: it would be better to 
-    // (a) have an interface of virtual functions calling into lxengine.exe or (b) put the gl3wInit
-    // call into a common location such that all DLLs automatically get access to the GL functions
-    // (rather than putting the call in each specific location such as RasterizerGL::initialize()).
-    //
-    gl3wInit();
+    gl3_2.reset(new lx0::OpenGlApi3_2);
+    gl = gl3_2.get();                   // Global pointer for now...
+    gl->initialize();
     
-    lx_log("Using OpenGL v%s",  (const char*)glGetString(GL_VERSION));
-    lx_log("Using GLSL v%s",    (const char*)glGetString(GL_SHADING_LANGUAGE_VERSION));
+    lx_log("Using OpenGL v%s",  (const char*)gl->getString(GL_VERSION));
+    lx_log("Using GLSL v%s",    (const char*)gl->getString(GL_SHADING_LANGUAGE_VERSION));
 
-    glClearColor(0.09f, 0.09f, 0.11f, 1.0f);
-    glEnable(GL_DEPTH_TEST);
+    gl->clearColor(0.09f, 0.09f, 0.11f, 1.0f);
+    gl->enable(GL_DEPTH_TEST);
 
     mspFBOScreen.reset( new FrameBuffer(FrameBuffer::eDefaultFrameBuffer) );
     mspFBOScreen->activate();
@@ -276,7 +281,7 @@ Texture::Texture()
 
 void Texture::unload()
 {
-    glDeleteTextures(1, &mId);
+    gl->deleteTextures(1, &mId);
     mId = 0;
 }
 
@@ -301,11 +306,11 @@ void Texture::load()
         load_png(img, mFilename.c_str());
 
         GLuint id;
-        glGenTextures(1, &id);
-        glBindTexture(GL_TEXTURE_2D, id);
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, img.mWidth, img.mHeight, 0, GL_RGBA, GL_UNSIGNED_BYTE, img.mData.get());
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        gl->genTextures(1, &id);
+        gl->bindTexture(GL_TEXTURE_2D, id);
+        gl->texImage2D(GL_TEXTURE_2D, 0, GL_RGBA, img.mWidth, img.mHeight, 0, GL_RGBA, GL_UNSIGNED_BYTE, img.mData.get());
+        gl->texParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	    gl->texParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
         mId = id;
     }
@@ -316,11 +321,11 @@ RasterizerGL::createTexture3f (const glgeom::image3f& image)
 {
     TexturePtr spTex(new Texture);
 
-    glGenTextures(1, &spTex->mId);
-    glBindTexture(GL_TEXTURE_2D, spTex->mId);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, image.width(), image.height(), 0, GL_RGB, GL_FLOAT, image.ptr());
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    gl->genTextures(1, &spTex->mId);
+    gl->bindTexture(GL_TEXTURE_2D, spTex->mId);
+    gl->texImage2D(GL_TEXTURE_2D, 0, GL_RGB, image.width(), image.height(), 0, GL_RGB, GL_FLOAT, image.ptr());
+    gl->texParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	gl->texParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
     return spTex;
 }
@@ -350,7 +355,7 @@ RasterizerGL::createTextureCubeMap (const glgeom::cubemap3f& cubemap)
 {
     check_glerror();
 
-    glEnable(GL_TEXTURE_CUBE_MAP);
+    gl->enable(GL_TEXTURE_CUBE_MAP);
 
     //
     // The filenames[] array order needs to match the expected OpenGL target sequence
@@ -358,18 +363,18 @@ RasterizerGL::createTextureCubeMap (const glgeom::cubemap3f& cubemap)
     GLuint              id;
     GLenum              target      = GL_TEXTURE_CUBE_MAP_POSITIVE_X;
 
-    glGenTextures(1, &id);
-    glBindTexture(GL_TEXTURE_CUBE_MAP, id);
+    gl->genTextures(1, &id);
+    gl->bindTexture(GL_TEXTURE_CUBE_MAP, id);
 
-    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_REPEAT);
-    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_REPEAT);
-    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_REPEAT);
-    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    gl->texParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    gl->texParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    gl->texParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_REPEAT);
+    gl->texParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    gl->texParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 
     for (int i = 0; i < 6; ++i, ++target)
     {
-        glTexImage2D(target, 0, GL_RGB, cubemap.width(), cubemap.height(), 0, GL_RGB, GL_FLOAT, cubemap.mImage[i].ptr());
+        gl->texImage2D(target, 0, GL_RGB, cubemap.width(), cubemap.height(), 0, GL_RGB, GL_FLOAT, cubemap.mImage[i].ptr());
     }
 
     auto pTexture = new Texture;
@@ -437,14 +442,14 @@ RasterizerGL::_acquireDefaultPointMaterial (void)
         GLuint vs = _createShader("media2/shaders/glsl/vertex/basic_point_00.vert", GL_VERTEX_SHADER);
         GLuint fs = _createShader("media2/shaders/glsl/fragment/solid_red.frag", GL_FRAGMENT_SHADER);
 
-        prog = glCreateProgram();
+        prog = gl->createProgram();
         {
-            glAttachShader(prog, vs);
-            glAttachShader(prog, fs);
+            gl->attachShader(prog, vs);
+            gl->attachShader(prog, fs);
         
             check_glerror();
             
-            glBindAttribLocation(prog, 0, "inPosition");
+            gl->bindAttribLocation(prog, 0, "inPosition");
         }
         check_glerror();
 
@@ -485,14 +490,14 @@ RasterizerGL::_acquireDefaultLineMaterial (void)
         GLuint vs = _createShader("media2/shaders/glsl/vertex/basic_point_00.vert", GL_VERTEX_SHADER);
         GLuint fs = _createShader("media2/shaders/glsl/fragment/solid_red.frag", GL_FRAGMENT_SHADER);
 
-        prog = glCreateProgram();
+        prog = gl->createProgram();
         {
-            glAttachShader(prog, vs);
-            glAttachShader(prog, fs);
+            gl->attachShader(prog, vs);
+            gl->attachShader(prog, fs);
         
             check_glerror();
             
-            glBindAttribLocation(prog, 0, "inPosition");
+            gl->bindAttribLocation(prog, 0, "inPosition");
         }
         check_glerror();
 
@@ -533,14 +538,14 @@ RasterizerGL::_acquireDefaultSurfaceMaterial (void)
         GLuint vs = _createShader("media2/shaders/glsl/materials/solid_texture2.vert", GL_VERTEX_SHADER);
         GLuint fs = _createShader("media2/shaders/glsl/materials/solid_texture2.frag", GL_FRAGMENT_SHADER);
 
-        prog = glCreateProgram();
+        prog = gl->createProgram();
         {
-            glAttachShader(prog, vs);
-            glAttachShader(prog, fs);
+            gl->attachShader(prog, vs);
+            gl->attachShader(prog, fs);
         
             check_glerror();
             
-            glBindAttribLocation(prog, 0, "inPosition");
+            gl->bindAttribLocation(prog, 0, "inPosition");
         }
         check_glerror();
 
@@ -690,20 +695,20 @@ RasterizerGL::_createProgram2  (std::string fragmentSource)
     GLuint gs = _createShader("media2/shaders/glsl/geometry/basic_01.geom", GL_GEOMETRY_SHADER);
     GLuint fs = _createShader2(fragmentSource, GL_FRAGMENT_SHADER);
 
-    GLuint prog = glCreateProgram();
+    GLuint prog = gl->createProgram();
     {
-        glAttachShader(prog, vs);
-        glAttachShader(prog, gs);
-        glAttachShader(prog, fs);
+        gl->attachShader(prog, vs);
+        gl->attachShader(prog, gs);
+        gl->attachShader(prog, fs);
         
         check_glerror();
             
-        glBindAttribLocation(prog, 0, "inPosition");
+        gl->bindAttribLocation(prog, 0, "inPosition");
     }
     check_glerror();
 
     _linkProgram(prog, fragmentSource.c_str());
-    glUseProgram(prog);
+    gl->useProgram(prog);
 
     return prog;
 }
@@ -713,20 +718,20 @@ RasterizerGL::_linkProgram (GLuint prog, const char* pszSource)
 {
     check_glerror();
 
-    glLinkProgram(prog);
+    gl->linkProgram(prog);
 
     GLint success;
-    glGetProgramiv(prog, GL_LINK_STATUS, &success);    
+    gl->getProgramiv(prog, GL_LINK_STATUS, &success);    
     if (success != GL_TRUE)
     {
         std::vector<char> log;
         GLint maxSize;
         GLint size;
 
-        glGetProgramiv(prog, GL_INFO_LOG_LENGTH, &maxSize);
+        gl->getProgramiv(prog, GL_INFO_LOG_LENGTH, &maxSize);
         log.resize(maxSize);
 
-        glGetProgramInfoLog(prog, maxSize, &size, &log[0]);
+        gl->getProgramInfoLog(prog, maxSize, &size, &log[0]);
         log[size] = '\0';
 
         //
@@ -783,12 +788,12 @@ RasterizerGL::_createShader2 (std::string& shaderText, GLuint type)
     GLuint shaderHandle = 0; 
     if (!shaderText.empty())
     {
-        shaderHandle = glCreateShader(type);
+        shaderHandle = gl->createShader(type);
 
         const GLchar* text = shaderText.c_str();
-        glShaderSource(shaderHandle, 1, &text, 0);
+        gl->shaderSource(shaderHandle, 1, &text, 0);
 
-        glCompileShader(shaderHandle);
+        gl->compileShader(shaderHandle);
     }
     else
         throw lx_error_exception("Shader source empty!");
@@ -910,18 +915,18 @@ RasterizerGL::createQuadList (std::vector<lx0::uint16>&     quadIndices,
     // Create a vertex array to store the vertex data
     //
     GLuint vao;
-    glGenVertexArrays(1, &vao);
-    glBindVertexArray(vao);
+    gl->genVertexArrays(1, &vao);
+    gl->bindVertexArray(vao);
 
     GLuint vio;
-    glGenBuffers(1, &vio);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, vio);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, triIndices.size() * sizeof(triIndices[0]), &triIndices[0], GL_STATIC_DRAW);
+    gl->genBuffers(1, &vio);
+    gl->bindBuffer(GL_ELEMENT_ARRAY_BUFFER, vio);
+    gl->bufferData(GL_ELEMENT_ARRAY_BUFFER, triIndices.size() * sizeof(triIndices[0]), &triIndices[0], GL_STATIC_DRAW);
 
     GLuint vboPositions;
-    glGenBuffers(1, &vboPositions);
-    glBindBuffer(GL_ARRAY_BUFFER, vboPositions);
-    glBufferData(GL_ARRAY_BUFFER, positions.size() * sizeof(positions[0]), &positions[0], GL_STATIC_DRAW);
+    gl->genBuffers(1, &vboPositions);
+    gl->bindBuffer(GL_ARRAY_BUFFER, vboPositions);
+    gl->bufferData(GL_ARRAY_BUFFER, positions.size() * sizeof(positions[0]), &positions[0], GL_STATIC_DRAW);
     
     check_glerror();
 
@@ -947,9 +952,9 @@ _genArrayBuffer (GLenum target, std::vector<T>& data)
     GLuint id = 0;
     if (!data.empty())
     {
-        glGenBuffers(1, &id);
-        glBindBuffer(target, id);
-        glBufferData(target, data.size() * sizeof(T), &data.front(), GL_STATIC_DRAW);
+        gl->genBuffers(1, &id);
+        gl->bindBuffer(target, id);
+        gl->bufferData(target, data.size() * sizeof(T), &data.front(), GL_STATIC_DRAW);
     }
     return id;
 }
@@ -963,8 +968,8 @@ RasterizerGL::createGeometry (glgeom::primitive_buffer& primitive)
     // Create a vertex array to store the vertex data
     //
     GLuint vao;
-    glGenVertexArrays(1, &vao);
-    glBindVertexArray(vao);
+    gl->genVertexArrays(1, &vao);
+    gl->bindVertexArray(vao);
     
     check_glerror();
 
@@ -1065,32 +1070,32 @@ RasterizerGL::createQuadList (const std::vector<unsigned short>& quadIndices,
     // Create a vertex array to store the vertex data
     //
     GLuint vao;
-    glGenVertexArrays(1, &vao);
-    glBindVertexArray(vao);
+    gl->genVertexArrays(1, &vao);
+    gl->bindVertexArray(vao);
 
     // Create the index array
     std::vector<lx0::uint16> triIndices;
     createTriangleIndices(quadIndices, triIndices);
 
     GLuint vio;
-    glGenBuffers(1, &vio);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, vio);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, triIndices.size() * sizeof(triIndices[0]), &triIndices[0], GL_STATIC_DRAW);
+    gl->genBuffers(1, &vio);
+    gl->bindBuffer(GL_ELEMENT_ARRAY_BUFFER, vio);
+    gl->bufferData(GL_ELEMENT_ARRAY_BUFFER, triIndices.size() * sizeof(triIndices[0]), &triIndices[0], GL_STATIC_DRAW);
 
     GLuint vboPositions;
-    glGenBuffers(1, &vboPositions);
-    glBindBuffer(GL_ARRAY_BUFFER, vboPositions);
-    glBufferData(GL_ARRAY_BUFFER, positions.size() * sizeof(positions[0]), &positions[0], GL_STATIC_DRAW);
+    gl->genBuffers(1, &vboPositions);
+    gl->bindBuffer(GL_ARRAY_BUFFER, vboPositions);
+    gl->bufferData(GL_ARRAY_BUFFER, positions.size() * sizeof(positions[0]), &positions[0], GL_STATIC_DRAW);
     
     GLuint vboNormals;
-    glGenBuffers(1, &vboNormals);
-    glBindBuffer(GL_ARRAY_BUFFER, vboNormals);
-    glBufferData(GL_ARRAY_BUFFER, normals.size() * sizeof(normals[0]), &normals[0], GL_STATIC_DRAW);
+    gl->genBuffers(1, &vboNormals);
+    gl->bindBuffer(GL_ARRAY_BUFFER, vboNormals);
+    gl->bufferData(GL_ARRAY_BUFFER, normals.size() * sizeof(normals[0]), &normals[0], GL_STATIC_DRAW);
 
     GLuint vboColors;
-    glGenBuffers(1, &vboColors);
-    glBindBuffer(GL_ARRAY_BUFFER, vboColors);
-    glBufferData(GL_ARRAY_BUFFER, colors.size() * sizeof(colors[0]), &colors[0], GL_STATIC_DRAW);
+    gl->genBuffers(1, &vboColors);
+    gl->bindBuffer(GL_ARRAY_BUFFER, vboColors);
+    gl->bufferData(GL_ARRAY_BUFFER, colors.size() * sizeof(colors[0]), &colors[0], GL_STATIC_DRAW);
 
     check_glerror();
 
@@ -1112,14 +1117,14 @@ RasterizerGL::createQuadList (const std::vector<unsigned short>& quadIndices,
             flags[i * 2 + 1] = v;
         }
 
-        glGenTextures(1, &texFlags);
-        glBindTexture(GL_TEXTURE_1D, texFlags);
-        glTexImage1D(GL_TEXTURE_1D, 0, 1, flags.size(), 0, GL_RED, GL_UNSIGNED_BYTE, &flags[0]);
+        gl->genTextures(1, &texFlags);
+        gl->bindTexture(GL_TEXTURE_1D, texFlags);
+        gl->texImage1D(GL_TEXTURE_1D, 0, 1, flags.size(), 0, GL_RED, GL_UNSIGNED_BYTE, &flags[0]);
         check_glerror();
-        glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-	    glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-        glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-	    glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+        gl->texParameteri(GL_TEXTURE_1D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	    gl->texParameteri(GL_TEXTURE_1D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+        gl->texParameteri(GL_TEXTURE_1D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	    gl->texParameteri(GL_TEXTURE_1D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
         check_glerror();
 
         faceCount = flags.size();
@@ -1364,18 +1369,19 @@ void
 RasterizerGL::beginFrame (RenderAlgorithm& algorithm)
 {
     mStats.tmScene.start();
+
+    gl = this->gl3_2.get();
     
     mFrameNum++;
     mFrameData = FrameData();
     mContext.frame = FrameContext();
 
-    lx_check_error( glGetError() == GL_NO_ERROR );
+    lx_check_error( gl->getError() == GL_NO_ERROR );
 
     // Should the clear actually be part of the GlobalPass?  Additionally to this?
     const auto& color = algorithm.mClearColor;
-    glClearColor(color.r, color.g, color.b, color.a);
-
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    gl->clearColor(color.r, color.g, color.b, color.a);
+    gl->clear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 }
 
 void RasterizerGL::endFrame()
@@ -1418,6 +1424,16 @@ RasterizerGL::rasterizeList (RenderAlgorithm& algorithm, std::vector<std::shared
             else
             {
                 //
+                // Is this not the default framebuffer?  Assume a clear is necessary -
+                // eventually there should be a bClear option on the pass object.
+                //
+                if (spFBO->textureId() != 0)
+                {
+                    gl->clearColor(1, 1, 1, 1.0f);
+                    gl->clear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+                }
+
+                //
                 // Render the list of Instances
                 //
                 for (auto it = list.begin(); it != list.end(); ++it)
@@ -1453,17 +1469,17 @@ RasterizerGL::Context::Uniforms::activate ()
     check_glerror();
 
     GLint progId;
-    glGetIntegerv(GL_CURRENT_PROGRAM, &progId);
+    gl->getIntegerv(GL_CURRENT_PROGRAM, &progId);
 
     //
     // Pass in additional transform information
     // 
     if (spProjMatrix)
     {
-        GLint idx = glGetUniformLocation(progId, "unifProjMatrix");
+        GLint idx = gl->getUniformLocation(progId, "unifProjMatrix");
         if (idx != -1)
         {
-            glUniformMatrix4fv(idx, 1, GL_FALSE, glm::value_ptr(*spProjMatrix));
+            gl->uniformMatrix4fv(idx, 1, GL_FALSE, glm::value_ptr(*spProjMatrix));
         }
     }
 
@@ -1472,19 +1488,19 @@ RasterizerGL::Context::Uniforms::activate ()
     // 
     if (spViewMatrix)
     {
-        GLint idx = glGetUniformLocation(progId, "unifViewMatrix");
+        GLint idx = gl->getUniformLocation(progId, "unifViewMatrix");
         if (idx != -1)
         {
-            glUniformMatrix4fv(idx, 1, GL_FALSE, glm::value_ptr(*spViewMatrix));
+            gl->uniformMatrix4fv(idx, 1, GL_FALSE, glm::value_ptr(*spViewMatrix));
         }
 
         // The gl_NormalMatrix is the upper 3x3 of the inverse transpose of the model view matrix
         glm::mat3 normalMatrix = glm::mat3(glm::inverseTranspose(*spViewMatrix));
         {
-            GLint idx = glGetUniformLocation(progId, "unifNormalMatrix");
+            GLint idx = gl->getUniformLocation(progId, "unifNormalMatrix");
             if (idx != -1)
             {
-                glUniformMatrix3fv(idx, 1, GL_FALSE, glm::value_ptr(normalMatrix));
+                gl->uniformMatrix3fv(idx, 1, GL_FALSE, glm::value_ptr(normalMatrix));
             }
         }
     }
@@ -1629,31 +1645,45 @@ RasterizerGL::readPixel (int x, int y)
 {
     // Flip y since window coordinates differ from OpenGL's 0 at the bottom convention 
     GLint viewport[4];
-	glGetIntegerv(GL_VIEWPORT,viewport);
+	gl->getIntegerv(GL_VIEWPORT,viewport);
     y = viewport[3] - y;
 	
     // Read the pixel
-    glReadBuffer(GL_BACK);
+    gl->readBuffer(GL_BACK);
     GLubyte pixel[4];
-    glReadPixels(x, y, 1, 1, GL_RGBA, GL_UNSIGNED_BYTE, (void *)pixel);
+    gl->readPixels(x, y, 1, 1, GL_RGBA, GL_UNSIGNED_BYTE, (void *)pixel);
 
     unsigned int id = (pixel[0] << 16) + (pixel[1] << 8) + pixel[2];
     return id;
 }
 
 void
-RasterizerGL::readBackBuffer(glgeom::image3f& img)
+RasterizerGL::readFrontBuffer (glgeom::image3f& img)
 {
+    _readBuffer(GL_FRONT, img);
+}
+
+void
+RasterizerGL::readBackBuffer (glgeom::image3f& img)
+{
+    _readBuffer(GL_BACK, img);
+}
+
+void        
+RasterizerGL::_readBuffer (GLenum buffer, glgeom::image3f& img)
+{
+    check_glerror();
+
     // Flip y since window coordinates differ from OpenGL's 0 at the bottom convention 
     GLint viewport[4];
-	glGetIntegerv(GL_VIEWPORT,viewport);
+	gl->getIntegerv(GL_VIEWPORT,viewport);
 	
     img = glgeom::image3f(viewport[2], viewport[3]);
 
     // Read the pixel
-    glReadBuffer(GL_BACK);
+    gl->readBuffer(buffer);
     std::vector<GLubyte> pixel(4 * img.width() * img.height());
-    glReadPixels(0, 0, img.width(), img.height(), GL_RGBA, GL_UNSIGNED_BYTE, (void *)&pixel[0]);
+    gl->readPixels(0, 0, img.width(), img.height(), GL_RGBA, GL_UNSIGNED_BYTE, (void *)&pixel[0]);
 
     GLubyte* p = &pixel[0];
     for (int y = 0; y < img.height(); ++y)
@@ -1669,6 +1699,8 @@ RasterizerGL::readBackBuffer(glgeom::image3f& img)
             p++;
         }
     }
+
+    check_glerror();
 }
 
 //===========================================================================//

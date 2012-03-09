@@ -168,6 +168,7 @@ public:
         : mCurrentMaterial    (0)
         , mCurrentGeometry    (0)
         , mbRotate            (true)
+        , miRenderAlgorithm   (0)
     {
     }
 
@@ -219,14 +220,26 @@ public:
         algorithm.mClearColor = glgeom::color4f(0.1f, 0.3f, 0.8f, 1.0f);
         
         lx0::GlobalPass pass;
-        pass.spFrameBuffer = mspFBOffscreen;
-        pass.spCamera   = mspCamera;
-        pass.spLightSet = mspLightSet;
-        algorithm.mPasses.push_back(pass);
+        switch (miRenderAlgorithm % 2)
+        {
+        default:
+        case 0:
+            pass.spFrameBuffer = mspFBOffscreen;
+            pass.spCamera   = mspCamera;
+            pass.spLightSet = mspLightSet;
+            algorithm.mPasses.push_back(pass);
 
-        pass.spFrameBuffer.reset();
-        pass.spSourceFBO = mspFBOffscreen;
-        algorithm.mPasses.push_back(pass);
+            pass.spFrameBuffer.reset();
+            pass.spSourceFBO = mspFBOffscreen;
+            algorithm.mPasses.push_back(pass);
+            break;
+
+        case 1:
+            pass.spCamera   = mspCamera;
+            pass.spLightSet = mspLightSet;
+            algorithm.mPasses.push_back(pass);
+            break;
+        }
 
         lx0::RenderList instances;
         instances.push_back(0, mspRenderable->mspInstance);
@@ -287,6 +300,10 @@ public:
             // This should be handled as a global rendering algorithm override instead
             for (auto it = mMaterials.begin(); it != mMaterials.end(); ++it)
                 (*it).spMaterial->mWireframe = !(*it).spMaterial->mWireframe;
+        }
+        else if (evt == "cycle_renderalgorithm")
+        {
+            miRenderAlgorithm++;
         }
     }
 
@@ -424,13 +441,18 @@ protected:
             // in a separate thread.
             //
             auto loadGeometry = [this,filename,addGeometry]() {
-                lx_message("Loading Blender model '%1%'", filename);
-                glgeom::primitive_buffer* primitive = new glgeom::primitive_buffer;
-                glm::mat4 scaleMat = glm::scale(glm::mat4(), glm::vec3(1, 1, 1));
-                lx0::primitive_buffer_from_blendfile(*primitive, filename.c_str(), scaleMat);
+
+                if (!lx0::Engine::acquire()->isShuttingDown())
+                {
+                    lx_message("Loading Blender model '%1%'", filename);
+                    glgeom::primitive_buffer* primitive = new glgeom::primitive_buffer;
+                    glm::mat4 scaleMat = glm::scale(glm::mat4(), glm::vec3(1, 1, 1));
+                    lx0::primitive_buffer_from_blendfile(*primitive, filename.c_str(), scaleMat);
                     
-                auto f = addGeometry;
-                lx0::Engine::acquire()->sendTask([primitive,f](){ f(primitive); });
+                    auto f = addGeometry;
+                    if (!lx0::Engine::acquire()->isShuttingDown())
+                        lx0::Engine::acquire()->sendTask([primitive,f](){ f(primitive); });
+                }
             };
 
             lx0::Engine::acquire()->sendWorkerTask(loadGeometry);
@@ -474,6 +496,7 @@ protected:
     RenderablePtr                 mspRenderable;
 
     bool                          mbRotate;
+    int                           miRenderAlgorithm;
     glm::mat4                     mRotation;
 
     size_t                        mCurrentMaterial;

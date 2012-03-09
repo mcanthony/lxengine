@@ -33,7 +33,7 @@
 using namespace lx0;
 using namespace glgeom;
 
-
+extern OpenGlApi3_2* gl;
 
 static 
 void
@@ -116,7 +116,7 @@ _selectLights (std::vector<LightPtr>& all, RasterizerGL::ActiveLights& active, R
 void LightSet::activate(RasterizerGL* pRasterizer)
 {
     GLint mId;
-    glGetIntegerv(GL_CURRENT_PROGRAM, &mId);
+    gl->getIntegerv(GL_CURRENT_PROGRAM, &mId);
 
     //
     // This is a temporary bit of code to select only the four closest
@@ -136,18 +136,18 @@ void LightSet::activate(RasterizerGL* pRasterizer)
     size_t activeCount = active.positionsEc.size();
 
     {
-        GLint unifIndex = glGetUniformLocation(mId, "unifAmbient");
+        GLint unifIndex = gl->getUniformLocation(mId, "unifAmbient");
         if (unifIndex != -1)
         {
-            glUniform3f(unifIndex, 0.1f, 0.1f, 0.1f);
+            gl->uniform3f(unifIndex, 0.1f, 0.1f, 0.1f);
         }
     }
 
     {
-        GLint unifIndex = glGetUniformLocation(mId, "unifLightCount");
+        GLint unifIndex = gl->getUniformLocation(mId, "unifLightCount");
         if (unifIndex != -1)
         {
-            glUniform1i(unifIndex, (int)activeCount);
+            gl->uniform1i(unifIndex, (int)activeCount);
         }
     }
 
@@ -157,19 +157,19 @@ void LightSet::activate(RasterizerGL* pRasterizer)
         // Position, color, attenuation
         //
         {
-            GLint idx = glGetUniformLocation(mId, "unifLightPosition[0]");
+            GLint idx = gl->getUniformLocation(mId, "unifLightPosition[0]");
             if (idx != -1)
-                glUniform3fv(idx, activeCount, &active.positionsEc[0].x);
+                gl->uniform3fv(idx, activeCount, &active.positionsEc[0].x);
         }
         {
-            GLint idx = glGetUniformLocation(mId, "unifLightColor[0]");
+            GLint idx = gl->getUniformLocation(mId, "unifLightColor[0]");
             if (idx != -1)
-                glUniform3fv(idx, activeCount, &active.colors[0].r);
+                gl->uniform3fv(idx, activeCount, &active.colors[0].r);
         }
         {
-            GLint idx = glGetUniformLocation(mId, "unifLightAttenuation[0]");
+            GLint idx = gl->getUniformLocation(mId, "unifLightAttenuation[0]");
             if (idx != -1)
-                glUniform3fv(idx, activeCount, &active.attenuation[0].x);
+                gl->uniform3fv(idx, activeCount, &active.attenuation[0].x);
         }
 
 
@@ -177,19 +177,19 @@ void LightSet::activate(RasterizerGL* pRasterizer)
         // Glow parameters
         //
         {
-            GLint idx = glGetUniformLocation(mId, "unifLightGlowRadius[0]");
+            GLint idx = gl->getUniformLocation(mId, "unifLightGlowRadius[0]");
             if (idx != -1)
-                glUniform1fv(idx, activeCount, &active.glowRadius[0]);
+                gl->uniform1fv(idx, activeCount, &active.glowRadius[0]);
         }
         {
-            GLint idx = glGetUniformLocation(mId, "unifLightGlowMultiplier[0]");
+            GLint idx = gl->getUniformLocation(mId, "unifLightGlowMultiplier[0]");
             if (idx != -1)
-                glUniform1fv(idx, activeCount, &active.glowMultiplier[0]);
+                gl->uniform1fv(idx, activeCount, &active.glowMultiplier[0]);
         }
         {
-            GLint idx = glGetUniformLocation(mId, "unifLightGlowExponent[0]");
+            GLint idx = gl->getUniformLocation(mId, "unifLightGlowExponent[0]");
             if (idx != -1)
-                glUniform1fv(idx, activeCount, &active.glowExponent[0]);
+                gl->uniform1fv(idx, activeCount, &active.glowExponent[0]);
         }
     }
 }

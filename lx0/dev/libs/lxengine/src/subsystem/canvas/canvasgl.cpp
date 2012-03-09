@@ -34,7 +34,7 @@
 #include <windowsx.h>
 #include "windowclass.hpp"
 
-#include <GL3/gl3w_modified.hpp>
+//#include <GL3/gl3w_modified.hpp>
 #include <lx0/subsystem/rasterizer/gl/glinterface.hpp>
 
 // Inline the WGL defines since this is the only place they're used
@@ -273,8 +273,7 @@ namespace
         //
         // Initialize (pulls in all the OpenGL extension functions)
         //
-        gl3wInit();
-        wglCreateContextAttribsARB = (PFNWGLCREATECONTEXTATTRIBSARBPROC) wglGetProcAddress("wglCreateContextAttribsARB");
+        wglCreateContextAttribsARB = (PFNWGLCREATECONTEXTATTRIBSARBPROC)wglGetProcAddress("wglCreateContextAttribsARB");
         wglChoosePixelFormatARB    = (PFNWGLCHOOSEPIXELFORMATARBPROC)wglGetProcAddress("wglChoosePixelFormatARB");
 
         //
@@ -449,7 +448,7 @@ namespace lx0 { namespace subsystem { namespace canvas_ns { namespace detail {
         // but it most cases it will be helpful and not cause problems for the multiple
         // sub-window client.
         //
-        glViewport(0, 0, width, height);
+        gl->viewport(0, 0, width, height);
 
         return true;
     }   
@@ -507,8 +506,11 @@ namespace lx0 { namespace subsystem { namespace canvas_ns { namespace detail {
         else
             throw lx_error_exception("Using a pre-OpenGL 3.2 context");
     
-        lx0::OpenGlApi3_2 api;
-        api.initialize();
+        //
+        // Initialize the API interface
+        //
+        gl.reset(new lx0::OpenGlApi3_2);
+        gl->initialize();
 
         // Check post-conditions
         //

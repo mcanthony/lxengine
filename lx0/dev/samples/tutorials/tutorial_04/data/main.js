@@ -2,12 +2,16 @@ var uiBinding =
 {
     onKeyDown : function (view, keyCode)
     {
-        lx0.message("onKeyDown called! KeyCode = " + keyCode);
-
         if (keyCode == lx0.KC_G)
+        {
+            lx0.message("Changing to next model...");
             view.sendEvent("change_geometry", "next");
+        }
         if (keyCode == lx0.KC_F)
+        {
+            lx0.message("Changing to previous model...");
             view.sendEvent("change_geometry", "prev");
+        }
         if (keyCode == lx0.KC_M)
             view.sendEvent("next_material");
         if (keyCode == lx0.KC_N)
@@ -17,6 +21,11 @@ var uiBinding =
             view.sendEvent("toggle_rotation");
         if (keyCode == lx0.KC_W)
             view.sendEvent("toggle_wireframe");
+        if (keyCode == lx0.KC_A)
+        {
+            lx0.message("Changing render algorithm...");
+            view.sendEvent("cycle_renderalgorithm");    
+        }
 
         // Temporary code for testing
         if (keyCode == lx0.KC_ESCAPE)

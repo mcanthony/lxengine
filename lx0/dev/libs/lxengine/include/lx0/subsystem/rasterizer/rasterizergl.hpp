@@ -260,6 +260,7 @@ namespace lx0
                 void            rasterizeItem   (GlobalPass& pass, std::shared_ptr<Instance> spInstance);
                 
                 unsigned int    readPixel       (int x, int y);
+                void            readFrontBuffer (glgeom::image3f& img);
                 void            readBackBuffer  (glgeom::image3f& img);
 
                 struct ActiveLights
@@ -341,7 +342,9 @@ namespace lx0
 
                 GeometryPtr _acquireFullScreenQuad          (int width, int height);
 
-                std::unique_ptr<GLInterface>      gl;
+                void        _readBuffer             (GLenum buffer, glgeom::image3f& img);
+
+                std::unique_ptr<lx0::OpenGlApi3_2>  gl3_2;
 
                 std::map<std::string, GLuint>       mCachePrograms;
                 std::list<ResourcePtr>              mResources;

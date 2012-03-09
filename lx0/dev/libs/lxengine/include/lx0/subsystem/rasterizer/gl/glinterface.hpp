@@ -28,7 +28,7 @@
 
 #pragma once
 
-#include <GL3/gl3w_modified.hpp>
+#include <GL3/gl3.h>
 
 namespace lx0 
 {
@@ -40,37 +40,6 @@ namespace lx0
          */
         namespace rasterizer_ns
         {
-            class GLInterface 
-            {
-            public:
-                virtual ~GLInterface() {}
-
-                virtual void        bindVertexArray     (GLuint array)                                                      { glBindVertexArray(array); }
-                virtual void        deleteVertexArrays  (GLsizei n, const GLuint *arrays)                                   { glDeleteVertexArrays(n, arrays); }
-                virtual void        genVertexArrays     (GLsizei n, GLuint *arrays)                                         { glGenVertexArrays(n, arrays); }
-                virtual GLboolean   isVertexArray       (GLuint array)                                                      { return glIsVertexArray(array); }
-
-                virtual void        genQueries          (GLsizei n, GLuint *ids)                                            { glGenQueries(n, ids); }
-                virtual void        deleteQueries       (GLsizei n, const GLuint *ids)                                      { glDeleteQueries(n, ids); }
-                virtual GLboolean   isQuery             (GLuint id)                                                         { return glIsQuery(id); }
-                virtual void        beginQuery          (GLenum target, GLuint id)                                          { glBeginQuery(target, id); }
-                virtual void        endQuery            (GLenum target)                                                     { glEndQuery(target); }
-                virtual void        getQueryiv          (GLenum target, GLenum pname, GLint *params)                        { glGetQueryiv(target, pname, params); }
-                virtual void        getQueryObjectiv    (GLuint id, GLenum pname, GLint *params)                            { glGetQueryObjectiv(id, pname, params); }
-                virtual void        getQueryObjectuiv   (GLuint id, GLenum pname, GLuint *params)                           { glGetQueryObjectuiv(id, pname, params); }
-                virtual void        bindBuffer          (GLenum target, GLuint buffer)                                      { glBindBuffer(target, buffer); }
-                virtual void        deleteBuffers       (GLsizei n, const GLuint *buffers)                                  { glDeleteBuffers(n, buffers); }
-                virtual void        genBuffers          (GLsizei n, GLuint *buffers)                                        { glGenBuffers(n, buffers); }
-                virtual GLboolean   isBuffer            (GLuint buffer)                                                     { return glIsBuffer(buffer); }
-                virtual void        bufferData          (GLenum target, GLsizeiptr size, const GLvoid *dat, GLenum usage)   { glBufferData(target, size, dat, usage); }
-                virtual void        bufferSubData       (GLenum target, GLintptr offset, GLsizeiptr size, const GLvoid *data) { glBufferSubData(target, offset, size, data); }
-                virtual void        getBufferSubData    (GLenum target, GLintptr offset, GLsizeiptr size, GLvoid *data)     { glGetBufferSubData(target, offset, size, data); }
-                virtual GLvoid*     mapBuffer           (GLenum target, GLenum access)                                      { return glMapBuffer(target, access); }
-                virtual GLboolean   unmapBuffer         (GLenum target)                                                     { return glUnmapBuffer(target); }
-                virtual void        getBufferParameteriv(GLenum target, GLenum pname, GLint *params)                        { glGetBufferParameteriv(target, pname, params); }
-                virtual void        getBufferPointerv   (GLenum target, GLenum pname, GLvoid* *params)                      { glGetBufferPointerv(target, pname, params); }
-            };
-
             class OpenGlApi3_2
             {
             public:

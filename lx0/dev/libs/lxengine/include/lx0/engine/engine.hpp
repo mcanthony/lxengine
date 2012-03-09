@@ -171,6 +171,7 @@ namespace lx0
         
                 void                initialize          (void);
                 void                shutdown            (void);
+                bool                isShuttingDown      (void) const;
 
                 lx0::uint32         generateId          (void);
 
@@ -265,6 +266,7 @@ namespace lx0
                 Environment                 mEnvironment;
                 std::vector<DocumentPtr>    mDocuments;
                 std::deque<Event>           m_eventQueue;
+                bool                        mbShutdownRequested;
 
                 lx0::uint32                 mFrameNum;
                 lx0::uint32                 mFrameStartMs;

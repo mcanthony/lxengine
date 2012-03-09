@@ -31,6 +31,7 @@
 using namespace lx0;
 using namespace glgeom;
 
+extern OpenGlApi3_2* gl;
 
 Material::Material(GLuint id)
     : mId           (id)
@@ -57,13 +58,13 @@ Material::activate (RasterizerGL* pRasterizer, GlobalPass& pass)
     pRasterizer->mFrameData.shaderProgramActivations++;
 
     // Activate the shader
-    glUseProgram(mId);
+    gl->useProgram(mId);
         
     //
     // Set up color
     //
     {
-        GLint unifIndex = glGetUniformLocation(mId, "inColor");
+        GLint unifIndex = gl->getUniformLocation(mId, "inColor");
         if (unifIndex != -1)
         {
             unsigned int id = pRasterizer->mContext.itemId;
@@ -81,23 +82,23 @@ Material::activate (RasterizerGL* pRasterizer, GlobalPass& pass)
             float b = ((id >>  0) & 0xFF) / 255.0f;
             float a = 255;
             
-            glUniform4f(unifIndex, r, g, b, a);
+            gl->uniform4f(unifIndex, r, g, b, a);
         }
     }
     {
-        GLint idx = glGetUniformLocation(mId, "unifMaterialDiffuse");
+        GLint idx = gl->getUniformLocation(mId, "unifMaterialDiffuse");
         if (idx != -1)
-            glUniform3f(idx, 1.0f, 1.0f, 1.0f);
+            gl->uniform3f(idx, 1.0f, 1.0f, 1.0f);
     }
     {
-        GLint idx = glGetUniformLocation(mId, "unifMaterialSpecular");
+        GLint idx = gl->getUniformLocation(mId, "unifMaterialSpecular");
         if (idx != -1)
-            glUniform3f(idx, 1.0f, 1.0f, 1.0f);
+            gl->uniform3f(idx, 1.0f, 1.0f, 1.0f);
     }
     {
-        GLint idx = glGetUniformLocation(mId, "unifMaterialSpecularEx");
+        GLint idx = gl->getUniformLocation(mId, "unifMaterialSpecularEx");
         if (idx != -1)
-            glUniform1f(idx, 32.0f);
+            gl->uniform1f(idx, 32.0f);
     }
 
     check_glerror();
@@ -106,11 +107,11 @@ Material::activate (RasterizerGL* pRasterizer, GlobalPass& pass)
     // Z Test/Write
     //
     if (mZTest)
-        glEnable(GL_DEPTH_TEST);
+        gl->enable(GL_DEPTH_TEST);
     else
-        glDisable(GL_DEPTH_TEST);
+        gl->disable(GL_DEPTH_TEST);
 
-    glDepthMask(mZWrite ? GL_TRUE : GL_FALSE);
+    gl->depthMask(mZWrite ? GL_TRUE : GL_FALSE);
     
 
     //
@@ -118,11 +119,11 @@ Material::activate (RasterizerGL* pRasterizer, GlobalPass& pass)
     // 
     if (mBlend)
     {
-        glEnable(GL_BLEND);
-        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+        gl->enable(GL_BLEND);
+        gl->blendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     }
     else
-        glDisable(GL_BLEND);
+        gl->disable(GL_BLEND);
 
     //
     // Wireframe render mode?
@@ -132,9 +133,9 @@ Material::activate (RasterizerGL* pRasterizer, GlobalPass& pass)
         : pass.tbWireframe;
 
     if (bWireframe)
-        glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+        gl->polygonMode(GL_FRONT_AND_BACK, GL_LINE);
     else
-        glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+        gl->polygonMode(GL_FRONT_AND_BACK, GL_FILL);
 
     check_glerror();
 }
@@ -156,9 +157,9 @@ SolidColorMaterial::activate (RasterizerGL* pRasterizer, GlobalPass& pass)
     // Set up color
     //
     {
-        GLint idx = glGetUniformLocation(mId, "inColor");
+        GLint idx = gl->getUniformLocation(mId, "inColor");
         if (idx != -1)
-            glUniform4f(idx, mColor.r, mColor.g, mColor.b, 1.0f);
+            gl->uniform4f(idx, mColor.r, mColor.g, mColor.b, 1.0f);
     }
 
     check_glerror();
@@ -194,19 +195,19 @@ PhongMaterial::activate (RasterizerGL* pRasterizer, GlobalPass& pass)
     // Set up color
     //
     {
-        GLint idx = glGetUniformLocation(mId, "unifMaterialDiffuse");
+        GLint idx = gl->getUniformLocation(mId, "unifMaterialDiffuse");
         if (idx != -1)
-            glUniform3f(idx, mPhong.diffuse.r, mPhong.diffuse.g, mPhong.diffuse.b);
+            gl->uniform3f(idx, mPhong.diffuse.r, mPhong.diffuse.g, mPhong.diffuse.b);
     }
     {
-        GLint idx = glGetUniformLocation(mId, "unifMaterialSpecular");
+        GLint idx = gl->getUniformLocation(mId, "unifMaterialSpecular");
         if (idx != -1)
-            glUniform3f(idx, mPhong.specular.r, mPhong.specular.g, mPhong.specular.b);
+            gl->uniform3f(idx, mPhong.specular.r, mPhong.specular.g, mPhong.specular.b);
     }
     {
-        GLint idx = glGetUniformLocation(mId, "unifMaterialSpecularEx");
+        GLint idx = gl->getUniformLocation(mId, "unifMaterialSpecularEx");
         if (idx != -1)
-            glUniform1f(idx, mPhong.specular_n);
+            gl->uniform1f(idx, mPhong.specular_n);
     }
 }
 
@@ -247,7 +248,7 @@ GenericMaterial::_compile (RasterizerGL* pRasterizer)
     // Query the list of uniforms in the actual GLSL program
     //
     int uniformCount;
-    glGetProgramiv(mId, GL_ACTIVE_UNIFORMS, &uniformCount); 
+    gl->getProgramiv(mId, GL_ACTIVE_UNIFORMS, &uniformCount); 
     for (int i = 0; i < uniformCount; ++i)  
     {
         GLenum  uniformType;
@@ -255,7 +256,7 @@ GenericMaterial::_compile (RasterizerGL* pRasterizer)
         GLsizei uniformNameLength;
         GLint   uniformSize;        // Array size, if an array, 1 otherwise
 
-        glGetActiveUniform(mId, GLuint(i), sizeof(uniformName), &uniformNameLength, &uniformSize, &uniformType, uniformName);
+        gl->getActiveUniform(mId, GLuint(i), sizeof(uniformName), &uniformNameLength, &uniformSize, &uniformType, uniformName);
 
         if (uniformNameLength >= sizeof(uniformName))
         {
@@ -274,7 +275,7 @@ GenericMaterial::_compile (RasterizerGL* pRasterizer)
     // Query the list of active attributes
     //
     int attributeCount;
-    glGetProgramiv(mId, GL_ACTIVE_ATTRIBUTES, &attributeCount); 
+    gl->getProgramiv(mId, GL_ACTIVE_ATTRIBUTES, &attributeCount); 
     for (int i = 0; i < attributeCount; ++i)  
     {
         GLenum  attribType;
@@ -282,7 +283,7 @@ GenericMaterial::_compile (RasterizerGL* pRasterizer)
         GLsizei attribNameLength;
         GLint   attribSize;        // Array size, if an array, 1 otherwise
 
-        glGetActiveAttrib(mId, GLuint(i), sizeof(attribName), &attribNameLength, &attribSize, &attribType, attribName);
+        gl->getActiveAttrib(mId, GLuint(i), sizeof(attribName), &attribNameLength, &attribSize, &attribType, attribName);
 
         if (attribNameLength >= sizeof(attribName))
         {
@@ -306,26 +307,26 @@ GenericMaterial::_compile (RasterizerGL* pRasterizer)
         const std::string type        = (*it)[0];
         lxvar&            value       = (*it)[1];
 
-        GLint index = glGetUniformLocation(mId, uniformName.c_str());
+        GLint index = gl->getUniformLocation(mId, uniformName.c_str());
         if (index != -1)
         {
             if (type == "float")
             {
                 float v = value.as<float>();
-                mInstructions.push_back([=]() { glUniform1f(index, v); });
+                mInstructions.push_back([=]() { gl->uniform1f(index, v); });
             }
             else if (type == "vec2")
             {
                 float v0 = value[0].as<float>();
                 float v1 = value[1].as<float>();
-                mInstructions.push_back([=]() { glUniform2f(index, v0, v1); });
+                mInstructions.push_back([=]() { gl->uniform2f(index, v0, v1); });
             }
             else if (type == "vec3")
             {
                 float v0 = value[0].as<float>();
                 float v1 = value[1].as<float>();
                 float v2 = value[2].as<float>();
-                mInstructions.push_back([=]() { glUniform3f(index, v0, v1, v2); });
+                mInstructions.push_back([=]() { gl->uniform3f(index, v0, v1, v2); });
             }
             else if (type == "vec4")
             {
@@ -333,7 +334,7 @@ GenericMaterial::_compile (RasterizerGL* pRasterizer)
                 float v1 = value[1].as<float>();
                 float v2 = value[2].as<float>();
                 float v3 = value[3].as<float>();
-                mInstructions.push_back([=]() { glUniform4f(index, v0, v1, v2, v3); });
+                mInstructions.push_back([=]() { gl->uniform4f(index, v0, v1, v2, v3); });
             }
             else if (type == "sampler2D")
             {
@@ -370,15 +371,15 @@ GenericMaterial::_compile (RasterizerGL* pRasterizer)
 
                         // Set the shader uniform to the *texture unit* containing the texture (NOT
                         // the GL id of the texture)
-                        glUniform1i(index, unit);
+                        gl->uniform1i(index, unit);
 
-                        glActiveTexture(GL_TEXTURE0 + unit);
-                        glBindTexture(GL_TEXTURE_2D, textureId);
+                        gl->activeTexture(GL_TEXTURE0 + unit);
+                        gl->bindTexture(GL_TEXTURE_2D, textureId);
 
                         // Set the parameters on the texture unit
-                        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, mFilter);
-                        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, mFilter);
-                        glEnable(GL_TEXTURE_2D);
+                        gl->texParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, mFilter);
+                        gl->texParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, mFilter);
+                        gl->enable(GL_TEXTURE_2D);
                     });
                 }
                 else if (bUseFBO)
@@ -389,15 +390,15 @@ GenericMaterial::_compile (RasterizerGL* pRasterizer)
 
                         // Set the shader uniform to the *texture unit* containing the texture (NOT
                         // the GL id of the texture)
-                        glUniform1i(index, unit);
+                        gl->uniform1i(index, unit);
 
-                        glActiveTexture(GL_TEXTURE0 + unit);
-                        glBindTexture(GL_TEXTURE_2D, textureId);
+                        gl->activeTexture(GL_TEXTURE0 + unit);
+                        gl->bindTexture(GL_TEXTURE_2D, textureId);
 
                         // Set the parameters on the texture unit
-                        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, mFilter);
-                        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, mFilter);
-                        glEnable(GL_TEXTURE_2D);
+                        gl->texParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+                        gl->texParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+                        gl->enable(GL_TEXTURE_2D);
                     });
                 }
                 else
@@ -434,10 +435,10 @@ GenericMaterial::_compile (RasterizerGL* pRasterizer)
 
                         // Set the shader uniform to the *texture unit* containing the texture (NOT
                         // the GL id of the texture)
-                        glUniform1i(index, unit);
+                        gl->uniform1i(index, unit);
 
-                        glActiveTexture(GL_TEXTURE0 + unit);
-                        glBindTexture(GL_TEXTURE_CUBE_MAP, texId);
+                        gl->activeTexture(GL_TEXTURE0 + unit);
+                        gl->bindTexture(GL_TEXTURE_CUBE_MAP, texId);
                     });
                 }
             }
