@@ -11,5 +11,5 @@ void main()
 	vec4 texColor = texture2D(unifTexture0, fragUV);
     //if (outColor.a < .01)
     //discard;
-    outColor = vec4(texColor.g, texColor.b, texColor.r, 1.0);
+    outColor = vec4(1 - texColor.r, 1 - texColor.g, 1 - texColor.b, 1.0);
 }

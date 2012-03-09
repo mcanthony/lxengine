@@ -95,8 +95,8 @@ FrameBuffer::FrameBuffer(FrameBuffer::Type type, int width, int height)
             pixels[i] = die();
 
         gl->texImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, mWidth, mHeight, 0, GL_RGBA, GL_UNSIGNED_BYTE, &pixels[0]);
-        gl->texParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-        gl->texParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);        
+        gl->texParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        gl->texParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);        
         gl->texParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
         gl->texParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
         gl->framebufferTexture2D(GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, renderTex, 0);
@@ -576,18 +576,15 @@ RasterizerGL::_acquireFullScreenQuad (int width, int height)
     prim.vertex.positions.push_back( point3f(-fExtent, -fExtent, 0) );
     prim.vertex.positions.push_back( point3f( fExtent, -fExtent, 0) );
     prim.vertex.positions.push_back( point3f( fExtent,  fExtent, 0) );
-    prim.vertex.positions.push_back( point3f(-fExtent,  fExtent, 0) );
-
-    auto f = [](float u, float v) -> std::vector<point2f> {
-        std::vector<point2f> a;
-        a.push_back( point2f(u, v) );
-        return a;
-    };
-    prim.vertex.uv.reserve(4);
-    prim.vertex.uv.push_back( f(-fExtent, -fExtent) );
-    prim.vertex.uv.push_back( f( fExtent, -fExtent) );
-    prim.vertex.uv.push_back( f( fExtent,  fExtent) );
-    prim.vertex.uv.push_back( f(-fExtent,  fExtent) );
+    prim.vertex.positions.push_back( point3f(-fExtent,  fExtent, 0) );    
+    
+    std::vector<point2f> channel0;
+    channel0.reserve(4);
+    channel0.push_back( point2f( 0, 0) );
+    channel0.push_back( point2f( 1, 0) );
+    channel0.push_back( point2f( 1, 1) );
+    channel0.push_back( point2f( 0, 1) );
+    prim.vertex.uv.push_back(channel0);
 
     auto spGeometry = this->createGeometry(prim);
     return spGeometry;
@@ -1007,7 +1004,10 @@ RasterizerGL::createGeometry (glgeom::primitive_buffer& primitive)
     else if (primitive.type == "quadlist")
     {
         std::vector<glgeom::point3f> positions;
+        std::vector<glgeom::point2f> uv0;
         positions.reserve( primitive.vertex.positions.size() * 3 / 2);
+        uv0.reserve( primitive.vertex.positions.size() * 3 / 2 );
+        
         auto it = primitive.vertex.positions.begin(); 
         while (it != primitive.vertex.positions.end())
         {
@@ -1024,6 +1024,22 @@ RasterizerGL::createGeometry (glgeom::primitive_buffer& primitive)
             positions.push_back(v3);
         }
 
+        auto jt = primitive.vertex.uv[0].begin(); 
+        while (jt != primitive.vertex.uv[0].end())
+        {
+            auto v0 = *jt++;
+            auto v1 = *jt++;
+            auto v2 = *jt++;
+            auto v3 = *jt++;
+
+            uv0.push_back(v0);
+            uv0.push_back(v1);
+            uv0.push_back(v2);
+            uv0.push_back(v0);
+            uv0.push_back(v2);
+            uv0.push_back(v3);
+        }
+
         pGeom->mType          = GL_TRIANGLES;
         pGeom->mVao           = vao;
         pGeom->mVboPosition   = _genArrayBuffer(GL_ARRAY_BUFFER, positions);
@@ -1031,6 +1047,8 @@ RasterizerGL::createGeometry (glgeom::primitive_buffer& primitive)
 
         for (int i = 0; i < 8 && i < (int)primitive.vertex.uv.size(); ++i)
             pGeom->mVboUVs[i] = _genArrayBuffer(GL_ARRAY_BUFFER, primitive.vertex.uv[i]);
+        
+        pGeom->mVboUVs[0] = _genArrayBuffer(GL_ARRAY_BUFFER, uv0);
     }
     else
         throw lx_error_exception("Unknown primitive type '%s'", primitive.type);
@@ -1429,7 +1447,8 @@ RasterizerGL::rasterizeList (RenderAlgorithm& algorithm, std::vector<std::shared
                 //
                 if (spFBO->textureId() != 0)
                 {
-                    gl->clearColor(1, 1, 1, 1.0f);
+                    const auto& color = algorithm.mClearColor;                    
+                    gl->clearColor(color.r, color.g, color.b, color.a);
                     gl->clear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
                 }
 
