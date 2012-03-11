@@ -956,6 +956,31 @@ _genArrayBuffer (GLenum target, std::vector<T>& data)
     return id;
 }
 
+template <typename T>
+static
+std::vector<T>
+_expandQuadsToTris (std::vector<T>& quads)
+{
+    std::vector<T> tris;
+    tris.reserve( quads.size() * 3 / 2);
+        
+    auto it = quads.begin(); 
+    while (it != quads.end())
+    {
+        auto v0 = *it++;
+        auto v1 = *it++;
+        auto v2 = *it++;
+        auto v3 = *it++;
+
+        tris.push_back(v0);
+        tris.push_back(v1);
+        tris.push_back(v2);
+        tris.push_back(v0);
+        tris.push_back(v2);
+        tris.push_back(v3);
+    }
+    return tris;
+}
 
 GeometryPtr
 RasterizerGL::createGeometry (glgeom::primitive_buffer& primitive)
@@ -1003,52 +1028,13 @@ RasterizerGL::createGeometry (glgeom::primitive_buffer& primitive)
     }
     else if (primitive.type == "quadlist")
     {
-        std::vector<glgeom::point3f> positions;
-        std::vector<glgeom::point2f> uv0;
-        positions.reserve( primitive.vertex.positions.size() * 3 / 2);
-        uv0.reserve( primitive.vertex.positions.size() * 3 / 2 );
-        
-        auto it = primitive.vertex.positions.begin(); 
-        while (it != primitive.vertex.positions.end())
-        {
-            auto v0 = *it++;
-            auto v1 = *it++;
-            auto v2 = *it++;
-            auto v3 = *it++;
-
-            positions.push_back(v0);
-            positions.push_back(v1);
-            positions.push_back(v2);
-            positions.push_back(v0);
-            positions.push_back(v2);
-            positions.push_back(v3);
-        }
-
-        auto jt = primitive.vertex.uv[0].begin(); 
-        while (jt != primitive.vertex.uv[0].end())
-        {
-            auto v0 = *jt++;
-            auto v1 = *jt++;
-            auto v2 = *jt++;
-            auto v3 = *jt++;
-
-            uv0.push_back(v0);
-            uv0.push_back(v1);
-            uv0.push_back(v2);
-            uv0.push_back(v0);
-            uv0.push_back(v2);
-            uv0.push_back(v3);
-        }
-
         pGeom->mType          = GL_TRIANGLES;
         pGeom->mVao           = vao;
-        pGeom->mVboPosition   = _genArrayBuffer(GL_ARRAY_BUFFER, positions);
-        pGeom->mCount         = positions.size();
+        pGeom->mVboPosition   = _genArrayBuffer(GL_ARRAY_BUFFER, _expandQuadsToTris(primitive.vertex.positions));
+        pGeom->mCount         = primitive.vertex.positions.size() * 3 / 2;
 
         for (int i = 0; i < 8 && i < (int)primitive.vertex.uv.size(); ++i)
-            pGeom->mVboUVs[i] = _genArrayBuffer(GL_ARRAY_BUFFER, primitive.vertex.uv[i]);
-        
-        pGeom->mVboUVs[0] = _genArrayBuffer(GL_ARRAY_BUFFER, uv0);
+            pGeom->mVboUVs[i] = _genArrayBuffer(GL_ARRAY_BUFFER, _expandQuadsToTris(primitive.vertex.uv[i]));
     }
     else
         throw lx_error_exception("Unknown primitive type '%s'", primitive.type);
