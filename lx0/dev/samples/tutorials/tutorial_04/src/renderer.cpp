@@ -227,6 +227,7 @@ public:
             pass.spFrameBuffer = mspFBOffscreen;
             pass.spCamera   = mspCamera;
             pass.spLightSet = mspLightSet;
+            pass.optClearColor = std::make_pair(true, glgeom::color4f(0, 0, 0, 0));
             algorithm.mPasses.push_back(pass);
 
             pass.spFrameBuffer.reset();

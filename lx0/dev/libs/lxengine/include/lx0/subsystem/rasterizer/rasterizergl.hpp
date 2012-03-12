@@ -76,6 +76,7 @@ namespace lx0
                      GlobalPass()
                          : tbWireframe          (boost::indeterminate)
                          , tbFlatShading        (boost::indeterminate)
+                         , optClearColor        (false, glgeom::color4f(0, 0, 0, 1))
                      { }
 
                 FrameBufferPtr  spFrameBuffer;          // optional: screen is the default
@@ -86,8 +87,9 @@ namespace lx0
                 LightSetPtr     spLightSet;
                 MaterialPtr     spMaterial;
 
-                boost::tribool  tbWireframe;
-                boost::tribool  tbFlatShading;
+                boost::tribool                      tbWireframe;
+                boost::tribool                      tbFlatShading;
+                std::pair<bool, glgeom::color4f>    optClearColor;
             };
 
             //===========================================================================//

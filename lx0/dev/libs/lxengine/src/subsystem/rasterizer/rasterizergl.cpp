@@ -568,7 +568,7 @@ GeometryPtr
 RasterizerGL::_acquireFullScreenQuad (int width, int height)
 {
     // Changing this from 1.0 can be helpful for debugging (i.e. blit to 80% of the screen, set to .8)
-    const float fExtent = .8f;
+    const float fExtent = 1.0f;
 
     primitive_buffer prim;
     prim.type = "quadlist";
@@ -1433,7 +1433,7 @@ RasterizerGL::rasterizeList (RenderAlgorithm& algorithm, std::vector<std::shared
                 //
                 if (spFBO->textureId() != 0)
                 {
-                    const auto& color = algorithm.mClearColor;                    
+                    const auto& color = pass->optClearColor.second;                    
                     gl->clearColor(color.r, color.g, color.b, color.a);
                     gl->clear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
                 }
