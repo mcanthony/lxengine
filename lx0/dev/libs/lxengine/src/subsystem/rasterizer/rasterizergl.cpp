@@ -87,14 +87,8 @@ FrameBuffer::FrameBuffer(FrameBuffer::Type type, int width, int height)
         gl->genTextures(1, &renderTex);
         gl->activeTexture(GL_TEXTURE0); // Use texture unit 0
         gl->bindTexture(GL_TEXTURE_2D, renderTex);
-
-        auto die = lx0::random_die_i(0, 255, 100);
-        std::vector<unsigned char> pixels;
-        pixels.resize(mWidth * mHeight * 4);
-        for (int i = 0; i < mWidth * mHeight * 4; ++i)
-            pixels[i] = die();
-
-        gl->texImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, mWidth, mHeight, 0, GL_RGBA, GL_UNSIGNED_BYTE, &pixels[0]);
+        
+        gl->texImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, mWidth, mHeight, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
         gl->texParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
         gl->texParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);        
         gl->texParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
@@ -113,9 +107,7 @@ FrameBuffer::FrameBuffer(FrameBuffer::Type type, int width, int height)
         gl->renderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT, mWidth, mHeight);
         gl->framebufferRenderbuffer(GL_DRAW_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, depthBuf);
         lx_check_error(depthBuf != GL_NONE);
-
-        /*GLenum drawBuffers[2] = {GL_COLOR_ATTACHMENT0,GL_DEPTH_ATTACHMENT};
-        gl->drawBuffers(2, drawBuffers);*/
+        mDepthHandle = depthBuf;
 
         lx_check_error( gl->checkFramebufferStatus(GL_DRAW_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE );
     
@@ -142,6 +134,18 @@ FrameBuffer::FrameBuffer(FrameBuffer::Type type, int width, int height)
 
 FrameBuffer::~FrameBuffer()
 {
+    // Ensure FBO is not current
+    GLint currentFBO;
+    gl->getIntegerv(GL_DRAW_FRAMEBUFFER_BINDING, &currentFBO);
+    if (currentFBO == mHandle)
+        gl->bindFramebuffer(GL_FRAMEBUFFER, 0);
+
+    //
+    // Delete FBO and associated objects
+    //
+    gl->deleteTextures(1, &mTextureHandle);
+    gl->deleteRenderbuffers(1, &mDepthHandle);
+    gl->deleteFramebuffers(1, &mHandle);
 }
 
 void 
@@ -1138,7 +1142,7 @@ RasterizerGL::createQuadList (const std::vector<unsigned short>& quadIndices,
         //@todo Handle face flags properly
         /*
             This is essentially laziness: the face flags should be opt-in, not
-            determined by the overally face count.  Also, if the face count is
+            determined by the overal face count.  Also, if the face count is
             too high, a 2D texture should be used.
          */
         lx_warn("Skipping face flags since the data size is too large!");

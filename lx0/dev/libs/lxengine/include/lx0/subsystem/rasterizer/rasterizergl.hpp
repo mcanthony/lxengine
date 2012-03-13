@@ -133,6 +133,7 @@ namespace lx0
                 int     mHeight;
 
                 GLuint  mTextureHandle;
+                GLuint  mDepthHandle;
             };
 
             //===========================================================================//
