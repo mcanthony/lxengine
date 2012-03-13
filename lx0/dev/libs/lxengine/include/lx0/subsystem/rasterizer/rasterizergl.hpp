@@ -303,6 +303,7 @@ namespace lx0
                     CameraPtr       spCamera;
                     MaterialPtr     spMaterial;
                     TransformPtr    spTransform;
+                    GeometryPtr     spGeometry;
 
                     unsigned int    textureUnit;
 
@@ -318,8 +319,6 @@ namespace lx0
                             spProjMatrix.reset();
                             spViewMatrix.reset();
                         }
-                        void activate();
-
                         std::shared_ptr<glm::mat4>  spProjMatrix;
                         std::shared_ptr<glm::mat4>  spViewMatrix;
 

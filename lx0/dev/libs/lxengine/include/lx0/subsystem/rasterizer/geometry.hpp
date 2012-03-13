@@ -43,43 +43,30 @@ namespace lx0
                 Geometry()
                     : mType          (0)
                     , mtbFlatShading (boost::indeterminate)
-                {}
-                virtual ~Geometry() {}
-                
-                virtual void activate(RasterizerGL*, GlobalPass& pass) = 0;
-
-                GLenum  mType;
-                glgeom::abbox3f mBBox;
-                boost::tribool  mtbFlatShading;
-            };
-
-            //===========================================================================//
-            //! \ingroup lx0_subsystem_rasterizer
-            /*!
-                \todo Eventually move to a generic vector of string attrib-name to 
-                    VBO id/type pairs.
-             */
-            class GeomImp : public Geometry
-            {
-            public:
-                GeomImp() 
-                    : mVboIndices   (0)
-                    , mVao          (0)
-                    , mVboPosition  (0)
-                    , mVboNormal    (0)
-                    , mCount        (0)
-                    , mVboColors    (0)
-                    , mTexFlags     (0) 
-                    , mFaceCount    (0)
+                    , mVboIndices    (0)
+                    , mVao           (0)
+                    , mVboPosition   (0)
+                    , mVboNormal     (0)
+                    , mCount         (0)
+                    , mVboColors     (0)
+                    , mTexFlags      (0) 
+                    , mFaceCount     (0)
                 {
                     for (int i = 0; i < 8; ++i)
                         mVboUVs[i] = 0;
                 }
+                virtual ~Geometry();
+                
+                virtual void    activate    (RasterizerGL*, GlobalPass& pass);
 
-                ~GeomImp();
+                GLenum          mType;
+                
+                glgeom::abbox3f mBBox;
 
-                virtual void activate(RasterizerGL*, GlobalPass& pass);
+                // Options
+                boost::tribool  mtbFlatShading;
 
+                // Data
                 GLuint  mVao;
                 GLsizei mCount;
                 
@@ -91,21 +78,7 @@ namespace lx0
                 GLuint  mVboIndices;
                 GLuint  mTexFlags;
                 GLuint  mFaceCount;
-            };
-
-            //===========================================================================//
-            //! \ingroup lx0_subsystem_rasterizer
-            class QuadList : public Geometry
-            {
-            public:
-                virtual void activate(RasterizerGL*, GlobalPass& pass);
-
-                size_t size;
-                GLuint vbo[1];
-                GLuint vao[1];
-            };
-            typedef std::shared_ptr<QuadList> QuadListPtr;
-
+            };           
         }
     }
 }

@@ -123,7 +123,6 @@ public:
         // to ensure only the right pixels are actually written to the pixel buffer.
         //
         GlobalPass pass[4];
-        pass[0].bOverrideMaterial = true;
         pass[0].spMaterial = mRasterizer.createMaterial("media2/shaders/glsl/fragment/solid.frag");
         algorithm.mPasses.push_back(pass[0]); 
     }

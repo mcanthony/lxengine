@@ -860,7 +860,7 @@ RasterizerGL::createQuadList (std::vector<glgeom::point3f>& quadPositions,
 
     // Create the cache to encapsulate the created OGL resources
     //
-    auto pGeom = new GeomImp;
+    auto pGeom = new Geometry;
     pGeom->mtbFlatShading = true;
     pGeom->mType        = GL_TRIANGLES;
     pGeom->mVao         = vao;
@@ -929,7 +929,7 @@ RasterizerGL::createQuadList (std::vector<lx0::uint16>&     quadIndices,
 
     // Create the cache to encapsulate the created OGL resources
     //
-    auto pGeom = new GeomImp;
+    auto pGeom = new Geometry;
     pGeom->mtbFlatShading = true;
     pGeom->mType          = GL_TRIANGLES;
     pGeom->mVao           = vao;
@@ -997,7 +997,7 @@ RasterizerGL::createGeometry (glgeom::primitive_buffer& primitive)
 
     // Create the cache to encapsulate the created OGL resources
     //
-    auto pGeom = new GeomImp;
+    auto pGeom = new Geometry;
     if (primitive.type == "trilist")
     {
         pGeom->mType          = GL_TRIANGLES;
@@ -1148,7 +1148,7 @@ RasterizerGL::createQuadList (const std::vector<unsigned short>& quadIndices,
 
     // Create the cache to encapsulate the created OGL resources
     //
-    auto pGeom = new GeomImp;
+    auto pGeom = new Geometry;
     pGeom->mType        = GL_TRIANGLES;
     pGeom->mVao         = vao;
     pGeom->mVboIndices  = vio;
@@ -1468,50 +1468,6 @@ RasterizerGL::rasterizeList (RenderAlgorithm& algorithm, std::vector<std::shared
     }
 }
 
-void
-RasterizerGL::Context::Uniforms::activate ()
-{
-    check_glerror();
-
-    GLint progId;
-    gl->getIntegerv(GL_CURRENT_PROGRAM, &progId);
-
-    //
-    // Pass in additional transform information
-    // 
-    if (spProjMatrix)
-    {
-        GLint idx = gl->getUniformLocation(progId, "unifProjMatrix");
-        if (idx != -1)
-        {
-            gl->uniformMatrix4fv(idx, 1, GL_FALSE, glm::value_ptr(*spProjMatrix));
-        }
-    }
-
-    //
-    // Pass in additional transform information
-    // 
-    if (spViewMatrix)
-    {
-        GLint idx = gl->getUniformLocation(progId, "unifViewMatrix");
-        if (idx != -1)
-        {
-            gl->uniformMatrix4fv(idx, 1, GL_FALSE, glm::value_ptr(*spViewMatrix));
-        }
-
-        // The gl_NormalMatrix is the upper 3x3 of the inverse transpose of the model view matrix
-        glm::mat3 normalMatrix = glm::mat3(glm::inverseTranspose(*spViewMatrix));
-        {
-            GLint idx = gl->getUniformLocation(progId, "unifNormalMatrix");
-            if (idx != -1)
-            {
-                gl->uniformMatrix3fv(idx, 1, GL_FALSE, glm::value_ptr(normalMatrix));
-            }
-        }
-    }
-    check_glerror();
-}
-
 __forceinline static
 void _timeCall (lx0::Timer& timer, std::function<void (void)> f)
 {
@@ -1529,6 +1485,7 @@ RasterizerGL::rasterizeItem (GlobalPass& pass, std::shared_ptr<Instance> spInsta
 
     // Set up the context variables that have changed
     mContext.spInstance = spInstance;
+    mContext.spGeometry = spInstance->spGeometry;
     mContext.textureUnit = 0;
     mContext.uniforms.reset();
 
@@ -1604,8 +1561,6 @@ RasterizerGL::rasterizeItem (GlobalPass& pass, std::shared_ptr<Instance> spInsta
 
         mContext.spCamera->activate(this);
         
-        _timeCall(mStats.tmMaterialActivate, [&](){  mContext.spMaterial->activate(this, pass);  });
-
         // Lights are optional; not all rendering algorithms require explicitly defined lights
         _timeCall(mStats.tmLightSetActivate, [&]() {
             if (mContext.spLightSet)
@@ -1617,9 +1572,8 @@ RasterizerGL::rasterizeItem (GlobalPass& pass, std::shared_ptr<Instance> spInsta
                 mContext.spTransform->activate(this, spInstance->spCamera); 
         });
 
-        mContext.uniforms.activate();
-        
-        _timeCall(mStats.tmGeometryActivate, [&]() { spInstance->spGeometry->activate(this, pass); });
+        _timeCall(mStats.tmMaterialActivate, [&](){  mContext.spMaterial->activate(this, pass);  });
+        _timeCall(mStats.tmGeometryActivate, [&]() { mContext.spGeometry->activate(this, pass); });
     
         check_glerror();
     }
@@ -1629,6 +1583,7 @@ RasterizerGL::rasterizeItem (GlobalPass& pass, std::shared_ptr<Instance> spInsta
     mContext.spMaterial.reset();
     mContext.spTransform.reset();
     mContext.spInstance.reset();
+    mContext.spGeometry.reset();
 }
 
 

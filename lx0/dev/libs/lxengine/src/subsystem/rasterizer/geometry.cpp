@@ -32,7 +32,7 @@ using namespace lx0;
 
 extern OpenGlApi3_2* gl;
 
-GeomImp::~GeomImp()
+Geometry::~Geometry()
 {
     if (mVao)
         gl->deleteVertexArrays(1, &mVao);
@@ -55,7 +55,7 @@ GeomImp::~GeomImp()
     names are mapped to geometry variables *by convention*.
  */
 void 
-GeomImp::activate(RasterizerGL* pRasterizer, GlobalPass& pass)
+Geometry::activate(RasterizerGL* pRasterizer, GlobalPass& pass)
 {
     check_glerror();
 
@@ -81,45 +81,6 @@ GeomImp::activate(RasterizerGL* pRasterizer, GlobalPass& pass)
     gl->vertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
     gl->enableVertexAttribArray(0);
             
-    GLint normalIndex = gl->getAttribLocation(shaderProgram, "vertNormal");
-    if (normalIndex != -1)
-    {
-        if (mVboNormal)
-        {
-            gl->bindBuffer(GL_ARRAY_BUFFER, mVboNormal);
-            gl->vertexAttribPointer(normalIndex, 3, GL_FLOAT, GL_FALSE, 0, 0);
-            gl->enableVertexAttribArray(normalIndex);
-        }
-        else
-            gl->disableVertexAttribArray(normalIndex);
-    }
-
-    GLint colorIndex = gl->getAttribLocation(shaderProgram, "vertColor");
-    if (colorIndex != -1)
-    {
-        if (mVboColors)
-        {
-            gl->bindBuffer(GL_ARRAY_BUFFER, mVboColors);
-            gl->vertexAttribPointer(colorIndex, 3, GL_FLOAT, GL_FALSE, 0, 0);
-            gl->enableVertexAttribArray(colorIndex);
-        }
-        else
-            gl->disableVertexAttribArray(colorIndex);
-    }
-
-    GLint uvIndex = gl->getAttribLocation(shaderProgram, "vertUV");
-    if (uvIndex != -1)
-    {
-        if (mVboUVs[0])
-        {
-            gl->bindBuffer(GL_ARRAY_BUFFER, mVboUVs[0]);
-            gl->vertexAttribPointer(uvIndex, 2, GL_FLOAT, GL_FALSE, 0, 0);
-            gl->enableVertexAttribArray(uvIndex);
-        }
-        else
-            gl->disableVertexAttribArray(uvIndex);
-    }
-
     // Set per-primitive flags
     {
         bool texture1dUsed = false;
@@ -156,15 +117,6 @@ GeomImp::activate(RasterizerGL* pRasterizer, GlobalPass& pass)
         }
     }
 
-    // Options
-    {
-        GLint loc = gl->getUniformLocation(shaderProgram, "unifFlatNormals");
-        if (loc != -1)
-        {
-            const int flatShading = (pRasterizer->mContext.tbFlatShading == true) ? 1 : 0; 
-            gl->uniform1i(loc, flatShading);
-        }
-    }
 
     check_glerror();
 

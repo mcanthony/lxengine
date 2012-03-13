@@ -252,7 +252,6 @@ Renderer::_generateRenderAlgorithm (lx0::RenderAlgorithm& algorithm)
         algorithm.mPasses.push_back(pass[0]);
         break;
     case 2:
-        pass[0].bOverrideMaterial = true;
         pass[0].spMaterial = mRasterizer.createMaterial("media2/shaders/glsl/fragment/solid.frag");
         algorithm.mPasses.push_back(pass[0]);
         break;

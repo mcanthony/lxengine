@@ -27,6 +27,7 @@
 //===========================================================================//
 
 #include <lx0/subsystem/rasterizer.hpp>
+#include <glm/gtc/matrix_inverse.hpp>
 
 using namespace lx0;
 using namespace glgeom;
@@ -211,6 +212,91 @@ PhongMaterial::activate (RasterizerGL* pRasterizer, GlobalPass& pass)
     }
 }
 
+std::function<void()> 
+_generateStandardUniform (RasterizerGL* pRasterizer, GLint location, std::string name, GLenum type, GLint count)
+{
+    if (name == "unifProjMatrix")
+    {        
+        return [=]() {
+            auto& spMatrix = pRasterizer->mContext.uniforms.spProjMatrix;
+            gl->uniformMatrix4fv(location, 1, GL_FALSE, glm::value_ptr(*spMatrix));
+        };
+    }
+    else if (name == "unifViewMatrix")
+    {
+        return [=]() {
+            auto& spMatrix = pRasterizer->mContext.uniforms.spViewMatrix;
+            gl->uniformMatrix4fv(location, 1, GL_FALSE, glm::value_ptr(*spMatrix));
+        };
+    }
+    else if (name == "unifNormalMatrix")
+    {
+        return [=]() {
+            auto& spViewMatrix = pRasterizer->mContext.uniforms.spViewMatrix;
+            glm::mat3 normalMatrix = glm::mat3(glm::inverseTranspose(*spViewMatrix));
+            gl->uniformMatrix3fv(location, 1, GL_FALSE, glm::value_ptr(normalMatrix));
+        };
+    }
+    else if (name == "unifFlatNormals")
+    {
+        return [=]() {
+            const int flatShading = (pRasterizer->mContext.tbFlatShading == true) ? 1 : 0; 
+            gl->uniform1i(location, flatShading);
+        };
+    }
+
+    return std::function<void()>();
+}
+
+std::function<void()> 
+_generateStandardAttribute (RasterizerGL* pRasterizer, GLint location, std::string name, GLenum type, GLint count)
+{
+    if (name == "vertNormal")
+    {
+        return [=]() {
+            auto& vboNormals = pRasterizer->mContext.spGeometry->mVboNormal;
+            if (vboNormals)
+            {
+                gl->bindBuffer(GL_ARRAY_BUFFER, vboNormals);
+                gl->vertexAttribPointer(location, 3, GL_FLOAT, GL_FALSE, 0, 0);
+                gl->enableVertexAttribArray(location);
+            }
+            else
+                gl->disableVertexAttribArray(location);
+        };
+    }
+    else if (name == "vertColor")
+    {
+        return [=]() {
+            auto& mVboColors = pRasterizer->mContext.spGeometry->mVboColors;
+            if (mVboColors)
+            {
+                gl->bindBuffer(GL_ARRAY_BUFFER, mVboColors);
+                gl->vertexAttribPointer(location, 3, GL_FLOAT, GL_FALSE, 0, 0);
+                gl->enableVertexAttribArray(location);
+            }
+            else
+                gl->disableVertexAttribArray(location);
+        };
+    }
+    else if (name == "vertUV")
+    {
+        return [=]() {
+            auto& mVboUVs = pRasterizer->mContext.spGeometry->mVboUVs;
+            if (mVboUVs[0])
+            {
+                gl->bindBuffer(GL_ARRAY_BUFFER, mVboUVs[0]);
+                gl->vertexAttribPointer(location, 2, GL_FLOAT, GL_FALSE, 0, 0);
+                gl->enableVertexAttribArray(location);
+            }
+            else
+                gl->disableVertexAttribArray(location);
+        };
+    }
+
+    return std::function<void()>();
+}
+
 
 GenericMaterial::GenericMaterial (GLuint id)
     : Material          (id)
@@ -255,8 +341,10 @@ GenericMaterial::_compile (RasterizerGL* pRasterizer)
         char    uniformName[128];
         GLsizei uniformNameLength;
         GLint   uniformSize;        // Array size, if an array, 1 otherwise
+        GLint   uniformLocation;
 
         gl->getActiveUniform(mId, GLuint(i), sizeof(uniformName), &uniformNameLength, &uniformSize, &uniformType, uniformName);
+        uniformLocation = gl->getUniformLocation(mId, uniformName);
 
         if (uniformNameLength >= sizeof(uniformName))
         {
@@ -264,10 +352,26 @@ GenericMaterial::_compile (RasterizerGL* pRasterizer)
         }
         else
         {
-            if (!mParameters.has_key(uniformName))
+            //
+            // Check instance parameters, type default parameters, then "standard" names.
+            // Check for direct values, implicitly convertible values, then indirect semantic values.
+            //
+
+            std::function<void()> instruction;
+
+            if (mParameters.has_key(uniformName))
             {
-                lx_log("Program contains unspecified uniform: %1%", uniformName);
+                // Ignore for now.
             }
+            else if (/*mDefaults has key*/ false) 
+            { 
+            }
+            else if (instruction = _generateStandardUniform(pRasterizer, uniformLocation, uniformName, uniformType, uniformSize))
+            {
+                mInstructions.push_back(instruction);
+            }
+            else
+                lx_log("Program contains unspecified uniform: %1%", uniformName);
         }
     }
 
@@ -282,8 +386,10 @@ GenericMaterial::_compile (RasterizerGL* pRasterizer)
         char    attribName[128];
         GLsizei attribNameLength;
         GLint   attribSize;        // Array size, if an array, 1 otherwise
+        GLint   attribLocation;
 
         gl->getActiveAttrib(mId, GLuint(i), sizeof(attribName), &attribNameLength, &attribSize, &attribType, attribName);
+        attribLocation = gl->getAttribLocation(mId, attribName);
 
         if (attribNameLength >= sizeof(attribName))
         {
@@ -291,7 +397,9 @@ GenericMaterial::_compile (RasterizerGL* pRasterizer)
         }
         else
         {
-                lx_log("Program contains active attribute: %1%", attribName);
+            std::function<void()> instruction;
+            if (instruction = _generateStandardAttribute(pRasterizer, attribLocation, attribName, attribType, attribSize))
+                mInstructions.push_back(instruction);
         }
     }
 
