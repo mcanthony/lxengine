@@ -4,7 +4,7 @@
 
     LICENSE
 
-    Copyright (c) 2011 athile@athile.net (http://www.athile.net)
+    Copyright (c) 2011-2012 athile@athile.net (http://www.athile.net)
 
     Permission is hereby granted, free of charge, to any person obtaining a 
     copy of this software and associated documentation files (the "Software"), 
@@ -34,6 +34,49 @@ namespace lx0
     {
         namespace rasterizer_ns
         {
+
+            class MaterialType
+            {
+            public:
+                struct _Parameter
+                {
+                    std::string name;
+                    GLenum      type;
+                    GLint       size;
+                    GLint       location;
+                };
+                struct Uniform : public _Parameter { };
+                struct Attribute : public _Parameter { };
+
+                            MaterialType();
+                            ~MaterialType();
+
+                void        iterateUniforms     (std::function<void(const Uniform& uniform)> f); 
+                void        iterateAttributes   (std::function<void(const Attribute& attribute)> f); 
+
+            protected:
+                GLuint      mProgram;
+                GLuint      mVertShader;
+                GLuint      mGeomShader;
+                GLuint      mFragShader;
+
+                std::string mName;
+                lx0::lxvar  mDefaults;
+            };
+
+            class MaterialInstance
+            {
+            public:
+
+                virtual void    activate   (RasterizerGL*, GlobalPass& pass);
+
+                std::string                         mName;
+                MaterialTypePtr                     mMaterialType;
+                lx0::lxvar                          mParameters;
+
+                bool                                mbDirty;
+                std::vector<std::function<void()>>  mInstructions;
+            };
 
             //===========================================================================//
             //! \ingroup lx0_subsystem_rasterizer

@@ -249,6 +249,8 @@ public:
         orientation = glgeom::quatf(orient.w(), orient.x(), orient.y(), orient.z());
     }
 
+    virtual lx0::uint32 flags               (void) const { return eSkipUpdate; }
+
     //
     // Currently, this class represents a static, immovable object.  This method is
     // required as part of the interface, but if all is working properly, it will never

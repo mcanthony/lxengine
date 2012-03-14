@@ -982,6 +982,7 @@ public:
                         // Allocate the buffer representation (5x5 vertices representing the 4x4 quad cells)
                         //
                         std::shared_ptr<glgeom::primitive_buffer> spPrimitive (new glgeom::primitive_buffer);
+                        spPrimitive->type = "trilist";
                         spPrimitive->vertex.positions.resize(5 * 5);
                         spPrimitive->vertex.normals.resize(5 * 5);
                         spPrimitive->vertex.uv.resize(1);
@@ -1153,6 +1154,7 @@ public:
                 {
                     instance inst;
                     
+                    inst.spPrimitive->type = "trilist";
                     inst.spPrimitive->vertex.positions.resize(4);
                     inst.spPrimitive->vertex.positions[0] = glgeom::point3f(0, 0, 0);
                     inst.spPrimitive->vertex.positions[1] = glgeom::point3f(0, 8192, 0);

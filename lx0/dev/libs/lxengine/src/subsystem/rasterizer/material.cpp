@@ -4,7 +4,7 @@
 
     LICENSE
 
-    Copyright (c) 2010-2011 athile@athile.net (http://www.athile.net)
+    Copyright (c) 2010-2012 athile@athile.net (http://www.athile.net)
 
     Permission is hereby granted, free of charge, to any person obtaining a 
     copy of this software and associated documentation files (the "Software"), 
@@ -33,6 +33,72 @@ using namespace lx0;
 using namespace glgeom;
 
 extern OpenGlApi3_2* gl;
+
+
+MaterialType::MaterialType()
+    : mProgram    (0)
+    , mVertShader (0)
+    , mGeomShader (0)
+    , mFragShader (0)
+{
+}
+
+MaterialType::~MaterialType()
+{
+}
+
+void 
+MaterialType::iterateUniforms (std::function<void(const Uniform& uniform)> f)
+{
+    int uniformCount;
+    gl->getProgramiv(mProgram, GL_ACTIVE_UNIFORMS, &uniformCount); 
+    for (int i = 0; i < uniformCount; ++i)  
+    {
+        Uniform uniform;
+        char    uniformName[128];
+        GLsizei uniformNameLength;
+
+        gl->getActiveUniform(mProgram, GLuint(i), sizeof(uniformName), &uniformNameLength, &uniform.size, &uniform.type, uniformName);
+
+        if (uniformNameLength >= sizeof(uniformName))
+        {
+            throw lx_error_exception("GLSL program contains a uniform with too long a name size!");
+        }
+        else
+        {
+            uniform.name = uniformName;
+            uniform.location = gl->getUniformLocation(mProgram, uniformName);
+            f(uniform);
+        }
+    }
+}
+
+void 
+MaterialType::iterateAttributes (std::function<void(const Attribute& attribute)> f)
+{
+    int attributeCount;
+    gl->getProgramiv(mProgram, GL_ACTIVE_ATTRIBUTES, &attributeCount); 
+    for (int i = 0; i < attributeCount; ++i)  
+    {
+        Attribute attribute;
+        char    attribName[128];
+        GLsizei attribNameLength;
+
+        gl->getActiveAttrib(mProgram, GLuint(i), sizeof(attribName), &attribNameLength, &attribute.size, &attribute.type, attribName);
+
+        if (attribNameLength >= sizeof(attribName))
+        {
+            throw lx_error_exception("GLSL program contains an attribute with too long a name size!");
+        }
+        else
+        {
+            attribute.name = attribName;
+            attribute.location = gl->getAttribLocation(mProgram, attribName);
+            f(attribute);
+        }
+    }
+}
+
 
 Material::Material(GLuint id)
     : mId           (id)

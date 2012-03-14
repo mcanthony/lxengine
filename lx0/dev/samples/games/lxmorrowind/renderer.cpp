@@ -61,6 +61,7 @@ public:
     {
         mFunc(spElem);
     }
+    virtual lx0::uint32 flags               (void) const { return eSkipUpdate; }
 protected:
     std::function<void (ElementPtr)> mFunc;
 };

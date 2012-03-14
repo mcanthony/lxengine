@@ -5,7 +5,7 @@
     LICENSE
     * MIT License (http://www.opensource.org/licenses/mit-license.php)
 
-    Copyright (c) 2011 athile@athile.net (http://www.athile.net)
+    Copyright (c) 2011-2012 athile@athile.net (http://www.athile.net)
 
     Permission is hereby granted, free of charge, to any person obtaining a 
     copy of this software and associated documentation files (the "Software"), 
@@ -32,14 +32,16 @@
 #include <lx0/lxengine.hpp>
 #include <glgeom/prototype/image.hpp>
 #include <lx0/prototype/misc.hpp>
+#include <lx0/subsystem/rasterizer/gl/glinterface.hpp>
 
 #include <ddraw.h>
-#include <GL3/gl3w_modified.hpp>
 
 #define GL_COMPRESSED_RGB_S3TC_DXT1_EXT                   0x83F0
 #define GL_COMPRESSED_RGBA_S3TC_DXT1_EXT                  0x83F1
 #define GL_COMPRESSED_RGBA_S3TC_DXT3_EXT                  0x83F2
 #define GL_COMPRESSED_RGBA_S3TC_DXT5_EXT                  0x83F3
+
+extern lx0::OpenGlApi3_2* gl;
 
 static void _dumpTextureToDisk(GLuint id)
 {
@@ -47,15 +49,14 @@ static void _dumpTextureToDisk(GLuint id)
     static int count = 0;
 
     int w, h;
-    glGetTexLevelParameteriv (GL_TEXTURE_2D, 0, GL_TEXTURE_WIDTH, &w);
-    glGetTexLevelParameteriv (GL_TEXTURE_2D, 0, GL_TEXTURE_HEIGHT, &h);
+    gl->getTexLevelParameteriv (GL_TEXTURE_2D, 0, GL_TEXTURE_WIDTH, &w);
+    gl->getTexLevelParameteriv (GL_TEXTURE_2D, 0, GL_TEXTURE_HEIGHT, &h);
     
     glgeom::image3f image(w, h);
-    
 
-    glPixelStorei(GL_PACK_ALIGNMENT, 1);
-    glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-    glGetTexImage(GL_TEXTURE_2D, 0, GL_RGB, GL_FLOAT, image.ptr());
+    gl->pixelStorei(GL_PACK_ALIGNMENT, 1);
+    gl->pixelStorei(GL_UNPACK_ALIGNMENT, 1);
+    gl->getTexImage(GL_TEXTURE_2D, 0, GL_RGB, GL_FLOAT, image.ptr());
 
     lx0::save_png(image, boost::str( boost::format("dds_texture_%04d.png") % (count++) ).c_str());
 #endif
@@ -103,13 +104,13 @@ GLuint _loadDDS(std::istream& stream)
         int mipmaps = surface.dwMipMapCount;
         size_t dataSize = surface.dwLinearSize * ((mipmaps > 1) ? 2 : 1);
 
-        glGenTextures(1, &id);
-        glBindTexture(GL_TEXTURE_2D, id);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-	    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, mipmaps - 1);
+        gl->genTextures(1, &id);
+        gl->bindTexture(GL_TEXTURE_2D, id);
+        gl->texParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+        gl->texParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+        gl->texParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+	    gl->texParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        gl->texParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, mipmaps - 1);
 
         int mipmapWidth = width;
         int mipmapHeight = height;
@@ -125,7 +126,7 @@ GLuint _loadDDS(std::istream& stream)
 
             // Some source indicate the DDS textures need to be flipped?
 
-            glCompressedTexImage2D(GL_TEXTURE_2D, level, format, mipmapWidth, mipmapHeight, 0, size, &buffer[0]);
+            gl->compressedTexImage2D(GL_TEXTURE_2D, level, format, mipmapWidth, mipmapHeight, 0, size, &buffer[0]);
 
             mipmapWidth  = std::max(mipmapWidth / 2, 1);
             mipmapHeight = std::max(mipmapHeight / 2, 1);
