@@ -194,7 +194,11 @@ RasterizerGL::RasterizerGL()
     : mInited   (false)
     , mShutdown (false)
     , mFrameNum (0)
+    , mStandardParameterValues (lx0::lxvar::map())
 {
+    
+    mStandardParameterValues["unifDiffuse"] = lx0::lxvar(0.80f, 0.75f, 0.75f);
+    mStandardParameterValues["unifSpecular"] = lx0::lxvar(0.95f, 0.95f, 0.75f);
 }
 
 RasterizerGL::~RasterizerGL()

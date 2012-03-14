@@ -77,6 +77,8 @@ main (int argc, char** argv)
     {
         EnginePtr   spEngine   = Engine::acquire();
 
+        spEngine->initialize();
+
         spEngine->addDocumentComponent("physics2", [] () { return new PhysicsSubsystem; } );
 
         spEngine->addElementComponent("Terrain", "runtime", [](ElementPtr spElem) { return new Terrain::Runtime(spElem); }); 

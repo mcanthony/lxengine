@@ -354,6 +354,7 @@ namespace lx0
             public:
                 std::map<std::string,TexturePtr>    mTextureCache;      //!< @todo Replace with a more sophisicated, formal cache
                 lx0::uint32                         mFrameNum;
+                lx0::lxvar                          mStandardParameterValues;
 
             protected:
                 bool                            mInited;

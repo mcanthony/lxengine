@@ -99,6 +99,93 @@ MaterialType::iterateAttributes (std::function<void(const Attribute& attribute)>
     }
 }
 
+MaterialInstance::MaterialInstance()
+    : mParameters   (lx0::lxvar::map())
+    , mBlend        (false)
+    , mZTest        (true)
+    , mZWrite       (true)
+    , mWireframe    (false)
+    , mFilter       (GL_LINEAR)
+    , mbDirty       (true)
+{
+}
+
+void    
+MaterialInstance::activate (RasterizerGL* pRasterizer, GlobalPass& pass)
+{
+
+}
+
+void    
+MaterialInstance::_compile (RasterizerGL* pRasterizer)
+{
+    //
+    // Clear any cached instructions
+    // 
+    mInstructions.clear();
+
+    //
+    // Loop the material parameters and generate instructions to set a 
+    // value for each instruction.
+    //
+    // First determine the 'specified value' by checking in order for:
+    // - The instance parameters table contains a value for the name
+    // - The type defaults table contains a value for the name
+    // - The name is a known 'standard' which has a built-in default
+    //
+    // Second, translate the 'specified value' into an instruction that sets a 'direct value'
+    // - If it is a direct value, generate an instruction to set that value
+    // - If it is an indirect/semantic value, generate an instruction to 
+    //   look-up the direct value and set it
+    //
+    // The specified to direct value may involve implicit type conversions, 
+    // references to the current context, and other objects.
+    //
+    auto& parameters = mParameters;
+    auto& defaults = mspMaterialType->mDefaults;
+    auto& standards = pRasterizer->mStandardParameterValues;
+
+    auto findSpecifiedValue = [&](const std::string& name) -> lx0::lxvar {
+        if (parameters.has_key(name))
+            return parameters[name];
+        else if (defaults.has_key(name))
+            return defaults[name];
+        else if (standards.has_key(name))
+            return standards[name];
+    };
+
+    mspMaterialType->iterateAttributes([&](const Attribute& attribute) {
+        lx0::lxvar specifiedValue = findSpecifiedValue(attribute.name);
+        
+        if (specifiedValue.is_defined())
+            mInstructions.push_back( _generateInstruction(pRasterizer, attribute, specifiedValue) );
+        else
+            throw lx_error_exception("Could not generate instruction for material attribute '%1%'", attribute.name);
+    });
+
+    mspMaterialType->iterateUniforms([&](const Uniform& uniform) {
+        lx0::lxvar specifiedValue = findSpecifiedValue(uniform.name);
+
+        if (specifiedValue.is_defined())
+            mInstructions.push_back( _generateInstruction(pRasterizer, uniform, specifiedValue) );
+        else
+            throw lx_error_exception("Could not generate instruction for material uniform '%1%'", uniform.name);
+    });
+
+    mbDirty = false;
+}
+
+std::function<void()>   
+MaterialInstance::_generateInstruction(RasterizerGL* pRasterizer, const Attribute& attribute, lx0::lxvar& value)
+{
+    return std::function<void()>();
+}
+
+std::function<void()>   
+MaterialInstance::_generateInstruction(RasterizerGL* pRasterizer, const Uniform& uniform, lx0::lxvar& value)
+{
+    return std::function<void()>();
+}
 
 Material::Material(GLuint id)
     : mId           (id)
@@ -276,6 +363,55 @@ PhongMaterial::activate (RasterizerGL* pRasterizer, GlobalPass& pass)
         if (idx != -1)
             gl->uniform1f(idx, mPhong.specular_n);
     }
+}
+
+template <typename Material>
+std::function<void()>
+_generateBaseInstruction (RasterizerGL* pRasterizer, Material* pMaterial)
+{
+    return [=]() {
+
+        check_glerror();
+
+        auto& pass = *pRasterizer->mContext.pGlobalPass;
+    
+        pRasterizer->mFrameData.shaderProgramActivations++;
+
+        //
+        // Z Test/Write
+        //
+        if (pMaterial->mZTest)
+            gl->enable(GL_DEPTH_TEST);
+        else
+            gl->disable(GL_DEPTH_TEST);
+
+        gl->depthMask(pMaterial->mZWrite ? GL_TRUE : GL_FALSE);
+    
+        //
+        // Set up blending
+        // 
+        if (pMaterial->mBlend)
+        {
+            gl->enable(GL_BLEND);
+            gl->blendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+        }
+        else
+            gl->disable(GL_BLEND);
+
+        //
+        // Wireframe render mode?
+        //
+        bool bWireframe = boost::indeterminate(pass.tbWireframe)
+            ? pMaterial->mWireframe
+            : pass.tbWireframe;
+
+        if (bWireframe)
+            gl->polygonMode(GL_FRONT_AND_BACK, GL_LINE);
+        else
+            gl->polygonMode(GL_FRONT_AND_BACK, GL_FILL);
+
+        check_glerror();
+    };
 }
 
 std::function<void()> 
