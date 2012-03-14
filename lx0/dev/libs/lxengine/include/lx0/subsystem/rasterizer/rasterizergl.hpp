@@ -201,6 +201,8 @@ namespace lx0
             {
             public:
                 friend class Material;
+                friend class MaterialType;
+                friend class MaterialInstance;
 
                                 RasterizerGL    ();
                                 ~RasterizerGL   ();

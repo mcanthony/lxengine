@@ -51,6 +51,8 @@ namespace lx0
                             MaterialType();
                             ~MaterialType();
 
+                virtual void    activate   (RasterizerGL* pRasterizer, GlobalPass& pass);
+
                 void        iterateUniforms     (std::function<void(const Uniform& uniform)> f); 
                 void        iterateAttributes   (std::function<void(const Attribute& attribute)> f); 
 
@@ -73,8 +75,10 @@ namespace lx0
 
                 virtual void    activate   (RasterizerGL* pRasterizer, GlobalPass& pass);
                 void            _compile   (RasterizerGL* pRasterizer);
-                std::function<void()>   _generateInstruction(RasterizerGL*, const Attribute&, lx0::lxvar& value);
-                std::function<void()>   _generateInstruction(RasterizerGL*, const Uniform&, lx0::lxvar& value);
+
+                std::function<void()>   _generateBaseInstruction    (RasterizerGL*);
+                std::function<void()>   _generateInstruction        (RasterizerGL*, const Attribute&, lx0::lxvar& value);
+                std::function<void()>   _generateInstruction        (RasterizerGL*, const Uniform&, lx0::lxvar& value);
 
                 std::string                         mName;
                 MaterialTypePtr                     mspMaterialType;

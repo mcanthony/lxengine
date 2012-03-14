@@ -99,6 +99,15 @@ MaterialType::iterateAttributes (std::function<void(const Attribute& attribute)>
     }
 }
 
+void    
+MaterialType::activate (RasterizerGL* pRasterizer, GlobalPass& pass)
+{
+    pRasterizer->mFrameData.shaderProgramActivations++;
+
+    // Activate the shader
+    gl->useProgram(mProgram);
+}
+
 MaterialInstance::MaterialInstance()
     : mParameters   (lx0::lxvar::map())
     , mBlend        (false)
@@ -113,7 +122,15 @@ MaterialInstance::MaterialInstance()
 void    
 MaterialInstance::activate (RasterizerGL* pRasterizer, GlobalPass& pass)
 {
+    check_glerror();
 
+    if (mbDirty)
+        _compile(pRasterizer);
+
+    for (auto it = mInstructions.begin(); it != mInstructions.end(); ++it)
+        (*it)();
+
+    check_glerror();
 }
 
 void    
@@ -123,6 +140,11 @@ MaterialInstance::_compile (RasterizerGL* pRasterizer)
     // Clear any cached instructions
     // 
     mInstructions.clear();
+
+    //
+    // Add the base code common to all instances
+    //
+    mInstructions.push_back( _generateBaseInstruction(pRasterizer) );
 
     //
     // Loop the material parameters and generate instructions to set a 
@@ -152,38 +174,302 @@ MaterialInstance::_compile (RasterizerGL* pRasterizer)
             return defaults[name];
         else if (standards.has_key(name))
             return standards[name];
+        else
+            return lx0::lxvar();
     };
 
     mspMaterialType->iterateAttributes([&](const Attribute& attribute) {
         lx0::lxvar specifiedValue = findSpecifiedValue(attribute.name);
-        
-        if (specifiedValue.is_defined())
-            mInstructions.push_back( _generateInstruction(pRasterizer, attribute, specifiedValue) );
-        else
-            throw lx_error_exception("Could not generate instruction for material attribute '%1%'", attribute.name);
+        mInstructions.push_back( _generateInstruction(pRasterizer, attribute, specifiedValue) );
     });
 
     mspMaterialType->iterateUniforms([&](const Uniform& uniform) {
         lx0::lxvar specifiedValue = findSpecifiedValue(uniform.name);
-
-        if (specifiedValue.is_defined())
-            mInstructions.push_back( _generateInstruction(pRasterizer, uniform, specifiedValue) );
-        else
-            throw lx_error_exception("Could not generate instruction for material uniform '%1%'", uniform.name);
+        mInstructions.push_back( _generateInstruction(pRasterizer, uniform, specifiedValue) );
     });
 
     mbDirty = false;
 }
 
+/*
+    For consistency, it might make sense to store all these as parameters:
+    hide the fact that they result in GL calls rather than shader parameters.
+ */
+std::function<void()>   
+MaterialInstance::_generateBaseInstruction (RasterizerGL* pRasterizer)
+{
+    return [this, pRasterizer]() {
+
+        check_glerror();
+
+        auto& pass = *pRasterizer->mContext.pGlobalPass;
+
+        //
+        // Z Test/Write
+        //
+        if (mZTest)
+            gl->enable(GL_DEPTH_TEST);
+        else
+            gl->disable(GL_DEPTH_TEST);
+
+        gl->depthMask(mZWrite ? GL_TRUE : GL_FALSE);
+    
+
+        //
+        // Set up blending
+        // 
+        if (mBlend)
+        {
+            gl->enable(GL_BLEND);
+            gl->blendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+        }
+        else
+            gl->disable(GL_BLEND);
+
+        //
+        // Wireframe render mode?
+        //
+        bool bWireframe = boost::indeterminate(pass.tbWireframe)
+            ? mWireframe
+            : pass.tbWireframe;
+
+        if (bWireframe)
+            gl->polygonMode(GL_FRONT_AND_BACK, GL_LINE);
+        else
+            gl->polygonMode(GL_FRONT_AND_BACK, GL_FILL);
+
+        check_glerror();
+
+    };
+}
+
 std::function<void()>   
 MaterialInstance::_generateInstruction(RasterizerGL* pRasterizer, const Attribute& attribute, lx0::lxvar& value)
 {
+    auto location = attribute.location;
+
+    if (attribute.name == "vertNormal")
+    {
+        return [=]() {
+            auto& vboNormals = pRasterizer->mContext.spGeometry->mVboNormal;
+            if (vboNormals)
+            {
+                gl->bindBuffer(GL_ARRAY_BUFFER, vboNormals);
+                gl->vertexAttribPointer(location, 3, GL_FLOAT, GL_FALSE, 0, 0);
+                gl->enableVertexAttribArray(location);
+            }
+            else
+                gl->disableVertexAttribArray(location);
+        };
+    }
+    else if (attribute.name == "vertColor")
+    {
+        return [=]() {
+            auto& mVboColors = pRasterizer->mContext.spGeometry->mVboColors;
+            if (mVboColors)
+            {
+                gl->bindBuffer(GL_ARRAY_BUFFER, mVboColors);
+                gl->vertexAttribPointer(location, 3, GL_FLOAT, GL_FALSE, 0, 0);
+                gl->enableVertexAttribArray(location);
+            }
+            else
+                gl->disableVertexAttribArray(location);
+        };
+    }
+    else if (attribute.name == "vertUV")
+    {
+        return [=]() {
+            auto& mVboUVs = pRasterizer->mContext.spGeometry->mVboUVs;
+            if (mVboUVs[0])
+            {
+                gl->bindBuffer(GL_ARRAY_BUFFER, mVboUVs[0]);
+                gl->vertexAttribPointer(location, 2, GL_FLOAT, GL_FALSE, 0, 0);
+                gl->enableVertexAttribArray(location);
+            }
+            else
+                gl->disableVertexAttribArray(location);
+        };
+    }
+
     return std::function<void()>();
 }
 
 std::function<void()>   
-MaterialInstance::_generateInstruction(RasterizerGL* pRasterizer, const Uniform& uniform, lx0::lxvar& value)
+MaterialInstance::_generateInstruction (RasterizerGL* pRasterizer, const Uniform& uniform, lx0::lxvar& value)
 {
+    auto loc = uniform.location;
+
+    if (value.is_defined())
+    {
+        if (uniform.type == GL_FLOAT)
+        {
+            if (uniform.size == 1)
+            {
+                float v = value.as<float>();
+                return [=]() { gl->uniform1f(loc, v); };
+            }
+            else if (uniform.size == 2)
+            {
+                float v0 = value[0].as<float>();
+                float v1 = value[1].as<float>();
+                return [=]() { gl->uniform2f(loc, v0, v1); };
+            }
+            else if (uniform.size == 3)
+            {
+                float v0 = value[0].as<float>();
+                float v1 = value[1].as<float>();
+                float v2 = value[2].as<float>();
+                return [=]() { gl->uniform3f(loc, v0, v1, v2); };
+            }
+            else if (uniform.size == 4)
+            {
+                float v0 = value[0].as<float>();
+                float v1 = value[1].as<float>();
+                float v2 = value[2].as<float>();
+                float v3 = value[3].as<float>();
+                return [=]() { gl->uniform4f(loc, v0, v1, v2, v3); };
+            }
+        }
+        else if (uniform.type == GL_SAMPLER_2D)
+        {
+            GLuint textureId = GL_NONE;
+            bool   bUseFBO = false;
+
+            auto name = value.as<std::string>();
+            if (name[0] != '@')
+            {
+                TexturePtr spTexture;
+
+                auto it = pRasterizer->mTextureCache.find(name);                    
+                if (it == pRasterizer->mTextureCache.end()) 
+                {
+                    spTexture = pRasterizer->createTexture(name.c_str());
+                    pRasterizer->cacheTexture(name, spTexture);
+                }
+                else
+                    spTexture = it->second;
+
+                textureId = spTexture->mId;
+            }
+            else
+            {
+                if (name == "@sourceFBO")
+                    bUseFBO = true;
+            }
+
+            if (textureId)
+            {
+                // Activate the corresponding texture unit and set *that* to the GL id
+                return [=]() {
+                    const auto unit = pRasterizer->mContext.textureUnit++;
+
+                    // Set the shader uniform to the *texture unit* containing the texture (NOT
+                    // the GL id of the texture)
+                    gl->uniform1i(loc, unit);
+
+                    gl->activeTexture(GL_TEXTURE0 + unit);
+                    gl->bindTexture(GL_TEXTURE_2D, textureId);
+
+                    // Set the parameters on the texture unit
+                    gl->texParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, mFilter);
+                    gl->texParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, mFilter);
+                    gl->enable(GL_TEXTURE_2D);
+                };
+            }
+            else if (bUseFBO)
+            {
+                return [this,loc,pRasterizer]() {
+                    const auto textureId = pRasterizer->mContext.sourceFBOTexture;
+                    const auto unit = pRasterizer->mContext.textureUnit++;
+
+                    // Set the shader uniform to the *texture unit* containing the texture (NOT
+                    // the GL id of the texture)
+                    gl->uniform1i(loc, unit);
+
+                    gl->activeTexture(GL_TEXTURE0 + unit);
+                    gl->bindTexture(GL_TEXTURE_2D, textureId);
+
+                    // Set the parameters on the texture unit
+                    gl->texParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+                    gl->texParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+                    gl->enable(GL_TEXTURE_2D);
+                };
+            }
+            else
+                lx_warn("Could not find referenced texture '%s' in the texture cache.", name.c_str());
+        }
+        else if (uniform.type == GL_SAMPLER_CUBE)
+        {
+            TexturePtr spTexture;
+
+            auto name = value.as<std::string>();
+            auto it = pRasterizer->mTextureCache.find(name);                    
+            if (it == pRasterizer->mTextureCache.end()) 
+            {
+                std::string file[6];
+                file[0] = name + "/xpos.png";
+                file[1] = name + "/xneg.png";
+                file[2] = name + "/ypos.png";
+                file[3] = name + "/yneg.png";
+                file[4] = name + "/zpos.png";
+                file[5] = name + "/zneg.png";
+                spTexture = pRasterizer->createTextureCubeMap(file[0].c_str(), file[1].c_str(), file[2].c_str(), file[3].c_str(), file[4].c_str(), file[5].c_str());
+                pRasterizer->cacheTexture(name, spTexture);
+            }
+            else
+                spTexture = it->second;
+
+            if (spTexture)
+            {
+                // Activate the corresponding texture unit and set *that* to the GL id
+                const GLuint texId = spTexture->mId;
+
+                return [=]() {
+                    const auto unit = pRasterizer->mContext.textureUnit++;
+
+                    // Set the shader uniform to the *texture unit* containing the texture (NOT
+                    // the GL id of the texture)
+                    gl->uniform1i(loc, unit);
+
+                    gl->activeTexture(GL_TEXTURE0 + unit);
+                    gl->bindTexture(GL_TEXTURE_CUBE_MAP, texId);
+                };
+            }
+        }
+    }
+    else
+    {
+        if (uniform.name == "unifProjMatrix")
+        {        
+            return [=]() {
+                auto& spMatrix = pRasterizer->mContext.uniforms.spProjMatrix;
+                gl->uniformMatrix4fv(loc, 1, GL_FALSE, glm::value_ptr(*spMatrix));
+            };
+        }
+        else if (uniform.name == "unifViewMatrix")
+        {
+            return [=]() {
+                auto& spMatrix = pRasterizer->mContext.uniforms.spViewMatrix;
+                gl->uniformMatrix4fv(loc, 1, GL_FALSE, glm::value_ptr(*spMatrix));
+            };
+        }
+        else if (uniform.name == "unifNormalMatrix")
+        {
+            return [=]() {
+                auto& spViewMatrix = pRasterizer->mContext.uniforms.spViewMatrix;
+                glm::mat3 normalMatrix = glm::mat3(glm::inverseTranspose(*spViewMatrix));
+                gl->uniformMatrix3fv(loc, 1, GL_FALSE, glm::value_ptr(normalMatrix));
+            };
+        }
+        else if (uniform.name == "unifFlatNormals")
+        {
+            return [=]() {
+                const int flatShading = (pRasterizer->mContext.tbFlatShading == true) ? 1 : 0; 
+                gl->uniform1i(loc, flatShading);
+            };
+        }
+    }
+
     return std::function<void()>();
 }
 
