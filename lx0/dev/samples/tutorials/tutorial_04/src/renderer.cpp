@@ -155,6 +155,7 @@ struct MaterialData
 {
     lx0::lxvar          renderProperties;
     lx0::MaterialPtr    spMaterial;
+    lx0::MaterialInstancePtr spMaterial2;
 };
 
 //===========================================================================//
@@ -204,6 +205,7 @@ public:
         mspRenderable->mspInstance.reset(new lx0::Instance);
         mspRenderable->mspInstance->spTransform = mspRasterizer->createTransform(mRotation);
         mspRenderable->mspInstance->spMaterial = mMaterials[mCurrentMaterial].spMaterial;
+        mspRenderable->mspInstance->spMaterial2 = mMaterials[mCurrentMaterial].spMaterial2;
         mspRenderable->mspInstance->spGeometry = mGeometry[mCurrentGeometry];
 
         //
@@ -291,6 +293,7 @@ public:
             mCurrentMaterial %= mMaterials.size();
 
             mspRenderable->mspInstance->spMaterial = mMaterials[mCurrentMaterial].spMaterial;
+            mspRenderable->mspInstance->spMaterial2 = mMaterials[mCurrentMaterial].spMaterial2;
         }
         else if (evt == "toggle_rotation")
         {
@@ -412,11 +415,16 @@ protected:
 
     void _addMaterial (std::string uniqueName, std::string source, lx0::lxvar parameters, lx0::lxvar render)
     {
+        lx0::lxvar params2;
+        for (auto it = parameters.begin(); it != parameters.end(); ++it)
+        {
+            params2[it.key()] = (*it)[1].clone();
+        }
+
         MaterialData data;
         data.renderProperties = render;
         data.spMaterial = mspRasterizer->createMaterial(uniqueName, source, parameters);
-
-        auto spMaterialInstance = mspRasterizer->createMaterialInstance(uniqueName, source, parameters);
+        data.spMaterial2 = mspRasterizer->createMaterialInstance(uniqueName, source, params2);
 
         mMaterials.push_back(data);
     }

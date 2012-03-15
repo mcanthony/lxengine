@@ -52,7 +52,21 @@ void lx0::subsystem::rasterizer_ns::check_glerror()
     
     if (errCode != GL_NO_ERROR)
     {
-        std::string errString = "";//(const char*)gluErrorString(errCode);
+        //
+        // Don't want to include glu.h, so manually convert the error to a string
+        //
+        std::string errString;
+        switch (errCode)
+        {
+        case GL_NO_ERROR:           errString = "GL_NO_ERROR";          break;
+        case GL_INVALID_ENUM:       errString = "GL_INVALID_ENUM";      break;
+        case GL_INVALID_VALUE:      errString = "GL_INVALID_VALUE";     break;
+        case GL_INVALID_OPERATION:  errString = "GL_INVALID_OPERATION"; break;
+        case GL_OUT_OF_MEMORY:      errString = "GL_OUT_OF_MEMORY";     break;
+
+        default:                    errString = "<unknown error>";      break;
+        }        
+        
         lx_warn("glError() detected.");
         lx_warn("Error Code = %1%", errCode);
         lx_warn("Error String = %1%", errString);
@@ -1523,6 +1537,7 @@ RasterizerGL::rasterizeItem (GlobalPass& pass, std::shared_ptr<Instance> spInsta
     mContext.spMaterial = (pass.spMaterial) 
         ? pass.spMaterial
         : spInstance->spMaterial;
+    mContext.spMaterial2 = spInstance->spMaterial2;
     mContext.spTransform = spInstance->spTransform;
 
     mContext.tbFlatShading = boost::indeterminate(spInstance->spGeometry->mtbFlatShading) 
@@ -1547,12 +1562,15 @@ RasterizerGL::rasterizeItem (GlobalPass& pass, std::shared_ptr<Instance> spInsta
         {
         case GL_TRIANGLES:
             mContext.spMaterial = _acquireDefaultSurfaceMaterial();
+            mContext.spMaterial2.reset();
             break;
         case GL_LINES:
             mContext.spMaterial = _acquireDefaultLineMaterial();
+            mContext.spMaterial2.reset();
             break;
         case GL_POINTS:
             mContext.spMaterial = _acquireDefaultPointMaterial();
+            mContext.spMaterial2.reset();
             break;
         default:
             throw lx_error_exception("Incompatible material for geometry type.  Could not determine a alternate material to use.");
@@ -1589,7 +1607,12 @@ RasterizerGL::rasterizeItem (GlobalPass& pass, std::shared_ptr<Instance> spInsta
                 mContext.spTransform->activate(this, spInstance->spCamera); 
         });
 
-        _timeCall(mStats.tmMaterialActivate, [&](){  mContext.spMaterial->activate(this, pass);  });
+        _timeCall(mStats.tmMaterialActivate, [&]() {              
+            if (mContext.spMaterial2)
+                mContext.spMaterial2->activate(this, pass);
+            else
+                mContext.spMaterial->activate(this, pass);  
+        });
         _timeCall(mStats.tmGeometryActivate, [&]() { mContext.spGeometry->activate(this, pass); });
     
         check_glerror();
@@ -1598,6 +1621,7 @@ RasterizerGL::rasterizeItem (GlobalPass& pass, std::shared_ptr<Instance> spInsta
     mContext.spCamera.reset();
     mContext.spLightSet.reset();
     mContext.spMaterial.reset();
+    mContext.spMaterial2.reset();
     mContext.spTransform.reset();
     mContext.spInstance.reset();
     mContext.spGeometry.reset();

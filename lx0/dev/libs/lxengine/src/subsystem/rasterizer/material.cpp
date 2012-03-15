@@ -40,6 +40,7 @@ MaterialType::MaterialType (GLuint id)
     , mVertShader (0)
     , mGeomShader (0)
     , mFragShader (0)
+    , mDefaults   (lx0::lxvar::map())
 {
     lx_check_error( gl->isProgram(id) );
 }
@@ -135,8 +136,19 @@ MaterialInstance::activate (RasterizerGL* pRasterizer, GlobalPass& pass)
     if (mbDirty)
         _compile(pRasterizer);
 
+    mspMaterialType->activate(pRasterizer, pass);
+
+    int count = 0;
     for (auto it = mInstructions.begin(); it != mInstructions.end(); ++it)
-        (*it)();
+    {
+        std::function<void()>& instruction = *it;
+        lx_check_error(instruction);
+        
+        instruction();
+        check_glerror();
+
+        ++count;
+    }
 
     check_glerror();
 }
@@ -188,12 +200,16 @@ MaterialInstance::_compile (RasterizerGL* pRasterizer)
 
     mspMaterialType->iterateAttributes([&](const Attribute& attribute) {
         lx0::lxvar specifiedValue = findSpecifiedValue(attribute.name);
-        mInstructions.push_back( _generateInstruction(pRasterizer, attribute, specifiedValue) );
+        auto instr = _generateInstruction(pRasterizer, attribute, specifiedValue);
+        if (instr)
+            mInstructions.push_back(instr);
     });
 
     mspMaterialType->iterateUniforms([&](const Uniform& uniform) {
         lx0::lxvar specifiedValue = findSpecifiedValue(uniform.name);
-        mInstructions.push_back( _generateInstruction(pRasterizer, uniform, specifiedValue) );
+        auto instr = _generateInstruction(pRasterizer, uniform, specifiedValue);
+        if (instr)
+            mInstructions.push_back(instr);
     });
 
     mbDirty = false;
@@ -268,6 +284,8 @@ MaterialInstance::_generateInstruction(RasterizerGL* pRasterizer, const Attribut
             }
             else
                 gl->disableVertexAttribArray(location);
+
+            check_glerror();
         };
     }
     else if (attribute.name == "vertColor")
@@ -282,6 +300,8 @@ MaterialInstance::_generateInstruction(RasterizerGL* pRasterizer, const Attribut
             }
             else
                 gl->disableVertexAttribArray(location);
+
+            check_glerror();
         };
     }
     else if (attribute.name == "vertUV")
@@ -296,9 +316,28 @@ MaterialInstance::_generateInstruction(RasterizerGL* pRasterizer, const Attribut
             }
             else
                 gl->disableVertexAttribArray(location);
+            
+            check_glerror();
+        };
+    }
+    else if (attribute.name == "gl_Vertex")
+    {
+        return [=]() {
+            auto& mVboPosition = pRasterizer->mContext.spGeometry->mVboPosition;
+            if (mVboPosition)
+            {
+                gl->bindBuffer(GL_ARRAY_BUFFER, mVboPosition);
+                gl->vertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
+                gl->enableVertexAttribArray(0);
+            }
+            else
+                gl->disableVertexAttribArray(0);
+
+            check_glerror();
         };
     }
 
+    lx_warn("No instruction generated for attribute '%1%'", attribute.name);
     return std::function<void()>();
 }
 
@@ -314,20 +353,29 @@ MaterialInstance::_generateInstruction (RasterizerGL* pRasterizer, const Uniform
             if (uniform.size == 1)
             {
                 float v = value.as<float>();
-                return [=]() { gl->uniform1f(loc, v); };
+                return [=]() { 
+                    gl->uniform1f(loc, v); 
+                    check_glerror();
+                };
             }
             else if (uniform.size == 2)
             {
                 float v0 = value[0].as<float>();
                 float v1 = value[1].as<float>();
-                return [=]() { gl->uniform2f(loc, v0, v1); };
+                return [=]() { 
+                    gl->uniform2f(loc, v0, v1); 
+                    check_glerror();
+                };
             }
             else if (uniform.size == 3)
             {
                 float v0 = value[0].as<float>();
                 float v1 = value[1].as<float>();
                 float v2 = value[2].as<float>();
-                return [=]() { gl->uniform3f(loc, v0, v1, v2); };
+                return [=]() { 
+                    gl->uniform3f(loc, v0, v1, v2); 
+                    check_glerror();
+                };
             }
             else if (uniform.size == 4)
             {
@@ -335,7 +383,10 @@ MaterialInstance::_generateInstruction (RasterizerGL* pRasterizer, const Uniform
                 float v1 = value[1].as<float>();
                 float v2 = value[2].as<float>();
                 float v3 = value[3].as<float>();
-                return [=]() { gl->uniform4f(loc, v0, v1, v2, v3); };
+                return [=]() { 
+                    gl->uniform4f(loc, v0, v1, v2, v3); 
+                    check_glerror();
+                };
             }
         }
         else if (uniform.type == GL_SAMPLER_2D)
@@ -382,6 +433,7 @@ MaterialInstance::_generateInstruction (RasterizerGL* pRasterizer, const Uniform
                     gl->texParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, mFilter);
                     gl->texParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, mFilter);
                     gl->enable(GL_TEXTURE_2D);
+                    check_glerror();
                 };
             }
             else if (bUseFBO)
@@ -401,6 +453,7 @@ MaterialInstance::_generateInstruction (RasterizerGL* pRasterizer, const Uniform
                     gl->texParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
                     gl->texParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
                     gl->enable(GL_TEXTURE_2D);
+                    check_glerror();
                 };
             }
             else
@@ -441,6 +494,7 @@ MaterialInstance::_generateInstruction (RasterizerGL* pRasterizer, const Uniform
 
                     gl->activeTexture(GL_TEXTURE0 + unit);
                     gl->bindTexture(GL_TEXTURE_CUBE_MAP, texId);
+                    check_glerror();
                 };
             }
         }
@@ -452,6 +506,7 @@ MaterialInstance::_generateInstruction (RasterizerGL* pRasterizer, const Uniform
             return [=]() {
                 auto& spMatrix = pRasterizer->mContext.uniforms.spProjMatrix;
                 gl->uniformMatrix4fv(loc, 1, GL_FALSE, glm::value_ptr(*spMatrix));
+                check_glerror();
             };
         }
         else if (uniform.name == "unifViewMatrix")
@@ -459,6 +514,7 @@ MaterialInstance::_generateInstruction (RasterizerGL* pRasterizer, const Uniform
             return [=]() {
                 auto& spMatrix = pRasterizer->mContext.uniforms.spViewMatrix;
                 gl->uniformMatrix4fv(loc, 1, GL_FALSE, glm::value_ptr(*spMatrix));
+                check_glerror();
             };
         }
         else if (uniform.name == "unifNormalMatrix")
@@ -467,6 +523,7 @@ MaterialInstance::_generateInstruction (RasterizerGL* pRasterizer, const Uniform
                 auto& spViewMatrix = pRasterizer->mContext.uniforms.spViewMatrix;
                 glm::mat3 normalMatrix = glm::mat3(glm::inverseTranspose(*spViewMatrix));
                 gl->uniformMatrix3fv(loc, 1, GL_FALSE, glm::value_ptr(normalMatrix));
+                check_glerror();
             };
         }
         else if (uniform.name == "unifFlatNormals")
@@ -474,10 +531,12 @@ MaterialInstance::_generateInstruction (RasterizerGL* pRasterizer, const Uniform
             return [=]() {
                 const int flatShading = (pRasterizer->mContext.tbFlatShading == true) ? 1 : 0; 
                 gl->uniform1i(loc, flatShading);
+                check_glerror();
             };
         }
     }
 
+    lx_warn("No instruction generated for uniform '%1%'", uniform.name);
     return std::function<void()>();
 }
 

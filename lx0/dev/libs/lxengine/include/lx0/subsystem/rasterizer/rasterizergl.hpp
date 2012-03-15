@@ -306,6 +306,7 @@ namespace lx0
                     LightSetPtr     spLightSet;
                     CameraPtr       spCamera;
                     MaterialPtr     spMaterial;
+                    MaterialInstancePtr spMaterial2;
                     TransformPtr    spTransform;
                     GeometryPtr     spGeometry;
 
