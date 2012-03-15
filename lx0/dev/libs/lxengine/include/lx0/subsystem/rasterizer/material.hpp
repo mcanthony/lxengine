@@ -35,7 +35,7 @@ namespace lx0
         namespace rasterizer_ns
         {
 
-            class MaterialType
+            class MaterialType : public std::enable_shared_from_this<MaterialType>
             {
             public:
                 struct _Parameter
@@ -48,10 +48,12 @@ namespace lx0
                 struct Uniform : public _Parameter { };
                 struct Attribute : public _Parameter { };
 
-                            MaterialType();
-                            ~MaterialType();
+                            MaterialType    (GLuint id);
+                            ~MaterialType   ();
 
-                virtual void    activate   (RasterizerGL* pRasterizer, GlobalPass& pass);
+                virtual void    activate    (RasterizerGL* pRasterizer, GlobalPass& pass);
+
+                MaterialInstancePtr createInstance (lx0::lxvar& parameters);
 
                 void        iterateUniforms     (std::function<void(const Uniform& uniform)> f); 
                 void        iterateAttributes   (std::function<void(const Attribute& attribute)> f); 
@@ -65,13 +67,13 @@ namespace lx0
                 lx0::lxvar  mDefaults;
             };
 
-            class MaterialInstance
+            class MaterialInstance : public std::enable_shared_from_this<MaterialInstance>
             {
             public:
                 typedef MaterialType::Attribute Attribute;
                 typedef MaterialType::Uniform   Uniform;
 
-                                MaterialInstance();
+                                MaterialInstance    (MaterialTypePtr spMaterialType, lx0::lxvar& parameters);
 
                 virtual void    activate   (RasterizerGL* pRasterizer, GlobalPass& pass);
                 void            _compile   (RasterizerGL* pRasterizer);

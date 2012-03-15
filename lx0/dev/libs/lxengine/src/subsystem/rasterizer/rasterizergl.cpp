@@ -621,6 +621,15 @@ RasterizerGL::createMaterial (std::string name, std::string fragmentSource, lx0:
     return MaterialPtr(pMat);
 }
 
+MaterialInstancePtr 
+RasterizerGL::createMaterialInstance (std::string name, std::string fragmentSource, lx0::lxvar parameters)
+{
+    GLuint prog = _createProgram(name, GL_TRIANGLES, fragmentSource);
+    
+    MaterialTypePtr spMatType(new MaterialType(prog));
+    return spMatType->createInstance(parameters);
+}
+
 MaterialPtr     
 RasterizerGL::createSolidColorMaterial (const color3f& rgb)
 {

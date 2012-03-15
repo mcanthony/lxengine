@@ -415,6 +415,9 @@ protected:
         MaterialData data;
         data.renderProperties = render;
         data.spMaterial = mspRasterizer->createMaterial(uniqueName, source, parameters);
+
+        auto spMaterialInstance = mspRasterizer->createMaterialInstance(uniqueName, source, parameters);
+
         mMaterials.push_back(data);
     }
 

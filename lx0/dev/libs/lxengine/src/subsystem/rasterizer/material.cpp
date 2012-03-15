@@ -35,16 +35,23 @@ using namespace glgeom;
 extern OpenGlApi3_2* gl;
 
 
-MaterialType::MaterialType()
-    : mProgram    (0)
+MaterialType::MaterialType (GLuint id)
+    : mProgram    (id)
     , mVertShader (0)
     , mGeomShader (0)
     , mFragShader (0)
 {
+    lx_check_error( gl->isProgram(id) );
 }
 
 MaterialType::~MaterialType()
 {
+}
+
+MaterialInstancePtr 
+MaterialType::createInstance (lx0::lxvar& parameters)
+{
+    return MaterialInstancePtr( new MaterialInstance(shared_from_this(), parameters) );
 }
 
 void 
@@ -108,8 +115,9 @@ MaterialType::activate (RasterizerGL* pRasterizer, GlobalPass& pass)
     gl->useProgram(mProgram);
 }
 
-MaterialInstance::MaterialInstance()
-    : mParameters   (lx0::lxvar::map())
+MaterialInstance::MaterialInstance (MaterialTypePtr spMaterialType, lx0::lxvar& parameters)
+    : mspMaterialType (spMaterialType)
+    , mParameters   (parameters.clone())
     , mBlend        (false)
     , mZTest        (true)
     , mZWrite       (true)

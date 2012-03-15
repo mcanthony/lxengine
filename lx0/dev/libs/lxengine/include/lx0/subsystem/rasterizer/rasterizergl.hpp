@@ -224,6 +224,7 @@ namespace lx0
                 MaterialPtr     createSolidColorMaterial    (const glgeom::color3f& rgb);
                 MaterialPtr     createVertexColorMaterial   (void);
                 MaterialPtr     createPhongMaterial         (const glgeom::material_phong_f& mat);
+                MaterialInstancePtr createMaterialInstance  (std::string name, std::string fragmentSource, lx0::lxvar parameters);
 
                 TexturePtr      createTexture               (const char* filename);
                 TexturePtr      createTextureCubeMap        (const char* xpos, const char* xneg, const char* ypos, const char* yneg, const char* zpos, const char* zneg); 
