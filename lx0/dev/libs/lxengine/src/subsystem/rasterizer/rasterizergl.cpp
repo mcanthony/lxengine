@@ -644,6 +644,10 @@ RasterizerGL::createMaterialInstance (std::string name, std::string fragmentSour
     return spMatType->createInstance(parameters);
 }
 
+/*
+    This should be retired; create a MaterialInstance instead and set the rgb as
+    a parameter on the MaterialInstance.
+ */
 MaterialPtr     
 RasterizerGL::createSolidColorMaterial (const color3f& rgb)
 {
@@ -652,31 +656,50 @@ RasterizerGL::createSolidColorMaterial (const color3f& rgb)
     auto pMat = new SolidColorMaterial(prog);
     pMat->mShaderFilename = "media2/shaders/glsl/fragment/solid.frag";
     pMat->mColor = rgb;
+    pMat->mGeometryType = GL_TRIANGLES;
     
     return MaterialPtr(pMat);
 }
 
-MaterialPtr
+MaterialTypePtr        
+RasterizerGL::_acquireMaterialType (const char* name, std::function<MaterialType*()> ctor)
+{
+    auto it = mMaterialTypes.find(name);
+    if (it == mMaterialTypes.end())
+    {
+        MaterialTypePtr spMatType( ctor() );
+        mMaterialTypes.insert(std::make_pair(name, spMatType));
+        return spMatType;
+    }
+    else
+        return it->second;
+}
+
+MaterialInstancePtr
 RasterizerGL::createVertexColorMaterial (void)
 {
-    GLuint prog = _createProgramFromFile("media2/shaders/glsl/fragment/vertexColor.frag");
+    MaterialTypePtr spMatType = _acquireMaterialType("VertexColor", [this]() -> MaterialType* {
+        GLuint prog = _createProgramFromFile("media2/shaders/glsl/fragment/vertexColor.frag");
+        return new MaterialType(prog);
+    });
 
-    auto pMat = new VertexColorMaterial(prog);
-    pMat->mShaderFilename = "media2/shaders/glsl/fragment/vertexColor.frag";
-    
-    return MaterialPtr(pMat);
+    lxvar params = lxvar::map();
+    return spMatType->createInstance(params);
 }
 
-MaterialPtr 
+MaterialInstancePtr 
 RasterizerGL::createPhongMaterial (const glgeom::material_phong_f& mat)
 {
-    GLuint prog = _createProgramFromFile("media2/shaders/glsl/fragment/phong2.frag");
+    MaterialTypePtr spMatType = _acquireMaterialType("VertexColor", [this]() -> MaterialType* {
+        GLuint prog = _createProgramFromFile("media2/shaders/glsl/fragment/phong2.frag");
+        return new MaterialType(prog);
+    });
 
-    auto pMat = new PhongMaterial(prog);
-    pMat->mShaderFilename = "media2/shaders/glsl/fragment/phong2.frag";
-    pMat->mPhong = mat;
-    
-    return MaterialPtr(pMat);
+    lxvar params = lxvar::map();
+    params["unifMaterialDiffuse"] = lxvar(mat.diffuse.r, mat.diffuse.g, mat.diffuse.b);
+    params["unifMaterialSpecular"] = lxvar(mat.specular.r, mat.specular.g, mat.specular.b);
+    params["unifMaterialSpecularEx"] = mat.specular_n;
+    return spMatType->createInstance(params);
 }
 
 GLuint 
@@ -1561,8 +1584,11 @@ RasterizerGL::rasterizeItem (GlobalPass& pass, std::shared_ptr<Instance> spInsta
         switch (spInstance->spGeometry->mType)
         {
         case GL_TRIANGLES:
-            mContext.spMaterial = _acquireDefaultSurfaceMaterial();
-            mContext.spMaterial2.reset();
+            if (!mContext.spMaterial2)
+            {
+                mContext.spMaterial = _acquireDefaultSurfaceMaterial();
+                mContext.spMaterial2.reset();
+            }
             break;
         case GL_LINES:
             mContext.spMaterial = _acquireDefaultLineMaterial();
@@ -1576,7 +1602,6 @@ RasterizerGL::rasterizeItem (GlobalPass& pass, std::shared_ptr<Instance> spInsta
             throw lx_error_exception("Incompatible material for geometry type.  Could not determine a alternate material to use.");
         };
     }
-    lx_check_error(spInstance->spGeometry->mType == mContext.spMaterial->mGeometryType);
 
     //
     // Error checking
@@ -1592,7 +1617,7 @@ RasterizerGL::rasterizeItem (GlobalPass& pass, std::shared_ptr<Instance> spInsta
     {
         check_glerror();
         lx_check_error( mContext.spCamera );
-        lx_check_error( mContext.spMaterial );
+        lx_check_error( mContext.spMaterial || mContext.spMaterial2 );
 
         mContext.spCamera->activate(this);
         

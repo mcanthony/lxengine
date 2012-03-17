@@ -121,7 +121,7 @@ public:
     }
 
 protected:
-    MaterialPtr _findMaterial(ElementPtr spElem)
+    MaterialInstancePtr _findMaterial(ElementPtr spElem)
     {
         auto it = mMaterials.find(query(spElem->attr("material"), ""));
         if (it != mMaterials.end())
@@ -146,7 +146,7 @@ protected:
                 lx0::ShaderBuilder::Material material;
                 mShaderBuilder.buildShaderGLSL(material, graph);
             
-                auto spMat = mspRasterizer->createMaterial(material.uniqueName, material.source, material.parameters);
+                auto spMat = mspRasterizer->createMaterialInstance(material.uniqueName, material.source, material.parameters);
                 mMaterials.insert(std::make_pair(name, spMat));
             }
             catch (lx0::error_exception& e)
@@ -164,7 +164,7 @@ protected:
             auto pInstance = new Instance;
             pInstance->spCamera   = mspCamera;
             pInstance->spLightSet = mspLightSet;
-            pInstance->spMaterial = _findMaterial(spElem);
+            pInstance->spMaterial2 = _findMaterial(spElem);
             pInstance->spTransform = mspRasterizer->createTransform(scale, center);
             pInstance->spGeometry = _loadMesh("media2/models/unit_sphere-000.blend");
 
@@ -178,7 +178,7 @@ protected:
             auto pInstance = new Instance;
             pInstance->spCamera   = mspCamera;
             pInstance->spLightSet = mspLightSet;
-            pInstance->spMaterial = _findMaterial(spElem);
+            pInstance->spMaterial2 = _findMaterial(spElem);
             pInstance->spTransform = mspRasterizer->createTransform(scale, center);
             pInstance->spGeometry = _loadMesh("media2/models/unit_cube-000.blend");
             
@@ -194,7 +194,7 @@ protected:
             auto pInstance = new Instance;
             pInstance->spCamera   = mspCamera;
             pInstance->spLightSet = mspLightSet;
-            pInstance->spMaterial = _findMaterial(spElem);
+            pInstance->spMaterial2 = _findMaterial(spElem);
             pInstance->spTransform = mspRasterizer->createTransform(scale, center);
             pInstance->spGeometry = _loadMesh("media2/models/unit_geometry/unit_cylinder-001.blend");
             
@@ -210,7 +210,7 @@ protected:
             auto pInstance = new Instance;
             pInstance->spCamera   = mspCamera;
             pInstance->spLightSet = mspLightSet;
-            pInstance->spMaterial = _findMaterial(spElem);
+            pInstance->spMaterial2 = _findMaterial(spElem);
             pInstance->spTransform = mspRasterizer->createTransform(scale, center);
             pInstance->spGeometry = _loadMesh("media2/models/unit_geometry/unit_cone-000.blend");
             
@@ -252,7 +252,7 @@ protected:
             auto pInstance = new Instance;
             pInstance->spCamera   = mspCamera;
             pInstance->spLightSet = mspLightSet;
-            pInstance->spMaterial = _findMaterial(spElem);
+            pInstance->spMaterial2 = _findMaterial(spElem);
             pInstance->spTransform = mspRasterizer->createTransform(glm::mat4(mat));
             pInstance->spGeometry = _loadMesh("media2/models/plane_1k-001.blend");
             
@@ -354,7 +354,7 @@ protected:
 
     std::map<std::string,GeometryPtr>   mMeshes;
     std::vector<InstancePtr>            mGeometry;
-    std::map<std::string,MaterialPtr>   mMaterials;
+    std::map<std::string,MaterialInstancePtr>   mMaterials;
 };
 
 //===========================================================================//

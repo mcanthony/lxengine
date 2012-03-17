@@ -47,6 +47,8 @@ public:
         glgeom::radians fov(glgeom::degrees(60.0f));
         mspCamera = pRasterizer->createCamera(fov, 0.01f, 8000.0f, glm::lookAt(mPosition.vec, mTarget.vec, glm::vec3(0, 0, 1)));
     }
+    
+    virtual lx0::uint32 flags               (void) const { return eSkipUpdate; }
 
     virtual void onValueChange (ElementPtr spElem)
     {
@@ -215,7 +217,7 @@ protected:
         if (!position.empty())
         {
             InstancePtr spInstance(new Instance);
-            spInstance->spMaterial = pRasterizer->createVertexColorMaterial();
+            spInstance->spMaterial2 = pRasterizer->createVertexColorMaterial();
             spInstance->spTransform = pRasterizer->createTransform(glgeom::vector3f(1, 1, 1), offset + glgeom::point3f(.5f, .5f, .5f));
             spInstance->spGeometry = pRasterizer->createQuadList(position, colors);
             return spInstance;

@@ -58,6 +58,8 @@ namespace lx0
                 void        iterateUniforms     (std::function<void(const Uniform& uniform)> f); 
                 void        iterateAttributes   (std::function<void(const Attribute& attribute)> f); 
 
+                GLenum      mGeometryType;
+
                 GLuint      mProgram;
                 GLuint      mVertShader;
                 GLuint      mGeomShader;

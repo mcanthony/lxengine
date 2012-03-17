@@ -34,9 +34,13 @@ using namespace glgeom;
 
 extern OpenGlApi3_2* gl;
 
+//===========================================================================//
+//   M A T E R I A L T Y P E
+//===========================================================================//
 
 MaterialType::MaterialType (GLuint id)
-    : mProgram    (id)
+    : mGeometryType (GL_TRIANGLES)
+    , mProgram    (id)
     , mVertShader (0)
     , mGeomShader (0)
     , mFragShader (0)
@@ -115,6 +119,10 @@ MaterialType::activate (RasterizerGL* pRasterizer, GlobalPass& pass)
     // Activate the shader
     gl->useProgram(mProgram);
 }
+
+//===========================================================================//
+//   M A T E R I A L I N S T A N C E
+//===========================================================================//
 
 MaterialInstance::MaterialInstance (MaterialTypePtr spMaterialType, lx0::lxvar& parameters)
     : mspMaterialType (spMaterialType)
@@ -534,11 +542,22 @@ MaterialInstance::_generateInstruction (RasterizerGL* pRasterizer, const Uniform
                 check_glerror();
             };
         }
+        else if (uniform.name == "unifFaceCount")
+        {
+            return [=]() {
+                gl->uniform1i(loc, pRasterizer->mContext.spGeometry->mFaceCount);
+                check_glerror();
+            };
+        }
     }
 
     lx_warn("No instruction generated for uniform '%1%'", uniform.name);
     return std::function<void()>();
 }
+
+//===========================================================================//
+//   M A T E R I A L 
+//===========================================================================//
 
 Material::Material(GLuint id)
     : mId           (id)

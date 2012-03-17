@@ -222,8 +222,8 @@ namespace lx0
                 MaterialPtr     createMaterial              (std::string vertexShader, std::string geometryShader, std::string fragmentShader);
                 MaterialPtr     createMaterial              (std::string name, std::string fragmentSource, lxvar parameters);
                 MaterialPtr     createSolidColorMaterial    (const glgeom::color3f& rgb);
-                MaterialPtr     createVertexColorMaterial   (void);
-                MaterialPtr     createPhongMaterial         (const glgeom::material_phong_f& mat);
+                MaterialInstancePtr createVertexColorMaterial   (void);
+                MaterialInstancePtr createPhongMaterial         (const glgeom::material_phong_f& mat);
                 MaterialInstancePtr createMaterialInstance  (std::string name, std::string fragmentSource, lx0::lxvar parameters);
 
                 TexturePtr      createTexture               (const char* filename);
@@ -350,9 +350,12 @@ namespace lx0
 
                 void        _readBuffer             (GLenum buffer, glgeom::image3f& img);
 
+                MaterialTypePtr _acquireMaterialType    (const char* name, std::function<MaterialType*()> ctor);
+
                 std::unique_ptr<lx0::OpenGlApi3_2>  gl3_2;
 
                 std::map<std::string, GLuint>       mCachePrograms;
+                std::map<std::string, MaterialTypePtr> mMaterialTypes;
                 std::list<ResourcePtr>              mResources;
                 std::vector<TexturePtr>             mTextures;
             public:

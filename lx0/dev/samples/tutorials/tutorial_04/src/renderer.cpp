@@ -136,7 +136,8 @@ namespace lx0 { namespace core { namespace lxvar_ns { namespace detail {
 
 /*
     Work-in-progress class towards a complex renderable, potentially composed of
-    multiple generated and specified meshes.
+    multiple generated and specified meshes.  Logically it is one mesh, but
+    may be composed of multiple instances.
  */
 class Renderable
 {
@@ -154,7 +155,6 @@ _LX_FORWARD_DECL_PTRS(Renderable);
 struct MaterialData
 {
     lx0::lxvar          renderProperties;
-    lx0::MaterialPtr    spMaterial;
     lx0::MaterialInstancePtr spMaterial2;
 };
 
@@ -204,7 +204,6 @@ public:
         mspRenderable.reset(new Renderable);
         mspRenderable->mspInstance.reset(new lx0::Instance);
         mspRenderable->mspInstance->spTransform = mspRasterizer->createTransform(mRotation);
-        mspRenderable->mspInstance->spMaterial = mMaterials[mCurrentMaterial].spMaterial;
         mspRenderable->mspInstance->spMaterial2 = mMaterials[mCurrentMaterial].spMaterial2;
         mspRenderable->mspInstance->spGeometry = mGeometry[mCurrentGeometry];
 
@@ -292,7 +291,6 @@ public:
                 : (mCurrentMaterial + mMaterials.size() - 1);
             mCurrentMaterial %= mMaterials.size();
 
-            mspRenderable->mspInstance->spMaterial = mMaterials[mCurrentMaterial].spMaterial;
             mspRenderable->mspInstance->spMaterial2 = mMaterials[mCurrentMaterial].spMaterial2;
         }
         else if (evt == "toggle_rotation")
@@ -303,7 +301,7 @@ public:
         {
             // This should be handled as a global rendering algorithm override instead
             for (auto it = mMaterials.begin(); it != mMaterials.end(); ++it)
-                (*it).spMaterial->mWireframe = !(*it).spMaterial->mWireframe;
+                (*it).spMaterial2->mWireframe = !(*it).spMaterial2->mWireframe;
         }
         else if (evt == "cycle_renderalgorithm")
         {
@@ -423,7 +421,6 @@ protected:
 
         MaterialData data;
         data.renderProperties = render;
-        data.spMaterial = mspRasterizer->createMaterial(uniqueName, source, parameters);
         data.spMaterial2 = mspRasterizer->createMaterialInstance(uniqueName, source, params2);
 
         mMaterials.push_back(data);

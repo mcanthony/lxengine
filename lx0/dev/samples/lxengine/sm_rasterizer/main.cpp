@@ -344,6 +344,8 @@ main (int argc, char** argv)
     try
     {
         EnginePtr spEngine = Engine::acquire();
+
+        spEngine->initialize();
         
         spEngine->globals().add("file",      lx0::eAcceptsString,  lx0::validate_filename());
         spEngine->globals().add("output",    lx0::eAcceptsString,  lx0::validate_string());

@@ -61,9 +61,6 @@ Geometry::activate(RasterizerGL* pRasterizer, GlobalPass& pass)
 
     auto spMaterial = pRasterizer->mContext.spMaterial;
 
-    if (spMaterial->mGeometryType != this->mType)
-        throw lx_error_exception("Material does not support this geometry type!");
-
     switch (mType)
     {
     case GL_POINTS:
@@ -108,15 +105,6 @@ Geometry::activate(RasterizerGL* pRasterizer, GlobalPass& pass)
         else
             gl->disable(GL_TEXTURE_1D);
     }
-
-    {
-        GLint idx = gl->getUniformLocation(shaderProgram, "unifFaceCount");
-        if (idx != -1)
-        {
-            gl->uniform1i(idx, mFaceCount);
-        }
-    }
-
 
     check_glerror();
 
