@@ -342,7 +342,7 @@ namespace lx0
                 GLuint      _createShader2          (std::string& source, GLuint type);
                 void        _linkProgram            (GLuint prog, const char* pszSource = nullptr);
                 
-                MaterialPtr _acquireDefaultPointMaterial    (void);
+                MaterialInstancePtr _acquireDefaultPointMaterial    (void);
                 MaterialPtr _acquireDefaultLineMaterial     (void);
                 MaterialPtr _acquireDefaultSurfaceMaterial  (void);
 

@@ -445,46 +445,39 @@ RasterizerGL::cacheTexture (std::string name, TexturePtr spTexture)
     mTextureCache.insert( std::make_pair(name, spTexture) );
 }
 
-MaterialPtr 
+MaterialInstancePtr
 RasterizerGL::_acquireDefaultPointMaterial (void)
 {
-    static MaterialPtr spDefault;
-    if (spDefault)
-        return spDefault;
-
-    //throw lx_error_exception("Not implemented!");
-
-    //GLuint prog = _createProgram(name, GL_POINTS, fragmentSource);
-    GLuint prog;
+    static MaterialInstancePtr spDefault;
+    if (!spDefault)
     {
-        check_glerror();
+        MaterialTypePtr spMatType = _acquireMaterialType("DefaultPointMaterial", [this]() -> MaterialType* {
+            GLuint prog;
+            {
+                check_glerror();
 
-        // Create the shader program
-        //
-        GLuint vs = _createShader("media2/shaders/glsl/vertex/basic_point_00.vert", GL_VERTEX_SHADER);
-        GLuint fs = _createShader("media2/shaders/glsl/fragment/solid_red.frag", GL_FRAGMENT_SHADER);
+                // Create the shader program
+                //
+                GLuint vs = _createShader("media2/shaders/glsl/vertex/basic_point_00.vert", GL_VERTEX_SHADER);
+                GLuint fs = _createShader("media2/shaders/glsl/fragment/solid_red.frag", GL_FRAGMENT_SHADER);
 
-        prog = gl->createProgram();
-        {
-            gl->attachShader(prog, vs);
-            gl->attachShader(prog, fs);
+                prog = gl->createProgram();
+                {
+                    gl->attachShader(prog, vs);
+                    gl->attachShader(prog, fs);
         
-            check_glerror();
+                    check_glerror();
             
-            gl->bindAttribLocation(prog, 0, "inPosition");
-        }
-        check_glerror();
+                    gl->bindAttribLocation(prog, 0, "inPosition");
+                }
+                check_glerror();
 
-        _linkProgram(prog);
+                _linkProgram(prog);
+            }
+            return new MaterialType(prog);
+        });
+        spDefault = spMatType->createInstance(lxvar::map());
     }
-
-
-    auto pMat = new GenericMaterial(prog);
-    pMat->mShaderFilename = "<default point material>";
-    pMat->mGeometryType = GL_POINTS;
-    //pMat->mParameters = parameters.clone();
- 
-    spDefault = MaterialPtr(pMat);
     return spDefault;
 }
 
@@ -1595,8 +1588,8 @@ RasterizerGL::rasterizeItem (GlobalPass& pass, std::shared_ptr<Instance> spInsta
             mContext.spMaterial2.reset();
             break;
         case GL_POINTS:
-            mContext.spMaterial = _acquireDefaultPointMaterial();
-            mContext.spMaterial2.reset();
+            mContext.spMaterial2 = _acquireDefaultPointMaterial();
+            mContext.spMaterial.reset();
             break;
         default:
             throw lx_error_exception("Incompatible material for geometry type.  Could not determine a alternate material to use.");
