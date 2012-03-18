@@ -335,12 +335,10 @@ namespace lx0
                 } mContext;
 
             protected:
-                GLuint      _createProgramFromFile  (std::string filename);
-                GLuint      _createProgram          (std::string uniqueId, GLenum geometryType, std::string& source);
-                GLuint      _createProgram2         (std::string source);
-                GLuint      _createShader           (const char* filename, GLuint type);
-                GLuint      _createShader2          (std::string& source, GLuint type);
-                void        _linkProgram            (GLuint prog, const char* pszSource = nullptr);
+                GLuint      _createProgramVGF           (std::string vertShaderFile, std::string geomShaderFile, std::string fragShaderFile);
+                GLuint      _createProgramVGF2          (std::string vertShaderSource, std::string geomShaderSource, std::string fragShaderSource);
+                GLuint      _createShader2              (std::string& source, GLuint type);
+                void        _linkProgram                (GLuint prog, const char* pszSource = nullptr);
                 
                 MaterialInstancePtr _acquireDefaultPointMaterial    (void);
                 MaterialPtr _acquireDefaultLineMaterial     (void);
@@ -354,7 +352,6 @@ namespace lx0
 
                 std::unique_ptr<lx0::OpenGlApi3_2>  gl3_2;
 
-                std::map<std::string, GLuint>       mCachePrograms;
                 std::map<std::string, MaterialTypePtr> mMaterialTypes;
                 std::list<ResourcePtr>              mResources;
                 std::vector<TexturePtr>             mTextures;

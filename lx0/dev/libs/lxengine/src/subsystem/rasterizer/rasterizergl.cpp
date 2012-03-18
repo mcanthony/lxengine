@@ -452,28 +452,7 @@ RasterizerGL::_acquireDefaultPointMaterial (void)
     if (!spDefault)
     {
         MaterialTypePtr spMatType = _acquireMaterialType("DefaultPointMaterial", [this]() -> MaterialType* {
-            GLuint prog;
-            {
-                check_glerror();
-
-                // Create the shader program
-                //
-                GLuint vs = _createShader("media2/shaders/glsl/vertex/basic_point_00.vert", GL_VERTEX_SHADER);
-                GLuint fs = _createShader("media2/shaders/glsl/fragment/solid_red.frag", GL_FRAGMENT_SHADER);
-
-                prog = gl->createProgram();
-                {
-                    gl->attachShader(prog, vs);
-                    gl->attachShader(prog, fs);
-        
-                    check_glerror();
-            
-                    gl->bindAttribLocation(prog, 0, "inPosition");
-                }
-                check_glerror();
-
-                _linkProgram(prog);
-            }
+            auto prog = _createProgramVGF("media2/shaders/glsl/vertex/basic_point_00.vert", "", "media2/shaders/glsl/fragment/solid_red.frag");
             return new MaterialType(prog);
         });
         spDefault = spMatType->createInstance(lxvar::map());
@@ -493,37 +472,10 @@ RasterizerGL::_acquireDefaultLineMaterial (void)
     if (spDefault)
         return spDefault;
 
-    //throw lx_error_exception("Not implemented!");
-
-    //GLuint prog = _createProgram(name, GL_POINTS, fragmentSource);
-    GLuint prog;
-    {
-        check_glerror();
-
-        // Create the shader program
-        //
-        GLuint vs = _createShader("media2/shaders/glsl/vertex/basic_point_00.vert", GL_VERTEX_SHADER);
-        GLuint fs = _createShader("media2/shaders/glsl/fragment/solid_red.frag", GL_FRAGMENT_SHADER);
-
-        prog = gl->createProgram();
-        {
-            gl->attachShader(prog, vs);
-            gl->attachShader(prog, fs);
-        
-            check_glerror();
-            
-            gl->bindAttribLocation(prog, 0, "inPosition");
-        }
-        check_glerror();
-
-        _linkProgram(prog);
-    }
-
-
+    auto prog = _createProgramVGF("media2/shaders/glsl/vertex/basic_point_00.vert", "", "media2/shaders/glsl/fragment/solid_red.frag");
     auto pMat = new GenericMaterial(prog);
     pMat->mShaderFilename = "<default point material>";
     pMat->mGeometryType = GL_LINES;
-    //pMat->mParameters = parameters.clone();
  
     spDefault = MaterialPtr(pMat);
     return spDefault;
@@ -541,33 +493,7 @@ RasterizerGL::_acquireDefaultSurfaceMaterial (void)
     if (spDefault)
         return spDefault;
 
-    //throw lx_error_exception("Not implemented!");
-
-    //GLuint prog = _createProgram(name, GL_POINTS, fragmentSource);
-    GLuint prog;
-    {
-        check_glerror();
-
-        // Create the shader program
-        //
-        GLuint vs = _createShader("media2/shaders/glsl/materials/solid_texture2.vert", GL_VERTEX_SHADER);
-        GLuint fs = _createShader("media2/shaders/glsl/materials/solid_texture2.frag", GL_FRAGMENT_SHADER);
-
-        prog = gl->createProgram();
-        {
-            gl->attachShader(prog, vs);
-            gl->attachShader(prog, fs);
-        
-            check_glerror();
-            
-            gl->bindAttribLocation(prog, 0, "inPosition");
-        }
-        check_glerror();
-
-        _linkProgram(prog);
-    }
-
-
+    auto prog = _createProgramVGF("media2/shaders/glsl/materials/solid_texture2.vert", "", "media2/shaders/glsl/materials/solid_texture2.frag");
     auto pMat = new GenericMaterial(prog);
     pMat->mShaderFilename = "<default surface material>";
     pMat->mGeometryType = GL_TRIANGLES;
@@ -609,7 +535,11 @@ RasterizerGL::_acquireFullScreenQuad (int width, int height)
 MaterialPtr 
 RasterizerGL::createMaterial (std::string fragShader)
 {
-    GLuint prog = _createProgramFromFile(fragShader);
+    GLuint prog = _createProgramVGF2(
+        lx0::string_from_file("media2/shaders/glsl/vertex/basic_01.vert"),
+        lx0::string_from_file("media2/shaders/glsl/geometry/basic_01.geom"),
+        lx0::string_from_file(fragShader)
+    );
     MaterialPtr spMat(new Material(prog));
     spMat->mShaderFilename = fragShader;
     return spMat;
@@ -618,7 +548,11 @@ RasterizerGL::createMaterial (std::string fragShader)
 MaterialPtr 
 RasterizerGL::createMaterial (std::string name, std::string fragmentSource, lx0::lxvar parameters)
 {
-    GLuint prog = _createProgram(name, GL_TRIANGLES, fragmentSource);
+    GLuint prog = _createProgramVGF2(
+        lx0::string_from_file("media2/shaders/glsl/vertex/basic_01.vert"),
+        lx0::string_from_file("media2/shaders/glsl/geometry/basic_01.geom"),
+        fragmentSource
+    );
     
     auto pMat = new GenericMaterial(prog);
     pMat->mShaderFilename = name;
@@ -631,7 +565,11 @@ RasterizerGL::createMaterial (std::string name, std::string fragmentSource, lx0:
 MaterialInstancePtr 
 RasterizerGL::createMaterialInstance (std::string name, std::string fragmentSource, lx0::lxvar parameters)
 {
-    GLuint prog = _createProgram(name, GL_TRIANGLES, fragmentSource);
+    GLuint prog = _createProgramVGF2(
+        lx0::string_from_file("media2/shaders/glsl/vertex/basic_01.vert"),
+        lx0::string_from_file("media2/shaders/glsl/geometry/basic_01.geom"),
+        fragmentSource
+    );
     
     MaterialTypePtr spMatType(new MaterialType(prog));
     return spMatType->createInstance(parameters);
@@ -644,7 +582,11 @@ RasterizerGL::createMaterialInstance (std::string name, std::string fragmentSour
 MaterialPtr     
 RasterizerGL::createSolidColorMaterial (const color3f& rgb)
 {
-    GLuint prog = _createProgramFromFile("media2/shaders/glsl/fragment/solid.frag");
+    GLuint prog = _createProgramVGF2(
+        lx0::string_from_file("media2/shaders/glsl/vertex/basic_01.vert"),
+        lx0::string_from_file("media2/shaders/glsl/geometry/basic_01.geom"),
+        lx0::string_from_file("media2/shaders/glsl/fragment/solid.frag")
+    );
 
     auto pMat = new SolidColorMaterial(prog);
     pMat->mShaderFilename = "media2/shaders/glsl/fragment/solid.frag";
@@ -672,7 +614,11 @@ MaterialInstancePtr
 RasterizerGL::createVertexColorMaterial (void)
 {
     MaterialTypePtr spMatType = _acquireMaterialType("VertexColor", [this]() -> MaterialType* {
-        GLuint prog = _createProgramFromFile("media2/shaders/glsl/fragment/vertexColor.frag");
+        GLuint prog = _createProgramVGF2(
+            lx0::string_from_file("media2/shaders/glsl/vertex/basic_01.vert"),
+            lx0::string_from_file("media2/shaders/glsl/geometry/basic_01.geom"),
+            lx0::string_from_file("media2/shaders/glsl/fragment/vertexColor.frag")
+        );
         return new MaterialType(prog);
     });
 
@@ -684,7 +630,11 @@ MaterialInstancePtr
 RasterizerGL::createPhongMaterial (const glgeom::material_phong_f& mat)
 {
     MaterialTypePtr spMatType = _acquireMaterialType("VertexColor", [this]() -> MaterialType* {
-        GLuint prog = _createProgramFromFile("media2/shaders/glsl/fragment/phong2.frag");
+        GLuint prog = _createProgramVGF2(
+            lx0::string_from_file("media2/shaders/glsl/vertex/basic_01.vert"),
+            lx0::string_from_file("media2/shaders/glsl/geometry/basic_01.geom"),
+            lx0::string_from_file("media2/shaders/glsl/fragment/phong2.frag")
+        );
         return new MaterialType(prog);
     });
 
@@ -695,55 +645,39 @@ RasterizerGL::createPhongMaterial (const glgeom::material_phong_f& mat)
     return spMatType->createInstance(params);
 }
 
-GLuint 
-RasterizerGL::_createProgramFromFile  (std::string filename)
+GLuint      
+RasterizerGL::_createProgramVGF (std::string vertShaderFile, std::string geomShaderFile, std::string fragShaderFile)
 {
-    return _createProgram(filename, GL_TRIANGLES, lx0::string_from_file(filename));
+    std::string vertShaderSource = vertShaderFile.empty() ? "" : lx0::string_from_file( vertShaderFile );
+    std::string geomShaderSource = geomShaderFile.empty() ? "" : lx0::string_from_file( geomShaderFile );
+    std::string fragShaderSource = fragShaderFile.empty() ? "" : lx0::string_from_file( fragShaderFile );
+
+    return _createProgramVGF2(vertShaderSource, geomShaderSource, fragShaderSource);
 }
 
-GLuint 
-RasterizerGL::_createProgram   (std::string uniqueId, GLenum geometryType, std::string& source)
-{
-    static int s_anonymousId = 0;
-    if (uniqueId.empty())
-        uniqueId = boost::str( boost::format("_anonymous%04d") % s_anonymousId );
-
-    auto it = mCachePrograms.find(uniqueId);
-    if (it != mCachePrograms.end())
-    {
-        return it->second;
-    }
-    else
-    {
-        lx_debug("Creating program for shader '%s'", uniqueId.c_str());
-
-        GLuint id = _createProgram2(source);
-        mCachePrograms.insert(std::make_pair(uniqueId, id));
-        return id;
-    }
-}
-
-GLuint 
-RasterizerGL::_createProgram2  (std::string fragmentSource)
+GLuint      
+RasterizerGL::_createProgramVGF2 (std::string vertShaderSource, std::string geomShaderSource, std::string fragShaderSource)
 {
     //
     // An empty shader is definitely not valid.  A problem has occurred upstream in the code.
     // 
-    lx_check_error(!fragmentSource.empty());
-
+    lx_check_error(!fragShaderSource.empty());
     check_glerror();
 
     // Create the shader program
     //
-    GLuint vs = _createShader("media2/shaders/glsl/vertex/basic_01.vert", GL_VERTEX_SHADER);
-    GLuint gs = _createShader("media2/shaders/glsl/geometry/basic_01.geom", GL_GEOMETRY_SHADER);
-    GLuint fs = _createShader2(fragmentSource, GL_FRAGMENT_SHADER);
+    GLuint vs = vertShaderSource.empty() ? 0 : _createShader2(vertShaderSource, GL_VERTEX_SHADER);
+    GLuint gs = geomShaderSource.empty() ? 0 : _createShader2(geomShaderSource, GL_GEOMETRY_SHADER);
+    GLuint fs = fragShaderSource.empty() ? 0 : _createShader2(fragShaderSource, GL_FRAGMENT_SHADER);
 
     GLuint prog = gl->createProgram();
     {
-        gl->attachShader(prog, vs);
-        gl->attachShader(prog, gs);
-        gl->attachShader(prog, fs);
+        if (vs)
+            gl->attachShader(prog, vs);
+        if (gs)
+            gl->attachShader(prog, gs);
+        if (fs)
+            gl->attachShader(prog, fs);
         
         check_glerror();
             
@@ -751,7 +685,7 @@ RasterizerGL::_createProgram2  (std::string fragmentSource)
     }
     check_glerror();
 
-    _linkProgram(prog, fragmentSource.c_str());
+    _linkProgram(prog, fragShaderSource.c_str());
     gl->useProgram(prog);
 
     return prog;
@@ -817,16 +751,6 @@ RasterizerGL::_linkProgram (GLuint prog, const char* pszSource)
 }
 
 GLuint 
-RasterizerGL::_createShader(const char* filename, GLuint type)
-{
-    std::string shaderText = lx0::string_from_file(filename);
-    if (shaderText.empty())
-        throw lx_error_exception("Could not load shader '%s' (file exists = %s)", filename, (lx0::file_exists(filename) ? "true" : "false"));
-   
-    return _createShader2(shaderText, type);
-}
-
-GLuint 
 RasterizerGL::_createShader2 (std::string& shaderText, GLuint type)
 {
     GLuint shaderHandle = 0; 
@@ -836,7 +760,6 @@ RasterizerGL::_createShader2 (std::string& shaderText, GLuint type)
 
         const GLchar* text = shaderText.c_str();
         gl->shaderSource(shaderHandle, 1, &text, 0);
-
         gl->compileShader(shaderHandle);
     }
     else
