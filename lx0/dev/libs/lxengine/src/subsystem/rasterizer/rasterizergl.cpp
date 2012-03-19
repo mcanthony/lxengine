@@ -447,61 +447,85 @@ RasterizerGL::cacheTexture (std::string name, TexturePtr spTexture)
 
 MaterialInstancePtr
 RasterizerGL::_acquireDefaultPointMaterial (void)
+{   
+    return _acquireDefaultMaterial("DefaultPoint");
+}
+
+MaterialInstancePtr 
+RasterizerGL::_acquireDefaultMaterial (std::string name)
+{
+    //
+    // Create a material class from a set of shaders and default parameters to the
+    // uniforms.
+    //
+    MaterialTypePtr& spMaterialType = mMaterialTypes[name];
+    if (!spMaterialType)
+    {
+        std::string base = "media2/shaders/lx/materials";
+
+        auto conditionalLoad = [](std::string base, std::string name, std::string file) -> std::string {
+            std::string filename = base + "/" + name + "/" + file;
+            if (lx0::file_exists(filename))
+                return lx0::string_from_file(filename);
+            else
+                return "";
+        };
+
+        std::string vertSource = conditionalLoad(base, name, "shader.vert");
+        std::string geomSource = conditionalLoad(base, name, "shader.geom");
+        std::string fragSource = conditionalLoad(base, name, "shader.frag");
+            
+        auto prog = _createProgramVGF2(vertSource, geomSource, fragSource);
+        spMaterialType.reset( new MaterialType(prog) );
+        spMaterialType->mName = name;
+    }
+
+    //
+    // Create a material instance using all the material class defaults
+    //
+    MaterialInstancePtr& spMaterialInstance = mMaterialInstances[name];
+    if (!spMaterialInstance)
+    {
+        lx0::lxvar params = lxvar::map();
+        spMaterialInstance = spMaterialType->createInstance(params);
+        spMaterialInstance->mName = name;
+    }
+
+    return spMaterialInstance;
+}
+
+/*
+    This was thrown together quickly and contains a lot of duplicate code.
+    A generic createMaterial method should handle the low-level details
+    used here.
+ */
+MaterialInstancePtr 
+RasterizerGL::_acquireDefaultLineMaterial (void)
+{
+    return _acquireDefaultMaterial("DefaultLine");
+}
+
+/*
+    This was thrown together quickly and contains a lot of duplicate code.
+    A generic createMaterial method should handle the low-level details
+    used here.
+ */
+MaterialInstancePtr 
+RasterizerGL::_acquireDefaultSurfaceMaterial (void)
 {
     static MaterialInstancePtr spDefault;
     if (!spDefault)
     {
         MaterialTypePtr spMatType = _acquireMaterialType("DefaultPointMaterial", [this]() -> MaterialType* {
-            auto prog = _createProgramVGF("media2/shaders/glsl/vertex/basic_point_00.vert", "", "media2/shaders/glsl/fragment/solid_red.frag");
+            auto prog = _createProgramVGF("media2/shaders/glsl/materials/solid_texture2.vert", "", "media2/shaders/glsl/materials/solid_texture2.frag");
             return new MaterialType(prog);
         });
-        spDefault = spMatType->createInstance(lxvar::map());
+        lxvar params;
+        params["unifTexture0"] = "@sourceFBO";
+        spDefault = spMatType->createInstance(params);
+        spDefault->mBlend = false;
+        spDefault->mZTest = false;
     }
-    return spDefault;
-}
-
-/*
-    This was thrown together quickly and contains a lot of duplicate code.
-    A generic createMaterial method should handle the low-level details
-    used here.
- */
-MaterialPtr 
-RasterizerGL::_acquireDefaultLineMaterial (void)
-{
-    static MaterialPtr spDefault;
-    if (spDefault)
-        return spDefault;
-
-    auto prog = _createProgramVGF("media2/shaders/glsl/vertex/basic_point_00.vert", "", "media2/shaders/glsl/fragment/solid_red.frag");
-    auto pMat = new GenericMaterial(prog);
-    pMat->mShaderFilename = "<default point material>";
-    pMat->mGeometryType = GL_LINES;
- 
-    spDefault = MaterialPtr(pMat);
-    return spDefault;
-}
-
-/*
-    This was thrown together quickly and contains a lot of duplicate code.
-    A generic createMaterial method should handle the low-level details
-    used here.
- */
-MaterialPtr 
-RasterizerGL::_acquireDefaultSurfaceMaterial (void)
-{
-    static MaterialPtr spDefault;
-    if (spDefault)
-        return spDefault;
-
-    auto prog = _createProgramVGF("media2/shaders/glsl/materials/solid_texture2.vert", "", "media2/shaders/glsl/materials/solid_texture2.frag");
-    auto pMat = new GenericMaterial(prog);
-    pMat->mShaderFilename = "<default surface material>";
-    pMat->mGeometryType = GL_TRIANGLES;
-    pMat->mParameters.insert("unifTexture0", lx0::lxvar("sampler2D", "@sourceFBO"));
-    pMat->mBlend = false;
-    pMat->mZTest = false;
- 
-    spDefault = MaterialPtr(pMat);
     return spDefault;
 }
 
@@ -530,7 +554,6 @@ RasterizerGL::_acquireFullScreenQuad (int width, int height)
     auto spGeometry = this->createGeometry(prim);
     return spGeometry;
 }
-
 
 MaterialPtr 
 RasterizerGL::createMaterial (std::string fragShader)
@@ -573,27 +596,6 @@ RasterizerGL::createMaterialInstance (std::string name, std::string fragmentSour
     
     MaterialTypePtr spMatType(new MaterialType(prog));
     return spMatType->createInstance(parameters);
-}
-
-/*
-    This should be retired; create a MaterialInstance instead and set the rgb as
-    a parameter on the MaterialInstance.
- */
-MaterialPtr     
-RasterizerGL::createSolidColorMaterial (const color3f& rgb)
-{
-    GLuint prog = _createProgramVGF2(
-        lx0::string_from_file("media2/shaders/glsl/vertex/basic_01.vert"),
-        lx0::string_from_file("media2/shaders/glsl/geometry/basic_01.geom"),
-        lx0::string_from_file("media2/shaders/glsl/fragment/solid.frag")
-    );
-
-    auto pMat = new SolidColorMaterial(prog);
-    pMat->mShaderFilename = "media2/shaders/glsl/fragment/solid.frag";
-    pMat->mColor = rgb;
-    pMat->mGeometryType = GL_TRIANGLES;
-    
-    return MaterialPtr(pMat);
 }
 
 MaterialTypePtr        
@@ -1502,13 +1504,13 @@ RasterizerGL::rasterizeItem (GlobalPass& pass, std::shared_ptr<Instance> spInsta
         case GL_TRIANGLES:
             if (!mContext.spMaterial2)
             {
-                mContext.spMaterial = _acquireDefaultSurfaceMaterial();
-                mContext.spMaterial2.reset();
+                mContext.spMaterial2 = _acquireDefaultSurfaceMaterial();
+                mContext.spMaterial.reset();
             }
             break;
         case GL_LINES:
-            mContext.spMaterial = _acquireDefaultLineMaterial();
-            mContext.spMaterial2.reset();
+            mContext.spMaterial2 = _acquireDefaultLineMaterial();
+            mContext.spMaterial.reset();
             break;
         case GL_POINTS:
             mContext.spMaterial2 = _acquireDefaultPointMaterial();

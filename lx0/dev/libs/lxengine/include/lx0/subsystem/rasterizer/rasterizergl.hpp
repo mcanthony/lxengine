@@ -41,7 +41,7 @@ namespace lx0
 
             //===========================================================================//
             //! \ingroup lx0_subsystem_rasterizer
-            class Resource
+            class Resource : public std::enable_shared_from_this<Resource>
             {
             public:
                 virtual ~Resource() {}
@@ -221,7 +221,6 @@ namespace lx0
                 MaterialPtr     createMaterial              (std::string fragShader);
                 MaterialPtr     createMaterial              (std::string vertexShader, std::string geometryShader, std::string fragmentShader);
                 MaterialPtr     createMaterial              (std::string name, std::string fragmentSource, lxvar parameters);
-                MaterialPtr     createSolidColorMaterial    (const glgeom::color3f& rgb);
                 MaterialInstancePtr createVertexColorMaterial   (void);
                 MaterialInstancePtr createPhongMaterial         (const glgeom::material_phong_f& mat);
                 MaterialInstancePtr createMaterialInstance  (std::string name, std::string fragmentSource, lx0::lxvar parameters);
@@ -340,9 +339,10 @@ namespace lx0
                 GLuint      _createShader2              (std::string& source, GLuint type);
                 void        _linkProgram                (GLuint prog, const char* pszSource = nullptr);
                 
+                MaterialInstancePtr _acquireDefaultMaterial         (std::string name);
                 MaterialInstancePtr _acquireDefaultPointMaterial    (void);
-                MaterialPtr _acquireDefaultLineMaterial     (void);
-                MaterialPtr _acquireDefaultSurfaceMaterial  (void);
+                MaterialInstancePtr _acquireDefaultLineMaterial     (void);
+                MaterialInstancePtr _acquireDefaultSurfaceMaterial  (void);
 
                 GeometryPtr _acquireFullScreenQuad          (int width, int height);
 
@@ -353,6 +353,7 @@ namespace lx0
                 std::unique_ptr<lx0::OpenGlApi3_2>  gl3_2;
 
                 std::map<std::string, MaterialTypePtr> mMaterialTypes;
+                std::map<std::string, MaterialInstancePtr> mMaterialInstances;
                 std::list<ResourcePtr>              mResources;
                 std::vector<TexturePtr>             mTextures;
             public:
