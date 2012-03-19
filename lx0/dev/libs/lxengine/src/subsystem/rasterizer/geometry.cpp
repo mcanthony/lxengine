@@ -59,17 +59,12 @@ Geometry::activate(RasterizerGL* pRasterizer, GlobalPass& pass)
 {
     check_glerror();
 
-    auto spMaterial = pRasterizer->mContext.spMaterial;
-
     switch (mType)
     {
     case GL_POINTS:
         gl->pointSize(3);
         break;
     }
-
-    GLint shaderProgram;
-    gl->getIntegerv(GL_CURRENT_PROGRAM, &shaderProgram);
 
     gl->bindVertexArray(mVao);
 
@@ -79,6 +74,8 @@ Geometry::activate(RasterizerGL* pRasterizer, GlobalPass& pass)
     gl->enableVertexAttribArray(0);
             
     // Set per-primitive flags
+    GLint shaderProgram;
+    gl->getIntegerv(GL_CURRENT_PROGRAM, &shaderProgram);
     {
         bool texture1dUsed = false;
 

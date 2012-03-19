@@ -123,7 +123,10 @@ public:
         // to ensure only the right pixels are actually written to the pixel buffer.
         //
         GlobalPass pass[4];
-        pass[0].spMaterial = mRasterizer.createMaterial("media2/shaders/glsl/fragment/solid.frag");
+        pass[0].spMaterial = mRasterizer.createMaterialInstance(
+            "SelectMaterial",
+            lx0::string_from_file("media2/shaders/glsl/fragment/solid.frag"),
+            lx0::lxvar::map());
         algorithm.mPasses.push_back(pass[0]); 
     }
 

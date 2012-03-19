@@ -91,7 +91,7 @@ namespace lx0
 
                 CameraPtr       spCamera;
                 LightSetPtr     spLightSet;
-                MaterialPtr     spMaterial;
+                MaterialInstancePtr     spMaterial;
 
                 boost::tribool                      tbWireframe;
                 boost::tribool                      tbFlatShading;
@@ -224,12 +224,9 @@ namespace lx0
                 LightPtr        createLight                 (void);
                 LightPtr        createLight                 (const glgeom::point_light_f& light);
 
-                MaterialPtr     createMaterial              (std::string fragShader);
-                MaterialPtr     createMaterial              (std::string vertexShader, std::string geometryShader, std::string fragmentShader);
-                MaterialPtr     createMaterial              (std::string name, std::string fragmentSource, lxvar parameters);
-                MaterialInstancePtr createVertexColorMaterial   (void);
-                MaterialInstancePtr createPhongMaterial         (const glgeom::material_phong_f& mat);
                 MaterialInstancePtr createMaterialInstance  (std::string name, std::string fragmentSource, lx0::lxvar parameters);
+                MaterialInstancePtr createVertexColorMaterial   (void);
+                MaterialInstancePtr createPhongMaterial         (const glgeom::material_phong_f& mat);                
 
                 TexturePtr      createTexture               (const char* filename);
                 TexturePtr      createTextureCubeMap        (const char* xpos, const char* xneg, const char* ypos, const char* yneg, const char* zpos, const char* zneg); 
@@ -310,7 +307,6 @@ namespace lx0
                     unsigned int    itemId;
                     LightSetPtr     spLightSet;
                     CameraPtr       spCamera;
-                    MaterialPtr     spMaterial;
                     MaterialInstancePtr spMaterial2;
                     TransformPtr    spTransform;
                     GeometryPtr     spGeometry;

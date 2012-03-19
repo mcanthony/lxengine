@@ -110,7 +110,7 @@ public:
         //
         mspInstance.reset(new lx0::Instance);
         mspInstance->spTransform = mspRasterizer->createTransform(mRotation);
-        mspInstance->spMaterial = mspRasterizer->createMaterial("media2/shaders/glsl/fragment/normal.frag");
+        mspInstance->spMaterial2 = mspRasterizer->createMaterialInstance("Unnamed", lx0::string_from_file("media2/shaders/glsl/fragment/normal.frag"), lx0::lxvar::map());
         mspInstance->spGeometry = spCube;
     }
 

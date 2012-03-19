@@ -4,7 +4,7 @@
 
     LICENSE
 
-    Copyright (c) 2011 athile@athile.net (http://www.athile.net)
+    Copyright (c) 2011-2012 athile@athile.net (http://www.athile.net)
 
     Permission is hereby granted, free of charge, to any person obtaining a 
     copy of this software and associated documentation files (the "Software"), 
@@ -59,7 +59,6 @@ namespace lx0
             _LX_FORWARD_DECL_PTRS(Light);
             _LX_FORWARD_DECL_PTRS(Geometry);
             _LX_FORWARD_DECL_PTRS(Transform);
-            _LX_FORWARD_DECL_PTRS(Material);
             _LX_FORWARD_DECL_PTRS(MaterialType);
             _LX_FORWARD_DECL_PTRS(MaterialInstance);
             _LX_FORWARD_DECL_PTRS(Texture);

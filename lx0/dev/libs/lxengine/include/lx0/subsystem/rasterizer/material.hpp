@@ -98,89 +98,10 @@ namespace lx0
                 int                                 mFilter;
                 TexturePtr                          mTextures[8];
 
+            protected:
                 bool                                mbDirty;
                 std::vector<std::function<void()>>  mInstructions;
-
-            protected:
-
             };
-
-            //===========================================================================//
-            //! \ingroup lx0_subsystem_rasterizer
-            class Material
-            {
-            public:
-                             Material   (GLuint id);
-
-                virtual void activate   (RasterizerGL*, GlobalPass& pass);
-
-                GLenum      mGeometryType;
-                std::string mShaderFilename;
-
-                bool        mBlend;
-                bool        mZTest;
-                bool        mZWrite;
-                bool        mWireframe;
-                int         mFilter;
-                TexturePtr  mTextures[8];
-    
-            protected:
-                // Note: the program should be separate from the parameters passed to
-                // it.
-                GLuint      mId;
-            };
-
-            //===========================================================================//
-            //! \ingroup lx0_subsystem_rasterizer
-            class SolidColorMaterial : public Material
-            {
-            public:
-                        SolidColorMaterial(GLuint id);
-
-                virtual void activate   (RasterizerGL*, GlobalPass& pass);
-
-                glgeom::color3f    mColor;
-            };
-
-            //===========================================================================//
-            //! \ingroup lx0_subsystem_rasterizer
-            class VertexColorMaterial : public Material
-            {
-            public:
-                        VertexColorMaterial(GLuint id);
-
-                virtual void activate   (RasterizerGL*, GlobalPass& pass);
-            };
-
-            //===========================================================================//
-            //! \ingroup lx0_subsystem_rasterizer
-            class PhongMaterial : public Material
-            {
-            public:
-                        PhongMaterial(GLuint id);
-
-                virtual void activate   (RasterizerGL*, GlobalPass& pass);
-
-                glgeom::material_phong_f    mPhong;
-            };
-
-            //===========================================================================//
-            //! \ingroup lx0_subsystem_rasterizer
-            class GenericMaterial : public Material
-            {
-            public:
-                                GenericMaterial (GLuint id);
-
-                virtual void    activate        (RasterizerGL*, GlobalPass& pass);
-
-            //protected:
-                void            _compile        (RasterizerGL*);
-
-                lxvar                                   mParameters;
-                bool                                    mbNeedsCompile;
-                std::vector<std::function<void (void)>> mInstructions;
-            };
-
         }
     }
 }

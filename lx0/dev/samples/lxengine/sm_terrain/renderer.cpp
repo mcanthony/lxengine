@@ -62,7 +62,7 @@ public:
 
             auto spGeom = lx0::quadlist_from_blendfile(rasterizer, "media2/models/unit_hemisphere-000.blend", 200.0f);
 
-            auto spMat = rasterizer.createMaterial("media2/shaders/glsl/fragment/skymap.frag");
+            auto spMat = rasterizer.createMaterialInstance("SkyMap", lx0::string_from_file("media2/shaders/glsl/fragment/skymap.frag"), lxvar::map());
             spMat->mBlend = false;
             spMat->mWireframe = false;
             spMat->mZTest = false;
@@ -72,7 +72,7 @@ public:
             auto pInstance = new Instance;
             pInstance->spCamera   = spCamera;
             pInstance->spLightSet = spLightSet;
-            pInstance->spMaterial = spMat;
+            pInstance->spMaterial2 = spMat;
             pInstance->spTransform = rasterizer.createTransformEye(mPosition.x, mPosition.y, mPosition.z, glgeom::radians(0.0f));
             pInstance->spGeometry = spGeom;
             
@@ -94,11 +94,11 @@ protected:
 class SpriteShared
 {
 public:
-    MaterialPtr _ensureMaterial (RasterizerGL& rasterizer, std::string image)
+    MaterialInstancePtr _ensureMaterial (RasterizerGL& rasterizer, std::string image)
     {
         if (!mspMaterial)
         {
-            auto spMat = rasterizer.createMaterial("media2/shaders/glsl/fragment/texture1_fog.frag");
+            auto spMat = rasterizer.createMaterialInstance("SpriteShared", lx0::string_from_file("media2/shaders/glsl/fragment/texture1_fog.frag"), lxvar::map());
             spMat->mBlend = true;
             spMat->mFilter = GL_NEAREST;
             spMat->mTextures[0] = rasterizer.createTexture(image.c_str());
@@ -155,7 +155,7 @@ public:
     }
 
 protected:
-    MaterialPtr       mspMaterial;
+    MaterialInstancePtr       mspMaterial;
     GeometryPtr       mspGeom;
 };
 
@@ -177,7 +177,7 @@ public:
             pInstance->setData<ElementPtr>(spElement);
             pInstance->spCamera   = spCamera;
             pInstance->spLightSet = spLightSet;
-            pInstance->spMaterial = SpriteShared::acquire()->_ensureMaterial(rasterizer, image);
+            pInstance->spMaterial2 = SpriteShared::acquire()->_ensureMaterial(rasterizer, image);
             pInstance->spGeometry = SpriteShared::acquire()->_ensureGeom(rasterizer);
             
             mspInstance.reset(pInstance);
@@ -227,7 +227,7 @@ Renderer::handleEvent (std::string evt, lx0::lxvar params)
         std::string name = spElement
             ? query(spElement->attr("image"), "unknown").c_str()
             : "no associated element";
-        printf("Select: %s (%s)\n", spInstance->spMaterial->mShaderFilename.c_str(), name.c_str());
+        //printf("Select: %s (%s)\n", spInstance->spMaterial2->mShaderFilename.c_str(), name.c_str());
     }
     else if (evt == "cycle_viewmode")
         cycleViewMode();
@@ -252,7 +252,10 @@ Renderer::_generateRenderAlgorithm (lx0::RenderAlgorithm& algorithm)
         algorithm.mPasses.push_back(pass[0]);
         break;
     case 2:
-        pass[0].spMaterial = mRasterizer.createMaterial("media2/shaders/glsl/fragment/solid.frag");
+        pass[0].spMaterial = mRasterizer.createMaterialInstance(
+            "RenderMaterial",
+            lx0::string_from_file("media2/shaders/glsl/fragment/solid.frag"),
+            lx0::lxvar::map());
         algorithm.mPasses.push_back(pass[0]);
         break;
     }  

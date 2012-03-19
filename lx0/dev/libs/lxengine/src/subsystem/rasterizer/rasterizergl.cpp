@@ -543,36 +543,6 @@ RasterizerGL::_acquireFullScreenQuad (int width, int height)
     return spGeometry;
 }
 
-MaterialPtr 
-RasterizerGL::createMaterial (std::string fragShader)
-{
-    GLuint prog = _createProgramVGF(
-        lx0::string_from_file("media2/shaders/glsl/vertex/basic_01.vert"),
-        lx0::string_from_file("media2/shaders/glsl/geometry/basic_01.geom"),
-        lx0::string_from_file(fragShader)
-    );
-    MaterialPtr spMat(new Material(prog));
-    spMat->mShaderFilename = fragShader;
-    return spMat;
-}
-
-MaterialPtr 
-RasterizerGL::createMaterial (std::string name, std::string fragmentSource, lx0::lxvar parameters)
-{
-    GLuint prog = _createProgramVGF(
-        lx0::string_from_file("media2/shaders/glsl/vertex/basic_01.vert"),
-        lx0::string_from_file("media2/shaders/glsl/geometry/basic_01.geom"),
-        fragmentSource
-    );
-    
-    auto pMat = new GenericMaterial(prog);
-    pMat->mShaderFilename = name;
-    pMat->mGeometryType = GL_TRIANGLES;
-    pMat->mParameters = parameters.clone();
- 
-    return MaterialPtr(pMat);
-}
-
 MaterialInstancePtr 
 RasterizerGL::createMaterialInstance (std::string name, std::string fragmentSource, lx0::lxvar parameters)
 {
@@ -1453,10 +1423,9 @@ RasterizerGL::rasterizeItem (GlobalPass& pass, std::shared_ptr<Instance> spInsta
     mContext.spLightSet = (spInstance->spLightSet)
         ? spInstance->spLightSet
         : pass.spLightSet;
-    mContext.spMaterial = (pass.spMaterial) 
+    mContext.spMaterial2 = (pass.spMaterial) 
         ? pass.spMaterial
-        : spInstance->spMaterial;
-    mContext.spMaterial2 = spInstance->spMaterial2;
+        : spInstance->spMaterial2;
     mContext.spTransform = spInstance->spTransform;
 
     mContext.tbFlatShading = boost::indeterminate(spInstance->spGeometry->mtbFlatShading) 
@@ -1470,34 +1439,24 @@ RasterizerGL::rasterizeItem (GlobalPass& pass, std::shared_ptr<Instance> spInsta
     //
     lx_check_error(spInstance->spGeometry);
     lx_check_error(spInstance->spGeometry->mType != GL_INVALID_ENUM);
-    lx_check_error(!mContext.spMaterial || mContext.spMaterial->mGeometryType != GL_INVALID_ENUM);
 
-    if (!mContext.spMaterial 
-        ||  spInstance->spGeometry->mType != mContext.spMaterial->mGeometryType)
+    // The requested material does not support the type of geometry that is being
+    // rendered.  Use the default material for that geometry instead.
+    switch (spInstance->spGeometry->mType)
     {
-        // The requested material does not support the type of geometry that is being
-        // rendered.  Use the default material for that geometry instead.
-        switch (spInstance->spGeometry->mType)
-        {
-        case GL_TRIANGLES:
-            if (!mContext.spMaterial2)
-            {
-                mContext.spMaterial2 = _acquireDefaultMaterial("DefaultSurface");
-                mContext.spMaterial.reset();
-            }
-            break;
-        case GL_LINES:
-            mContext.spMaterial2 = _acquireDefaultMaterial("DefaultLine");
-            mContext.spMaterial.reset();
-            break;
-        case GL_POINTS:
-            mContext.spMaterial2 = _acquireDefaultMaterial("DefaultPoint");
-            mContext.spMaterial.reset();
-            break;
-        default:
-            throw lx_error_exception("Incompatible material for geometry type.  Could not determine a alternate material to use.");
-        };
-    }
+    case GL_TRIANGLES:
+        if (!mContext.spMaterial2)
+            mContext.spMaterial2 = _acquireDefaultMaterial("DefaultSurface");
+        break;
+    case GL_LINES:
+        mContext.spMaterial2 = _acquireDefaultMaterial("DefaultLine");
+        break;
+    case GL_POINTS:
+        mContext.spMaterial2 = _acquireDefaultMaterial("DefaultPoint");
+        break;
+    default:
+        throw lx_error_exception("Incompatible material for geometry type.  Could not determine a alternate material to use.");
+    };
 
     //
     // Error checking
@@ -1513,7 +1472,7 @@ RasterizerGL::rasterizeItem (GlobalPass& pass, std::shared_ptr<Instance> spInsta
     {
         check_glerror();
         lx_check_error( mContext.spCamera );
-        lx_check_error( mContext.spMaterial || mContext.spMaterial2 );
+        lx_check_error( mContext.spMaterial2 );
 
         mContext.spCamera->activate(this);
         
@@ -1529,10 +1488,7 @@ RasterizerGL::rasterizeItem (GlobalPass& pass, std::shared_ptr<Instance> spInsta
         });
 
         _timeCall(mStats.tmMaterialActivate, [&]() {              
-            if (mContext.spMaterial2)
-                mContext.spMaterial2->activate(this, pass);
-            else
-                mContext.spMaterial->activate(this, pass);  
+            mContext.spMaterial2->activate(this, pass);
         });
         _timeCall(mStats.tmGeometryActivate, [&]() { mContext.spGeometry->activate(this, pass); });
     
@@ -1541,7 +1497,6 @@ RasterizerGL::rasterizeItem (GlobalPass& pass, std::shared_ptr<Instance> spInsta
 
     mContext.spCamera.reset();
     mContext.spLightSet.reset();
-    mContext.spMaterial.reset();
     mContext.spMaterial2.reset();
     mContext.spTransform.reset();
     mContext.spInstance.reset();
