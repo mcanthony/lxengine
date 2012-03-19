@@ -78,6 +78,9 @@ namespace lx0
                                 MaterialInstance    (MaterialTypePtr spMaterialType, lx0::lxvar& parameters);
 
                 virtual void    activate   (RasterizerGL* pRasterizer, GlobalPass& pass);
+
+                void            trimParameterTypes  (void);
+
                 void            _compile   (RasterizerGL* pRasterizer);
 
                 std::function<void()>   _generateBaseInstruction    (RasterizerGL*);

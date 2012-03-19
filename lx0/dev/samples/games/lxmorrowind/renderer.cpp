@@ -153,7 +153,7 @@ public:
 
             if (!cull)
             {
-                int layer = ((*it)->spMaterial->mBlend == true) ? 1 : 0;
+                int layer = ((*it)->spMaterial2->mBlend == true) ? 1 : 0;
                 instances.push_back(layer, *it);
             }
         }
@@ -178,9 +178,9 @@ public:
             pInstance->spTransform = mspRasterizer->createTransform(transform);
 
             if (material.is_defined())
-                pInstance->spMaterial = _buildMaterial(material);
+                pInstance->spMaterial2 = _buildMaterial(material);
             else
-                pInstance->spMaterial = mMaterials.find("phong_checker")->second;
+                pInstance->spMaterial2 = mMaterials.find("phong_checker")->second;
 
             pInstance->spGeometry = mspRasterizer->createGeometry(primitive);
             pInstance->bsphere    = glgeom::bsphere3f(primitive.bbox.center(), primitive.bbox.diagonal());
@@ -202,8 +202,9 @@ public:
         }
         else if (spElem->tagName() == "Material")
         {
-            auto material = mShaderBuilder.buildShaderGLSL( spElem->value().find("graph") );
-            auto spMaterial = mspRasterizer->createMaterial(material.uniqueName, material.source, material.parameters);
+            auto material = mShaderBuilder.buildShaderGLSL( spElem->value().find("graph") );            
+            auto spMaterial = mspRasterizer->createMaterialInstance(material.uniqueName, material.source, material.parameters);
+            spMaterial->trimParameterTypes();
 
             std::string name = query(spElem->attr("id"), "");
             mMaterials.insert(std::make_pair(name, spMaterial));
@@ -221,10 +222,12 @@ public:
         }
     }
 
-    lx0::MaterialPtr _buildMaterial (lx0::lxvar& material)
+    lx0::MaterialInstancePtr _buildMaterial (lx0::lxvar& material)
     {
         auto desc = mShaderBuilder.buildShaderGLSL(material["graph"]);
-        auto spMaterial = mspRasterizer->createMaterial(desc.uniqueName, desc.source, desc.parameters);
+        auto spMaterial = mspRasterizer->createMaterialInstance(desc.uniqueName, desc.source, desc.parameters);
+        spMaterial->trimParameterTypes();
+
         spMaterial->mBlend = query_path(material, "options/blend", false);
         return spMaterial;
     }
@@ -235,7 +238,7 @@ protected:
 
     lx0::CameraPtr                          mspCamera;
     lx0::LightSetPtr                        mspLightSet;
-    std::map<std::string, lx0::MaterialPtr> mMaterials;
+    std::map<std::string, lx0::MaterialInstancePtr> mMaterials;
     std::map<std::string, lx0::TexturePtr>  mTextures;
     std::vector<lx0::InstancePtr>           mInstances;
     glgeom::abbox3f                         mBounds;

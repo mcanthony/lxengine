@@ -41,6 +41,8 @@ namespace lx0
 
             //===========================================================================//
             //! \ingroup lx0_subsystem_rasterizer
+            /*!
+             */
             class Resource : public std::enable_shared_from_this<Resource>
             {
             public:
@@ -53,6 +55,8 @@ namespace lx0
 
             //===========================================================================//
             //! \ingroup lx0_subsystem_rasterizer
+            /*!
+             */
             class Texture : public Resource
             {
             public:
@@ -70,6 +74,8 @@ namespace lx0
 
             //===========================================================================//
             //! \ingroup lx0_subsystem_rasterizer
+            /*!
+             */
             class GlobalPass
             {
             public:
@@ -94,6 +100,8 @@ namespace lx0
 
             //===========================================================================//
             //! \ingroup lx0_subsystem_rasterizer
+            /*!
+             */
             class RenderAlgorithm
             {
             public:
@@ -159,8 +167,6 @@ namespace lx0
 
                 typedef std::map<int,Layer> LayerMap;
 
-
-
                 void                    push_back   (int layer, InstancePtr spInstance);
 
                 LayerMap::iterator      begin       (void)      { return mLayers.begin(); }
@@ -207,10 +213,10 @@ namespace lx0
                                 RasterizerGL    ();
                                 ~RasterizerGL   ();
 
-                void            initialize      (void);
-                void            shutdown        (void);
+                void            initialize                  (void);
+                void            shutdown                    (void);
 
-                CameraPtr       createCamera    (glgeom::radians fov, float nearDist, float farDist, glm::mat4& viewMatrix);
+                CameraPtr       createCamera                (glgeom::radians fov, float nearDist, float farDist, glm::mat4& viewMatrix);
                 
                 FrameBufferPtr  createFrameBuffer           (int width, int height);
 
@@ -334,21 +340,16 @@ namespace lx0
                 } mContext;
 
             protected:
-                GLuint      _createProgramVGF           (std::string vertShaderFile, std::string geomShaderFile, std::string fragShaderFile);
-                GLuint      _createProgramVGF2          (std::string vertShaderSource, std::string geomShaderSource, std::string fragShaderSource);
-                GLuint      _createShader2              (std::string& source, GLuint type);
-                void        _linkProgram                (GLuint prog, const char* pszSource = nullptr);
+                GLuint              _createProgramVGF       (std::string vertShaderSource, std::string geomShaderSource, std::string fragShaderSource);
+                GLuint              _createShader           (std::string& source, GLuint type);
+                void                _linkProgram            (GLuint prog, const char* pszSource = nullptr);
+                void                _readBuffer             (GLenum buffer, glgeom::image3f& img);
                 
-                MaterialInstancePtr _acquireDefaultMaterial         (std::string name);
-                MaterialInstancePtr _acquireDefaultPointMaterial    (void);
-                MaterialInstancePtr _acquireDefaultLineMaterial     (void);
-                MaterialInstancePtr _acquireDefaultSurfaceMaterial  (void);
+                MaterialTypePtr     _acquireMaterialType    (const char* name, std::function<MaterialType*()> ctor);
+                MaterialInstancePtr _acquireDefaultMaterial (std::string name);
+                GeometryPtr         _acquireFullScreenQuad  (int width, int height);
 
-                GeometryPtr _acquireFullScreenQuad          (int width, int height);
-
-                void        _readBuffer             (GLenum buffer, glgeom::image3f& img);
-
-                MaterialTypePtr _acquireMaterialType    (const char* name, std::function<MaterialType*()> ctor);
+                
 
                 std::unique_ptr<lx0::OpenGlApi3_2>  gl3_2;
 

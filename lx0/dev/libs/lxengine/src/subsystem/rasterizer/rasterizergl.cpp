@@ -445,24 +445,20 @@ RasterizerGL::cacheTexture (std::string name, TexturePtr spTexture)
     mTextureCache.insert( std::make_pair(name, spTexture) );
 }
 
-MaterialInstancePtr
-RasterizerGL::_acquireDefaultPointMaterial (void)
-{   
-    return _acquireDefaultMaterial("DefaultPoint");
-}
-
 MaterialInstancePtr 
 RasterizerGL::_acquireDefaultMaterial (std::string name)
 {
     //
-    // Create a material class from a set of shaders and default parameters to the
-    // uniforms.
+    // Create a material instance using all the material class defaults
     //
-    MaterialTypePtr& spMaterialType = mMaterialTypes[name];
-    if (!spMaterialType)
+    MaterialInstancePtr& spMaterialInstance = mMaterialInstances[name];
+    if (!spMaterialInstance)
     {
+        //
+        // Add some local helpers
+        //
         std::string base = "media2/shaders/lx/materials";
-
+        
         auto conditionalLoad = [](std::string base, std::string name, std::string file) -> std::string {
             std::string filename = base + "/" + name + "/" + file;
             if (lx0::file_exists(filename))
@@ -471,62 +467,54 @@ RasterizerGL::_acquireDefaultMaterial (std::string name)
                 return "";
         };
 
-        std::string vertSource = conditionalLoad(base, name, "shader.vert");
-        std::string geomSource = conditionalLoad(base, name, "shader.geom");
-        std::string fragSource = conditionalLoad(base, name, "shader.frag");
-            
-        auto prog = _createProgramVGF2(vertSource, geomSource, fragSource);
-        spMaterialType.reset( new MaterialType(prog) );
-        spMaterialType->mName = name;
-    }
+        //
+        // Create a material class from a set of shaders and default parameters to the
+        // uniforms.
+        //
+        MaterialTypePtr& spMaterialType = mMaterialTypes[name];
+        if (!spMaterialType)
+        {
 
-    //
-    // Create a material instance using all the material class defaults
-    //
-    MaterialInstancePtr& spMaterialInstance = mMaterialInstances[name];
-    if (!spMaterialInstance)
-    {
+            std::string vertSource = conditionalLoad(base, name, "shader.vert");
+            std::string geomSource = conditionalLoad(base, name, "shader.geom");
+            std::string fragSource = conditionalLoad(base, name, "shader.frag");
+            
+            auto prog = _createProgramVGF(vertSource, geomSource, fragSource);
+            spMaterialType.reset( new MaterialType(prog) );
+            spMaterialType->mName = name;
+        }
+
+        //
+        // Create the default instance parameters and state.
+        // Then check if these options are specified in a file.
+        //
         lx0::lxvar params = lxvar::map();
+        lx0::lxvar state = lxvar::undefined();
+
+        std::string json = conditionalLoad(base, name, "material.json");
+        if (!json.empty())
+        {
+            lxvar material = lx0::lxvar::parse(json.c_str());            
+            params = material["parameters"];
+            state = material["state"];            
+        }
+        
         spMaterialInstance = spMaterialType->createInstance(params);
         spMaterialInstance->mName = name;
+
+        if (state.is_defined())
+        {
+            for (auto it = state.begin(); it != state.end(); ++it)
+            {
+                if (it.key() == "blend")
+                    spMaterialInstance->mBlend = (*it).as<bool>();
+                else if (it.key() == "ztest")
+                    spMaterialInstance->mZTest = (*it).as<bool>();
+            }
+        }
     }
 
     return spMaterialInstance;
-}
-
-/*
-    This was thrown together quickly and contains a lot of duplicate code.
-    A generic createMaterial method should handle the low-level details
-    used here.
- */
-MaterialInstancePtr 
-RasterizerGL::_acquireDefaultLineMaterial (void)
-{
-    return _acquireDefaultMaterial("DefaultLine");
-}
-
-/*
-    This was thrown together quickly and contains a lot of duplicate code.
-    A generic createMaterial method should handle the low-level details
-    used here.
- */
-MaterialInstancePtr 
-RasterizerGL::_acquireDefaultSurfaceMaterial (void)
-{
-    static MaterialInstancePtr spDefault;
-    if (!spDefault)
-    {
-        MaterialTypePtr spMatType = _acquireMaterialType("DefaultPointMaterial", [this]() -> MaterialType* {
-            auto prog = _createProgramVGF("media2/shaders/glsl/materials/solid_texture2.vert", "", "media2/shaders/glsl/materials/solid_texture2.frag");
-            return new MaterialType(prog);
-        });
-        lxvar params;
-        params["unifTexture0"] = "@sourceFBO";
-        spDefault = spMatType->createInstance(params);
-        spDefault->mBlend = false;
-        spDefault->mZTest = false;
-    }
-    return spDefault;
 }
 
 GeometryPtr 
@@ -558,7 +546,7 @@ RasterizerGL::_acquireFullScreenQuad (int width, int height)
 MaterialPtr 
 RasterizerGL::createMaterial (std::string fragShader)
 {
-    GLuint prog = _createProgramVGF2(
+    GLuint prog = _createProgramVGF(
         lx0::string_from_file("media2/shaders/glsl/vertex/basic_01.vert"),
         lx0::string_from_file("media2/shaders/glsl/geometry/basic_01.geom"),
         lx0::string_from_file(fragShader)
@@ -571,7 +559,7 @@ RasterizerGL::createMaterial (std::string fragShader)
 MaterialPtr 
 RasterizerGL::createMaterial (std::string name, std::string fragmentSource, lx0::lxvar parameters)
 {
-    GLuint prog = _createProgramVGF2(
+    GLuint prog = _createProgramVGF(
         lx0::string_from_file("media2/shaders/glsl/vertex/basic_01.vert"),
         lx0::string_from_file("media2/shaders/glsl/geometry/basic_01.geom"),
         fragmentSource
@@ -588,7 +576,7 @@ RasterizerGL::createMaterial (std::string name, std::string fragmentSource, lx0:
 MaterialInstancePtr 
 RasterizerGL::createMaterialInstance (std::string name, std::string fragmentSource, lx0::lxvar parameters)
 {
-    GLuint prog = _createProgramVGF2(
+    GLuint prog = _createProgramVGF(
         lx0::string_from_file("media2/shaders/glsl/vertex/basic_01.vert"),
         lx0::string_from_file("media2/shaders/glsl/geometry/basic_01.geom"),
         fragmentSource
@@ -616,7 +604,7 @@ MaterialInstancePtr
 RasterizerGL::createVertexColorMaterial (void)
 {
     MaterialTypePtr spMatType = _acquireMaterialType("VertexColor", [this]() -> MaterialType* {
-        GLuint prog = _createProgramVGF2(
+        GLuint prog = _createProgramVGF(
             lx0::string_from_file("media2/shaders/glsl/vertex/basic_01.vert"),
             lx0::string_from_file("media2/shaders/glsl/geometry/basic_01.geom"),
             lx0::string_from_file("media2/shaders/glsl/fragment/vertexColor.frag")
@@ -632,7 +620,7 @@ MaterialInstancePtr
 RasterizerGL::createPhongMaterial (const glgeom::material_phong_f& mat)
 {
     MaterialTypePtr spMatType = _acquireMaterialType("VertexColor", [this]() -> MaterialType* {
-        GLuint prog = _createProgramVGF2(
+        GLuint prog = _createProgramVGF(
             lx0::string_from_file("media2/shaders/glsl/vertex/basic_01.vert"),
             lx0::string_from_file("media2/shaders/glsl/geometry/basic_01.geom"),
             lx0::string_from_file("media2/shaders/glsl/fragment/phong2.frag")
@@ -648,17 +636,7 @@ RasterizerGL::createPhongMaterial (const glgeom::material_phong_f& mat)
 }
 
 GLuint      
-RasterizerGL::_createProgramVGF (std::string vertShaderFile, std::string geomShaderFile, std::string fragShaderFile)
-{
-    std::string vertShaderSource = vertShaderFile.empty() ? "" : lx0::string_from_file( vertShaderFile );
-    std::string geomShaderSource = geomShaderFile.empty() ? "" : lx0::string_from_file( geomShaderFile );
-    std::string fragShaderSource = fragShaderFile.empty() ? "" : lx0::string_from_file( fragShaderFile );
-
-    return _createProgramVGF2(vertShaderSource, geomShaderSource, fragShaderSource);
-}
-
-GLuint      
-RasterizerGL::_createProgramVGF2 (std::string vertShaderSource, std::string geomShaderSource, std::string fragShaderSource)
+RasterizerGL::_createProgramVGF (std::string vertShaderSource, std::string geomShaderSource, std::string fragShaderSource)
 {
     //
     // An empty shader is definitely not valid.  A problem has occurred upstream in the code.
@@ -668,9 +646,9 @@ RasterizerGL::_createProgramVGF2 (std::string vertShaderSource, std::string geom
 
     // Create the shader program
     //
-    GLuint vs = vertShaderSource.empty() ? 0 : _createShader2(vertShaderSource, GL_VERTEX_SHADER);
-    GLuint gs = geomShaderSource.empty() ? 0 : _createShader2(geomShaderSource, GL_GEOMETRY_SHADER);
-    GLuint fs = fragShaderSource.empty() ? 0 : _createShader2(fragShaderSource, GL_FRAGMENT_SHADER);
+    GLuint vs = vertShaderSource.empty() ? 0 : _createShader(vertShaderSource, GL_VERTEX_SHADER);
+    GLuint gs = geomShaderSource.empty() ? 0 : _createShader(geomShaderSource, GL_GEOMETRY_SHADER);
+    GLuint fs = fragShaderSource.empty() ? 0 : _createShader(fragShaderSource, GL_FRAGMENT_SHADER);
 
     GLuint prog = gl->createProgram();
     {
@@ -753,7 +731,7 @@ RasterizerGL::_linkProgram (GLuint prog, const char* pszSource)
 }
 
 GLuint 
-RasterizerGL::_createShader2 (std::string& shaderText, GLuint type)
+RasterizerGL::_createShader (std::string& shaderText, GLuint type)
 {
     GLuint shaderHandle = 0; 
     if (!shaderText.empty())
@@ -1504,16 +1482,16 @@ RasterizerGL::rasterizeItem (GlobalPass& pass, std::shared_ptr<Instance> spInsta
         case GL_TRIANGLES:
             if (!mContext.spMaterial2)
             {
-                mContext.spMaterial2 = _acquireDefaultSurfaceMaterial();
+                mContext.spMaterial2 = _acquireDefaultMaterial("DefaultSurface");
                 mContext.spMaterial.reset();
             }
             break;
         case GL_LINES:
-            mContext.spMaterial2 = _acquireDefaultLineMaterial();
+            mContext.spMaterial2 = _acquireDefaultMaterial("DefaultLine");
             mContext.spMaterial.reset();
             break;
         case GL_POINTS:
-            mContext.spMaterial2 = _acquireDefaultPointMaterial();
+            mContext.spMaterial2 = _acquireDefaultMaterial("DefaultPoint");
             mContext.spMaterial.reset();
             break;
         default:

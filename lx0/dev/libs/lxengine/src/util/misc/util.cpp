@@ -107,23 +107,27 @@ namespace lx0 { namespace util { namespace misc {
     }
 
     /*!
-        Inefficient, but simple and convenient.
+        Simple and convenient.
      */
     std::string 
     string_from_file (std::string filename)
     {
-        std::string s;
         FILE* fp;
         fopen_s(&fp, filename.c_str(), "r");
-
         lx_check_error(fp != nullptr, "string_from_file: file '%s' not found!", filename.c_str());
 
-        char szString[4096];
-        while (fgets(szString, 4096, fp) != NULL) {
-            s += std::string(szString);
-        }
-        fclose(fp);
+        fseek(fp, 0L, SEEK_END);        
+        unsigned int fileSize = ftell(fp);
+        
+        std::string s(fileSize, 0);        
+        rewind(fp);      
 
+        // File size does NOT necessarily equal readCount since we open in text
+        // rather than binary mode.
+        unsigned int readCount = fread(&s[0], 1, fileSize, fp);
+        s.resize(readCount);
+
+        fclose(fp);
         return s;
     }
 

@@ -171,7 +171,7 @@ IF NOT EXIST 7za.exe (
 call:auto_extract_source boost_1_46_1 boost_1_46_1.7z
 call:auto_extract_source glm-0.9.2.3  glm-0.9.2.3.zip
 call:auto_extract_source bullet-2.78 bullet-2.78.zip
-call:auto_extract_source niflib niflib-6cbe9f4d0141b75c951cd05dcbfb3e230d70ea2b.7z
+call:auto_extract_source niflib niflib-6cce687f3aebfdc292e812c7dbbfa98d4bffb25b.7z
 call:auto_extract_source zlib-1.2.5 zlib-1.2.5.7z
 call:auto_extract_source lpng154 lpng154.7z
 

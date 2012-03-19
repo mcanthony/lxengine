@@ -555,6 +555,19 @@ MaterialInstance::_generateInstruction (RasterizerGL* pRasterizer, const Uniform
     return std::function<void()>();
 }
 
+
+void        
+MaterialInstance::trimParameterTypes  (void)
+{
+    if (mParameters.is_defined())
+    {
+        for (auto it = mParameters.begin(); it != mParameters.end(); ++it)
+        {
+            mParameters[it.key()] = (*it)[1];
+        }
+    }
+}
+
 //===========================================================================//
 //   M A T E R I A L 
 //===========================================================================//

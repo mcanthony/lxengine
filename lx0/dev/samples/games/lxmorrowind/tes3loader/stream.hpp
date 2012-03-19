@@ -58,6 +58,7 @@ public:
     void open (const std::string& filename)
     {
         mFin.open(filename, std::ios::binary | std::ios::in);
+        lx_check_error(mFin.is_open());
     }
 
     std::ifstream&  stream  (void)              { return mFin; }
