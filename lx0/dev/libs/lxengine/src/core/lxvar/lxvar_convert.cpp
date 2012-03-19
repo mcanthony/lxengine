@@ -40,6 +40,15 @@ namespace lx0 { namespace core { namespace lxvar_ns {
     namespace detail
     {
         template <typename T>
+        void _convert_any2f (lxvar& v, T& u)
+        {
+            lx_check_error(v.is_array());
+            lx_check_error(v.size() == 2, "Cannot convert lxvar: array size is not 2 (%s:%d).", __FILE__, __LINE__);
+            u[0] = v.at(0).as<float>();
+            u[1] = v.at(1).as<float>();
+        }
+
+        template <typename T>
         void _convert_any3f (lxvar& v, T& u)
         {
             lx_check_error(v.is_array());
@@ -56,6 +65,8 @@ namespace lx0 { namespace core { namespace lxvar_ns {
         void _convert (lxvar& v,    glgeom::vector3d& u)    { _convert_any3f(v, u); }
         void _convert (lxvar& v,    glgeom::color3f& u)     { _convert_any3f(v, u); }
         void _convert (lxvar& v,    glgeom::color3d& u)     { _convert_any3f(v, u); }
+
+        void _convert (lxvar& v,    glgeom::point2f& u)     { _convert_any2f(v, u); }
 
     }
 }}

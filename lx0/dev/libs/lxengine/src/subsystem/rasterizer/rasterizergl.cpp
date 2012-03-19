@@ -38,6 +38,7 @@
 #include <lx0/prototype/misc.hpp>
 #include <lx0/util/misc/util.hpp>
 #include <lx0/subsystem/rasterizer.hpp>
+#include <lx0/util/misc/lxvar_convert.hpp>
 
 #include <glm/gtc/matrix_inverse.hpp>
 
@@ -517,32 +518,53 @@ RasterizerGL::_acquireDefaultMaterial (std::string name)
     return spMaterial;
 }
 
-GeometryPtr 
-RasterizerGL::_acquireFullScreenQuad (int width, int height)
+GeometryPtr
+RasterizerGL::_acquireGeometry (std::string name)
 {
-    // Changing this from 1.0 can be helpful for debugging (i.e. blit to 80% of the screen, set to .8)
-    const float fExtent = 1.0f;
+    GeometryPtr& spGeometry = mGeometryCache[name];
+    if (!spGeometry)
+    {
+        std::string filename = "media2/geometry/" + name + ".json";
+        lx0::lxvar json = lx0::lxvar::parse( lx0::string_from_file(filename).c_str() );
 
-    primitive_buffer prim;
-    prim.type = "quadlist";
-    prim.vertex.positions.reserve(4);
-    prim.vertex.positions.push_back( point3f(-fExtent, -fExtent, 0) );
-    prim.vertex.positions.push_back( point3f( fExtent, -fExtent, 0) );
-    prim.vertex.positions.push_back( point3f( fExtent,  fExtent, 0) );
-    prim.vertex.positions.push_back( point3f(-fExtent,  fExtent, 0) );    
+        //
+        // WIP code - partial JSON -> primitive_buffer conversion
+        //
+        
+        primitive_buffer prim;
+        prim.type = json["type"].as<std::string>();
+        
+        prim.vertex.positions.resize( json["vertex"]["positions"].size() );
+        for (auto i = 0; i < prim.vertex.positions.size(); ++i)
+            prim.vertex.positions[i] = json["vertex"]["positions"][i];
+        
+        std::vector<point2f> channel0;
+        channel0.resize( json["vertex"]["uv"][0].size() );
+        for (auto i = 0; i < prim.vertex.positions.size(); ++i)
+            channel0[i] = json["vertex"]["uv"][0][i];
+        prim.vertex.uv.push_back(channel0);
+        
+        //
+        //
+        //
     
-    std::vector<point2f> channel0;
-    channel0.reserve(4);
-    channel0.push_back( point2f( 0, 0) );
-    channel0.push_back( point2f( 1, 0) );
-    channel0.push_back( point2f( 1, 1) );
-    channel0.push_back( point2f( 0, 1) );
-    prim.vertex.uv.push_back(channel0);
-
-    auto spGeometry = this->createGeometry(prim);
+        spGeometry = createGeometry(prim);
+    }
     return spGeometry;
 }
 
+/*
+    This is somewhat of a reminant of old code that doesn't quite fit, but hasn't
+    outlived its usefulness.
+
+    The idea is that many fragment shaders can share the same standard vertex/geometry
+    shaders, so it should be possible to create a material from the fragment shader 
+    only.  This also hides the notion of a MaterialClass versus a Material from the
+    caller - which is useful too in many cases (i.e. the common 1:1 class <-> instance 
+    case).
+
+    It might be better if this eventually takes an lxvar descriptor.
+ */
 MaterialPtr 
 RasterizerGL::createMaterial (std::string name, std::string fragmentSource, lx0::lxvar parameters)
 {
@@ -552,57 +574,47 @@ RasterizerGL::createMaterial (std::string name, std::string fragmentSource, lx0:
         fragmentSource
     );
     
-    MaterialClassPtr spMatType(new MaterialClass(prog));
-    return spMatType->createInstance(parameters);
-}
-
-MaterialClassPtr        
-RasterizerGL::_acquireMaterialClass (const char* name, std::function<MaterialClass*()> ctor)
-{
-    auto it = mMaterialClasses.find(name);
-    if (it == mMaterialClasses.end())
-    {
-        MaterialClassPtr spMatType( ctor() );
-        mMaterialClasses.insert(std::make_pair(name, spMatType));
-        return spMatType;
-    }
-    else
-        return it->second;
+    MaterialClassPtr spMatClass(new MaterialClass(prog));
+    return spMatClass->createInstance(parameters);
 }
 
 MaterialPtr
 RasterizerGL::createVertexColorMaterial (void)
 {
-    MaterialClassPtr spMatType = _acquireMaterialClass("VertexColor", [this]() -> MaterialClass* {
+    MaterialClassPtr& spMatClass = mMaterialClasses["VertexColor"];
+    if (!spMatClass)
+    {
         GLuint prog = _createProgramVGF(
             lx0::string_from_file("media2/shaders/glsl/vertex/basic_01.vert"),
             lx0::string_from_file("media2/shaders/glsl/geometry/basic_01.geom"),
             lx0::string_from_file("media2/shaders/glsl/fragment/vertexColor.frag")
         );
-        return new MaterialClass(prog);
-    });
+        spMatClass.reset(new MaterialClass(prog));
+    }
 
     lxvar params = lxvar::map();
-    return spMatType->createInstance(params);
+    return spMatClass->createInstance(params);
 }
 
 MaterialPtr 
 RasterizerGL::createPhongMaterial (const glgeom::material_phong_f& mat)
 {
-    MaterialClassPtr spMatType = _acquireMaterialClass("VertexColor", [this]() -> MaterialClass* {
+    MaterialClassPtr& spMatClass = mMaterialClasses["Phong"];
+    if (!spMatClass)
+    {
         GLuint prog = _createProgramVGF(
             lx0::string_from_file("media2/shaders/glsl/vertex/basic_01.vert"),
             lx0::string_from_file("media2/shaders/glsl/geometry/basic_01.geom"),
             lx0::string_from_file("media2/shaders/glsl/fragment/phong2.frag")
         );
-        return new MaterialClass(prog);
-    });
-
+        spMatClass.reset(new MaterialClass(prog));
+    }
+    
     lxvar params = lxvar::map();
     params["unifMaterialDiffuse"] = lxvar(mat.diffuse.r, mat.diffuse.g, mat.diffuse.b);
     params["unifMaterialSpecular"] = lxvar(mat.specular.r, mat.specular.g, mat.specular.b);
     params["unifMaterialSpecularEx"] = mat.specular_n;
-    return spMatType->createInstance(params);
+    return spMatClass->createInstance(params);
 }
 
 GLuint      
@@ -1355,7 +1367,7 @@ RasterizerGL::rasterizeList (RenderAlgorithm& algorithm, std::vector<std::shared
                 // Render a full screen quad textured with the given FBO
                 //
                 InstancePtr spInstance(new Instance);
-                spInstance->spGeometry = _acquireFullScreenQuad(mspFBOScreen->width(), mspFBOScreen->height());;
+                spInstance->spGeometry = _acquireGeometry("basic2d/FullScreenQuad");
                 spInstance->spTransform = createTransform(glm::mat4(), glm::mat4(), glm::mat4());
 
                 rasterizeItem(*pass, spInstance);

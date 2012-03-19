@@ -39,6 +39,8 @@ namespace lx0 { namespace core { namespace lxvar_ns {
         class lxvar;
 
         void _convert(lxvar& v, glm::vec3& u);
+
+        void _convert(lxvar& v, glgeom::point2f& p);
         void _convert(lxvar& v, glgeom::point3f& p);
         void _convert(lxvar& v, glgeom::point3d& p);
         void _convert(lxvar& v, glgeom::vector3f& u);

@@ -341,17 +341,16 @@ namespace lx0
                 void                _linkProgram            (GLuint prog, const char* pszSource = nullptr);
                 void                _readBuffer             (GLenum buffer, glgeom::image3f& img);
                 
-                MaterialClassPtr     _acquireMaterialClass    (const char* name, std::function<MaterialClass*()> ctor);
-                MaterialPtr _acquireDefaultMaterial (std::string name);
-                GeometryPtr         _acquireFullScreenQuad  (int width, int height);
-
-                
+                MaterialPtr         _acquireDefaultMaterial (std::string name);
+                GeometryPtr         _acquireGeometry        (std::string name);
 
                 std::unique_ptr<lx0::OpenGlApi3_2>  gl3_2;
 
                 std::map<std::string, MaterialClassPtr> mMaterialClasses;
-                std::map<std::string, MaterialPtr> mMaterials;
-                std::list<ResourcePtr>              mResources;
+                std::map<std::string, MaterialPtr>      mMaterials;
+                std::map<std::string, GeometryPtr>      mGeometryCache;
+                
+                    std::list<ResourcePtr>              mResources;
                 std::vector<TexturePtr>             mTextures;
             public:
                 std::map<std::string,TexturePtr>    mTextureCache;      //!< @todo Replace with a more sophisicated, formal cache
