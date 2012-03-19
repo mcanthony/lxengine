@@ -950,11 +950,24 @@ RasterizerGL::createGeometry (glgeom::primitive_buffer& primitive)
     {
         pGeom->mType          = GL_TRIANGLES;
         pGeom->mVao           = vao;
-        pGeom->mVboPosition   = _genArrayBuffer(GL_ARRAY_BUFFER, _expandQuadsToTris(primitive.vertex.positions));
-        pGeom->mCount         = primitive.vertex.positions.size() * 3 / 2;
+        
+        if (primitive.indices.empty())
+        {
+            pGeom->mVboPosition   = _genArrayBuffer(GL_ARRAY_BUFFER, _expandQuadsToTris(primitive.vertex.positions));
+            pGeom->mCount         = primitive.vertex.positions.size() * 3 / 2;
 
-        for (int i = 0; i < 8 && i < (int)primitive.vertex.uv.size(); ++i)
-            pGeom->mVboUVs[i] = _genArrayBuffer(GL_ARRAY_BUFFER, _expandQuadsToTris(primitive.vertex.uv[i]));
+            for (int i = 0; i < 8 && i < (int)primitive.vertex.uv.size(); ++i)
+                pGeom->mVboUVs[i] = _genArrayBuffer(GL_ARRAY_BUFFER, _expandQuadsToTris(primitive.vertex.uv[i]));
+        }
+        else
+        {
+            pGeom->mVboIndices    = _genArrayBuffer(GL_ELEMENT_ARRAY_BUFFER, _expandQuadsToTris(primitive.indices));
+            pGeom->mCount         = primitive.indices.size() * 3 / 2;
+
+            pGeom->mVboPosition   = _genArrayBuffer(GL_ARRAY_BUFFER, primitive.vertex.positions);
+            for (int i = 0; i < 8 && i < (int)primitive.vertex.uv.size(); ++i)
+                pGeom->mVboUVs[i] = _genArrayBuffer(GL_ARRAY_BUFFER, primitive.vertex.uv[i]);
+        }
     }
     else
         throw lx_error_exception("Unknown primitive type '%s'", primitive.type);
@@ -962,6 +975,8 @@ RasterizerGL::createGeometry (glgeom::primitive_buffer& primitive)
     check_glerror();
 
     lx_check_error(pGeom->mType != GL_INVALID_ENUM);
+    lx_check_error(pGeom->mCount > 0);
+
     return GeometryPtr(pGeom);
 }
 

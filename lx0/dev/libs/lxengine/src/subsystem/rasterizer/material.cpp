@@ -417,6 +417,20 @@ Material::_generateInstruction (RasterizerGL* pRasterizer, const Uniform& unifor
                 };
             }
         }
+        else if (uniform.type == GL_INT)
+        {
+            switch (uniform.size)
+            {
+            case 1:
+                {
+                    int v0 = value.as<int>();
+                    return [=]() { 
+                        gl->uniform1i(loc, v0); 
+                        check_glerror();
+                    };
+                }
+            }
+        }
         else if (uniform.type == GL_SAMPLER_2D)
         {
             GLuint textureId = GL_NONE;

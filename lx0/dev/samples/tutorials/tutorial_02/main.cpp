@@ -74,23 +74,26 @@ public:
         //
         // Build the cube geometry
         //
-        std::vector<glgeom::point3f> positions(8);
-        positions[0] = glgeom::point3f(-.5f,-.5f,-.5f);
-        positions[1] = glgeom::point3f( .5f,-.5f,-.5f);
-        positions[2] = glgeom::point3f(-.5f, .5f,-.5f);
-        positions[3] = glgeom::point3f( .5f, .5f,-.5f);
-        positions[4] = glgeom::point3f(-.5f,-.5f, .5f);
-        positions[5] = glgeom::point3f( .5f,-.5f, .5f);
-        positions[6] = glgeom::point3f(-.5f, .5f, .5f);
-        positions[7] = glgeom::point3f( .5f, .5f, .5f);
+        glgeom::primitive_buffer primitive;
+        primitive.type = "quadlist";
+
+        primitive.vertex.positions.resize(8);
+        primitive.vertex.positions[0] = glgeom::point3f(-.5f,-.5f,-.5f);
+        primitive.vertex.positions[1] = glgeom::point3f( .5f,-.5f,-.5f);
+        primitive.vertex.positions[2] = glgeom::point3f(-.5f, .5f,-.5f);
+        primitive.vertex.positions[3] = glgeom::point3f( .5f, .5f,-.5f);
+        primitive.vertex.positions[4] = glgeom::point3f(-.5f,-.5f, .5f);
+        primitive.vertex.positions[5] = glgeom::point3f( .5f,-.5f, .5f);
+        primitive.vertex.positions[6] = glgeom::point3f(-.5f, .5f, .5f);
+        primitive.vertex.positions[7] = glgeom::point3f( .5f, .5f, .5f);
         
         std::vector<lx0::uint16> indices;
-        indices.reserve(4 * 6);
-        auto push_face = [&indices](lx0::uint8 i0, lx0::uint8 i1, lx0::uint8 i2, lx0::uint8 i3) {
-            indices.push_back(i0);
-            indices.push_back(i1);
-            indices.push_back(i2);
-            indices.push_back(i3);
+        primitive.indices.reserve(4 * 6);
+        auto push_face = [&primitive](lx0::uint8 i0, lx0::uint8 i1, lx0::uint8 i2, lx0::uint8 i3) {
+            primitive.indices.push_back(i0);
+            primitive.indices.push_back(i1);
+            primitive.indices.push_back(i2);
+            primitive.indices.push_back(i3);
         };
         push_face(0, 2, 3, 1);      // -Z face
         push_face(4, 5, 7, 6);      // +Z face
@@ -103,14 +106,16 @@ public:
         // Create indexed geometry
         // Channels such as normals, per-vertex color, uv coordinates, etc. are optional
         //
-        lx0::GeometryPtr spCube = mspRasterizer->createQuadList(indices, positions);
+        lx0::GeometryPtr spCube = mspRasterizer->createGeometry(primitive);
 
         //
         // Build the cube renderable
         //
         mspInstance.reset(new lx0::Instance);
         mspInstance->spTransform = mspRasterizer->createTransform(mRotation);
-        mspInstance->spMaterial = mspRasterizer->createMaterial("Unnamed", lx0::string_from_file("media2/shaders/glsl/fragment/normal.frag"), lx0::lxvar::map());
+        lx0::lxvar params;
+        params["unifFlatNormals"] = 1;
+        mspInstance->spMaterial = mspRasterizer->createMaterial("Unnamed", lx0::string_from_file("media2/shaders/glsl/fragment/normal.frag"), params);        
         mspInstance->spGeometry = spCube;
     }
 
