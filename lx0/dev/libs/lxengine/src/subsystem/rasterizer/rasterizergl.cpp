@@ -445,14 +445,14 @@ RasterizerGL::cacheTexture (std::string name, TexturePtr spTexture)
     mTextureCache.insert( std::make_pair(name, spTexture) );
 }
 
-MaterialInstancePtr 
+MaterialPtr 
 RasterizerGL::_acquireDefaultMaterial (std::string name)
 {
     //
     // Create a material instance using all the material class defaults
     //
-    MaterialInstancePtr& spMaterialInstance = mMaterialInstances[name];
-    if (!spMaterialInstance)
+    MaterialPtr& spMaterial = mMaterials[name];
+    if (!spMaterial)
     {
         //
         // Add some local helpers
@@ -471,8 +471,8 @@ RasterizerGL::_acquireDefaultMaterial (std::string name)
         // Create a material class from a set of shaders and default parameters to the
         // uniforms.
         //
-        MaterialTypePtr& spMaterialType = mMaterialTypes[name];
-        if (!spMaterialType)
+        MaterialClassPtr& spMaterialClass = mMaterialClasses[name];
+        if (!spMaterialClass)
         {
 
             std::string vertSource = conditionalLoad(base, name, "shader.vert");
@@ -480,8 +480,8 @@ RasterizerGL::_acquireDefaultMaterial (std::string name)
             std::string fragSource = conditionalLoad(base, name, "shader.frag");
             
             auto prog = _createProgramVGF(vertSource, geomSource, fragSource);
-            spMaterialType.reset( new MaterialType(prog) );
-            spMaterialType->mName = name;
+            spMaterialClass.reset( new MaterialClass(prog) );
+            spMaterialClass->mName = name;
         }
 
         //
@@ -499,22 +499,22 @@ RasterizerGL::_acquireDefaultMaterial (std::string name)
             state = material["state"];            
         }
         
-        spMaterialInstance = spMaterialType->createInstance(params);
-        spMaterialInstance->mName = name;
+        spMaterial = spMaterialClass->createInstance(params);
+        spMaterial->mName = name;
 
         if (state.is_defined())
         {
             for (auto it = state.begin(); it != state.end(); ++it)
             {
                 if (it.key() == "blend")
-                    spMaterialInstance->mBlend = (*it).as<bool>();
+                    spMaterial->mBlend = (*it).as<bool>();
                 else if (it.key() == "ztest")
-                    spMaterialInstance->mZTest = (*it).as<bool>();
+                    spMaterial->mZTest = (*it).as<bool>();
             }
         }
     }
 
-    return spMaterialInstance;
+    return spMaterial;
 }
 
 GeometryPtr 
@@ -543,8 +543,8 @@ RasterizerGL::_acquireFullScreenQuad (int width, int height)
     return spGeometry;
 }
 
-MaterialInstancePtr 
-RasterizerGL::createMaterialInstance (std::string name, std::string fragmentSource, lx0::lxvar parameters)
+MaterialPtr 
+RasterizerGL::createMaterial (std::string name, std::string fragmentSource, lx0::lxvar parameters)
 {
     GLuint prog = _createProgramVGF(
         lx0::string_from_file("media2/shaders/glsl/vertex/basic_01.vert"),
@@ -552,50 +552,50 @@ RasterizerGL::createMaterialInstance (std::string name, std::string fragmentSour
         fragmentSource
     );
     
-    MaterialTypePtr spMatType(new MaterialType(prog));
+    MaterialClassPtr spMatType(new MaterialClass(prog));
     return spMatType->createInstance(parameters);
 }
 
-MaterialTypePtr        
-RasterizerGL::_acquireMaterialType (const char* name, std::function<MaterialType*()> ctor)
+MaterialClassPtr        
+RasterizerGL::_acquireMaterialClass (const char* name, std::function<MaterialClass*()> ctor)
 {
-    auto it = mMaterialTypes.find(name);
-    if (it == mMaterialTypes.end())
+    auto it = mMaterialClasses.find(name);
+    if (it == mMaterialClasses.end())
     {
-        MaterialTypePtr spMatType( ctor() );
-        mMaterialTypes.insert(std::make_pair(name, spMatType));
+        MaterialClassPtr spMatType( ctor() );
+        mMaterialClasses.insert(std::make_pair(name, spMatType));
         return spMatType;
     }
     else
         return it->second;
 }
 
-MaterialInstancePtr
+MaterialPtr
 RasterizerGL::createVertexColorMaterial (void)
 {
-    MaterialTypePtr spMatType = _acquireMaterialType("VertexColor", [this]() -> MaterialType* {
+    MaterialClassPtr spMatType = _acquireMaterialClass("VertexColor", [this]() -> MaterialClass* {
         GLuint prog = _createProgramVGF(
             lx0::string_from_file("media2/shaders/glsl/vertex/basic_01.vert"),
             lx0::string_from_file("media2/shaders/glsl/geometry/basic_01.geom"),
             lx0::string_from_file("media2/shaders/glsl/fragment/vertexColor.frag")
         );
-        return new MaterialType(prog);
+        return new MaterialClass(prog);
     });
 
     lxvar params = lxvar::map();
     return spMatType->createInstance(params);
 }
 
-MaterialInstancePtr 
+MaterialPtr 
 RasterizerGL::createPhongMaterial (const glgeom::material_phong_f& mat)
 {
-    MaterialTypePtr spMatType = _acquireMaterialType("VertexColor", [this]() -> MaterialType* {
+    MaterialClassPtr spMatType = _acquireMaterialClass("VertexColor", [this]() -> MaterialClass* {
         GLuint prog = _createProgramVGF(
             lx0::string_from_file("media2/shaders/glsl/vertex/basic_01.vert"),
             lx0::string_from_file("media2/shaders/glsl/geometry/basic_01.geom"),
             lx0::string_from_file("media2/shaders/glsl/fragment/phong2.frag")
         );
-        return new MaterialType(prog);
+        return new MaterialClass(prog);
     });
 
     lxvar params = lxvar::map();
@@ -1423,9 +1423,9 @@ RasterizerGL::rasterizeItem (GlobalPass& pass, std::shared_ptr<Instance> spInsta
     mContext.spLightSet = (spInstance->spLightSet)
         ? spInstance->spLightSet
         : pass.spLightSet;
-    mContext.spMaterial2 = (pass.spMaterial) 
+    mContext.spMaterial = (pass.spMaterial) 
         ? pass.spMaterial
-        : spInstance->spMaterial2;
+        : spInstance->spMaterial;
     mContext.spTransform = spInstance->spTransform;
 
     mContext.tbFlatShading = boost::indeterminate(spInstance->spGeometry->mtbFlatShading) 
@@ -1445,14 +1445,14 @@ RasterizerGL::rasterizeItem (GlobalPass& pass, std::shared_ptr<Instance> spInsta
     switch (spInstance->spGeometry->mType)
     {
     case GL_TRIANGLES:
-        if (!mContext.spMaterial2)
-            mContext.spMaterial2 = _acquireDefaultMaterial("DefaultSurface");
+        if (!mContext.spMaterial)
+            mContext.spMaterial = _acquireDefaultMaterial("DefaultSurface");
         break;
     case GL_LINES:
-        mContext.spMaterial2 = _acquireDefaultMaterial("DefaultLine");
+        mContext.spMaterial = _acquireDefaultMaterial("DefaultLine");
         break;
     case GL_POINTS:
-        mContext.spMaterial2 = _acquireDefaultMaterial("DefaultPoint");
+        mContext.spMaterial = _acquireDefaultMaterial("DefaultPoint");
         break;
     default:
         throw lx_error_exception("Incompatible material for geometry type.  Could not determine a alternate material to use.");
@@ -1472,7 +1472,7 @@ RasterizerGL::rasterizeItem (GlobalPass& pass, std::shared_ptr<Instance> spInsta
     {
         check_glerror();
         lx_check_error( mContext.spCamera );
-        lx_check_error( mContext.spMaterial2 );
+        lx_check_error( mContext.spMaterial );
 
         mContext.spCamera->activate(this);
         
@@ -1488,7 +1488,7 @@ RasterizerGL::rasterizeItem (GlobalPass& pass, std::shared_ptr<Instance> spInsta
         });
 
         _timeCall(mStats.tmMaterialActivate, [&]() {              
-            mContext.spMaterial2->activate(this, pass);
+            mContext.spMaterial->activate(this, pass);
         });
         _timeCall(mStats.tmGeometryActivate, [&]() { mContext.spGeometry->activate(this, pass); });
     
@@ -1497,7 +1497,7 @@ RasterizerGL::rasterizeItem (GlobalPass& pass, std::shared_ptr<Instance> spInsta
 
     mContext.spCamera.reset();
     mContext.spLightSet.reset();
-    mContext.spMaterial2.reset();
+    mContext.spMaterial.reset();
     mContext.spTransform.reset();
     mContext.spInstance.reset();
     mContext.spGeometry.reset();

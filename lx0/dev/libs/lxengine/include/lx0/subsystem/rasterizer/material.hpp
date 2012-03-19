@@ -35,7 +35,7 @@ namespace lx0
         namespace rasterizer_ns
         {
 
-            class MaterialType : public std::enable_shared_from_this<MaterialType>
+            class MaterialClass : public std::enable_shared_from_this<MaterialClass>
             {
             public:
                 struct _Parameter
@@ -48,12 +48,12 @@ namespace lx0
                 struct Uniform : public _Parameter { };
                 struct Attribute : public _Parameter { };
 
-                            MaterialType    (GLuint id);
-                            ~MaterialType   ();
+                            MaterialClass    (GLuint id);
+                            ~MaterialClass   ();
 
                 virtual void    activate    (RasterizerGL* pRasterizer, GlobalPass& pass);
 
-                MaterialInstancePtr createInstance (lx0::lxvar& parameters);
+                MaterialPtr createInstance (lx0::lxvar& parameters);
 
                 void        iterateUniforms     (std::function<void(const Uniform& uniform)> f); 
                 void        iterateAttributes   (std::function<void(const Attribute& attribute)> f); 
@@ -69,13 +69,13 @@ namespace lx0
                 lx0::lxvar  mDefaults;
             };
 
-            class MaterialInstance : public std::enable_shared_from_this<MaterialInstance>
+            class Material : public std::enable_shared_from_this<Material>
             {
             public:
-                typedef MaterialType::Attribute Attribute;
-                typedef MaterialType::Uniform   Uniform;
+                typedef MaterialClass::Attribute Attribute;
+                typedef MaterialClass::Uniform   Uniform;
 
-                                MaterialInstance    (MaterialTypePtr spMaterialType, lx0::lxvar& parameters);
+                                Material    (MaterialClassPtr spMaterialClass, lx0::lxvar& parameters);
 
                 virtual void    activate   (RasterizerGL* pRasterizer, GlobalPass& pass);
 
@@ -88,7 +88,7 @@ namespace lx0
                 std::function<void()>   _generateInstruction        (RasterizerGL*, const Uniform&, lx0::lxvar& value);
 
                 std::string                         mName;
-                MaterialTypePtr                     mspMaterialType;
+                MaterialClassPtr                     mspMaterialClass;
                 lx0::lxvar                          mParameters;
 
                 bool                                mBlend;

@@ -251,7 +251,7 @@ namespace Terrain
         return rasterizer.createQuadList(indices, positions, normals, colors);
     }
 
-    MaterialInstancePtr 
+    MaterialPtr 
     Render::_ensureMaterial (RasterizerGL& rasterizer)
     {
         if (mwpMaterial.expired())
@@ -259,7 +259,7 @@ namespace Terrain
             auto spTextureGrass = rasterizer.createTexture("media2/textures/seamless/grass/grass_yofrankie01/grass_0.png");
             auto spTextureDirt = rasterizer.createTexture("media2/textures/seamless/dirt/dirt000/dirt000.png");
 
-            auto spMat = rasterizer.createMaterialInstance("GrassMat", lx0::string_from_file("media2/shaders/glsl/fragment/checker_world_xy10.frag"), lxvar::map());
+            auto spMat = rasterizer.createMaterial("GrassMat", lx0::string_from_file("media2/shaders/glsl/fragment/checker_world_xy10.frag"), lxvar::map());
             spMat->mTextures[0] = spTextureGrass;
             spMat->mTextures[1] = spTextureDirt;
 
@@ -279,7 +279,7 @@ namespace Terrain
         auto pInstance = new Instance;
         pInstance->spCamera   = spCamera;
         pInstance->spLightSet = spLightSet;
-        pInstance->spMaterial2 = _ensureMaterial(rasterizer);
+        pInstance->spMaterial = _ensureMaterial(rasterizer);
         pInstance->spTransform = rasterizer.createTransform(regionX * 100.0f, regionY * 100.0f, 0.0f);
         pInstance->spGeometry = _buildTileGeom2(spElement, rasterizer, regionX, regionY);
         return InstancePtr(pInstance);

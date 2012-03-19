@@ -91,7 +91,7 @@ namespace lx0
                 //weak_ptr<Target> wpTarget;  - probably should be a member of the RenderList layer or RenderAlgorithm?
                 CameraPtr           spCamera;
                 TransformPtr        spTransform;
-                MaterialInstancePtr spMaterial2;
+                MaterialPtr spMaterial;
                 GeometryPtr         spGeometry;
                 LightSetPtr         spLightSet;
 

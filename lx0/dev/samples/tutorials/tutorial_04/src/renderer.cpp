@@ -155,7 +155,7 @@ _LX_FORWARD_DECL_PTRS(Renderable);
 struct MaterialData
 {
     lx0::lxvar          renderProperties;
-    lx0::MaterialInstancePtr spMaterial2;
+    lx0::MaterialPtr spMaterial;
 };
 
 //===========================================================================//
@@ -204,7 +204,7 @@ public:
         mspRenderable.reset(new Renderable);
         mspRenderable->mspInstance.reset(new lx0::Instance);
         mspRenderable->mspInstance->spTransform = mspRasterizer->createTransform(mRotation);
-        mspRenderable->mspInstance->spMaterial2 = mMaterials[mCurrentMaterial].spMaterial2;
+        mspRenderable->mspInstance->spMaterial = mMaterials[mCurrentMaterial].spMaterial;
         mspRenderable->mspInstance->spGeometry = mGeometry[mCurrentGeometry];
 
         //
@@ -291,7 +291,7 @@ public:
                 : (mCurrentMaterial + mMaterials.size() - 1);
             mCurrentMaterial %= mMaterials.size();
 
-            mspRenderable->mspInstance->spMaterial2 = mMaterials[mCurrentMaterial].spMaterial2;
+            mspRenderable->mspInstance->spMaterial = mMaterials[mCurrentMaterial].spMaterial;
         }
         else if (evt == "toggle_rotation")
         {
@@ -301,7 +301,7 @@ public:
         {
             // This should be handled as a global rendering algorithm override instead
             for (auto it = mMaterials.begin(); it != mMaterials.end(); ++it)
-                (*it).spMaterial2->mWireframe = !(*it).spMaterial2->mWireframe;
+                (*it).spMaterial->mWireframe = !(*it).spMaterial->mWireframe;
         }
         else if (evt == "cycle_renderalgorithm")
         {
@@ -421,7 +421,7 @@ protected:
 
         MaterialData data;
         data.renderProperties = render;
-        data.spMaterial2 = mspRasterizer->createMaterialInstance(uniqueName, source, params2);
+        data.spMaterial = mspRasterizer->createMaterial(uniqueName, source, params2);
 
         mMaterials.push_back(data);
     }

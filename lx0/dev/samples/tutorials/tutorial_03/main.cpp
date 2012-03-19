@@ -111,7 +111,7 @@ public:
         //
         mspInstance.reset(new lx0::Instance);
         mspInstance->spTransform = mspRasterizer->createTransform(mRotation);
-        mspInstance->spMaterial2 = mMaterials[mCurrentMaterial];
+        mspInstance->spMaterial = mMaterials[mCurrentMaterial];
         mspInstance->spGeometry = mGeometry[mCurrentGeometry];
 
         //
@@ -178,7 +178,7 @@ public:
                 : (mCurrentMaterial + mMaterials.size() - 1);
             mCurrentMaterial %= mMaterials.size();
 
-            mspInstance->spMaterial2 = mMaterials[mCurrentMaterial];
+            mspInstance->spMaterial = mMaterials[mCurrentMaterial];
         }
     }
 
@@ -283,7 +283,7 @@ protected:
 
     void _addMaterial (std::string uniqueName, std::string source, lx0::lxvar parameters)
     {
-        auto spMaterial = mspRasterizer->createMaterialInstance(uniqueName, source, parameters);
+        auto spMaterial = mspRasterizer->createMaterial(uniqueName, source, parameters);
         mMaterials.push_back(spMaterial);
     }
 
@@ -303,7 +303,7 @@ protected:
     glm::mat4                     mRotation;
 
     size_t                        mCurrentMaterial;
-    std::vector<lx0::MaterialInstancePtr> mMaterials;
+    std::vector<lx0::MaterialPtr> mMaterials;
 
     size_t                        mCurrentGeometry;
     std::vector<lx0::GeometryPtr> mGeometry;

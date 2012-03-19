@@ -38,7 +38,7 @@ extern OpenGlApi3_2* gl;
 //   M A T E R I A L T Y P E
 //===========================================================================//
 
-MaterialType::MaterialType (GLuint id)
+MaterialClass::MaterialClass (GLuint id)
     : mGeometryType (GL_TRIANGLES)
     , mProgram    (id)
     , mVertShader (0)
@@ -51,22 +51,22 @@ MaterialType::MaterialType (GLuint id)
 
 //---------------------------------------------------------------------------//
 
-MaterialType::~MaterialType()
+MaterialClass::~MaterialClass()
 {
 }
 
 //---------------------------------------------------------------------------//
 
-MaterialInstancePtr 
-MaterialType::createInstance (lx0::lxvar& parameters)
+MaterialPtr 
+MaterialClass::createInstance (lx0::lxvar& parameters)
 {
-    return MaterialInstancePtr( new MaterialInstance(shared_from_this(), parameters) );
+    return MaterialPtr( new Material(shared_from_this(), parameters) );
 }
 
 //---------------------------------------------------------------------------//
 
 void 
-MaterialType::iterateUniforms (std::function<void(const Uniform& uniform)> f)
+MaterialClass::iterateUniforms (std::function<void(const Uniform& uniform)> f)
 {
     int uniformCount;
     gl->getProgramiv(mProgram, GL_ACTIVE_UNIFORMS, &uniformCount); 
@@ -94,7 +94,7 @@ MaterialType::iterateUniforms (std::function<void(const Uniform& uniform)> f)
 //---------------------------------------------------------------------------//
 
 void 
-MaterialType::iterateAttributes (std::function<void(const Attribute& attribute)> f)
+MaterialClass::iterateAttributes (std::function<void(const Attribute& attribute)> f)
 {
     int attributeCount;
     gl->getProgramiv(mProgram, GL_ACTIVE_ATTRIBUTES, &attributeCount); 
@@ -122,7 +122,7 @@ MaterialType::iterateAttributes (std::function<void(const Attribute& attribute)>
 //---------------------------------------------------------------------------//
 
 void    
-MaterialType::activate (RasterizerGL* pRasterizer, GlobalPass& pass)
+MaterialClass::activate (RasterizerGL* pRasterizer, GlobalPass& pass)
 {
     pRasterizer->mFrameData.shaderProgramActivations++;
 
@@ -134,8 +134,8 @@ MaterialType::activate (RasterizerGL* pRasterizer, GlobalPass& pass)
 //   M A T E R I A L I N S T A N C E
 //===========================================================================//
 
-MaterialInstance::MaterialInstance (MaterialTypePtr spMaterialType, lx0::lxvar& parameters)
-    : mspMaterialType (spMaterialType)
+Material::Material (MaterialClassPtr spMaterialClass, lx0::lxvar& parameters)
+    : mspMaterialClass (spMaterialClass)
     , mParameters   (parameters.clone())
     , mBlend        (false)
     , mZTest        (true)
@@ -149,14 +149,14 @@ MaterialInstance::MaterialInstance (MaterialTypePtr spMaterialType, lx0::lxvar& 
 //---------------------------------------------------------------------------//
 
 void    
-MaterialInstance::activate (RasterizerGL* pRasterizer, GlobalPass& pass)
+Material::activate (RasterizerGL* pRasterizer, GlobalPass& pass)
 {
     check_glerror();
 
     if (mbDirty)
         _compile(pRasterizer);
 
-    mspMaterialType->activate(pRasterizer, pass);
+    mspMaterialClass->activate(pRasterizer, pass);
 
     int count = 0;
     for (auto it = mInstructions.begin(); it != mInstructions.end(); ++it)
@@ -176,7 +176,7 @@ MaterialInstance::activate (RasterizerGL* pRasterizer, GlobalPass& pass)
 //---------------------------------------------------------------------------//
 
 void    
-MaterialInstance::_compile (RasterizerGL* pRasterizer)
+Material::_compile (RasterizerGL* pRasterizer)
 {
     //
     // Clear any cached instructions
@@ -206,7 +206,7 @@ MaterialInstance::_compile (RasterizerGL* pRasterizer)
     // references to the current context, and other objects.
     //
     auto& parameters = mParameters;
-    auto& defaults = mspMaterialType->mDefaults;
+    auto& defaults = mspMaterialClass->mDefaults;
     auto& standards = pRasterizer->mStandardParameterValues;
 
     auto findSpecifiedValue = [&](const std::string& name) -> lx0::lxvar {
@@ -220,14 +220,14 @@ MaterialInstance::_compile (RasterizerGL* pRasterizer)
             return lx0::lxvar();
     };
 
-    mspMaterialType->iterateAttributes([&](const Attribute& attribute) {
+    mspMaterialClass->iterateAttributes([&](const Attribute& attribute) {
         lx0::lxvar specifiedValue = findSpecifiedValue(attribute.name);
         auto instr = _generateInstruction(pRasterizer, attribute, specifiedValue);
         if (instr)
             mInstructions.push_back(instr);
     });
 
-    mspMaterialType->iterateUniforms([&](const Uniform& uniform) {
+    mspMaterialClass->iterateUniforms([&](const Uniform& uniform) {
         lx0::lxvar specifiedValue = findSpecifiedValue(uniform.name);
         auto instr = _generateInstruction(pRasterizer, uniform, specifiedValue);
         if (instr)
@@ -244,7 +244,7 @@ MaterialInstance::_compile (RasterizerGL* pRasterizer)
     hide the fact that they result in GL calls rather than shader parameters.
  */
 std::function<void()>   
-MaterialInstance::_generateBaseInstruction (RasterizerGL* pRasterizer)
+Material::_generateBaseInstruction (RasterizerGL* pRasterizer)
 {
     return [this, pRasterizer]() {
 
@@ -294,7 +294,7 @@ MaterialInstance::_generateBaseInstruction (RasterizerGL* pRasterizer)
 //---------------------------------------------------------------------------//
 
 std::function<void()>   
-MaterialInstance::_generateInstruction(RasterizerGL* pRasterizer, const Attribute& attribute, lx0::lxvar& value)
+Material::_generateInstruction(RasterizerGL* pRasterizer, const Attribute& attribute, lx0::lxvar& value)
 {
     auto location = attribute.location;
 
@@ -370,7 +370,7 @@ MaterialInstance::_generateInstruction(RasterizerGL* pRasterizer, const Attribut
 //---------------------------------------------------------------------------//
 
 std::function<void()>   
-MaterialInstance::_generateInstruction (RasterizerGL* pRasterizer, const Uniform& uniform, lx0::lxvar& value)
+Material::_generateInstruction (RasterizerGL* pRasterizer, const Uniform& uniform, lx0::lxvar& value)
 {
     auto loc = uniform.location;
 
@@ -578,7 +578,7 @@ MaterialInstance::_generateInstruction (RasterizerGL* pRasterizer, const Uniform
 //---------------------------------------------------------------------------//
 
 void        
-MaterialInstance::trimParameterTypes  (void)
+Material::trimParameterTypes  (void)
 {
     if (mParameters.is_defined())
     {

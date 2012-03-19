@@ -217,7 +217,7 @@ protected:
         if (!position.empty())
         {
             InstancePtr spInstance(new Instance);
-            spInstance->spMaterial2 = pRasterizer->createVertexColorMaterial();
+            spInstance->spMaterial = pRasterizer->createVertexColorMaterial();
             spInstance->spTransform = pRasterizer->createTransform(glgeom::vector3f(1, 1, 1), offset + glgeom::point3f(.5f, .5f, .5f));
             spInstance->spGeometry = pRasterizer->createQuadList(position, colors);
             return spInstance;

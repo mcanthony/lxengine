@@ -91,7 +91,7 @@ namespace lx0
 
                 CameraPtr       spCamera;
                 LightSetPtr     spLightSet;
-                MaterialInstancePtr     spMaterial;
+                MaterialPtr     spMaterial;
 
                 boost::tribool                      tbWireframe;
                 boost::tribool                      tbFlatShading;
@@ -207,8 +207,8 @@ namespace lx0
             {
             public:
                 friend class Material;
-                friend class MaterialType;
-                friend class MaterialInstance;
+                friend class MaterialClass;
+                friend class Material;
 
                                 RasterizerGL    ();
                                 ~RasterizerGL   ();
@@ -224,9 +224,9 @@ namespace lx0
                 LightPtr        createLight                 (void);
                 LightPtr        createLight                 (const glgeom::point_light_f& light);
 
-                MaterialInstancePtr createMaterialInstance  (std::string name, std::string fragmentSource, lx0::lxvar parameters);
-                MaterialInstancePtr createVertexColorMaterial   (void);
-                MaterialInstancePtr createPhongMaterial         (const glgeom::material_phong_f& mat);                
+                MaterialPtr createMaterial  (std::string name, std::string fragmentSource, lx0::lxvar parameters);
+                MaterialPtr createVertexColorMaterial   (void);
+                MaterialPtr createPhongMaterial         (const glgeom::material_phong_f& mat);                
 
                 TexturePtr      createTexture               (const char* filename);
                 TexturePtr      createTextureCubeMap        (const char* xpos, const char* xneg, const char* ypos, const char* yneg, const char* zpos, const char* zneg); 
@@ -307,7 +307,7 @@ namespace lx0
                     unsigned int    itemId;
                     LightSetPtr     spLightSet;
                     CameraPtr       spCamera;
-                    MaterialInstancePtr spMaterial2;
+                    MaterialPtr spMaterial;
                     TransformPtr    spTransform;
                     GeometryPtr     spGeometry;
 
@@ -341,16 +341,16 @@ namespace lx0
                 void                _linkProgram            (GLuint prog, const char* pszSource = nullptr);
                 void                _readBuffer             (GLenum buffer, glgeom::image3f& img);
                 
-                MaterialTypePtr     _acquireMaterialType    (const char* name, std::function<MaterialType*()> ctor);
-                MaterialInstancePtr _acquireDefaultMaterial (std::string name);
+                MaterialClassPtr     _acquireMaterialClass    (const char* name, std::function<MaterialClass*()> ctor);
+                MaterialPtr _acquireDefaultMaterial (std::string name);
                 GeometryPtr         _acquireFullScreenQuad  (int width, int height);
 
                 
 
                 std::unique_ptr<lx0::OpenGlApi3_2>  gl3_2;
 
-                std::map<std::string, MaterialTypePtr> mMaterialTypes;
-                std::map<std::string, MaterialInstancePtr> mMaterialInstances;
+                std::map<std::string, MaterialClassPtr> mMaterialClasses;
+                std::map<std::string, MaterialPtr> mMaterials;
                 std::list<ResourcePtr>              mResources;
                 std::vector<TexturePtr>             mTextures;
             public:
