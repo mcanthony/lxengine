@@ -66,7 +66,7 @@ Geometry::activate(RasterizerGL* pRasterizer, GlobalPass& pass)
         break;
     }
 
-    gl->bindVertexArray(mVao);
+    
     check_glerror();
 
     //

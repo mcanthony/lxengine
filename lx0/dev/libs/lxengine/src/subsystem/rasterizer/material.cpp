@@ -253,6 +253,14 @@ Material::_generateBaseInstruction (RasterizerGL* pRasterizer)
         auto& pass = *pRasterizer->mContext.pGlobalPass;
 
         //
+        // Activate Vertex Array Object
+        //
+        // Some of the other instructions may activate array buffers of the
+        // VAO, so ensure the current geometry's VAO is active.
+        //
+        gl->bindVertexArray(pRasterizer->mContext.spGeometry->mVao);
+
+        //
         // Z Test/Write
         //
         if (mZTest)
@@ -358,8 +366,6 @@ Material::_generateInstruction(RasterizerGL* pRasterizer, const Attribute& attri
             }
             else
                 gl->disableVertexAttribArray(0);
-
-            check_glerror();
         };
     }
 
