@@ -248,7 +248,14 @@ namespace Terrain
             }
         }
 
-        return rasterizer.createQuadList(indices, positions, normals, colors);
+        glgeom::primitive_buffer primitive;
+        primitive.type = "quadlist";
+        primitive.vertex.positions.swap(positions);
+        primitive.vertex.normals.swap(normals);
+        primitive.vertex.colors.swap(colors);
+        primitive.indices.swap(indices);
+
+        return rasterizer.createGeometry(primitive);
     }
 
     MaterialPtr 

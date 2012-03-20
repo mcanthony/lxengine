@@ -451,8 +451,10 @@ protected:
             //
             auto loadGeometry = [this,filename,addGeometry]() {
 
+                lx0::Timer timer;
                 if (!lx0::Engine::acquire()->isShuttingDown())
                 {
+                    lx0::TimeSection section(timer);
                     lx_message("Loading Blender model '%1%'", filename);
                     glgeom::primitive_buffer* primitive = new glgeom::primitive_buffer;
                     glm::mat4 scaleMat = glm::scale(glm::mat4(), glm::vec3(1, 1, 1));
@@ -462,6 +464,7 @@ protected:
                     if (!lx0::Engine::acquire()->isShuttingDown())
                         lx0::Engine::acquire()->sendTask([primitive,f](){ f(primitive); });
                 }
+                lx_message("Model loaded in %2%ms", filename, timer.totalMs());
             };
 
             lx0::Engine::acquire()->sendWorkerTask(loadGeometry);

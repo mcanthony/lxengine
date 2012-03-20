@@ -447,7 +447,7 @@ RasterizerGL::cacheTexture (std::string name, TexturePtr spTexture)
 }
 
 MaterialPtr 
-RasterizerGL::_acquireDefaultMaterial (std::string name)
+RasterizerGL::acquireMaterial (std::string name)
 {
     //
     // Create a material instance using all the material class defaults
@@ -519,7 +519,7 @@ RasterizerGL::_acquireDefaultMaterial (std::string name)
 }
 
 GeometryPtr
-RasterizerGL::_acquireGeometry (std::string name)
+RasterizerGL::acquireGeometry (std::string name)
 {
     GeometryPtr& spGeometry = mGeometryCache[name];
     if (!spGeometry)
@@ -730,80 +730,6 @@ RasterizerGL::_createShader (std::string& shaderText, GLuint type)
     return shaderHandle;
 }
 
-GeometryPtr
-RasterizerGL::createQuadList (std::vector<glgeom::point3f>& quadPositions, 
-                              std::vector<glgeom::color3f>& quadColors)
-{
-    lx_check_error(!quadPositions.empty());
-    lx_check_error(quadPositions.size() == quadColors.size());
-
-    check_glerror();
-
-    // Convert the quads to triangles - OpenGL 3.2+ doesn't support quads natively
-    std::vector<glgeom::point3f> positions ((quadPositions.size() * 3) / 2);
-    std::vector<glgeom::color3f> colors ((quadColors.size() * 3) / 2);
-    {
-        const auto* pSrcP = &quadPositions[0];
-        const auto* pSrcC = &quadColors[0];
-        auto* pDstP = &positions[0];
-        auto* pDstC = &colors[0];
-
-        for (size_t i = 0; i < quadPositions.size(); i += 4)
-        {
-            pDstP[0] = pSrcP[0];
-            pDstP[1] = pSrcP[1];
-            pDstP[2] = pSrcP[2];
-            pDstP[3] = pSrcP[0];
-            pDstP[4] = pSrcP[2];
-            pDstP[5] = pSrcP[3];
-
-            pDstC[0] = pSrcC[0];
-            pDstC[1] = pSrcC[1];
-            pDstC[2] = pSrcC[2];
-            pDstC[3] = pSrcC[0];
-            pDstC[4] = pSrcC[2];
-            pDstC[5] = pSrcC[3];
-
-            pDstP += 6;
-            pDstC += 6;
-            pSrcP += 4;
-            pSrcC += 4;
-        }
-    }
-
-
-    // Create a vertex array to store the vertex data
-    //
-    GLuint vao;
-    gl->genVertexArrays(1, &vao);
-    gl->bindVertexArray(vao);
-
-    GLuint vboPositions;
-    gl->genBuffers(1, &vboPositions);
-    gl->bindBuffer(GL_ARRAY_BUFFER, vboPositions);
-    gl->bufferData(GL_ARRAY_BUFFER, positions.size() * sizeof(positions[0]), &positions[0], GL_STATIC_DRAW);
-    
-    GLuint vboColors;
-    gl->genBuffers(1, &vboColors);
-    gl->bindBuffer(GL_ARRAY_BUFFER, vboColors);
-    gl->bufferData(GL_ARRAY_BUFFER, colors.size() * sizeof(colors[0]), &colors[0], GL_STATIC_DRAW);
-
-    check_glerror();
-
-    // Create the cache to encapsulate the created OGL resources
-    //
-    auto pGeom = new Geometry;
-    pGeom->mtbFlatShading = true;
-    pGeom->mType        = GL_TRIANGLES;
-    pGeom->mVao         = vao;
-    pGeom->mCount       = positions.size();
-    pGeom->mVboPosition = vboPositions;
-    pGeom->mVboColors   = vboColors;
-
-    lx_check_error(pGeom->mType != GL_INVALID_ENUM);
-    return GeometryPtr(pGeom);
-}
-
 //
 // OpenGL 3.2 Core Profile does not support GL_QUADS, so convert the indices to a triangle list
 //
@@ -830,47 +756,6 @@ createTriangleIndices (const std::vector<lx0::uint16>& quadIndices,
         pDst += 6;
         pSrc  += 4;
     }
-}
-
-GeometryPtr
-RasterizerGL::createQuadList (std::vector<lx0::uint16>&     quadIndices,
-                              std::vector<glgeom::point3f>& positions)
-{
-    std::vector<lx0::uint16> triIndices;
-    createTriangleIndices(quadIndices, triIndices);
-
-    check_glerror();
-
-    // Create a vertex array to store the vertex data
-    //
-    GLuint vao;
-    gl->genVertexArrays(1, &vao);
-    gl->bindVertexArray(vao);
-
-    GLuint vio;
-    gl->genBuffers(1, &vio);
-    gl->bindBuffer(GL_ELEMENT_ARRAY_BUFFER, vio);
-    gl->bufferData(GL_ELEMENT_ARRAY_BUFFER, triIndices.size() * sizeof(triIndices[0]), &triIndices[0], GL_STATIC_DRAW);
-
-    GLuint vboPositions;
-    gl->genBuffers(1, &vboPositions);
-    gl->bindBuffer(GL_ARRAY_BUFFER, vboPositions);
-    gl->bufferData(GL_ARRAY_BUFFER, positions.size() * sizeof(positions[0]), &positions[0], GL_STATIC_DRAW);
-    
-    check_glerror();
-
-    // Create the cache to encapsulate the created OGL resources
-    //
-    auto pGeom = new Geometry;
-    pGeom->mtbFlatShading = true;
-    pGeom->mType          = GL_TRIANGLES;
-    pGeom->mVao           = vao;
-    pGeom->mVboIndices    = vio;
-    pGeom->mCount         = triIndices.size();
-    pGeom->mVboPosition   = vboPositions;
-
-    lx_check_error(pGeom->mType != GL_INVALID_ENUM);
-    return GeometryPtr(pGeom);
 }
 
 template <typename T>
@@ -950,6 +835,7 @@ RasterizerGL::createGeometry (glgeom::primitive_buffer& primitive)
         pGeom->mVao           = vao;
         pGeom->mVboPosition   = _genArrayBuffer(GL_ARRAY_BUFFER, primitive.vertex.positions);
         pGeom->mCount         = primitive.vertex.positions.size();
+        pGeom->mVboColors     = _genArrayBuffer(GL_ARRAY_BUFFER, primitive.vertex.colors);
     }
     else if (primitive.type == "linelist")
     {
@@ -957,6 +843,7 @@ RasterizerGL::createGeometry (glgeom::primitive_buffer& primitive)
         pGeom->mVao           = vao;
         pGeom->mVboPosition   = _genArrayBuffer(GL_ARRAY_BUFFER, primitive.vertex.positions);
         pGeom->mCount         = primitive.vertex.positions.size();
+        pGeom->mVboColors     = _genArrayBuffer(GL_ARRAY_BUFFER, primitive.vertex.colors);
     }
     else if (primitive.type == "quadlist")
     {
@@ -967,6 +854,7 @@ RasterizerGL::createGeometry (glgeom::primitive_buffer& primitive)
         {
             pGeom->mVboPosition   = _genArrayBuffer(GL_ARRAY_BUFFER, _expandQuadsToTris(primitive.vertex.positions));
             pGeom->mCount         = primitive.vertex.positions.size() * 3 / 2;
+            pGeom->mVboColors     = _genArrayBuffer(GL_ARRAY_BUFFER, _expandQuadsToTris(primitive.vertex.colors));
 
             for (int i = 0; i < 8 && i < (int)primitive.vertex.uv.size(); ++i)
                 pGeom->mVboUVs[i] = _genArrayBuffer(GL_ARRAY_BUFFER, _expandQuadsToTris(primitive.vertex.uv[i]));
@@ -977,6 +865,7 @@ RasterizerGL::createGeometry (glgeom::primitive_buffer& primitive)
             pGeom->mCount         = primitive.indices.size() * 3 / 2;
 
             pGeom->mVboPosition   = _genArrayBuffer(GL_ARRAY_BUFFER, primitive.vertex.positions);
+            pGeom->mVboColors     = _genArrayBuffer(GL_ARRAY_BUFFER, primitive.vertex.colors);
             for (int i = 0; i < 8 && i < (int)primitive.vertex.uv.size(); ++i)
                 pGeom->mVboUVs[i] = _genArrayBuffer(GL_ARRAY_BUFFER, primitive.vertex.uv[i]);
         }
@@ -990,18 +879,6 @@ RasterizerGL::createGeometry (glgeom::primitive_buffer& primitive)
     lx_check_error(pGeom->mCount > 0);
 
     return GeometryPtr(pGeom);
-}
-
-GeometryPtr
-RasterizerGL::createQuadList (std::vector<unsigned short>& indices, 
-                              std::vector<glgeom::point3f>& positions, 
-                              std::vector<glgeom::vector3f>& normals,
-                              std::vector<glgeom::color3f>& colors)
-{
-    std::vector<lx0::uint8> flags(indices.size() / 4);
-    std::fill(flags.begin(), flags.end(), 0);
-
-    return createQuadList(indices, flags, positions, normals, colors);
 }
 
 GeometryPtr
@@ -1367,7 +1244,8 @@ RasterizerGL::rasterizeList (RenderAlgorithm& algorithm, std::vector<std::shared
                 // Render a full screen quad textured with the given FBO
                 //
                 InstancePtr spInstance(new Instance);
-                spInstance->spGeometry = _acquireGeometry("basic2d/FullScreenQuad");
+                spInstance->spGeometry = acquireGeometry("basic2d/FullScreenQuad");
+                spInstance->spMaterial = acquireMaterial("BlitFBO");
                 spInstance->spTransform = createTransform(glm::mat4(), glm::mat4(), glm::mat4());
 
                 rasterizeItem(*pass, spInstance);
@@ -1473,13 +1351,13 @@ RasterizerGL::rasterizeItem (GlobalPass& pass, std::shared_ptr<Instance> spInsta
     {
     case GL_TRIANGLES:
         if (!mContext.spMaterial)
-            mContext.spMaterial = _acquireDefaultMaterial("DefaultSurface");
+            mContext.spMaterial = acquireMaterial("DefaultSurface");
         break;
     case GL_LINES:
-        mContext.spMaterial = _acquireDefaultMaterial("DefaultLine");
+        mContext.spMaterial = acquireMaterial("DefaultLine");
         break;
     case GL_POINTS:
-        mContext.spMaterial = _acquireDefaultMaterial("DefaultPoint");
+        mContext.spMaterial = acquireMaterial("DefaultPoint");
         break;
     default:
         throw lx_error_exception("Incompatible material for geometry type.  Could not determine a alternate material to use.");

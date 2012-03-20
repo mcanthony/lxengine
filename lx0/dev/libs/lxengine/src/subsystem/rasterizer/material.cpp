@@ -583,6 +583,31 @@ Material::_generateInstruction (RasterizerGL* pRasterizer, const Uniform& unifor
                 check_glerror();
             };
         }
+        else if (uniform.name == "unifFaceFlags")
+        {
+            return [=]() {
+                bool texture1dUsed = false;
+                auto texFlags = pRasterizer->mContext.spGeometry->mTexFlags;
+                if (texFlags)
+                {
+                    const auto unit = pRasterizer->mContext.textureUnit++;
+
+                    // Set the shader uniform to the *texture unit* containing the texture
+                    gl->uniform1i(loc, unit);
+
+                    // Activate the corresponding texture unit and set *that* to the GL id
+                    gl->activeTexture(GL_TEXTURE0 + unit);
+                    gl->bindTexture(GL_TEXTURE_1D, texFlags);
+
+                    texture1dUsed = true;
+                }
+
+                if (texture1dUsed)
+                    gl->enable(GL_TEXTURE_1D);
+                else
+                    gl->disable(GL_TEXTURE_1D);
+            };
+        }
     }
 
     lx_warn("No instruction generated for uniform '%1%'", uniform.name);

@@ -1,0 +1,9 @@
+{
+	state : {
+		blend : false,
+		ztest : false,
+	},
+	parameters: {
+		unifTexture0 : "@sourceFBO"
+	}
+}

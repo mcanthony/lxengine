@@ -67,51 +67,13 @@ Geometry::activate(RasterizerGL* pRasterizer, GlobalPass& pass)
     }
 
     gl->bindVertexArray(mVao);
-
-    // Bind the position data
-    gl->bindBuffer(GL_ARRAY_BUFFER, mVboPosition);
-    gl->vertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
-    gl->enableVertexAttribArray(0);
-            
-    // Set per-primitive flags
-    GLint shaderProgram;
-    gl->getIntegerv(GL_CURRENT_PROGRAM, &shaderProgram);
-    {
-        bool texture1dUsed = false;
-
-        GLint idx = gl->getUniformLocation(shaderProgram, "unifFaceFlags");
-        if (idx != -1)
-        {
-            if (mTexFlags)
-            {
-                const auto unit = pRasterizer->mContext.textureUnit++;
-
-                // Set the shader uniform to the *texture unit* containing the texture
-                gl->uniform1i(idx, unit);
-
-                // Activate the corresponding texture unit and set *that* to the GL id
-                gl->activeTexture(GL_TEXTURE0 + unit);
-                gl->bindTexture(GL_TEXTURE_1D, mTexFlags);
-
-                texture1dUsed = true;
-            }
-        }
-
-        if (texture1dUsed)
-            gl->enable(GL_TEXTURE_1D);
-        else
-            gl->disable(GL_TEXTURE_1D);
-    }
-
     check_glerror();
 
     //
     // Is this an indexed primitive or a list of vertices?
     //
     if (mCount < 1)
-    {
         throw lx_error_exception("Cannot render empty geometry set!");
-    }
 
     if (mVboIndices)
         gl->drawElements(mType, mCount, GL_UNSIGNED_SHORT, 0);

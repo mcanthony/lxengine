@@ -137,7 +137,14 @@ public:
             indicies.push_back(2);
             indicies.push_back(3);
 
-            mspGeom = rasterizer.createQuadList(indicies, positions, normals, colors);
+            glgeom::primitive_buffer primitive;
+            primitive.type = "quadlist";
+            primitive.vertex.positions.swap(positions);
+            primitive.vertex.normals.swap(normals);
+            primitive.vertex.colors.swap(colors);
+            primitive.indices.swap(indicies);
+
+            mspGeom = rasterizer.createGeometry(primitive);
         }
         return mspGeom;
     }

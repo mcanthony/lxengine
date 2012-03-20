@@ -79,11 +79,11 @@ namespace lx0
             class GlobalPass
             {
             public:
-                     GlobalPass()
-                         : tbWireframe          (boost::indeterminate)
-                         , tbFlatShading        (boost::indeterminate)
-                         , optClearColor        (false, glgeom::color4f(0, 0, 0, 1))
-                     { }
+                GlobalPass()
+                    : tbWireframe          (boost::indeterminate)
+                    , tbFlatShading        (boost::indeterminate)
+                    , optClearColor        (false, glgeom::color4f(0, 0, 0, 1))
+                { }
 
                 FrameBufferPtr  spFrameBuffer;          // optional: screen is the default
 
@@ -164,7 +164,6 @@ namespace lx0
                     void*       pSettings;
                     ItemList    list;
                 };
-
                 typedef std::map<int,Layer> LayerMap;
 
                 void                    push_back   (int layer, InstancePtr spInstance);
@@ -172,7 +171,7 @@ namespace lx0
                 LayerMap::iterator      begin       (void)      { return mLayers.begin(); }
                 LayerMap::iterator      end         (void)      { return mLayers.end(); }
 
-                InstancePtr                 getInstance     (unsigned int id);
+                InstancePtr             getInstance (unsigned int id);
 
             protected:
                 LayerMap    mLayers;
@@ -208,7 +207,6 @@ namespace lx0
             public:
                 friend class Material;
                 friend class MaterialClass;
-                friend class Material;
 
                                 RasterizerGL    ();
                                 ~RasterizerGL   ();
@@ -224,9 +222,10 @@ namespace lx0
                 LightPtr        createLight                 (void);
                 LightPtr        createLight                 (const glgeom::point_light_f& light);
 
-                MaterialPtr createMaterial  (std::string name, std::string fragmentSource, lx0::lxvar parameters);
-                MaterialPtr createVertexColorMaterial   (void);
-                MaterialPtr createPhongMaterial         (const glgeom::material_phong_f& mat);                
+                MaterialPtr     acquireMaterial             (std::string name);
+                MaterialPtr     createMaterial              (std::string name, std::string fragmentSource, lx0::lxvar parameters);
+                MaterialPtr     createVertexColorMaterial   (void);
+                MaterialPtr     createPhongMaterial         (const glgeom::material_phong_f& mat);                
 
                 TexturePtr      createTexture               (const char* filename);
                 TexturePtr      createTextureCubeMap        (const char* xpos, const char* xneg, const char* ypos, const char* yneg, const char* zpos, const char* zneg); 
@@ -243,20 +242,13 @@ namespace lx0
                 TransformPtr    createTransformBillboardXYS (float tx, float ty, float tz, float sx, float sy, float sz);
                 TransformPtr    createTransformEye          (float tx, float ty, float tz, glgeom::radians z_angle);
 
-                GeometryPtr     createGeometry  (glgeom::primitive_buffer& primitive);
-                GeometryPtr     createQuadList  (std::vector<glgeom::point3f>& positions, 
-                                                 std::vector<glgeom::color3f>& colors);
-                GeometryPtr     createQuadList  (std::vector<lx0::uint16>& indices,
-                                                 std::vector<glgeom::point3f>& positions);
-                GeometryPtr     createQuadList  (std::vector<lx0::uint16>& indices, 
-                                                 std::vector<glgeom::point3f>& positions, 
-                                                 std::vector<glgeom::vector3f>& normals,
-                                                 std::vector<glgeom::color3f>& colors);
-                GeometryPtr     createQuadList  (const std::vector<lx0::uint16>& indices,
-                                                 const std::vector<lx0::uint8>& faceFlags,
-                                                 const std::vector<glgeom::point3f>& positions, 
-                                                 const std::vector<glgeom::vector3f>& normals,
-                                                 const std::vector<glgeom::color3f>& colors);
+                GeometryPtr     acquireGeometry             (std::string name);
+                GeometryPtr     createGeometry              (glgeom::primitive_buffer& primitive);
+                GeometryPtr     createQuadList              (const std::vector<lx0::uint16>& indices,
+                                                             const std::vector<lx0::uint8>& faceFlags,
+                                                             const std::vector<glgeom::point3f>& positions, 
+                                                             const std::vector<glgeom::vector3f>& normals,
+                                                             const std::vector<glgeom::color3f>& colors);
 
                 void            refreshTextures (void);
 
@@ -340,9 +332,6 @@ namespace lx0
                 GLuint              _createShader           (std::string& source, GLuint type);
                 void                _linkProgram            (GLuint prog, const char* pszSource = nullptr);
                 void                _readBuffer             (GLenum buffer, glgeom::image3f& img);
-                
-                MaterialPtr         _acquireDefaultMaterial (std::string name);
-                GeometryPtr         _acquireGeometry        (std::string name);
 
                 std::unique_ptr<lx0::OpenGlApi3_2>  gl3_2;
 

@@ -219,7 +219,11 @@ protected:
             InstancePtr spInstance(new Instance);
             spInstance->spMaterial = pRasterizer->createVertexColorMaterial();
             spInstance->spTransform = pRasterizer->createTransform(glgeom::vector3f(1, 1, 1), offset + glgeom::point3f(.5f, .5f, .5f));
-            spInstance->spGeometry = pRasterizer->createQuadList(position, colors);
+
+            glgeom::primitive_buffer primitive;
+            primitive.vertex.positions = position;
+            primitive.vertex.colors = colors;
+            spInstance->spGeometry = pRasterizer->createGeometry(primitive);
             return spInstance;
         }
         else 
