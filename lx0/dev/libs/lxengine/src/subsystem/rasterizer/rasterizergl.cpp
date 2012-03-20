@@ -535,12 +535,12 @@ RasterizerGL::acquireGeometry (std::string name)
         prim.type = json["type"].as<std::string>();
         
         prim.vertex.positions.resize( json["vertex"]["positions"].size() );
-        for (auto i = 0; i < prim.vertex.positions.size(); ++i)
+        for (auto i = 0u; i < prim.vertex.positions.size(); ++i)
             prim.vertex.positions[i] = json["vertex"]["positions"][i];
         
         std::vector<point2f> channel0;
         channel0.resize( json["vertex"]["uv"][0].size() );
-        for (auto i = 0; i < prim.vertex.positions.size(); ++i)
+        for (auto i = 0u; i < prim.vertex.positions.size(); ++i)
             channel0[i] = json["vertex"]["uv"][0][i];
         prim.vertex.uv.push_back(channel0);
         

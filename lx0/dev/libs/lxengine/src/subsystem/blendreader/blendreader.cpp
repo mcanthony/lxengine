@@ -67,28 +67,28 @@ namespace lx0 { namespace subsystem { namespace blendreader_ns {
             Read a 32-bit little endian pointer and return it as a
             native unsigned 64 bit address.
          */
-        unsigned __int64 read_addr_32L (std::ifstream& file)
+        inline unsigned __int64 read_addr_32L (std::ifstream& file)
         {
             __int32 i;
             file.read((char*)&i, 4);
             return __int64(i);
         }
 
-        unsigned __int64 read_addr_64L (std::ifstream& file)
+        inline unsigned __int64 read_addr_64L (std::ifstream& file)
         {
             __int64 i;
             file.read((char*)&i, 8);
             return i;
         }
 
-        unsigned short read_u16 (std::ifstream& file)
+        inline unsigned short read_u16 (std::ifstream& file)
         {
             unsigned short i;
             file.read((char*)&i, 2);
             return i;
         }
 
-        __int32 read_int (std::ifstream& file)
+        inline __int32 read_int (std::ifstream& file)
         {
             __int32 i;
             file.read((char*)&i, 4);
@@ -106,13 +106,27 @@ namespace lx0 { namespace subsystem { namespace blendreader_ns {
         void read_string_array(std::ifstream& file, std::vector<std::string>& names)
         {
             unsigned int nameCount = read_int(file);
+            names.reserve(nameCount);
+
             for (unsigned int i = 0; i < nameCount; ++i)
             {
                 std::string t;
+                char buffer[257];
+                int  j = 0;
 
                 char c;
                 while ((c = (char)file.get()))
-                    t += c;
+                {
+                    buffer[j++] = c;
+                    if (j == 256)
+                    {
+                        buffer[j] = '\0';
+                        j = 0;
+                        t += buffer;
+                    }
+                }
+                buffer[j] = '\0';
+                t += buffer;
 
                 names.push_back(t);
             }
@@ -135,8 +149,7 @@ namespace lx0 { namespace subsystem { namespace blendreader_ns {
         // First 7 characters are the BLENDER id
         //
         header.identifier.resize(7);
-        for (int i = 0; i < 7; ++i)
-            header.identifier[i] = buffer[i];
+        ::memcpy(&header.identifier[0], &buffer[0], 7);
         lx_check_error(header.identifier == "BLENDER");
 
         // Next character indicates the pointer size on the
@@ -168,6 +181,9 @@ namespace lx0 { namespace subsystem { namespace blendreader_ns {
     static void
     readBlockDNA1 (std::ifstream& file, const Header& header, DNA& dna)
     {
+        lx0::Timer timer;       
+        timer.start();
+        
         std::string sdna = read_str(file, 4);
                     
         std::vector<std::string> names;
@@ -193,21 +209,23 @@ namespace lx0 { namespace subsystem { namespace blendreader_ns {
 
         std::string strc = read_str(file, 4);
         unsigned int count = read_int(file);
+        dna.structIndex.resize(count);
+
         for (unsigned int i = 0; i < count; ++i)
         {
-            std::shared_ptr<Structure> spStruct(new Structure);
+            Structure* pStruct = new Structure;
 
             unsigned short type;
             file.read((char*)&type, 2);
 
-            spStruct->name = types[type];
-            spStruct->size = typeSizes[type];
+            pStruct->name = types[type];
+            pStruct->size = typeSizes[type];
 
             unsigned short fields;
             file.read((char*)&fields, 2);
 
             size_t currentOffset = 0;
-            spStruct->fields.reserve(fields);
+            pStruct->fields.reserve(fields);            
             for (unsigned short j = 0; j < fields; j++)
             {
                 auto typeIndex = read_u16(file);
@@ -249,13 +267,16 @@ namespace lx0 { namespace subsystem { namespace blendreader_ns {
                 f.size *= f.dim;
 
                 currentOffset += f.size;
-                spStruct->fields.push_back(f);
-                spStruct->fieldMap[f.ref] = &spStruct->fields.back();
+                pStruct->fields.push_back(f);
+                pStruct->fieldMap[f.ref] = &pStruct->fields.back();
             }
 
-            dna.structIndex.push_back(spStruct);
-            dna.structMap.insert(std::make_pair(spStruct->name, spStruct));
+            dna.structIndex[i].reset(pStruct);
+            dna.structMap.insert(std::make_pair(pStruct->name, dna.structIndex[i]));
         }
+
+        timer.stop();
+        lx_log("readBlockDNA1 time %1%ms", timer.totalMs());
     }
 
     //===========================================================================//
@@ -322,8 +343,19 @@ namespace lx0 { namespace subsystem { namespace blendreader_ns {
                 throw lx_error_exception("Unexpected pointer size read from .blend file");
             }
 
-            _readBlocks();
-            _indexBlocks();
+            lx0::Timer t0;
+            lx0::Timer t1;
+
+            {
+                lx0::TimeSection section(t0);
+                _readBlocks();
+            }
+            {
+                lx0::TimeSection section(t1);
+                _indexBlocks();            
+            }
+            lx_log("BlenderReader _readBlocks %1%ms (%2%)", t0.totalMs(), filename);
+            lx_log("BlenderReader _indexBlocks %1%ms (%2%)", t1.totalMs(), filename);
         }
 
         return mFile.is_open();
@@ -337,6 +369,7 @@ namespace lx0 { namespace subsystem { namespace blendreader_ns {
     void
     BlendReader::_readBlocks (void)
     {
+        //
         // Loop over the blocks in the file
         //
         bool bDone = false;
@@ -350,8 +383,7 @@ namespace lx0 { namespace subsystem { namespace blendreader_ns {
             spBlock->count = read_int(mFile);
 
             spBlock->filePos = (int)mFile.tellg();
-            int nextBlock = (int)mFile.tellg();
-            nextBlock += int(spBlock->size);
+            int nextBlock = spBlock->filePos + int(spBlock->size);
 
             mDNA.blockIndex.push_back(spBlock);
 
