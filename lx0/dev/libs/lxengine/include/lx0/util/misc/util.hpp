@@ -50,12 +50,16 @@ namespace lx0 { namespace util { namespace misc {
     std::string             lx_itoa                 (size_t i);
     std::string             lx_ctime                (void);
     std::string             lx_timestring           (void);
-    bool                    lx_little_endian        (void);
+    bool                    lx_little_endian        (void);    
 
     unsigned int            lx_milliseconds         (void);
+    lx0::int64              lx_ticks                (void);
+    lx0::int64              lx_ticks_per_second     (void);
+
     void                    lx_message_box          (std::string caption, std::string message);
     void                    lx_debugger_message     (std::string message);
 
+    lx0::uint32             lx_current_thread_id    (void);
     void                    lx_current_thread_priority_below_normal (void);
 
     float                   random_unit         (void);

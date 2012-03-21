@@ -41,6 +41,22 @@ namespace lx0 { namespace util { namespace misc {
         return ::timeGetTime();
     }
 
+    lx0::int64              
+    lx_ticks (void)
+    {
+        LARGE_INTEGER li;
+        QueryPerformanceCounter(&li);
+        return li.QuadPart;
+    }
+
+    lx0::int64              
+    lx_ticks_per_second (void)
+    {
+        LARGE_INTEGER li;
+        QueryPerformanceFrequency(&li);
+        return li.QuadPart;
+    }
+    
     void
     lx_message_box (std::string caption, std::string message)
     {
@@ -238,6 +254,12 @@ namespace lx0 { namespace util { namespace misc {
         if (!*pData)
             *pData = new std::weak_ptr<lx0::Engine>;
         return *pData;
+    }
+
+    lx0::uint32             
+    lx_current_thread_id (void)
+    {
+        return ::GetCurrentThreadId();
     }
 
     void                    
