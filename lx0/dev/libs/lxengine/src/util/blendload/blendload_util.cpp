@@ -133,7 +133,13 @@ _primitive_buffer_from_block (glgeom::primitive_buffer& primitive, lx0::BlendRea
             vi[3] = vi[2];
 
         for (int j = 0; j < 4; ++j)
+        {     
+            // Add the face index to the 16-bit primitive index array.  
+            // Check for overflow.
+            //
             primitive.indices.push_back(vi[j]);
+            lx_check_error( primitive.indices.back() == vi[j] );
+        }
 
         // The blender source code implies that
         // 1 = ME_SMOOTH

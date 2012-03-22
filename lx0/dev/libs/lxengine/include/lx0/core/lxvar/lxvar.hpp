@@ -208,6 +208,9 @@ namespace lx0
 
                     template <typename T>
                     T               as              (void) const;
+                    
+                    template <typename T>
+                    T               query           (T defaultValue) const;
 
                     iterator        begin           (void);
                     iterator        end             (void);
@@ -344,6 +347,14 @@ namespace lx0
                     mValue->as(t); 
                     return t; 
                 }
+
+                template <typename T>
+                typename T lxvar::query (T defaultValue) const
+                { 
+                    return is_undefined() 
+                        ? defaultValue
+                        : as<T>();
+                }                              
 
                 //=================================================================//
 

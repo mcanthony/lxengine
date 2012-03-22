@@ -180,7 +180,13 @@ _LX_FORWARD_DECL_PTRS(Renderable);
 struct MaterialData
 {
     lx0::lxvar          renderProperties;
-    lx0::MaterialPtr spMaterial;
+    lx0::MaterialPtr    spMaterial;
+};
+
+struct GeometryData
+{
+    lx0::GeometryPtr    spGeometry;
+    float               zoom;
 };
 
 //===========================================================================//
@@ -231,14 +237,15 @@ public:
         mspRenderable->mspInstance.reset(new lx0::Instance);
         mspRenderable->mspInstance->spTransform = mspRasterizer->createTransform(mRotation);
         mspRenderable->mspInstance->spMaterial = mMaterials[mCurrentMaterial].spMaterial;
-        mspRenderable->mspInstance->spGeometry = mGeometry[mCurrentGeometry];
+        mspRenderable->mspInstance->spGeometry = mGeometry[mCurrentGeometry].spGeometry;
 
         //
         // Create the camera last since it is dependent on the bounds of the geometry
         // being viewed.  Therefore, it needs to be created after the geometry is 
         // loaded.
         // 
-        mspCamera = _createCamera(mGeometry[mCurrentGeometry]->mBBox);
+        auto& geomData = mGeometry[mCurrentGeometry];
+        mspCamera = _createCamera(geomData.spGeometry->mBBox, geomData.zoom);
     }
 
     virtual void render (void)	
@@ -304,13 +311,14 @@ public:
                 : (mCurrentGeometry + mGeometry.size() - 1);
             mCurrentGeometry %= mGeometry.size();
             
-            mspRenderable->mspInstance->spGeometry = mGeometry[mCurrentGeometry];
+            auto& geomData = mGeometry[mCurrentGeometry];
+            mspRenderable->mspInstance->spGeometry = geomData.spGeometry;
             
             //
             // Recreate the camera after geometry changes since the camera position
             // is based on the bounds of the geometry being viewed.
             //
-            mspCamera           = _createCamera(mspRenderable->mspInstance->spGeometry->mBBox);
+            mspCamera           = _createCamera(geomData.spGeometry->mBBox, geomData.zoom);
         }
         else if (evt == "next_material" || evt == "prev_material")
         {
@@ -408,7 +416,8 @@ protected:
         // Extract the data from the DOM
         //
         std::string sourceFilename = spElem->attr("src").as<std::string>();
-        _addGeometry(spDocument, sourceFilename);
+        float       zoom           = spElem->attr("zoom").query<float>(1.0f);
+        _addGeometry(spDocument, sourceFilename, zoom);
     }
 
     void _processLight (lx0::ElementPtr spElem)
@@ -426,12 +435,12 @@ protected:
     // Creates a camera with fixed view direction and a view distance determined by
     // the visibility bounds.
     //
-    lx0::CameraPtr _createCamera (const glgeom::abbox3f& bbox)
+    lx0::CameraPtr _createCamera (const glgeom::abbox3f& bbox, float zoomFactor)
     {
         lx_check_error(!bbox.empty());
 
         const glgeom::vector3f viewDirection(-1, 2, -1.5f);
-        const float            viewDistance (bbox.diagonal() * .9f);
+        const float            viewDistance (bbox.diagonal() * .9f / zoomFactor);
 
         glgeom::point3f viewPoint  = glgeom::point3f(0, 0, 0) - glgeom::normalize(viewDirection) * viewDistance; 
         glm::mat4       viewMatrix = glm::lookAt(viewPoint.vec, glm::vec3(0, 0, 0), glm::vec3(0, 0, 1));
@@ -454,7 +463,7 @@ protected:
         mMaterials.push_back(data);
     }
 
-    void _addGeometry (lx0::DocumentPtr spDocument, const std::string filename)
+    void _addGeometry (lx0::DocumentPtr spDocument, const std::string filename, float zoom)
     {
         if (boost::iends_with(filename, ".blend"))
         {
@@ -462,14 +471,17 @@ protected:
             // This is executed as a task in the main thread; therefore no locks or threading 
             // protection is necessary on the rasterizer or geometry list.
             //
-            auto addGeometry = [this](glgeom::primitive_buffer* primitive) {
+            auto addGeometry = [this,zoom](glgeom::primitive_buffer* primitive) {
                     auto spGeometry = mspRasterizer->createQuadList(primitive->indices, 
                                                                     primitive->face.flags, 
                                                                     primitive->vertex.positions, 
                                                                     primitive->vertex.normals, 
                                                                     primitive->vertex.colors);
                     spGeometry->mBBox = primitive->bbox;
-                    mGeometry.push_back(spGeometry);
+                    GeometryData data;
+                    data.spGeometry = spGeometry;
+                    data.zoom = zoom;
+                    mGeometry.push_back(data);
                     delete primitive;
             };
 
@@ -521,7 +533,10 @@ protected:
 
                 auto spModel = mspRasterizer->createGeometry(primitive);
                 spModel->mBBox = bbox;
-                mGeometry.push_back(spModel);
+                GeometryData data;
+                data.spGeometry = spModel;
+                data.zoom = 1.0f;
+                mGeometry.push_back(data);
             }
             else
                 throw lx_error_exception("Script failure!");
@@ -543,7 +558,7 @@ protected:
     std::vector<MaterialData>     mMaterials;
 
     size_t                        mCurrentGeometry;
-    std::vector<lx0::GeometryPtr> mGeometry;
+    std::vector<GeometryData>     mGeometry;
 };
 
 
