@@ -55,6 +55,8 @@ struct Profile
     int     acquireMaterial;
     int     rasterizeList;
     int     rasterizeItem;
+    int     beginFrame;
+    int     endFrame;
 
     void registerCounters()
     {
@@ -63,8 +65,11 @@ struct Profile
         pEngine->registerProfileCounter("Rasterizer acquireMaterial",   &acquireMaterial);
         pEngine->registerProfileCounter("Rasterizer rasterizeList",   &rasterizeList);
         pEngine->registerProfileCounter("Rasterizer rasterizeItem",   &rasterizeItem);
+        pEngine->registerProfileCounter("Rasterizer beginFrame",   &beginFrame);
+        pEngine->registerProfileCounter("Rasterizer endFrame",   &endFrame);
 
         pEngine->addProfileRelationship("Engine run",               "Rasterizer rasterizeList");
+        pEngine->addProfileRelationship("Rasterizer rasterizeList", "Rasterizer beginFrame");
         pEngine->addProfileRelationship("Rasterizer rasterizeList", "Rasterizer rasterizeItem");
         pEngine->addProfileRelationship("Rasterizer rasterizeList", "Rasterizer checkError");
         pEngine->addProfileRelationship("Rasterizer rasterizeItem", "Rasterizer checkError");
@@ -1225,6 +1230,8 @@ RasterizerGL::refreshTextures (void)
 void 
 RasterizerGL::beginFrame (RenderAlgorithm& algorithm)
 {
+    lx0::ProfileSection section(profile.beginFrame);
+
     mStats.tmScene.start();
 
     gl = this->gl3_2.get();
@@ -1243,6 +1250,8 @@ RasterizerGL::beginFrame (RenderAlgorithm& algorithm)
 
 void RasterizerGL::endFrame()
 {
+    lx0::ProfileSection section(profile.endFrame);
+
     check_glerror();
     mStats.tmScene.stop();
 }

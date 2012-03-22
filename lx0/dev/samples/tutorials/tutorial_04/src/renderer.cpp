@@ -42,6 +42,31 @@
 #include <glgeom/ext/primitive_buffer.hpp>
 #include <lx0/util/misc/lxvar_convert.hpp>
 
+//===========================================================================//
+//   P R O F I L I N G   D A T A
+//===========================================================================//
+
+namespace 
+{
+    struct Profile
+    {
+        Profile() { ::memset(this, 0, sizeof(*this)); }
+                    
+        int     _init;
+        int     render;
+        
+        void initialize()
+        {
+            if (!_init)
+            {
+                _init = 1;
+                auto pEngine = lx0::Engine::acquire().get();
+                pEngine->registerProfileCounter("Renderer render",        &render);            
+                pEngine->addProfileRelationship("Engine runLoop", "Renderer render");
+            }
+        }
+    } profile;
+}
 
 //===========================================================================//
 //   L O C A L   F U N C T I O N S
@@ -171,6 +196,7 @@ public:
         , mbRotate            (true)
         , miRenderAlgorithm   (0)
     {
+        profile.initialize();
     }
 
     virtual void initialize(lx0::ViewPtr spView)
@@ -217,6 +243,8 @@ public:
 
     virtual void render (void)	
     {
+        lx0::ProfileSection section(profile.render);
+
         lx0::RenderAlgorithm algorithm;
         algorithm.mClearColor = glgeom::color4f(0.1f, 0.3f, 0.8f, 1.0f);
         
