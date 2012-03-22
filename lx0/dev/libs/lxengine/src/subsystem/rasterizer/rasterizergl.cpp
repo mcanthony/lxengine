@@ -47,8 +47,34 @@ using namespace glgeom;
 
 lx0::OpenGlApi3_2* gl;
 
+struct Profile
+{
+    Profile() { ::memset(this, 0, sizeof(*this)); }
+                    
+    int     checkError;
+    int     acquireMaterial;
+    int     rasterizeList;
+    int     rasterizeItem;
+
+    void registerCounters()
+    {
+        auto pEngine = lx0::Engine::acquire().get();
+        pEngine->registerProfileCounter("Rasterizer checkError",        &checkError);
+        pEngine->registerProfileCounter("Rasterizer acquireMaterial",   &acquireMaterial);
+        pEngine->registerProfileCounter("Rasterizer rasterizeList",   &rasterizeList);
+        pEngine->registerProfileCounter("Rasterizer rasterizeItem",   &rasterizeItem);
+
+        pEngine->addProfileRelationship("Engine run",               "Rasterizer rasterizeList");
+        pEngine->addProfileRelationship("Rasterizer rasterizeList", "Rasterizer rasterizeItem");
+        pEngine->addProfileRelationship("Rasterizer rasterizeList", "Rasterizer checkError");
+        pEngine->addProfileRelationship("Rasterizer rasterizeItem", "Rasterizer checkError");
+    }
+} profile;
+
 void lx0::subsystem::rasterizer_ns::check_glerror()
 {
+    lx0::ProfileSection section(profile.checkError);
+
 	GLenum errCode = gl->getError();
     
     if (errCode != GL_NO_ERROR)
@@ -211,7 +237,8 @@ RasterizerGL::RasterizerGL()
     , mFrameNum (0)
     , mStandardParameterValues (lx0::lxvar::map())
 {
-    
+    profile.registerCounters();
+
     mStandardParameterValues["unifDiffuse"] = lx0::lxvar(0.80f, 0.75f, 0.75f);
     mStandardParameterValues["unifSpecular"] = lx0::lxvar(0.95f, 0.95f, 0.75f);
 }
@@ -449,6 +476,8 @@ RasterizerGL::cacheTexture (std::string name, TexturePtr spTexture)
 MaterialPtr 
 RasterizerGL::acquireMaterial (std::string name)
 {
+    lx0::ProfileSection section(profile.acquireMaterial);
+
     //
     // Create a material instance using all the material class defaults
     //
@@ -1223,6 +1252,7 @@ RasterizerGL::rasterizeList (RenderAlgorithm& algorithm, std::vector<std::shared
 {
     try
     {
+        lx0::ProfileSection section (profile.rasterizeList);
         TimeSection( mStats.tmRasterizeList );
 
         for (auto pass = algorithm.mPasses.begin(); pass != algorithm.mPasses.end(); ++pass)
@@ -1304,6 +1334,7 @@ void _timeCall (lx0::Timer& timer, std::function<void (void)> f)
 void 
 RasterizerGL::rasterizeItem (GlobalPass& pass, std::shared_ptr<Instance> spInstance)
 {
+    lx0::ProfileSection section (profile.rasterizeItem);
     TimeSection( mStats.tmRasterizeItem );
 
     lx_check_error(spInstance.get() != nullptr);

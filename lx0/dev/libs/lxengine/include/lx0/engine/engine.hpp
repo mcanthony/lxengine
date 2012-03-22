@@ -45,6 +45,7 @@
 #include <lx0/_detail/forward_decls.hpp>
 #include <lx0/core/init/version.hpp>
 #include <lx0/engine/dom_base.hpp>
+#include <lx0/engine/profilemonitor.hpp>
 #include <lx0/core/lxvar/lxvar.hpp>
 #include <lx0/core/log/log.hpp>
 
@@ -126,9 +127,11 @@ namespace lx0
                     boost::condition_variable         mCondition;
                     boost::mutex                      mMutex;
                     std::deque<std::function<void()>> mQueue;
-                    volatile bool                     mDone;
+                    volatile bool                     mDone;                    
                 };
 
+
+                struct Profile;
             }
 
             
@@ -233,6 +236,8 @@ namespace lx0
                 void                decObjectCount          (std::string name);
                 const detail::ObjectCount& objectCount      (std::string name) { return m_objectCounts[name]; }
                 void                incPerformanceCounter   (std::string name, lx0::uint64 t);
+                void                registerProfileCounter  (const char* name, int* pId);
+                void                addProfileRelationship  (const char* parentName, const char* childName);
                 ///@}
 
                 void                postponeException       (lx0::error_exception& e);
@@ -276,6 +281,8 @@ namespace lx0
                 std::deque<lx0::error_exception>            m_postponedExceptions;
                 std::map<std::string, detail::ObjectCount>  m_objectCounts;
                 
+                struct detail::Profile*     mpProfile;              
+
                 struct PerfCounter
                 {
                     PerfCounter(lx0::uint64 e, lx0::uint64 t) : events(e), total (t) {}
@@ -292,9 +299,9 @@ namespace lx0
                 std::map<std::string, std::vector<std::function<bool(std::string)>>>    m_psuedoAttributes;
                 std::map<std::string, std::vector<std::function<lxvar(std::string)>>>   m_attributeParsers;
 
+                ProfileMonitor                                                          mProfileMonitor;
                 std::vector<detail::WorkerThread*>                                      mWorkerThreads;
             };
-
         }
     }
     using namespace lx0::engine::dom_ns;

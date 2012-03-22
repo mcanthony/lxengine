@@ -48,6 +48,33 @@
 
 using namespace lx0::core;
 
+namespace {
+
+    struct Counters
+    {
+        Counters() { ::memset(this, 0, sizeof(*this)); }
+
+        int _inited;
+        int open;
+        int readHeader;
+        int readBlocks;
+        int indexBlocks;
+
+        void initialize()
+        {
+            if (!_inited)
+            {
+                _inited = 1;
+                auto spEngine = lx0::Engine::acquire();
+                spEngine->registerProfileCounter("BlendReader open", &open);
+                spEngine->registerProfileCounter("BlendReader readHeader", &readHeader);
+                spEngine->registerProfileCounter("BlendReader readBlocks", &readBlocks);
+                spEngine->registerProfileCounter("BlendReader indexBlocks", &indexBlocks);
+            }
+        }
+    } counters;
+}
+
 namespace lx0 { namespace subsystem { namespace blendreader_ns { 
 
     namespace io_util
@@ -140,6 +167,8 @@ namespace lx0 { namespace subsystem { namespace blendreader_ns {
     static void 
     readHeader (std::ifstream& file, Header& header)
     {
+        lx0::ProfileSection section(counters.readHeader);
+
         // The header is always 12-bytes long.  Read it all
         // as a single chunk, then process that data
         //
@@ -330,6 +359,10 @@ namespace lx0 { namespace subsystem { namespace blendreader_ns {
     bool    
     BlendReader::open (std::string filename)
     {
+        counters.initialize();
+
+        lx0::ProfileSection section(counters.open);
+
         mFile.open (filename, std::ios::in | std::ios::binary);
         if (mFile.is_open())
         {
@@ -341,21 +374,10 @@ namespace lx0 { namespace subsystem { namespace blendreader_ns {
             case 4: mIO.read_address = read_addr_32L; break;
             default: 
                 throw lx_error_exception("Unexpected pointer size read from .blend file");
-            }
-
-            lx0::Timer t0;
-            lx0::Timer t1;
-
-            {
-                lx0::TimeSection section(t0);
-                _readBlocks();
-            }
-            {
-                lx0::TimeSection section(t1);
-                _indexBlocks();            
-            }
-            lx_log("BlenderReader _readBlocks %1%ms (%2%)", t0.totalMs(), filename);
-            lx_log("BlenderReader _indexBlocks %1%ms (%2%)", t1.totalMs(), filename);
+            }            
+            
+            _readBlocks();
+            _indexBlocks();            
         }
 
         return mFile.is_open();
@@ -369,6 +391,8 @@ namespace lx0 { namespace subsystem { namespace blendreader_ns {
     void
     BlendReader::_readBlocks (void)
     {
+        lx0::ProfileSection section(counters.readBlocks);
+
         //
         // Loop over the blocks in the file
         //
@@ -404,6 +428,8 @@ namespace lx0 { namespace subsystem { namespace blendreader_ns {
     void          
     BlendReader::_indexBlocks (void)
     {
+        lx0::ProfileSection section(counters.indexBlocks);
+
         for (auto it = mDNA.blockIndex.begin(); it != mDNA.blockIndex.end(); ++it)
         {
             (*it)->spStruct = mDNA.structIndex[(*it)->sdnaIndex];

@@ -182,6 +182,12 @@ namespace lx0
             std::string _lx_format      (const char* format, T0 a0, T1 a1, T2 a2, T3 a3) { return boost::str( boost::format(format) % a0 % a1 % a2 % a3 ); }
             template <typename T0, typename T1, typename T2, typename T3, typename T4>  
             std::string _lx_format      (const char* format, T0 a0, T1 a1, T2 a2, T3 a3, T4 a4) { return boost::str( boost::format(format) % a0 % a1 % a2 % a3 % a4 ); }
+            template <typename T0, typename T1, typename T2, typename T3, typename T4, typename T5>  
+            std::string _lx_format      (const char* format, T0 a0, T1 a1, T2 a2, T3 a3, T4 a4, T5 a5) { return boost::str( boost::format(format) % a0 % a1 % a2 % a3 % a4 % a5); }
+            template <typename T0, typename T1, typename T2, typename T3, typename T4, typename T5, typename T6>  
+            std::string _lx_format      (const char* format, T0 a0, T1 a1, T2 a2, T3 a3, T4 a4, T5 a5, T6 a6) { return boost::str( boost::format(format) % a0 % a1 % a2 % a3 % a4 % a5 % a6); }
+            template <typename T0, typename T1, typename T2, typename T3, typename T4, typename T5, typename T6, typename T7>  
+            std::string _lx_format      (const char* format, T0 a0, T1 a1, T2 a2, T3 a3, T4 a4, T5 a5, T6 a6, T7 a7) { return boost::str( boost::format(format) % a0 % a1 % a2 % a3 % a4 % a5 % a6 %a7); }
 
             void        _lx_message_imp (const char* file, int line, const std::string& s);
             void        _lx_debug_imp   (const char* file, int line, const std::string& s);

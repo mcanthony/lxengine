@@ -53,6 +53,28 @@ namespace lx0 { namespace engine { namespace dom_ns {
 
     namespace detail
     {
+        struct Profile
+        {
+            Profile() { ::memset(this, 0, sizeof(*this)); }
+                    
+            int     run;
+            int     runUpdate;
+            int     runLoop;
+            int     runPlatformMessages;
+
+            void registerCounters()
+            {
+                auto pEngine = Engine::acquire().get();
+                pEngine->registerProfileCounter("Engine run",        &run);
+                pEngine->registerProfileCounter("Engine runUpdate",  &runUpdate);
+                pEngine->registerProfileCounter("Engine runLoop",    &runLoop);
+                pEngine->registerProfileCounter("Engine platformMSGs",  &runPlatformMessages);
+
+                pEngine->addProfileRelationship("Engine runLoop", "Engine platformMSGs");
+            }
+        };
+
+
         ObjectCount::ObjectCount (void)
             : mCurrent (0)
             , mTotal   (0)
@@ -78,9 +100,30 @@ namespace lx0 { namespace engine { namespace dom_ns {
             mCurrent--;
         }
 
+        struct WTProfile
+        {
+            WTProfile() { ::memset(this, 0, sizeof(*this)); }
+                    
+            int     _inited;
+            int     lifetime;
+            int     tasks;
+
+            void registerCounters()
+            {
+                if (!_inited)
+                {
+                    _inited = 1;
+                    auto spEngine = Engine::acquire();
+                    spEngine->registerProfileCounter("WorkerThread lifetime", &lifetime);
+                    spEngine->registerProfileCounter("WorkerThread tasks", &tasks);
+                    spEngine->addProfileRelationship("WorkerThread lifetime", "WorkerThread tasks");
+                }
+            }
+        } wtprofile;
+
 
         WorkerThread::WorkerThread()
-            : mDone (false)
+            : mDone         (false)
         {
             mpThread = new boost::thread([&]() { _run(); });
         }
@@ -103,17 +146,22 @@ namespace lx0 { namespace engine { namespace dom_ns {
         void
         WorkerThread::_run (void)
         {
-            lx_current_thread_priority_below_normal();
+            wtprofile.registerCounters();
 
+            lx_current_thread_priority_below_normal();
+            
+            lx0::ProfileSection _section(wtprofile.lifetime);
             while (!mDone)
             {
+                // Standard consumer-producer paradigm using boost threads.
                 boost::unique_lock<boost::mutex> lock(mMutex);
                 while (mQueue.empty())
                     mCondition.wait(lock);
 
                 auto f = mQueue.front();
                 mQueue.pop_front();
-
+                
+                ProfileSection _section(wtprofile.tasks);
                 f();
             }
         }  
@@ -157,6 +205,7 @@ namespace lx0 { namespace engine { namespace dom_ns {
         : mGlobals            (lxvar::decorated_map())
         , mIdCounter          (0)
         , mbShutdownRequested (false)
+        , mpProfile           (new detail::Profile)
     {
         lx_init();
         lx_log("lx::core::Engine ctor");
@@ -225,11 +274,25 @@ namespace lx0 { namespace engine { namespace dom_ns {
     }
 
     void
+    Engine::registerProfileCounter  (const char* name, int* pId)
+    {
+        mProfileMonitor.registerCounter(name, pId);
+    }
+
+    void
+    Engine::addProfileRelationship  (const char* parentName, const char* childName)
+    {
+        mProfileMonitor.addRelation(parentName, childName);
+    }
+
+    void
     Engine::initialize()
     {
         // Convenience code to reset the working path automatically.
         if (lx_in_debugger())
             _lx_change_current_path_to_lx_root();
+
+        mpProfile->registerCounters();
 
         _registerBuiltInPlugins();
     }
@@ -251,6 +314,8 @@ namespace lx0 { namespace engine { namespace dom_ns {
                 double(it->second.total) / double(it->second.events), 
                 double(it->second.total), double(it->second.events));
         }
+
+        mProfileMonitor.logCounters();
             
         // Explicitly free all references to shared objects so that memory leak checks will work
         mDocuments.clear();
@@ -595,7 +660,10 @@ namespace lx0 { namespace engine { namespace dom_ns {
     void 
     Engine::sendWorkerTask (std::function<void()> f)
     {
-        mWorkerThreads[0]->addTask(f);
+        static lx0::uint32 index = 0;
+        
+        mWorkerThreads[index]->addTask(f);
+        index = (index + 1) % mWorkerThreads.size();
     }
 
     void        
@@ -618,6 +686,8 @@ namespace lx0 { namespace engine { namespace dom_ns {
 	int
 	Engine::run()
 	{
+        lx0::ProfileSection section(mpProfile->run);
+
         slotRunBegin();
 
         const lx0::uint64 start = lx0::lx_milliseconds();
@@ -626,9 +696,10 @@ namespace lx0 { namespace engine { namespace dom_ns {
         _lx_reposition_console();
 
         //
-        // Launch the worker thread
+        // Launch the worker threads
         //
-        mWorkerThreads.push_back( new detail::WorkerThread );
+        for (int i = 0; i < 4; ++i)
+            mWorkerThreads.push_back( new detail::WorkerThread );
 
         //
         // Signal to the Document components that the main loop is about
@@ -640,8 +711,9 @@ namespace lx0 { namespace engine { namespace dom_ns {
         bool bDone = false;
         do
         {
-            mFrameStartMs = lx0::lx_milliseconds();
+            lx0::ProfileSection section(mpProfile->runLoop);
 
+            mFrameStartMs = lx0::lx_milliseconds();
             bool bIdle = true;
 
             _throwPostponedException();
@@ -674,8 +746,11 @@ namespace lx0 { namespace engine { namespace dom_ns {
                 }
             }
 
-            _handlePlatformMessages(bDone, bIdle);
-            _throwPostponedException();
+            {
+                lx0::ProfileSection section(mpProfile->runPlatformMessages);
+                _handlePlatformMessages(bDone, bIdle);
+                _throwPostponedException();
+            }
 
             if (bIdle)
                 slotIdle();
@@ -683,15 +758,11 @@ namespace lx0 { namespace engine { namespace dom_ns {
             ///@todo Devise a better way to hand time-slices from the main loop to the individual documents
             /// for updates.  Also consider multi-threading.
             {
-                const auto startLoop = lx0::lx_milliseconds();
+                lx0::ProfileSection section(mpProfile->runUpdate);
 
                 for(auto it = mDocuments.begin(); it != mDocuments.end(); ++it)
                     (*it)->updateRun();
-
-                incPerformanceCounter("Engine>run>doc update", lx0::lx_milliseconds() - startLoop);
             }
-
-            incPerformanceCounter("Engine>run>loop", lx0::lx_milliseconds() - mFrameStartMs);
 
             //
             // Engine's notion of a frame is one full cycle through the main loop.
@@ -706,8 +777,6 @@ namespace lx0 { namespace engine { namespace dom_ns {
 
         for(auto it = mDocuments.begin(); it != mDocuments.end(); ++it)
             (*it)->endRun();
-
-        incPerformanceCounter("Engine>run", lx0::lx_milliseconds() - start);
 
         slotRunEnd();
 
