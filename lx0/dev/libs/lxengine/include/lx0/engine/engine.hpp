@@ -189,6 +189,8 @@ namespace lx0
                 const std::vector<DocumentPtr>& documents (void) { return mDocuments; }
 
                 void                sendEvent           (std::string evt);
+                void                sendEvent           (const char* evt)           { sendEvent(std::string(evt)); }
+                void                sendEvent           (std::function<int()> f);
                 void                sendTask            (std::function<void()> f);
                 void                sendWorkerTask      (std::function<void()> f);
 
@@ -246,6 +248,7 @@ namespace lx0
                 {
                     std::string             message;
                     std::function<void()>   task;
+                    std::function<int()>    func;
                 };
 
                 Engine();

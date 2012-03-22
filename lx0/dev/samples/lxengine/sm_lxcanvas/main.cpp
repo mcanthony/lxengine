@@ -45,11 +45,12 @@
 // Lx0 headers
 #include <lx0/lxengine.hpp>
 #include <lx0/subsystem/canvas.hpp>
-
-#include <GL3/gl3w_modified.hpp>
+#include <lx0/subsystem/rasterizer/gl/glinterface.hpp>
 
 using namespace lx0;
 using namespace lx0::core;
+
+static OpenGlApi3_2* gl = 0;
 
 //===========================================================================//
 
@@ -60,28 +61,30 @@ public:
     {
         // Initialization
         //
-        lx_log("Using OpenGL v%s", (const char*)glGetString(GL_VERSION));
+        gl = new OpenGlApi3_2;
+        gl->initialize();
+        lx_log("Using OpenGL v%s", (const char*)gl->getString(GL_VERSION));
 
         // Create the shader program
         //
         GLuint vs = createShader("media2/shaders/glsl/vertex/transform_only.vert", GL_VERTEX_SHADER);
         GLuint fs = createShader("media2/shaders/glsl/fragment/minimal.frag", GL_FRAGMENT_SHADER);
 
-        GLuint prog = glCreateProgram();
+        GLuint prog = gl->createProgram();
         {
-            glAttachShader(prog, vs);
-            glAttachShader(prog, fs);
-            glBindAttribLocation(prog, 0, "inPosition");
+            gl->attachShader(prog, vs);
+            gl->attachShader(prog, fs);
+            gl->bindAttribLocation(prog, 0, "inPosition");
         }
-        glLinkProgram(prog);
-        glUseProgram(prog);
+        gl->linkProgram(prog);
+        gl->useProgram(prog);
 
         // Create a vertex array to store the vertex data
         //
-        glGenVertexArrays(1, &vao[0]);
-        glBindVertexArray(vao[0]);
+        gl->genVertexArrays(1, &vao[0]);
+        gl->bindVertexArray(vao[0]);
 
-        lx_check_error( glGetError() == GL_NO_ERROR, "OpenGL error detected." );
+        lx_check_error( gl->getError() == GL_NO_ERROR, "OpenGL error detected." );
         
         // Create a vertex buffer to store the data for the vertex array
         GLfloat positionData[] = 
@@ -91,16 +94,16 @@ public:
              2.0f,  -1.0f, -10.0f,
         };
         GLuint vbo[1];
-        glGenBuffers(1, &vbo[0]);
-        glBindBuffer(GL_ARRAY_BUFFER, vbo[0]);
-        glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) * 9, &positionData[0], GL_STATIC_DRAW);
+        gl->genBuffers(1, &vbo[0]);
+        gl->bindBuffer(GL_ARRAY_BUFFER, vbo[0]);
+        gl->bufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) * 9, &positionData[0], GL_STATIC_DRAW);
         
         // TODO: The position input to the vertex shader is apparently always 0.  Find out where
         // this is documented.
-        const int positionIndex = 0;   // glGetAttribLocation(prog, "gl_Vertex");
-        glVertexAttribPointer(positionIndex, 3, GL_FLOAT, GL_FALSE, 0, 0);
-        glEnableVertexAttribArray(positionIndex);
-        lx_check_error( glGetError() == GL_NO_ERROR, "OpenGL error detected." );
+        const int positionIndex = 0;   // gl->getAttribLocation(prog, "gl_Vertex");
+        gl->vertexAttribPointer(positionIndex, 3, GL_FLOAT, GL_FALSE, 0, 0);
+        gl->enableVertexAttribArray(positionIndex);
+        lx_check_error( gl->getError() == GL_NO_ERROR, "OpenGL error detected." );
     }  
 
     void 
@@ -118,10 +121,10 @@ public:
     void 
     render (void)	
     {
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        gl->clear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         
-        glBindVertexArray(vao[0]);
-        glDrawArrays(GL_TRIANGLES, 0, 3);        
+        gl->bindVertexArray(vao[0]);
+        gl->drawArrays(GL_TRIANGLES, 0, 3);        
     }
 
 protected:
@@ -133,13 +136,13 @@ protected:
         std::string shaderText = lx0::string_from_file(filename);
         if (!shaderText.empty())
         {
-            shaderHandle = glCreateShader(type);
+            shaderHandle = gl->createShader(type);
 
             const GLchar* text = shaderText.c_str();
-            glShaderSource(shaderHandle, 1, &text, 0);
+            gl->shaderSource(shaderHandle, 1, &text, 0);
             shaderText.swap(std::string());
 
-            glCompileShader(shaderHandle);
+            gl->compileShader(shaderHandle);
         }
         else
             throw lx_error_exception("Could not load shader '%s' (file exists = %s)", filename, lx0::file_exists(filename) ? "true" : "false");

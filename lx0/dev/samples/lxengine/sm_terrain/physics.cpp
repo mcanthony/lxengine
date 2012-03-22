@@ -56,13 +56,7 @@ void PhysicsSubsystem::onElementRemoved (Document*   pDocument, ElementPtr spEle
     
 float PhysicsSubsystem::drop (float x, float y)
 {
-    lx0::uint64 start = lx0::lx_milliseconds();
-            
     float maxZ = std::max(maxZ, mspTerrain->calcHeight(x, y));
-
-    lx0::uint64 end = lx0::lx_milliseconds();
-    Engine::acquire()->incPerformanceCounter("PhysicsSubsystem drop()", end - start);
-
     return maxZ; 
 }
 

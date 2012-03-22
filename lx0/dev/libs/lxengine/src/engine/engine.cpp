@@ -619,6 +619,14 @@ namespace lx0 { namespace engine { namespace dom_ns {
         mEventQueue.push_back(evt);
     }
 
+    void   
+	Engine::sendEvent (std::function<int()> f)
+    {
+        Event evt;
+        evt.func = f;
+        mEventQueue.push_back(evt);
+    }
+
     void 
     Engine::sendWorkerTask (std::function<void()> f)
     {
@@ -667,6 +675,7 @@ namespace lx0 { namespace engine { namespace dom_ns {
             mFrameStartMs = lx0::lx_milliseconds();
             bool bIdle = true;
 
+            std::deque<Event> reQueue;
             while (!mEventQueue.empty())
             {
                 bIdle = false;
@@ -674,7 +683,7 @@ namespace lx0 { namespace engine { namespace dom_ns {
                 Event evt = mEventQueue.front();
                 mEventQueue.pop_front();
 
-                int validity = (evt.message.empty() ? 0 : 1) + (evt.task ? 1 : 0);
+                int validity = (evt.message.empty() ? 0 : 1) + (evt.task ? 1 : 0) + (evt.func ? 1 : 0);
                 switch (validity)
                 {
                 case 0:
@@ -687,13 +696,39 @@ namespace lx0 { namespace engine { namespace dom_ns {
                 case 1:
                     {
                         if (evt.message == "quit")
+                        {
                             bDone = true;
-                        if (evt.task)
+                        }
+                        else if (evt.task)
+                        {
                             evt.task();
+                        }
+                        else if (evt.func)
+                        {
+                            int delay = evt.func();
+                            if (delay == 0)
+                            {
+                                reQueue.push_back(evt);
+                            }
+                            else if (delay > 0)
+                            {
+                                throw lx_error_exception("Delayed re-enqueue not yet implemented!!");
+                            }
+                            else
+                            {
+                                // Discard
+                            }
+                        }
                     }
                     break;
                 }
             }
+            
+            // Fill the event queue with all events that should be repeated
+            //
+            mEventQueue.swap(reQueue);
+            lx_check_error(reQueue.empty());
+
 
             {
                 lx0::ProfileSection section(mpProfile->runPlatformMessages);

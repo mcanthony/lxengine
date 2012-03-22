@@ -200,6 +200,7 @@ public:
         : mCurrentMaterial    (0)
         , mCurrentGeometry    (0)
         , mbRotate            (true)
+        , mZoom               (1.0f)
         , miRenderAlgorithm   (0)
     {
         profile.initialize();
@@ -245,7 +246,8 @@ public:
         // loaded.
         // 
         auto& geomData = mGeometry[mCurrentGeometry];
-        mspCamera = _createCamera(geomData.spGeometry->mBBox, geomData.zoom);
+        mZoom = geomData.zoom;
+        mspCamera = _createCamera(geomData.spGeometry->mBBox, mZoom);
     }
 
     virtual void render (void)	
@@ -299,6 +301,18 @@ public:
             mRotation = glm::rotate(mRotation, 1.0f, glm::vec3(0, 0, 1));
             mspRenderable->mspInstance->spTransform = mspRasterizer->createTransform(mRotation);
         }
+
+        //
+        // If the zoom value on the geometry has changed, adjust the
+        // camera view accordingly
+        //
+        auto& geomData = mGeometry[mCurrentGeometry];
+        if (mZoom != geomData.zoom)
+        {
+            mZoom = geomData.zoom;
+            mspCamera = _createCamera(geomData.spGeometry->mBBox, mZoom);
+        }
+
         spView->sendEvent("redraw");
     }
 
@@ -318,7 +332,8 @@ public:
             // Recreate the camera after geometry changes since the camera position
             // is based on the bounds of the geometry being viewed.
             //
-            mspCamera           = _createCamera(geomData.spGeometry->mBBox, geomData.zoom);
+            mZoom     = geomData.zoom;
+            mspCamera = _createCamera(geomData.spGeometry->mBBox, mZoom);
         }
         else if (evt == "next_material" || evt == "prev_material")
         {
@@ -342,6 +357,35 @@ public:
         else if (evt == "cycle_renderalgorithm")
         {
             miRenderAlgorithm++;
+        }
+        else if (evt == "zoom_in" || evt == "zoom_out")
+        {
+            auto zoom = [&](float factor) {
+                // Zoom in over a period of time
+                // Cancel previous zoom if another request comes in or geometry changes
+                auto* pGeomZoom = &mGeometry[mCurrentGeometry].zoom;
+                auto value0 = *pGeomZoom;
+                auto value1 = value0 * factor;
+                auto start = lx0::lx_milliseconds();
+                auto func = [pGeomZoom, start, value0, value1]() -> int {
+                    // Should replace with frame times - not real times
+                    float alpha = float(lx0::lx_milliseconds() - start) / 2000.0f;
+                    if (alpha >= 1.0)
+                    {
+                        *pGeomZoom = value1;
+                        return -1;
+                    }
+                    else
+                    {
+                        float a = sin(alpha * 1.57079633f);
+                        *pGeomZoom = glm::mix(value0, value1, a);
+                        return 0;
+                    }
+                };
+                lx0::Engine::acquire()->sendEvent(func);
+            };
+
+            zoom( evt == "zoom_in" ? 2.0f : 0.5f );
         }
     }
 
@@ -553,11 +597,11 @@ protected:
     bool                          mbRotate;
     int                           miRenderAlgorithm;
     glm::mat4                     mRotation;
-
+    float                         mZoom;
     size_t                        mCurrentMaterial;
-    std::vector<MaterialData>     mMaterials;
-
     size_t                        mCurrentGeometry;
+
+    std::vector<MaterialData>     mMaterials;
     std::vector<GeometryData>     mGeometry;
 };
 
