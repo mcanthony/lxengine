@@ -34,7 +34,6 @@
 #include <windowsx.h>
 #include "windowclass.hpp"
 
-//#include <GL3/gl3w_modified.hpp>
 #include <lx0/subsystem/rasterizer/gl/glinterface.hpp>
 
 // Inline the WGL defines since this is the only place they're used
@@ -115,6 +114,29 @@ static PFNWGLCHOOSEPIXELFORMATARBPROC    wglChoosePixelFormatARB    = 0;
 #define m_hRC  reinterpret_cast<HGLRC&>(m_opaque_hRC)
 
 using namespace lx0::subsystem::canvas_ns::detail;
+
+namespace 
+{
+    struct Profile
+    {
+        Profile() { ::memset(this, 0, sizeof(*this)); }
+                    
+        int     _init;
+        int     impRedraw;
+        
+        void registerCounters()
+        {
+            if (!_init)
+            {
+                _init = 1;
+                auto pEngine = lx0::Engine::acquire().get();
+                pEngine->registerProfileCounter("CanvasGL impRedraw",        &impRedraw);
+            
+                pEngine->addProfileRelationship("Engine runLoop", "CanvasGL impRedraw");
+            }
+        }
+    } profile;
+}
 
 namespace
 {
@@ -305,6 +327,8 @@ namespace lx0 { namespace subsystem { namespace canvas_ns { namespace detail {
         , mRedrawActive     (false)
         , mPixelFormat      (0)
     {
+        profile.registerCounters();
+
         // Determine the pixel format by creating a temporary window first, then 
         // create the real window.
         mPixelFormat = _createTempWindow();
@@ -408,6 +432,8 @@ namespace lx0 { namespace subsystem { namespace canvas_ns { namespace detail {
 
     bool CanvasGL::impRedraw()
     {
+        lx0::ProfileSection section(profile.impRedraw);
+
         if (!mRedrawActive)
         {
             mRedrawActive = true;
@@ -427,7 +453,9 @@ namespace lx0 { namespace subsystem { namespace canvas_ns { namespace detail {
                 // The message handling code would blindly consume and ignore the exception, which
                 // is confusing to the developer.  Since the exception cannot be passed directly
                 // up the call stack, postpone the exception until the next Engine update().
-                Engine::acquire()->postponeException(e);
+                lx_warn("Unhandleable expection: '%s'", e.what());
+                lx0::lx_break_if_debugging();
+                throw;
             }
             catch (...)
             {

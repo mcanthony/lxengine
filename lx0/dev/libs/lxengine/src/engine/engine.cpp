@@ -260,19 +260,6 @@ namespace lx0 { namespace engine { namespace dom_ns {
         spComponent->onAttached(shared_from_this()); 
     }
 
-    void 
-    Engine::incPerformanceCounter (std::string name, lx0::uint64 t) 
-    { 
-        auto it = m_perfCounters.find(name);
-        if (it != m_perfCounters.end())
-        {
-            it->second.events++;
-            it->second.total += t;
-        }
-        else
-            m_perfCounters.insert(std::make_pair(name, PerfCounter(1, t))); 
-    }
-
     void
     Engine::registerProfileCounter  (const char* name, int* pId)
     {
@@ -308,13 +295,6 @@ namespace lx0 { namespace engine { namespace dom_ns {
     {
         lx_log("Engine::shutdown()");
 
-        for (auto it = m_perfCounters.begin(); it != m_perfCounters.end(); ++it)
-        {
-            lx_log("COUNTER: %s => %lf avg, %lf total %.0lf events", it->first.c_str(), 
-                double(it->second.total) / double(it->second.events), 
-                double(it->second.total), double(it->second.events));
-        }
-
         mProfileMonitor.logCounters();
             
         // Explicitly free all references to shared objects so that memory leak checks will work
@@ -335,7 +315,7 @@ namespace lx0 { namespace engine { namespace dom_ns {
 
        // Check for memory leaks of Engine-related objects
        bool bLeaksFound = false;
-       for (auto it = m_objectCounts.begin(); it != m_objectCounts.end(); ++it)
+       for (auto it = mObjectCounts.begin(); it != mObjectCounts.end(); ++it)
        {
            if (it->second.current() != 0)
            {
@@ -372,9 +352,9 @@ namespace lx0 { namespace engine { namespace dom_ns {
     void
     Engine::incObjectCount  (std::string name)
     {
-        auto it = m_objectCounts.find(name);
-        if (it == m_objectCounts.end())
-            m_objectCounts.insert(std::make_pair(name, ObjectCount(1)));
+        auto it = mObjectCounts.find(name);
+        if (it == mObjectCounts.end())
+            mObjectCounts.insert(std::make_pair(name, ObjectCount(1)));
         else
             it->second.inc();
     }
@@ -382,9 +362,9 @@ namespace lx0 { namespace engine { namespace dom_ns {
     void 
     Engine::decObjectCount (std::string name)
     {
-        auto it = m_objectCounts.find(name);
+        auto it = mObjectCounts.find(name);
         
-        if (it != m_objectCounts.end())
+        if (it != mObjectCounts.end())
         {
             if (!(it->second.current() >= 1))
                 lx_warn("Object count for '%s' is unexpectedly less than 1!", name.c_str());
@@ -393,24 +373,6 @@ namespace lx0 { namespace engine { namespace dom_ns {
         }
         else
             lx_warn("Decrementing object count on '%s' but no entry for that name.", name.c_str());
-    }
-
-    /*!
-        Defers an exception such that it will be rethrown at the start of the next update.
-        This is reserved for cases where the exception simply cannot be thrown all the
-        way up the call stack to where it can be handled appropriately.
-
-        For example, the Windows message loop code will consume any exception that 
-        propogates through it; therefore, this method is used to get the exception back
-        to the client code - albeit postponed until the next update - so that the 
-        relevant failure is communicated to the client.
-
-        This method should be used as rarely as possible.
-     */ 
-    void
-    Engine::postponeException (lx0::error_exception& e)
-    {
-        m_postponedExceptions.push_back(e);
     }
 
     lxvar
@@ -646,7 +608,7 @@ namespace lx0 { namespace engine { namespace dom_ns {
 
         Event evt;
         evt.message = message;
-        m_eventQueue.push_back(evt);
+        mEventQueue.push_back(evt);
     }
 
 	void   
@@ -654,7 +616,7 @@ namespace lx0 { namespace engine { namespace dom_ns {
     {
         Event evt;
         evt.task = f;
-        m_eventQueue.push_back(evt);
+        mEventQueue.push_back(evt);
     }
 
     void 
@@ -664,17 +626,6 @@ namespace lx0 { namespace engine { namespace dom_ns {
         
         mWorkerThreads[index]->addTask(f);
         index = (index + 1) % mWorkerThreads.size();
-    }
-
-    void        
-    Engine::_throwPostponedException (void)
-    {
-        if (!m_postponedExceptions.empty())
-        {
-            auto e = m_postponedExceptions.front();
-            m_postponedExceptions.pop_front();
-            throw e;
-        }
     }
 
     bool
@@ -716,14 +667,12 @@ namespace lx0 { namespace engine { namespace dom_ns {
             mFrameStartMs = lx0::lx_milliseconds();
             bool bIdle = true;
 
-            _throwPostponedException();
-
-            while (!m_eventQueue.empty())
+            while (!mEventQueue.empty())
             {
                 bIdle = false;
 
-                Event evt = m_eventQueue.front();
-                m_eventQueue.pop_front();
+                Event evt = mEventQueue.front();
+                mEventQueue.pop_front();
 
                 int validity = (evt.message.empty() ? 0 : 1) + (evt.task ? 1 : 0);
                 switch (validity)
@@ -749,7 +698,6 @@ namespace lx0 { namespace engine { namespace dom_ns {
             {
                 lx0::ProfileSection section(mpProfile->runPlatformMessages);
                 _handlePlatformMessages(bDone, bIdle);
-                _throwPostponedException();
             }
 
             if (bIdle)

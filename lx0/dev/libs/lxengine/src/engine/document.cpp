@@ -36,6 +36,27 @@
 
 #include <lx0/lxengine.hpp>
 
+namespace {
+
+    struct Profile
+    {
+        Profile() { ::memset(this, 0, sizeof(*this)); }
+
+        int _inited;
+        int updateRun;
+        
+        void initialize()
+        {
+            if (!_inited)
+            {
+                _inited = 1;
+                auto spEngine = lx0::Engine::acquire();
+                spEngine->registerProfileCounter("Document updateRun", &updateRun);
+            }
+        }
+    } profile;
+}
+
 namespace lx0 { namespace engine { namespace dom_ns {
 
     Document::Document()
@@ -43,6 +64,7 @@ namespace lx0 { namespace engine { namespace dom_ns {
         , m_documentId (0)
     {
         auto spEngine = Engine::acquire();
+        profile.initialize();
         spEngine->incObjectCount("Document");
         m_documentId = spEngine->generateId();
 
@@ -291,33 +313,20 @@ namespace lx0 { namespace engine { namespace dom_ns {
     void            
     Document::updateRun ()
     {
-        _foreach ([&](ComponentPtr it) {
-            lx0::uint64 start = lx0::lx_milliseconds();
-            
-            it->onUpdate(shared_from_this());
+        lx0::ProfileSection section(profile.updateRun);
 
-            lx0::uint64 end = lx0::lx_milliseconds();
-            std::string name = it->name() ? it->name() : "(anonymous)";
-            Engine::acquire()->incPerformanceCounter(std::string("update>") + name, end - start);
+        _foreach ([&](ComponentPtr it) {                        
+            it->onUpdate(shared_from_this());
         });          
         
         slotUpdateRun();
 
-        if (0)
+        for (auto it = mElementsWithUpdate.begin(); it != mElementsWithUpdate.end(); ++it)
         {
-            _walkElements([&](ElementPtr spElem) -> bool {
-                spElem->notifyUpdate(this);
-                return false;
-            });
+            auto& pElem = *it;
+            pElem->notifyUpdate(this);
         }
-        else
-        {
-            for (auto it = mElementsWithUpdate.begin(); it != mElementsWithUpdate.end(); ++it)
-            {
-                auto& pElem = *it;
-                pElem->notifyUpdate(this);
-            }
-        }
+        
 
         for (auto it = m_views.begin(); it != m_views.end(); ++it)
             it->second->updateFrame();

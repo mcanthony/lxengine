@@ -159,7 +159,6 @@ namespace lx0
                     float       mTimeScale;
                 };
 
-
                 ///@name Version
                 ///@{
                 int                 versionMajor        (void) const                { return lx0::LXENGINE_VERSION_MAJOR; }
@@ -181,26 +180,19 @@ namespace lx0
                 lxvar               getSystemInfo       (void);
                 bool                parseCommandLine    (int argc, char** argv, const char* defArgumentName = nullptr);
 
+                lxvar&              globals             (void)                      { return mGlobals; }
                 Environment&        environment         (void)                      { return mEnvironment; }
 
                 DocumentPtr         createDocument      (void);
                 DocumentPtr         loadDocument        (std::string filename);
                 void                closeDocument       (DocumentPtr& spDocument);
-        
                 const std::vector<DocumentPtr>& documents (void) { return mDocuments; }
 
                 void                sendEvent           (std::string evt);
                 void                sendTask            (std::function<void()> f);
-
-                int	                run                 (void);
-
                 void                sendWorkerTask      (std::function<void()> f);
 
-                lx0::slot<void()>   slotRunBegin;
-                lx0::slot<void()>   slotRunEnd;
-                lx0::slot<void()>   slotIdle;
-
-                lxvar&              globals             (void) { return mGlobals; }
+                int	                run                 (void);
 
                 ///@name Attribute Parsing
                 ///@{
@@ -230,20 +222,25 @@ namespace lx0
 
                 void                notifyAttached      (ComponentPtr spComponent);
 
+                lx0::slot<void()>   slotRunBegin;
+                lx0::slot<void()>   slotRunEnd;
+                lx0::slot<void()>   slotIdle;
+
                 ///@name Counters and Statistics
                 ///@{
                 void                incObjectCount          (std::string name);
                 void                decObjectCount          (std::string name);
-                const detail::ObjectCount& objectCount      (std::string name) { return m_objectCounts[name]; }
-                void                incPerformanceCounter   (std::string name, lx0::uint64 t);
+                const detail::ObjectCount& objectCount      (std::string name) { return mObjectCounts[name]; }
                 void                registerProfileCounter  (const char* name, int* pId);
                 void                addProfileRelationship  (const char* parentName, const char* childName);
                 ///@}
 
-                void                postponeException       (lx0::error_exception& e);
+
 
             protected:
                 template <typename T> friend std::shared_ptr<T> lx0::detail::acquireSingleton (std::weak_ptr<T>&);
+
+                typedef std::map<std::string,std::function<void(lx0::lxvar)>> FunctionMap;
 
                 struct Event
                 {
@@ -254,42 +251,28 @@ namespace lx0
                 Engine();
                 ~Engine(); 
 
-                void        _registerBuiltInPlugins     (void);
+                void                        _registerBuiltInPlugins     (void);
 
-                DocumentPtr _loadDocument               (bool bCreate, std::string filename);
-                ElementPtr  _loadDocumentRoot           (DocumentPtr spDocument, std::string filename);
+                DocumentPtr                 _loadDocument               (bool bCreate, std::string filename);
+                ElementPtr                  _loadDocumentRoot           (DocumentPtr spDocument, std::string filename);
         
-                void        _throwPostponedException    (void);
-                void        _handlePlatformMessages     (bool& bDone, bool& bIdle);
+                void                        _handlePlatformMessages     (bool& bDone, bool& bIdle);
 
-                lxvar                       mSystemInfo;
+                lxvar                               mSystemInfo;
+                lxvar                               mGlobals;
+                Environment                         mEnvironment;
+                lx0::uint32                         mIdCounter;
+
                 
-                typedef std::map<std::string,std::function<void(lx0::lxvar)>> FunctionMap;
-                lxvar                       mGlobals;
-                FunctionMap                 mFunctions;
+                bool                                mbShutdownRequested;
+                std::vector<DocumentPtr>            mDocuments;
+                std::deque<Event>                   mEventQueue;
+                std::vector<detail::WorkerThread*>  mWorkerThreads;
 
-                Environment                 mEnvironment;
-                std::vector<DocumentPtr>    mDocuments;
-                std::deque<Event>           m_eventQueue;
-                bool                        mbShutdownRequested;
+                FunctionMap                         mFunctions;
 
-                lx0::uint32                 mFrameNum;
-                lx0::uint32                 mFrameStartMs;
-
-                lx0::uint32                 mIdCounter;
-
-                std::deque<lx0::error_exception>            m_postponedExceptions;
-                std::map<std::string, detail::ObjectCount>  m_objectCounts;
-                
-                struct detail::Profile*     mpProfile;              
-
-                struct PerfCounter
-                {
-                    PerfCounter(lx0::uint64 e, lx0::uint64 t) : events(e), total (t) {}
-                    lx0::uint64 events;
-                    lx0::uint64 total;
-                };
-                std::map<std::string, PerfCounter>          m_perfCounters;
+                lx0::uint32                         mFrameNum;
+                lx0::uint32                         mFrameStartMs;
 
                 std::map<std::string, std::function<ViewImp*(View*)>>                   mViewImps;
                 std::map<std::string, std::function<DocumentComponent* ()>>             mDocumentComponents;
@@ -299,8 +282,10 @@ namespace lx0
                 std::map<std::string, std::vector<std::function<bool(std::string)>>>    m_psuedoAttributes;
                 std::map<std::string, std::vector<std::function<lxvar(std::string)>>>   m_attributeParsers;
 
-                ProfileMonitor                                                          mProfileMonitor;
-                std::vector<detail::WorkerThread*>                                      mWorkerThreads;
+                
+                ProfileMonitor                              mProfileMonitor;                
+                struct detail::Profile*                     mpProfile;
+                std::map<std::string, detail::ObjectCount>  mObjectCounts;
             };
         }
     }
