@@ -849,7 +849,7 @@ RasterizerGL::createGeometry (glgeom::primitive_buffer& primitive)
     // Create the cache to encapsulate the created OGL resources
     //
     auto pGeom = new Geometry;
-    if (primitive.type == "trilist")
+    if (primitive.type == "triangles")
     {
         pGeom->mType          = GL_TRIANGLES;
         pGeom->mVao           = vao;
@@ -863,7 +863,7 @@ RasterizerGL::createGeometry (glgeom::primitive_buffer& primitive)
 
         pGeom->mtbFlatShading = (pGeom->mVboNormal == 0);
     }
-    else if (primitive.type == "pointlist")
+    else if (primitive.type == "points")
     {
         pGeom->mType          = GL_POINTS;
         pGeom->mVao           = vao;
@@ -871,7 +871,7 @@ RasterizerGL::createGeometry (glgeom::primitive_buffer& primitive)
         pGeom->mCount         = primitive.vertex.positions.size();
         pGeom->mVboColors     = _genArrayBuffer(GL_ARRAY_BUFFER, primitive.vertex.colors);
     }
-    else if (primitive.type == "linelist")
+    else if (primitive.type == "lines")
     {
         pGeom->mType          = GL_LINES;
         pGeom->mVao           = vao;
@@ -879,7 +879,7 @@ RasterizerGL::createGeometry (glgeom::primitive_buffer& primitive)
         pGeom->mCount         = primitive.vertex.positions.size();
         pGeom->mVboColors     = _genArrayBuffer(GL_ARRAY_BUFFER, primitive.vertex.colors);
     }
-    else if (primitive.type == "quadlist")
+    else if (primitive.type == "quads")
     {
         pGeom->mType          = GL_TRIANGLES;
         pGeom->mVao           = vao;

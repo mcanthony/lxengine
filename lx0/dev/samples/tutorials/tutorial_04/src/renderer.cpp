@@ -74,27 +74,38 @@ namespace
 
 namespace lx0 { namespace core { namespace lxvar_ns { namespace detail {
 
-    static void _convertTriMesh (lxvar& json, glgeom::primitive_buffer& prim)
+    /*
+        Helper function for converting an lxvar describing a triangle
+        mesh to a native glgeom::primitive_buffer.
+     */
+    static void 
+    _convertTriMesh (lxvar& json, glgeom::primitive_buffer& prim)
     {
+        // The caller should have assured this is true before calling the function
         lx_check_error(json["_meshType"].as<std::string>() == "TriMesh");
 
         const int faceCount = json["_faces"].size();
         const int vertexCount = json["_vertices"].size();
 
-        prim.type = "trilist"; 
+        // Create the primitive buffer of triangles. This native representation
+        // will then be used by the rasterizer to the necesary OpenGL buffers
+        // needed to do the rendering.
+        //
+        // Note the we only add the vertex positions, but other vertex data such
+        // as normals, colors, etc. are supported by the primitive buffer.
+        //
+        prim.type = "triangles"; 
         prim.vertex.positions.reserve(vertexCount);
         prim.vertex.normals.reserve(vertexCount);                    
         for (int i = 0; i < vertexCount; ++i)
         {
             lxvar vertex = json["_vertices"][i];
             lxvar v = vertex["position"];
-            lxvar n = vertex["normal"];
-            lxvar c = vertex["color"];
             prim.vertex.positions.push_back( v.convert() );
-            //prim.vertex.normals.push_back( n.convert() );
-            //prim.vertex.colors.push_back( c.convert() );
         }
 
+        // Now read the face indices.  This is a simple indexed triangle mesh.
+        //
         prim.indices.reserve(faceCount * 3);
         for (int i = 0; i < faceCount; ++i)
         {
@@ -102,18 +113,22 @@ namespace lx0 { namespace core { namespace lxvar_ns { namespace detail {
             prim.indices.push_back((int)f[0]);
             prim.indices.push_back((int)f[1]);
             prim.indices.push_back((int)f[2]);
-            //prim.indices.push_back((int)f[3]);
         }
 
     }
 
-    static void _convertPointList (lxvar& json, glgeom::primitive_buffer& prim)
+    /*
+        Helper function for converting an lxvar describing a point list
+        to a native glgeom::primitive_buffer.
+     */
+    static void 
+    _convertPointList (lxvar& json, glgeom::primitive_buffer& prim)
     {
         lx_check_error(json["_meshType"].as<std::string>() == "PointList");
 
         const int vertexCount = json["_vertices"].size();
 
-        prim.type = "pointlist"; 
+        prim.type = "points"; 
         prim.vertex.positions.reserve(vertexCount);
         for (int i = 0; i < vertexCount; ++i)
         {
@@ -123,13 +138,17 @@ namespace lx0 { namespace core { namespace lxvar_ns { namespace detail {
         }
     }
 
+    /*
+        Helper function for converting an lxvar describing a line list
+        to a native glgeom::primitive_buffer.
+     */
     static void _convertLineList (lxvar& json, glgeom::primitive_buffer& prim)
     {
         lx_check_error(json["_meshType"].as<std::string>() == "LineList");
 
         const int vertexCount = json["_vertices"].size();
 
-        prim.type = "linelist"; 
+        prim.type = "lines"; 
         prim.vertex.positions.reserve(vertexCount);
         for (int i = 0; i < vertexCount; ++i)
         {
@@ -139,7 +158,22 @@ namespace lx0 { namespace core { namespace lxvar_ns { namespace detail {
         }
     }
 
-    void _convert (lxvar& json, glgeom::primitive_buffer& prim)
+    /*
+        Define a custom lxvar-to-native-type conversion function.
+
+        The lxvar::convert() template searches the  lx0::core::lxvar_ns::detail 
+        namespace for an overload of the _convert() function that matches the
+        necessary implicit conversion.  Therefore, if a function of the
+        prototype _convert(lxvar&, T&) is declared in the code before a call
+        to convert() for a type T, then the compiler will properly invoke the
+        _convert() implementation.  
+
+        In this case, this allows us to write the following:
+
+        glgeom::primitive_buffer primitive = myvar.convert();
+     */
+    void 
+    _convert (lxvar& json, glgeom::primitive_buffer& prim)
     {
         std::string type = json["_meshType"].as<std::string>();
         
@@ -177,12 +211,20 @@ public:
 _LX_FORWARD_DECL_PTRS(Renderable);
 
 
+/*
+    A standard LxEngine Material object coupled with additional data
+    for this tutorial.
+ */
 struct MaterialData
 {
+    lx0::MaterialPtr    spMaterial;  
     lx0::lxvar          renderProperties;
-    lx0::MaterialPtr    spMaterial;
 };
 
+/*
+    A standard LxEngine Geometry object coupled with additional
+    data for this tutorial.
+ */
 struct GeometryData
 {
     lx0::GeometryPtr    spGeometry;
@@ -193,6 +235,14 @@ struct GeometryData
 //   R E N D E R E R
 //===========================================================================//
 
+/*
+    The main plug-in used by the tutorial.  
+    
+    The Renderer is a View::Component which responds to redraw requests, 
+    frame updates, events, as well as other standard Component notifications.
+    This is where we define how to redraw the screen, how to react to events
+    (e.g. key presses), and the majority of the application logic.
+ */
 class Renderer : public lx0::View::Component
 {
 public:
@@ -203,6 +253,11 @@ public:
         , mZoom               (1.0f)
         , miRenderAlgorithm   (0)
     {
+        //
+        // The profile counters need to be initialized prior to use.  This
+        // is a good place to do so as the constructor will always be called
+        // before any of the counters are used.
+        //
         profile.initialize();
     }
 
@@ -215,10 +270,15 @@ public:
         mspRasterizer.reset( new lx0::RasterizerGL );
         mspRasterizer->initialize();
 
+        //
+        // Create an offscreen frame buffer to use for some of the multipass
+        // rendering algorithms.
+        // 
         mspFBOffscreen = mspRasterizer->createFrameBuffer(512, 512);
 
         //
-        // Add an empty light set; the Document will populate it
+        // Add an empty light set; the Document will populate it with
+        // individual lights.
         // 
         mspLightSet = mspRasterizer->createLightSet();
 
@@ -250,10 +310,20 @@ public:
         mspCamera = _createCamera(geomData.spGeometry->mBBox, mZoom);
     }
 
+    /*
+        The View::Component render virtual method is called when the view 
+        needs to be redrawn.
+     */
     virtual void render (void)	
     {
         lx0::ProfileSection section(profile.render);
 
+        //
+        // The RenderAlgorithm describes number of global scene passes and
+        // as well as setup data such as the clear color.  Depending on the
+        // activate requested algorithm, populate this data structure with
+        // the appropriate parameters.
+        //
         lx0::RenderAlgorithm algorithm;
         algorithm.mClearColor = glgeom::color4f(0.1f, 0.3f, 0.8f, 1.0f);
         
@@ -262,6 +332,13 @@ public:
         {
         default:
         case 0:
+            //
+            // Set up a two pass rendering algorithm. The first pass
+            // draws the scene normally but to the offscreen frame buffer.
+            // The second pass then renders the offscreen frame buffer to
+            // the display frame buffer using a custom shader to apply a 
+            // blur effect.
+            //
             pass.spFrameBuffer = mspFBOffscreen;
             pass.spCamera   = mspCamera;
             pass.spLightSet = mspLightSet;
@@ -274,15 +351,31 @@ public:
             break;
 
         case 1:
+            //
+            // Set up a "default" rendering algorithm.  A camera and light set
+            // are all that are provided: the algorithm will default to rendering
+            // to the screen and the shader/material data will all come from 
+            // the individual entities.
+            //
             pass.spCamera   = mspCamera;
             pass.spLightSet = mspLightSet;
             algorithm.mPasses.push_back(pass);
             break;
         }
 
+        //
+        // The scene is described via a RenderList, which (for our purposes) is
+        // a simple list of Instance objects.  The Instance objects describe the
+        // individual entities as a set of geometry, material, and any custom 
+        // settings or overrides for that entity.
+        //
         lx0::RenderList instances;
         instances.push_back(0, mspRenderable->mspInstance);
 
+        //
+        // This is a standard rendering loop: begin the frame, then rasterize
+        // each layer of the RenderList according via rasterizeList.
+        //
         mspRasterizer->beginFrame(algorithm);
         for (auto it = instances.begin(); it != instances.end(); ++it)
         {
@@ -291,7 +384,13 @@ public:
         mspRasterizer->endFrame();
     }
 
-    virtual void update (lx0::ViewPtr spView) 
+    /*
+        Called every frame to give the renderer an opportunity to do 
+        any data update such as simulations, animations, or other 
+        incremental data updates.
+     */
+    virtual void 
+    update (lx0::ViewPtr spView) 
     {
         //
         // Always rotate the model on every update
@@ -304,7 +403,7 @@ public:
 
         //
         // If the zoom value on the geometry has changed, adjust the
-        // camera view accordingly
+        // camera view accordingly.
         //
         auto& geomData = mGeometry[mCurrentGeometry];
         if (mZoom != geomData.zoom)
@@ -313,10 +412,26 @@ public:
             mspCamera = _createCamera(geomData.spGeometry->mBBox, mZoom);
         }
 
+        //
+        // Views are not necessarily redrawn every frame; the application must indicate
+        // whether a redraw is actually needed.  This tutorial forces a redraw every
+        // frame by always sending the redraw message to the view with every update.
+        //
         spView->sendEvent("redraw");
     }
 
-    virtual void handleEvent (std::string evt, lx0::lxvar params) 
+    /*
+        LxEngine abstracts direct user input and commands from the logic to handle
+        those interactions.  The keyboard logic, for example, translates key presses
+        into high-level "events."  This way the application logic responds to 
+        events such as "next_material" rather than a specific key press such as 
+        "N" meaning switch to the next material.  This abstraction allows for easy
+        customization of keyboard shortcuts as well as allows for thing such as 
+        scripted interaction (i.e. simulating a keypress) without any changes to
+        the internal handling logic.
+     */
+    virtual void 
+    handleEvent (std::string evt, lx0::lxvar params) 
     {
         if (evt == "change_geometry")
         {
@@ -350,7 +465,7 @@ public:
         }
         else if (evt == "toggle_wireframe")
         {
-            // This should be handled as a global rendering algorithm override instead
+            //@todo This should be handled as a global rendering algorithm override instead
             for (auto it = mMaterials.begin(); it != mMaterials.end(); ++it)
                 (*it).spMaterial->mWireframe = !(*it).spMaterial->mWireframe;
         }
@@ -513,7 +628,9 @@ protected:
         {
             //
             // This is executed as a task in the main thread; therefore no locks or threading 
-            // protection is necessary on the rasterizer or geometry list.
+            // protection is necessary on the rasterizer or geometry list.  If this were
+            // executed outside the main thread, then the calls to createQuadList and the
+            // modification to mGeometry would be problematic.
             //
             auto addGeometry = [this,zoom](glgeom::primitive_buffer* primitive) {
                     auto spGeometry = mspRasterizer->createQuadList(primitive->indices, 

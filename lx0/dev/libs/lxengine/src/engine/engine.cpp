@@ -611,11 +611,25 @@ namespace lx0 { namespace engine { namespace dom_ns {
         mEventQueue.push_back(evt);
     }
 
+    /*!
+        Adds a "task" to the main event queue.  This task will be executed on the 
+        next frame.  
+        
+        The task is guarenteed to be run in the main thread.  This function is
+        thread-safe and can be called from any thread.  This method is a useful
+        way to guarentee a task, needed by a worker thread, is run in the main 
+        thread (e.g. delivering a data packet back to the main thread without 
+        having to use a thread-safe container.)
+     */
 	void   
 	Engine::sendTask (std::function<void()> f)
     {
         Event evt;
         evt.task = f;
+
+        // Not that efficient, but easy code...
+        static boost::mutex mutex;
+        boost::lock_guard<boost::mutex> lock(mutex);
         mEventQueue.push_back(evt);
     }
 

@@ -128,7 +128,7 @@ processNifObject (Niflib::NiObjectRef spObject, std::function<std::string (std::
                     auto& primitive = *spGroup->instances.back().spPrimitive;
                     auto& transform = *spGroup->instances.back().spTransform;
 
-                    primitive.type = "trilist";
+                    primitive.type = "triangles";
 
                     //
                     // A mesh is being processed, so record the texture filename found earlier.

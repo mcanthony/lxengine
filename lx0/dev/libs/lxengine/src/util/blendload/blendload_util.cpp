@@ -74,7 +74,7 @@ _primitive_buffer_from_block (glgeom::primitive_buffer& primitive, lx0::BlendRea
     const auto totalVertices = spMesh->field<int>("totvert");
     const auto totalFaces = spMesh->field<int>("totface");
 
-    primitive.type = "quadlist";
+    primitive.type = "quads";
 
     //
     // Reserve the memory needed in advance for efficiency

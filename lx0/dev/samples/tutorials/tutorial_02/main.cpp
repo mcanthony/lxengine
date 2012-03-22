@@ -75,7 +75,7 @@ public:
         // Build the cube geometry
         //
         glgeom::primitive_buffer primitive;
-        primitive.type = "quadlist";
+        primitive.type = "quads";
 
         primitive.vertex.positions.resize(8);
         primitive.vertex.positions[0] = glgeom::point3f(-.5f,-.5f,-.5f);

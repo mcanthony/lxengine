@@ -249,7 +249,7 @@ namespace Terrain
         }
 
         glgeom::primitive_buffer primitive;
-        primitive.type = "quadlist";
+        primitive.type = "quads";
         primitive.vertex.positions.swap(positions);
         primitive.vertex.normals.swap(normals);
         primitive.vertex.colors.swap(colors);
