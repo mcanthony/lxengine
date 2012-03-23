@@ -362,10 +362,20 @@ void Texture::load()
 
         GLuint id;
         gl->genTextures(1, &id);
-        gl->bindTexture(GL_TEXTURE_2D, id);
-        gl->texImage2D(GL_TEXTURE_2D, 0, GL_RGBA, img.mWidth, img.mHeight, 0, GL_RGBA, GL_UNSIGNED_BYTE, img.mData.get());
-        gl->texParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	    gl->texParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        if (img.mHeight == 1)
+        {
+            gl->bindTexture(GL_TEXTURE_1D, id);
+            gl->texImage1D(GL_TEXTURE_1D, 0, GL_RGBA, img.mWidth, 0, GL_RGBA, GL_UNSIGNED_BYTE, img.mData.get());
+            gl->texParameteri(GL_TEXTURE_1D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	        gl->texParameteri(GL_TEXTURE_1D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        }
+        else
+        {
+            gl->bindTexture(GL_TEXTURE_2D, id);
+            gl->texImage2D(GL_TEXTURE_2D, 0, GL_RGBA, img.mWidth, img.mHeight, 0, GL_RGBA, GL_UNSIGNED_BYTE, img.mData.get());
+            gl->texParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	        gl->texParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        }
 
         mId = id;
     }

@@ -437,6 +437,48 @@ Material::_generateInstruction (RasterizerGL* pRasterizer, const Uniform& unifor
                 }
             }
         }
+        else if (uniform.type == GL_SAMPLER_1D)
+        {
+            GLuint textureId = GL_NONE;
+
+            auto name = value.as<std::string>();
+            if (name[0] != '@')
+            {
+                TexturePtr spTexture;
+
+                auto it = pRasterizer->mTextureCache.find(name);                    
+                if (it == pRasterizer->mTextureCache.end()) 
+                {
+                    spTexture = pRasterizer->createTexture(name.c_str());
+                    pRasterizer->cacheTexture(name, spTexture);
+                }
+                else
+                    spTexture = it->second;
+
+                textureId = spTexture->mId;
+            }
+
+            if (textureId)
+            {
+                // Activate the corresponding texture unit and set *that* to the GL id
+                return [=]() {
+                    const auto unit = pRasterizer->mContext.textureUnit++;
+
+                    // Set the shader uniform to the *texture unit* containing the texture (NOT
+                    // the GL id of the texture)
+                    gl->uniform1i(loc, unit);
+
+                    gl->activeTexture(GL_TEXTURE0 + unit);
+                    gl->bindTexture(GL_TEXTURE_1D, textureId);
+
+                    // Set the parameters on the texture unit
+                    gl->texParameteri(GL_TEXTURE_1D, GL_TEXTURE_MAG_FILTER, mFilter);
+                    gl->texParameteri(GL_TEXTURE_1D, GL_TEXTURE_MIN_FILTER, mFilter);
+                    gl->enable(GL_TEXTURE_1D);
+                    check_glerror();
+                };
+            }
+        }
         else if (uniform.type == GL_SAMPLER_2D)
         {
             GLuint textureId = GL_NONE;

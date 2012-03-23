@@ -1,5 +1,5 @@
 {
-    type : "quadlist",
+    type : "quads",
     vertex : {
         positions : [
             [ -1, -1, 0 ],

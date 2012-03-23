@@ -1,0 +1,1 @@
+Originally based off of the Toon shading tutorial from lighthouse3d available at: http://www.lighthouse3d.com/tutorials/glsl-tutorial/toon-shading-version-i/

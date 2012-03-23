@@ -555,18 +555,32 @@ protected:
         lx0::lxvar  render = spElem->value().find("render");
         lx0::lxvar  graph = spElem->value().find("graph");
 
-        //
-        // Use the Shader Builder subsystem to construct a material
-        // (i.e. unique id, shader source code, and set of parameters)
-        //
-        lx0::ShaderBuilder::Material material;
-        mShaderBuilder.buildShaderGLSL(material, graph);
+        if (graph.is_defined())
+        {
+            //
+            // Use the Shader Builder subsystem to construct a material
+            // (i.e. unique id, shader source code, and set of parameters)
+            //
+            lx0::ShaderBuilder::Material material;
+            mShaderBuilder.buildShaderGLSL(material, graph);
 
-        //
-        // Pass on the generated material data which the rasterizer
-        // will use to compile a shader plus a parameter set.
-        //
-        _addMaterial(material.uniqueName, material.source, material.parameters, render);
+            //
+            // Pass on the generated material data which the rasterizer
+            // will use to compile a shader plus a parameter set.
+            //
+            _addMaterial(material.uniqueName, material.source, material.parameters, render);
+        }
+        else
+        {
+            std::string fragShader = spElem->value().find("fragmentShader").as<std::string>();
+            std::string vertShader = spElem->value().find("vertexShader").as<std::string>();
+
+            MaterialData data;
+            data.renderProperties = render;
+            data.spMaterial = mspRasterizer->acquireMaterial("ToonSimple");
+
+            mMaterials.push_back(data);
+        }
     }
 
     void _processGeometry (lx0::DocumentPtr spDocument, lx0::ElementPtr spElem)

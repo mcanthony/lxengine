@@ -757,8 +757,9 @@ namespace lx0 { namespace engine { namespace dom_ns {
             //
             {
                 boost::lock_guard<boost::mutex> lock(mEventQueueMutex);
-                mEventQueue.swap(reQueue);
-                lx_check_error(reQueue.empty());
+                for (auto it = reQueue.begin(); it != reQueue.end(); ++it)
+                    mEventQueue.push_back(*it);
+                reQueue.clear();
             }
 
             {

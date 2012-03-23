@@ -64,7 +64,14 @@
           color : [ .7, 0, 0 ],
         },
       }
-    </Material>       
+    </Material>
+    
+    <Material id="toon1">
+        {
+            vertexShader : "media2/shaders/lx/materials/ToonSimple/shader.vert",
+            fragmentShader : "media2/shaders/lx/materials/ToonSimple/shader.frag",
+        }
+    </Material>
     
     <Material id="phong_defaults">
       {
