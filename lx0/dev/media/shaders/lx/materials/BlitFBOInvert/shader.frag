@@ -10,8 +10,7 @@ layout(location = 0) out vec4 outColor;
 void main()
 {	   
     vec4 texColor = texture2D(unifTexture0, fragUV);
-    
     if (texColor.a < .01)
         discard;
-    outColor = vec4(texColor.r, texColor.g, texColor.b, 1.0);
+    outColor = vec4(vec3(1,1,1) - texColor.rgb, 1.0);
 }

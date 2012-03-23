@@ -328,10 +328,22 @@ public:
         algorithm.mClearColor = glgeom::color4f(0.1f, 0.3f, 0.8f, 1.0f);
         
         lx0::GlobalPass pass;
-        switch (miRenderAlgorithm % 2)
+        switch (miRenderAlgorithm % 5)
         {
         default:
         case 0:
+            //
+            // Set up a "default" rendering algorithm.  A camera and light set
+            // are all that are provided: the algorithm will default to rendering
+            // to the screen and the shader/material data will all come from 
+            // the individual entities.
+            //
+            pass.spCamera   = mspCamera;
+            pass.spLightSet = mspLightSet;
+            algorithm.mPasses.push_back(pass);
+            break;
+
+        case 1:
             //
             // Set up a two pass rendering algorithm. The first pass
             // draws the scene normally but to the offscreen frame buffer.
@@ -350,17 +362,66 @@ public:
             algorithm.mPasses.push_back(pass);
             break;
 
-        case 1:
+        case 2:
             //
-            // Set up a "default" rendering algorithm.  A camera and light set
-            // are all that are provided: the algorithm will default to rendering
-            // to the screen and the shader/material data will all come from 
-            // the individual entities.
+            // Set up a two pass rendering algorithm. The first pass
+            // draws the scene normally but to the offscreen frame buffer.
+            // The second pass then renders the offscreen frame buffer to
+            // the display frame buffer using a custom shader to apply a 
+            // blur effect.
             //
+            pass.spFrameBuffer = mspFBOffscreen;
             pass.spCamera   = mspCamera;
             pass.spLightSet = mspLightSet;
+            pass.optClearColor = std::make_pair(true, glgeom::color4f(0, 0, 0, 0));
+            algorithm.mPasses.push_back(pass);
+
+            pass.spFrameBuffer.reset();
+            pass.spSourceFBO = mspFBOffscreen;
+            pass.spMaterial = mspRasterizer->acquireMaterial("BlitFBOGrayscale");
             algorithm.mPasses.push_back(pass);
             break;
+
+        case 3:
+            //
+            // Set up a two pass rendering algorithm. The first pass
+            // draws the scene normally but to the offscreen frame buffer.
+            // The second pass then renders the offscreen frame buffer to
+            // the display frame buffer using a custom shader to apply a 
+            // blur effect.
+            //
+            pass.spFrameBuffer = mspFBOffscreen;
+            pass.spCamera   = mspCamera;
+            pass.spLightSet = mspLightSet;
+            pass.optClearColor = std::make_pair(true, glgeom::color4f(0, 0, 0, 0));
+            algorithm.mPasses.push_back(pass);
+
+            pass.spFrameBuffer.reset();
+            pass.spSourceFBO = mspFBOffscreen;
+            pass.spMaterial = mspRasterizer->acquireMaterial("BlitFBOInvert");
+            algorithm.mPasses.push_back(pass);
+            break;
+
+        case 4:
+            //
+            // Set up a two pass rendering algorithm. The first pass
+            // draws the scene normally but to the offscreen frame buffer.
+            // The second pass then renders the offscreen frame buffer to
+            // the display frame buffer using a custom shader to apply a 
+            // blur effect.
+            //
+            pass.spFrameBuffer = mspFBOffscreen;
+            pass.spCamera   = mspCamera;
+            pass.spLightSet = mspLightSet;
+            pass.optClearColor = std::make_pair(true, glgeom::color4f(0, 0, 0, 0));
+            algorithm.mPasses.push_back(pass);
+
+            pass.spFrameBuffer.reset();
+            pass.spSourceFBO = mspFBOffscreen;
+            pass.spMaterial = mspRasterizer->acquireMaterial("BlitFBOInvertBlur");
+            algorithm.mPasses.push_back(pass);
+            break;
+
         }
 
         //

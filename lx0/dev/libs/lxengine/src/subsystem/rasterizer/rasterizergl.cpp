@@ -499,6 +499,8 @@ RasterizerGL::acquireMaterial (std::string name)
     MaterialPtr& spMaterial = mMaterials[name];
     if (!spMaterial)
     {
+        lx_log("Loading material '%1%'", name);
+
         //
         // Add some local helpers
         //
@@ -1294,7 +1296,7 @@ RasterizerGL::rasterizeList (RenderAlgorithm& algorithm, std::vector<std::shared
                 //
                 InstancePtr spInstance(new Instance);
                 spInstance->spGeometry = acquireGeometry("basic2d/FullScreenQuad");
-                spInstance->spMaterial = acquireMaterial("BlitFBO");
+                spInstance->spMaterial = pass->spMaterial ? pass->spMaterial : acquireMaterial("BlitFBO");
                 spInstance->spTransform = createTransform(glm::mat4(), glm::mat4(), glm::mat4());
 
                 rasterizeItem(*pass, spInstance);
