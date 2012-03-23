@@ -444,17 +444,9 @@ Material::_generateInstruction (RasterizerGL* pRasterizer, const Uniform& unifor
             auto name = value.as<std::string>();
             if (name[0] != '@')
             {
-                TexturePtr spTexture;
-
-                auto it = pRasterizer->mTextureCache.find(name);                    
-                if (it == pRasterizer->mTextureCache.end()) 
-                {
+                TexturePtr& spTexture = pRasterizer->mTextureCache[name];
+                if (!spTexture) 
                     spTexture = pRasterizer->createTexture(name.c_str());
-                    pRasterizer->cacheTexture(name, spTexture);
-                }
-                else
-                    spTexture = it->second;
-
                 textureId = spTexture->mId;
             }
 
@@ -474,6 +466,8 @@ Material::_generateInstruction (RasterizerGL* pRasterizer, const Uniform& unifor
                     // Set the parameters on the texture unit
                     gl->texParameteri(GL_TEXTURE_1D, GL_TEXTURE_MAG_FILTER, mFilter);
                     gl->texParameteri(GL_TEXTURE_1D, GL_TEXTURE_MIN_FILTER, mFilter);
+                    gl->texParameteri(GL_TEXTURE_1D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	                gl->texParameteri(GL_TEXTURE_1D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
                     gl->enable(GL_TEXTURE_1D);
                     check_glerror();
                 };

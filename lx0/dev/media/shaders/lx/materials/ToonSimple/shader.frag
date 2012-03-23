@@ -9,6 +9,5 @@ layout(location = 0) out vec4 outColor;
 
 void main()
 {
-    float intensity = clamp(fragIntensity, 0.01, 0.99);
-	outColor = texture(unifTexture0, intensity);        
+    outColor = texture(unifTexture0, fragIntensity);        
 }
