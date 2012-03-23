@@ -1,0 +1,1 @@
+Shader based on "Applying a Gaussian blur filter" in Chapter 5 of "OpenGL 4.0 Shading Language Cookbook".

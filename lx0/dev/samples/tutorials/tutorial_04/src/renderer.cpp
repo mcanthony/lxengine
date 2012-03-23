@@ -274,7 +274,8 @@ public:
         // Create an offscreen frame buffer to use for some of the multipass
         // rendering algorithms.
         // 
-        mspFBOffscreen = mspRasterizer->createFrameBuffer(512, 512);
+        mspFBOffscreen  = mspRasterizer->createFrameBuffer(512, 512);
+        mspFBOffscreen1 = mspRasterizer->createFrameBuffer(512, 512);
 
         //
         // Add an empty light set; the Document will populate it with
@@ -354,11 +355,16 @@ public:
             pass.spFrameBuffer = mspFBOffscreen;
             pass.spCamera   = mspCamera;
             pass.spLightSet = mspLightSet;
-            pass.optClearColor = std::make_pair(true, glgeom::color4f(0, 0, 0, 0));
+            algorithm.mPasses.push_back(pass);
+
+            pass.spFrameBuffer = mspFBOffscreen1;
+            pass.spSourceFBO = mspFBOffscreen;
+            pass.spMaterial = mspRasterizer->acquireMaterial("BlitFBOGaussianPass1");
             algorithm.mPasses.push_back(pass);
 
             pass.spFrameBuffer.reset();
-            pass.spSourceFBO = mspFBOffscreen;
+            pass.spSourceFBO = mspFBOffscreen1;
+            pass.spMaterial = mspRasterizer->acquireMaterial("BlitFBOGaussianPass2");
             algorithm.mPasses.push_back(pass);
             break;
 
@@ -782,6 +788,7 @@ protected:
     lx0::ShaderBuilder            mShaderBuilder;
     lx0::RasterizerGLPtr          mspRasterizer;
     lx0::FrameBufferPtr           mspFBOffscreen;
+    lx0::FrameBufferPtr           mspFBOffscreen1;
     lx0::CameraPtr                mspCamera;
     lx0::LightSetPtr              mspLightSet;
     RenderablePtr                 mspRenderable;

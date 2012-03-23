@@ -1309,7 +1309,12 @@ RasterizerGL::rasterizeList (RenderAlgorithm& algorithm, std::vector<std::shared
                 //
                 if (spFBO->textureId() != 0)
                 {
-                    const auto& color = pass->optClearColor.second;                    
+                    glgeom::color4f color;
+                    if (pass->optClearColor.first)
+                        color = pass->optClearColor.second;
+                    else
+                        color = algorithm.mClearColor;
+
                     gl->clearColor(color.r, color.g, color.b, color.a);
                     gl->clear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
                 }
