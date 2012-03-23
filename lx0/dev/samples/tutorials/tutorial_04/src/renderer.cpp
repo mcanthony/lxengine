@@ -619,8 +619,8 @@ protected:
 
     void _processMaterial (lx0::ElementPtr spElem)
     {
-        lx0::lxvar  render = spElem->value().find("render");
-        lx0::lxvar  graph = spElem->value().find("graph");
+        lx0::lxvar  render = spElem->value().is_defined() ? spElem->value().find("render") : lx0::lxvar::undefined();
+        lx0::lxvar  graph = spElem->value().is_defined() ? spElem->value().find("graph") : lx0::lxvar::undefined();
 
         if (graph.is_defined())
         {
@@ -639,12 +639,12 @@ protected:
         }
         else
         {
-            std::string fragShader = spElem->value().find("fragmentShader").as<std::string>();
-            std::string vertShader = spElem->value().find("vertexShader").as<std::string>();
+            std::string src = spElem->attr("src").query(std::string(""));
+            std::string instance = spElem->attr("instance").query(std::string(""));
 
             MaterialData data;
             data.renderProperties = render;
-            data.spMaterial = mspRasterizer->acquireMaterial("ToonSimple");
+            data.spMaterial = mspRasterizer->acquireMaterial(src, instance);
 
             mMaterials.push_back(data);
         }

@@ -66,12 +66,10 @@
       }
     </Material>
     
-    <Material id="toon1">
-        {
-            vertexShader : "media2/shaders/lx/materials/ToonSimple/shader.vert",
-            fragmentShader : "media2/shaders/lx/materials/ToonSimple/shader.frag",
-        }
-    </Material>
+    <Material id="toon1" src="ToonSimple" />
+    <Material id="toon2" src="ToonSimple" instance="Forest" />    
+    <Material id="toon3" src="ToonSimple" instance="Forest2" />    
+    <Material id="toon3" src="ToonSimple" instance="Forest3" />
     
     <Material id="phong_defaults">
       {

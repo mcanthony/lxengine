@@ -1,0 +1,5 @@
+{
+	parameters: {
+		unifTexture0 : "media2/textures/gradients/1d/forestgreen_1-00.png"
+	}
+}

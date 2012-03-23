@@ -489,17 +489,19 @@ RasterizerGL::cacheTexture (std::string name, TexturePtr spTexture)
 }
 
 MaterialPtr 
-RasterizerGL::acquireMaterial (std::string name)
+RasterizerGL::acquireMaterial (std::string className, std::string instanceName)
 {
     lx0::ProfileSection section(profile.acquireMaterial);
+
+    std::string materialName = className + "." + instanceName;
 
     //
     // Create a material instance using all the material class defaults
     //
-    MaterialPtr& spMaterial = mMaterials[name];
+    MaterialPtr& spMaterial = mMaterials[materialName];
     if (!spMaterial)
     {
-        lx_log("Loading material '%1%'", name);
+        lx_log("Loading material '%1%'", materialName);
 
         //
         // Add some local helpers
@@ -518,36 +520,55 @@ RasterizerGL::acquireMaterial (std::string name)
         // Create a material class from a set of shaders and default parameters to the
         // uniforms.
         //
-        MaterialClassPtr& spMaterialClass = mMaterialClasses[name];
+        MaterialClassPtr& spMaterialClass = mMaterialClasses[className];
         if (!spMaterialClass)
         {
 
-            std::string vertSource = conditionalLoad(base, name, "shader.vert");
-            std::string geomSource = conditionalLoad(base, name, "shader.geom");
-            std::string fragSource = conditionalLoad(base, name, "shader.frag");
+            std::string vertSource = conditionalLoad(base, className, "shader.vert");
+            std::string geomSource = conditionalLoad(base, className, "shader.geom");
+            std::string fragSource = conditionalLoad(base, className, "shader.frag");
             
             auto prog = _createProgramVGF(vertSource, geomSource, fragSource);
             spMaterialClass.reset( new MaterialClass(prog) );
-            spMaterialClass->mName = name;
+            spMaterialClass->mName = className;
+
+            //
+            // Create the default instance parameters and state.
+            // Then check if these options are specified in a file.
+            //
+            lx0::lxvar params = lxvar::map();
+            std::string json = conditionalLoad(base, className, "material.json");
+            if (!json.empty())
+            {
+                lxvar material = lx0::lxvar::parse(json.c_str());            
+                params = material["parameters"];
+            }
+            spMaterialClass->mDefaults = params;
         }
-
+        
         //
-        // Create the default instance parameters and state.
-        // Then check if these options are specified in a file.
+        // Unfortunately, the "state" is currently stored on the Material,
+        // not the MaterialClass - so material.json needs to be loaded again.
         //
-        lx0::lxvar params = lxvar::map();
         lx0::lxvar state = lxvar::undefined();
-
-        std::string json = conditionalLoad(base, name, "material.json");
+        std::string json = conditionalLoad(base, className, "material.json");
         if (!json.empty())
         {
             lxvar material = lx0::lxvar::parse(json.c_str());            
-            params = material["parameters"];
             state = material["state"];            
-        }
+        }        
+        
+        lx0::lxvar params = lxvar::map();
+        std::string instanceJson = conditionalLoad(base, className, lx0::_lx_format("instance-%1%.json", instanceName));
+        if (!instanceJson.empty())
+        {
+            lxvar material = lx0::lxvar::parse(instanceJson.c_str());            
+            params = material["parameters"];            
+        }        
         
         spMaterial = spMaterialClass->createInstance(params);
-        spMaterial->mName = name;
+        spMaterial->mName = materialName;
+        spMaterial->mParameters = params;
 
         if (state.is_defined())
         {

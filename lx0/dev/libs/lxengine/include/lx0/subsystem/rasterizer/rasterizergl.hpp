@@ -222,7 +222,7 @@ namespace lx0
                 LightPtr        createLight                 (void);
                 LightPtr        createLight                 (const glgeom::point_light_f& light);
 
-                MaterialPtr     acquireMaterial             (std::string name);
+                MaterialPtr     acquireMaterial             (std::string name, std::string instance = "");
                 MaterialPtr     createMaterial              (std::string name, std::string fragmentSource, lx0::lxvar parameters);
                 MaterialPtr     createVertexColorMaterial   (void);
                 MaterialPtr     createPhongMaterial         (const glgeom::material_phong_f& mat);                
