@@ -265,10 +265,10 @@ namespace lx0
                 lxvar                               mGlobals;
                 Environment                         mEnvironment;
                 lx0::uint32                         mIdCounter;
-
                 
                 bool                                mbShutdownRequested;
                 std::vector<DocumentPtr>            mDocuments;
+                boost::mutex                        mEventQueueMutex;
                 std::deque<Event>                   mEventQueue;
                 std::vector<detail::WorkerThread*>  mWorkerThreads;
 

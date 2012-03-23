@@ -608,6 +608,8 @@ namespace lx0 { namespace engine { namespace dom_ns {
 
         Event evt;
         evt.message = message;
+
+        boost::lock_guard<boost::mutex> lock(mEventQueueMutex);
         mEventQueue.push_back(evt);
     }
 
@@ -627,9 +629,7 @@ namespace lx0 { namespace engine { namespace dom_ns {
         Event evt;
         evt.task = f;
 
-        // Not that efficient, but easy code...
-        static boost::mutex mutex;
-        boost::lock_guard<boost::mutex> lock(mutex);
+        boost::lock_guard<boost::mutex> lock(mEventQueueMutex);
         mEventQueue.push_back(evt);
     }
 
@@ -638,6 +638,8 @@ namespace lx0 { namespace engine { namespace dom_ns {
     {
         Event evt;
         evt.func = f;
+
+        boost::lock_guard<boost::mutex> lock(mEventQueueMutex);
         mEventQueue.push_back(evt);
     }
 
@@ -689,13 +691,25 @@ namespace lx0 { namespace engine { namespace dom_ns {
             mFrameStartMs = lx0::lx_milliseconds();
             bool bIdle = true;
 
+            //
+            // Copy the current queue contents to a local queue in case other
+            // threads may be adding to the queue while the current contents
+            // are being processed.  Use a secondary queue for events that want
+            // to be run again in the next frame as well.
+            //
+            std::deque<Event> queue;
             std::deque<Event> reQueue;
-            while (!mEventQueue.empty())
+            {
+                boost::lock_guard<boost::mutex> lock(mEventQueueMutex);
+                queue.swap(mEventQueue);
+            }
+
+            while (!queue.empty())
             {
                 bIdle = false;
 
-                Event evt = mEventQueue.front();
-                mEventQueue.pop_front();
+                Event evt = queue.front();
+                queue.pop_front();
 
                 int validity = (evt.message.empty() ? 0 : 1) + (evt.task ? 1 : 0) + (evt.func ? 1 : 0);
                 switch (validity)
@@ -704,6 +718,7 @@ namespace lx0 { namespace engine { namespace dom_ns {
                     lx_warn("Ignoring empty event (neither a message or task is set)");
                     break;
                 case 2:
+                case 3:
                     throw lx_error_exception("Overspecified event! Both a message and a task are set on the event.");
                     break;
 
@@ -740,9 +755,11 @@ namespace lx0 { namespace engine { namespace dom_ns {
             
             // Fill the event queue with all events that should be repeated
             //
-            mEventQueue.swap(reQueue);
-            lx_check_error(reQueue.empty());
-
+            {
+                boost::lock_guard<boost::mutex> lock(mEventQueueMutex);
+                mEventQueue.swap(reQueue);
+                lx_check_error(reQueue.empty());
+            }
 
             {
                 lx0::ProfileSection section(mpProfile->runPlatformMessages);
