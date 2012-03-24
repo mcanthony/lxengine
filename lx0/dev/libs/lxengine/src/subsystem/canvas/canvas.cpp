@@ -170,6 +170,22 @@ namespace lx0 { namespace subsystem { namespace canvas_ns { namespace detail {
         return mKeyboard;
     }
 
+    int
+    CanvasBase::width (void) const
+    {
+        RECT rect;
+        ::GetClientRect((HWND)mOpaqueHwnd, &rect);
+        return rect.right - rect.left;
+    }
+
+    int 
+    CanvasBase::height (void) const
+    {
+        RECT rect;
+        ::GetClientRect((HWND)mOpaqueHwnd, &rect);
+        return rect.bottom - rect.top;
+    }
+
     void 
     CanvasBase::overrideParentWndProc (void* wndProc)
     {

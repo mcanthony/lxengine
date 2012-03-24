@@ -45,6 +45,9 @@ public:
     virtual void        show            (View* pHostView, Document* pDocument);
     virtual void        swapBuffers     (void);
 
+    virtual int         width           (void) const;
+    virtual int         height          (void) const;
+
     virtual     void        _onElementAdded             (ElementPtr spElem) {}
     virtual     void        _onElementRemoved           (ElementPtr spElem) {}
 
@@ -121,6 +124,18 @@ void
 LxCanvasImp::swapBuffers (void)
 {
     mspWin->swapBuffers();
+}
+
+int
+LxCanvasImp::width (void) const
+{
+    return mspWin->width();
+}
+
+int 
+LxCanvasImp::height (void) const
+{
+    return mspWin->height();
 }
 
 void 

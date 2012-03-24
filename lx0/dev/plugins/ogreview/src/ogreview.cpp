@@ -378,6 +378,8 @@ namespace {
         void        createWindow    (View* pHostView, size_t& handle, unsigned int& width, unsigned int& height, lxvar options);
         void        show            (View* pHostView, Document* pDocument);
 
+        virtual int         width           (void) const;
+        virtual int         height          (void) const;
 
         void        _updateFrameRenderingQueued ();
         void        _onElementAdded             (ElementPtr spElem);
@@ -400,6 +402,7 @@ namespace {
         View*                       mpHostView;
         std::unique_ptr<Ogre::Root>   mspRoot;
         Ogre::SceneManager*         mpSceneMgr;     //! Non-owning pointer.  OGRE owns this pointer
+        Ogre::Viewport*             mpViewport;
         Ogre::RenderWindow*         mpRenderWindow; //! Non-owning pointer.  OGRE owns this pointer.
         Ogre::Camera*               mpCamera;
 
@@ -498,16 +501,28 @@ namespace {
         mpCamera->setNearClipDistance(0.1f);
         mpCamera->setFarClipDistance(100.0f);
 
-        Ogre::Viewport* mViewport = mpRenderWindow->addViewport(mpCamera);
-        mViewport->setBackgroundColour(Ogre::ColourValue(0.1f, 0.1f, 0.16f));
+        mpViewport= mpRenderWindow->addViewport(mpCamera);
+        mpViewport->setBackgroundColour(Ogre::ColourValue(0.1f, 0.1f, 0.16f));
 
-        mpCamera->setAspectRatio(Ogre::Real(mViewport->getActualWidth()) / Ogre::Real(mViewport->getActualHeight()));
+        mpCamera->setAspectRatio(Ogre::Real(mpViewport->getActualWidth()) / Ogre::Real(mpViewport->getActualHeight()));
 
         _addLighting(mpSceneMgr);
         _addMaterials();
         _addGroundPlane(mpSceneMgr);
 
         _processDocument(pHostView, pDocument);
+    }
+
+    int
+    OgreImp::width (void) const
+    {
+        return mpViewport->getActualWidth();
+    }
+    
+    int 
+    OgreImp::height (void) const
+    {
+        return mpViewport->getActualHeight();
     }
 
     void

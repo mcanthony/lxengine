@@ -274,8 +274,10 @@ public:
         // Create an offscreen frame buffer to use for some of the multipass
         // rendering algorithms.
         // 
-        mspFBOffscreen  = mspRasterizer->createFrameBuffer(512, 512);
-        mspFBOffscreen1 = mspRasterizer->createFrameBuffer(512, 512);
+        int width = spView->width();
+        int height = spView->height();
+        mspFBOffscreen  = mspRasterizer->createFrameBuffer(width, height);
+        mspFBOffscreen1 = mspRasterizer->createFrameBuffer(width, height);
 
         //
         // Add an empty light set; the Document will populate it with

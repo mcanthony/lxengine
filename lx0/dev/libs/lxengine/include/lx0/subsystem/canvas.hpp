@@ -122,6 +122,8 @@ namespace lx0 {
                     bool                    isVisible   (void) const;
 
                     const KeyboardState&    keyboard    (void) const;    
+                    int                     width       (void) const;
+                    int                     height      (void) const;
                     ///@}
 
                     ///@name Event Signals

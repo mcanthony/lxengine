@@ -182,6 +182,9 @@ namespace lx0 { namespace engine { namespace dom_ns {
         virtual void        show            (View* pHostView, Document* pDocument) = 0;
         virtual void        swapBuffers     (void) {}
 
+        virtual int         width           (void) const = 0;
+        virtual int         height          (void) const = 0;
+
 
         virtual     void        _onElementAdded             (ElementPtr spElem) = 0;
         virtual     void        _onElementRemoved           (ElementPtr spElem) = 0;
@@ -239,6 +242,9 @@ namespace lx0 { namespace engine { namespace dom_ns {
 
         DocumentPtr document        (void);
         
+        int         width           (void) const { return mspImp->width(); }
+        int         height          (void) const { return mspImp->height(); }
+
         void        show            (void);
         void        show            (lxvar options);
         void        swapBuffers     (void);
