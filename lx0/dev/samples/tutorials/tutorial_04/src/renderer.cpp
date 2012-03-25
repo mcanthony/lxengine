@@ -566,7 +566,7 @@ public:
                         return 0;
                     }
                 };
-                lx0::Engine::acquire()->sendEvent(func);
+                lx0::Engine::acquire()->sendEvent(func, mspHandle);
             };
 
             zoom( evt == "zoom_in" ? 2.0f : 0.5f );
@@ -794,6 +794,7 @@ protected:
     lx0::CameraPtr                mspCamera;
     lx0::LightSetPtr              mspLightSet;
     RenderablePtr                 mspRenderable;
+    std::shared_ptr<std::function<int()>> mspHandle;
 
     bool                          mbRotate;
     int                           miRenderAlgorithm;

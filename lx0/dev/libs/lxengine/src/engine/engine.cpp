@@ -643,6 +643,19 @@ namespace lx0 { namespace engine { namespace dom_ns {
         mEventQueue.push_back(evt);
     }
 
+    void
+    Engine::sendEvent (std::function<int()> f, std::shared_ptr<std::function<int()>>& spHandle)
+    {
+        std::function<int()>* pFunc = new std::function<int()>(f);
+        spHandle.reset(pFunc);
+        
+        Event evt;
+        evt.wpFunc = spHandle;
+
+        boost::lock_guard<boost::mutex> lock(mEventQueueMutex);
+        mEventQueue.push_back(evt);
+    }
+
     void 
     Engine::sendWorkerTask (std::function<void()> f)
     {
@@ -711,46 +724,30 @@ namespace lx0 { namespace engine { namespace dom_ns {
                 Event evt = queue.front();
                 queue.pop_front();
 
-                int validity = (evt.message.empty() ? 0 : 1) + (evt.task ? 1 : 0) + (evt.func ? 1 : 0);
-                switch (validity)
-                {
-                case 0:
-                    lx_warn("Ignoring empty event (neither a message or task is set)");
-                    break;
-                case 2:
-                case 3:
-                    throw lx_error_exception("Overspecified event! Both a message and a task are set on the event.");
-                    break;
+                int delay = -1;
+                std::shared_ptr<std::function<int()>> spFunc;
 
-                case 1:
-                    {
-                        if (evt.message == "quit")
-                        {
-                            bDone = true;
-                        }
-                        else if (evt.task)
-                        {
-                            evt.task();
-                        }
-                        else if (evt.func)
-                        {
-                            int delay = evt.func();
-                            if (delay == 0)
-                            {
-                                reQueue.push_back(evt);
-                            }
-                            else if (delay > 0)
-                            {
-                                throw lx_error_exception("Delayed re-enqueue not yet implemented!!");
-                            }
-                            else
-                            {
-                                // Discard
-                            }
-                        }
-                    }
-                    break;
+                if (evt.message == "quit")
+                {
+                    bDone = true;
                 }
+                else if (evt.task)
+                {
+                    evt.task();
+                }
+                else if (evt.func)
+                {
+                    delay = evt.func();
+                }
+                else if (spFunc = evt.wpFunc.lock())
+                {
+                    delay = (*spFunc)();
+                }
+
+                if (delay == 0)
+                    reQueue.push_back(evt);
+                else if (delay > 0)
+                    throw lx_error_exception("Delayed re-enqueue not yet implemented!!");
             }
             
             // Fill the event queue with all events that should be repeated

@@ -191,6 +191,7 @@ namespace lx0
                 void                sendEvent           (std::string evt);
                 void                sendEvent           (const char* evt)           { sendEvent(std::string(evt)); }
                 void                sendEvent           (std::function<int()> f);
+                void                sendEvent           (std::function<int()> f, std::shared_ptr<std::function<int()>>& spHandle);
                 void                sendTask            (std::function<void()> f);
                 void                sendWorkerTask      (std::function<void()> f);
 
@@ -246,9 +247,10 @@ namespace lx0
 
                 struct Event
                 {
-                    std::string             message;
-                    std::function<void()>   task;
-                    std::function<int()>    func;
+                    std::string                         message;
+                    std::function<void()>               task;
+                    std::function<int()>                func;
+                    std::weak_ptr<std::function<int()>> wpFunc;
                 };
 
                 Engine();
