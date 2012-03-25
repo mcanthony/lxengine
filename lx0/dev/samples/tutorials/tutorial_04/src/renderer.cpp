@@ -29,41 +29,64 @@
 #include <boost/algorithm/string.hpp>
 #include <boost/thread.hpp>
 
+//#include <v8/v8.h>
+
+#include <glgeom/ext/primitive_buffer.hpp>
+
 #include <lx0/lxengine.hpp>
 #include <lx0/subsystem/rasterizer.hpp>
 #include <lx0/subsystem/shaderbuilder.hpp>
 #include <lx0/subsystem/javascript.hpp>
+//#include <lx0/subsystem/javascript/v8bind.hpp>
 #include <lx0/util/blendload.hpp>
 #include <lx0/util/misc.hpp>
-
-#include <v8/v8.h>
-#include "../../../libs/lxengine/src/subsystem/javascript/v8bind.hpp"
-
-#include <glgeom/ext/primitive_buffer.hpp>
 #include <lx0/util/misc/lxvar_convert.hpp>
 
 //===========================================================================//
 //   P R O F I L I N G   D A T A
 //===========================================================================//
+/*
+    The LxEngine profiling system is intended for coarse-grain profiling,
+    as it is simple and straightforward but introduces a non-neglible amount
+    of overhead.  
 
+    The counters are created and identified by integer ids.  These counters
+    are thread-safe and will report time spent in a per thread basis.  The
+    counters alternately can be identified by their string name: this is
+    useful for identifying counters registered in different modules (where
+    access to the integer id may not be available).
+
+    The counters need to be registered before they are used in order to 
+    operate correctly.
+ */
 namespace 
 {
     struct Profile
     {
         Profile() { ::memset(this, 0, sizeof(*this)); }
                     
-        int     _init;
         int     render;
+        int     update;
         
         void initialize()
         {
-            if (!_init)
-            {
-                _init = 1;
-                auto pEngine = lx0::Engine::acquire().get();
-                pEngine->registerProfileCounter("Renderer render",        &render);            
-                pEngine->addProfileRelationship("Engine runLoop", "Renderer render");
-            }
+            auto pEngine = lx0::Engine::acquire().get();
+
+            //
+            // Register the counters.  This must be done before the lx0::ProfileSection
+            // class can be used to record times for a section of code with that 
+            // counter.
+            //
+            pEngine->registerProfileCounter("Renderer render",        &render);            
+            pEngine->registerProfileCounter("Renderer update",        &update);            
+
+            //
+            // Add correlations to the profile.  The list of built-in counter names
+            // can be determined by looking at the contents of lxprofile.log after
+            // running an application.
+            //
+            pEngine->addProfileRelationship("Engine runLoop", "Renderer render");
+            pEngine->addProfileRelationship("Engine runLoop", "Renderer update");
         }
     } profile;
 }
@@ -189,41 +212,13 @@ namespace lx0 { namespace core { namespace lxvar_ns { namespace detail {
 
 }}}}
 
+
 //===========================================================================//
-//   R E N D E R A B L E
+//   G E O M E T R Y D A T A
 //===========================================================================//
-
-/*
-    Work-in-progress class towards a complex renderable, potentially composed of
-    multiple generated and specified meshes.  Logically it is one mesh, but
-    may be composed of multiple instances.
- */
-class Renderable
-{
-public:
-    lx0::lxvar          mRenderProperties;        // e.g. shadows : { cast : true, receive : false }
-    //MeshPtr         mspGeometry;
-    //MaterialPtr     mspMaterial;
-    //InstanceCache   mInstanceCache;
-    lx0::InstancePtr    mspInstance;
-};
-
-_LX_FORWARD_DECL_PTRS(Renderable);
-
-
-/*
-    A standard LxEngine Material object coupled with additional data
-    for this tutorial.
- */
-struct MaterialData
-{
-    lx0::MaterialPtr    spMaterial;  
-    lx0::lxvar          renderProperties;
-};
-
 /*
     A standard LxEngine Geometry object coupled with additional
-    data for this tutorial.
+    data that can be specified in the XML file.
  */
 struct GeometryData
 {
@@ -256,12 +251,12 @@ public:
         //
         // The profile counters need to be initialized prior to use.  This
         // is a good place to do so as the constructor will always be called
-        // before any of the counters are used.
+        // before any of the counters within the profile object are used.
         //
         profile.initialize();
     }
 
-    virtual void initialize(lx0::ViewPtr spView)
+    virtual void initialize (lx0::ViewPtr spView)
     {
         //
         // Initialize the rasterizer subsystem as soon as the OpenGL context is
@@ -271,12 +266,12 @@ public:
         mspRasterizer->initialize();
 
         //
-        // Create an offscreen frame buffer to use for some of the multipass
+        // Create a couple offscreen frame buffers to use with the multipass
         // rendering algorithms.
         // 
         int width = spView->width();
         int height = spView->height();
-        mspFBOffscreen  = mspRasterizer->createFrameBuffer(width, height);
+        mspFBOffscreen0 = mspRasterizer->createFrameBuffer(width, height);
         mspFBOffscreen1 = mspRasterizer->createFrameBuffer(width, height);
 
         //
@@ -288,20 +283,22 @@ public:
         //
         // Process the data in the document being viewed
         // 
-        _processConfiguration();
         _processDocument( spView->document() );
         
         lx_check_error( !mMaterials.empty() );
         lx_check_error( !mGeometry.empty() );
 
         //
-        // Build the renderable
+        // Build the instance.
         //
-        mspRenderable.reset(new Renderable);
-        mspRenderable->mspInstance.reset(new lx0::Instance);
-        mspRenderable->mspInstance->spTransform = mspRasterizer->createTransform(mRotation);
-        mspRenderable->mspInstance->spMaterial = mMaterials[mCurrentMaterial].spMaterial;
-        mspRenderable->mspInstance->spGeometry = mGeometry[mCurrentGeometry].spGeometry;
+        // This is bundle of geometry, material, and transform to be rendered.  
+        // The material and geometry pointers will be updated as the user cycles
+        // through the array of settings loaded by the document.
+        //
+        mspInstance.reset(new lx0::Instance);
+        mspInstance->spTransform = mspRasterizer->createTransform(mRotation);
+        mspInstance->spMaterial = mMaterials[mCurrentMaterial];
+        mspInstance->spGeometry = mGeometry[mCurrentGeometry].spGeometry;
 
         //
         // Create the camera last since it is dependent on the bounds of the geometry
@@ -348,23 +345,30 @@ public:
 
         case 1:
             //
-            // Set up a two pass rendering algorithm. The first pass
-            // draws the scene normally but to the offscreen frame buffer.
-            // The second pass then renders the offscreen frame buffer to
-            // the display frame buffer using a custom shader to apply a 
-            // blur effect.
+            // Set up a Gaussian blur via a three-pass render.  The first
+            // pass will draw the scene normally but to an offscreen frame
+            // buffer (FBO 0). The second pass will blit the result of the first
+            // pass (FBO 0) to a second offscreen frame buffer (FBO 1) and apply 
+            /// the first of the Gaussian blur shaders (a vertical blur).  The 
+            // final, third pass will blit the result of the second pass (FBO 1)
+            // to the display and apply the second Gaussian blur shader (a
+            // horizontal blur).
             //
-            pass.spFrameBuffer = mspFBOffscreen;
+            
+            // Draw Scene -> FBO 0
+            pass.spFrameBuffer = mspFBOffscreen0;
             pass.spCamera   = mspCamera;
             pass.spLightSet = mspLightSet;
             algorithm.mPasses.push_back(pass);
 
+            // Blit FBO 0 -> FBO 1
             pass.spFrameBuffer = mspFBOffscreen1;
-            pass.spSourceFBO = mspFBOffscreen;
+            pass.spSourceFBO = mspFBOffscreen0;
             pass.spMaterial = mspRasterizer->acquireMaterial("BlitFBOGaussianPass1");
             algorithm.mPasses.push_back(pass);
 
-            pass.spFrameBuffer.reset();
+            // Blit FBO 1 -> Display
+            pass.spFrameBuffer.reset();             
             pass.spSourceFBO = mspFBOffscreen1;
             pass.spMaterial = mspRasterizer->acquireMaterial("BlitFBOGaussianPass2");
             algorithm.mPasses.push_back(pass);
@@ -372,60 +376,55 @@ public:
 
         case 2:
             //
-            // Set up a two pass rendering algorithm. The first pass
-            // draws the scene normally but to the offscreen frame buffer.
-            // The second pass then renders the offscreen frame buffer to
-            // the display frame buffer using a custom shader to apply a 
-            // blur effect.
+            // Set up a two pass grayscale render algorithm: draw the scene normally
+            // to an offscreen FBO, then blit that FBO to the display using a 
+            // shader that will transform all colors to their grayscale equivalent.
             //
-            pass.spFrameBuffer = mspFBOffscreen;
+            pass.spFrameBuffer = mspFBOffscreen0;
             pass.spCamera   = mspCamera;
             pass.spLightSet = mspLightSet;
             pass.optClearColor = std::make_pair(true, glgeom::color4f(0, 0, 0, 0));
             algorithm.mPasses.push_back(pass);
 
             pass.spFrameBuffer.reset();
-            pass.spSourceFBO = mspFBOffscreen;
+            pass.spSourceFBO = mspFBOffscreen0;
             pass.spMaterial = mspRasterizer->acquireMaterial("BlitFBOGrayscale");
             algorithm.mPasses.push_back(pass);
             break;
 
         case 3:
             //
-            // Set up a two pass rendering algorithm. The first pass
-            // draws the scene normally but to the offscreen frame buffer.
-            // The second pass then renders the offscreen frame buffer to
-            // the display frame buffer using a custom shader to apply a 
-            // blur effect.
+            // A similar two pass render algorithm: draw the scene normally to an
+            // offscreen FBO, then blit the FBO to the display using a pixel shader
+            // which will invert the RGB value.
             //
-            pass.spFrameBuffer = mspFBOffscreen;
+            pass.spFrameBuffer = mspFBOffscreen0;
             pass.spCamera   = mspCamera;
             pass.spLightSet = mspLightSet;
             pass.optClearColor = std::make_pair(true, glgeom::color4f(0, 0, 0, 0));
             algorithm.mPasses.push_back(pass);
 
             pass.spFrameBuffer.reset();
-            pass.spSourceFBO = mspFBOffscreen;
+            pass.spSourceFBO = mspFBOffscreen0;
             pass.spMaterial = mspRasterizer->acquireMaterial("BlitFBOInvert");
             algorithm.mPasses.push_back(pass);
             break;
 
         case 4:
             //
-            // Set up a two pass rendering algorithm. The first pass
-            // draws the scene normally but to the offscreen frame buffer.
-            // The second pass then renders the offscreen frame buffer to
-            // the display frame buffer using a custom shader to apply a 
-            // blur effect.
+            // Similar to the the grayscale and invert algorithms, this two pass
+            // algorithm differs only by the pixel shader used: this one will apply
+            // a color inversion and use a box blur filter (that varies in size based 
+            // on distance from the viewport center) on the image.
             //
-            pass.spFrameBuffer = mspFBOffscreen;
+            pass.spFrameBuffer = mspFBOffscreen0;
             pass.spCamera   = mspCamera;
             pass.spLightSet = mspLightSet;
             pass.optClearColor = std::make_pair(true, glgeom::color4f(0, 0, 0, 0));
             algorithm.mPasses.push_back(pass);
 
             pass.spFrameBuffer.reset();
-            pass.spSourceFBO = mspFBOffscreen;
+            pass.spSourceFBO = mspFBOffscreen0;
             pass.spMaterial = mspRasterizer->acquireMaterial("BlitFBOInvertBlur");
             algorithm.mPasses.push_back(pass);
             break;
@@ -439,7 +438,7 @@ public:
         // settings or overrides for that entity.
         //
         lx0::RenderList instances;
-        instances.push_back(0, mspRenderable->mspInstance);
+        instances.push_back(0, mspInstance);
 
         //
         // This is a standard rendering loop: begin the frame, then rasterize
@@ -461,13 +460,15 @@ public:
     virtual void 
     update (lx0::ViewPtr spView) 
     {
+        lx0::ProfileSection section(profile.update);
+
         //
         // Always rotate the model on every update
         //
         if (mbRotate)
         {
             mRotation = glm::rotate(mRotation, 1.0f, glm::vec3(0, 0, 1));
-            mspRenderable->mspInstance->spTransform = mspRasterizer->createTransform(mRotation);
+            mspInstance->spTransform = mspRasterizer->createTransform(mRotation);
         }
 
         //
@@ -510,7 +511,7 @@ public:
             mCurrentGeometry %= mGeometry.size();
             
             auto& geomData = mGeometry[mCurrentGeometry];
-            mspRenderable->mspInstance->spGeometry = geomData.spGeometry;
+            mspInstance->spGeometry = geomData.spGeometry;
             
             //
             // Recreate the camera after geometry changes since the camera position
@@ -526,7 +527,7 @@ public:
                 : (mCurrentMaterial + mMaterials.size() - 1);
             mCurrentMaterial %= mMaterials.size();
 
-            mspRenderable->mspInstance->spMaterial = mMaterials[mCurrentMaterial].spMaterial;
+            mspInstance->spMaterial = mMaterials[mCurrentMaterial];
         }
         else if (evt == "toggle_rotation")
         {
@@ -536,7 +537,7 @@ public:
         {
             //@todo This should be handled as a global rendering algorithm override instead
             for (auto it = mMaterials.begin(); it != mMaterials.end(); ++it)
-                (*it).spMaterial->mWireframe = !(*it).spMaterial->mWireframe;
+                (*it)->mWireframe = !(*it)->mWireframe;
         }
         else if (evt == "cycle_renderalgorithm")
         {
@@ -574,28 +575,6 @@ public:
     }
 
 protected:
-    void _processConfiguration (void)
-    {
-        //
-        // Check the global configuration
-        //
-        lx0::lxvar config = lx0::Engine::acquire()->globals();
-
-        if (config.find("model_filename").is_defined())
-        {
-            //_addGeometry(config["model_filename"]);
-        }
-
-        if (config.find("shader_filename").is_defined())
-        {
-            std::string source     = lx0::string_from_file(config["shader_filename"]);
-            lx0::lxvar  parameters = config.find("params_filename").is_defined() 
-                ? lx0::lxvar_from_file( config["params_filename"] )
-                : lx0::lxvar::undefined();
-
-            _addMaterial("", source, parameters, lx0::lxvar::undefined());
-        }
-    }
 
     void _processDocument (lx0::DocumentPtr spDocument)
     {
@@ -644,11 +623,8 @@ protected:
             std::string src = spElem->attr("src").query(std::string(""));
             std::string instance = spElem->attr("instance").query(std::string(""));
 
-            MaterialData data;
-            data.renderProperties = render;
-            data.spMaterial = mspRasterizer->acquireMaterial(src, instance);
-
-            mMaterials.push_back(data);
+            auto spMaterial = mspRasterizer->acquireMaterial(src, instance);
+            mMaterials.push_back(spMaterial);
         }
     }
 
@@ -698,11 +674,8 @@ protected:
             params2[it.key()] = (*it)[1].clone();
         }
 
-        MaterialData data;
-        data.renderProperties = render;
-        data.spMaterial = mspRasterizer->createMaterial(uniqueName, source, params2);
-
-        mMaterials.push_back(data);
+        auto spMaterial = mspRasterizer->createMaterial(uniqueName, source, params2);
+        mMaterials.push_back(spMaterial);
     }
 
     void _addGeometry (lx0::DocumentPtr spDocument, const std::string filename, float zoom)
@@ -789,13 +762,13 @@ protected:
 
     lx0::ShaderBuilder            mShaderBuilder;
     lx0::RasterizerGLPtr          mspRasterizer;
-    lx0::FrameBufferPtr           mspFBOffscreen;
+    lx0::FrameBufferPtr           mspFBOffscreen0;
     lx0::FrameBufferPtr           mspFBOffscreen1;
     lx0::CameraPtr                mspCamera;
     lx0::LightSetPtr              mspLightSet;
-    RenderablePtr                 mspRenderable;
-    std::shared_ptr<std::function<int()>> mspHandle;
-
+    lx0::InstancePtr              mspInstance;
+    
+    lx0::EventHandle              mspHandle;
     bool                          mbRotate;
     int                           miRenderAlgorithm;
     glm::mat4                     mRotation;
@@ -803,15 +776,16 @@ protected:
     size_t                        mCurrentMaterial;
     size_t                        mCurrentGeometry;
 
-    std::vector<MaterialData>     mMaterials;
+    std::vector<lx0::MaterialPtr> mMaterials;
     std::vector<GeometryData>     mGeometry;
 };
 
+//===========================================================================//
+//   P L U G - I N   E N T R Y P O I N T
+//===========================================================================//
 
 extern "C" _declspec(dllexport) void initializePlugin()
 {
     auto spEngine = lx0::Engine::acquire();   
     spEngine->registerViewComponent("Renderer", []() { return new Renderer; });
 }
-
-

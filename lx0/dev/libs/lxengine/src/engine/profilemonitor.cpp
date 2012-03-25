@@ -49,10 +49,10 @@ namespace lx0 { namespace engine { namespace profilemonitor_ns {
     //===========================================================================//
 
     __declspec(thread) ProfileCounter* _profileCounterTable;
+    __declspec(thread) ProfileCounter* _activeCounter = nullptr;
 
     ProfileMonitor::ProfileMonitor() 
-        : mpActiveCounter(nullptr) 
-        , mSize          (0)
+        : mSize          (0)
     {
         mNameMap.push_back("<invalid id>");
     }
@@ -60,16 +60,31 @@ namespace lx0 { namespace engine { namespace profilemonitor_ns {
     void 
     ProfileMonitor::registerCounter (const char* name, int* id)
     {
+        //
+        // Multiple threads may be registering counters; throw a lock around
+        // this non-performance critical method to ensure simultaneous, data-structure
+        // corrupting registrations do not occur.
+        //
+        boost::lock_guard<boost::mutex> lock(mMutex);
+
         if (!ProfileSection::pMonitor)
             ProfileSection::pMonitor = this;
 
-        *id = ++mSize;
-        mNameMap.push_back(name);
+        auto it = mNameMap2.find(name);
+        if (it == mNameMap2.end())
+        {
+            *id = ++mSize;
+            mNameMap.push_back(name);
+            mNameMap2.insert(std::make_pair(std::string(name), *id));
+        }
+        else
+            *id = it->second;
     }
 
     void
     ProfileMonitor::addRelation (const char* parentName, const char* childName)
     {
+        boost::lock_guard<boost::mutex> lock(mMutex);
         mRelations.push_back( std::make_pair(std::string(parentName), std::string(childName)) );
     }
 
@@ -97,13 +112,13 @@ namespace lx0 { namespace engine { namespace profilemonitor_ns {
 
         if (++pCounter->depth == 1)
             pCounter->inclusiveStart = now;
-
-        pCounter->pPrevious = mpActiveCounter;
-        if (pCounter->pPrevious)
-            pCounter->pPrevious->exclusive += (now - pCounter->pPrevious->exclusiveStart);
         
+        if (_activeCounter)
+            _activeCounter->exclusive += (now - _activeCounter->exclusiveStart);
+        pCounter->pPrevious = _activeCounter;
+
         pCounter->exclusiveStart = now;        
-        mpActiveCounter = pCounter;
+        _activeCounter = pCounter;
         
         return pCounter;
     }
@@ -117,9 +132,9 @@ namespace lx0 { namespace engine { namespace profilemonitor_ns {
         if (--pCounter->depth == 0)
             pCounter->inclusive += (now - pCounter->inclusiveStart);
 
-        if (pCounter->pPrevious)
-            pCounter->pPrevious->exclusiveStart = now;
-        mpActiveCounter = pCounter->pPrevious;
+        _activeCounter = pCounter->pPrevious;
+        if (_activeCounter)
+            _activeCounter->exclusiveStart = now;
     }
 
     void 

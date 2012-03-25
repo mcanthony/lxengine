@@ -4,7 +4,7 @@
 
     LICENSE
 
-    Copyright (c) 2010-2011 athile@athile.net (http://www.athile.net)
+    Copyright (c) 2010-2012 athile@athile.net (http://www.athile.net)
 
     Permission is hereby granted, free of charge, to any person obtaining a 
     copy of this software and associated documentation files (the "Software"), 
@@ -28,7 +28,7 @@
 
 #include <glm/glm.hpp>
 #include <lx0/util/misc/util.hpp>
-#include "v8bind.hpp"
+#include <lx0/subsystem/javascript/v8bind.hpp>
 
 using namespace lx0::core;
 using namespace v8;

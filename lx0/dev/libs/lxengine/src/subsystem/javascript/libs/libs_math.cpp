@@ -48,7 +48,7 @@
 #include <lx0/util/misc/util.hpp>
 #include <lx0/util/misc/lxvar_convert.hpp>
 #include <lx0/subsystem/javascript.hpp>
-#include "../v8bind.hpp"
+#include <lx0/subsystem/javascript/v8bind.hpp>
 
 using namespace v8;
 using namespace lx0::core;

@@ -35,7 +35,7 @@
 #include <lx0/util/misc/util.hpp>
 
 #include <v8/v8.h>
-#include "../../../libs/lxengine/src/subsystem/javascript/v8bind.hpp"
+#include <lx0/subsystem/javascript/v8bind.hpp>
 
 #include <glgeom/ext/primitive_buffer.hpp>
 #include <lx0/util/misc/lxvar_convert.hpp>

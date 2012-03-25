@@ -134,7 +134,9 @@ namespace lx0
                 struct Profile;
             }
 
-            
+            //===========================================================================//
+
+            typedef std::shared_ptr<std::function<int()>>   EventHandle;
 
 
             //===========================================================================//
@@ -146,7 +148,7 @@ namespace lx0
                 : public std::enable_shared_from_this<Engine>
                 , public detail::_EnableComponentList<Engine, detail::EngineComponent>
             {
-            public:
+            public:               
                 class Environment
                 {
                 public:
@@ -191,7 +193,7 @@ namespace lx0
                 void                sendEvent           (std::string evt);
                 void                sendEvent           (const char* evt)           { sendEvent(std::string(evt)); }
                 void                sendEvent           (std::function<int()> f);
-                void                sendEvent           (std::function<int()> f, std::shared_ptr<std::function<int()>>& spHandle);
+                void                sendEvent           (std::function<int()> f, EventHandle& handle);
                 void                sendTask            (std::function<void()> f);
                 void                sendWorkerTask      (std::function<void()> f);
 

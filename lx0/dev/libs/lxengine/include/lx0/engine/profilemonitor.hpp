@@ -74,9 +74,10 @@ namespace lx0
             protected:
                 typedef std::map<lx0::uint32, ProfileCounter*> ThreadMap;
 
-                ProfileCounter*             mpActiveCounter;
+                boost::mutex                mMutex;
                 ThreadMap                   mThreadMap;  
                 std::vector<std::string>    mNameMap;
+                std::map<std::string,int>   mNameMap2;
                 int                         mSize;
 
                 std::vector<std::pair<std::string,std::string>> mRelations;

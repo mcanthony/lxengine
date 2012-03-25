@@ -4,7 +4,7 @@
 
     LICENSE
 
-    Copyright (c) 2010-2011 athile@athile.net (http://www.athile.net)
+    Copyright (c) 2010-2012 athile@athile.net (http://www.athile.net)
 
     Permission is hereby granted, free of charge, to any person obtaining a 
     copy of this software and associated documentation files (the "Software"), 
@@ -68,7 +68,7 @@ namespace lx0 { namespace engine { namespace dom_ns {
                 pEngine->registerProfileCounter("Engine run",        &run);
                 pEngine->registerProfileCounter("Engine runUpdate",  &runUpdate);
                 pEngine->registerProfileCounter("Engine runLoop",    &runLoop);
-                pEngine->registerProfileCounter("Engine platformMSGs",  &runPlatformMessages);
+                pEngine->registerProfileCounter("Engine platformMessages",  &runPlatformMessages);
 
                 pEngine->addProfileRelationship("Engine runLoop", "Engine platformMSGs");
             }
@@ -741,6 +741,13 @@ namespace lx0 { namespace engine { namespace dom_ns {
                 }
                 else if (spFunc = evt.wpFunc.lock())
                 {
+                    //
+                    // Cancel-able events use a weak_ptr to allow the event to expire:
+                    // the caller needs to maintain the shared_ptr as long as they want
+                    // the event to exist; if the reference to that event is released,
+                    // then the weak_ptr will expire and the event will not be processed
+                    // by the engine.
+                    //
                     delay = (*spFunc)();
                 }
 
