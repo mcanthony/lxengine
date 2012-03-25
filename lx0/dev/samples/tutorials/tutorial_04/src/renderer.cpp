@@ -27,9 +27,6 @@
 //===========================================================================//
 
 #include <boost/algorithm/string.hpp>
-#include <boost/thread.hpp>
-
-//#include <v8/v8.h>
 
 #include <glgeom/ext/primitive_buffer.hpp>
 
@@ -37,7 +34,6 @@
 #include <lx0/subsystem/rasterizer.hpp>
 #include <lx0/subsystem/shaderbuilder.hpp>
 #include <lx0/subsystem/javascript.hpp>
-//#include <lx0/subsystem/javascript/v8bind.hpp>
 #include <lx0/util/blendload.hpp>
 #include <lx0/util/misc.hpp>
 #include <lx0/util/misc/lxvar_convert.hpp>
@@ -306,7 +302,6 @@ public:
             pass.spMaterial = mspRasterizer->acquireMaterial("BlitFBOInvertBlur");
             algorithm.mPasses.push_back(pass);
             break;
-
         }
 
         //
@@ -341,7 +336,7 @@ public:
         lx0::ProfileSection section(profile.update);
 
         //
-        // Always rotate the model on every update
+        // Rotate the model on every update, if that option is enabled.
         //
         if (mbRotate)
         {
@@ -421,42 +416,13 @@ public:
         {
             miRenderAlgorithm++;
         }
-        else if (evt == "zoom_in" || evt == "zoom_out")
+        else if (evt == "zoom_in")
         {
-            float zoomFactor = evt == "zoom_in" ? 2.0f : 0.5f;
-            float interval = 2000.0f;
-
-            //
-            // Create a lambda function that will incrementally zoom in or out
-            // over a given time period.
-            //            
-            float*      pGeomZoom = &mGeometry[mCurrentGeometry].zoom;
-            float       value0    = *pGeomZoom;
-            float       value1    = value0 * zoomFactor;
-            lx0::uint32 start     = lx0::lx_milliseconds();
-
-            auto func = [=]() -> int {
-                // Should replace with frame times - not real times
-                float alpha = float(lx0::lx_milliseconds() - start) / interval;
-                if (alpha >= 1.0)
-                {
-                    *pGeomZoom = value1;
-                    return -1;
-                }
-                else
-                {
-                    float a = sin(alpha * 1.57079633f);
-                    *pGeomZoom = glm::mix(value0, value1, a);
-                    return 0;
-                }
-            };
-            
-            //
-            // Add the function as an event in the event queue.  An EventHandle
-            // is used to ensure only any newly registered event will cancel
-            // any prior one.
-            //
-            lx0::Engine::acquire()->sendEvent(func, mEventHandle);
+            _handleEventZoom(true);
+        }
+        else if (evt == "zoom_out")
+        {
+            _handleEventZoom(false);
         }
     }
 
@@ -644,6 +610,79 @@ protected:
         }
     }
 
+    void
+    _handleEventZoom (bool bZoomIn)
+    {
+        //
+        // Parameters for the zoom effect: how much are we changing the zoom
+        // factor and how long should the view transition take?
+        //
+        float zoomFactor = bZoomIn ? 2.0f : 0.5f;
+        float intervalMs = 2000.0f;
+
+        //
+        // Create a lambda function that will incrementally zoom in or out
+        // over a given time period.
+        //
+        // Determine the starting zoom value, the end value, staring time,
+        // then 
+        //            
+        float*      pGeomZoom  = &mGeometry[mCurrentGeometry].zoom;
+        float       startValue = *pGeomZoom;
+        float       endValue   = startValue * zoomFactor;
+        lx0::uint32 startTime  = lx0::lx_milliseconds();
+
+        //
+        // Apply a sinusoidal smooth (ease-in/ease-out) to the alpha value
+        // for a smoother animation.  If the set interval time has expired
+        // then end the event reoccurence by setting the final value exactly 
+        // and returning -1 (i.e. the time delay before rerunning the event).
+        //
+        //@todo Replace the real time measurements with application frame times,
+        // so that the animation is linked to the speed of the app, not the
+        // real world clock.
+        //
+        //@todo The event stores a pointer to the GeometryData::zoom field
+        // in the mGeometry vector.  Other threads may add new geometry to that 
+        // vector, which changes the size of the vector (i.e. can reallocate), 
+        // thus invalidating the pointer.  An easy fix would be to reset() the
+        // event handle whenever the mGeometry vector is modified; but this is
+        // not obvious to the casual reader of the code why this would be 
+        // necessary.  Is there a cleaner approach to solving this problem?
+        // Modify mCurrentZoom directly instead?  Make the zoom member a 
+        // shared_ptr so mGeometry can be reallocated without corrupting this
+        // function?
+        //
+        //@todo Move sinusoidalSmooth to glgeom library
+        //
+        auto sinusoidalSmooth = [](float alpha) { return sin(alpha * glgeom::half_pi().value); };
+        auto func = [=]() -> int {
+            float alpha = float(lx0::lx_milliseconds() - startTime) / intervalMs;
+            if (!(alpha >= 1.0))
+            {
+                *pGeomZoom = glm::mix(startValue, endValue, sinusoidalSmooth(alpha));
+                return 0;
+            }
+            else
+            {
+                *pGeomZoom = endValue;
+                return -1;
+            }
+        };
+            
+        //
+        // Add the function as an event in the event queue and record an event
+        // handle.  The mEventHandle is used to cancel pending events; namely
+        // if the handle is reassigned or reset() is called on the handle before
+        // the event is done, the event will not be executed.  In this case,
+        // the same event handle is used for all view changes, thus cancelling
+        // any in-progress view changes when a new one is requested (i.e. that's
+        // the desired behavior we want.)
+        //
+        lx0::Engine::acquire()->sendEvent(func, mEventHandle);
+    }
+
+    // Rasterizer objects
     lx0::ShaderBuilder            mShaderBuilder;
     lx0::RasterizerGLPtr          mspRasterizer;
     lx0::FrameBufferPtr           mspFBOffscreen0;
@@ -652,14 +691,16 @@ protected:
     lx0::LightSetPtr              mspLightSet;
     lx0::InstancePtr              mspInstance;
     
-    lx0::EventHandle              mEventHandle;
+    // Current settings
     bool                          mbRotate;
-    int                           miRenderAlgorithm;
     glm::mat4                     mRotation;
     float                         mCurrentZoom;
+    int                           miRenderAlgorithm;
     size_t                        mCurrentMaterial;
     size_t                        mCurrentGeometry;
 
+    // Application data
+    lx0::EventHandle              mEventHandle;
     std::vector<lx0::MaterialPtr> mMaterials;
     std::vector<GeometryData>     mGeometry;
 };
@@ -670,6 +711,11 @@ protected:
 
 extern "C" _declspec(dllexport) void initializePlugin()
 {
+    //
+    // Assign the class a name (so that scripts and other code have a way to
+    // refer to it) and an associated function for creating an instance of
+    // the class.
+    //
     auto spEngine = lx0::Engine::acquire();   
     spEngine->registerViewComponent("Renderer", []() { return new Renderer; });
 }
