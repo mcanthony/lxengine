@@ -123,7 +123,7 @@ public:
         : mCurrentMaterial    (0)
         , mCurrentGeometry    (0)
         , mbRotate            (true)
-        , mZoom               (1.0f)
+        , mCurrentZoom        (1.0f)
         , miRenderAlgorithm   (0)
     {
         //
@@ -184,8 +184,8 @@ public:
         // loaded.
         // 
         auto& geomData = mGeometry[mCurrentGeometry];
-        mZoom = geomData.zoom;
-        mspCamera = _createCamera(geomData.spGeometry->mBBox, mZoom);
+        mCurrentZoom = geomData.zoom;
+        mspCamera = _createCamera(geomData.spGeometry->mBBox, mCurrentZoom);
     }
 
     /*
@@ -354,10 +354,10 @@ public:
         // camera view accordingly.
         //
         auto& geomData = mGeometry[mCurrentGeometry];
-        if (mZoom != geomData.zoom)
+        if (mCurrentZoom != geomData.zoom)
         {
-            mZoom = geomData.zoom;
-            mspCamera = _createCamera(geomData.spGeometry->mBBox, mZoom);
+            mCurrentZoom = geomData.zoom;
+            mspCamera = _createCamera(geomData.spGeometry->mBBox, mCurrentZoom);
         }
 
         //
@@ -395,8 +395,8 @@ public:
             // Recreate the camera after geometry changes since the camera position
             // is based on the bounds of the geometry being viewed.
             //
-            mZoom     = geomData.zoom;
-            mspCamera = _createCamera(geomData.spGeometry->mBBox, mZoom);
+            mCurrentZoom = geomData.zoom;
+            mspCamera = _createCamera(geomData.spGeometry->mBBox, mCurrentZoom);
         }
         else if (evt == "next_material" || evt == "prev_material")
         {
@@ -423,32 +423,40 @@ public:
         }
         else if (evt == "zoom_in" || evt == "zoom_out")
         {
-            auto zoom = [&](float factor) {
-                // Zoom in over a period of time
-                // Cancel previous zoom if another request comes in or geometry changes
-                auto* pGeomZoom = &mGeometry[mCurrentGeometry].zoom;
-                auto value0 = *pGeomZoom;
-                auto value1 = value0 * factor;
-                auto start = lx0::lx_milliseconds();
-                auto func = [pGeomZoom, start, value0, value1]() -> int {
-                    // Should replace with frame times - not real times
-                    float alpha = float(lx0::lx_milliseconds() - start) / 2000.0f;
-                    if (alpha >= 1.0)
-                    {
-                        *pGeomZoom = value1;
-                        return -1;
-                    }
-                    else
-                    {
-                        float a = sin(alpha * 1.57079633f);
-                        *pGeomZoom = glm::mix(value0, value1, a);
-                        return 0;
-                    }
-                };
-                lx0::Engine::acquire()->sendEvent(func, mspHandle);
-            };
+            float zoomFactor = evt == "zoom_in" ? 2.0f : 0.5f;
+            float interval = 2000.0f;
 
-            zoom( evt == "zoom_in" ? 2.0f : 0.5f );
+            //
+            // Create a lambda function that will incrementally zoom in or out
+            // over a given time period.
+            //            
+            float*      pGeomZoom = &mGeometry[mCurrentGeometry].zoom;
+            float       value0    = *pGeomZoom;
+            float       value1    = value0 * zoomFactor;
+            lx0::uint32 start     = lx0::lx_milliseconds();
+
+            auto func = [=]() -> int {
+                // Should replace with frame times - not real times
+                float alpha = float(lx0::lx_milliseconds() - start) / interval;
+                if (alpha >= 1.0)
+                {
+                    *pGeomZoom = value1;
+                    return -1;
+                }
+                else
+                {
+                    float a = sin(alpha * 1.57079633f);
+                    *pGeomZoom = glm::mix(value0, value1, a);
+                    return 0;
+                }
+            };
+            
+            //
+            // Add the function as an event in the event queue.  An EventHandle
+            // is used to ensure only any newly registered event will cancel
+            // any prior one.
+            //
+            lx0::Engine::acquire()->sendEvent(func, mEventHandle);
         }
     }
 
@@ -644,11 +652,11 @@ protected:
     lx0::LightSetPtr              mspLightSet;
     lx0::InstancePtr              mspInstance;
     
-    lx0::EventHandle              mspHandle;
+    lx0::EventHandle              mEventHandle;
     bool                          mbRotate;
     int                           miRenderAlgorithm;
     glm::mat4                     mRotation;
-    float                         mZoom;
+    float                         mCurrentZoom;
     size_t                        mCurrentMaterial;
     size_t                        mCurrentGeometry;
 
