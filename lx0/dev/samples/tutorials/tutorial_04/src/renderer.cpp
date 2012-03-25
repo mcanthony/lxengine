@@ -92,128 +92,6 @@ namespace
 }
 
 //===========================================================================//
-//   L O C A L   F U N C T I O N S
-//===========================================================================//
-
-namespace lx0 { namespace core { namespace lxvar_ns { namespace detail {
-
-    /*
-        Helper function for converting an lxvar describing a triangle
-        mesh to a native glgeom::primitive_buffer.
-     */
-    static void 
-    _convertTriMesh (lxvar& json, glgeom::primitive_buffer& prim)
-    {
-        // The caller should have assured this is true before calling the function
-        lx_check_error(json["_meshType"].as<std::string>() == "TriMesh");
-
-        const int faceCount = json["_faces"].size();
-        const int vertexCount = json["_vertices"].size();
-
-        // Create the primitive buffer of triangles. This native representation
-        // will then be used by the rasterizer to the necesary OpenGL buffers
-        // needed to do the rendering.
-        //
-        // Note the we only add the vertex positions, but other vertex data such
-        // as normals, colors, etc. are supported by the primitive buffer.
-        //
-        prim.type = "triangles"; 
-        prim.vertex.positions.reserve(vertexCount);
-        prim.vertex.normals.reserve(vertexCount);                    
-        for (int i = 0; i < vertexCount; ++i)
-        {
-            lxvar vertex = json["_vertices"][i];
-            lxvar v = vertex["position"];
-            prim.vertex.positions.push_back( v.convert() );
-        }
-
-        // Now read the face indices.  This is a simple indexed triangle mesh.
-        //
-        prim.indices.reserve(faceCount * 3);
-        for (int i = 0; i < faceCount; ++i)
-        {
-            lxvar f = json["_faces"][i]["indices"];
-            prim.indices.push_back((int)f[0]);
-            prim.indices.push_back((int)f[1]);
-            prim.indices.push_back((int)f[2]);
-        }
-
-    }
-
-    /*
-        Helper function for converting an lxvar describing a point list
-        to a native glgeom::primitive_buffer.
-     */
-    static void 
-    _convertPointList (lxvar& json, glgeom::primitive_buffer& prim)
-    {
-        lx_check_error(json["_meshType"].as<std::string>() == "PointList");
-
-        const int vertexCount = json["_vertices"].size();
-
-        prim.type = "points"; 
-        prim.vertex.positions.reserve(vertexCount);
-        for (int i = 0; i < vertexCount; ++i)
-        {
-            lxvar vertex = json["_vertices"][i];
-            lxvar v = vertex["position"];
-            prim.vertex.positions.push_back( v.convert() );
-        }
-    }
-
-    /*
-        Helper function for converting an lxvar describing a line list
-        to a native glgeom::primitive_buffer.
-     */
-    static void _convertLineList (lxvar& json, glgeom::primitive_buffer& prim)
-    {
-        lx_check_error(json["_meshType"].as<std::string>() == "LineList");
-
-        const int vertexCount = json["_vertices"].size();
-
-        prim.type = "lines"; 
-        prim.vertex.positions.reserve(vertexCount);
-        for (int i = 0; i < vertexCount; ++i)
-        {
-            lxvar vertex = json["_vertices"][i];
-            lxvar v = vertex["position"];
-            prim.vertex.positions.push_back( v.convert() );
-        }
-    }
-
-    /*
-        Define a custom lxvar-to-native-type conversion function.
-
-        The lxvar::convert() template searches the  lx0::core::lxvar_ns::detail 
-        namespace for an overload of the _convert() function that matches the
-        necessary implicit conversion.  Therefore, if a function of the
-        prototype _convert(lxvar&, T&) is declared in the code before a call
-        to convert() for a type T, then the compiler will properly invoke the
-        _convert() implementation.  
-
-        In this case, this allows us to write the following:
-
-        glgeom::primitive_buffer primitive = myvar.convert();
-     */
-    void 
-    _convert (lxvar& json, glgeom::primitive_buffer& prim)
-    {
-        std::string type = json["_meshType"].as<std::string>();
-        
-        if (type == "TriMesh")
-            _convertTriMesh(json, prim);
-        else if (type == "PointList")
-            _convertPointList(json, prim);
-        else if (type == "LineList")
-            _convertLineList(json, prim);
-        else
-            throw lx_error_exception("Unrecognized _meshType '%s'", type);
-    }
-
-}}}}
-
-
-//===========================================================================//
 //   G E O M E T R Y D A T A
 //===========================================================================//
 /*
@@ -734,9 +612,7 @@ protected:
             
             //
             // The result of the script is converted to an lxvar as an intermediate step.  This is
-            // a bit inefficient; but since V8 is linked to as a static library and this plug-in is
-            // not the same as the module as the EXE, mixing V8 between this module and the EXE will
-            // cause problems.
+            // a bit inefficient, but flexible and convenient as a common intermediary.
             //
             auto source = lx0::string_from_file(filename);     
             lx0::lxvar result = spJavascriptDoc->run(source);
@@ -744,7 +620,7 @@ protected:
             if (result.is_defined())
             {
                 glgeom::primitive_buffer primitive = result.convert();
-                
+
                 glgeom::abbox3f bbox;
                 glgeom::compute_bounds(primitive, bbox);               
 
@@ -752,7 +628,7 @@ protected:
                 spModel->mBBox = bbox;
                 GeometryData data;
                 data.spGeometry = spModel;
-                data.zoom = 1.0f;
+                data.zoom = zoom;
                 mGeometry.push_back(data);
             }
             else

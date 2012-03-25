@@ -24,5 +24,5 @@
     var polyMesh = mesh.createPolyMesh();
     polyMesh.integrityCheck();    
     var triMesh = polyMesh.createTriMesh();
-    return triMesh;
+    return triMesh.createPrimitiveBuffer();
 })();

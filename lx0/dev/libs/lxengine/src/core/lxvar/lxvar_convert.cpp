@@ -68,6 +68,39 @@ namespace lx0 { namespace core { namespace lxvar_ns {
 
         void _convert (lxvar& v,    glgeom::point2f& u)     { _convert_any2f(v, u); }
 
+
+        void _convert (lxvar& json, glgeom::primitive_buffer& prim)
+        {
+            using namespace glgeom;
+
+            prim.type = json["type"].as<std::string>();
+        
+            lxvar vertexData = json["vertex"];
+
+            if (vertexData.has_key("positions"))
+            {
+                prim.vertex.positions.resize( vertexData["positions"].size() );
+                for (auto i = 0u; i < prim.vertex.positions.size(); ++i)
+                    prim.vertex.positions[i] = vertexData["positions"][i];
+            }
+            if (vertexData.has_key("uv"))
+            {
+                std::vector<point2f> channel0;
+                channel0.resize( vertexData["uv"][0].size() );
+                for (auto i = 0u; i < prim.vertex.positions.size(); ++i)
+                    channel0[i] = vertexData["uv"][0][i];
+                prim.vertex.uv.push_back(channel0);
+            }
+
+            lxvar indices = json["indices"];
+            if (indices.is_defined())
+            {
+                prim.indices.resize(indices.size());
+                for (auto i = 0u; i < prim.indices.size(); ++i)
+                    prim.indices[i] = (lx0::uint16)indices[i].as<int>();
+            }
+        }
+
     }
 }}
 

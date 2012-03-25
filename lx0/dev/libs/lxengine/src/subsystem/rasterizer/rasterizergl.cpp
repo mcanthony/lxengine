@@ -594,27 +594,7 @@ RasterizerGL::acquireGeometry (std::string name)
         std::string filename = "media2/geometry/" + name + ".json";
         lx0::lxvar json = lx0::lxvar::parse( lx0::string_from_file(filename).c_str() );
 
-        //
-        // WIP code - partial JSON -> primitive_buffer conversion
-        //
-        
-        primitive_buffer prim;
-        prim.type = json["type"].as<std::string>();
-        
-        prim.vertex.positions.resize( json["vertex"]["positions"].size() );
-        for (auto i = 0u; i < prim.vertex.positions.size(); ++i)
-            prim.vertex.positions[i] = json["vertex"]["positions"][i];
-        
-        std::vector<point2f> channel0;
-        channel0.resize( json["vertex"]["uv"][0].size() );
-        for (auto i = 0u; i < prim.vertex.positions.size(); ++i)
-            channel0[i] = json["vertex"]["uv"][0][i];
-        prim.vertex.uv.push_back(channel0);
-        
-        //
-        //
-        //
-    
+        primitive_buffer prim = json.convert();
         spGeometry = createGeometry(prim);
     }
     return spGeometry;

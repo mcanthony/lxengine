@@ -17,5 +17,5 @@
 			}		
 		}
 	}
-    return mesh;
+    return mesh.createPrimitiveBuffer();
 })();

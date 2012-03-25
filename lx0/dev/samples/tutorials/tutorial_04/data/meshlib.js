@@ -70,7 +70,19 @@ PointList.prototype.addVertex = function (x, y, z) {
     var vertex = { position : [x, y, z] };
     this._vertices.push(vertex);
     return vertex;
-}
+};
+
+PointList.prototype.createPrimitiveBuffer = function() {
+    var prim = {};
+    prim.type = "points";
+    prim.vertex = {};
+    
+    prim.vertex.positions = [];    
+    for (var i = 0; i < this._vertices.length; ++i)
+        prim.vertex.positions[i] = this._vertices[i].position.slice(0);   
+        
+    return prim;
+};
 
 //===========================================================================//
 // LineList
@@ -85,6 +97,18 @@ LineList.prototype.addSegment = function (v0, v1) {
     this._vertices.push({ position : v0.slice(0) });
 	this._vertices.push({ position : v1.slice(0) });
 }
+
+LineList.prototype.createPrimitiveBuffer = function() {
+    var prim = {};
+    prim.type = "lines";
+    prim.vertex = {};
+    
+    prim.vertex.positions = [];    
+    for (var i = 0; i < this._vertices.length; ++i)
+        prim.vertex.positions[i] = this._vertices[i].position.slice(0);   
+        
+    return prim;
+};
 
 //===========================================================================//
 // TriMesh
@@ -105,6 +129,25 @@ TriMesh.prototype.addFace = function(i0,i1,i2)
 {
     this._faces.push({ indices : [i0,i1,i2] });
 }
+
+TriMesh.prototype.createPrimitiveBuffer = function() {
+    var prim = {};
+    prim.type = "triangles";
+    prim.vertex = {};
+    
+    prim.vertex.positions = [];    
+    for (var i = 0; i < this._vertices.length; ++i)
+        prim.vertex.positions[i] = this._vertices[i].position.slice(0);   
+    
+    prim.indices = [];    
+    for (var i = 0; i < this._faces.length; ++i) {
+        prim.indices[i*3+0] = this._faces[i].indices[0];  
+        prim.indices[i*3+1] = this._faces[i].indices[1];
+        prim.indices[i*3+2] = this._faces[i].indices[2];
+    }
+    
+    return prim;
+};
 
 //===========================================================================//
 // QuadMesh

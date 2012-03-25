@@ -18,5 +18,5 @@
 	mesh.iterateEdges(function (edge) {
 		delete edge._mark;
 	});    
-    return lineList;
+    return lineList.createPrimitiveBuffer();
 })();

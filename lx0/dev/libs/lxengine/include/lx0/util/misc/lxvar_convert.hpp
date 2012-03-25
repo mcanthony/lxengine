@@ -31,6 +31,7 @@
 
 #include <lx0/_detail/forward_decls.hpp>
 #include <glgeom/glgeom.hpp>
+#include <glgeom/ext/primitive_buffer.hpp>
 
 namespace lx0 { namespace core { namespace lxvar_ns {
 
@@ -47,6 +48,8 @@ namespace lx0 { namespace core { namespace lxvar_ns {
         void _convert(lxvar& v, glgeom::vector3d& u);
         void _convert(lxvar& v, glgeom::color3f& p);
         void _convert(lxvar& v, glgeom::color3d& p);
+
+        void _convert(lxvar& v, glgeom::primitive_buffer& prim);
     }
 
 }}
