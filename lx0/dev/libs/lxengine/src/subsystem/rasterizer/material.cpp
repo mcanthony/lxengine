@@ -650,6 +650,20 @@ Material::_generateInstruction (RasterizerGL* pRasterizer, const Uniform& unifor
                     gl->disable(GL_TEXTURE_1D);
             };
         }
+        else if (uniform.name == "unifBBoxMin")
+        {
+            return [=]() {
+                auto& bbox = pRasterizer->mContext.spGeometry->mBBox;
+                gl->uniform3f(loc, bbox.min.x, bbox.min.y, bbox.min.z);
+            };
+        }
+        else if (uniform.name == "unifBBoxMax")
+        {
+            return [=]() {
+                auto& bbox = pRasterizer->mContext.spGeometry->mBBox;
+                gl->uniform3f(loc, bbox.max.x, bbox.max.y, bbox.max.z);
+            };
+        }
     }
 
     lx_warn("No instruction generated for uniform '%1%'", uniform.name);

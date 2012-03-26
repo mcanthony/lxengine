@@ -2,10 +2,14 @@ uniform mat4    unifProjMatrix;
 uniform mat4    unifViewMatrix;
 uniform mat3    unifNormalMatrix;
 
+uniform vec3      unifBBoxMin;
+uniform vec3      unifBBoxMax;
+
 in      vec3    vertNormal;
 
 varying out float fragIntensity;
-varying out vec3  fragUVW;
+varying out vec2  fragUV;
+varying out float fragHeight;
 
 void main()
 {
@@ -18,5 +22,6 @@ void main()
     fragIntensity = dot(normalize(lightDir), unifNormalMatrix * vertNormal);
     
     gl_Position = unifProjMatrix * unifViewMatrix * gl_Vertex;
-	fragUVW = gl_Vertex;
+	fragUV = gl_Vertex.xy;
+    fragHeight = (gl_Vertex.z - unifBBoxMin.z) / (unifBBoxMax.z - unifBBoxMin.z);
 }
