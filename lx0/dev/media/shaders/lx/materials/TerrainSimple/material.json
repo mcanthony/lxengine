@@ -1,6 +1,8 @@
 {
 	parameters: {
-		unifTexture0 : "media2/textures/seamless/grass/grass_01-000.png",
-		unifTexture1 : "media2/textures/seamless/grass/grass-set-00/grass17.png"
+		unifTexture0 : "media2/textures/seamless/dirt/dirt_001-000.png",
+		unifTexture1 : "media2/textures/seamless/grass/grass-set-00/grass17.png",
+		unifTexture2 : "media2/textures/seamless/grass/grass-set-00/grass10.png",
+		unifTexture3 : "media2/textures/seamless/noise/noise_d3_00-000.png"
 	}
 }
