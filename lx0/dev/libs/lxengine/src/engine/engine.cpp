@@ -678,7 +678,6 @@ namespace lx0 { namespace engine { namespace dom_ns {
 
         slotRunBegin();
 
-        const lx0::uint64 start = lx0::lx_milliseconds();
         mFrameNum = 0;
 
         _lx_reposition_console();

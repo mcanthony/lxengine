@@ -424,6 +424,10 @@ public:
         {
             _handleEventZoom(false);
         }
+        else if (evt == "cancel_event")
+        {
+            mEventHandle.reset();
+        }
     }
 
 protected:
@@ -530,7 +534,8 @@ protected:
         mMaterials.push_back(spMaterial);
     }
 
-    void _addGeometry (lx0::DocumentPtr spDocument, const std::string filename, float zoom)
+    void 
+    _addGeometry (lx0::DocumentPtr spDocument, const std::string filename, float zoom)
     {
         if (boost::iends_with(filename, ".blend"))
         {
@@ -623,14 +628,11 @@ protected:
         //
         // Create a lambda function that will incrementally zoom in or out
         // over a given time period.
-        //
-        // Determine the starting zoom value, the end value, staring time,
-        // then 
         //            
-        float*      pGeomZoom  = &mGeometry[mCurrentGeometry].zoom;
-        float       startValue = *pGeomZoom;
-        float       endValue   = startValue * zoomFactor;
-        lx0::uint32 startTime  = lx0::lx_milliseconds();
+        int         geometryIndex = mCurrentGeometry;
+        float       startValue    = mGeometry[geometryIndex].zoom;
+        float       endValue      = startValue * zoomFactor;
+        lx0::uint32 startTime     = lx0::lx_milliseconds();
 
         //
         // Apply a sinusoidal smooth (ease-in/ease-out) to the alpha value
@@ -638,34 +640,21 @@ protected:
         // then end the event reoccurence by setting the final value exactly 
         // and returning -1 (i.e. the time delay before rerunning the event).
         //
-        //@todo Replace the real time measurements with application frame times,
-        // so that the animation is linked to the speed of the app, not the
-        // real world clock.
-        //
-        //@todo The event stores a pointer to the GeometryData::zoom field
-        // in the mGeometry vector.  Other threads may add new geometry to that 
-        // vector, which changes the size of the vector (i.e. can reallocate), 
-        // thus invalidating the pointer.  An easy fix would be to reset() the
-        // event handle whenever the mGeometry vector is modified; but this is
-        // not obvious to the casual reader of the code why this would be 
-        // necessary.  Is there a cleaner approach to solving this problem?
-        // Modify mCurrentZoom directly instead?  Make the zoom member a 
-        // shared_ptr so mGeometry can be reallocated without corrupting this
-        // function?
-        //
-        //@todo Move sinusoidalSmooth to glgeom library
-        //
-        auto sinusoidalSmooth = [](float alpha) { return sin(alpha * glgeom::half_pi().value); };
-        auto func = [=]() -> int {
-            float alpha = float(lx0::lx_milliseconds() - startTime) / intervalMs;
+        auto func = [this, geometryIndex, startValue, endValue, startTime, intervalMs]() -> int {
+            
+            // Grab the refernece to the zoom variable every time since the 
+            // mGeometry vector may need to reallocate as new geometry is added.
+            float& zoom  = mGeometry[geometryIndex].zoom;
+
+            float  alpha = float(lx0::lx_milliseconds() - startTime) / intervalMs;
             if (!(alpha >= 1.0))
             {
-                *pGeomZoom = glm::mix(startValue, endValue, sinusoidalSmooth(alpha));
+                zoom = glm::mix(startValue, endValue, glgeom::sinusodial_smooth(alpha));
                 return 0;
             }
             else
             {
-                *pGeomZoom = endValue;
+                zoom = endValue;
                 return -1;
             }
         };

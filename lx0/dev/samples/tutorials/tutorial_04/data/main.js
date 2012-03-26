@@ -60,7 +60,9 @@ var uiBinding =
         if (keyCode == lx0.KC_X)
             view.sendEvent("zoom_out");
 
-        // Temporary code for testing
+        if (keyCode == lx0.KC_SPACE)
+            view.sendEvent("cancel_event");
+
         if (keyCode == lx0.KC_ESCAPE)
             engine.sendEvent("quit");
     },

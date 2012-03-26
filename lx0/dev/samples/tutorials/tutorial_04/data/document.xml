@@ -6,15 +6,15 @@
   
   <Library>
     <!-- Geometry -->
-    <Geometry src="media2/appdata/tutorial_04/cube.js" />
+    <Geometry src="media2/models/standard/suzanne/suzanne_subdivided.blend" />
     <Geometry name="PointList" src="media2/appdata/tutorial_04/points.js" />
     <Geometry name="LineList" src="media2/appdata/tutorial_04/lines.js" />
-	
+    <Geometry src="media2/appdata/tutorial_04/cube.js" />
+
     <Geometry src="media2/models/unit_cube-000.blend" />
     <Geometry src="media2/models/unit_hemisphere-000.blend" />
     <Geometry src="media2/models/unit_sphere-000.blend" />
     <Geometry src="media2/models/space-ship-ship_00/ship_00-nomodifiers.blend" zoom="1.1"/>
-    <Geometry src="media2/models/standard/suzanne/suzanne_subdivided.blend" />
     <Geometry src="media2/models/standard/stanford_bunny/bunny-000.blend" />
     <Geometry src="media2/models/unit_geometry/unit_cone-000.blend" />
     <Geometry src="media2/models/unit_geometry/unit_cylinder-000.blend" />
@@ -37,22 +37,12 @@
     </Light>
 
     <!-- Materials -->
-    
-    <Material id="solid_default">
-      {
-        graph : {
-          _type : "spot",
-        },
-      }
-    </Material> 
-    <Material id="solid_blue">
-      {
-        graph : {
-          _type : "solid",
-          color : [ 0, 0, .7 ],
-        },
-      }
-    </Material>
+
+    <Material id="toon1" src="ToonSimple" />
+    <Material id="toon2" src="ToonSimple" instance="Forest" />
+    <Material id="toon3" src="ToonSimple" instance="Forest2" />
+    <Material id="toon3" src="ToonSimple" instance="Forest3" />
+
     <Material id="solid_red">
       {
         render : {
@@ -65,11 +55,6 @@
         },
       }
     </Material>
-    
-    <Material id="toon1" src="ToonSimple" />
-    <Material id="toon2" src="ToonSimple" instance="Forest" />    
-    <Material id="toon3" src="ToonSimple" instance="Forest2" />    
-    <Material id="toon3" src="ToonSimple" instance="Forest3" />
     
     <Material id="phong_defaults">
       {
@@ -147,36 +132,7 @@
           },
         },
       }
-    </Material>    
-    
-    <Material id="star_simple">
-      {
-        graph : {
-          _type : "star",
-          color0 : [ .835, .835, .010 ],
-          color1 : [ .200, .100, .100 ],
-          width : .04,
-          uv : { 
-            _type : "cube",
-            scale : [ 8, 8 ],
-          },
-        },
-      }
-    </Material>         
-    <Material id="wave_simple">
-      {
-        graph : {
-          _type : "wave",
-          color0 : [ .835, .823, .790 ],
-          color1 : [ .261, .191, .720 ],
-          width : .15,
-          uv : { 
-            _type : "cube",
-            scale : [ 8, 8 ],
-          },
-        },
-      }
-    </Material>       
+    </Material>  
     
     <Material id="diamond_simple">
       {
@@ -220,20 +176,8 @@
         },
       }
     </Material>  
-   
-    <Material id="gradient">
-      {
-        graph : {
-          _type : "gradient",
-          c00 : [ 1, .6, 0 ],
-          c01 : [ 0.4, 1, 0 ],
-          c10 : [ 0, 0.4, 1 ],
-          c11 : [ 1, 1, 1 ], 
-          uv : { _type : "cube" },
-        },
-      }
-    </Material>
-     <Material id="checker_simple">
+    
+    <Material id="checker_simple">
       {
         graph : {
           _type : "checker",
@@ -245,7 +189,7 @@
         },
       }
     </Material>       
-     <Material id="checker_redblack">
+    <Material id="checker_redblack">
       {
         graph : {
           _type : "checker",
