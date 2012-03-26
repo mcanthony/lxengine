@@ -1,0 +1,6 @@
+{
+	parameters: {
+		unifTexture0 : "media2/textures/seamless/grass/grass_01-000.png",
+		unifTexture1 : "media2/textures/seamless/grass/grass-set-00/grass17.png"
+	}
+}

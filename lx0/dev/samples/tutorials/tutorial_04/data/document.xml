@@ -43,6 +43,8 @@
     <Material id="toon3" src="ToonSimple" instance="Forest2" />
     <Material id="toon3" src="ToonSimple" instance="Forest3" />
 
+    <Material id="toon1" src="TerrainSimple" />
+
     <Material id="solid_red">
       {
         render : {
