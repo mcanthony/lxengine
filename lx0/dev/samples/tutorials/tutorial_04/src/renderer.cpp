@@ -345,10 +345,20 @@ public:
         }
 
         //
-        // If the zoom value on the geometry has changed, adjust the
-        // camera view accordingly.
+        // Check if new geometry has loaded and update the active instance.  
+        // Recreate the camera as well since the bounds will have changed.
         //
         auto& geomData = mGeometry[mCurrentGeometry];
+        if (mGeometry[mCurrentGeometry].spGeometry.get() != mspInstance->spGeometry.get())
+        {
+            mspInstance->spGeometry = mGeometry[mCurrentGeometry].spGeometry;
+            mspCamera = _createCamera(geomData.spGeometry->mBBox, mCurrentZoom);
+        }
+
+        //
+        // If the zoom value on the geometry has changed, adjust the
+        // camera view accordingly.
+        //        
         if (mCurrentZoom != geomData.zoom)
         {
             mCurrentZoom = geomData.zoom;
@@ -534,59 +544,63 @@ protected:
         mMaterials.push_back(spMaterial);
     }
 
-    void 
-    _addGeometry (lx0::DocumentPtr spDocument, const std::string filename, float zoom)
+    void
+    _addGeometryBlender (lx0::DocumentPtr spDocument, const std::string filename, int index)
     {
-        if (boost::iends_with(filename, ".blend"))
-        {
-            //
-            // This is executed as a task in the main thread; therefore no locks or threading 
-            // protection is necessary on the rasterizer or geometry list.  If this were
-            // executed outside the main thread, then the calls to createQuadList and the
-            // modification to mGeometry would be problematic.
-            //
-            auto addGeometry = [this,zoom](glgeom::primitive_buffer* primitive) {
-                    auto spGeometry = mspRasterizer->createQuadList(primitive->indices, 
-                                                                    primitive->face.flags, 
-                                                                    primitive->vertex.positions, 
-                                                                    primitive->vertex.normals, 
-                                                                    primitive->vertex.colors);
-                    spGeometry->mBBox = primitive->bbox;
-                    GeometryData data;
-                    data.spGeometry = spGeometry;
-                    data.zoom = zoom;
-                    mGeometry.push_back(data);
-                    delete primitive;
-            };
+        //
+        // This is executed as a task in the main thread; therefore no locks or threading 
+        // protection is necessary on the rasterizer or geometry list.  If this were
+        // executed outside the main thread, then the calls to createQuadList and the
+        // modification to mGeometry would be problematic.
+        //
+        auto addGeometry = [this,index](glgeom::primitive_buffer* primitive) {
+                auto spGeometry = mspRasterizer->createQuadList(primitive->indices, 
+                                                                primitive->face.flags, 
+                                                                primitive->vertex.positions, 
+                                                                primitive->vertex.normals, 
+                                                                primitive->vertex.colors);
+                spGeometry->mBBox = primitive->bbox;
+                mGeometry[index].spGeometry = spGeometry;
+                delete primitive;
+        };
 
-            //
-            // The geometry loading uses only local data and therefore can safely be executed
-            // in a separate thread.
-            //
-            auto loadGeometry = [this,filename,addGeometry]() {
+        //
+        // The geometry loading uses only local data and therefore can safely be executed
+        // in a separate thread.
+        //
+        auto loadGeometry = [this,filename,addGeometry]() {
 
-                lx0::Timer timer;
-                if (!lx0::Engine::acquire()->isShuttingDown())
-                {
-                    lx0::TimeSection section(timer);
-                    lx_message("Loading Blender model '%1%'", filename);
-                    glgeom::primitive_buffer* primitive = new glgeom::primitive_buffer;
-                    glm::mat4 scaleMat = glm::scale(glm::mat4(), glm::vec3(1, 1, 1));
-                    lx0::primitive_buffer_from_blendfile(*primitive, filename.c_str(), scaleMat);
+            lx0::Timer timer;
+            if (!lx0::Engine::acquire()->isShuttingDown())
+            {
+                lx0::TimeSection section(timer);
+                lx_message("Loading Blender model '%1%'", filename);
+                glgeom::primitive_buffer* primitive = new glgeom::primitive_buffer;
+                glm::mat4 scaleMat = glm::scale(glm::mat4(), glm::vec3(1, 1, 1));
+                lx0::primitive_buffer_from_blendfile(*primitive, filename.c_str(), scaleMat);
                     
-                    auto f = addGeometry;
-                    if (!lx0::Engine::acquire()->isShuttingDown())
-                        lx0::Engine::acquire()->sendTask([primitive,f](){ f(primitive); });
-                }
-                lx_message("Model loaded in %2%ms", filename, timer.totalMs());
-            };
+                auto f = addGeometry;
+                if (!lx0::Engine::acquire()->isShuttingDown())
+                    lx0::Engine::acquire()->sendTask([primitive,f](){ f(primitive); });
+            }
+            lx_message("Model loaded in %2%ms", filename, timer.totalMs());
+        };
 
-            lx0::Engine::acquire()->sendWorkerTask(loadGeometry);
-        }
-        else if (boost::iends_with(filename, ".js"))
-        {
+        lx0::Engine::acquire()->sendWorkerTask(loadGeometry);
+    }
+
+    void
+    _addGeometryJavascript (lx0::DocumentPtr spDocument, const std::string filename, int index)
+    {
+        //
+        // Add the script execution as task in the Engine queue.  This will be executed
+        // once the Engine::run() loop begins.  There's not much advantage or necessity to 
+        // queuing the script execution rather than running it directly; this is being
+        // done mostly demonstrate using the sendTask() method.
+        //
+        lx0::Engine::acquire()->sendTask([this,spDocument,filename,index]() {
+
             lx_message("Loading geometry script '%1%'", filename);
-
             auto spJavascriptDoc = spDocument->getComponent<lx0::IJavascriptDoc>();
             
             //
@@ -599,20 +613,42 @@ protected:
             if (result.is_defined())
             {
                 glgeom::primitive_buffer primitive = result.convert();
+                glgeom::compute_bounds(primitive, primitive.bbox);               
 
-                glgeom::abbox3f bbox;
-                glgeom::compute_bounds(primitive, bbox);               
-
-                auto spModel = mspRasterizer->createGeometry(primitive);
-                spModel->mBBox = bbox;
-                GeometryData data;
-                data.spGeometry = spModel;
-                data.zoom = zoom;
-                mGeometry.push_back(data);
+                auto spGeometry = mspRasterizer->createGeometry(primitive);
+                spGeometry->mBBox = primitive.bbox;
+                mGeometry[index].spGeometry = spGeometry;
             }
             else
                 throw lx_error_exception("Script failure!");
-        }
+        });
+    }
+
+    void 
+    _addGeometry (lx0::DocumentPtr spDocument, const std::string filename, float zoom)
+    {
+        //
+        // Insert a stub item into the geometry index.  This will be replaced by
+        // the real geometry as soon as the geometry is loaded.
+        //
+        auto index = mGeometry.size();
+        mGeometry.push_back(GeometryData());
+        mGeometry[index].zoom = zoom;            
+
+        mGeometry[index].spGeometry = mspRasterizer->acquireGeometry("basic2d/Empty");
+        glgeom::abbox3f bbox;
+        bbox.min = glgeom::point3f(-1, -1, -1);
+        bbox.max = glgeom::point3f( 1,  1,  1);
+        mGeometry[index].spGeometry->mBBox = bbox;
+
+        if (boost::iends_with(filename, ".blend"))
+            _addGeometryBlender(spDocument, filename, index);
+
+        else if (boost::iends_with(filename, ".js"))
+            _addGeometryJavascript(spDocument, filename, index);
+        
+        else
+            throw lx_error_exception("Unrecognized geometry source!");
     }
 
     void

@@ -851,6 +851,8 @@ RasterizerGL::createGeometry (glgeom::primitive_buffer& primitive)
 {
     check_glerror();
 
+    auto pGeom = new Geometry;
+
     // Create a vertex array to store the vertex data
     //
     GLuint vao;
@@ -859,10 +861,19 @@ RasterizerGL::createGeometry (glgeom::primitive_buffer& primitive)
     
     check_glerror();
 
+    //
     // Create the cache to encapsulate the created OGL resources
     //
-    auto pGeom = new Geometry;
-    if (primitive.type == "triangles")
+    if (primitive.type == "none")
+    {
+        //
+        // Special case of "empty" geometry.  Can be useful as a stub to send
+        // through the pipeline.
+        //
+        pGeom->mType          = GL_NONE;
+        pGeom->mCount         = 0;
+    }
+    else if (primitive.type == "triangles")
     {
         pGeom->mType          = GL_TRIANGLES;
         pGeom->mVao           = vao;
@@ -921,10 +932,7 @@ RasterizerGL::createGeometry (glgeom::primitive_buffer& primitive)
         throw lx_error_exception("Unknown primitive type '%s'", primitive.type);
 
     check_glerror();
-
-    lx_check_error(pGeom->mType != GL_INVALID_ENUM);
-    lx_check_error(pGeom->mCount > 0);
-
+    
     return GeometryPtr(pGeom);
 }
 

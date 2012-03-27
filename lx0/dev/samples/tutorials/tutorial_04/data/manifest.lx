@@ -4,6 +4,4 @@
         "RasterizerGL"
     ],
     mainScript : "main.js",
-    commandLine : {
-    },
 }
