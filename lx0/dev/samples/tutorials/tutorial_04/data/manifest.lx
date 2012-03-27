@@ -1,6 +1,7 @@
 {
     plugins : [
-        "tutorial_04"
+        "tutorial_04",
+        "RasterizerGL"
     ],
     mainScript : "main.js",
     commandLine : {

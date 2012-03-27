@@ -218,6 +218,7 @@ SET_PROPERTY(TARGET glgeom_unittest         PROPERTY FOLDER "Libs/GLGeom")
 SET_PROPERTY(TARGET SoundAL                 PROPERTY FOLDER "Plugins/SoundAL")
 SET_PROPERTY(TARGET OgreView                PROPERTY FOLDER "Plugins/OgreView")
 SET_PROPERTY(TARGET LxPlugin-BulletPhysics  PROPERTY FOLDER "Plugins/BulletPhysics")
+SET_PROPERTY(TARGET RasterizerGL            PROPERTY FOLDER "Plugins/RasterizerGL")
 
 SET_PROPERTY(TARGET sm_lx_cube_asteriods    PROPERTY FOLDER "Samples/LxEngine")
 SET_PROPERTY(TARGET sm_lx_cube_rain         PROPERTY FOLDER "Samples/LxEngine")
