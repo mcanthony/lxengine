@@ -3,6 +3,4 @@
         "tutorial_04"
     ],
     mainScript : "main.js",
-    commandLine : {
-    },
 }
