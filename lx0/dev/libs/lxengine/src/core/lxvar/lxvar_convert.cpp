@@ -75,23 +75,31 @@ namespace lx0 { namespace core { namespace lxvar_ns {
 
             prim.type = json["type"].as<std::string>();
         
+            //
+            // Convert vertex data
+            //
             lxvar vertexData = json["vertex"];
-
-            if (vertexData.has_key("positions"))
+            if (vertexData.is_defined())
             {
-                prim.vertex.positions.resize( vertexData["positions"].size() );
-                for (auto i = 0u; i < prim.vertex.positions.size(); ++i)
-                    prim.vertex.positions[i] = vertexData["positions"][i];
-            }
-            if (vertexData.has_key("uv"))
-            {
-                std::vector<point2f> channel0;
-                channel0.resize( vertexData["uv"][0].size() );
-                for (auto i = 0u; i < prim.vertex.positions.size(); ++i)
-                    channel0[i] = vertexData["uv"][0][i];
-                prim.vertex.uv.push_back(channel0);
+                if (vertexData.has_key("positions"))
+                {
+                    prim.vertex.positions.resize( vertexData["positions"].size() );
+                    for (auto i = 0u; i < prim.vertex.positions.size(); ++i)
+                        prim.vertex.positions[i] = vertexData["positions"][i];
+                }
+                if (vertexData.has_key("uv"))
+                {
+                    std::vector<point2f> channel0;
+                    channel0.resize( vertexData["uv"][0].size() );
+                    for (auto i = 0u; i < prim.vertex.positions.size(); ++i)
+                        channel0[i] = vertexData["uv"][0][i];
+                    prim.vertex.uv.push_back(channel0);
+                }
             }
 
+            //
+            // Convert indices
+            //
             lxvar indices = json["indices"];
             if (indices.is_defined())
             {

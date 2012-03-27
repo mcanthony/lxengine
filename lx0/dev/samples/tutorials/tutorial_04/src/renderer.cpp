@@ -345,10 +345,20 @@ public:
         }
 
         //
-        // If the zoom value on the geometry has changed, adjust the
-        // camera view accordingly.
+        // Check if new geometry has loaded and update the active instance.  
+        // Recreate the camera as well since the bounds will have changed.
         //
         auto& geomData = mGeometry[mCurrentGeometry];
+        if (mGeometry[mCurrentGeometry].spGeometry.get() != mspInstance->spGeometry.get())
+        {
+            mspInstance->spGeometry = mGeometry[mCurrentGeometry].spGeometry;
+            mspCamera = _createCamera(geomData.spGeometry->mBBox, mCurrentZoom);
+        }
+
+        //
+        // If the zoom value on the geometry has changed, adjust the
+        // camera view accordingly.
+        //        
         if (mCurrentZoom != geomData.zoom)
         {
             mCurrentZoom = geomData.zoom;
@@ -537,6 +547,20 @@ protected:
     void 
     _addGeometry (lx0::DocumentPtr spDocument, const std::string filename, float zoom)
     {
+        //
+        // Insert a stub item into the geometry index.  This will be replaced by
+        // the real geometry as soon as it is ready.
+        //
+        auto index = mGeometry.size();
+        mGeometry.push_back(GeometryData());
+        mGeometry[index].zoom = zoom;            
+
+        mGeometry[index].spGeometry = mspRasterizer->acquireGeometry("basic2d/Empty");
+        glgeom::abbox3f bbox;
+        bbox.min = glgeom::point3f(-1, -1, -1);
+        bbox.max = glgeom::point3f( 1,  1,  1);
+        mGeometry[index].spGeometry->mBBox = bbox;
+
         if (boost::iends_with(filename, ".blend"))
         {
             //
@@ -545,17 +569,14 @@ protected:
             // executed outside the main thread, then the calls to createQuadList and the
             // modification to mGeometry would be problematic.
             //
-            auto addGeometry = [this,zoom](glgeom::primitive_buffer* primitive) {
+            auto addGeometry = [this,index,zoom](glgeom::primitive_buffer* primitive) {
                     auto spGeometry = mspRasterizer->createQuadList(primitive->indices, 
                                                                     primitive->face.flags, 
                                                                     primitive->vertex.positions, 
                                                                     primitive->vertex.normals, 
                                                                     primitive->vertex.colors);
                     spGeometry->mBBox = primitive->bbox;
-                    GeometryData data;
-                    data.spGeometry = spGeometry;
-                    data.zoom = zoom;
-                    mGeometry.push_back(data);
+                    mGeometry[index].spGeometry = spGeometry;
                     delete primitive;
             };
 
@@ -585,33 +606,30 @@ protected:
         }
         else if (boost::iends_with(filename, ".js"))
         {
-            lx_message("Loading geometry script '%1%'", filename);
+            lx0::Engine::acquire()->sendTask([this,spDocument,filename,index]() {
 
-            auto spJavascriptDoc = spDocument->getComponent<lx0::IJavascriptDoc>();
+                lx_message("Loading geometry script '%1%'", filename);
+                auto spJavascriptDoc = spDocument->getComponent<lx0::IJavascriptDoc>();
             
-            //
-            // The result of the script is converted to an lxvar as an intermediate step.  This is
-            // a bit inefficient, but flexible and convenient as a common intermediary.
-            //
-            auto source = lx0::string_from_file(filename);     
-            lx0::lxvar result = spJavascriptDoc->run(source);
+                //
+                // The result of the script is converted to an lxvar as an intermediate step.  This is
+                // a bit inefficient, but flexible and convenient as a common intermediary.
+                //
+                auto source = lx0::string_from_file(filename);     
+                lx0::lxvar result = spJavascriptDoc->run(source);
 
-            if (result.is_defined())
-            {
-                glgeom::primitive_buffer primitive = result.convert();
+                if (result.is_defined())
+                {
+                    glgeom::primitive_buffer primitive = result.convert();
+                    glgeom::compute_bounds(primitive, primitive.bbox);               
 
-                glgeom::abbox3f bbox;
-                glgeom::compute_bounds(primitive, bbox);               
-
-                auto spModel = mspRasterizer->createGeometry(primitive);
-                spModel->mBBox = bbox;
-                GeometryData data;
-                data.spGeometry = spModel;
-                data.zoom = zoom;
-                mGeometry.push_back(data);
-            }
-            else
-                throw lx_error_exception("Script failure!");
+                    auto spGeometry = mspRasterizer->createGeometry(primitive);
+                    spGeometry->mBBox = primitive.bbox;
+                    mGeometry[index].spGeometry = spGeometry;
+                }
+                else
+                    throw lx_error_exception("Script failure!");
+            });
         }
     }
 

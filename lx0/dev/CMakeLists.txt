@@ -30,6 +30,8 @@ ELSE()
     message (STATUS "Pre-built dependencies not found.  Relying on CMake to find the packages.")
 ENDIF()
 
+INSTALL(FILES "${CMAKE_SOURCE_DIR}/dependencies/openal_1_1/openal/OpenAL-Soft/build/Debug/OpenAL32.dll" DESTINATION ${PROJECT_BINARY_DIR}/Debug)
+INSTALL(FILES "${CMAKE_SOURCE_DIR}/dependencies/openal_1_1/openal/OpenAL-Soft/build/Release/OpenAL32.dll" DESTINATION ${PROJECT_BINARY_DIR}/Release)
 
 #
 # Dependencies
@@ -68,6 +70,7 @@ file(GLOB ASSETS "$ENV{OGRE_HOME}/bin/debug/*.dll")
 INSTALL(FILES ${ASSETS} DESTINATION ${PROJECT_BINARY_DIR}/Debug)
 file(GLOB ASSETS "$ENV{OGRE_HOME}/bin/Release/*.dll")
 INSTALL(FILES ${ASSETS} DESTINATION ${PROJECT_BINARY_DIR}/Release)
+
 
 #
 # Additional info

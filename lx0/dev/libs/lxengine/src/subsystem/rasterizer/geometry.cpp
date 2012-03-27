@@ -66,19 +66,23 @@ Geometry::activate(RasterizerGL* pRasterizer, GlobalPass& pass)
         break;
     }
 
-    
-    check_glerror();
-
     //
     // Is this an indexed primitive or a list of vertices?
     //
-    if (mCount < 1)
-        throw lx_error_exception("Cannot render empty geometry set!");
-
-    if (mVboIndices)
-        gl->drawElements(mType, mCount, GL_UNSIGNED_SHORT, 0);
+    if (mCount > 0)
+    {       
+        if (mVboIndices)
+            gl->drawElements(mType, mCount, GL_UNSIGNED_SHORT, 0);
+        else
+            gl->drawArrays(mType, 0, mCount); 
+    }
     else
-        gl->drawArrays(mType, 0, mCount); 
-
+    {
+        //
+        // Only the special "none" geometry type should have a 
+        // count of zero.
+        //
+        lx_check_error(mType == GL_NONE);
+    }
     check_glerror();
 }
