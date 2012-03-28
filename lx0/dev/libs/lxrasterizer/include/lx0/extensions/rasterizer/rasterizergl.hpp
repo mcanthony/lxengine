@@ -216,7 +216,7 @@ namespace lx0
 
                 CameraPtr       createCamera                (glgeom::radians fov, float nearDist, float farDist, glm::mat4& viewMatrix);
                 
-                FrameBufferPtr  createFrameBuffer           (int width, int height);
+                FrameBufferPtr  acquireFrameBuffer          (std::string name, int width, int height);
 
                 LightSetPtr     createLightSet              (void);
                 LightPtr        createLight                 (void);
@@ -335,11 +335,12 @@ namespace lx0
 
                 std::unique_ptr<lx0::OpenGlApi3_2>  gl3_2;
 
+                std::map<std::string, FrameBufferPtr>   mFrameBuffers;
                 std::map<std::string, MaterialClassPtr> mMaterialClasses;
                 std::map<std::string, MaterialPtr>      mMaterials;
                 std::map<std::string, GeometryPtr>      mGeometryCache;
-                
-                    std::list<ResourcePtr>              mResources;
+
+                std::list<ResourcePtr>              mResources;
                 std::vector<TexturePtr>             mTextures;
             public:
                 std::map<std::string,TexturePtr>    mTextureCache;      //!< @todo Replace with a more sophisicated, formal cache

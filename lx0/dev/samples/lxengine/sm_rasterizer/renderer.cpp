@@ -52,8 +52,7 @@ public:
         glgeom::vector3f position = spElem->value().find("position").convert();
         glgeom::point3f target = spElem->value().find("look_at").convert();
 
-        auto view = glm::lookAt(position.vec, target.vec, glm::vec3(0, 0, 1));
-        mspCamera->viewMatrix = view;
+        mspCamera->viewMatrix = glm::lookAt(position.vec, target.vec, glm::vec3(0, 0, 1));
     }
 
     lx0::CameraPtr       mspCamera; 
@@ -77,6 +76,8 @@ public:
             _onElementAddRemove(spElem, true); 
             return false; 
         });
+
+        spView->sendEvent("redraw");
     }  
 
     virtual void render (void)	
@@ -84,6 +85,8 @@ public:
         RenderAlgorithm algorithm;
         algorithm.mClearColor = glgeom::color4f(0.0f, 0.3f, 0.32f, 1.0f);
         GlobalPass pass[4];
+        pass[0].spCamera = mspCamera;
+        pass[0].spLightSet = mspLightSet;
         algorithm.mPasses.push_back(pass[0]);
 
         RenderList instances;
@@ -147,6 +150,7 @@ protected:
                 mShaderBuilder.buildShaderGLSL(material, graph);
             
                 auto spMat = mspRasterizer->createMaterial(material.uniqueName, material.source, material.parameters);
+                spMat->trimParameterTypes();
                 mMaterials.insert(std::make_pair(name, spMat));
             }
             catch (lx0::error_exception& e)
@@ -162,8 +166,6 @@ protected:
             glgeom::vector3f scale(radius / .5f, radius / .5f, radius / .5f);
 
             auto pInstance = new Instance;
-            pInstance->spCamera   = mspCamera;
-            pInstance->spLightSet = mspLightSet;
             pInstance->spMaterial = _findMaterial(spElem);
             pInstance->spTransform = mspRasterizer->createTransform(scale, center);
             pInstance->spGeometry = _loadMesh("media2/models/unit_sphere-000.blend");
@@ -176,8 +178,6 @@ protected:
             glgeom::vector3f scale = spElem->value().find("scale").convert();
 
             auto pInstance = new Instance;
-            pInstance->spCamera   = mspCamera;
-            pInstance->spLightSet = mspLightSet;
             pInstance->spMaterial = _findMaterial(spElem);
             pInstance->spTransform = mspRasterizer->createTransform(scale, center);
             pInstance->spGeometry = _loadMesh("media2/models/unit_cube-000.blend");
@@ -192,8 +192,6 @@ protected:
             glgeom::vector3f scale(radius / .5f, radius / .5f, radius / .5f);
 
             auto pInstance = new Instance;
-            pInstance->spCamera   = mspCamera;
-            pInstance->spLightSet = mspLightSet;
             pInstance->spMaterial = _findMaterial(spElem);
             pInstance->spTransform = mspRasterizer->createTransform(scale, center);
             pInstance->spGeometry = _loadMesh("media2/models/unit_geometry/unit_cylinder-001.blend");
@@ -208,8 +206,6 @@ protected:
             glgeom::vector3f scale(radius / .5f, radius / .5f, radius / .5f);
 
             auto pInstance = new Instance;
-            pInstance->spCamera   = mspCamera;
-            pInstance->spLightSet = mspLightSet;
             pInstance->spMaterial = _findMaterial(spElem);
             pInstance->spTransform = mspRasterizer->createTransform(scale, center);
             pInstance->spGeometry = _loadMesh("media2/models/unit_geometry/unit_cone-000.blend");
@@ -250,8 +246,6 @@ protected:
 
 
             auto pInstance = new Instance;
-            pInstance->spCamera   = mspCamera;
-            pInstance->spLightSet = mspLightSet;
             pInstance->spMaterial = _findMaterial(spElem);
             pInstance->spTransform = mspRasterizer->createTransform(glm::mat4(mat));
             pInstance->spGeometry = _loadMesh("media2/models/plane_1k-001.blend");

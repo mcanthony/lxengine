@@ -309,12 +309,17 @@ void RasterizerGL::shutdown()
 }
 
 FrameBufferPtr  
-RasterizerGL::createFrameBuffer (int width, int height)
+RasterizerGL::acquireFrameBuffer (std::string name, int width, int height)
 {
-    //
-    // Ignore width/height for now, until we have something working...
-    //
-    return FrameBufferPtr( new FrameBuffer(FrameBuffer::eCreateFrameBuffer, width, height) );
+    auto& spFrameBuffer = mFrameBuffers[name];
+    if (!spFrameBuffer)
+    {
+        spFrameBuffer.reset( new FrameBuffer(FrameBuffer::eCreateFrameBuffer, width, height) );
+    }
+
+    lx_check_error(spFrameBuffer->width() == width);
+    lx_check_error(spFrameBuffer->height() == height);
+    return spFrameBuffer;
 }
 
 CameraPtr       

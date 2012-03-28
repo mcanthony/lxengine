@@ -145,8 +145,8 @@ public:
         // 
         int width = spView->width();
         int height = spView->height();
-        mspFBOffscreen0 = mspRasterizer->createFrameBuffer(width, height);
-        mspFBOffscreen1 = mspRasterizer->createFrameBuffer(width, height);
+        mspFBOffscreen0 = mspRasterizer->acquireFrameBuffer("FB0", width, height);
+        mspFBOffscreen1 = mspRasterizer->acquireFrameBuffer("FB1", width, height);
 
         //
         // Add an empty light set; the Document will populate it with
