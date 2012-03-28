@@ -36,7 +36,7 @@
 #include <lx0/subsystem/shaderbuilder.hpp>
 #include <lx0/util/blendload.hpp>
 #include <lx0/util/misc.hpp>
-#include <lx0/libs/rasterizer.hpp>
+#include <lx0/extensions/rasterizer.hpp>
 
 //===========================================================================//
 //   U I - B I N D I N G

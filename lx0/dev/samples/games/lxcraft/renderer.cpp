@@ -26,7 +26,7 @@
 */
 //===========================================================================//
 
-#include <lx0/libs/rasterizer.hpp>
+#include <lx0/extensions/rasterizer.hpp>
 #include <lx0/util/misc/lxvar_convert.hpp>
 #include <lx0/util/blendload.hpp>
 #include <lx0/prototype/misc.hpp>

@@ -27,7 +27,7 @@
 //===========================================================================//
 
 #include <lx0/util/blendload.hpp>
-#include <lx0/libs/rasterizer.hpp>
+#include <lx0/extensions/rasterizer.hpp>
 
 using namespace lx0::subsystem::rasterizer_ns;
 

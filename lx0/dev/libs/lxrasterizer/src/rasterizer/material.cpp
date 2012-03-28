@@ -26,7 +26,7 @@
 */
 //===========================================================================//
 
-#include <lx0/libs/rasterizer.hpp>
+#include <lx0/extensions/rasterizer.hpp>
 #include <glm/gtc/matrix_inverse.hpp>
 
 using namespace lx0;

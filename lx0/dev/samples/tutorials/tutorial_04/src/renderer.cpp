@@ -31,7 +31,7 @@
 #include <glgeom/ext/primitive_buffer.hpp>
 
 #include <lx0/lxengine.hpp>
-#include <lx0/libs/rasterizer.hpp>
+#include <lx0/extensions/rasterizer.hpp>
 #include <lx0/subsystem/shaderbuilder.hpp>
 #include <lx0/subsystem/javascript.hpp>
 #include <lx0/util/blendload.hpp>

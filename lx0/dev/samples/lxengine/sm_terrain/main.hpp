@@ -30,7 +30,7 @@
 
 #include <lx0/lxengine.hpp>
 #include <lx0/prototype/misc.hpp>
-#include <lx0/libs/rasterizer.hpp>
+#include <lx0/extensions/rasterizer.hpp>
 #include "rasterizer_ext.hpp"
 
 using namespace lx0;

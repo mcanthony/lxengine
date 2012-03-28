@@ -82,13 +82,13 @@ namespace lx0
 
 #include <lx0/util/gl/glinterface.hpp>
 
-#include <lx0/libs/rasterizer/camera.hpp>
-#include <lx0/libs/rasterizer/lightset.hpp>
-#include <lx0/libs/rasterizer/geometry.hpp>
-#include <lx0/libs/rasterizer/material.hpp>
-#include <lx0/libs/rasterizer/transform.hpp>
-#include <lx0/libs/rasterizer/item.hpp>
+#include <lx0/extensions/rasterizer/camera.hpp>
+#include <lx0/extensions/rasterizer/lightset.hpp>
+#include <lx0/extensions/rasterizer/geometry.hpp>
+#include <lx0/extensions/rasterizer/material.hpp>
+#include <lx0/extensions/rasterizer/transform.hpp>
+#include <lx0/extensions/rasterizer/item.hpp>
 
-#include <lx0/libs/rasterizer/rasterizergl.hpp>
+#include <lx0/extensions/rasterizer/rasterizergl.hpp>
 
-#include <lx0/libs/rasterizer/cache/meshcache.hpp>
+#include <lx0/extensions/rasterizer/cache/meshcache.hpp>

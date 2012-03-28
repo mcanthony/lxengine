@@ -27,8 +27,8 @@
 //===========================================================================//
 
 #include <glgeom/glgeom.hpp>
-#include <lx0/libs/rasterizer.hpp>
-#include <lx0/libs/rasterizer/lightset.hpp>
+#include <lx0/extensions/rasterizer.hpp>
+#include <lx0/extensions/rasterizer/lightset.hpp>
 
 using namespace lx0;
 using namespace glgeom;

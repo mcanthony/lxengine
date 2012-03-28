@@ -52,7 +52,7 @@ set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY "${PROJECT_BINARY_DIR}")
 # LxEngine
 include_directories( libs/lxengine/include )
 include_directories( libs/glgeom/include )
-include_directories( libs/rasterizergl/include )
+include_directories( libs/lxrasterizer/include )
 
 # Boost
 include_directories(${Boost_INCLUDE_DIR})
@@ -85,7 +85,7 @@ message(STATUS "CMAKE_EXE_LINKER_FLAGS=${CMAKE_EXE_LINKER_FLAGS}")
 
 set( LX_ALL_LIBS 
     lxengine
-    RasterizerGL
+    lxrasterizer
     ${V8_LIBS} 
     ${OIS_LIBS}     
     opengl32.lib
@@ -198,7 +198,7 @@ add_subdirectory( libs/lxengine )
 add_subdirectory( libs/lxengine/unittest )
 add_subdirectory( libs/glgeom/unittest )
 add_subdirectory( libs/glgeom/benchmarks )
-add_subdirectory( libs/rasterizergl )
+add_subdirectory( libs/lxrasterizer )
 
 recurse_subdirectories(apps)
 recurse_subdirectories(plugins)
@@ -218,7 +218,7 @@ SET_PROPERTY(TARGET lxengineapp             PROPERTY FOLDER "Apps/LxEngineApp")
 SET_PROPERTY(TARGET lxengine                PROPERTY FOLDER "Libs")
 SET_PROPERTY(TARGET glgeom_benchmark        PROPERTY FOLDER "Libs")
 SET_PROPERTY(TARGET glgeom_unittest         PROPERTY FOLDER "Libs")
-SET_PROPERTY(TARGET RasterizerGL            PROPERTY FOLDER "Libs")
+SET_PROPERTY(TARGET lxrasterizer            PROPERTY FOLDER "Libs")
 
 SET_PROPERTY(TARGET SoundAL                 PROPERTY FOLDER "Plugins")
 SET_PROPERTY(TARGET OgreView                PROPERTY FOLDER "Plugins")
