@@ -49,6 +49,20 @@ public:
         mRotation += glgeom::two_pi() / 1000.0f;
     }
 
+    static lx0::GeometryPtr 
+    _createGeometry (RasterizerGL* spRasterizer, const char* filename, float scale)
+    {
+
+        glgeom::primitive_buffer primitive;
+        glm::mat4 scaleMat = glm::scale(glm::mat4(), glm::vec3(scale, scale, scale));
+        lx0::primitive_buffer_from_blendfile(primitive, filename, scaleMat);
+            
+        auto spGeometry = spRasterizer->createQuadList(primitive.indices, primitive.face.flags, primitive.vertex.positions, primitive.vertex.normals, primitive.vertex.colors);
+        spGeometry->mBBox = primitive.bbox;
+
+        return spGeometry;
+    }
+
     virtual void generate(ElementPtr spElement,
                       RasterizerGL& rasterizer,
                       lx0::Camera2& cam1,
@@ -60,7 +74,7 @@ public:
         {               
             mPosition = glgeom::point3f ( 0.0f, 0.0f, 0.0f);
 
-            auto spGeom = lx0::quadlist_from_blendfile(rasterizer, "media2/models/unit_hemisphere-000.blend", 200.0f);
+            auto spGeom = _createGeometry(&rasterizer, "media2/models/unit_hemisphere-000.blend", 200.0f);
 
             auto spMat = rasterizer.createMaterial("SkyMap", lx0::string_from_file("media2/shaders/glsl/fragment/skymap.frag"), lxvar::map());
             spMat->mBlend = false;

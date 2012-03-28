@@ -31,7 +31,7 @@
 //===========================================================================//
 
 #include <lx0/lxengine.hpp>
-#include <lx0/subsystem/rasterizer.hpp>
+#include <lx0/libs/rasterizer.hpp>
 
 //===========================================================================//
 //   U I - B I N D I N G

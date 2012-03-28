@@ -33,10 +33,10 @@
 #include <iostream>
 
 #include <lx0/lxengine.hpp>
-#include <lx0/subsystem/rasterizer.hpp>
 #include <lx0/subsystem/shaderbuilder.hpp>
 #include <lx0/util/blendload.hpp>
 #include <lx0/util/misc.hpp>
+#include <lx0/libs/rasterizer.hpp>
 
 //===========================================================================//
 //   U I - B I N D I N G
@@ -287,11 +287,25 @@ protected:
         mMaterials.push_back(spMaterial);
     }
 
+    static lx0::GeometryPtr 
+    _createGeometry (lx0::RasterizerGL* pRasterizer, const char* filename, float scale)
+    {
+
+        glgeom::primitive_buffer primitive;
+        glm::mat4 scaleMat = glm::scale(glm::mat4(), glm::vec3(scale, scale, scale));
+        lx0::primitive_buffer_from_blendfile(primitive, filename, scaleMat);
+            
+        auto spGeometry = pRasterizer->createQuadList(primitive.indices, primitive.face.flags, primitive.vertex.positions, primitive.vertex.normals, primitive.vertex.colors);
+        spGeometry->mBBox = primitive.bbox;
+
+        return spGeometry;
+    }
+
     void _addGeometry (const std::string& modelFilename)
     {
         lx_message("Loading '%1%'", modelFilename);
-        lx0::GeometryPtr spModel = lx0::geometry_from_blendfile(mspRasterizer, modelFilename.c_str());
-        mGeometry.push_back(spModel);
+        lx0::GeometryPtr spGeometry = _createGeometry(mspRasterizer.get(), modelFilename.c_str(), 1.0f);
+        mGeometry.push_back(spGeometry);
     }
 
     lx0::ShaderBuilder            mShaderBuilder;

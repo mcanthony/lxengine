@@ -32,7 +32,7 @@
 #include <lx0/lxengine.hpp>
 #include <glgeom/prototype/image.hpp>
 #include <lx0/prototype/misc.hpp>
-#include <lx0/subsystem/rasterizer/gl/glinterface.hpp>
+#include <lx0/util/gl/glinterface.hpp>
 
 #include <ddraw.h>
 

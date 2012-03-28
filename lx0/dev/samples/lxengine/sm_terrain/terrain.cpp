@@ -45,7 +45,7 @@
 #include <lx0/prototype/misc.hpp>
 
 #include "terrain.hpp"
-#include <lx0/subsystem/rasterizer.hpp>
+#include <lx0/libs/rasterizer.hpp>
 
 //===========================================================================//
 //   N A M E S P A C E S

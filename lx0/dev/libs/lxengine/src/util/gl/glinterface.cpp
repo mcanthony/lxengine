@@ -29,7 +29,7 @@
 #pragma once
 
 #include <lx0/core/log/log.hpp>
-#include <lx0/subsystem/rasterizer/gl/glinterface.hpp>
+#include <lx0/util/gl/glinterface.hpp>
 
 #define WIN32_LEAN_AND_MEAN 1
 #include <windows.h>

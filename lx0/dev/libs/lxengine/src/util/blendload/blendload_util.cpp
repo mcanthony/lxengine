@@ -43,29 +43,6 @@ using namespace lx0;
 //   I M P L E M E N T A T I O N 
 //===========================================================================//
 
-lx0::GeometryPtr    
-lx0::util::blendload_ns::geometry_from_blendfile (lx0::RasterizerGLPtr spRasterizer, const char* filename)
-{
-    glgeom::abbox3f bbox;
-    auto spGeometry = lx0::quadlist_from_blendfile(*spRasterizer.get(), filename, 1.0f, &bbox);
-    spGeometry->mBBox = bbox;
-
-    return spGeometry;
-}
-
-lx0::GeometryPtr
-lx0::util::blendload_ns::quadlist_from_blendfile (RasterizerGL& rasterizer, const char* filename, float scale, glgeom::abbox3f* pBounds)
-{
-    glgeom::primitive_buffer primitive;
-    glm::mat4 scaleMat = glm::scale(glm::mat4(), glm::vec3(scale, scale, scale));
-    
-    primitive_buffer_from_blendfile(primitive, filename, scaleMat);
-
-    if (pBounds)
-        *pBounds = primitive.bbox;
-    return rasterizer.createQuadList(primitive.indices, primitive.face.flags, primitive.vertex.positions, primitive.vertex.normals, primitive.vertex.colors);
-}
-
 static
 void
 _primitive_buffer_from_block (glgeom::primitive_buffer& primitive, lx0::BlendReader& reader, lx0::BlockPtr spBlock, const glm::mat4& pretransform)

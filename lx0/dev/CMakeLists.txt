@@ -52,13 +52,11 @@ set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY "${PROJECT_BINARY_DIR}")
 # LxEngine
 include_directories( libs/lxengine/include )
 include_directories( libs/glgeom/include )
+include_directories( libs/rasterizergl/include )
 
 # Boost
 include_directories(${Boost_INCLUDE_DIR})
 link_directories(${Boost_LIBRARY_DIRS})
-
-# Modified Gl3w
-include_directories( ${CMAKE_SOURCE_DIR}/libs/lxengine/src/extern/gl3w/include )
 
 # OGRE
 #
@@ -71,6 +69,7 @@ INSTALL(FILES ${ASSETS} DESTINATION ${PROJECT_BINARY_DIR}/Debug)
 file(GLOB ASSETS "$ENV{OGRE_HOME}/bin/Release/*.dll")
 INSTALL(FILES ${ASSETS} DESTINATION ${PROJECT_BINARY_DIR}/Release)
 
+include_directories( ${CMAKE_SOURCE_DIR}/libs/lxengine/src/extern/gl3w/include )
 
 #
 # Additional info
@@ -86,6 +85,7 @@ message(STATUS "CMAKE_EXE_LINKER_FLAGS=${CMAKE_EXE_LINKER_FLAGS}")
 
 set( LX_ALL_LIBS 
     lxengine
+    RasterizerGL
     ${V8_LIBS} 
     ${OIS_LIBS}     
     opengl32.lib
@@ -198,6 +198,7 @@ add_subdirectory( libs/lxengine )
 add_subdirectory( libs/lxengine/unittest )
 add_subdirectory( libs/glgeom/unittest )
 add_subdirectory( libs/glgeom/benchmarks )
+add_subdirectory( libs/rasterizergl )
 
 recurse_subdirectories(apps)
 recurse_subdirectories(plugins)
@@ -214,14 +215,14 @@ SET_PROPERTY(GLOBAL PROPERTY USE_FOLDERS ON)
 
 SET_PROPERTY(TARGET lxengineapp             PROPERTY FOLDER "Apps/LxEngineApp")
 
-SET_PROPERTY(TARGET lxengine                PROPERTY FOLDER "Libs/LxEngine")
-SET_PROPERTY(TARGET glgeom_benchmark        PROPERTY FOLDER "Libs/GLGeom")
-SET_PROPERTY(TARGET glgeom_unittest         PROPERTY FOLDER "Libs/GLGeom")
+SET_PROPERTY(TARGET lxengine                PROPERTY FOLDER "Libs")
+SET_PROPERTY(TARGET glgeom_benchmark        PROPERTY FOLDER "Libs")
+SET_PROPERTY(TARGET glgeom_unittest         PROPERTY FOLDER "Libs")
+SET_PROPERTY(TARGET RasterizerGL            PROPERTY FOLDER "Libs")
 
-SET_PROPERTY(TARGET SoundAL                 PROPERTY FOLDER "Plugins/SoundAL")
-SET_PROPERTY(TARGET OgreView                PROPERTY FOLDER "Plugins/OgreView")
-SET_PROPERTY(TARGET LxPlugin-BulletPhysics  PROPERTY FOLDER "Plugins/BulletPhysics")
-SET_PROPERTY(TARGET RasterizerGL            PROPERTY FOLDER "Plugins/RasterizerGL")
+SET_PROPERTY(TARGET SoundAL                 PROPERTY FOLDER "Plugins")
+SET_PROPERTY(TARGET OgreView                PROPERTY FOLDER "Plugins")
+SET_PROPERTY(TARGET LxPlugin-BulletPhysics  PROPERTY FOLDER "Plugins")
 
 SET_PROPERTY(TARGET sm_lx_cube_asteriods    PROPERTY FOLDER "Samples/LxEngine")
 SET_PROPERTY(TARGET sm_lx_cube_rain         PROPERTY FOLDER "Samples/LxEngine")

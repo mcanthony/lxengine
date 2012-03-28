@@ -30,7 +30,6 @@
 #pragma once
 
 #include <glgeom/ext/primitive_buffer.hpp>
-#include <lx0/subsystem/rasterizer.hpp>
     
 namespace lx0 
 { 
@@ -38,13 +37,7 @@ namespace lx0
     { 
         namespace blendload_ns 
         {
-
-            lx0::GeometryPtr    geometry_from_blendfile          (lx0::RasterizerGLPtr spRasterizer, const char* filename);
-
-            lx0::GeometryPtr    quadlist_from_blendfile          (lx0::RasterizerGL& rasterizer, const char* filename, float scale = 1.0f, glgeom::abbox3f* pBounds = nullptr);
-
             void                primitive_buffer_from_blendfile  (glgeom::primitive_buffer& primitive, const char* filename, const glm::mat4& pretransform = glm::mat4());
-
         }
     }
     using namespace lx0::util::blendload_ns;

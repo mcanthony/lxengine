@@ -26,7 +26,7 @@
 */
 //===========================================================================//
 
-#include <lx0/subsystem/rasterizer.hpp>
+#include <lx0/libs/rasterizer.hpp>
 #include <lx0/subsystem/javascript.hpp>
 #include <lx0/util/misc/lxvar_convert.hpp>
 #include <lx0/util/blendload.hpp>
@@ -329,6 +329,20 @@ protected:
         }
     }
 
+    static lx0::GeometryPtr 
+    _createGeometry (RasterizerGL* spRasterizer, const char* filename, float scale)
+    {
+
+        glgeom::primitive_buffer primitive;
+        glm::mat4 scaleMat = glm::scale(glm::mat4(), glm::vec3(scale, scale, scale));
+        lx0::primitive_buffer_from_blendfile(primitive, filename, scaleMat);
+            
+        auto spGeometry = spRasterizer->createQuadList(primitive.indices, primitive.face.flags, primitive.vertex.positions, primitive.vertex.normals, primitive.vertex.colors);
+        spGeometry->mBBox = primitive.bbox;
+
+        return spGeometry;
+    }
+
     GeometryPtr _loadMesh (const char* filename)
     {
         auto it = mMeshes.find(filename);
@@ -339,7 +353,7 @@ protected:
         }
         else
         {
-            auto spGeom = lx0::quadlist_from_blendfile(*mspRasterizer.get(), filename);
+            auto spGeom = _createGeometry(mspRasterizer.get(), filename, 1.0f);
             mMeshes.insert(std::make_pair(filename, spGeom));
             return spGeom;
         }

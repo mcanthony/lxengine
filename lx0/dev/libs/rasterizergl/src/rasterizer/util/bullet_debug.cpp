@@ -2,13 +2,9 @@
 
 //////////////////////////////////////////////////////////////////////////////////////////
 
-#include <Windows.h>
-#include <gl/GL.h>
-
-#include <GL3/gl3.h>
 extern "C" {
-extern PFNGLUSEPROGRAMPROC gl3wUseProgram;
-#define glUseProgram		gl3wUseProgram
+//extern PFNGLUSEPROGRAMPROC gl3wUseProgram;
+//#define glUseProgram		gl3wUseProgram
 }
 
 #include <bullet/btBulletCollisionCommon.h>
@@ -42,11 +38,11 @@ DebugDraw::DebugDraw()
 void    
 DebugDraw::drawLine(const btVector3& from,const btVector3& to,const btVector3& color)
 {
-    glBegin(GL_LINES);
+/*    glBegin(GL_LINES);
     glColor3f(color.getX(), color.getY(), color.getZ());
     glVertex3f(from.getX(), from.getY(), from.getZ());
     glVertex3f(to.getX(), to.getY(), to.getZ());
-    glEnd();
+    glEnd();*/
 }
 
 void    
@@ -101,7 +97,11 @@ void draw_bullet_debug(const glm::mat4& projMatrix, const glm::mat4& viewMatrix)
         auto spPhysicsDoc = (*it)->getComponent<lx0::IPhysicsDoc>();
         if (spPhysicsDoc)
         {
-            glUseProgram(0);
+            //
+            // Temporarily disabled - this direct use of OpenGL does not fit
+            // well with the rest of the architecture.
+            //
+            /*glUseProgram(0);
             glDepthRange (0.0f, 0.999999f);
 
             glMatrixMode(GL_PROJECTION);
@@ -113,7 +113,7 @@ void draw_bullet_debug(const glm::mat4& projMatrix, const glm::mat4& viewMatrix)
             auto pWorld = spPhysicsDoc->getWorld();
             pWorld->debugDrawWorld();
 
-            glDepthRange (0.0f, 1.0f);
+            glDepthRange (0.0f, 1.0f);*/
         }
     }
 }

@@ -34,7 +34,7 @@
 #include <string>
 
 #include <lx0/engine/view.hpp>
-#include <lx0/subsystem/rasterizer/gl/glinterface.hpp>
+#include <lx0/util/gl/glinterface.hpp>
 
 namespace lx0 { 
     

@@ -26,9 +26,8 @@
 */
 //===========================================================================//
 
-#include "lx0/subsystem/rasterizer.hpp"
 #include <lx0/util/blendload.hpp>
-
+#include <lx0/libs/rasterizer.hpp>
 
 using namespace lx0::subsystem::rasterizer_ns;
 
@@ -41,6 +40,20 @@ MeshCache::MeshCache(std::shared_ptr<RasterizerGL> spRasterizer)
 MeshCache::~MeshCache()
 {
     lx_log("MeshCache dtor");
+}
+
+static lx0::GeometryPtr 
+_createGeometry (RasterizerGL* spRasterizer, const char* filename, float scale)
+{
+
+    glgeom::primitive_buffer primitive;
+    glm::mat4 scaleMat = glm::scale(glm::mat4(), glm::vec3(scale, scale, scale));
+    lx0::primitive_buffer_from_blendfile(primitive, filename, scaleMat);
+            
+    auto spGeometry = spRasterizer->createQuadList(primitive.indices, primitive.face.flags, primitive.vertex.positions, primitive.vertex.normals, primitive.vertex.colors);
+    spGeometry->mBBox = primitive.bbox;
+
+    return spGeometry;
 }
 
 GeometryPtr 
@@ -58,7 +71,7 @@ MeshCache::acquire (const char* filename)
     {
         lx_log("Adding mesh '%s' to MeshCache", filename);
 
-        auto spGeom = lx0::quadlist_from_blendfile(*mspRasterizer.get(), filename);
+        auto spGeom = _createGeometry(mspRasterizer.get(), filename, 1.0f);
         mCache.insert(std::make_pair(filename, spGeom));
         return spGeom;
     }

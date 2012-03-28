@@ -4,7 +4,7 @@
 
     LICENSE
 
-    Copyright (c) 2010-2011 athile@athile.net (http://www.athile.net)
+    Copyright (c) 2010-2012 athile@athile.net (http://www.athile.net)
 
     Permission is hereby granted, free of charge, to any person obtaining a 
     copy of this software and associated documentation files (the "Software"), 
@@ -26,34 +26,63 @@
 */
 //===========================================================================//
 
-#include <lx0/subsystem/rasterizer.hpp>
+#include <lx0/libs/rasterizer.hpp>
 
 using namespace lx0;
 
 extern OpenGlApi3_2* gl;
 
-glm::mat4 
-Camera::projectionMatrix (void) const
+Geometry::~Geometry()
 {
-    int vp[4];  // x, y, width, height
-    gl->getIntegerv(GL_VIEWPORT, vp);
-    GLfloat aspectRatio = (GLfloat)vp[2]/(GLfloat)vp[3];
+    if (mVao)
+        gl->deleteVertexArrays(1, &mVao);
+    if (mVboPosition)
+        gl->deleteBuffers(1, &mVboPosition);
+    if (mVboNormal)
+        gl->deleteBuffers(1, &mVboNormal);
+    if (mVboColors)
+        gl->deleteBuffers(1, &mVboColors);
 
-    float fovDegrees = glgeom::degrees(fov).value;
-    return glm::perspective(fovDegrees, aspectRatio, nearDist, farDist);
+    for (int i = 0; i < 8; ++i)
+        if (mVboUVs[i])
+            gl->deleteBuffers(1, &mVboUVs[i]);
 }
 
-void
-Camera::activate(RasterizerGL* pRasterizer)
+/*!
+    This method takes the entire set of geometry properties (e.g. the list of vertices,
+    the indices, the vertex attributes like normals, colors, etc.) and searches for
+    shader program variables to bind those attriutes to.  The shader program variable
+    names are mapped to geometry variables *by convention*.
+ */
+void 
+Geometry::activate(RasterizerGL* pRasterizer, GlobalPass& pass)
 {
     check_glerror();
-        
-    //
-    // Setup projection matrix
-    //
-    auto projMatrix = projectionMatrix();
-    pRasterizer->mContext.uniforms.spProjMatrix.reset(new glm::mat4(projMatrix));
-    pRasterizer->mContext.uniforms.spViewMatrix.reset(new glm::mat4(viewMatrix));
 
+    switch (mType)
+    {
+    case GL_POINTS:
+        gl->pointSize(3);
+        break;
+    }
+
+    //
+    // Is this an indexed primitive or a list of vertices?
+    //
+    if (mCount > 0)
+    {       
+        if (mVboIndices)
+            gl->drawElements(mType, mCount, GL_UNSIGNED_SHORT, 0);
+        else
+            gl->drawArrays(mType, 0, mCount); 
+    }
+    else
+    {
+        //
+        // Only the special "none" geometry type should have a 
+        // count of zero.
+        //
+        lx_check_error(mType == GL_NONE);
+    }
     check_glerror();
 }

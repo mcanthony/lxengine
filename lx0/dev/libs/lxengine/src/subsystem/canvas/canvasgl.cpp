@@ -34,7 +34,7 @@
 #include <windowsx.h>
 #include "windowclass.hpp"
 
-#include <lx0/subsystem/rasterizer/gl/glinterface.hpp>
+#include <lx0/util/gl/glinterface.hpp>
 
 // Inline the WGL defines since this is the only place they're used
 #define WGL_CONTEXT_MAJOR_VERSION_ARB		        0x2091

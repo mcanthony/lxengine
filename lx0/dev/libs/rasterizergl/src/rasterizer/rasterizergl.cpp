@@ -37,7 +37,7 @@
 
 #include <lx0/prototype/misc.hpp>
 #include <lx0/util/misc/util.hpp>
-#include <lx0/subsystem/rasterizer.hpp>
+#include <lx0/libs/rasterizer.hpp>
 #include <lx0/util/misc/lxvar_convert.hpp>
 
 #include <glm/gtc/matrix_inverse.hpp>
