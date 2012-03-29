@@ -466,8 +466,9 @@ protected:
 
     void _processMaterial (lx0::ElementPtr spElem)
     {
-        lx0::lxvar  render = spElem->value().is_defined() ? spElem->value().find("render") : lx0::lxvar::undefined();
-        lx0::lxvar  graph = spElem->value().is_defined() ? spElem->value().find("graph") : lx0::lxvar::undefined();
+        lx0::lxvar  elemValue = spElem->value();
+        lx0::lxvar  render = elemValue.is_defined() ? elemValue.find("render") : lx0::lxvar::undefined();
+        lx0::lxvar  graph = elemValue.is_defined() ? elemValue.find("graph") : lx0::lxvar::undefined();
 
         if (graph.is_defined())
         {

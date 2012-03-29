@@ -54,16 +54,47 @@
     </Material> 
     <Material id="solid_red">
       {
-        render : {
-            edges : true,
-            edgeColor : [ .0, .0, .7 ],
-        },      
         graph : {
           _type : "solid",
           color : [ .7, 0, 0 ],
         },
       }
     </Material>    
+    
+    <Material>
+    {
+        graph : {
+          _type : "phong",
+          diffuse : {
+            _type : "texture2d",
+            texture : "media2/textures/seamless/noise/green_circuit-000.png",
+            uv : {
+              _type : "spherical",
+              scale : [ 1, 1 ]
+            },
+          },
+          normal_diffuse : {
+              _type : "bump",
+              value : {
+                _type : "texture2d",
+                texture : "media2/textures/bumpmaps/gray_circuit-000.png",
+                uv: { 
+                  _type : "spherical",
+                  scale : [ 6, 6 ],
+                }
+              },
+              intensity : 2.65,                
+          },            
+          specular : [ 6, 8, .0 ],
+          specularEx : 256,            
+          reflectivity : {
+            _type : "cubemap",
+            cubemap : "texture3",
+            intensity : .75,
+          },         
+        }
+    }
+    </Material> 
     
     <Material id="phong_checker_complex2">
       {
