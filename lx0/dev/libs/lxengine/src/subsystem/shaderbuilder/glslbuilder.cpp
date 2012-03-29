@@ -200,6 +200,8 @@ int
 GLSLBuilder::_processNode (Shader& shader, Context& context, lxvar& parameters, lxvar graph, std::string requiredOutputType)
 {
     lx_check_error( this != nullptr );
+    lx_check_error( graph.is_defined() );
+    lx_check_error( !graph.is_string(), "Found string where map was expected.  JSON parsing error?"); 
     lx_check_error( graph.find("_type").is_defined() );
 
     const int         id       = context.mNodeCount++;

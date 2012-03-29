@@ -61,40 +61,7 @@
       }
     </Material>    
     
-    <Material>
-    {
-        graph : {
-          _type : "phong",
-          diffuse : {
-            _type : "texture2d",
-            texture : "media2/textures/seamless/noise/green_circuit-000.png",
-            uv : {
-              _type : "spherical",
-              scale : [ 1, 1 ]
-            },
-          },
-          normal_diffuse : {
-              _type : "bump",
-              value : {
-                _type : "texture2d",
-                texture : "media2/textures/bumpmaps/gray_circuit-000.png",
-                uv: { 
-                  _type : "spherical",
-                  scale : [ 6, 6 ],
-                }
-              },
-              intensity : 2.65,                
-          },            
-          specular : [ 6, 8, .0 ],
-          specularEx : 256,            
-          reflectivity : {
-            _type : "cubemap",
-            cubemap : "texture3",
-            intensity : .75,
-          },         
-        }
-    }
-    </Material> 
+    <Material src="BumpSample1" />
     
     <Material id="phong_checker_complex2">
       {
@@ -126,21 +93,8 @@
           },
         },
       }
-    </Material>  
-         
-    <Material id="checker_redblack">
-      {
-        graph : {
-          _type : "checker",
-          color0 : [ 1, 0, 0 ],
-          color1 : [ .1, .1, 0 ],
-          uv : { 
-            _type : "spherical",
-            scale : [ 9, 14 ],
-          },
-        },
-      }
-    </Material>   
+    </Material>
+    <Material src="CheckerRedBlack" /> 
 
     <Material id="checker_nested">
       {
@@ -163,40 +117,8 @@
         },
       }
     </Material>     
-
-    <Material id="phong_weave">
-      {
-        graph : {
-          _type : "phong",
-          diffuse : {
-            _type : "weave",
-            color0 : {
-              _type : "checker",
-              color0 : [ 1, 0, 0 ],
-              color1 : [ 1.0, 0.5, 0 ],
-              uv : { 
-                _type : "spherical",
-                scale : [ 16, 16 ],
-              },
-            },
-            color1 : [ 0, 0, 0 ],
-            uv : { 
-              _type : "spherical",
-              scale : [ 8, 8 ],
-            },
-          },
-          specular : {
-            _type : "weave",
-            color0 : [ .5, .5, .5 ],
-            color1 : [ 0, 0, 0],
-            uv : { 
-              _type : "spherical",
-              scale : [ 8, 8 ],
-            },            
-          },
-        }
-      }
-    </Material>      
+	
+    <Material src="PhongWeave" />
     
   </Library>
 </Document>

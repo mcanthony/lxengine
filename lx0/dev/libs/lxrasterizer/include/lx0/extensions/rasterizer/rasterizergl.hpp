@@ -32,6 +32,8 @@
 #include <glgeom/prototype/image.hpp>
 #include <glgeom/ext/primitive_buffer.hpp>
 
+#include <lx0/subsystem/shaderbuilder.hpp>
+
 namespace lx0 
 {
     namespace subsystem
@@ -353,6 +355,8 @@ namespace lx0
                 FrameData                       mFrameData;
 
                 FrameBufferPtr                  mspFBOScreen;
+
+                lx0::ShaderBuilder              mShaderBuilder;
 
                 struct
                 {

@@ -1,0 +1,31 @@
+  {
+	graph : {
+	  _type : "phong",
+	  diffuse : {
+		_type : "weave",
+		color0 : {
+		  _type : "checker",
+		  color0 : [ 1, 0, 0 ],
+		  color1 : [ 1.0, 0.5, 0 ],
+		  uv : { 
+			_type : "spherical",
+			scale : [ 16, 16 ],
+		  },
+		},
+		color1 : [ 0, 0, 0 ],
+		uv : { 
+		  _type : "spherical",
+		  scale : [ 8, 8 ],
+		},
+	  },
+	  specular : {
+		_type : "weave",
+		color0 : [ .5, .5, .5 ],
+		color1 : [ 0, 0, 0],
+		uv : { 
+		  _type : "spherical",
+		  scale : [ 8, 8 ],
+		},            
+	  },
+	}
+  }

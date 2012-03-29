@@ -528,26 +528,68 @@ RasterizerGL::acquireMaterial (std::string className, std::string instanceName)
         MaterialClassPtr& spMaterialClass = mMaterialClasses[className];
         if (!spMaterialClass)
         {
-
-            std::string vertSource = conditionalLoad(base, className, "shader.vert");
-            std::string geomSource = conditionalLoad(base, className, "shader.geom");
-            std::string fragSource = conditionalLoad(base, className, "shader.frag");
+            std::string graphSource = conditionalLoad(base, className, "shader.graph");
+            std::string vertSource  = conditionalLoad(base, className, "shader.vert");
+            std::string geomSource  = conditionalLoad(base, className, "shader.geom");
+            std::string fragSource  = conditionalLoad(base, className, "shader.frag");
             
-            auto prog = _createProgramVGF(vertSource, geomSource, fragSource);
+            GLuint     prog = GL_NONE;
+            lx0::lxvar params = lxvar::map();
+
+            if (graphSource.empty())
+            {
+                //
+                // Create the shader from the source strings.  Note that it's okay
+                // for the geometry shader to be empty.
+                //
+                prog = _createProgramVGF(vertSource, geomSource, fragSource);
+
+                //
+                // Create the default instance parameters.
+                //
+                std::string json = conditionalLoad(base, className, "material.json");
+                if (!json.empty())
+                {
+                    lxvar material = lx0::lxvar::parse(json.c_str());            
+                    params = material["parameters"];
+                }
+            }
+            else
+            {
+                //
+                // The generated shader builder material contains the fragment shader
+                // source code, a name uniquely identifying the graph setup (effectively
+                // a unique hash to determine duplicate graphs), and a set of parameters
+                // for the shader instance.
+                //
+                lx0::ShaderBuilder::Material material;
+                auto json = lx0::lxvar::parse(graphSource.c_str());
+                mShaderBuilder.buildShaderGLSL(material, json["graph"]);
+
+                //
+                // ShaderBuilder GLSL use fixed vertex and geometry shaders
+                //
+                prog = _createProgramVGF(
+                    lx0::string_from_file("media2/shaders/glsl/vertex/basic_01.vert"),
+                    lx0::string_from_file("media2/shaders/glsl/geometry/basic_01.geom"),
+                    material.source
+                );
+                params = material.parameters;
+
+                //
+                // Due to differences between the material system and the ShaderBuilder
+                // (written at different times), the shader builder parameters also include
+                // the parameter data types - which are not needed and should be stripped
+                // out before being set on the MaterialClass.
+                //
+                for (auto it = params.begin(); it != params.end(); ++it)
+                    params[it.key()] = (*it)[1];
+
+            }
+            lx_check_error(prog != GL_NONE);
+            
             spMaterialClass.reset( new MaterialClass(prog) );
             spMaterialClass->mName = className;
-
-            //
-            // Create the default instance parameters and state.
-            // Then check if these options are specified in a file.
-            //
-            lx0::lxvar params = lxvar::map();
-            std::string json = conditionalLoad(base, className, "material.json");
-            if (!json.empty())
-            {
-                lxvar material = lx0::lxvar::parse(json.c_str());            
-                params = material["parameters"];
-            }
             spMaterialClass->mDefaults = params;
         }
         
