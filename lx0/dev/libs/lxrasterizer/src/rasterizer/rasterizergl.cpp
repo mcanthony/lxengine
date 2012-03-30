@@ -933,6 +933,8 @@ RasterizerGL::createGeometry (glgeom::primitive_buffer& primitive)
             pGeom->mVboUVs[i] = _genArrayBuffer(GL_ARRAY_BUFFER, primitive.vertex.uv[i]);
 
         pGeom->mtbFlatShading = (pGeom->mVboNormal == 0);
+
+        lx_check_error(pGeom->mCount > 0, "Only primitives of type 'none' should be empty");
     }
     else if (primitive.type == "points")
     {
@@ -941,6 +943,8 @@ RasterizerGL::createGeometry (glgeom::primitive_buffer& primitive)
         pGeom->mVboPosition   = _genArrayBuffer(GL_ARRAY_BUFFER, primitive.vertex.positions);
         pGeom->mCount         = primitive.vertex.positions.size();
         pGeom->mVboColors     = _genArrayBuffer(GL_ARRAY_BUFFER, primitive.vertex.colors);
+
+        lx_check_error(pGeom->mCount > 0, "Only primitives of type 'none' should be empty");
     }
     else if (primitive.type == "lines")
     {
@@ -949,6 +953,8 @@ RasterizerGL::createGeometry (glgeom::primitive_buffer& primitive)
         pGeom->mVboPosition   = _genArrayBuffer(GL_ARRAY_BUFFER, primitive.vertex.positions);
         pGeom->mCount         = primitive.vertex.positions.size();
         pGeom->mVboColors     = _genArrayBuffer(GL_ARRAY_BUFFER, primitive.vertex.colors);
+
+        lx_check_error(pGeom->mCount > 0, "Only primitives of type 'none' should be empty");
     }
     else if (primitive.type == "quads")
     {
@@ -974,6 +980,8 @@ RasterizerGL::createGeometry (glgeom::primitive_buffer& primitive)
             for (int i = 0; i < 8 && i < (int)primitive.vertex.uv.size(); ++i)
                 pGeom->mVboUVs[i] = _genArrayBuffer(GL_ARRAY_BUFFER, primitive.vertex.uv[i]);
         }
+
+        lx_check_error(pGeom->mCount > 0, "Only primitives of type 'none' should be empty");
     }
     else
         throw lx_error_exception("Unknown primitive type '%s'", primitive.type);

@@ -30,11 +30,35 @@
 // Vector helpers
 //===========================================================================//
 
+function vec3_add(u, v) {
+    return [
+        u[0] + v[0],
+        u[1] + v[1],
+        u[2] + v[2],
+    ];
+};
+
 function vec3_sub(u, v) {
     return [
         u[0] - v[0],
         u[1] - v[1],
         u[2] - v[2],
+    ];
+};
+
+function vec3_mul(u, s) {
+    return [
+        u[0] * s,
+        u[1] * s,
+        u[2] * s,
+    ];
+};
+
+function vec3_div(u, s) {
+    return [
+        u[0] / s,
+        u[1] / s,
+        u[2] / s,
     ];
 };
 
@@ -130,10 +154,22 @@ TriMesh.prototype.addFace = function(i0,i1,i2)
     this._faces.push({ indices : [i0,i1,i2] });
 }
 
+TriMesh.prototype.computeFaceNormals = function()
+{
+    for (var i = 0; i < this._faces.length; ++i) {
+        var f = this._faces[i].indices;
+        var v0 = this._vertices[f[0]].position;
+        var v1 = this._vertices[f[1]].position;
+        var v2 = this._vertices[f[2]].position;       
+        this._faces[i].normal = vec3_normal(v0,v1,v2);
+    }
+}
+
 TriMesh.prototype.createPrimitiveBuffer = function() {
     var prim = {};
     prim.type = "triangles";
     prim.vertex = {};
+    prim.face = {};
     
     prim.vertex.positions = [];    
     for (var i = 0; i < this._vertices.length; ++i)
@@ -144,6 +180,13 @@ TriMesh.prototype.createPrimitiveBuffer = function() {
         prim.indices[i*3+0] = this._faces[i].indices[0];  
         prim.indices[i*3+1] = this._faces[i].indices[1];
         prim.indices[i*3+2] = this._faces[i].indices[2];
+    }
+    
+    if (this._faces[0].normal)
+    {
+        prim.face.normals = [];
+        for (var i = 0; i < this._faces.length; ++i)
+            prim.face.normals[i] = this._faces[i].normal.slice(0);
     }
     
     return prim;
@@ -378,21 +421,36 @@ var HalfEdgeMesh = (function () {
 
     HalfEdgeMesh.prototype.integrityCheck = function () {
     
+        var debug = true;
+        
         var mesh = this;
         this.indexElements();
         
+        if (debug) lx0.message("Check 0");
         mesh.iterateVertices(function(vertex) {
-            if (vertex._index === undefined) throw "indexElements did not set a index for all vertices";
+            if (debug) lx0.message("Checking vertex: " + vertex._index);
+            if (vertex._index === undefined) 
+                throw "indexElements did not set a index for all vertices";
+            
+            if (debug) lx0.message("Checking vertex integrity");
             vertex.checkIntegrity();
+            
+            if (debug) lx0.message("Checking vertex edges");
+            var count = 0;
             vertex.iterateEdges(function(edge) {
+                if (debug) lx0.message("Checking vertex-edge " + count);
+                count++;
             });
         });
     
+        if (debug) lx0.message("Check 1");
         for (var i = 0; i < this._faces.length; ++i) {
             if (this._faces[i].edge.face !== this._faces[i]) {
                 throw "Edge face incorrect.  Edges in loop do not all refer to same face.";
             }
         }
+        
+        if (debug) lx0.message("Check 2");
         for (var i = 0; i < this._edges.length; ++i) {
             if (this._edges[i].opposite == null)
                 throw "Null opposite edge";                
@@ -405,6 +463,8 @@ var HalfEdgeMesh = (function () {
                 
             this._edges[i].checkFaceIntegrity();
         }
+        
+        if (debug) lx0.message("Check 3");
         for (var i = 0; i < this._vertices.length; ++i) {
             if (this._vertices[i].edge.vertex !== this._vertices[i]
                 && this._vertices[i].edge.next.vertex !== this._vertices[i])
@@ -419,6 +479,7 @@ var HalfEdgeMesh = (function () {
         // Then check that all vertices in the array are referenced; do
         // this by inverting the process.
         //
+        if (debug) lx0.message("Check 4");
         for (var i = 0; i < this._vertices.length; ++i)
             this._vertices[i]._inarray = true;
             
@@ -431,6 +492,7 @@ var HalfEdgeMesh = (function () {
         for (var i = 0; i < this._vertices.length; ++i)
             delete this._vertices[i]._inarray;
             
+        if (debug) lx0.message("Check 5");
         this.iterateFaces(function (face) {
             face.iterateVertices(function (v) {
                 v._isreferenced = true;
@@ -440,6 +502,7 @@ var HalfEdgeMesh = (function () {
             if (this._vertices[i]._isreferenced != true)
                 throw "Orphaned vertex in array";
         
+        if (debug) lx0.message("Check 6");
         this.iterateFaces(function (face) {
             face.iterateVertices(function (v) {
                 delete v._isreferenced;
@@ -449,9 +512,11 @@ var HalfEdgeMesh = (function () {
         //
         // Check that all the faces are planar
         //
+        if (debug) lx0.message("Check Faces are planar");
         var mesh = this;
         mesh.iterateFaces(function (face) {
                     
+            if (debug) lx0.message("Checking planarity for face " + face._index);
             var vertices = [];
             face.iterateVertices(function(vertex) {
                 vertices.push(vertex.position);
@@ -487,6 +552,8 @@ var HalfEdgeMesh = (function () {
                 }
             }
         });
+        
+        if (debug) lx0.message("Integrity check done");
     };
            
     
@@ -529,11 +596,19 @@ var HalfEdgeMesh = (function () {
     Vertex.prototype.checkIntegrity = function() {
                 
         var vertex = this;
+        
+        if (vertex.edge.opposite.opposite !== vertex.edge)
+            throw "Edge relationship corrupt";
+        if (vertex.edge.vertex !== vertex)
+            throw "Vertex edge does not reference vertex!";
+        
         var edgeCount = 0;
+        lx0.message("Vertex computing degree...");
         var edgeTotal = this.degree();
         
+        lx0.message("Degree = " + edgeTotal);
         this.iterateEdges(function(edge) {   
-         
+            lx0.message("E" + edgeCount + " checking...");
             if (edge.vertex !== vertex)
             {
                 lx0.message("*** Corrupt vertex detected on edge " + edgeCount + " of " + edgeTotal + " of vertex:");
@@ -569,13 +644,24 @@ var HalfEdgeMesh = (function () {
         } while (edge !== this.edge);
     };
     
+    Vertex.prototype.iterateFaces = function (f) {	
+        var edge = this.edge;
+        do {		
+            f(edge.face);
+            edge = edge.opposite.next;
+        } while (edge !== this.edge);
+    };
+    
     //
     // I.e. number of edges on the vertex
     //
     Vertex.prototype.degree = function (f) {	
         var edge = this.edge;
         var count = 0;
-        do {		
+        do {
+            if (edge.vertex !== this)
+                throw "Vertex-edge relationship corrupt";
+        
             count++;
             edge = edge.opposite.next;
         } while (edge !== this.edge);
@@ -587,11 +673,35 @@ var HalfEdgeMesh = (function () {
     //    
     Face.prototype.iterateVertices = function(f)
     {
+        if (this.edge === null) throw "Face with undefined edge";
+        
         var edge = this.edge;
         do {
             f(edge.vertex);
             edge = edge.next;
         } while (edge != this.edge);
+    };
+    
+    Face.prototype.centroid = function()
+    {
+        var sum = [0,0,0];
+        var count = 0;
+        this.iterateVertices(function(vertex) {
+            sum = vec3_add(sum, vertex.position);
+            ++count;
+        });
+        return vec3_div(sum, count);
+    };
+    
+    Face.prototype.sides = function() 
+    {
+        var edge = this.edge;
+        var count = 0;
+        do {
+            count++;
+            edge = edge.next;
+        } while (edge != this.edge);
+        return count;
     };
 
     HalfEdgeMesh.prototype.iterateVertices = function (f) {
@@ -646,6 +756,201 @@ var HalfEdgeMesh = (function () {
         for (var i = 0; i < this._vertices.length; ++i)
             this._vertices[i]._index = i;
     };
+    
+    //
+    // Smooth the mesh using Catmull-Clark subdivision
+    //
+    HalfEdgeMesh.prototype.smooth = function() {
+        
+        // Alias since we use numerous callbacks
+        var mesh = this;
+            
+        var newVertices = [];
+        var newEdges = [];
+        var newFaces = []; 
+        
+        // Temporarily cache the centroid of each face
+        lx0.message("Step 1");
+        mesh.iterateFaces(function(f) {
+            var pos = f.centroid();
+            f._centroid = new Vertex(pos[0], pos[1], pos[2]);
+            newVertices.push(f._centroid);
+        });
+        
+        //
+        // Compute the new positions of each vertex, but don't
+        // set them yet (the prior position is needed for all
+        // other calculations).
+        //
+        mesh.iterateVertices(function (vertex) {
+            
+            var F = [0,0,0];
+            var faceCount = 0;
+            vertex.iterateFaces(function (face) { 
+                F = vec3_add(F, face._centroid.position);
+                faceCount++;
+            });
+            F = vec3_div(F, faceCount);
+            
+            var R = [0,0,0];
+            var edgeCount = 0;
+            vertex.iterateEdges(function (edge) {
+                var midPoint = vec3_add(edge.vertex.position, edge.opposite.vertex.position);
+                midPoint = vec3_div(midPoint, 2);
+                R = vec3_add(R, midPoint);
+                edgeCount ++;
+            });
+            R = vec3_div(R, edgeCount);
+            
+            
+            var t = vec3_add(F, vec3_mul(R, 2));
+            var p = vec3_mul(vertex.position, edgeCount - 3);
+            vertex._newposition = vec3_div( vec3_add(t, p), edgeCount);
+        });
+        
+        //
+        // Split every edge in half using a weighted mid-point based
+        // on the Catmull-Clark formulation
+        //
+        lx0.message("Step 2");
+        mesh.iterateEdges(function(edge) {
+            //
+            // It's easier to split the edge and opposite edge
+            // together, but we need to mark edges as processed
+            // to ensure we don't process each edge twice.
+            //
+            if (!edge._mark)
+            {
+                edge._mark = true;
+                edge.opposite._mark = true;
+                
+                var midPoint;
+                midPoint = vec3_add(edge.opposite.face._centroid.position, edge.face._centroid.position);
+                midPoint = vec3_add(midPoint, edge.vertex.position);
+                midPoint = vec3_add(midPoint, edge.opposite.vertex.position);
+                midPoint = vec3_div(midPoint, 4);
+                var vertex = new Vertex(midPoint[0], midPoint[1], midPoint[2]);              
+                
+                var nedge0 = new Edge();
+                nedge0.face = edge.face;
+                nedge0.vertex = vertex;
+                nedge0.opposite = edge.opposite;
+                nedge0.next = edge.next;
+                edge.next = nedge0;
+                               
+                var nedge1 = new Edge();
+                nedge1.face = edge.opposite.face;
+                nedge1.vertex = vertex;
+                nedge1.opposite = edge;
+                nedge1.next = edge.opposite.next;
+                edge.opposite.next = nedge1;
+                
+                edge.opposite.opposite = nedge0;
+                edge.opposite = nedge1;
+                vertex.edge = nedge0;
+                
+                newVertices.push(vertex);
+                newEdges.push(nedge0);
+                newEdges.push(nedge1);
+                
+                if (nedge0.opposite.opposite !== nedge0) throw "Error";
+                if (nedge1.opposite.opposite !== nedge1) throw "Error";
+                if (edge.opposite.opposite !== edge) throw "Error"; 
+                if (nedge0.opposite.next.vertex !== nedge0.vertex) throw "Error";
+                if (nedge1.opposite.next.vertex !== nedge1.vertex) throw "Error";
+                if (edge.vertex !== nedge1.next.vertex) throw "Error";
+                if (vertex.degree() != 2) throw "Error";
+            }
+        });
+        
+        //
+        // Split each face into a set of faces about the centroid
+        //
+        lx0.message("Step 3");
+        mesh.iterateFaces(function(face) {
+            var localFaces = [];
+            var edge0 = face.edge;
+            
+            lx0.message("Face sides = " + face.sides());       
+            do
+            {
+                var nextStart = edge0.next;
+            
+                var edge1 = new Edge();
+                var edge2 = new Edge();
+                var innerFace = new Face();
+                innerFace.edge = edge0;
+                innerFace._edge1 = edge1;   // Temp for connecting opposites
+                innerFace._edge2 = edge2;   // Temp for connecting opposites
+                
+                edge0.face = innerFace;
+                edge1.face = innerFace;
+                edge2.face = innerFace;
+                
+                edge1.vertex = edge0.next.vertex;
+                edge2.vertex = face._centroid;
+                
+                edge0.next = edge1;
+                edge1.next = edge2; 
+                edge2.next = edge0;
+
+                localFaces.push(innerFace);
+                newFaces.push(innerFace);
+                newEdges.push(edge1);
+                newEdges.push(edge2);
+                
+                // Iterate to next pair
+                edge0 = nextStart;
+                
+            } while (edge0 !== face.edge);
+            
+            //
+            // Connect opposites
+            //
+            for (var i = 0; i < localFaces.length; ++i)
+            {
+                var face0 = localFaces[i];
+                var face1 = localFaces[(i+1) % localFaces.length];
+                face0._edge1.opposite = face1._edge2;
+                face1._edge2.opposite = face0._edge1;
+            }
+            for (var i = 0; i < localFaces.length; ++i)
+            {
+                var face = localFaces[i];
+                delete face._edge1;
+                delete face._edge2;
+            }
+        });
+        
+        lx0.message("Face counts = " + mesh._faces.length + " / " + newFaces.length);
+        
+        //
+        // Now move all the original vertices
+        //
+        mesh.iterateVertices(function (vertex) {
+            vertex.position = vertex._newposition;
+            delete vertex._newposition;
+        });
+        
+        //
+        // Concatenate all the new elements *after* the smoothing
+        // to ensure they are not included in any of the iterations
+        //
+        // Note: all faces were replaced with a set of new faces, thus
+        // we *replace* not concatenate the faces array.
+        //
+        mesh._vertices = mesh._vertices.concat(newVertices);
+        mesh._edges    = mesh._edges.concat(newEdges);
+        mesh._faces    = newFaces;
+        
+        lx0.message("Step 4");
+        
+        // Remove all temporary properties
+        mesh.iterateEdges(function(e) {
+            delete e._mark;
+        });
+    }
+    
     
     // 
     // Take a vertex and "smooth" the corner by creating a face at 
@@ -816,8 +1121,10 @@ HalfEdgeMesh.prototype.createPolyMesh = function () {
         // objects with a fixed set of properties.
         v._index = i;
     }
-
+   
+    var faceCount = 0;
     h.iterateFaces(function (face) {
+        faceCount++;
         var indices = [];
         face.iterateVertices(function (v) {
             if (v._index === undefined)
@@ -828,6 +1135,7 @@ HalfEdgeMesh.prototype.createPolyMesh = function () {
         });
         m.addFace.apply(m, indices);
     });
+    lx0.message("Generated polymesh with " + faceCount + " faces");
 
     // Remove the temporary property
     for (var i = 0; i < h._vertices.length; ++i)
