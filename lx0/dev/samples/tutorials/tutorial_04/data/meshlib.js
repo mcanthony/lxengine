@@ -610,45 +610,52 @@ var HalfEdgeMesh = (function () {
         //
         // Check that all the faces are planar
         //
-        if (debug) lx0.message("Check Faces are planar");
-        var mesh = this;
-        mesh.iterateFaces(function (face) {
-                    
-            var vertices = [];
-            face.iterateVertices(function(vertex) {
-                vertices.push(vertex.position);
-            });
-            
-            if (vertices.length < 3)
-                throw "Degenerate face detected.  Less than 3 vertices";			
-            
-            var bv0 = vertices[0];
-            var bv1 = vertices[1];
-            var bv2 = vertices[2];
-            var baseNormal = vec3_normal(bv0,bv1,bv2);
-            
-            for (var i = 3; i < vertices.length; ++i)
-            {
-                var v0 = vertices[i - 2];
-                var v1 = vertices[i - 1];
-                var v2 = vertices[i];
-                var n = vec3_normal(v0,v1,v2);
+        // Don't do this check as Catmull-Clark subdivision, by design,
+        // creates non-planar faces; the mesh will be triangulated 
+        // eventually anyway.
+        //
+        if (false)
+        {
+            if (debug) lx0.message("Check Faces are planar");
+            var mesh = this;
+            mesh.iterateFaces(function (face) {
+                        
+                var vertices = [];
+                face.iterateVertices(function(vertex) {
+                    vertices.push(vertex.position);
+                });
                 
-                var dot = vec3_dot(baseNormal, n);				
-                if (dot < .9)
+                if (vertices.length < 3)
+                    throw "Degenerate face detected.  Less than 3 vertices";			
+                
+                var bv0 = vertices[0];
+                var bv1 = vertices[1];
+                var bv2 = vertices[2];
+                var baseNormal = vec3_normal(bv0,bv1,bv2);
+                
+                for (var i = 3; i < vertices.length; ++i)
                 {
-                    lx0.message("Face vertices");
-                    for (var k = 0; k < vertices.length; ++k)
-                        lx0.message("V" + k + " " + vertices[k]);
+                    var v0 = vertices[i - 2];
+                    var v1 = vertices[i - 1];
+                    var v2 = vertices[i];
+                    var n = vec3_normal(v0,v1,v2);
                     
-                    lx0.message("Offending face");					
-                    lx0.message("V" + (i - 2) + " " + v0);
-                    lx0.message("V" + (i - 1) + " " + v1);
-                    lx0.message("V" + i + " " + v2);
-                    throw "Non-planar face in HalfEdgeMesh (dot = " + dot + ")";
+                    var dot = vec3_dot(baseNormal, n);				
+                    if (dot < .9)
+                    {
+                        lx0.message("Face vertices");
+                        for (var k = 0; k < vertices.length; ++k)
+                            lx0.message("V" + k + " " + vertices[k]);
+                        
+                        lx0.message("Offending face");					
+                        lx0.message("V" + (i - 2) + " " + v0);
+                        lx0.message("V" + (i - 1) + " " + v1);
+                        lx0.message("V" + i + " " + v2);
+                        throw "Non-planar face in HalfEdgeMesh (dot = " + dot + ")";
+                    }
                 }
-            }
-        });
+            });
+        }
         
         if (debug) lx0.message("Integrity check done");
     };
@@ -859,6 +866,22 @@ var HalfEdgeMesh = (function () {
     //
     // Smooth the mesh using Catmull-Clark subdivision
     //
+    // Algorithm overview:
+    //
+    // 1) Insert a "face point" for each face at the average of all the 
+    //    original face vertex positions
+    //
+    // 2) Insert an "edge point" at a *weighted* mid-point of each edge; this
+    //    weighted mid-point is the average of the edge endpoints and the 
+    //    two adjacent "face points"
+    //
+    // 3) Replace each face in the original mesh with a set of faces connecting
+    //    the "edge points" to the "face point" for that face.
+    //
+    // 4) Move all the original vertices based on a weighted average of the
+    //    original position, the adjacent "edge points", and the adjacent
+    //    "face points"
+    //
     // References:
     // - http://en.wikipedia.org/wiki/Catmull%E2%80%93Clark_subdivision_surface
     // - http://yoshihitoyagi.com/projects/mesh/subdiv/catmull/index.html
@@ -874,10 +897,12 @@ var HalfEdgeMesh = (function () {
         var newFaces = []; 
         
         //
-        // Compute the "face points" - i.e. the centroid of each face.
+        // Step 1:
+        //
+        // Create the "face points" - i.e. the centroid of each face.
         //
         // Temporarily cache the centroid of each face on the face
-        // itself for convenience in the rest of the algorithm.
+        // itself for convenience in the rest of the algorithm.  
         //
         mesh.iterateFaces(function(f) {
             var pos = f.centroid();
@@ -886,9 +911,12 @@ var HalfEdgeMesh = (function () {
         });
         
         //
-        // Compute the new positions of each vertex, but don't
-        // set them yet (the prior position is needed for all
-        // other calculations).
+        // Step 1b (precursor to step 4):
+        //
+        // Compute the updated positions of each original vertex and
+        // store this value for later use.  Compute it now before we
+        // modify the mesh (since it relies on the original values).
+        // We'll update the original positions later.
         //
         mesh.iterateVertices(function (vertex) {
             
@@ -910,13 +938,16 @@ var HalfEdgeMesh = (function () {
                 edgeCount ++;
             });
             R = vec3_div(R, edgeCount);
-            
-            
+           
             var t = vec3_add(F, vec3_mul(R, 2));
             var p = vec3_mul(vertex.position, edgeCount - 3);
+            
+            // Store the new position in a temporary property on the vertex
             vertex._newposition = vec3_div( vec3_add(t, p), edgeCount);
         });
         
+        //
+        // Step 2:
         //
         // Split every edge in half using a weighted mid-point based
         // on the Catmull-Clark formulation
@@ -932,6 +963,8 @@ var HalfEdgeMesh = (function () {
                 edge._mark = true;
                 edge.opposite._mark = true;
                 
+                // The "mid-point" is the average of the two adjacent
+                // edge end points and the two adjacent face points
                 var midPoint = vec3_avg(
                     edge.opposite.face._centroid.position, 
                     edge.face._centroid.position,
@@ -977,40 +1010,53 @@ var HalfEdgeMesh = (function () {
         //
         mesh.iterateFaces(function(face) {
             var localFaces = [];
-            var edge0 = face.edge;
-              
+            
+            // Start on the edge *after* the face edge.  This is a bit subtle.
+            // "face.edge" is an original edge (this is true since no faces
+            // were updated to point to one of the new edges).  The algorithm
+            // is supposed to create quads that connect from "face point" to
+            // "edge point"; therefore, we want the "first" edge in the 
+            // iteration to point to one that starts at a mid-point.
+            // 
+            var edge0 = face.edge.next;
+            var edge1 = edge0.next;
+             
+            var stopEdge = edge0;
             do
             {
-                var nextStart = edge0.next;
+                var nextStart = edge1.next;
             
-                var edge1 = new Edge();
                 var edge2 = new Edge();
+                var edge3 = new Edge();
                 var innerFace = new Face();
                 innerFace.edge = edge0;
-                innerFace._edge1 = edge1;   // Temp for connecting opposites
                 innerFace._edge2 = edge2;   // Temp for connecting opposites
+                innerFace._edge3 = edge3;   // Temp for connecting opposites
                 
                 edge0.face = innerFace;
                 edge1.face = innerFace;
                 edge2.face = innerFace;
+                edge3.face = innerFace;
                 
-                edge1.vertex = edge0.next.vertex;
-                edge2.vertex = face._centroid;
-                edge2.vertex.edge = edge2;
+                edge2.vertex = edge1.next.vertex;
+                edge3.vertex = face._centroid;
+                edge3.vertex.edge = edge3;
                 
                 edge0.next = edge1;
-                edge1.next = edge2; 
-                edge2.next = edge0;
+                edge1.next = edge2;
+                edge2.next = edge3; 
+                edge3.next = edge0;
 
                 localFaces.push(innerFace);
                 newFaces.push(innerFace);
-                newEdges.push(edge1);
                 newEdges.push(edge2);
+                newEdges.push(edge3);
                 
                 // Iterate to next pair
                 edge0 = nextStart;
+                edge1 = edge0.next;
                 
-            } while (edge0 !== face.edge);
+            } while (edge0 !== stopEdge);
             
             //
             // Connect opposites
@@ -1019,25 +1065,30 @@ var HalfEdgeMesh = (function () {
             {
                 var face0 = localFaces[i];
                 var face1 = localFaces[(i+1) % localFaces.length];
-                face0._edge1.opposite = face1._edge2;
-                face1._edge2.opposite = face0._edge1;
+                face0._edge2.opposite = face1._edge3;
+                face1._edge3.opposite = face0._edge2;
             }
             for (var i = 0; i < localFaces.length; ++i)
             {
                 var face = localFaces[i];
-                delete face._edge1;
                 delete face._edge2;
+                delete face._edge3;
             }
         });       
         
         //
-        // Now move all the original vertices
+        // Step 4:
+        //
+        // Now move all the original vertices.  Remove the temporary
+        // property that had been storing the new position.
         //
         mesh.iterateVertices(function (vertex) {
             vertex.position = vertex._newposition;
             delete vertex._newposition;
         });
         
+        //
+        // Step 5 (clean-up of the data structure): 
         //
         // Concatenate all the new elements *after* the smoothing
         // to ensure they are not included in any of the iterations
@@ -1049,9 +1100,7 @@ var HalfEdgeMesh = (function () {
         mesh._edges    = mesh._edges.concat(newEdges);
         mesh._faces    = newFaces;
         
-        //
-        // Remove all temporary properties
-        //
+        // Remove temporary edge properties
         mesh.iterateEdges(function(e) {
             delete e._mark;
         });
