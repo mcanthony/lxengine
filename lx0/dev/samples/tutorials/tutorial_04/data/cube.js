@@ -3,9 +3,9 @@
     var mesh = new HalfEdgeMesh(createBox());
     mesh.integrityCheck();
     
-    mesh.smooth();
-    //mesh.smooth();
-    //mesh.integrityCheck();
+    for (var i = 0; i < 4; ++i) 
+        mesh.smooth();    
+    mesh.integrityCheck();
 
     lx0.message("Converting to triangle mesh...");            
     var polyMesh = mesh.createPolyMesh();

@@ -80,6 +80,22 @@ function vec3_normal(u,v,w) {
     return [ n[0] / m, n[1] / m, n[2] / m ];
 };
 
+function vec3_avg () 
+{
+    var x = 0;
+    var y = 0;
+    var z = 0;
+    var length = arguments.length;
+    for (var i = 0; i < length; ++i)
+    {
+        var v = arguments[i];
+        x += v[0];
+        y += v[1];
+        z += v[2];
+    }
+    return [ x / length, y / length, z / length ];
+}
+
 
 //===========================================================================//
 // PointList
@@ -421,10 +437,88 @@ var HalfEdgeMesh = (function () {
 
     HalfEdgeMesh.prototype.integrityCheck = function () {
     
-        var debug = true;
-        
+        var debug = true;        
         var mesh = this;
+                
+        //
+        // Property completeness checks
+        //
+        for (var i = 0; i < this._vertices.length; ++i)
+        {
+            var vertex = this._vertices[i];
+            if (!("position" in vertex))  throw "Incomplete vertex definition";
+            if (!("edge" in vertex))      throw "Incomplete vertex definition";
+            if (!vertex.position)         throw "Incomplete vertex definition";
+            if (!vertex.edge)             throw "Incomplete vertex definition";
+        }
+        
+        for (var i = 0; i < this._faces.length; ++i)
+        {
+            var face = this._faces[i];
+            if (!("edge" in face))        throw "Incomplete face definition";
+            if (!face.edge)               throw "Incomplete face definition";
+        }
+        
+        for (var i = 0; i < this._edges.length; ++i)
+        {
+            var edge = this._edges[i];
+            if (!("vertex" in edge))      throw "Incomplete edge definition";
+            if (!("face" in edge))        throw "Incomplete edge definition";
+            if (!("next" in edge))        throw "Incomplete edge definition";
+            if (!("opposite" in edge))    throw "Incomplete edge definition";
+            if (!edge.vertex)             throw "Incomplete edge definition";
+            if (!edge.face)               throw "Incomplete edge definition";
+            if (!edge.next)               throw "Incomplete edge definition";
+            if (!edge.opposite)           throw "Incomplete edge definition";
+        }
+        
+        //
+        // Index checks
+        //
         this.indexElements();
+        
+        for (var i = 0; i < this._vertices.length; ++i)
+        {
+            var vertex = this._vertices[i];
+            if (vertex._index !== i) throw "Corrupt vertex";
+            if (vertex.edge !== this._edges[vertex.edge._index]) throw "Corrupt vertex";
+        }
+        
+        for (var i = 0; i < this._faces.length; ++i)
+        {
+            var face = this._faces[i];
+            if (face._index !== i)  throw "Corrupt face";
+            if (face.edge !== this._edges[face.edge._index]) throw "Corrupt face";
+        }
+        
+        for (var i = 0; i < this._edges.length; ++i)
+        {
+            var edge = this._edges[i];
+            if (edge._index !== i) throw "Corrupt edge";
+            if (edge.vertex !== this._vertices[edge.vertex._index]) throw "Corrupt edge";
+            if (edge.face !== this._faces[edge.face ._index]) throw "Corrupt edge";
+            if (edge.next !== this._edges[edge.next._index]) throw "Corrupt edge";
+            if (edge.opposite !== this._edges[edge.opposite._index]) throw "Corrupt edge";
+        }
+        
+        //
+        // Simple invariant checks
+        //
+        for (var i = 0; i < this._vertices.length; ++i)
+        {
+            var vertex = this._vertices[i];
+        }
+        
+        for (var i = 0; i < this._faces.length; ++i)
+        {
+            var face = this._faces[i];
+        }
+        
+        for (var i = 0; i < this._edges.length; ++i)
+        {
+            var edge = this._edges[i];
+        }
+        
         
         if (debug) lx0.message("Check 0");
         mesh.iterateVertices(function(vertex) {
@@ -725,6 +819,10 @@ var HalfEdgeMesh = (function () {
     
     HalfEdgeMesh.prototype.indexElements = function() {
     
+        if (this._faces === undefined)    throw "Corrupt mesh";
+        if (this._edges === undefined)    throw "Corrupt mesh";
+        if (this._vertices === undefined) throw "Corrupt mesh";
+    
         //
         // Ensure any orphaned indices are cleared out.  In a defect free
         // program, this is unnecessary as there should be no orphans, but
@@ -741,6 +839,7 @@ var HalfEdgeMesh = (function () {
             delete this._edges[i].next._index;
             delete this._edges[i].opposite._index;
         }
+        
         for (var i = 0; i < this._vertices.length; ++i)
         {
             delete this._vertices[i].edge._index;
@@ -795,8 +894,7 @@ var HalfEdgeMesh = (function () {
             var R = [0,0,0];
             var edgeCount = 0;
             vertex.iterateEdges(function (edge) {
-                var midPoint = vec3_add(edge.vertex.position, edge.opposite.vertex.position);
-                midPoint = vec3_div(midPoint, 2);
+                var midPoint = vec3_avg(edge.vertex.position, edge.opposite.vertex.position);
                 R = vec3_add(R, midPoint);
                 edgeCount ++;
             });
@@ -824,11 +922,12 @@ var HalfEdgeMesh = (function () {
                 edge._mark = true;
                 edge.opposite._mark = true;
                 
-                var midPoint;
-                midPoint = vec3_add(edge.opposite.face._centroid.position, edge.face._centroid.position);
-                midPoint = vec3_add(midPoint, edge.vertex.position);
-                midPoint = vec3_add(midPoint, edge.opposite.vertex.position);
-                midPoint = vec3_div(midPoint, 4);
+                var midPoint = vec3_avg(
+                    edge.opposite.face._centroid.position, 
+                    edge.face._centroid.position,
+                    edge.vertex.position,
+                    edge.opposite.vertex.position
+                );
                 var vertex = new Vertex(midPoint[0], midPoint[1], midPoint[2]);              
                 
                 var nedge0 = new Edge();
@@ -889,6 +988,7 @@ var HalfEdgeMesh = (function () {
                 
                 edge1.vertex = edge0.next.vertex;
                 edge2.vertex = face._centroid;
+                edge2.vertex.edge = edge2;
                 
                 edge0.next = edge1;
                 edge1.next = edge2; 
