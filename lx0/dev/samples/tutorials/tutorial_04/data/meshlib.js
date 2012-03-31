@@ -437,7 +437,7 @@ var HalfEdgeMesh = (function () {
 
     HalfEdgeMesh.prototype.integrityCheck = function () {
     
-        var debug = true;        
+        var debug = false;        
         var mesh = this;
                 
         //
@@ -516,10 +516,14 @@ var HalfEdgeMesh = (function () {
         
         for (var i = 0; i < this._edges.length; ++i)
         {
-            var edge = this._edges[i];
+            var edge = this._edges[i];            
+            if (edge !== edge.opposite.opposite) throw "Corrupt edge";
         }
         
         
+        //
+        // Older checks..
+        //
         if (debug) lx0.message("Check 0");
         mesh.iterateVertices(function(vertex) {
             if (debug) lx0.message("Checking vertex: " + vertex._index);
@@ -610,7 +614,6 @@ var HalfEdgeMesh = (function () {
         var mesh = this;
         mesh.iterateFaces(function (face) {
                     
-            if (debug) lx0.message("Checking planarity for face " + face._index);
             var vertices = [];
             face.iterateVertices(function(vertex) {
                 vertices.push(vertex.position);
@@ -697,12 +700,9 @@ var HalfEdgeMesh = (function () {
             throw "Vertex edge does not reference vertex!";
         
         var edgeCount = 0;
-        lx0.message("Vertex computing degree...");
         var edgeTotal = this.degree();
         
-        lx0.message("Degree = " + edgeTotal);
         this.iterateEdges(function(edge) {   
-            lx0.message("E" + edgeCount + " checking...");
             if (edge.vertex !== vertex)
             {
                 lx0.message("*** Corrupt vertex detected on edge " + edgeCount + " of " + edgeTotal + " of vertex:");
@@ -859,6 +859,11 @@ var HalfEdgeMesh = (function () {
     //
     // Smooth the mesh using Catmull-Clark subdivision
     //
+    // References:
+    // - http://en.wikipedia.org/wiki/Catmull%E2%80%93Clark_subdivision_surface
+    // - http://yoshihitoyagi.com/projects/mesh/subdiv/catmull/index.html
+    // - http://www.rorydriscoll.com/2008/08/01/catmull-clark-subdivision-the-basics/
+    //
     HalfEdgeMesh.prototype.smooth = function() {
         
         // Alias since we use numerous callbacks
@@ -868,8 +873,12 @@ var HalfEdgeMesh = (function () {
         var newEdges = [];
         var newFaces = []; 
         
-        // Temporarily cache the centroid of each face
-        lx0.message("Step 1");
+        //
+        // Compute the "face points" - i.e. the centroid of each face.
+        //
+        // Temporarily cache the centroid of each face on the face
+        // itself for convenience in the rest of the algorithm.
+        //
         mesh.iterateFaces(function(f) {
             var pos = f.centroid();
             f._centroid = new Vertex(pos[0], pos[1], pos[2]);
@@ -883,6 +892,7 @@ var HalfEdgeMesh = (function () {
         //
         mesh.iterateVertices(function (vertex) {
             
+            // F = average of the adjacent "face points"
             var F = [0,0,0];
             var faceCount = 0;
             vertex.iterateFaces(function (face) { 
@@ -891,6 +901,7 @@ var HalfEdgeMesh = (function () {
             });
             F = vec3_div(F, faceCount);
             
+            // R = average of the center of the original adjacent edges
             var R = [0,0,0];
             var edgeCount = 0;
             vertex.iterateEdges(function (edge) {
@@ -910,7 +921,6 @@ var HalfEdgeMesh = (function () {
         // Split every edge in half using a weighted mid-point based
         // on the Catmull-Clark formulation
         //
-        lx0.message("Step 2");
         mesh.iterateEdges(function(edge) {
             //
             // It's easier to split the edge and opposite edge
@@ -965,12 +975,10 @@ var HalfEdgeMesh = (function () {
         //
         // Split each face into a set of faces about the centroid
         //
-        lx0.message("Step 3");
         mesh.iterateFaces(function(face) {
             var localFaces = [];
             var edge0 = face.edge;
-            
-            lx0.message("Face sides = " + face.sides());       
+              
             do
             {
                 var nextStart = edge0.next;
@@ -1020,9 +1028,7 @@ var HalfEdgeMesh = (function () {
                 delete face._edge1;
                 delete face._edge2;
             }
-        });
-        
-        lx0.message("Face counts = " + mesh._faces.length + " / " + newFaces.length);
+        });       
         
         //
         // Now move all the original vertices
@@ -1043,9 +1049,9 @@ var HalfEdgeMesh = (function () {
         mesh._edges    = mesh._edges.concat(newEdges);
         mesh._faces    = newFaces;
         
-        lx0.message("Step 4");
-        
+        //
         // Remove all temporary properties
+        //
         mesh.iterateEdges(function(e) {
             delete e._mark;
         });
@@ -1235,7 +1241,6 @@ HalfEdgeMesh.prototype.createPolyMesh = function () {
         });
         m.addFace.apply(m, indices);
     });
-    lx0.message("Generated polymesh with " + faceCount + " faces");
 
     // Remove the temporary property
     for (var i = 0; i < h._vertices.length; ++i)

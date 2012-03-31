@@ -660,7 +660,7 @@ protected:
         // factor and how long should the view transition take?
         //
         float zoomFactor = bZoomIn ? 2.0f : 0.5f;
-        float intervalMs = 750.0f;
+        float intervalMs = 1500.0f;
 
         //
         // Create a lambda function that will incrementally zoom in or out
