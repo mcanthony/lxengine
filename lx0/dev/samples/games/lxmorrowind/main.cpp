@@ -98,7 +98,7 @@ main (int argc, char** argv)
             //
             // Load up the document and do the very initial processsing
             //
-            DocumentPtr spDocument = spEngine->loadDocument("media2/appdata/lxmorrowind/lxmorrowind.xml");
+            DocumentPtr spDocument = spEngine->loadDocument("common/appdata/lxmorrowind/lxmorrowind.xml");
             spDocument->attachComponent(new MwPhysicsDoc);
             spDocument->addController( create_controller(spDocument) );
             _processDocumentSettings(spEngine, spDocument);            

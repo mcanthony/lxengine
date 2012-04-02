@@ -220,12 +220,30 @@ namespace lx0 { namespace util { namespace misc {
     void
     lx_load_plugin (std::string pluginName)
     {
+        //
+        // In the build environment, CMake will put the DLL in a prefix'ed sub-directory
+        // based on the build type.
+        //
+        std::string buildType;
 #ifdef NDEBUG
-        std::string filename = std::string() + "plugins/" + pluginName + "/Release/" + pluginName + ".dll"; 
+        buildType = "Release"; 
 #else 
-        std::string filename = std::string() + "plugins/" + pluginName + "/Debug/" + pluginName + ".dll"; 
+        buildType = "Debug"; 
 #endif
 
+        //
+        // Locate the plug-in
+        //
+        std::string filename = lx0::_lx_format("plugins/%1%/%2%/%1%.dll", pluginName, buildType);
+        if (!lx0::file_exists(filename))
+            filename = lx0::_lx_format("apps/%1%/%2%/%1%.dll", pluginName, buildType);
+        lx_check_error(lx0::file_exists(filename), "Could not locate plug-in named '%s'", pluginName.c_str());
+
+
+        //
+        // Initializing the plug-in consistents of calling a pre-defined "initializePlugin"
+        // function defined in the shared library.
+        //
         typedef void (*InitializePlugin)(void);
 
         HMODULE hDLL = ::LoadLibraryA(filename.c_str());

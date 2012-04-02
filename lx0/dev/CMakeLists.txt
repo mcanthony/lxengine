@@ -143,6 +143,29 @@ macro(lx_glob_sources BASE)
 
 endmacro(lx_glob_sources BASE)
 
+#
+# MACRO: lx_symbolic_link
+#
+# Creates a symbolic link to a sub-directory of the current source directory
+# in the project binary directory.
+#
+# Currently only works on Windows, Vista or later!
+#
+macro(lx_symbolic_link PROJECT LINK_TARGET LINK_SOURCE)
+    
+    FILE(TO_NATIVE_PATH "${PROJECT_BINARY_DIR}/${LINK_TARGET}" MKLINK_TARGET)
+    FILE(TO_NATIVE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/${LINK_SOURCE}" MKLINK_SOURCE)
+    
+    add_custom_command(TARGET ${PROJECT} 
+        POST_BUILD
+        COMMAND IF NOT EXIST "${MKLINK_TARGET}" mklink "/d" "${MKLINK_TARGET}" "${MKLINK_SOURCE}"
+        COMMENT "Adding symbolic link"
+    )
+endmacro(lx_symbolic_link TARGET SOURCE)
+
+#
+# MACRO: simple_executable
+# 
 macro(simple_executable EXENAME)
 
    set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR} )
@@ -207,7 +230,6 @@ recurse_subdirectories(samples)
 recurse_subdirectories(sandbox)
 recurse_subdirectories(unittest)
 
-
 #
 # Organize projects into folders
 #
@@ -240,6 +262,7 @@ SET_PROPERTY(TARGET tutorial_01             PROPERTY FOLDER "Samples/Tutorials")
 SET_PROPERTY(TARGET tutorial_02             PROPERTY FOLDER "Samples/Tutorials")
 SET_PROPERTY(TARGET tutorial_03             PROPERTY FOLDER "Samples/Tutorials")
 SET_PROPERTY(TARGET tutorial_04             PROPERTY FOLDER "Samples/Tutorials")
+SET_PROPERTY(TARGET tutorial_05             PROPERTY FOLDER "Samples/Tutorials")
 
 SET_PROPERTY(TARGET sm_ogre_minimal         PROPERTY FOLDER "Samples/Misc")
 SET_PROPERTY(TARGET sm_v8_basic             PROPERTY FOLDER "Samples/Misc")

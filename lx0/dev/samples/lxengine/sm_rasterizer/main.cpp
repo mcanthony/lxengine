@@ -133,7 +133,7 @@ generateNoiseCubeMap ()
 
     for (int i = 0; i < 6; ++i)
     {
-        std::string file = "media2/textures/cubemaps/noise000/";
+        std::string file = "common/textures/cubemaps/noise000/";
         file += filename[i];
         lx0::save_png(imageSet[i], file.c_str());
     }

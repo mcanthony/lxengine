@@ -43,7 +43,7 @@ namespace lx0
             { 
                 LXENGINE_VERSION_MAJOR      = 0,    //!< \ingroup lx0_core_init
                 LXENGINE_VERSION_MINOR      = 0,    //!< \ingroup lx0_core_init
-                LXENGINE_VERSION_REVISION   = 4,    //!< \ingroup lx0_core_init
+                LXENGINE_VERSION_REVISION   = 5,    //!< \ingroup lx0_core_init
             };
         }
     }

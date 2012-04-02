@@ -1,0 +1,43 @@
+<Document>
+  
+  <Header>
+  </Header>
+  
+  <Library>
+    <!-- Geometry -->
+    <Geometry src="media2/models/landscapes/mountain_valley_b-000.blend" zoom="2.5"/>
+
+    <!-- Lights -->
+    <Light>
+      {
+        position : [10, -10, 10],
+        color    : [ 1, 1, 1 ],
+      }
+    </Light>
+    <Light>
+      {
+        position : [ 10, 10, 10 ],
+        color    : [ .6, .6, 1 ],
+      }
+    </Light>
+
+    <!-- Materials -->
+
+    <Material id="toon3" src="ToonSimple" instance="Forest2" />
+    <Material id="toon2" src="ToonSimple" instance="Forest" />
+    <Material id="toon3" src="ToonSimple" instance="Forest3" />
+    <Material id="toon1" src="ToonSimple" />
+
+    <Material id="toon1" src="TerrainSimple" />
+   
+    <Material id="phong_defaults">
+      {
+      graph : {
+        _type : "phong",
+        },
+      }
+    </Material>   
+    <Material src="BumpSample1" />
+    
+  </Library>
+</Document>

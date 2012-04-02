@@ -608,7 +608,7 @@ protected:
             // The result of the script is converted to an lxvar as an intermediate step.  This is
             // a bit inefficient, but flexible and convenient as a common intermediary.
             //
-            auto source = lx0::string_from_file( lx0::Engine::acquire()->findResource(filename) );     
+            auto source = lx0::string_from_file(filename);     
             lx0::lxvar result = spJavascriptDoc->run(source);
 
             if (result.is_defined())

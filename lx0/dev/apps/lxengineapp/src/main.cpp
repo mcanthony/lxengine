@@ -77,9 +77,15 @@ main (int argc, char** argv)
     using namespace lx0;
 
     int exitCode = -1;
-    
-    std::cout << "LxEngineApp.exe prototype" << std::endl;
+
+    std::cout << 
+        lx0::_lx_format("LxEngineApp.exe prototype (%1%.%2%.%3%)", 
+            lx0::LXENGINE_VERSION_MAJOR,
+            lx0::LXENGINE_VERSION_MINOR,
+            lx0::LXENGINE_VERSION_REVISION)
+        << std::endl;
     std::cout << "================================================================================" << std::endl;
+    std::cout << std::endl;
 
     try
     {
@@ -90,7 +96,7 @@ main (int argc, char** argv)
         //
         // Set up global options prior to parsing the command line
         //
-        spEngine->globals().add("base_directory",     eAcceptsString, lx0::validate_filename());
+        spEngine->globals().add("base_directory",     eAcceptsString, lx0::validate_string());
 
         // Parse the command line (specifying "base_directory" as the default unnamed argument)
         if (spEngine->parseCommandLine(argc, argv, "base_directory"))
@@ -98,8 +104,16 @@ main (int argc, char** argv)
             spEngine->attachComponent(lx0::createJavascriptSubsystem());
             spEngine->attachComponent(lx0::createProcessScriptElement());
 
+            //
+            // Add resource directories (geometry, materials, textures, etc.)
+            //
+            spEngine->addResourceDirectory("common");
             std::string baseDir    = spEngine->globals()["base_directory"];
-            lx0::lxvar  manifest   = processManifest(baseDir + "/manifest.lx");
+            if (!lx0::file_exists(baseDir))
+                baseDir = lx0::_lx_format("apps/%1%/data", baseDir);
+            spEngine->addResourceDirectory(baseDir);
+
+            lx0::lxvar  manifest   = processManifest( spEngine->findResource("manifest.lx") );
             std::string mainScript = manifest["mainScript"].as<std::string>();
 
             //

@@ -125,7 +125,7 @@ public:
         GlobalPass pass[4];
         pass[0].spMaterial = mRasterizer.createMaterial(
             "SelectMaterial",
-            lx0::string_from_file("media2/shaders/glsl/fragment/solid.frag"),
+            lx0::string_from_file("common/shaders/glsl/fragment/solid.frag"),
             lx0::lxvar::map());
         algorithm.mPasses.push_back(pass[0]); 
     }

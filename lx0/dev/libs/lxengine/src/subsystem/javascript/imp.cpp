@@ -256,7 +256,7 @@ namespace {
         // Auto-loading attribute parsers is a relic of earlier code: the engine 
         // should not being doing something so specific.
         //
-        lx0::for_files_in_directory("media2/scripts/engine/attribute_parsers", "js", [&] (std::string path) {
+        lx0::for_files_in_directory("common/scripts/engine/attribute_parsers", "js", [&] (std::string path) {
             this->runFile(path.c_str());
         });
     }

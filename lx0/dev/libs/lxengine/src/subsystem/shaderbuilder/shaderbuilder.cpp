@@ -65,9 +65,9 @@ ShaderBuilder::_loadBuiltinNodes ()
     // This method should only be called once
     lx_assert(mNodeDirectories.empty());
 
-    mNodeDirectories.push_back("media2/shaders/shaderbuilder/shading");
-    mNodeDirectories.push_back("media2/shaders/shaderbuilder/patterns");
-    mNodeDirectories.push_back("media2/shaders/shaderbuilder/mappers");
+    mNodeDirectories.push_back("common/shaders/shaderbuilder/shading");
+    mNodeDirectories.push_back("common/shaders/shaderbuilder/patterns");
+    mNodeDirectories.push_back("common/shaders/shaderbuilder/mappers");
 
     _refreshNodes();
 }

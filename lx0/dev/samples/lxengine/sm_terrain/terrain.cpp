@@ -263,10 +263,10 @@ namespace Terrain
     {
         if (mwpMaterial.expired())
         {
-            auto spTextureGrass = rasterizer.createTexture("media2/textures/seamless/grass/grass_yofrankie01/grass_0.png");
-            auto spTextureDirt = rasterizer.createTexture("media2/textures/seamless/dirt/dirt000/dirt000.png");
+            auto spTextureGrass = rasterizer.createTexture("common/textures/seamless/grass/grass_yofrankie01/grass_0.png");
+            auto spTextureDirt = rasterizer.createTexture("common/textures/seamless/dirt/dirt000/dirt000.png");
 
-            auto spMat = rasterizer.createMaterial("GrassMat", lx0::string_from_file("media2/shaders/glsl/fragment/checker_world_xy10.frag"), lxvar::map());
+            auto spMat = rasterizer.createMaterial("GrassMat", lx0::string_from_file("common/shaders/glsl/fragment/checker_world_xy10.frag"), lxvar::map());
             spMat->mTextures[0] = spTextureGrass;
             spMat->mTextures[1] = spTextureDirt;
 

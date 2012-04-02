@@ -56,7 +56,8 @@ _runIfScriptElement (ElementPtr spElem)
         }
         else
         {
-            std::string filename = spElem->attr("src").as<std::string>();
+            std::string resource = spElem->attr("src").as<std::string>();
+            std::string filename = lx0::Engine::acquire()->findResource(resource);
             content = lx0::string_from_file(filename);
         }
 

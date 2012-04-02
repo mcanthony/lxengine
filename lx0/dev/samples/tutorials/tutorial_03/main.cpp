@@ -354,7 +354,7 @@ main (int argc, char** argv)
         //
         if (spEngine->parseCommandLine(argc, argv))
         {
-            lx0::DocumentPtr spDocument = spEngine->loadDocument("media2/appdata/tutorial_03/document.xml");
+            lx0::DocumentPtr spDocument = spEngine->loadDocument("common/appdata/tutorial_03/document.xml");
 
             lx0::ViewPtr spView = spDocument->createView("Canvas", "view", new Renderer );
             spView->addUIBinding( new UIBindingImp );

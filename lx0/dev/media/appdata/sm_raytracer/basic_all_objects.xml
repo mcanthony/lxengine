@@ -1,6 +1,6 @@
 <Document>
     <Library>
-      <IncludeDocument src="media2/appshared/materials/basic.xml" />
+      <IncludeDocument src="common/appshared/materials/basic.xml" />
       <Camera id="camera">
         {
             position : [ 4.25, 5.25, 3.25 ],

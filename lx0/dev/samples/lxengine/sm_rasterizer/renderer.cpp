@@ -168,7 +168,7 @@ protected:
             auto pInstance = new Instance;
             pInstance->spMaterial = _findMaterial(spElem);
             pInstance->spTransform = mspRasterizer->createTransform(scale, center);
-            pInstance->spGeometry = _loadMesh("media2/models/unit_sphere-000.blend");
+            pInstance->spGeometry = _loadMesh("common/models/unit_sphere-000.blend");
 
             mGeometry.push_back(InstancePtr(pInstance));
         }
@@ -180,7 +180,7 @@ protected:
             auto pInstance = new Instance;
             pInstance->spMaterial = _findMaterial(spElem);
             pInstance->spTransform = mspRasterizer->createTransform(scale, center);
-            pInstance->spGeometry = _loadMesh("media2/models/unit_cube-000.blend");
+            pInstance->spGeometry = _loadMesh("common/models/unit_cube-000.blend");
             
             mGeometry.push_back(InstancePtr(pInstance));
         }
@@ -194,7 +194,7 @@ protected:
             auto pInstance = new Instance;
             pInstance->spMaterial = _findMaterial(spElem);
             pInstance->spTransform = mspRasterizer->createTransform(scale, center);
-            pInstance->spGeometry = _loadMesh("media2/models/unit_geometry/unit_cylinder-001.blend");
+            pInstance->spGeometry = _loadMesh("common/models/unit_geometry/unit_cylinder-001.blend");
             
             mGeometry.push_back(InstancePtr(pInstance));
         }
@@ -208,7 +208,7 @@ protected:
             auto pInstance = new Instance;
             pInstance->spMaterial = _findMaterial(spElem);
             pInstance->spTransform = mspRasterizer->createTransform(scale, center);
-            pInstance->spGeometry = _loadMesh("media2/models/unit_geometry/unit_cone-000.blend");
+            pInstance->spGeometry = _loadMesh("common/models/unit_geometry/unit_cone-000.blend");
             
             mGeometry.push_back(InstancePtr(pInstance));
         }
@@ -248,7 +248,7 @@ protected:
             auto pInstance = new Instance;
             pInstance->spMaterial = _findMaterial(spElem);
             pInstance->spTransform = mspRasterizer->createTransform(glm::mat4(mat));
-            pInstance->spGeometry = _loadMesh("media2/models/plane_1k-001.blend");
+            pInstance->spGeometry = _loadMesh("common/models/plane_1k-001.blend");
             
             mGeometry.push_back(InstancePtr(pInstance));
         }

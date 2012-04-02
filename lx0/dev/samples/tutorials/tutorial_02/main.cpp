@@ -115,7 +115,7 @@ public:
         mspInstance->spTransform = mspRasterizer->createTransform(mRotation);
         lx0::lxvar params;
         params["unifFlatNormals"] = 1;
-        mspInstance->spMaterial = mspRasterizer->createMaterial("Unnamed", lx0::string_from_file("media2/shaders/glsl/fragment/normal.frag"), params);        
+        mspInstance->spMaterial = mspRasterizer->createMaterial("Unnamed", lx0::string_from_file("common/shaders/glsl/fragment/normal.frag"), params);        
         mspInstance->spGeometry = spCube;
     }
 

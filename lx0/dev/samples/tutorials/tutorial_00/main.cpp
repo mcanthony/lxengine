@@ -49,7 +49,7 @@ main (int argc, char** argv)
             //
             // Load up the Document containing the application data
             // 
-            lx0::DocumentPtr spDocument = spEngine->loadDocument("media2/appdata/tutorial_00/document.xml");
+            lx0::DocumentPtr spDocument = spEngine->loadDocument("common/appdata/tutorial_00/document.xml");
 
             //
             // Find the element in the XML tree and extract details

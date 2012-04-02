@@ -86,7 +86,7 @@ main (int argc, char** argv)
         spEngine->addElementComponent("Sprite", "renderable", [](ElementPtr spElem) { return new_Sprite(); });
         spEngine->addElementComponent("SkyMap", "renderable", [](ElementPtr spElem) { return new_SkyMap(); });
         
-        DocumentPtr spDocument = spEngine->loadDocument("media2/appdata/sm_terrain/scene.xml");
+        DocumentPtr spDocument = spEngine->loadDocument("common/appdata/sm_terrain/scene.xml");
         ViewPtr     spView     = spDocument->createView("Canvas", "view", new Renderer(spDocument));
         spView->addUIBinding( create_camera_controller() );
         spView->addController( create_event_controller() );

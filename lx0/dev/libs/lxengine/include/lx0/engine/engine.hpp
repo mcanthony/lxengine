@@ -182,6 +182,9 @@ namespace lx0
                 lxvar               getSystemInfo       (void);
                 bool                parseCommandLine    (int argc, char** argv, const char* defArgumentName = nullptr);
 
+                void                addResourceDirectory(std::string path);
+                std::string         findResource        (std::string name);
+
                 lxvar&              globals             (void)                      { return mGlobals; }
                 Environment&        environment         (void)                      { return mEnvironment; }
 
@@ -269,6 +272,9 @@ namespace lx0
                 lxvar                               mGlobals;
                 Environment                         mEnvironment;
                 lx0::uint32                         mIdCounter;
+
+                // Filesystem
+                std::vector<std::string>            mResourceDirectories;
                 
                 bool                                mbShutdownRequested;
                 std::vector<DocumentPtr>            mDocuments;

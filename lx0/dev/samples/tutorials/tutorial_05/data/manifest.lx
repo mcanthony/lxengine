@@ -1,0 +1,7 @@
+{
+    plugins : [
+        "tutorial_05",
+        "RasterizerGL"
+    ],
+    mainScript : "main.js",
+}

@@ -511,10 +511,11 @@ RasterizerGL::acquireMaterial (std::string className, std::string instanceName)
         //
         // Add some local helpers
         //
-        std::string base = "media2/shaders/lx/materials";
+        std::string base = "common/shaders/materials";
+        base = Engine::acquire()->findResource(lx0::_lx_format("shaders/materials/%1%", className));
         
-        auto conditionalLoad = [](std::string base, std::string name, std::string file) -> std::string {
-            std::string filename = base + "/" + name + "/" + file;
+        auto conditionalLoad = [](std::string base, std::string file) -> std::string {
+            std::string filename = base + "/" + file;
             if (lx0::file_exists(filename))
                 return lx0::string_from_file(filename);
             else
@@ -528,16 +529,19 @@ RasterizerGL::acquireMaterial (std::string className, std::string instanceName)
         MaterialClassPtr& spMaterialClass = mMaterialClasses[className];
         if (!spMaterialClass)
         {
-            std::string graphSource = conditionalLoad(base, className, "shader.graph");
-            std::string vertSource  = conditionalLoad(base, className, "shader.vert");
-            std::string geomSource  = conditionalLoad(base, className, "shader.geom");
-            std::string fragSource  = conditionalLoad(base, className, "shader.frag");
+            std::string graphSource = conditionalLoad(base, "shader.graph");
+            std::string vertSource  = conditionalLoad(base, "shader.vert");
+            std::string geomSource  = conditionalLoad(base, "shader.geom");
+            std::string fragSource  = conditionalLoad(base, "shader.frag");
             
             GLuint     prog = GL_NONE;
             lx0::lxvar params = lxvar::map();
 
             if (graphSource.empty())
             {
+                // At least the fragment shader must be defined
+                lx_check_error(!fragSource.empty());
+
                 //
                 // Create the shader from the source strings.  Note that it's okay
                 // for the geometry shader to be empty.
@@ -547,7 +551,7 @@ RasterizerGL::acquireMaterial (std::string className, std::string instanceName)
                 //
                 // Create the default instance parameters.
                 //
-                std::string json = conditionalLoad(base, className, "material.json");
+                std::string json = conditionalLoad(base, "material.json");
                 if (!json.empty())
                 {
                     lxvar material = lx0::lxvar::parse(json.c_str());            
@@ -570,8 +574,8 @@ RasterizerGL::acquireMaterial (std::string className, std::string instanceName)
                 // ShaderBuilder GLSL use fixed vertex and geometry shaders
                 //
                 prog = _createProgramVGF(
-                    lx0::string_from_file("media2/shaders/glsl/vertex/basic_01.vert"),
-                    lx0::string_from_file("media2/shaders/glsl/geometry/basic_01.geom"),
+                    lx0::string_from_file("common/shaders/glsl/vertex/basic_01.vert"),
+                    lx0::string_from_file("common/shaders/glsl/geometry/basic_01.geom"),
                     material.source
                 );
                 params = material.parameters;
@@ -598,7 +602,7 @@ RasterizerGL::acquireMaterial (std::string className, std::string instanceName)
         // not the MaterialClass - so material.json needs to be loaded again.
         //
         lx0::lxvar state = lxvar::undefined();
-        std::string json = conditionalLoad(base, className, "material.json");
+        std::string json = conditionalLoad(base, "material.json");
         if (!json.empty())
         {
             lxvar material = lx0::lxvar::parse(json.c_str());            
@@ -606,7 +610,7 @@ RasterizerGL::acquireMaterial (std::string className, std::string instanceName)
         }        
         
         lx0::lxvar params = lxvar::map();
-        std::string instanceJson = conditionalLoad(base, className, lx0::_lx_format("instance-%1%.json", instanceName));
+        std::string instanceJson = conditionalLoad(base, lx0::_lx_format("instance-%1%.json", instanceName));
         if (!instanceJson.empty())
         {
             lxvar material = lx0::lxvar::parse(instanceJson.c_str());            
@@ -638,7 +642,7 @@ RasterizerGL::acquireGeometry (std::string name)
     GeometryPtr& spGeometry = mGeometryCache[name];
     if (!spGeometry)
     {
-        std::string filename = "media2/geometry/" + name + ".json";
+        std::string filename = "common/geometry/" + name + ".json";
         lx0::lxvar json = lx0::lxvar::parse( lx0::string_from_file(filename).c_str() );
 
         primitive_buffer prim = json.convert();
@@ -663,8 +667,8 @@ MaterialPtr
 RasterizerGL::createMaterial (std::string name, std::string fragmentSource, lx0::lxvar parameters)
 {
     GLuint prog = _createProgramVGF(
-        lx0::string_from_file("media2/shaders/glsl/vertex/basic_01.vert"),
-        lx0::string_from_file("media2/shaders/glsl/geometry/basic_01.geom"),
+        lx0::string_from_file("common/shaders/glsl/vertex/basic_01.vert"),
+        lx0::string_from_file("common/shaders/glsl/geometry/basic_01.geom"),
         fragmentSource
     );
     
@@ -679,9 +683,9 @@ RasterizerGL::createVertexColorMaterial (void)
     if (!spMatClass)
     {
         GLuint prog = _createProgramVGF(
-            lx0::string_from_file("media2/shaders/glsl/vertex/basic_01.vert"),
-            lx0::string_from_file("media2/shaders/glsl/geometry/basic_01.geom"),
-            lx0::string_from_file("media2/shaders/glsl/fragment/vertexColor.frag")
+            lx0::string_from_file("common/shaders/glsl/vertex/basic_01.vert"),
+            lx0::string_from_file("common/shaders/glsl/geometry/basic_01.geom"),
+            lx0::string_from_file("common/shaders/glsl/fragment/vertexColor.frag")
         );
         spMatClass.reset(new MaterialClass(prog));
     }
@@ -697,9 +701,9 @@ RasterizerGL::createPhongMaterial (const glgeom::material_phong_f& mat)
     if (!spMatClass)
     {
         GLuint prog = _createProgramVGF(
-            lx0::string_from_file("media2/shaders/glsl/vertex/basic_01.vert"),
-            lx0::string_from_file("media2/shaders/glsl/geometry/basic_01.geom"),
-            lx0::string_from_file("media2/shaders/glsl/fragment/phong2.frag")
+            lx0::string_from_file("common/shaders/glsl/vertex/basic_01.vert"),
+            lx0::string_from_file("common/shaders/glsl/geometry/basic_01.geom"),
+            lx0::string_from_file("common/shaders/glsl/fragment/phong2.frag")
         );
         spMatClass.reset(new MaterialClass(prog));
     }

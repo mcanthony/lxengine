@@ -1,7 +1,7 @@
 <Document>
   
   <Header>
-    <Script src="media2/appdata/tutorial_04/meshlib.js"/>
+    <Script src="meshlib.js"/>
   </Header>
   
   <Library>
@@ -12,9 +12,9 @@
     <Geometry src="media2/models/space-ship-ship_00/ship_00-nomodifiers.blend" zoom="0.9"/>
     <Geometry src="media2/models/landscapes/mountain_valley_b-000.blend" zoom="2.5"/>
 
-    <Geometry name="PointList" src="media2/appdata/tutorial_04/points.js" />
-    <Geometry name="LineList" src="media2/appdata/tutorial_04/lines.js" />
-    <Geometry src="media2/appdata/tutorial_04/cube.js" />
+    <Geometry name="PointList" src="points.js" />
+    <Geometry name="LineList" src="lines.js" />
+    <Geometry src="cube.js" />
     
     <Geometry src="media2/models/unit_cube-000.blend" />
     <Geometry src="media2/models/unit_sphere-000.blend" />

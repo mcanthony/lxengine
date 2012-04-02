@@ -74,14 +74,14 @@ public:
         {               
             mPosition = glgeom::point3f ( 0.0f, 0.0f, 0.0f);
 
-            auto spGeom = _createGeometry(&rasterizer, "media2/models/unit_hemisphere-000.blend", 200.0f);
+            auto spGeom = _createGeometry(&rasterizer, "common/models/unit_hemisphere-000.blend", 200.0f);
 
-            auto spMat = rasterizer.createMaterial("SkyMap", lx0::string_from_file("media2/shaders/glsl/fragment/skymap.frag"), lxvar::map());
+            auto spMat = rasterizer.createMaterial("SkyMap", lx0::string_from_file("common/shaders/glsl/fragment/skymap.frag"), lxvar::map());
             spMat->mBlend = false;
             spMat->mWireframe = false;
             spMat->mZTest = false;
             spMat->mZWrite = false;
-            spMat->mTextures[0] = rasterizer.createTexture("media2/textures/skymaps/polar/bluesky_grayclouds.png");
+            spMat->mTextures[0] = rasterizer.createTexture("common/textures/skymaps/polar/bluesky_grayclouds.png");
 
             auto pInstance = new Instance;
             pInstance->spCamera   = spCamera;
@@ -112,7 +112,7 @@ public:
     {
         if (!mspMaterial)
         {
-            auto spMat = rasterizer.createMaterial("SpriteShared", lx0::string_from_file("media2/shaders/glsl/fragment/texture1_fog.frag"), lxvar::map());
+            auto spMat = rasterizer.createMaterial("SpriteShared", lx0::string_from_file("common/shaders/glsl/fragment/texture1_fog.frag"), lxvar::map());
             spMat->mBlend = true;
             spMat->mFilter = GL_NEAREST;
             spMat->mTextures[0] = rasterizer.createTexture(image.c_str());
@@ -275,7 +275,7 @@ Renderer::_generateRenderAlgorithm (lx0::RenderAlgorithm& algorithm)
     case 2:
         pass[0].spMaterial = mRasterizer.createMaterial(
             "RenderMaterial",
-            lx0::string_from_file("media2/shaders/glsl/fragment/solid.frag"),
+            lx0::string_from_file("common/shaders/glsl/fragment/solid.frag"),
             lx0::lxvar::map());
         algorithm.mPasses.push_back(pass[0]);
         break;

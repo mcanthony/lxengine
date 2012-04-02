@@ -151,7 +151,7 @@ main (int argc, char** argv)
     try
     {
         EnginePtr   spEngine   = Engine::acquire();
-        spEngine->globals().add("file",     eAcceptsString, lx0::validate_filename(), "media2/appdata/procedural2d/basic.xml");
+        spEngine->globals().add("file",     eAcceptsString, lx0::validate_filename(), "common/appdata/procedural2d/basic.xml");
 
         if (spEngine->parseCommandLine(argc, argv, "file"))
         {

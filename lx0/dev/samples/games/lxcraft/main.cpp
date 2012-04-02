@@ -53,7 +53,7 @@ main (int argc, char** argv)
         EnginePtr   spEngine   = Engine::acquire();
         spEngine->initialize();
         
-        DocumentPtr spDocument = spEngine->loadDocument("media2/appdata/sm_lxcraft/scene-000.xml");
+        DocumentPtr spDocument = spEngine->loadDocument("common/appdata/sm_lxcraft/scene-000.xml");
         spDocument->addController( create_controller(spDocument) );
 
         ViewPtr spView = spDocument->createView("Canvas", "view", create_renderer() );

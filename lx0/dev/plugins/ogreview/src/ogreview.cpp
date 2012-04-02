@@ -551,12 +551,12 @@ namespace {
         spMat->setSpecular(0, 0, 0, 0);
 
         {
-            Ogre::ResourceGroupManager::getSingleton().addResourceLocation("media2/appdata/sm_cube_rain", "FileSystem");
+            Ogre::ResourceGroupManager::getSingleton().addResourceLocation("common/appdata/sm_cube_rain", "FileSystem");
 
-            Ogre::ResourceGroupManager::getSingleton().addResourceLocation("media2/shaders/glsl/fragment", "FileSystem");
-            Ogre::ResourceGroupManager::getSingleton().addResourceLocation("media2/shaders/glsl/geometry", "FileSystem");
-            Ogre::ResourceGroupManager::getSingleton().addResourceLocation("media2/shaders/glsl/vertex", "FileSystem");
-            Ogre::ResourceGroupManager::getSingleton().addResourceLocation("media2/shaders/ogre", "FileSystem");
+            Ogre::ResourceGroupManager::getSingleton().addResourceLocation("common/shaders/glsl/fragment", "FileSystem");
+            Ogre::ResourceGroupManager::getSingleton().addResourceLocation("common/shaders/glsl/geometry", "FileSystem");
+            Ogre::ResourceGroupManager::getSingleton().addResourceLocation("common/shaders/glsl/vertex", "FileSystem");
+            Ogre::ResourceGroupManager::getSingleton().addResourceLocation("common/shaders/ogre", "FileSystem");
             Ogre::ResourceGroupManager::getSingleton().initialiseAllResourceGroups();
         }
     }

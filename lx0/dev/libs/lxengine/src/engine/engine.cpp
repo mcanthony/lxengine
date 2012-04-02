@@ -34,6 +34,7 @@
 #include <string>
 #include <boost/program_options.hpp>
 #include <boost/format.hpp>
+#include <boost/filesystem.hpp>
 
 #include <lx0/lxengine.hpp>
 #include <lx0/engine/engine.hpp>
@@ -504,6 +505,38 @@ namespace lx0 { namespace engine { namespace dom_ns {
 
         return true;
     }
+
+    void
+    Engine::addResourceDirectory (std::string path)
+    {
+        // Normalize the path a bit.  If more normalization than this ends up being necessary
+        // consider using a Boost filesystem path instead.
+        std::replace( path.begin(), path.end(), '\\', '/');
+        if (path.back() != '/')
+            path.push_back('/');
+
+        lx_log("Adding path '%1%' to resource search path", path);
+        mResourceDirectories.push_back(path);
+    }
+
+    std::string         
+    Engine::findResource (std::string name)
+    {
+        namespace bfs = boost::filesystem;
+
+        for (auto it = mResourceDirectories.begin(); it != mResourceDirectories.end(); ++it)
+        {
+            //
+            // "Resources" are allowed to be directories, so use boost::filesystem::exists()
+            // rather the lx_file_exists() since the former returns true for both files
+            // and directories.
+            //
+            std::string filename = (*it) + name;
+            if (bfs::exists(filename))
+                return filename;
+        }
+        return "";
+    }
    
     DocumentPtr
     Engine::createDocument (void)
@@ -517,6 +550,12 @@ namespace lx0 { namespace engine { namespace dom_ns {
     Engine::loadDocument (std::string filename)
     {
         lx_log("Loading document '%s'", filename.c_str());
+
+        //@todo Can we remove this check in the current working directory and
+        // force all resources to always come from an explicitly specified
+        // resource path?
+        if (!lx0::file_exists(filename))
+            filename = findResource(filename);
 
         return _loadDocument(false, filename);
     }
@@ -848,8 +887,16 @@ namespace lx0 { namespace engine { namespace dom_ns {
     Engine::createViewComponent (std::string name)
     {
         auto it = mViewComponents.find(name);
-        auto pComponent = (it->second)();
-        return pComponent;
+        if (it != mViewComponents.end())
+        {
+            auto pComponent = (it->second)();
+            return pComponent;
+        }
+        else
+        {
+            throw lx_error_exception("No view component registered with the name '%1%'", name);
+            return nullptr;
+        }
     }
 
     /*!
