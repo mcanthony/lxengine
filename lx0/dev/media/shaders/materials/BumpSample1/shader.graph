@@ -3,7 +3,7 @@
 	  _type : "phong",
 	  diffuse : {
 		_type : "texture2d",
-		texture : "media2/textures/seamless/noise/green_circuit-000.png",
+		texture : "common/textures/seamless/noise/green_circuit-000.png",
 		uv : {
 		  _type : "spherical",
 		  scale : [ 1, 1 ]
@@ -13,7 +13,7 @@
 		  _type : "bump",
 		  value : {
 			_type : "texture2d",
-			texture : "media2/textures/bumpmaps/gray_circuit-000.png",
+			texture : "common/textures/bumpmaps/gray_circuit-000.png",
 			uv: { 
 			  _type : "spherical",
 			  scale : [ 6, 6 ],

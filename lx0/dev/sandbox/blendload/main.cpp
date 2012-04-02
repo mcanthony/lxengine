@@ -73,7 +73,7 @@ main (int argc, char** argv)
     // It is necessary to call lx_init() if the Engine class is not being used.
     lx0::lx_init();
 
-    std::string filename = "media2/models/unit_cube-000.blend";
+    std::string filename = "common/models/unit_cube-000.blend";
     if (argc == 2)
         filename = argv[1];
 

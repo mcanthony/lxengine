@@ -98,7 +98,7 @@ main (int argc, char** argv)
     {
         EnginePtr spEngine = Engine::acquire();
         {
-            auto spDocument = spEngine->loadDocument("media2/appdata/sb_shadergraph/sample.xml");
+            auto spDocument = spEngine->loadDocument("common/appdata/sb_shadergraph/sample.xml");
             spDocument->attachComponent(new MaterialProcessor);
         }
         spEngine->shutdown();

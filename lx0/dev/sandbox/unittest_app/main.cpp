@@ -52,7 +52,7 @@ static void runImageTest (lxvar& results, std::string execName, std::string grou
 {
     std::string imageName = boost::str( boost::format("unittest_results\\%1%\\%2%.png") % groupName % testname );
     std::string diffName = boost::str( boost::format("unittest_results\\%1%\\%2%.diff.png") % groupName % testname );
-    std::string baseline =  boost::str( boost::format("media2\\unittest_baselines\\%1%\\%2%.png") % groupName % testname);
+    std::string baseline =  boost::str( boost::format("common\\unittest_baselines\\%1%\\%2%.png") % groupName % testname);
 
     std::string cmd = boost::str( boost::format(
         "%3% --file=\"%1%\" --width=256 --height=256 --output=%2% 2>stderr.txt 1>stdout.txt")
@@ -103,7 +103,7 @@ static void runTestSet()
     results["date"] = lx0::lx_ctime();
 
     std::vector<std::string> files;
-    lx0::find_files_in_directory(files, "media2/appdata/sm_raytracer", "xml");
+    lx0::find_files_in_directory(files, "common/appdata/sm_raytracer", "xml");
 
     for (auto it = files.begin(); it != files.end(); ++it)
     {
@@ -131,7 +131,7 @@ main (int argc, char** argv)
     {
         EnginePtr spEngine = Engine::acquire();
         {
-            auto spDocument = spEngine->loadDocument("media2/appdata/sb_unittest_app/unittests.xml");
+            auto spDocument = spEngine->loadDocument("common/appdata/sb_unittest_app/unittests.xml");
             runTestSet();
         }
         spEngine->shutdown();

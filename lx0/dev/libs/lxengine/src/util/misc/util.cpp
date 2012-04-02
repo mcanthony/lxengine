@@ -312,16 +312,16 @@ namespace lx0 { namespace util { namespace misc {
 
         // Practically wins out here...check for fixed path names to determine
         // the redirect
-        if (!is_directory("media2"))
+        if (!is_directory("common"))
         {
-            lx_log("Cannot find media2 directory.  Attempting to find correct path.");
+            lx_log("Cannot find 'common' directory.  Attempting to find correct path.");
             lx_log("Current path is: %1%", current_path().string() );
 
             // Try up to 6 levels of nesting
             std::string prefix = "..";
             for (int i = 0; i < 6; ++i)
             {
-                if (!is_directory(prefix + "/media2"))
+                if (!is_directory(prefix + "/common"))
                 {
                     prefix += "/..";
                 }

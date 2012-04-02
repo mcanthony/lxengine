@@ -89,8 +89,8 @@ function main()
     lx0.message("Creating view...");
     var view = document.createView("Canvas", "view", "Renderer");
     view.show({
-        title : "Tutorial 4",
-        width : 512,
+        title : "Tutorial 5",
+        width : 768,
         height : 512
     });
 

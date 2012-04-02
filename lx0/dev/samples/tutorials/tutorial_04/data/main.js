@@ -84,7 +84,7 @@ function main()
     lx0.log("Beginning main script");
 
     lx0.message("Loading document...");
-    var document = engine.loadDocument("media2/appdata/tutorial_04/document.xml");
+    var document = engine.loadDocument("document.xml");
 
     lx0.message("Creating view...");
     var view = document.createView("Canvas", "view", "Renderer");

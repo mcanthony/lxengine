@@ -5,7 +5,7 @@
   
   <Library>
     <!-- Geometry -->
-    <Geometry src="media2/models/landscapes/mountain_valley_b-000.blend" zoom="2.5"/>
+    <Geometry src="common/models/landscapes/mountain_valley_b-000.blend" zoom="2.5"/>
 
     <!-- Lights -->
     <Light>

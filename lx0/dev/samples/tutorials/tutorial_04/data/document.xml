@@ -6,21 +6,21 @@
   
   <Library>
     <!-- Geometry -->
-    <Geometry src="media2/models/standard/suzanne/suzanne_subdivided.blend" />
-    <Geometry src="media2/models/unit_geometry/teapot/teapot-000.blend" zoom="1.5"/>
-    <Geometry src="media2/models/standard/stanford_bunny/bunny-000.blend" />
-    <Geometry src="media2/models/space-ship-ship_00/ship_00-nomodifiers.blend" zoom="0.9"/>
-    <Geometry src="media2/models/landscapes/mountain_valley_b-000.blend" zoom="2.5"/>
+    <Geometry src="common/models/standard/suzanne/suzanne_subdivided.blend" />
+    <Geometry src="common/models/unit_geometry/teapot/teapot-000.blend" zoom="1.5"/>
+    <Geometry src="common/models/standard/stanford_bunny/bunny-000.blend" />
+    <Geometry src="common/models/space-ship-ship_00/ship_00-nomodifiers.blend" zoom="0.9"/>
+    <Geometry src="common/models/landscapes/mountain_valley_b-000.blend" zoom="2.5"/>
 
     <Geometry name="PointList" src="points.js" />
     <Geometry name="LineList" src="lines.js" />
     <Geometry src="cube.js" />
     
-    <Geometry src="media2/models/unit_cube-000.blend" />
-    <Geometry src="media2/models/unit_sphere-000.blend" />
-    <Geometry src="media2/models/unit_hemisphere-000.blend" />
-    <Geometry src="media2/models/unit_geometry/unit_cone-000.blend" />
-    <Geometry src="media2/models/unit_geometry/unit_cylinder-001.blend" />
+    <Geometry src="common/models/unit_cube-000.blend" />
+    <Geometry src="common/models/unit_sphere-000.blend" />
+    <Geometry src="common/models/unit_hemisphere-000.blend" />
+    <Geometry src="common/models/unit_geometry/unit_cone-000.blend" />
+    <Geometry src="common/models/unit_geometry/unit_cylinder-001.blend" />
 
     <!-- Lights -->
     <Light>

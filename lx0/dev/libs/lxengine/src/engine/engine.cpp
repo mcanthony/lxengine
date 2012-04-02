@@ -547,13 +547,14 @@ namespace lx0 { namespace engine { namespace dom_ns {
     }
 
     DocumentPtr
-    Engine::loadDocument (std::string filename)
+    Engine::loadDocument (std::string filename_)
     {
-        lx_log("Loading document '%s'", filename.c_str());
+        lx_log("Loading document '%s'", filename_.c_str());
 
         //@todo Can we remove this check in the current working directory and
         // force all resources to always come from an explicitly specified
         // resource path?
+        std::string filename (filename_);
         if (!lx0::file_exists(filename))
             filename = findResource(filename);
 
