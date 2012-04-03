@@ -108,10 +108,18 @@ struct GeometryData
 class Coroutine
 {
 public:
-    void    delay   (unsigned int delay)                          { mSteps.push_back(std::make_pair(delay, [](){})); }
-    void    main    (std::function<void()> f)                     { mSteps.push_back(std::make_pair(0, f)); }
-    void    main    (unsigned int delay, std::function<void()> f) { mSteps.push_back(std::make_pair(delay, f)); }
-    void    worker  (std::function<void()> f)                     { mSteps.push_back(std::make_pair(-1, f)); }
+    void    delay   (unsigned int delay)                          { mSteps.push_back(Step(delay, [](){})); }
+    void    main    (std::function<void()> f)                     { mSteps.push_back(Step(0, f)); }
+    void    main    (unsigned int delay, std::function<void()> f) { mSteps.push_back(Step(delay, f)); }
+    void    worker  (std::function<void()> f)                     { mSteps.push_back(Step(-1, f)); }
+
+    void    worker  (std::function<void()> f0, std::function<void()> f1)                     
+    { 
+        Step s;
+        s.parallel.push_back(f0);
+        s.parallel.push_back(f1);
+        mSteps.push_back(s); 
+    }
 
     std::function<void()> compile()                               
     { 
@@ -119,11 +127,20 @@ public:
         main ([this](){ delete this; });
         return wrap(mSteps, mSteps.begin()); 
     }
-    
+        
 protected:
-    typedef std::vector<std::pair<unsigned int,std::function<void()>>> StepList;
-    StepList    mSteps;
+    struct Step
+    {
+        Step () : delay (0) {}
+        Step (unsigned int d, std::function<void()> f) : delay(d), func(f) {}
 
+        unsigned int                        delay;
+        std::function<void()>               func;
+        std::vector<std::function<void()>>  parallel;
+    };
+    typedef std::vector<Step> StepList;
+    StepList    mSteps;
+ 
     static std::function<void()> 
     wrap (StepList& c, StepList::iterator it)
     {
@@ -131,17 +148,53 @@ protected:
         {
             std::function<void()> g = wrap(c, it + 1);
 
-            auto i = it->first; 
-            auto f = it->second;
-            auto h = [f,g]() { f(); g(); };
+            auto pEngine = lx0::Engine::acquire().get();     
+            auto f = it->func;
+
+            if (f)
+            {
+                auto i = it->delay; 
+                auto h = [f,g]() { f(); g(); };
                               
-            auto pEngine = lx0::Engine::acquire().get();            
-            if (i == 0)
-                return [=]() { pEngine->sendTask(h); };
-            else if (i > 0)
-                return [=]() { pEngine->sendTask(i, h); };
+                if (i == 0)
+                    return [=]() { pEngine->sendTask(h); };
+                else if (i > 0)
+                    return [=]() { pEngine->sendTask(i, h); };
+                else
+                    return [=]() { pEngine->sendWorkerTask(h); };
+            }
             else
-                return [=]() { pEngine->sendWorkerTask(h); };
+            {
+                //
+                // A set of tasks to run in parallel
+                //
+                auto fv = it->parallel;
+                auto total = fv.size();
+                
+                // Create a sync function to execute the next step only
+                // after all parallel functions have completed
+                volatile int* pCount = new int(0);
+                auto sync = [pCount,total,g]() { 
+                    if (++(*pCount) == total) {
+                        g(); 
+                        delete pCount;
+                    }
+                };
+
+                // Wrap the parallel functions with the sync as a tail
+                std::vector<std::function<void()>> hv;
+                for (auto it = fv.begin(); it != fv.end(); ++it)
+                {
+                    auto f = *it;
+                    hv.push_back([f,sync]() { f(); sync(); });
+                }
+
+                // Return a function to spawn the wrapped parallel functions
+                return [pEngine,hv]() {
+                    for (auto it = hv.begin(); it != hv.end(); ++it)
+                        pEngine->sendWorkerTask(*it);
+                };
+            }
         }
         else
             return [](){};
@@ -247,22 +300,35 @@ public:
             auto c = new PointCloud;
             c->pspInstance = &mspInstancePoints;          
 
+            const size_t kCount = 10 * 1000;
+
             c->delay(2000);
-            c->worker([c]() {
+            c->worker([c,kCount]() {
                 lx_message("generate...");
 
                 auto rollxy = lx0::random_die_f(-1, 1, 256);
                 auto rollz = lx0::random_die_f(.0, .5, 256);
                 
-                const size_t count = 10 * 1000;
+                
                 c->primitive.type = "points";
-                c->primitive.vertex.positions.reserve(count);
-                for (int i = 0; i < count; ++i)
+                c->primitive.vertex.positions.reserve(kCount);
+                for (size_t i = 0; i < kCount; ++i)
                 {
                     glgeom::point3f p( rollxy(), rollxy(), rollz() );                        
                     c->primitive.vertex.positions.push_back(p);
                 }
             });
+            c->worker(
+                []() {
+                    for (int i = 0; i < 1000; ++i)
+                        std::cout << "#" << std::flush;           
+                },
+                []() {                
+                    for (int i = 0; i < 1000; ++i)
+                        std::cout << "@" << std::flush;
+                }
+            );
+            c->worker([]() { std::cout << std::endl; });
             c->main([this,c]() {
                 lx_message("addInstance...");
                 auto spGeometry = mspRasterizer->createGeometry(c->primitive);
