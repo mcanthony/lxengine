@@ -102,6 +102,53 @@ struct GeometryData
 };
 
 //===========================================================================//
+//   C O R O U T I N E
+//===========================================================================//
+
+class Coroutine
+{
+public:
+    void    delay   (unsigned int delay)                          { mSteps.push_back(std::make_pair(delay, [](){})); }
+    void    main    (std::function<void()> f)                     { mSteps.push_back(std::make_pair(0, f)); }
+    void    main    (unsigned int delay, std::function<void()> f) { mSteps.push_back(std::make_pair(delay, f)); }
+    void    worker  (std::function<void()> f)                     { mSteps.push_back(std::make_pair(-1, f)); }
+
+    std::function<void()> compile()                               
+    { 
+        // Self-delete at the end of the coroutine
+        main ([this](){ delete this; });
+        return wrap(mSteps, mSteps.begin()); 
+    }
+    
+protected:
+    typedef std::vector<std::pair<unsigned int,std::function<void()>>> StepList;
+    StepList    mSteps;
+
+    static std::function<void()> 
+    wrap (StepList& c, StepList::iterator it)
+    {
+        if (it != c.end())
+        {
+            std::function<void()> g = wrap(c, it + 1);
+
+            auto i = it->first; 
+            auto f = it->second;
+            auto h = [f,g]() { f(); g(); };
+                              
+            auto pEngine = lx0::Engine::acquire().get();            
+            if (i == 0)
+                return [=]() { pEngine->sendTask(h); };
+            else if (i > 0)
+                return [=]() { pEngine->sendTask(i, h); };
+            else
+                return [=]() { pEngine->sendWorkerTask(h); };
+        }
+        else
+            return [](){};
+    }
+};
+
+//===========================================================================//
 //   R E N D E R E R
 //===========================================================================//
 
@@ -129,7 +176,7 @@ public:
         // before any of the counters within the profile object are used.
         //
         profile.initialize();
-    }
+    }   
 
     virtual void initialize (lx0::ViewPtr spView)
     {
@@ -184,43 +231,48 @@ public:
         mCurrentZoom = geomData.zoom;
         mspCamera = _createCamera(geomData.spGeometry->mBBox, mCurrentZoom);
 
+        //
+        // Create a co-routine to run through the event queue.  
+        //
+        // This effectively creates a sequential sequence of steps that can
+        // alternate between the main and worker threads as well as pausing
+        // without spinning any cycles.
+        //
         {
-            lx0::Engine::acquire()->sendTask(2000, [=]() {
+            struct PointCloud : public Coroutine
+            {
+                glgeom::primitive_buffer  primitive;
+                lx0::InstancePtr*         pspInstance;
+            };
+            auto c = new PointCloud;
+            c->pspInstance = &mspInstancePoints;          
 
-                auto spEngine = lx0::Engine::acquire();
-                auto* pspInstance = &mspInstancePoints;
+            c->delay(2000);
+            c->worker([c]() {
+                lx_message("generate...");
+
+                auto rollxy = lx0::random_die_f(-1, 1, 256);
+                auto rollz = lx0::random_die_f(.0, .5, 256);
                 
-                lx_message("Beginning task...");
-
-                auto addInstance = [=](glgeom::primitive_buffer* pPrim) {
-                    lx_message("addInstance...");
-                    auto spGeometry = mspRasterizer->createGeometry(*pPrim);
-                    delete pPrim;
-
-                    auto pInstance = new lx0::Instance;
-                    pInstance->spGeometry = spGeometry;
-                    pspInstance->reset(pInstance);
-                };
-
-                auto generate = [=]() {
-
-                    lx_message("generate...");
-                    auto rollxy = lx0::random_die_f(-1, 1, 256);
-                    auto rollz = lx0::random_die_f(.0, .5, 256);
-                    auto pPrim = new glgeom::primitive_buffer;
-                    pPrim->type = "points";
-                    for (int i = 0; i < 6000; ++i)
-                    {
-                        glgeom::point3f p( rollxy(), rollxy(), rollz() );                        
-                        pPrim->vertex.positions.push_back(p);
-                    }
-                    
-                    auto f = addInstance;
-                    spEngine->sendTask([=]() { f(pPrim); });
-                };
-                
-                spEngine->sendWorkerTask(generate);                
+                const size_t count = 10 * 1000;
+                c->primitive.type = "points";
+                c->primitive.vertex.positions.reserve(count);
+                for (int i = 0; i < count; ++i)
+                {
+                    glgeom::point3f p( rollxy(), rollxy(), rollz() );                        
+                    c->primitive.vertex.positions.push_back(p);
+                }
             });
+            c->main([this,c]() {
+                lx_message("addInstance...");
+                auto spGeometry = mspRasterizer->createGeometry(c->primitive);
+
+                auto pInstance = new lx0::Instance;
+                pInstance->spGeometry = spGeometry;
+                c->pspInstance->reset(pInstance);
+            });
+
+            lx0::Engine::acquire()->sendTask(2000, c->compile());
         }
     }
 
