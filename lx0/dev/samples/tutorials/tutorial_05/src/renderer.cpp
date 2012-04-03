@@ -27,6 +27,7 @@
 //===========================================================================//
 
 #include <boost/algorithm/string.hpp>
+#include <boost/interprocess/detail/atomic.hpp>
 
 #include <glgeom/ext/primitive_buffer.hpp>
 
@@ -125,7 +126,7 @@ public:
     { 
         // Self-delete at the end of the coroutine
         main ([this](){ delete this; });
-        return wrap(mSteps, mSteps.begin()); 
+        return _chain(mSteps, mSteps.begin()); 
     }
         
 protected:
@@ -141,12 +142,26 @@ protected:
     typedef std::vector<Step> StepList;
     StepList    mSteps;
  
+    /*
+        The function has two essential parts: (1) wrap the current step so that it 
+        is invoked by the engine properly, (2) wrap the invokation of the _next_
+        step is invoked automatically after the current step.
+
+        FUTURE:
+
+        "State" could be added to the coroutine, such as a active variable that 
+        the coroutine can be paused/resumed.  This would involve more complex
+        interaction with the Engine as a "pause" would need to prevent the next
+        step from being added to any queue, while a "resume" would need to know
+        what step (and how) to add back into a queue.  Possible, but let's wait
+        for a good use case.
+     */
     static std::function<void()> 
-    wrap (StepList& c, StepList::iterator it)
+    _chain (StepList& c, StepList::iterator it)
     {
         if (it != c.end())
         {
-            std::function<void()> g = wrap(c, it + 1);
+            std::function<void()> g = _chain(c, it + 1);
 
             auto pEngine = lx0::Engine::acquire().get();     
             auto f = it->func;
@@ -169,13 +184,13 @@ protected:
                 // A set of tasks to run in parallel
                 //
                 auto fv = it->parallel;
-                auto total = fv.size();
+                auto total = lx0::uint32( fv.size() );
                 
-                // Create a sync function to execute the next step only
+                // Create a sync function to execute the next step (i.e. g) only
                 // after all parallel functions have completed
-                volatile int* pCount = new int(0);
+                volatile lx0::uint32* pCount = new lx0::uint32(0);
                 auto sync = [pCount,total,g]() { 
-                    if (++(*pCount) == total) {
+                    if (boost::interprocess::detail::atomic_inc32(pCount) == total - 1) {
                         g(); 
                         delete pCount;
                     }
@@ -318,6 +333,7 @@ public:
                     c->primitive.vertex.positions.push_back(p);
                 }
             });
+            // Add a dummy step to test that parallel worker tasks work correctly.
             c->worker(
                 []() {
                     for (int i = 0; i < 1000; ++i)
