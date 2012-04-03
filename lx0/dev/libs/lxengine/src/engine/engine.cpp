@@ -674,6 +674,18 @@ namespace lx0 { namespace engine { namespace dom_ns {
     }
 
     void   
+	Engine::sendTask (unsigned int delay, std::function<void()> f)
+    {
+        unsigned int time = delay + lx0::lx_milliseconds();
+
+        Event evt;
+        evt.task = f;
+        
+        boost::lock_guard<boost::mutex> lock(mEventQueueMutex);
+        mDelayedEventQueue.insert( std::make_pair(time, evt) );
+    }
+
+    void   
 	Engine::sendEvent (std::function<int()> f)
     {
         Event evt;
@@ -749,11 +761,28 @@ namespace lx0 { namespace engine { namespace dom_ns {
             // are being processed.  Use a secondary queue for events that want
             // to be run again in the next frame as well.
             //
-            std::deque<Event> queue;
-            std::deque<Event> reQueue;
+            std::deque<Event>   queue;
+            std::deque<Event>   reQueue;
+            std::vector<std::pair<unsigned int, Event>> reQueueDelayed;
             {
                 boost::lock_guard<boost::mutex> lock(mEventQueueMutex);
                 queue.swap(mEventQueue);
+
+                // Push any pending events into the active queue                
+                auto it = mDelayedEventQueue.begin();
+                while (it != mDelayedEventQueue.end())
+                {
+                    if (it->first <= mFrameStartMs)
+                    {
+                        queue.push_back(it->second);
+
+                        // Note: very subtle use of post-increment here.  Erasing the iterator
+                        // invalidates it, therefore increment *before* erasing.
+                        mDelayedEventQueue.erase(it++);
+                    }
+                    else
+                        break;
+                }
             }
 
             while (!queue.empty())
@@ -793,9 +822,10 @@ namespace lx0 { namespace engine { namespace dom_ns {
                 if (delay == 0)
                     reQueue.push_back(evt);
                 else if (delay > 0)
-                    throw lx_error_exception("Delayed re-enqueue not yet implemented!!");
+                    reQueueDelayed.push_back( std::make_pair(mFrameStartMs + delay, evt) );
             }
             
+            //
             // Fill the event queue with all events that should be repeated
             //
             {
@@ -803,6 +833,10 @@ namespace lx0 { namespace engine { namespace dom_ns {
                 for (auto it = reQueue.begin(); it != reQueue.end(); ++it)
                     mEventQueue.push_back(*it);
                 reQueue.clear();
+
+                for (auto it = reQueueDelayed.begin(); it != reQueueDelayed.end(); ++it)
+                    mDelayedEventQueue.insert(*it);
+                reQueueDelayed.clear();
             }
 
             {

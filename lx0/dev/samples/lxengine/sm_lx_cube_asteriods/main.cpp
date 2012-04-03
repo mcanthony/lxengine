@@ -67,7 +67,7 @@ main (int argc, char** argv)
         {
             spEngine->attachComponent( lx0::createJavascriptSubsystem());
             spEngine->attachComponent( lx0::createProcessScriptElement());
-            spEngine->loadPlugin("LxPlugin-BulletPhysics");
+            spEngine->loadPlugin("BulletPhysics");
 
             DocumentPtr spDocument = spEngine->loadDocument("data/sm_lx_cube_asteriods/level00.xml");
             ViewPtr     spView     = spDocument->createView("OGRE", "view");

@@ -198,6 +198,7 @@ namespace lx0
                 void                sendEvent           (std::function<int()> f);
                 void                sendEvent           (std::function<int()> f, EventHandle& handle);
                 void                sendTask            (std::function<void()> f);
+                void                sendTask            (unsigned int delay, std::function<void()> f);
                 void                sendWorkerTask      (std::function<void()> f);
 
                 int	                run                 (void);
@@ -280,6 +281,7 @@ namespace lx0
                 std::vector<DocumentPtr>            mDocuments;
                 boost::mutex                        mEventQueueMutex;
                 std::deque<Event>                   mEventQueue;
+                std::map<unsigned int,Event>        mDelayedEventQueue;
                 std::vector<detail::WorkerThread*>  mWorkerThreads;
 
                 FunctionMap                         mFunctions;

@@ -246,7 +246,7 @@ SET_PROPERTY(TARGET lxrasterizer            PROPERTY FOLDER "Libs")
 
 SET_PROPERTY(TARGET SoundAL                 PROPERTY FOLDER "Plugins")
 SET_PROPERTY(TARGET OgreView                PROPERTY FOLDER "Plugins")
-SET_PROPERTY(TARGET LxPlugin-BulletPhysics  PROPERTY FOLDER "Plugins")
+SET_PROPERTY(TARGET BulletPhysics           PROPERTY FOLDER "Plugins")
 
 SET_PROPERTY(TARGET sm_lx_cube_asteriods    PROPERTY FOLDER "Samples/LxEngine")
 SET_PROPERTY(TARGET sm_lx_cube_rain         PROPERTY FOLDER "Samples/LxEngine")

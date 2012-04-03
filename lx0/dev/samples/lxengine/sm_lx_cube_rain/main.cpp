@@ -123,7 +123,7 @@ main (int argc, char** argv)
             spEngine->environment().setTimeScale(1.1f);
             spEngine->attachComponent( lx0::createJavascriptSubsystem());
             spEngine->attachComponent( lx0::createProcessScriptElement());
-            spEngine->loadPlugin("LxPlugin-BulletPhysics");
+            spEngine->loadPlugin("BulletPhysics");
 
             DocumentPtr spDocument = spEngine->loadDocument(options.find("file"));
             ViewPtr spView( spDocument->createView("OGRE", "view") );

@@ -23,11 +23,6 @@
 
     <!-- Materials -->
 
-    <Material id="toon3" src="ToonSimple" instance="Forest2" />
-    <Material id="toon2" src="ToonSimple" instance="Forest" />
-    <Material id="toon3" src="ToonSimple" instance="Forest3" />
-    <Material id="toon1" src="ToonSimple" />
-
     <Material id="toon1" src="TerrainSimple" />
    
     <Material id="phong_defaults">
@@ -37,7 +32,6 @@
         },
       }
     </Material>   
-    <Material src="BumpSample1" />
     
   </Library>
 </Document>

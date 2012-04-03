@@ -87,7 +87,7 @@ main (int argc, char** argv)
 
         if (spEngine->parseCommandLine(argc, argv, "startingCell"))
         {
-            spEngine->loadPlugin("LxPlugin-BulletPhysics");
+            spEngine->loadPlugin("BulletPhysics");
             
             //
             // A bit of a hack at the moment...

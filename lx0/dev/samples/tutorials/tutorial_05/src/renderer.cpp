@@ -96,8 +96,9 @@ namespace
  */
 struct GeometryData
 {
-    lx0::GeometryPtr    spGeometry;
-    float               zoom;
+    glgeom::primitive_buffer    primitive;
+    lx0::GeometryPtr            spGeometry;
+    float                       zoom;
 };
 
 //===========================================================================//
@@ -182,6 +183,45 @@ public:
         auto& geomData = mGeometry[mCurrentGeometry];
         mCurrentZoom = geomData.zoom;
         mspCamera = _createCamera(geomData.spGeometry->mBBox, mCurrentZoom);
+
+        {
+            lx0::Engine::acquire()->sendTask(2000, [=]() {
+
+                auto spEngine = lx0::Engine::acquire();
+                auto* pspInstance = &mspInstancePoints;
+                
+                lx_message("Beginning task...");
+
+                auto addInstance = [=](glgeom::primitive_buffer* pPrim) {
+                    lx_message("addInstance...");
+                    auto spGeometry = mspRasterizer->createGeometry(*pPrim);
+                    delete pPrim;
+
+                    auto pInstance = new lx0::Instance;
+                    pInstance->spGeometry = spGeometry;
+                    pspInstance->reset(pInstance);
+                };
+
+                auto generate = [=]() {
+
+                    lx_message("generate...");
+                    auto rollxy = lx0::random_die_f(-1, 1, 256);
+                    auto rollz = lx0::random_die_f(.0, .5, 256);
+                    auto pPrim = new glgeom::primitive_buffer;
+                    pPrim->type = "points";
+                    for (int i = 0; i < 6000; ++i)
+                    {
+                        glgeom::point3f p( rollxy(), rollxy(), rollz() );                        
+                        pPrim->vertex.positions.push_back(p);
+                    }
+                    
+                    auto f = addInstance;
+                    spEngine->sendTask([=]() { f(pPrim); });
+                };
+                
+                spEngine->sendWorkerTask(generate);                
+            });
+        }
     }
 
     /*
@@ -294,6 +334,9 @@ public:
         lx0::RenderList instances;
         instances.push_back(0, mspInstance);
 
+        if (mspInstancePoints)
+            instances.push_back(0, mspInstancePoints);
+
         //
         // This is a standard rendering loop: begin the frame, then rasterize
         // each layer of the RenderList according via rasterizeList.
@@ -320,6 +363,9 @@ public:
         {
             mRotation = glm::rotate(mRotation, 1.0f, glm::vec3(0, 0, 1));
             mspInstance->spTransform = mspRasterizer->createTransform(mRotation);
+
+            if (mspInstancePoints)
+                mspInstancePoints->spTransform = mspInstance->spTransform;
         }
 
         //
@@ -540,6 +586,7 @@ protected:
                                                                 primitive->vertex.colors);
                 spGeometry->mBBox = primitive->bbox;
                 mGeometry[index].spGeometry = spGeometry;
+                mGeometry[index].primitive = *primitive;
                 delete primitive;
         };
 
@@ -568,41 +615,6 @@ protected:
         lx0::Engine::acquire()->sendWorkerTask(loadGeometry);
     }
 
-    void
-    _addGeometryJavascript (lx0::DocumentPtr spDocument, const std::string filename, int index)
-    {
-        //
-        // Add the script execution as task in the Engine queue.  This will be executed
-        // once the Engine::run() loop begins.  There's not much advantage or necessity to 
-        // queuing the script execution rather than running it directly; this is being
-        // done mostly demonstrate using the sendTask() method.
-        //
-        lx0::Engine::acquire()->sendTask([this,spDocument,filename,index]() {
-
-            lx_message("Loading geometry script '%1%'", filename);
-            auto spJavascriptDoc = spDocument->getComponent<lx0::IJavascriptDoc>();
-            
-            //
-            // The result of the script is converted to an lxvar as an intermediate step.  This is
-            // a bit inefficient, but flexible and convenient as a common intermediary.
-            //
-            auto source = lx0::string_from_file(filename);     
-            lx0::lxvar result = spJavascriptDoc->run(source);
-
-            if (result.is_defined())
-            {
-                glgeom::primitive_buffer primitive = result.convert();
-                glgeom::compute_bounds(primitive, primitive.bbox);               
-
-                auto spGeometry = mspRasterizer->createGeometry(primitive);
-                spGeometry->mBBox = primitive.bbox;
-                mGeometry[index].spGeometry = spGeometry;
-            }
-            else
-                throw lx_error_exception("Script failure!");
-        });
-    }
-
     void 
     _addGeometry (lx0::DocumentPtr spDocument, const std::string filename, float zoom)
     {
@@ -622,10 +634,6 @@ protected:
 
         if (boost::iends_with(filename, ".blend"))
             _addGeometryBlender(spDocument, filename, index);
-
-        else if (boost::iends_with(filename, ".js"))
-            _addGeometryJavascript(spDocument, filename, index);
-        
         else
             throw lx_error_exception("Unrecognized geometry source!");
     }
@@ -707,6 +715,7 @@ protected:
     lx0::EventHandle              mEventHandle;
     std::vector<lx0::MaterialPtr> mMaterials;
     std::vector<GeometryData>     mGeometry;
+    lx0::InstancePtr              mspInstancePoints;
 };
 
 //===========================================================================//
