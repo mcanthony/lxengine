@@ -138,10 +138,7 @@ public:
         mRasterizer.beginFrame(algorithm);
 
         _generateItems(instances);
-        for (auto it = instances.begin(); it != instances.end(); ++it)
-        {
-            mRasterizer.rasterizeList(algorithm, it->second.list);
-        }
+        mRasterizer.rasterizeList(algorithm, instances);
 
         mRasterizer.endFrame();
     }

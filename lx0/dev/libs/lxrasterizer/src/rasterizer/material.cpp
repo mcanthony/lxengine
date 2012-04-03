@@ -664,6 +664,13 @@ Material::_generateInstruction (RasterizerGL* pRasterizer, const Uniform& unifor
                 gl->uniform3f(loc, bbox.max.x, bbox.max.y, bbox.max.z);
             };
         }
+        else if (uniform.name == "unifCurrentTime")
+        {
+            return [=]() {
+                float time = float(pRasterizer->mContext.frameStart);
+                gl->uniform1f(loc, time);
+            };
+        }
     }
 
     lx_warn("No instruction generated for uniform '%1%'", uniform.name);

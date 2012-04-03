@@ -202,7 +202,7 @@ public:
         algorithm.mClearColor = glgeom::color4f(0.1f, 0.3f, 0.8f, 1.0f);
         
         lx0::GlobalPass pass;
-        switch (miRenderAlgorithm % 5)
+        switch (miRenderAlgorithm % 4)
         {
         default:
         case 0:
@@ -268,9 +268,9 @@ public:
 
         case 3:
             //
-            // A similar two pass render algorithm: draw the scene normally to an
-            // offscreen FBO, then blit the FBO to the display using a pixel shader
-            // which will invert the RGB value.
+            // Set up a two pass grayscale render algorithm: draw the scene normally
+            // to an offscreen FBO, then blit that FBO to the display using a 
+            // shader that will transform all colors to their grayscale equivalent.
             //
             pass.spFrameBuffer = mspFBOffscreen0;
             pass.spCamera   = mspCamera;
@@ -280,26 +280,7 @@ public:
 
             pass.spFrameBuffer.reset();
             pass.spSourceFBO = mspFBOffscreen0;
-            pass.spMaterial = mspRasterizer->acquireMaterial("BlitFBOInvert");
-            algorithm.mPasses.push_back(pass);
-            break;
-
-        case 4:
-            //
-            // Similar to the the grayscale and invert algorithms, this two pass
-            // algorithm differs only by the pixel shader used: this one will apply
-            // a color inversion and use a box blur filter (that varies in size based 
-            // on distance from the viewport center) on the image.
-            //
-            pass.spFrameBuffer = mspFBOffscreen0;
-            pass.spCamera   = mspCamera;
-            pass.spLightSet = mspLightSet;
-            pass.optClearColor = std::make_pair(true, glgeom::color4f(0, 0, 0, 0));
-            algorithm.mPasses.push_back(pass);
-
-            pass.spFrameBuffer.reset();
-            pass.spSourceFBO = mspFBOffscreen0;
-            pass.spMaterial = mspRasterizer->acquireMaterial("BlitFBOInvertBlur");
+            pass.spMaterial = mspRasterizer->acquireMaterial("BlitFBODistortSinStripes");
             algorithm.mPasses.push_back(pass);
             break;
         }
@@ -318,10 +299,7 @@ public:
         // each layer of the RenderList according via rasterizeList.
         //
         mspRasterizer->beginFrame(algorithm);
-        for (auto it = instances.begin(); it != instances.end(); ++it)
-        {
-            mspRasterizer->rasterizeList(algorithm, it->second.list);
-        }
+        mspRasterizer->rasterizeList(algorithm, instances);
         mspRasterizer->endFrame();
     }
 

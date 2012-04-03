@@ -136,10 +136,7 @@ public:
         instances.push_back(0, mspInstance);
 
         mspRasterizer->beginFrame(algorithm);
-        for (auto it = instances.begin(); it != instances.end(); ++it)
-        {
-            mspRasterizer->rasterizeList(algorithm, it->second.list);
-        }
+        mspRasterizer->rasterizeList(algorithm, instances);
         mspRasterizer->endFrame();
     }
 

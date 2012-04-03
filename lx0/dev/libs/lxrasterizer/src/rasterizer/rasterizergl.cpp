@@ -297,7 +297,6 @@ void RasterizerGL::shutdown()
     lx_log("%s", __FUNCTION__);
     log_timer("Lifetime",           mStats.tmLifetime,          mStats.tmLifetime);
     log_timer("scene",              mStats.tmScene,             mStats.tmLifetime);
-    log_timer("rasterizeList",      mStats.tmRasterizeList,     mStats.tmScene);
     log_timer("rasterizeItem",      mStats.tmRasterizeItem,     mStats.tmScene);
     log_timer("activate Material",  mStats.tmMaterialActivate,  mStats.tmScene);
     log_timer("activate Geometry",  mStats.tmGeometryActivate,  mStats.tmScene);
@@ -511,8 +510,8 @@ RasterizerGL::acquireMaterial (std::string className, std::string instanceName)
         //
         // Add some local helpers
         //
-        std::string base = "common/shaders/materials";
-        base = Engine::acquire()->findResource(lx0::_lx_format("shaders/materials/%1%", className));
+        std::string base = Engine::acquire()->findResource(lx0::_lx_format("shaders/materials/%1%", className));
+        lx_check_error(!base.empty(), "Could not locate resource directory '%1%'", className);
         
         auto conditionalLoad = [](std::string base, std::string file) -> std::string {
             std::string filename = base + "/" + file;
@@ -1319,6 +1318,7 @@ RasterizerGL::beginFrame (RenderAlgorithm& algorithm)
     mFrameNum++;
     mFrameData = FrameData();
     mContext.frame = FrameContext();
+    mContext.frameStart = lx0::lx_milliseconds();
 
     lx_check_error( gl->getError() == GL_NO_ERROR );
 
@@ -1337,12 +1337,11 @@ void RasterizerGL::endFrame()
 }
 
 void 
-RasterizerGL::rasterizeList (RenderAlgorithm& algorithm, std::vector<std::shared_ptr<Instance>>& list)
+RasterizerGL::rasterizeList (RenderAlgorithm& algorithm, RenderList& list)
 {
     try
     {
         lx0::ProfileSection section (profile.rasterizeList);
-        TimeSection( mStats.tmRasterizeList );
 
         for (auto pass = algorithm.mPasses.begin(); pass != algorithm.mPasses.end(); ++pass)
         {
@@ -1355,6 +1354,10 @@ RasterizerGL::rasterizeList (RenderAlgorithm& algorithm, std::vector<std::shared
 
             spFBO->activate();
 
+            //
+            // If the pass has specified the a "source" frame buffer, this implies the
+            // FBO should be blitted rather rendering an Instances.
+            //
             if (pass->spSourceFBO)
             {
                 mContext.sourceFBOTexture = pass->spSourceFBO->textureId();
@@ -1388,20 +1391,26 @@ RasterizerGL::rasterizeList (RenderAlgorithm& algorithm, std::vector<std::shared
                 }
 
                 //
-                // Render the list of Instances
+                // Render the set of lists of Instances
                 //
-                for (auto it = list.begin(); it != list.end(); ++it)
+                for (auto jt = list.begin(); jt != list.end(); ++jt)
                 {
-                    auto spInstance = *it;
-                    if (spInstance)
+                    void* pSettings  = jt->second.pSettings;    // Reserved for future use
+                    auto& listGroups = jt->second.list;
+
+                    for (auto it = listGroups.begin(); it != listGroups.end(); ++it)
                     {
-                        rasterizeItem(*pass, spInstance);
+                        auto spInstance = *it;
+                        if (spInstance)
+                        {
+                            rasterizeItem(*pass, spInstance);
+                        }
+                        else
+                        {
+                            throw lx_error_exception("Null Instance in rasterization list");
+                        }
+                        mContext.itemId ++;
                     }
-                    else
-                    {
-                        throw lx_error_exception("Null Instance in rasterization list");
-                    }
-                    mContext.itemId ++;
                 }
             }
 

@@ -258,7 +258,7 @@ namespace lx0
                 void            beginFrame      (RenderAlgorithm& algorithm);
                 void            endFrame        (void);
 
-                void            rasterizeList   (RenderAlgorithm& algorithm, std::vector<std::shared_ptr<Instance>>& list);
+                void            rasterizeList   (RenderAlgorithm& algorithm, RenderList& list);
                 void            rasterizeItem   (GlobalPass& pass, std::shared_ptr<Instance> spInstance);
                 
                 unsigned int    readPixel       (int x, int y);
@@ -309,6 +309,7 @@ namespace lx0
 
                     boost::tribool  tbFlatShading;
 
+                    unsigned int    frameStart;
                     FrameContext    frame;
 
                     class Uniforms
@@ -362,7 +363,6 @@ namespace lx0
                 {
                     lx0::Timer  tmLifetime;
                     lx0::Timer  tmScene;
-                    lx0::Timer  tmRasterizeList;
                     lx0::Timer  tmRasterizeItem;
                     lx0::Timer  tmMaterialActivate;
                     lx0::Timer  tmGeometryActivate;
