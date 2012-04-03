@@ -207,6 +207,9 @@ namespace lx0 { namespace engine { namespace dom_ns {
         , mIdCounter          (0)
         , mbShutdownRequested (false)
         , mpProfile           (new detail::Profile)
+        , mFrameDuration      (1000 / 60)
+        , mFrameStart         (0)
+        , mFrameTime          (0)
     {
         lx_init();
         lx_log("lx::core::Engine ctor");
@@ -752,7 +755,7 @@ namespace lx0 { namespace engine { namespace dom_ns {
         {
             lx0::ProfileSection section(mpProfile->runLoop);
 
-            mFrameStartMs = lx0::lx_milliseconds();
+            mLoopStartMs = lx0::lx_milliseconds();
             bool bIdle = true;
 
             //
@@ -764,6 +767,7 @@ namespace lx0 { namespace engine { namespace dom_ns {
             std::deque<Event>   queue;
             std::deque<Event>   reQueue;
             std::vector<std::pair<unsigned int, Event>> reQueueDelayed;
+            std::deque<Event>   reQueueFrame;
             {
                 boost::lock_guard<boost::mutex> lock(mEventQueueMutex);
                 queue.swap(mEventQueue);
@@ -772,7 +776,7 @@ namespace lx0 { namespace engine { namespace dom_ns {
                 auto it = mDelayedEventQueue.begin();
                 while (it != mDelayedEventQueue.end())
                 {
-                    if (it->first <= mFrameStartMs)
+                    if (it->first <= mLoopStartMs)
                     {
                         queue.push_back(it->second);
 
@@ -782,6 +786,25 @@ namespace lx0 { namespace engine { namespace dom_ns {
                     }
                     else
                         break;
+                }
+
+                //
+                // Push frame events if enough time has passed to qualify 
+                // as a new frame. Creates an "artificial" time scale of 
+                // steps of fixed duration.
+                //
+                auto delta = mLoopStartMs - mFrameStart;
+                if (delta >= mFrameDuration)
+                {
+                    mFrameStart = mLoopStartMs;
+                    mFrameTime += mFrameDuration;
+
+                    if (!mFrameEventQueue.empty())
+                    {
+                        for (auto it = mFrameEventQueue.begin(); it != mFrameEventQueue.end(); ++it)
+                            queue.push_back(*it);
+                        mFrameEventQueue.clear();
+                    }
                 }
             }
 
@@ -822,7 +845,9 @@ namespace lx0 { namespace engine { namespace dom_ns {
                 if (delay == 0)
                     reQueue.push_back(evt);
                 else if (delay > 0)
-                    reQueueDelayed.push_back( std::make_pair(mFrameStartMs + delay, evt) );
+                    reQueueDelayed.push_back( std::make_pair(mLoopStartMs + delay, evt) );
+                else if (delay == -2)
+                    reQueueFrame.push_back(evt);
             }
             
             //
@@ -832,11 +857,12 @@ namespace lx0 { namespace engine { namespace dom_ns {
                 boost::lock_guard<boost::mutex> lock(mEventQueueMutex);
                 for (auto it = reQueue.begin(); it != reQueue.end(); ++it)
                     mEventQueue.push_back(*it);
-                reQueue.clear();
 
                 for (auto it = reQueueDelayed.begin(); it != reQueueDelayed.end(); ++it)
                     mDelayedEventQueue.insert(*it);
-                reQueueDelayed.clear();
+
+                for (auto it = reQueueFrame.begin(); it != reQueueFrame.end(); ++it)
+                    mFrameEventQueue.push_back(*it);
             }
 
             {

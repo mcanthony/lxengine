@@ -279,15 +279,20 @@ namespace lx0
                 
                 bool                                mbShutdownRequested;
                 std::vector<DocumentPtr>            mDocuments;
+
                 boost::mutex                        mEventQueueMutex;
                 std::deque<Event>                   mEventQueue;
                 std::map<unsigned int,Event>        mDelayedEventQueue;
+                std::deque<Event>                   mFrameEventQueue;
+                unsigned int                        mFrameDuration;
+                unsigned int                        mFrameStart;
+                unsigned int                        mFrameTime;
                 std::vector<detail::WorkerThread*>  mWorkerThreads;
 
                 FunctionMap                         mFunctions;
 
                 lx0::uint32                         mFrameNum;
-                lx0::uint32                         mFrameStartMs;
+                lx0::uint32                         mLoopStartMs;
 
                 std::map<std::string, std::function<ViewImp*(View*)>>                   mViewImps;
                 std::map<std::string, std::function<DocumentComponent* ()>>             mDocumentComponents;

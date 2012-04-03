@@ -309,10 +309,11 @@ public:
         {
             struct PointCloud : public Coroutine
             {
-                glgeom::primitive_buffer  primitive;
+                glgeom::primitive_buffer* pPrimitive;
                 lx0::InstancePtr*         pspInstance;
             };
             auto c = new PointCloud;
+            c->pPrimitive = &mPrimitivePoints;
             c->pspInstance = &mspInstancePoints;          
 
             const size_t kCount = 10 * 1000;
@@ -324,13 +325,12 @@ public:
                 auto rollxy = lx0::random_die_f(-1, 1, 256);
                 auto rollz = lx0::random_die_f(.0, .5, 256);
                 
-                
-                c->primitive.type = "points";
-                c->primitive.vertex.positions.reserve(kCount);
+                c->pPrimitive->type = "points";
+                c->pPrimitive->vertex.positions.reserve(kCount);
                 for (size_t i = 0; i < kCount; ++i)
                 {
                     glgeom::point3f p( rollxy(), rollxy(), rollz() );                        
-                    c->primitive.vertex.positions.push_back(p);
+                    c->pPrimitive->vertex.positions.push_back(p);
                 }
             });
             // Add a dummy step to test that parallel worker tasks work correctly.
@@ -347,11 +347,37 @@ public:
             c->worker([]() { std::cout << std::endl; });
             c->main([this,c]() {
                 lx_message("addInstance...");
-                auto spGeometry = mspRasterizer->createGeometry(c->primitive);
+                auto spGeometry = mspRasterizer->createGeometry(*c->pPrimitive);
 
                 auto pInstance = new lx0::Instance;
                 pInstance->spGeometry = spGeometry;
                 c->pspInstance->reset(pInstance);
+            });
+            c->delay(1000);
+            
+            c->main([this]() {
+                auto pThis = this;
+                lx0::Engine::acquire()->sendEvent([pThis]() -> int {
+                    int count = 0;
+                    auto& positions = pThis->mPrimitivePoints.vertex.positions;
+                    for (auto it = positions.begin(); it != positions.end(); ++it)
+                    {
+                        auto& p = *it;
+                        if (p.z > 0.001f)
+                        {
+                            p.z -= 0.001f;
+                            count++;
+                        }
+                    }
+
+                    auto spGeometry = pThis->mspRasterizer->createGeometry(pThis->mPrimitivePoints);
+
+                    auto pInstance = new lx0::Instance;
+                    pInstance->spGeometry = spGeometry;
+                    pThis->mspInstancePoints.reset(pInstance);
+
+                    return (count > 0) ? -2 :  -1;
+                });
             });
 
             lx0::Engine::acquire()->sendTask(2000, c->compile());
@@ -849,6 +875,7 @@ protected:
     lx0::EventHandle              mEventHandle;
     std::vector<lx0::MaterialPtr> mMaterials;
     std::vector<GeometryData>     mGeometry;
+    glgeom::primitive_buffer      mPrimitivePoints;
     lx0::InstancePtr              mspInstancePoints;
 };
 
