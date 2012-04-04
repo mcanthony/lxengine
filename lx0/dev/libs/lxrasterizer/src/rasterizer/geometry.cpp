@@ -59,13 +59,6 @@ Geometry::activate(RasterizerGL* pRasterizer, GlobalPass& pass)
 {
     check_glerror();
 
-    switch (mType)
-    {
-    case GL_POINTS:
-        gl->pointSize(3);
-        break;
-    }
-
     //
     // Is this an indexed primitive or a list of vertices?
     //

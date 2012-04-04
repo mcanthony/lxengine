@@ -234,6 +234,14 @@ Material::_compile (RasterizerGL* pRasterizer)
             mInstructions.push_back(instr);
     });
 
+    auto gl = ::gl;
+    {
+        auto value = findSpecifiedValue("pointSize").as<float>();
+        mInstructions.push_back([gl, value]() {
+            gl->pointSize(value);
+        });
+    }
+
     mbDirty = false;
 }
 

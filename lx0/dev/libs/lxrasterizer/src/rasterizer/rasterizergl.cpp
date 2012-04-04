@@ -246,6 +246,7 @@ RasterizerGL::RasterizerGL()
 
     mStandardParameterValues["unifDiffuse"] = lx0::lxvar(0.80f, 0.75f, 0.75f);
     mStandardParameterValues["unifSpecular"] = lx0::lxvar(0.95f, 0.95f, 0.75f);
+    mStandardParameterValues["pointSize"] = 3.0f;
 }
 
 RasterizerGL::~RasterizerGL()
@@ -1491,7 +1492,8 @@ RasterizerGL::rasterizeItem (GlobalPass& pass, std::shared_ptr<Instance> spInsta
         mContext.spMaterial = acquireMaterial("DefaultLine");
         break;
     case GL_POINTS:
-        mContext.spMaterial = acquireMaterial("DefaultPoint");
+        if (!mContext.spMaterial)
+            mContext.spMaterial = acquireMaterial("DefaultPoint");
         break;
     default:
         throw lx_error_exception("Incompatible material for geometry type.  Could not determine a alternate material to use.");

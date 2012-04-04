@@ -311,12 +311,13 @@ public:
             {
                 glgeom::primitive_buffer* pPrimitive;
                 lx0::InstancePtr*         pspInstance;
+                std::vector<float>        speeds;
             };
             auto c = new PointCloud;
             c->pPrimitive = &mPrimitivePoints;
             c->pspInstance = &mspInstancePoints;          
 
-            const size_t kCount = 10 * 1000;
+            const size_t kCount = 2 * 1000;
 
             c->delay(2000);
             c->worker([c,kCount]() {
@@ -324,6 +325,10 @@ public:
 
                 auto rollxy = lx0::random_die_f(-1, 1, 256);
                 auto rollz = lx0::random_die_f(.0, .5, 256);
+
+                c->speeds.reserve(32);
+                for (size_t i = 0; i < 32; ++i)
+                    c->speeds.push_back( lx0::random_unit() / 500  + 0.001f);
                 
                 c->pPrimitive->type = "points";
                 c->pPrimitive->vertex.positions.reserve(kCount);
@@ -351,30 +356,32 @@ public:
 
                 auto pInstance = new lx0::Instance;
                 pInstance->spGeometry = spGeometry;
+                pInstance->spMaterial = mspRasterizer->acquireMaterial("PointGeneric");
                 c->pspInstance->reset(pInstance);
             });
             c->delay(1000);
             
-            c->main([this]() {
+            c->main([this,c]() {
                 auto pThis = this;
-                lx0::Engine::acquire()->sendEvent([pThis]() -> int {
+                auto speeds = c->speeds;
+                lx0::Engine::acquire()->sendEvent([pThis,speeds]() -> int {
                     int count = 0;
+                    int index = 0;
                     auto& positions = pThis->mPrimitivePoints.vertex.positions;
                     for (auto it = positions.begin(); it != positions.end(); ++it)
                     {
                         auto& p = *it;
                         if (p.z > 0.001f)
                         {
-                            p.z -= 0.001f;
+                            auto speed = speeds[index % speeds.size()];
+                            p.z -= speed;
                             count++;
                         }
+                        index++;
                     }
 
                     auto spGeometry = pThis->mspRasterizer->createGeometry(pThis->mPrimitivePoints);
-
-                    auto pInstance = new lx0::Instance;
-                    pInstance->spGeometry = spGeometry;
-                    pThis->mspInstancePoints.reset(pInstance);
+                    pThis->mspInstancePoints->spGeometry = spGeometry;
 
                     return (count > 0) ? -2 :  -1;
                 });
