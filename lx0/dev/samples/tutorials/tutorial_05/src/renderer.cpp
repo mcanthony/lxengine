@@ -443,15 +443,9 @@ public:
             algorithm.mPasses.push_back(pass);
 
             // Blit FBO 0 -> FBO 1
-            pass.spFrameBuffer = mspFBOffscreen1;
+            pass.spFrameBuffer.reset();
             pass.spSourceFBO = mspFBOffscreen0;
-            pass.spMaterial = mspRasterizer->acquireMaterial("BlitFBOGaussianPass1");
-            algorithm.mPasses.push_back(pass);
-
-            // Blit FBO 1 -> Display
-            pass.spFrameBuffer.reset();             
-            pass.spSourceFBO = mspFBOffscreen1;
-            pass.spMaterial = mspRasterizer->acquireMaterial("BlitFBOGaussianPass2");
+            pass.spMaterial = mspRasterizer->acquireMaterial("BlitFBOPixelate");
             algorithm.mPasses.push_back(pass);
             break;
 
