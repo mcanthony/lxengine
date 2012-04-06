@@ -63,7 +63,7 @@ namespace lx0
 
                 virtual     void        onKeyDown       (ViewPtr spView, int keyCode) {}
 
-                virtual     void        updateFrame     (ViewPtr spView, const KeyboardState& keyboard) {}
+                virtual     void        update     (ViewPtr spView, const KeyboardState& keyboard) {}
             };
 
             //===========================================================================//

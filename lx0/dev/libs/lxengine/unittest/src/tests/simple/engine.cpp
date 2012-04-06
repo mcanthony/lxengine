@@ -26,23 +26,23 @@ void element_flags (TestRun& r)
         spDoc->root()->append(spElem);
 
         CHECK(r, spElem->flagNeedsUpdate() == false);
-        spDoc->updateRun();
+        spDoc->update();
         CHECK(r, spElem->flagNeedsUpdate() == false);
-        spDoc->updateRun();
+        spDoc->update();
         CHECK(r, spElem->flagNeedsUpdate() == false);
 
         spElem->attachComponent(new NoUpdateComp);
         CHECK(r, spElem->flagNeedsUpdate() == false);
-        spDoc->updateRun();
+        spDoc->update();
         CHECK(r, spElem->flagNeedsUpdate() == false);
-        spDoc->updateRun();
+        spDoc->update();
         CHECK(r, spElem->flagNeedsUpdate() == false);
 
         spElem->attachComponent(new UpdateComp);
         CHECK(r, spElem->flagNeedsUpdate() == true);
-        spDoc->updateRun();
+        spDoc->update();
         CHECK(r, spElem->flagNeedsUpdate() == true);
-        spDoc->updateRun();
+        spDoc->update();
         CHECK(r, spElem->flagNeedsUpdate() == true);
 
     }

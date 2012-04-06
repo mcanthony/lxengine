@@ -190,7 +190,8 @@ namespace lx0 { namespace engine { namespace dom_ns {
         virtual     void        _onElementRemoved           (ElementPtr spElem) = 0;
 
         virtual     void        updateBegin     (void) = 0;
-        virtual     void        updateFrame     (DocumentPtr spDocument) = 0;
+        virtual     void        update          (DocumentPtr spDocument) = 0;
+        virtual     void        updateFrame     (DocumentPtr spDocument) {}        
         virtual     void        updateEnd       (void) = 0;
 
         virtual     void        addUIBinding       (UIBinding* pController) {}
@@ -207,13 +208,14 @@ namespace lx0 { namespace engine { namespace dom_ns {
     {
     public:
 
-        virtual void initialize (ViewPtr spView) {}
-        virtual void shutdown   (View* pView) {}
+        virtual void initialize     (ViewPtr spView) {}
+        virtual void shutdown       (View* pView) {}
 
-        virtual void render     (void) {}
-        virtual void update     (ViewPtr spView) {}
+        virtual void render         (void) {}
+        virtual void update         (ViewPtr spView) {}
+        virtual void updateFrame    (ViewPtr spView) {}
 
-        virtual void handleEvent (std::string evt, lx0::lxvar params) {}
+        virtual void handleEvent    (std::string evt, lx0::lxvar params) {}
     };
 
 
@@ -250,7 +252,8 @@ namespace lx0 { namespace engine { namespace dom_ns {
         void        swapBuffers     (void);
 
         void        updateBegin     (void);
-        void        updateFrame     (void);
+        void        update          (void);
+        void        updateFrame     (DocumentPtr spDocument);
         void        updateEnd       (void);
 
         void        sendEvent       (std::string evt) { sendEvent(evt, lxvar()); }

@@ -277,7 +277,7 @@ namespace
                         });   
                     }
 
-                    virtual void updateFrame (lx0::ViewPtr spView, const lx0::KeyboardState& keyboard)
+                    virtual void update (lx0::ViewPtr spView, const lx0::KeyboardState& keyboard)
                     {
                         auto spJavascriptDoc = spView->document()->getComponent<lx0::IJavascriptDoc>();
                         spJavascriptDoc->runInContext([&]() {

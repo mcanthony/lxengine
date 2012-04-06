@@ -166,9 +166,20 @@ namespace lx0 { namespace engine { namespace dom_ns {
     }
 
     void
-    View::updateFrame()
+    View::update()
     {
-        mspImp->updateFrame(mpDocument->shared_from_this());
+        mspImp->update(mpDocument->shared_from_this());
+    }
+
+    void
+    View::updateFrame (DocumentPtr spDocument)
+    {
+        mspImp->updateFrame(spDocument);
+
+        auto spView = shared_from_this();
+        foreachComponent([spView](View::ComponentPtr spComp) {
+            spComp->updateFrame(spView);
+        });
     }
 
     bool

@@ -52,7 +52,7 @@ public:
     virtual     void        _onElementRemoved           (ElementPtr spElem) {}
 
     virtual     void        updateBegin     (void) {}
-    virtual     void        updateFrame     (DocumentPtr spDocument);
+    virtual     void        update     (DocumentPtr spDocument);
     virtual     void        updateEnd       (void) {}
 
     virtual     void        handleEvent     (std::string evt, lx0::lxvar params);
@@ -139,12 +139,12 @@ LxCanvasImp::height (void) const
 }
 
 void 
-LxCanvasImp::updateFrame (DocumentPtr spDocument) 
+LxCanvasImp::update (DocumentPtr spDocument) 
 {
     lx_check_error(mpHostView, "Host view not set!");
 
     for (auto it = mBindings.begin(); it != mBindings.end(); ++it)
-        (*it)->updateFrame( mpHostView->shared_from_this(), mspWin->keyboard() );
+        (*it)->update( mpHostView->shared_from_this(), mspWin->keyboard() );
 
     mpHostView->foreachComponent([this](View::ComponentPtr spComp) {
         spComp->update(mpHostView->shared_from_this());

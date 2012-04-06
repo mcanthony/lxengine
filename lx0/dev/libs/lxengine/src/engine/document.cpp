@@ -43,7 +43,7 @@ namespace {
         Profile() { ::memset(this, 0, sizeof(*this)); }
 
         int _inited;
-        int updateRun;
+        int update;
         
         void initialize()
         {
@@ -51,7 +51,7 @@ namespace {
             {
                 _inited = 1;
                 auto spEngine = lx0::Engine::acquire();
-                spEngine->registerProfileCounter("Document updateRun", &updateRun);
+                spEngine->registerProfileCounter("Document update", &update);
             }
         }
     } profile;
@@ -75,7 +75,7 @@ namespace lx0 { namespace engine { namespace dom_ns {
 
     Document::~Document()
     {
-        m_views.clear();
+        mViews.clear();
         m_spRoot->removeAll();
         _clearComponents();
         m_spRoot->notifyRemoved(this);
@@ -103,7 +103,7 @@ namespace lx0 { namespace engine { namespace dom_ns {
     {
         ViewPtr spView( new View(type, this) );
 
-        m_views.insert(std::make_pair(name, spView));
+        mViews.insert(std::make_pair(name, spView));
 
         // Forward the events along so they can be caught at any level
         spView->slotKeyDown += [&](KeyEvent& e) { this->slotKeyDown(e); };
@@ -132,10 +132,10 @@ namespace lx0 { namespace engine { namespace dom_ns {
     void
     Document::destroyView (std::string name)
     {
-        auto it = m_views.find(name);
-        if (it != m_views.end())
+        auto it = mViews.find(name);
+        if (it != mViews.end())
         {
-            m_views.erase(it);
+            mViews.erase(it);
         }
         else
             throw lx_error_exception("Could name find view '%s' on document.", name.c_str());
@@ -147,7 +147,7 @@ namespace lx0 { namespace engine { namespace dom_ns {
     ViewPtr
     Document::view (int index)
     {
-        auto it = m_views.begin();
+        auto it = mViews.begin();
         while (index--)
             it++;
 
@@ -299,21 +299,21 @@ namespace lx0 { namespace engine { namespace dom_ns {
     void            
     Document::beginRun ()
     {
-        for (auto it = m_views.begin(); it != m_views.end(); ++it)
+        for (auto it = mViews.begin(); it != mViews.end(); ++it)
             it->second->updateBegin();
     }
 
     void            
     Document::endRun ()
     {
-        for (auto it = m_views.begin(); it != m_views.end(); ++it)
+        for (auto it = mViews.begin(); it != mViews.end(); ++it)
             it->second->updateEnd();
     }
 
     void            
-    Document::updateRun ()
+    Document::update ()
     {
-        lx0::ProfileSection section(profile.updateRun);
+        lx0::ProfileSection section(profile.update);
 
         _foreach ([&](ComponentPtr it) {                        
             it->onUpdate(shared_from_this());
@@ -328,8 +328,19 @@ namespace lx0 { namespace engine { namespace dom_ns {
         }
         
 
-        for (auto it = m_views.begin(); it != m_views.end(); ++it)
-            it->second->updateFrame();
+        for (auto it = mViews.begin(); it != mViews.end(); ++it)
+            it->second->update();
+    }
+
+    void
+    Document::updateFrame (void)
+    {
+        if (!mViews.empty())
+        {
+            auto spThis = shared_from_this();
+            for (auto it = mViews.begin(); it != mViews.end(); ++it)
+                it->second->updateFrame(spThis);
+        }
     }
 
     void 
@@ -397,7 +408,7 @@ namespace lx0 { namespace engine { namespace dom_ns {
         for (auto it = mControllers.begin(); it != mControllers.end(); ++it)
             (*it)->handleEvent(evt, params);
 
-        for (auto it = m_views.begin(); it != m_views.end(); ++it)
+        for (auto it = mViews.begin(); it != mViews.end(); ++it)
             (*it).second->sendEvent(evt, params);
     }
 

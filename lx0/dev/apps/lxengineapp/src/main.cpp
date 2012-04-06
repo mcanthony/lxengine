@@ -117,6 +117,13 @@ main (int argc, char** argv)
             std::string mainScript = manifest["mainScript"].as<std::string>();
 
             //
+            // LxEngine has a notion of fixed-duration frames.  Use the frameRate option
+            // to set the duration of the frames.
+            //
+            if (manifest["frameRate"].is_defined())
+                spEngine->setFrameDuration(1000 / manifest["frameRate"].as<int>());
+
+            //
             // Load specified plug-ins
             //
             for (auto it = manifest["plugins"].begin(); it != manifest["plugins"].end(); ++it)

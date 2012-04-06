@@ -755,6 +755,7 @@ namespace lx0 { namespace engine { namespace dom_ns {
         {
             lx0::ProfileSection section(mpProfile->runLoop);
 
+            bool bNewFrame = false;
             bool bIdle = true;
 
             mUpdateStartMs = lx0::lx_milliseconds();
@@ -762,6 +763,7 @@ namespace lx0 { namespace engine { namespace dom_ns {
             auto loopDelta = mUpdateStartMs - mFrameStart;
             if (loopDelta >= mFrameDuration)
             {
+                bNewFrame = true;
                 mFrameStart = mUpdateStartMs;
                 mFrameTime += mFrameDuration;
                 mFrameNum++;
@@ -781,13 +783,22 @@ namespace lx0 { namespace engine { namespace dom_ns {
             if (bIdle)
                 slotIdle();
 
+            //
+            // Only call the frame updates if a full time-slice has passed
+            //
+            if (bNewFrame)
+            {
+                for (auto it = mDocuments.begin(); it != mDocuments.end(); ++it)
+                    (*it)->updateFrame();
+            }
+
             ///@todo Devise a better way to hand time-slices from the main loop to the individual documents
             /// for updates.  Also consider multi-threading.
             {
                 lx0::ProfileSection section(mpProfile->runUpdate);
 
                 for(auto it = mDocuments.begin(); it != mDocuments.end(); ++it)
-                    (*it)->updateRun();
+                    (*it)->update();
             }
 
             //

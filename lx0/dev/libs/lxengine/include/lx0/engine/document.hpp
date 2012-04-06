@@ -125,7 +125,8 @@ namespace lx0
         void                    iterateElements2    (std::function<void (ElementPtr)> f);
 
         void                    beginRun        (void);
-        void                    updateRun       (void);
+        void                    update       (void);
+        void                    updateFrame     (void);
         void                    endRun          (void);
 
         void                    sendEvent       (std::string evt, lx0::lxvar params = lxvar());
@@ -154,7 +155,7 @@ namespace lx0
         lx0::uint32                     m_documentId;
         TrWList                         m_openTransactions;     //!< Not currently implemented
         ElementPtr                      m_spRoot;
-        std::map<std::string, ViewPtr>  m_views;
+        std::map<std::string, ViewPtr>  mViews;
         std::vector<lx0::ControllerPtr> mControllers;
 
         std::set<Element*>              mElementsWithUpdate;

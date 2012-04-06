@@ -386,7 +386,7 @@ namespace {
         void        _onElementRemoved           (ElementPtr spElem);
 
         virtual void    updateBegin     (void);
-        virtual void    updateFrame     (DocumentPtr spDocument);
+        virtual void    update     (DocumentPtr spDocument);
         virtual void    updateEnd       (void);
 
     protected:
@@ -790,7 +790,7 @@ namespace {
     }
 
     void
-    OgreImp::updateFrame(DocumentPtr spDocument)
+    OgreImp::update(DocumentPtr spDocument)
     {
 		// Pump messages in all registered RenderWindow windows
 		Ogre::WindowEventUtilities::messagePump();

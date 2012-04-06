@@ -529,7 +529,7 @@ public:
         incremental data updates.
      */
     virtual void 
-    update (lx0::ViewPtr spView) 
+    updateFrame (lx0::ViewPtr spView) 
     {
         lx0::ProfileSection section(profile.update);
 

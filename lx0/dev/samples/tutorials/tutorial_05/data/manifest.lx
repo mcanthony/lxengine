@@ -3,4 +3,5 @@
         "tutorial_05",
     ],
     mainScript : "main.js",
+    frameRate : 30,
 }

@@ -189,6 +189,7 @@ namespace lx0
 
                 lxvar&              globals             (void)                      { return mGlobals; }
                 Environment&        environment         (void)                      { return mEnvironment; }
+                void                setFrameDuration    (unsigned int ms)           { mFrameDuration = ms; }
 
                 DocumentPtr         createDocument      (void);
                 DocumentPtr         loadDocument        (std::string filename);
