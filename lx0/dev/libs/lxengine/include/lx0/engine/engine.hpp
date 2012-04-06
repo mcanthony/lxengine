@@ -46,8 +46,10 @@
 #include <lx0/core/init/version.hpp>
 #include <lx0/engine/dom_base.hpp>
 #include <lx0/engine/profilemonitor.hpp>
+#include <lx0/engine/detail/eventqueue.hpp>
 #include <lx0/core/lxvar/lxvar.hpp>
 #include <lx0/core/log/log.hpp>
+
 
 namespace lx0 
 { 
@@ -251,13 +253,7 @@ namespace lx0
 
                 typedef std::map<std::string,std::function<void(lx0::lxvar)>> FunctionMap;
 
-                struct Event
-                {
-                    std::string                         message;
-                    std::function<void()>               task;
-                    std::function<int()>                func;
-                    std::weak_ptr<std::function<int()>> wpFunc;
-                };
+                typedef lx0::engine_ns::detail::Event Event;
 
                 Engine();
                 ~Engine(); 
@@ -280,19 +276,18 @@ namespace lx0
                 bool                                mbShutdownRequested;
                 std::vector<DocumentPtr>            mDocuments;
 
-                boost::mutex                        mEventQueueMutex;
-                std::deque<Event>                   mEventQueue;
-                std::map<unsigned int,Event>        mDelayedEventQueue;
-                std::deque<Event>                   mFrameEventQueue;
+                lx0::engine_ns::detail::EventQueue  mEventQueue;
+                lx0::uint32                         mUpdateNum;
+                lx0::uint32                         mUpdateStartMs;
                 unsigned int                        mFrameDuration;
                 unsigned int                        mFrameStart;
                 unsigned int                        mFrameTime;
+                lx0::uint32                         mFrameNum;
                 std::vector<detail::WorkerThread*>  mWorkerThreads;
 
                 FunctionMap                         mFunctions;
 
-                lx0::uint32                         mFrameNum;
-                lx0::uint32                         mLoopStartMs;
+
 
                 std::map<std::string, std::function<ViewImp*(View*)>>                   mViewImps;
                 std::map<std::string, std::function<DocumentComponent* ()>>             mDocumentComponents;

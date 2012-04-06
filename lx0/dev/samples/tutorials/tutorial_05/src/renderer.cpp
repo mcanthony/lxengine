@@ -111,6 +111,7 @@ class Coroutine
 public:
     void    delay   (unsigned int delay)                          { mSteps.push_back(Step(delay, [](){})); }
     void    main    (std::function<void()> f)                     { mSteps.push_back(Step(0, f)); }
+    void    main_ret(std::function<int()> f)                      { mSteps.push_back(Step(f)); }
     void    main    (unsigned int delay, std::function<void()> f) { mSteps.push_back(Step(delay, f)); }
     void    worker  (std::function<void()> f)                     { mSteps.push_back(Step(-1, f)); }
 
@@ -134,9 +135,11 @@ protected:
     {
         Step () : delay (0) {}
         Step (unsigned int d, std::function<void()> f) : delay(d), func(f) {}
+        Step (std::function<int()> f) : delay(0), func2(f) {}
 
         unsigned int                        delay;
         std::function<void()>               func;
+        std::function<int()>                func2;
         std::vector<std::function<void()>>  parallel;
     };
     typedef std::vector<Step> StepList;
@@ -162,12 +165,12 @@ protected:
         if (it != c.end())
         {
             std::function<void()> g = _chain(c, it + 1);
-
+            
             auto pEngine = lx0::Engine::acquire().get();     
-            auto f = it->func;
 
-            if (f)
+            if (it->func)
             {
+                auto f = it->func;
                 auto i = it->delay; 
                 auto h = [f,g]() { f(); g(); };
                               
@@ -178,7 +181,18 @@ protected:
                 else
                     return [=]() { pEngine->sendWorkerTask(h); };
             }
-            else
+            else if (it->func2)
+            {
+                auto f = it->func2;
+                auto h = [f,g]() -> int { 
+                    int ret = f();
+                    if (ret == 0)
+                        g();
+                    return ret;
+                };
+                return [=]() { pEngine->sendEvent(h); };
+            }
+            else if (!it->parallel.empty())
             {
                 //
                 // A set of tasks to run in parallel
@@ -210,6 +224,8 @@ protected:
                         pEngine->sendWorkerTask(*it);
                 };
             }
+            else
+                throw lx_error_exception("Empty event detected");
         }
         else
             return [](){};
@@ -306,6 +322,10 @@ public:
         // alternate between the main and worker threads as well as pausing
         // without spinning any cycles.
         //
+        // This experimental code to find the best way to represent an
+        // animated entity composed of a sequence of time-dependent events
+        // that can be processed in multiple threads.
+        //
         {
             struct PointCloud : public Coroutine
             {
@@ -361,33 +381,29 @@ public:
             });
             c->delay(1000);
             
-            c->main([this,c]() {
-                auto pThis = this;
-                auto speeds = c->speeds;
-                lx0::Engine::acquire()->sendEvent([pThis,speeds]() -> int {
-                    int count = 0;
-                    int index = 0;
-                    auto& positions = pThis->mPrimitivePoints.vertex.positions;
-                    for (auto it = positions.begin(); it != positions.end(); ++it)
+            c->main_ret([this,c]() -> int {
+                int count = 0;
+                int index = 0;
+                auto& positions = mPrimitivePoints.vertex.positions;
+                for (auto it = positions.begin(); it != positions.end(); ++it)
+                {
+                    auto& p = *it;
+                    if (p.z > 0.001f)
                     {
-                        auto& p = *it;
-                        if (p.z > 0.001f)
-                        {
-                            auto speed = speeds[index % speeds.size()];
-                            p.z -= speed;
-                            count++;
-                        }
-                        index++;
+                        auto speed = c->speeds[index % c->speeds.size()];
+                        p.z -= speed;
+                        count++;
                     }
+                    index++;
+                }
 
-                    auto spGeometry = pThis->mspRasterizer->createGeometry(pThis->mPrimitivePoints);
-                    pThis->mspInstancePoints->spGeometry = spGeometry;
+                auto spGeometry = mspRasterizer->createGeometry(mPrimitivePoints);
+                mspInstancePoints->spGeometry = spGeometry;
 
-                    return (count > 0) ? -2 :  -1;
-                });
+                return (count > 0) ? -2 :  -1;
             });
 
-            lx0::Engine::acquire()->sendTask(2000, c->compile());
+            lx0::Engine::acquire()->sendTask(1000, c->compile());
         }
     }
 
@@ -834,12 +850,12 @@ protected:
             if (!(alpha >= 1.0))
             {
                 zoom = glm::mix(startValue, endValue, glgeom::sinusodial_smooth(alpha));
-                return 0;
+                return 1;
             }
             else
             {
                 zoom = endValue;
-                return -1;
+                return 0;
             }
         };
             

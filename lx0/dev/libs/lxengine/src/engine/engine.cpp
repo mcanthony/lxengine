@@ -652,8 +652,7 @@ namespace lx0 { namespace engine { namespace dom_ns {
         Event evt;
         evt.message = message;
 
-        boost::lock_guard<boost::mutex> lock(mEventQueueMutex);
-        mEventQueue.push_back(evt);
+        mEventQueue.enqueue(0, evt);
     }
 
     /*!
@@ -672,21 +671,23 @@ namespace lx0 { namespace engine { namespace dom_ns {
         Event evt;
         evt.task = f;
 
-        boost::lock_guard<boost::mutex> lock(mEventQueueMutex);
-        mEventQueue.push_back(evt);
+        mEventQueue.enqueue(0, evt);
     }
 
     void   
 	Engine::sendTask (unsigned int delay, std::function<void()> f)
     {
-        unsigned int time = delay + lx0::lx_milliseconds();
+        unsigned int time;
+        if (delay > 1)
+            time = delay + lx0::lx_milliseconds();
+        else if (delay < -1)
+            time = -(mFrameTime + -delay);
 
         Event evt;
         evt.task = f;
-        
-        boost::lock_guard<boost::mutex> lock(mEventQueueMutex);
-        mDelayedEventQueue.insert( std::make_pair(time, evt) );
+        mEventQueue.enqueue(time, evt);
     }
+
 
     void   
 	Engine::sendEvent (std::function<int()> f)
@@ -694,8 +695,7 @@ namespace lx0 { namespace engine { namespace dom_ns {
         Event evt;
         evt.func = f;
 
-        boost::lock_guard<boost::mutex> lock(mEventQueueMutex);
-        mEventQueue.push_back(evt);
+        mEventQueue.enqueue(0, evt);
     }
 
     void
@@ -707,8 +707,7 @@ namespace lx0 { namespace engine { namespace dom_ns {
         Event evt;
         evt.wpFunc = spHandle;
 
-        boost::lock_guard<boost::mutex> lock(mEventQueueMutex);
-        mEventQueue.push_back(evt);
+        mEventQueue.enqueue(0, evt);
     }
 
     void 
@@ -733,6 +732,7 @@ namespace lx0 { namespace engine { namespace dom_ns {
 
         slotRunBegin();
 
+        mUpdateNum = 0;
         mFrameNum = 0;
 
         _lx_reposition_console();
@@ -755,115 +755,23 @@ namespace lx0 { namespace engine { namespace dom_ns {
         {
             lx0::ProfileSection section(mpProfile->runLoop);
 
-            mLoopStartMs = lx0::lx_milliseconds();
             bool bIdle = true;
 
-            //
-            // Copy the current queue contents to a local queue in case other
-            // threads may be adding to the queue while the current contents
-            // are being processed.  Use a secondary queue for events that want
-            // to be run again in the next frame as well.
-            //
-            std::deque<Event>   queue;
-            std::deque<Event>   reQueue;
-            std::vector<std::pair<unsigned int, Event>> reQueueDelayed;
-            std::deque<Event>   reQueueFrame;
+            mUpdateStartMs = lx0::lx_milliseconds();
+
+            auto loopDelta = mUpdateStartMs - mFrameStart;
+            if (loopDelta >= mFrameDuration)
             {
-                boost::lock_guard<boost::mutex> lock(mEventQueueMutex);
-                queue.swap(mEventQueue);
-
-                // Push any pending events into the active queue                
-                auto it = mDelayedEventQueue.begin();
-                while (it != mDelayedEventQueue.end())
-                {
-                    if (it->first <= mLoopStartMs)
-                    {
-                        queue.push_back(it->second);
-
-                        // Note: very subtle use of post-increment here.  Erasing the iterator
-                        // invalidates it, therefore increment *before* erasing.
-                        mDelayedEventQueue.erase(it++);
-                    }
-                    else
-                        break;
-                }
-
-                //
-                // Push frame events if enough time has passed to qualify 
-                // as a new frame. Creates an "artificial" time scale of 
-                // steps of fixed duration.
-                //
-                auto delta = mLoopStartMs - mFrameStart;
-                if (delta >= mFrameDuration)
-                {
-                    mFrameStart = mLoopStartMs;
-                    mFrameTime += mFrameDuration;
-
-                    if (!mFrameEventQueue.empty())
-                    {
-                        for (auto it = mFrameEventQueue.begin(); it != mFrameEventQueue.end(); ++it)
-                            queue.push_back(*it);
-                        mFrameEventQueue.clear();
-                    }
-                }
+                mFrameStart = mUpdateStartMs;
+                mFrameTime += mFrameDuration;
+                mFrameNum++;
             }
 
-            while (!queue.empty())
-            {
+            int ret = mEventQueue.run(mUpdateStartMs, mFrameTime);
+            if (ret < 0)
+                bDone = true;
+            else if (ret > 0)
                 bIdle = false;
-
-                Event evt = queue.front();
-                queue.pop_front();
-
-                int delay = -1;
-                std::shared_ptr<std::function<int()>> spFunc;
-
-                if (evt.message == "quit")
-                {
-                    bDone = true;
-                }
-                else if (evt.task)
-                {
-                    evt.task();
-                }
-                else if (evt.func)
-                {
-                    delay = evt.func();
-                }
-                else if (spFunc = evt.wpFunc.lock())
-                {
-                    //
-                    // Cancel-able events use a weak_ptr to allow the event to expire:
-                    // the caller needs to maintain the shared_ptr as long as they want
-                    // the event to exist; if the reference to that event is released,
-                    // then the weak_ptr will expire and the event will not be processed
-                    // by the engine.
-                    //
-                    delay = (*spFunc)();
-                }
-
-                if (delay == 0)
-                    reQueue.push_back(evt);
-                else if (delay > 0)
-                    reQueueDelayed.push_back( std::make_pair(mLoopStartMs + delay, evt) );
-                else if (delay == -2)
-                    reQueueFrame.push_back(evt);
-            }
-            
-            //
-            // Fill the event queue with all events that should be repeated
-            //
-            {
-                boost::lock_guard<boost::mutex> lock(mEventQueueMutex);
-                for (auto it = reQueue.begin(); it != reQueue.end(); ++it)
-                    mEventQueue.push_back(*it);
-
-                for (auto it = reQueueDelayed.begin(); it != reQueueDelayed.end(); ++it)
-                    mDelayedEventQueue.insert(*it);
-
-                for (auto it = reQueueFrame.begin(); it != reQueueFrame.end(); ++it)
-                    mFrameEventQueue.push_back(*it);
-            }
 
             {
                 lx0::ProfileSection section(mpProfile->runPlatformMessages);
@@ -887,7 +795,7 @@ namespace lx0 { namespace engine { namespace dom_ns {
             // Views may have different notions is there is not a 1:1 on the redraw
             // and main loop.
             //
-            mFrameNum++;
+            mUpdateNum++;
 
         } while (!bDone);
 
