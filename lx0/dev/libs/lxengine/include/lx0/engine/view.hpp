@@ -37,7 +37,7 @@
 #include <lx0/engine/dom_base.hpp>
 #include <lx0/engine/document.hpp>
 
-namespace lx0 { namespace engine { namespace dom_ns {
+namespace lx0 { namespace engine_ns {
 
     class KeyEvent;
 
@@ -189,10 +189,10 @@ namespace lx0 { namespace engine { namespace dom_ns {
         virtual     void        _onElementAdded             (ElementPtr spElem) = 0;
         virtual     void        _onElementRemoved           (ElementPtr spElem) = 0;
 
-        virtual     void        updateBegin     (void) = 0;
+        virtual     void        runBegin     (void) = 0;
         virtual     void        update          (DocumentPtr spDocument) = 0;
         virtual     void        updateFrame     (DocumentPtr spDocument) {}        
-        virtual     void        updateEnd       (void) = 0;
+        virtual     void        runEnd       (void) = 0;
 
         virtual     void        addUIBinding       (UIBinding* pController) {}
 
@@ -251,10 +251,10 @@ namespace lx0 { namespace engine { namespace dom_ns {
         void        show            (lxvar options);
         void        swapBuffers     (void);
 
-        void        updateBegin     (void);
+        void        runBegin     (void);
         void        update          (void);
         void        updateFrame     (DocumentPtr spDocument);
-        void        updateEnd       (void);
+        void        runEnd       (void);
 
         void        sendEvent       (std::string evt) { sendEvent(evt, lxvar()); }
         void        sendEvent       (std::string evt, lx0::lxvar params);
@@ -307,7 +307,7 @@ namespace lx0 { namespace engine { namespace dom_ns {
         int mOnElementRemovedId;
         int mOnElementAddedId;
     };
-}}
+}
 
-using namespace lx0::engine::dom_ns;
+using namespace lx0::engine_ns;
 }

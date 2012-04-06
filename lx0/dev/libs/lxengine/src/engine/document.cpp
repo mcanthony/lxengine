@@ -57,7 +57,7 @@ namespace {
     } profile;
 }
 
-namespace lx0 { namespace engine { namespace dom_ns {
+namespace lx0 { namespace engine_ns {
 
     Document::Document()
         : m_spRoot     ( new Element )
@@ -300,14 +300,14 @@ namespace lx0 { namespace engine { namespace dom_ns {
     Document::beginRun ()
     {
         for (auto it = mViews.begin(); it != mViews.end(); ++it)
-            it->second->updateBegin();
+            it->second->runBegin();
     }
 
     void            
     Document::endRun ()
     {
         for (auto it = mViews.begin(); it != mViews.end(); ++it)
-            it->second->updateEnd();
+            it->second->runEnd();
     }
 
     void            
@@ -418,4 +418,4 @@ namespace lx0 { namespace engine { namespace dom_ns {
         mControllers.push_back( ControllerPtr(pController) );
     }
 
-}}}
+}}

@@ -44,7 +44,7 @@
 // Internal headers
 #include "view_input.hpp"
 
-namespace lx0 { namespace engine { namespace dom_ns {
+namespace lx0 { namespace engine_ns {
 
 
     View::View (std::string impType, Document* pDocument)
@@ -134,15 +134,15 @@ namespace lx0 { namespace engine { namespace dom_ns {
     }
 
     void
-    View::updateBegin()
+    View::runBegin()
     {
-        mspImp->updateBegin();
+        mspImp->runBegin();
     }
 
     void
-    View::updateEnd()
+    View::runEnd()
     {
-        mspImp->updateEnd();
+        mspImp->runEnd();
     }
 
     void        
@@ -232,4 +232,4 @@ namespace lx0 { namespace engine { namespace dom_ns {
             bDown[i] = false;
     }
 
-}}}
+}}

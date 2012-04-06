@@ -51,9 +51,9 @@ public:
     virtual     void        _onElementAdded             (ElementPtr spElem) {}
     virtual     void        _onElementRemoved           (ElementPtr spElem) {}
 
-    virtual     void        updateBegin     (void) {}
+    virtual     void        runBegin     (void) {}
     virtual     void        update     (DocumentPtr spDocument);
-    virtual     void        updateEnd       (void) {}
+    virtual     void        runEnd       (void) {}
 
     virtual     void        handleEvent     (std::string evt, lx0::lxvar params);
 

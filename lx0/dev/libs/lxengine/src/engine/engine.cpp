@@ -49,7 +49,7 @@ using namespace lx0::util;
 //   I M P L E M E N T A T I O N 
 //===========================================================================//
 
-namespace lx0 { namespace engine { namespace dom_ns {
+namespace lx0 { namespace engine_ns { 
 
 
     namespace detail
@@ -677,11 +677,11 @@ namespace lx0 { namespace engine { namespace dom_ns {
     void   
 	Engine::sendTask (unsigned int delay, std::function<void()> f)
     {
-        unsigned int time;
+        int time;
         if (delay > 1)
             time = delay + lx0::lx_milliseconds();
         else if (delay < -1)
-            time = -(mFrameTime + -delay);
+            time = -(int(mFrameTime) + -int(delay));
 
         Event evt;
         evt.task = f;
@@ -713,6 +713,10 @@ namespace lx0 { namespace engine { namespace dom_ns {
     void 
     Engine::sendWorkerTask (std::function<void()> f)
     {
+        //
+        // Not a very intelligent scheduler, but for now this will
+        // do.
+        //
         static lx0::uint32 index = 0;
         
         mWorkerThreads[index]->addTask(f);
@@ -897,4 +901,4 @@ namespace lx0 { namespace engine { namespace dom_ns {
         mElementComponents[tag].push_back(std::make_pair(name, ctor));
     }
 
-}}}
+}}

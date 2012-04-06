@@ -33,10 +33,10 @@
 #include <lx0/engine/object.hpp>
 #include <glgeom/glgeom.hpp>
 
-namespace lx0 { namespace engine { namespace dom_ns {
+namespace lx0 { namespace engine_ns {
 
-    lx0::engine::dom_ns::Mesh*     load_blend (std::string name);
-    lx0::engine::dom_ns::Mesh*     load_lxson (lx0::lxvar& v);
+    lx0::engine_ns::Mesh*     load_blend (std::string name);
+    lx0::engine_ns::Mesh*     load_lxson (lx0::lxvar& v);
 
     //===========================================================================//
     //!
@@ -76,7 +76,7 @@ namespace lx0 { namespace engine { namespace dom_ns {
         std::vector<Quad>   mFaces;
     };
 
-}}
-using namespace lx0::engine::dom_ns;
+}
+using namespace lx0::engine_ns;
 }
 

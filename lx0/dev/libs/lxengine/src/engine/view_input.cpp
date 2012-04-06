@@ -51,7 +51,7 @@ using namespace lx0::util;
 //   I M P L E M E N T A T I O N 
 //===========================================================================//
 
-namespace lx0 { namespace engine { namespace dom_ns { namespace detail {
+namespace lx0 { namespace engine_ns { namespace detail {
 
     using OIS::KeyEvent;
 
@@ -203,4 +203,4 @@ namespace lx0 { namespace engine { namespace dom_ns { namespace detail {
         return mspImp->isKeyDown(keyCode);
     }
 
-}}}}
+}}}

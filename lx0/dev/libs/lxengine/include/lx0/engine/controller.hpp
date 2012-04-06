@@ -33,10 +33,8 @@
 
 namespace lx0 
 { 
-    namespace engine 
+    namespace engine_ns
     { 
-        namespace dom_ns 
-        {
             //===========================================================================//
             //! Maps user-interface / device events into high-level application events
             /*!
@@ -87,6 +85,5 @@ namespace lx0
                 virtual     void        handleEvent     (std::string evt, lx0::lxvar params) {}
             };
         }
-    }
-    using namespace lx0::engine::dom_ns;
+    using namespace lx0::engine_ns;
 }

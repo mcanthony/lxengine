@@ -60,7 +60,7 @@ namespace {
 //   I M P L E M E N T A T I O N 
 //===========================================================================//
 
-namespace lx0 { namespace engine { namespace dom_ns {
+namespace lx0 { namespace engine_ns {
 
     
     ElementPtr  
@@ -219,5 +219,5 @@ namespace lx0 { namespace engine { namespace dom_ns {
         return spRoot;
     }
  
-}}}
+}}
 

@@ -46,10 +46,8 @@
 
 namespace lx0 
 { 
-    namespace engine 
+    namespace engine_ns
     { 
-        namespace dom_ns 
-        {
 
     //===========================================================================//
     //!
@@ -162,6 +160,6 @@ namespace lx0
     };
 
         }
-    }
-    using namespace lx0::engine::dom_ns;
+    
+    using namespace lx0::engine_ns;
 }

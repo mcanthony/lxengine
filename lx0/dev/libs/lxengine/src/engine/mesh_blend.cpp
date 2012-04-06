@@ -41,7 +41,7 @@
 using namespace lx0;
 using namespace lx0::core;
 
-namespace lx0 { namespace engine { namespace dom_ns {
+namespace lx0 { namespace engine_ns {
 
     Mesh*
     load_blend (std::string filename)
@@ -73,4 +73,4 @@ namespace lx0 { namespace engine { namespace dom_ns {
         return pMesh;
     }
 
-}}}
+}}

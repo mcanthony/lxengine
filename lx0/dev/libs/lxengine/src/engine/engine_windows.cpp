@@ -34,7 +34,7 @@
 
 #include <lx0/engine/engine.hpp>
 
-using namespace lx0::engine::dom_ns;
+using namespace lx0::engine_ns;
 
 void
 Engine::_handlePlatformMessages (bool& bDone, bool& bIdle)

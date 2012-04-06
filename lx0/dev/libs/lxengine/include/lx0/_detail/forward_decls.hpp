@@ -88,31 +88,28 @@ namespace lx0
     {
     }
 
-    namespace engine
+    namespace engine_ns
     {
-        namespace dom_ns
-        {
-            _LX_FORWARD_DECL_PTRS(Element);
-            _LX_FORWARD_DECL_PTRS(Transaction);
-            _LX_FORWARD_DECL_PTRS(Document);
-            _LX_FORWARD_DECL_PTRS(Space);
-            _LX_FORWARD_DECL_PTRS(Engine);
-            _LX_FORWARD_DECL_PTRS(View);
-            _LX_FORWARD_DECL_PTRS(UIBinding);
-            _LX_FORWARD_DECL_PTRS(Controller);
-            _LX_FORWARD_DECL_PTRS(Object);
-            _LX_FORWARD_DECL_PTRS(LxVarObject);
+        _LX_FORWARD_DECL_PTRS(Element);
+        _LX_FORWARD_DECL_PTRS(Transaction);
+        _LX_FORWARD_DECL_PTRS(Document);
+        _LX_FORWARD_DECL_PTRS(Space);
+        _LX_FORWARD_DECL_PTRS(Engine);
+        _LX_FORWARD_DECL_PTRS(View);
+        _LX_FORWARD_DECL_PTRS(UIBinding);
+        _LX_FORWARD_DECL_PTRS(Controller);
+        _LX_FORWARD_DECL_PTRS(Object);
+        _LX_FORWARD_DECL_PTRS(LxVarObject);
 
-            _LX_FORWARD_DECL_LXPTRS(Mesh);
+        _LX_FORWARD_DECL_LXPTRS(Mesh);
 
-            class DocumentComponent;
-            class ElementComponent;
-            class ViewComponent;
-            class ViewImp;
-        }
+        class DocumentComponent;
+        class ElementComponent;
+        class ViewComponent;
+        class ViewImp;
     }
     
-    using namespace lx0::engine::dom_ns;
+    using namespace lx0::engine_ns;
 }
 
 

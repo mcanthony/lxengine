@@ -38,26 +38,23 @@
 
 namespace lx0 
 { 
-    namespace engine 
+    namespace engine_ns
     { 
-        namespace dom_ns 
+        class Transaction
         {
-            class Transaction
-            {
-            public:
-                void        add     (ElementPtr spParent, ElementPtr spChild);
-                ElementPtr  write   (ElementCPtr spElement);
+        public:
+            void        add     (ElementPtr spParent, ElementPtr spChild);
+            ElementPtr  write   (ElementCPtr spElement);
 
-                bool submit();
-                void revert();
+            bool submit();
+            void revert();
 
-            protected:
-                typedef std::vector<std::function<bool()>>  Operations;
+        protected:
+            typedef std::vector<std::function<bool()>>  Operations;
 
-                Operations m_validations;
-                Operations m_operations;
-            };
-        }
+            Operations m_validations;
+            Operations m_operations;
+        };
     }
-    using namespace lx0::engine::dom_ns;
+    using namespace lx0::engine_ns;
 }

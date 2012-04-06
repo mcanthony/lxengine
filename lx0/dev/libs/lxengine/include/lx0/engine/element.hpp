@@ -47,7 +47,7 @@
 #include <lx0/core/slot/slot.hpp>
 
 
-namespace lx0 { namespace engine { namespace dom_ns { 
+namespace lx0 { namespace engine_ns { 
 
 
     //===========================================================================//
@@ -184,7 +184,7 @@ namespace lx0 { namespace engine { namespace dom_ns {
         CallbackMap     mCallbackMap;
     };
 
-}}
-    using namespace lx0::engine::dom_ns;
+}
+    using namespace lx0::engine_ns;
 }
 

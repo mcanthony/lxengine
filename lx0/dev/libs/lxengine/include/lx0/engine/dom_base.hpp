@@ -42,7 +42,7 @@
 
 #include <lx0/core/log/log.hpp>
 
-namespace lx0 { namespace engine {  namespace dom_ns { namespace detail {
+namespace lx0 { namespace engine_ns {  namespace detail {
 
     class _ComponentBase : public std::enable_shared_from_this<_ComponentBase>
     {
@@ -214,5 +214,5 @@ namespace lx0 { namespace engine {  namespace dom_ns { namespace detail {
         }
     };
    
-}}}}
+}}}
 

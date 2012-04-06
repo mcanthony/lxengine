@@ -53,10 +53,8 @@
 
 namespace lx0 
 { 
-    namespace engine 
-    { 
-        namespace dom_ns
-        {
+    namespace engine_ns
+    {         
             namespace detail
             {
                 using lx0::lxvar;
@@ -303,7 +301,7 @@ namespace lx0
                 struct detail::Profile*                     mpProfile;
                 std::map<std::string, detail::ObjectCount>  mObjectCounts;
             };
-        }
+        
     }
-    using namespace lx0::engine::dom_ns;
+    using namespace lx0::engine_ns;
 }

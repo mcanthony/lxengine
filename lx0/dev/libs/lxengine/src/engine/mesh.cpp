@@ -37,7 +37,7 @@
 #include <lx0/engine/mesh.hpp>
 #include <glgeom/glgeom.hpp>
 
-namespace lx0 { namespace engine { namespace dom_ns {
+namespace lx0 { namespace engine_ns {
 
     Mesh::Mesh (void)
     {
@@ -101,4 +101,4 @@ namespace lx0 { namespace engine { namespace dom_ns {
         return 1.0f;
     }
 
-}}}
+}}

@@ -38,7 +38,7 @@
 #include <lx0/engine/object.hpp>
 #include <lx0/engine/document.hpp>
 
-namespace lx0 { namespace engine { namespace dom_ns {
+namespace lx0 { namespace engine_ns {
 
     //===========================================================================//
 
@@ -512,4 +512,4 @@ namespace lx0 { namespace engine { namespace dom_ns {
             it->second(spElem, args);
     }
 
-}}}
+}}

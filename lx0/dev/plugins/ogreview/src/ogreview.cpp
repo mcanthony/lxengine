@@ -385,9 +385,10 @@ namespace {
         void        _onElementAdded             (ElementPtr spElem);
         void        _onElementRemoved           (ElementPtr spElem);
 
-        virtual void    updateBegin     (void);
-        virtual void    update     (DocumentPtr spDocument);
-        virtual void    updateEnd       (void);
+        virtual void    runBegin                (void);
+        virtual void    runEnd                  (void);
+        virtual void    update                  (DocumentPtr spDocument);
+        
 
     protected:
         void        _addLighting        (Ogre::SceneManager* pSceneMgr);
@@ -761,10 +762,10 @@ namespace {
     }
 
     void
-    OgreImp::updateBegin()
+    OgreImp::runBegin()
     {
         lx_check_error(mspWindowEventListener.get() == nullptr, 
-            "Window Event Listener already allocated: has updateBegin() been incorrectly called twice?");
+            "Window Event Listener already allocated: has runBegin() been incorrectly called twice?");
 
         mspWindowEventListener.reset(new LxWindowEventListener);
         Ogre::WindowEventUtilities::addWindowEventListener(mpRenderWindow, mspWindowEventListener.get()); 
@@ -780,7 +781,7 @@ namespace {
     }
 
     void
-    OgreImp::updateEnd()
+    OgreImp::runEnd()
     {
         mspRoot->removeFrameListener(mspFrameEventListener.get());
         Ogre::WindowEventUtilities::removeWindowEventListener(mpRenderWindow, mspWindowEventListener.get());
