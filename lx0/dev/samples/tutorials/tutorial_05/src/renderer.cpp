@@ -376,7 +376,7 @@ public:
 
                 auto pInstance = new lx0::Instance;
                 pInstance->spGeometry = spGeometry;
-                pInstance->spMaterial = mspRasterizer->acquireMaterial("PointGeneric");
+                pInstance->spMaterial = mspRasterizer->acquireMaterial("PointSprite");
                 c->pspInstance->reset(pInstance);
             });
             c->delay(1000);

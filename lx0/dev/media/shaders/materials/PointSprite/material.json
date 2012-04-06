@@ -1,0 +1,9 @@
+{
+	state : {
+		blend : true,
+	},
+	parameters: {
+	    pointSize : 8,
+		unifTexture0 : "common/textures/seamless/rain/rain_00/rain_00-00.png",
+	}
+}
