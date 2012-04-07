@@ -24,7 +24,6 @@
     <!-- Materials -->
 
     <Material id="toon1" src="TerrainSimple" />
-   
     <Material id="phong_defaults">
       {
       graph : {
@@ -32,6 +31,7 @@
         },
       }
     </Material>   
+	<Material id="solid" src="Solid" />
     
   </Library>
 </Document>

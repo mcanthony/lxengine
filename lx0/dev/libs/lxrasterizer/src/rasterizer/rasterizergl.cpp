@@ -629,6 +629,8 @@ RasterizerGL::acquireMaterial (std::string className, std::string instanceName)
                     spMaterial->mBlend = (*it).as<bool>();
                 else if (it.key() == "ztest")
                     spMaterial->mZTest = (*it).as<bool>();
+                else if (it.key() == "zwrite")
+                    spMaterial->mZWrite = (*it).as<bool>();
             }
         }
     }
@@ -1326,6 +1328,7 @@ RasterizerGL::beginFrame (RenderAlgorithm& algorithm)
     // Should the clear actually be part of the GlobalPass?  Additionally to this?
     const auto& color = algorithm.mClearColor;
     gl->clearColor(color.r, color.g, color.b, color.a);
+    gl->depthMask(GL_TRUE);                                 // glDepthMask does affect glClear
     gl->clear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 }
 
@@ -1388,6 +1391,7 @@ RasterizerGL::rasterizeList (RenderAlgorithm& algorithm, RenderList& list)
                         color = algorithm.mClearColor;
 
                     gl->clearColor(color.r, color.g, color.b, color.a);
+                    gl->depthMask(GL_TRUE);
                     gl->clear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
                 }
 

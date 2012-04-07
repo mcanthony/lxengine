@@ -590,6 +590,15 @@ Material::_generateInstruction (RasterizerGL* pRasterizer, const Uniform& unifor
                 };
             }
         }
+        else if (uniform.type == GL_FLOAT_VEC3)
+        {
+            float v0 = value[0].as<float>();
+            float v1 = value[1].as<float>();
+            float v2 = value[2].as<float>();
+            return [=]() { 
+                gl->uniform3f(loc, v0, v1, v2); 
+            };
+        }
     }
     else
     {

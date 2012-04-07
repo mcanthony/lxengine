@@ -1,9 +1,11 @@
 {
 	state : {
 		blend : true,
+		zwrite : false,
 	},
 	parameters: {
 	    pointSize : 8,
-		unifTexture0 : "common/textures/seamless/rain/rain_00/rain_00-00.png",
+		unifSize : .125,
+		unifTexture0 : "common/textures/seamless/rain/rain_00/rain_00-02.png",
 	}
 }

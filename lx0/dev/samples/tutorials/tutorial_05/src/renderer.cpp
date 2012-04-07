@@ -337,7 +337,7 @@ public:
             c->pPrimitive = &mPrimitivePoints;
             c->pspInstance = &mspInstancePoints;          
 
-            const size_t kCount = 2 * 1000;
+            const size_t kCount =  800;
 
             c->delay(2000);
             c->worker([c,kCount]() {
@@ -345,10 +345,11 @@ public:
 
                 auto rollxy = lx0::random_die_f(-1, 1, 256);
                 auto rollz = lx0::random_die_f(.0, .5, 256);
+                auto rolls = lx0::random_die_f(.002f, .01f, 147);
 
                 c->speeds.reserve(32);
                 for (size_t i = 0; i < 32; ++i)
-                    c->speeds.push_back( lx0::random_unit() / 500  + 0.001f);
+                    c->speeds.push_back( rolls() );
                 
                 c->pPrimitive->type = "points";
                 c->pPrimitive->vertex.positions.reserve(kCount);
@@ -392,6 +393,11 @@ public:
                     {
                         auto speed = c->speeds[index % c->speeds.size()];
                         p.z -= speed;
+                        count++;
+                    }
+                    else
+                    {
+                        p.z = .75f;
                         count++;
                     }
                     index++;
