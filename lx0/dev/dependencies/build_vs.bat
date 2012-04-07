@@ -174,6 +174,7 @@ call:auto_extract_source bullet-2.78 bullet-2.78.zip
 call:auto_extract_source niflib niflib-6cce687f3aebfdc292e812c7dbbfa98d4bffb25b.7z
 call:auto_extract_source zlib-1.2.5 zlib-1.2.5.7z
 call:auto_extract_source lpng154 lpng154.7z
+call:auto_extract_source GL3 GL3-20120406.7z
 
 if %FAILURE%==1 ( 
     echo.
@@ -196,6 +197,7 @@ call:ensure_directory ogre_1_7_1
 call:ensure_directory ois_1_2_0
 call:ensure_directory openal_1_1
 call:ensure_directory v8
+call:ensure_directory source\GL3
 
 if %FAILURE%==1 ( 
     echo.
@@ -252,6 +254,13 @@ REM ===========================================================================
 echo.
 echo Building packages...
 echo.
+
+REM ===========================================================================
+REM "Build" GL3 header files (just a simple copy)
+REM ===========================================================================
+
+echo * Copying GL3 headers 
+call:copy_directory source\gl3 %PSDK%\gl3\include\gl3
 
 REM ===========================================================================
 REM Build Boost
@@ -710,6 +719,7 @@ REM
 :ensure_directory
     IF NOT EXIST %1 (
         echo ERROR: Could not find directory %1!
+        echo Current directory: %CD%
         set FAILURE=1
     ) ELSE (
         echo Found directory %1

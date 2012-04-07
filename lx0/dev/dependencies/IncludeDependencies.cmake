@@ -10,6 +10,11 @@ macro(install_debrel FOLDER FILE)
 endmacro(install_debrel)
 
 #
+# OpenGL headers
+#
+include_directories("${DEPS_SDK}/gl3/include")
+
+#
 # Ogre
 #
 set(ENV{OGRE_HOME} "${DEPS_SDK}/ogre")
