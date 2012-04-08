@@ -314,103 +314,6 @@ public:
         auto& geomData = mGeometry[mCurrentGeometry];
         mCurrentZoom = geomData.zoom;
         mspCamera = _createCamera(geomData.spGeometry->mBBox, mCurrentZoom);
-
-        //
-        // Create a co-routine to run through the event queue.  
-        //
-        // This effectively creates a sequential sequence of steps that can
-        // alternate between the main and worker threads as well as pausing
-        // without spinning any cycles.
-        //
-        // This experimental code to find the best way to represent an
-        // animated entity composed of a sequence of time-dependent events
-        // that can be processed in multiple threads.
-        //
-        {
-            struct PointCloud : public Coroutine
-            {
-                glgeom::primitive_buffer* pPrimitive;
-                lx0::InstancePtr*         pspInstance;
-                std::vector<float>        speeds;
-            };
-            auto c = new PointCloud;
-            c->pPrimitive = &mPrimitivePoints;
-            c->pspInstance = &mspInstancePoints;          
-
-            const size_t kCount =  800;
-
-            c->delay(2000);
-            c->worker([c,kCount]() {
-                lx_message("generate...");
-
-                auto rollxy = lx0::random_die_f(-1, 1, 256);
-                auto rollz = lx0::random_die_f(.0, .5, 256);
-                auto rolls = lx0::random_die_f(.002f, .01f, 147);
-
-                c->speeds.reserve(32);
-                for (size_t i = 0; i < 32; ++i)
-                    c->speeds.push_back( rolls() );
-                
-                c->pPrimitive->type = "points";
-                c->pPrimitive->vertex.positions.reserve(kCount);
-                for (size_t i = 0; i < kCount; ++i)
-                {
-                    glgeom::point3f p( rollxy(), rollxy(), rollz() );                        
-                    c->pPrimitive->vertex.positions.push_back(p);
-                }
-            });
-            // Add a dummy step to test that parallel worker tasks work correctly.
-            c->worker(
-                []() {
-                    for (int i = 0; i < 1000; ++i)
-                        std::cout << "#" << std::flush;           
-                },
-                []() {                
-                    for (int i = 0; i < 1000; ++i)
-                        std::cout << "@" << std::flush;
-                }
-            );
-            c->worker([]() { std::cout << std::endl; });
-            c->main([this,c]() {
-                lx_message("addInstance...");
-                auto spGeometry = mspRasterizer->createGeometry(*c->pPrimitive);
-
-                auto pInstance = new lx0::Instance;
-                pInstance->spGeometry = spGeometry;
-                pInstance->spMaterial = mspRasterizer->acquireMaterial("PointSprite");
-                c->pspInstance->reset(pInstance);
-            });
-            c->delay(1000);
-            
-            c->main_ret([this,c]() -> int {
-                int count = 0;
-                int index = 0;
-                auto& positions = mPrimitivePoints.vertex.positions;
-                for (auto it = positions.begin(); it != positions.end(); ++it)
-                {
-                    auto& p = *it;
-                    if (p.z > 0.001f)
-                    {
-                        auto speed = c->speeds[index % c->speeds.size()];
-                        p.z -= speed;
-                        count++;
-                    }
-                    else
-                    {
-                        p.z = .75f;
-                        count++;
-                    }
-                    index++;
-                }
-
-                auto spGeometry = mspRasterizer->createGeometry(mPrimitivePoints);
-                mspInstancePoints->spGeometry = spGeometry;
-
-                return (count > 0) ? -2 :  -1;
-            });
-
-            lx0::Engine::acquire()->sendTask(1000, c->compile());
-        }
     }
 
     /*
@@ -669,6 +572,147 @@ protected:
         auto vLights = spDocument->getElementsByTagName("Light");
         for (auto it = vLights.begin(); it != vLights.end(); ++it)
             _processLight(*it);
+
+        // And again for the <Entities> list
+        //
+        auto vEntities = spDocument->getElementsByTagName("Entities");
+        for (auto it = vEntities.begin(); it != vEntities.end(); ++it)
+        {
+            int count = (*it)->childCount();
+            for (int i = 0; i < count; ++i)
+                _processEntity((*it)->child(i));
+        }
+    }
+
+    void _processEntity (lx0::ElementPtr spElem)
+    {
+        std::string tag = spElem->tagName();
+
+        if (tag == "PointCloud")
+            _addPointCloud(spElem);
+        else
+            throw lx_error_exception("Unrecognized entity tag '%s'", tag);
+    }
+
+    class PointCloud : public lx0::Element::Component
+    {
+    public:
+        virtual lx0::uint32 flags               (void) const { return lx0::Element::Component::eSkipUpdate; }
+
+        Renderer*                 mpRenderer;
+        glgeom::primitive_buffer  mPrimitive;
+        lx0::InstancePtr*         mpspInstance;
+        std::vector<float>        mSpeeds;
+
+        void initialize (Renderer* pRenderer)
+        {
+            //@todo
+            // - Make the courtine a member variable with shared_ptr<> and handle
+            // that cancels the event on the dtor
+            // - Add a Coroutine protected: _onExit() that resets the shared_ptr<>
+            //   so data is not held past processing.
+
+            mpRenderer = pRenderer;
+            mpspInstance = &pRenderer->mspInstancePoints;
+
+            //
+            // Create a co-routine to run through the event queue.  
+            //
+            // This effectively creates a sequential sequence of steps that can
+            // alternate between the main and worker threads as well as pausing
+            // without spinning any cycles.
+            //
+            // This experimental code to find the best way to represent an
+            // animated entity composed of a sequence of time-dependent events
+            // that can be processed in multiple threads.
+            //
+
+            auto c = new Coroutine;
+            const size_t kCount =  800;
+
+            c->delay(2000);
+            c->worker([this,kCount]() {
+                lx_message("generate...");
+
+                auto rollxy = lx0::random_die_f(-1, 1, 256);
+                auto rollz = lx0::random_die_f(.0, .5, 256);
+                auto rolls = lx0::random_die_f(.002f, .01f, 147);
+
+                mSpeeds.reserve(32);
+                for (size_t i = 0; i < 32; ++i)
+                    mSpeeds.push_back( rolls() );
+                
+                mPrimitive.type = "points";
+                mPrimitive.vertex.positions.reserve(kCount);
+                for (size_t i = 0; i < kCount; ++i)
+                {
+                    glgeom::point3f p( rollxy(), rollxy(), rollz() );                        
+                    mPrimitive.vertex.positions.push_back(p);
+                }
+            });
+            // Add a dummy step to test that parallel worker tasks work correctly.
+            c->worker(
+                []() {
+                    for (int i = 0; i < 1000; ++i)
+                        std::cout << "#" << std::flush;           
+                },
+                []() {                
+                    for (int i = 0; i < 1000; ++i)
+                        std::cout << "@" << std::flush;
+                }
+            );
+            c->worker([]() { std::cout << std::endl; });
+            c->main([this]() {
+                lx_message("addInstance...");
+                auto spGeometry = mpRenderer->mspRasterizer->createGeometry(mPrimitive);
+
+                auto pInstance = new lx0::Instance;
+                pInstance->spGeometry = spGeometry;
+                pInstance->spMaterial = mpRenderer->mspRasterizer->acquireMaterial("PointSprite");
+                mpspInstance->reset(pInstance);
+            });
+            c->delay(1000);
+            
+            c->main_ret([this]() -> int {
+                int count = 0;
+                int index = 0;
+                auto& positions = mPrimitive.vertex.positions;
+                for (auto it = positions.begin(); it != positions.end(); ++it)
+                {
+                    auto& p = *it;
+                    if (p.z > 0.001f)
+                    {
+                        auto speed = mSpeeds[index % mSpeeds.size()];
+                        p.z -= speed;
+                        count++;
+                    }
+                    else
+                    {
+                        p.z = .75f;
+                        count++;
+                    }
+                    index++;
+                }
+
+                auto spGeometry = mpRenderer->mspRasterizer->createGeometry(mPrimitive);
+                mpRenderer->mspInstancePoints->spGeometry = spGeometry;
+
+                return (count > 0) ? -2 :  -1;
+            });
+
+            lx0::Engine::acquire()->sendTask(1000, c->compile());
+        }
+    };
+
+    void _addPointCloud (lx0::ElementPtr spElem)
+    {
+        // Create Element::Component
+        // that owns a Coroutine
+        // that adds an event sequence
+
+        auto pComp = new PointCloud;
+        spElem->attachComponent( pComp );
+        pComp->initialize(this);
     }
 
     void _processMaterial (lx0::ElementPtr spElem)
@@ -898,7 +942,6 @@ protected:
     lx0::EventHandle              mEventHandle;
     std::vector<lx0::MaterialPtr> mMaterials;
     std::vector<GeometryData>     mGeometry;
-    glgeom::primitive_buffer      mPrimitivePoints;
     lx0::InstancePtr              mspInstancePoints;
 };
 

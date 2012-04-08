@@ -32,6 +32,10 @@
       }
     </Material>   
 	<Material id="solid" src="Solid" />
+	
+	<Entities>
+		<PointCloud />
+	</Entities>
     
   </Library>
 </Document>
