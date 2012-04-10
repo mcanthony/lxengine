@@ -32,7 +32,7 @@
 
 #include <string>
 #include <lx0/core/lxvar/lxvar.hpp>
-#include <glgeom/ext/primitive_buffer.hpp>
+#include <glgeom/extension/primitive_buffer.hpp>
 #include <glgeom/prototype/std_lights.hpp>
 
 class texture_handle

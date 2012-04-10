@@ -27,9 +27,9 @@
 //===========================================================================//
 
 #include <glgeom/glgeom.hpp>
-#include <glgeom/ext/mappers.hpp>
-#include <glgeom/ext/patterns.hpp>
-#include <glgeom/ext/shaders.hpp>
+#include <glgeom/extension/mappers.hpp>
+#include <glgeom/extension/patterns.hpp>
+#include <glgeom/extension/shaders.hpp>
 
 #include <lx0/core/log/log.hpp>
 #include <lx0/prototype/misc.hpp>

@@ -29,7 +29,7 @@
 #include <boost/algorithm/string.hpp>
 #include <boost/interprocess/detail/atomic.hpp>
 
-#include <glgeom/ext/primitive_buffer.hpp>
+#include <glgeom/extension/primitive_buffer.hpp>
 
 #include <lx0/lxengine.hpp>
 #include <lx0/extensions/rasterizer.hpp>

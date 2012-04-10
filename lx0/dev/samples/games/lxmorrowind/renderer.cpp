@@ -32,7 +32,7 @@
 //===========================================================================//
 
 #include <iostream>
-#include <glgeom/ext/primitive_buffer.hpp>
+#include <glgeom/extension/primitive_buffer.hpp>
 #include <lx0/extensions/rasterizer.hpp>
 #include <lx0/subsystem/shaderbuilder.hpp>
 #include <lx0/util/misc.hpp>

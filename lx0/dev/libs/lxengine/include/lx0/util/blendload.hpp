@@ -29,7 +29,7 @@
 
 #pragma once
 
-#include <glgeom/ext/primitive_buffer.hpp>
+#include <glgeom/extension/primitive_buffer.hpp>
     
 namespace lx0 
 { 

@@ -41,7 +41,7 @@
 #include <lx0/prototype/misc.hpp>
 
 #include <glgeom/glgeom.hpp>
-#include <glgeom/ext/samplers.hpp>
+#include <glgeom/extension/samplers.hpp>
 #include <glgeom/prototype/camera.hpp>
 #include <glgeom/prototype/std_lights.hpp>
 #include <glgeom/prototype/material_phong.hpp>

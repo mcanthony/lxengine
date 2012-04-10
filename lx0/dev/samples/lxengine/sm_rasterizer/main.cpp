@@ -43,8 +43,8 @@ using namespace lx0;
 
 #include <glgeom/prototype/image.hpp>
 #include <lx0/prototype/misc.hpp>
-#include <glgeom/ext/patterns.hpp>
-#include <glgeom/ext/mappers.hpp>
+#include <glgeom/extension/patterns.hpp>
+#include <glgeom/extension/mappers.hpp>
 #include <boost/random/mersenne_twister.hpp>
 #include <boost/random/uniform_int.hpp>
 #include <boost/random/uniform_real.hpp>

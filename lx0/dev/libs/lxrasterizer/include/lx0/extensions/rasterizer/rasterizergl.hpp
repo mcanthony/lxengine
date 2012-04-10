@@ -30,7 +30,7 @@
 
 #include <iostream>
 #include <glgeom/prototype/image.hpp>
-#include <glgeom/ext/primitive_buffer.hpp>
+#include <glgeom/extension/primitive_buffer.hpp>
 
 #include <lx0/subsystem/shaderbuilder.hpp>
 

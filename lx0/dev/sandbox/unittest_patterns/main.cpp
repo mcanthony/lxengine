@@ -42,7 +42,7 @@
 // Lx0 headers
 #include <lx0/lxengine.hpp>
 #include <lx0/prototype/misc.hpp>
-#include <glgeom/ext/patterns.hpp>
+#include <glgeom/extension/patterns.hpp>
 #include <glgeom/prototype/image.hpp>
 #include <glm/gtx/noise.hpp>
 

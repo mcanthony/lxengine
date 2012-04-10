@@ -31,7 +31,7 @@
 
 #include <lx0/_detail/forward_decls.hpp>
 #include <glgeom/glgeom.hpp>
-#include <glgeom/ext/primitive_buffer.hpp>
+#include <glgeom/extension/primitive_buffer.hpp>
 
 namespace lx0 { namespace core { namespace lxvar_ns {
 

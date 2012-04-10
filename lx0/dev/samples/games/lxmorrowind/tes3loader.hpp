@@ -29,7 +29,7 @@
 #pragma once
 
 #include <glgeom/glgeom.hpp>
-#include <glgeom/ext/primitive_buffer.hpp>
+#include <glgeom/extension/primitive_buffer.hpp>
 #include <glgeom/prototype/std_lights.hpp>
 
 #include "lxextensions/material_handle.hpp"

@@ -38,7 +38,7 @@
 
 #include <v8/v8.h>
 
-#include <glgeom/ext/patterns.hpp>
+#include <glgeom/extension/patterns.hpp>
 
 #include <lx0/engine/engine.hpp>
 #include <lx0/engine/document.hpp>
