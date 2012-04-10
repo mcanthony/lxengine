@@ -89,26 +89,20 @@ namespace
 }
 
 //===========================================================================//
-//   G E O M E T R Y D A T A
-//===========================================================================//
-/*
-    A standard LxEngine Geometry object coupled with additional
-    data that can be specified in the XML file.
- */
-struct GeometryData
-{
-    glgeom::primitive_buffer    primitive;
-    lx0::GeometryPtr            spGeometry;
-    float                       zoom;
-};
-
-//===========================================================================//
 //   C O R O U T I N E
 //===========================================================================//
 
 class Coroutine
 {
 public:
+    Coroutine ()
+    {
+    }
+
+    ~Coroutine ()
+    {
+    }
+
     void    delay   (unsigned int delay)                          { mSteps.push_back(Step(delay, [](){})); }
     void    main    (std::function<void()> f)                     { mSteps.push_back(Step(0, f)); }
     void    main_ret(std::function<int()> f)                      { mSteps.push_back(Step(f)); }
@@ -125,8 +119,6 @@ public:
 
     std::function<void()> compile()                               
     { 
-        // Self-delete at the end of the coroutine
-        main ([this](){ delete this; });
         return _chain(mSteps, mSteps.begin()); 
     }
         
@@ -249,7 +241,6 @@ class Renderer : public lx0::View::Component
 public:
     Renderer()
         : mCurrentMaterial    (0)
-        , mCurrentGeometry    (0)
         , mbRotate            (true)
         , mCurrentZoom        (1.0f)
         , miRenderAlgorithm   (0)
@@ -292,28 +283,24 @@ public:
         _processDocument( spView->document() );
         
         lx_check_error( !mMaterials.empty() );
-        lx_check_error( !mGeometry.empty() );
-
-        //
-        // Build the instance.
-        //
-        // This is bundle of geometry, material, and transform to be rendered.  
-        // The material and geometry pointers will be updated as the user cycles
-        // through the array of settings loaded by the document.
-        //
-        mspInstance.reset(new lx0::Instance);
-        mspInstance->spTransform = mspRasterizer->createTransform(mRotation);
-        mspInstance->spMaterial = mMaterials[mCurrentMaterial];
-        mspInstance->spGeometry = mGeometry[mCurrentGeometry].spGeometry;
-
+        
         //
         // Create the camera last since it is dependent on the bounds of the geometry
         // being viewed.  Therefore, it needs to be created after the geometry is 
         // loaded.
         // 
-        auto& geomData = mGeometry[mCurrentGeometry];
-        mCurrentZoom = geomData.zoom;
-        mspCamera = _createCamera(geomData.spGeometry->mBBox, mCurrentZoom);
+        mCurrentZoom = 1.0f;
+        mspCamera = _createCamera(mInstances.front()->spGeometry->mBBox, mCurrentZoom);
+    }
+
+    /* 
+        Add an instance to the scene.
+     */
+    void
+    _addInstance (lx0::InstancePtr spInstance)
+    {
+        mInstances.push_back(spInstance);
+        mSceneBounds.merge(spInstance->spGeometry->mBBox);
     }
 
     /*
@@ -418,10 +405,8 @@ public:
         // settings or overrides for that entity.
         //
         lx0::RenderList instances;
-        instances.push_back(0, mspInstance);
-
-        if (mspInstancePoints)
-            instances.push_back(0, mspInstancePoints);
+        for (auto it = mInstances.begin(); it != mInstances.end(); ++it)
+            instances.push_back(0, *it);
 
         //
         // This is a standard rendering loop: begin the frame, then rasterize
@@ -443,37 +428,24 @@ public:
         lx0::ProfileSection section(profile.update);
 
         //
-        // Rotate the model on every update, if that option is enabled.
+        // Rotate the models on every update, if that option is enabled.
+        //
+        //@todo Rotate the camera instead
         //
         if (mbRotate)
         {
             mRotation = glm::rotate(mRotation, 1.0f, glm::vec3(0, 0, 1));
-            mspInstance->spTransform = mspRasterizer->createTransform(mRotation);
-
-            if (mspInstancePoints)
-                mspInstancePoints->spTransform = mspInstance->spTransform;
+            auto spTransform = mspRasterizer->createTransform(mRotation);
+            
+            for (auto it = mInstances.begin(); it != mInstances.end(); ++it)
+                (*it)->spTransform = spTransform;
         }
 
         //
         // Check if new geometry has loaded and update the active instance.  
         // Recreate the camera as well since the bounds will have changed.
         //
-        auto& geomData = mGeometry[mCurrentGeometry];
-        if (mGeometry[mCurrentGeometry].spGeometry.get() != mspInstance->spGeometry.get())
-        {
-            mspInstance->spGeometry = mGeometry[mCurrentGeometry].spGeometry;
-            mspCamera = _createCamera(geomData.spGeometry->mBBox, mCurrentZoom);
-        }
-
-        //
-        // If the zoom value on the geometry has changed, adjust the
-        // camera view accordingly.
-        //        
-        if (mCurrentZoom != geomData.zoom)
-        {
-            mCurrentZoom = geomData.zoom;
-            mspCamera = _createCamera(geomData.spGeometry->mBBox, mCurrentZoom);
-        }
+        mspCamera = _createCamera(mInstances.front()->spGeometry->mBBox, mCurrentZoom);
 
         //
         // Views are not necessarily redrawn every frame; the application must indicate
@@ -496,31 +468,14 @@ public:
     virtual void 
     handleEvent (std::string evt, lx0::lxvar params) 
     {
-        if (evt == "change_geometry")
-        {
-            mCurrentGeometry = (params == "next") 
-                ? (mCurrentGeometry + 1)
-                : (mCurrentGeometry + mGeometry.size() - 1);
-            mCurrentGeometry %= mGeometry.size();
-            
-            auto& geomData = mGeometry[mCurrentGeometry];
-            mspInstance->spGeometry = geomData.spGeometry;
-            
-            //
-            // Recreate the camera after geometry changes since the camera position
-            // is based on the bounds of the geometry being viewed.
-            //
-            mCurrentZoom = geomData.zoom;
-            mspCamera = _createCamera(geomData.spGeometry->mBBox, mCurrentZoom);
-        }
-        else if (evt == "next_material" || evt == "prev_material")
+        if (evt == "next_material" || evt == "prev_material")
         {
             mCurrentMaterial = (evt == "next_material")
                 ? (mCurrentMaterial + 1)
                 : (mCurrentMaterial + mMaterials.size() - 1);
             mCurrentMaterial %= mMaterials.size();
 
-            mspInstance->spMaterial = mMaterials[mCurrentMaterial];
+            mInstances.front()->spMaterial = mMaterials[mCurrentMaterial];
         }
         else if (evt == "toggle_rotation")
         {
@@ -561,13 +516,7 @@ protected:
         for (auto it = vMaterials.begin(); it != vMaterials.end(); ++it)
             _processMaterial(*it);
 
-        // Do the same for <Geometry> elements
-        //
-        auto vGeometry = spDocument->getElementsByTagName("Geometry");
-        for (auto it = vGeometry.begin(); it != vGeometry.end(); ++it)
-            _processGeometry(spDocument, *it);
-
-        // And once more for <Light> elements
+        // Once more for <Light> elements
         //
         auto vLights = spDocument->getElementsByTagName("Light");
         for (auto it = vLights.begin(); it != vLights.end(); ++it)
@@ -590,6 +539,8 @@ protected:
 
         if (tag == "PointCloud")
             _addPointCloud(spElem);
+        else if (tag == "Geometry")
+            _processGeometry(spElem);
         else
             throw lx_error_exception("Unrecognized entity tag '%s'", tag);
     }
@@ -597,12 +548,20 @@ protected:
     class PointCloud : public lx0::Element::Component
     {
     public:
+        ~PointCloud()
+        {
+        }
+
         virtual lx0::uint32 flags               (void) const { return lx0::Element::Component::eSkipUpdate; }
 
         Renderer*                 mpRenderer;
-        glgeom::primitive_buffer  mPrimitive;
-        lx0::InstancePtr*         mpspInstance;
+        lx0::RasterizerGL*        mpRasterizer;
+
+        lx0::InstancePtr          mspInstance;
+        glgeom::primitive_buffer  mPrimitive;        
         std::vector<float>        mSpeeds;
+
+        Coroutine                 mCoroutine;
 
         void initialize (Renderer* pRenderer)
         {
@@ -612,8 +571,8 @@ protected:
             // - Add a Coroutine protected: _onExit() that resets the shared_ptr<>
             //   so data is not held past processing.
 
-            mpRenderer = pRenderer;
-            mpspInstance = &pRenderer->mspInstancePoints;
+            mpRenderer   = pRenderer;
+            mpRasterizer = pRenderer->mspRasterizer.get();
 
             //
             // Create a co-routine to run through the event queue.  
@@ -627,10 +586,10 @@ protected:
             // that can be processed in multiple threads.
             //
 
-            auto c = new Coroutine;
             const size_t kCount =  800;
+            auto c = &mCoroutine;           
 
-            c->delay(2000);
+            c->delay(1000);
             c->worker([this,kCount]() {
                 lx_message("generate...");
 
@@ -664,43 +623,46 @@ protected:
             c->worker([]() { std::cout << std::endl; });
             c->main([this]() {
                 lx_message("addInstance...");
-                auto spGeometry = mpRenderer->mspRasterizer->createGeometry(mPrimitive);
+                auto spGeometry = mpRasterizer->createGeometry(mPrimitive);
 
                 auto pInstance = new lx0::Instance;
                 pInstance->spGeometry = spGeometry;
-                pInstance->spMaterial = mpRenderer->mspRasterizer->acquireMaterial("PointSprite");
-                mpspInstance->reset(pInstance);
+                pInstance->spMaterial = mpRasterizer->acquireMaterial("PointSprite");
+                mspInstance.reset(pInstance);
+
+                mpRenderer->_addInstance(mspInstance);
             });
-            c->delay(1000);
+            c->delay(500);
             
             c->main_ret([this]() -> int {
-                int count = 0;
+                
+                //
+                // Update the "particle system"
+                //
                 int index = 0;
                 auto& positions = mPrimitive.vertex.positions;
-                for (auto it = positions.begin(); it != positions.end(); ++it)
+                for (auto it = positions.begin(); it != positions.end(); ++it, ++index)
                 {
                     auto& p = *it;
                     if (p.z > 0.001f)
                     {
                         auto speed = mSpeeds[index % mSpeeds.size()];
                         p.z -= speed;
-                        count++;
                     }
                     else
-                    {
                         p.z = .75f;
-                        count++;
-                    }
-                    index++;
                 }
 
-                auto spGeometry = mpRenderer->mspRasterizer->createGeometry(mPrimitive);
-                mpRenderer->mspInstancePoints->spGeometry = spGeometry;
+                //
+                // Recreate the geometry.  This is not necessarily the most efficient means
+                // of updating the particles.
+                // 
+                mspInstance->spGeometry = mpRasterizer->createGeometry(mPrimitive);
 
-                return (count > 0) ? -2 :  -1;
+                return -1;
             });
 
-            lx0::Engine::acquire()->sendTask(1000, c->compile());
+            lx0::Engine::acquire()->sendTask(10, c->compile());
         }
     };
 
@@ -746,14 +708,13 @@ protected:
         }
     }
 
-    void _processGeometry (lx0::DocumentPtr spDocument, lx0::ElementPtr spElem)
+    void _processGeometry (lx0::ElementPtr spElem)
     {
         //
         // Extract the data from the DOM
         //
         std::string sourceFilename = spElem->attr("src").as<std::string>();
-        float       zoom           = spElem->attr("zoom").query<float>(1.0f);
-        _addGeometry(spDocument, sourceFilename, zoom);
+        _addGeometry(sourceFilename);
     }
 
     void _processLight (lx0::ElementPtr spElem)
@@ -797,7 +758,7 @@ protected:
     }
 
     void
-    _addGeometryBlender (lx0::DocumentPtr spDocument, const std::string filename, int index)
+    _addGeometryBlender (const std::string filename, size_t index)
     {
         //
         // This is executed as a task in the main thread; therefore no locks or threading 
@@ -813,9 +774,12 @@ protected:
                                                             primitive->vertex.normals, 
                                                             primitive->vertex.colors);
             spGeometry->mBBox = primitive->bbox;
-            mGeometry[index].spGeometry = spGeometry;
-            mGeometry[index].primitive = *primitive;
             delete primitive;
+
+            // Replace the geometry.  This is being called from the main thread, so no locking
+            // should be needed.
+            mInstances[index]->spGeometry = spGeometry;
+            mInstances[index]->spMaterial = mMaterials.front();
         };
 
         //
@@ -844,24 +808,21 @@ protected:
     }
 
     void 
-    _addGeometry (lx0::DocumentPtr spDocument, const std::string filename, float zoom)
+    _addGeometry (const std::string filename)
     {
         //
-        // Insert a stub item into the geometry index.  This will be replaced by
+        // Insert a stub instance into the index.  This will be replaced by
         // the real geometry as soon as the geometry is loaded.
-        //
-        auto index = mGeometry.size();
-        mGeometry.push_back(GeometryData());
-        mGeometry[index].zoom = zoom;            
+        //                
+        auto pInstance = new lx0::Instance;
+        pInstance->spGeometry = mspRasterizer->acquireGeometry("basic2d/Empty");
+        pInstance->spGeometry->mBBox = glgeom::abbox3f( glgeom::point3f(-1, -1, -1), glgeom::point3f( 1,  1,  1) );
 
-        mGeometry[index].spGeometry = mspRasterizer->acquireGeometry("basic2d/Empty");
-        glgeom::abbox3f bbox;
-        bbox.min = glgeom::point3f(-1, -1, -1);
-        bbox.max = glgeom::point3f( 1,  1,  1);
-        mGeometry[index].spGeometry->mBBox = bbox;
-
+        auto index = mInstances.size();
+        mInstances.push_back( lx0::InstancePtr(pInstance) );
+                
         if (boost::iends_with(filename, ".blend"))
-            _addGeometryBlender(spDocument, filename, index);
+            _addGeometryBlender(filename, index);
         else
             throw lx_error_exception("Unrecognized geometry source!");
     }
@@ -880,8 +841,7 @@ protected:
         // Create a lambda function that will incrementally zoom in or out
         // over a given time period.
         //            
-        int         geometryIndex = mCurrentGeometry;
-        float       startValue    = mGeometry[geometryIndex].zoom;
+        float       startValue    = mCurrentZoom;
         float       endValue      = startValue * zoomFactor;
         lx0::uint32 startTime     = lx0::lx_milliseconds();
 
@@ -891,21 +851,18 @@ protected:
         // then end the event reoccurence by setting the final value exactly 
         // and returning -1 (i.e. the time delay before rerunning the event).
         //
-        auto func = [this, geometryIndex, startValue, endValue, startTime, intervalMs]() -> int {
+        auto func = [this, startValue, endValue, startTime, intervalMs]() -> int {
             
-            // Grab the refernece to the zoom variable every time since the 
-            // mGeometry vector may need to reallocate as new geometry is added.
-            float& zoom  = mGeometry[geometryIndex].zoom;
 
             float  alpha = float(lx0::lx_milliseconds() - startTime) / intervalMs;
             if (!(alpha >= 1.0))
             {
-                zoom = glm::mix(startValue, endValue, glgeom::sinusodial_smooth(alpha));
+                mCurrentZoom = glm::mix(startValue, endValue, glgeom::sinusodial_smooth(alpha));
                 return 1;
             }
             else
             {
-                zoom = endValue;
+                mCurrentZoom = endValue;
                 return 0;
             }
         };
@@ -929,7 +886,6 @@ protected:
     lx0::FrameBufferPtr           mspFBOffscreen1;
     lx0::CameraPtr                mspCamera;
     lx0::LightSetPtr              mspLightSet;
-    lx0::InstancePtr              mspInstance;
     
     // Current settings
     bool                          mbRotate;
@@ -937,13 +893,12 @@ protected:
     float                         mCurrentZoom;
     int                           miRenderAlgorithm;
     size_t                        mCurrentMaterial;
-    size_t                        mCurrentGeometry;
 
     // Application data
     lx0::EventHandle              mEventHandle;
     std::vector<lx0::MaterialPtr> mMaterials;
-    std::vector<GeometryData>     mGeometry;
-    lx0::InstancePtr              mspInstancePoints;
+    std::vector<lx0::InstancePtr> mInstances;
+    glgeom::abbox3f               mSceneBounds;
 };
 
 //===========================================================================//

@@ -148,6 +148,11 @@ namespace lx0 { namespace engine_ns {  namespace detail {
             throw lx_error_exception("Attempt to remove a Component that is not attached.");
         }
 
+        void clearComponents (void)
+        {
+            _clearComponents();
+        }
+
         template <typename T>
         std::shared_ptr<T>  ensureComponent (std::string name, std::function<T* (void)> ctor)
         {

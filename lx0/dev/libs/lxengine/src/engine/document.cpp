@@ -73,8 +73,17 @@ namespace lx0 { namespace engine_ns {
         m_spRoot->notifyAdded(this);
     }
 
+    /*!
+        @todo The shutdown sequence here is not well-defined. Given the use of
+        shared_ptrs throughout, it is hard to definitely avoid cycles and 
+        out-of-order resource releases without a better shutdown design.
+    */
     Document::~Document()
-    {
+    {       
+        this->iterateElements2([](ElementPtr spElem){
+            spElem->clearComponents();
+        });
+
         mViews.clear();
         m_spRoot->removeAll();
         _clearComponents();

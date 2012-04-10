@@ -3,9 +3,7 @@
   <Header>
   </Header>
   
-  <Library>
-    <!-- Geometry -->
-    <Geometry src="common/models/landscapes/mountain_valley_b-000.blend" zoom="2.5"/>
+  <Library>    
 
     <!-- Lights -->
     <Light>
@@ -34,6 +32,7 @@
 	<Material id="solid" src="Solid" />
 	
 	<Entities>
+        <Geometry src="common/models/landscapes/mountain_valley_b-000.blend" />
 		<PointCloud />
 	</Entities>
     
