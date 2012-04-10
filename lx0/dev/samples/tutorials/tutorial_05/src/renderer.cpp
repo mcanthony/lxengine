@@ -806,15 +806,16 @@ protected:
         // modification to mGeometry would be problematic.
         //
         auto addGeometry = [this,index](glgeom::primitive_buffer* primitive) {
-                auto spGeometry = mspRasterizer->createQuadList(primitive->indices, 
-                                                                primitive->face.flags, 
-                                                                primitive->vertex.positions, 
-                                                                primitive->vertex.normals, 
-                                                                primitive->vertex.colors);
-                spGeometry->mBBox = primitive->bbox;
-                mGeometry[index].spGeometry = spGeometry;
-                mGeometry[index].primitive = *primitive;
-                delete primitive;
+
+            auto spGeometry = mspRasterizer->createQuadList(primitive->indices, 
+                                                            primitive->face.flags, 
+                                                            primitive->vertex.positions, 
+                                                            primitive->vertex.normals, 
+                                                            primitive->vertex.colors);
+            spGeometry->mBBox = primitive->bbox;
+            mGeometry[index].spGeometry = spGeometry;
+            mGeometry[index].primitive = *primitive;
+            delete primitive;
         };
 
         //

@@ -970,8 +970,9 @@ RasterizerGL::createGeometry (glgeom::primitive_buffer& primitive)
         if (primitive.indices.empty())
         {
             pGeom->mVboPosition   = _genArrayBuffer(GL_ARRAY_BUFFER, _expandQuadsToTris(primitive.vertex.positions));
-            pGeom->mCount         = primitive.vertex.positions.size() * 3 / 2;
+            pGeom->mVboNormal     = _genArrayBuffer(GL_ARRAY_BUFFER, _expandQuadsToTris(primitive.vertex.normals));
             pGeom->mVboColors     = _genArrayBuffer(GL_ARRAY_BUFFER, _expandQuadsToTris(primitive.vertex.colors));
+            pGeom->mCount         = primitive.vertex.positions.size() * 3 / 2;
 
             for (int i = 0; i < 8 && i < (int)primitive.vertex.uv.size(); ++i)
                 pGeom->mVboUVs[i] = _genArrayBuffer(GL_ARRAY_BUFFER, _expandQuadsToTris(primitive.vertex.uv[i]));
@@ -982,7 +983,9 @@ RasterizerGL::createGeometry (glgeom::primitive_buffer& primitive)
             pGeom->mCount         = primitive.indices.size() * 3 / 2;
 
             pGeom->mVboPosition   = _genArrayBuffer(GL_ARRAY_BUFFER, primitive.vertex.positions);
+            pGeom->mVboNormal     = _genArrayBuffer(GL_ARRAY_BUFFER, primitive.vertex.normals);
             pGeom->mVboColors     = _genArrayBuffer(GL_ARRAY_BUFFER, primitive.vertex.colors);
+
             for (int i = 0; i < 8 && i < (int)primitive.vertex.uv.size(); ++i)
                 pGeom->mVboUVs[i] = _genArrayBuffer(GL_ARRAY_BUFFER, primitive.vertex.uv[i]);
         }
