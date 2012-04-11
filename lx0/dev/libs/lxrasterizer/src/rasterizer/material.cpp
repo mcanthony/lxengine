@@ -627,6 +627,29 @@ Material::_generateInstruction (RasterizerGL* pRasterizer, const Uniform& unifor
                 check_glerror();
             };
         }
+        else if (uniform.name == "unifViewportMatrix")
+        {
+            //
+            // Adapted from "sceneshadewire.cpp" in the Chapter 6 code samples from "OpenGL 4.0 Shading Cookbook"
+            //
+            return [=]() {
+            
+                GLint viewport[4];
+                gl->getIntegerv(GL_VIEWPORT, viewport);
+
+                float halfWidth = float(viewport[2]) / 2.0f;
+                float halfHeight = float(viewport[3]) / 2.0f;
+
+                glm::mat4 m(
+                    glm::vec4(halfWidth, 0.0f, 0.0f, 0.0f),
+                    glm::vec4(0.0f, halfHeight, 0.0f, 0.0f),
+                    glm::vec4(0.0f, 0.0f, 1.0f, 0.0f),
+                    glm::vec4(halfWidth, halfHeight, 0.0f, 1.0f)
+                );
+
+                gl->uniformMatrix4fv(loc, 1, GL_FALSE, glm::value_ptr(m));
+            };
+        }
         else if (uniform.name == "unifFlatNormals")
         {
             return [=]() {

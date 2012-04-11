@@ -22,6 +22,7 @@
     <!-- Materials -->
 
     <Material id="toon1" src="TerrainSimple" />
+    <Material src="SurfaceWireframe" />
     <Material id="phong_defaults">
       {
       graph : {
@@ -29,12 +30,12 @@
         },
       }
     </Material>   
-	<Material id="solid" src="Solid" />
-	
-	<Entities>
+    <Material id="solid" src="Solid" />
+    
+    <Entities>
         <Geometry src="common/models/landscapes/mountain_valley_b-000.blend" />
-		<PointCloud />
-	</Entities>
+        <PointCloud />
+    </Entities>
     
   </Library>
 </Document>
