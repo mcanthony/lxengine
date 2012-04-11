@@ -30,6 +30,7 @@
 #include <boost/interprocess/detail/atomic.hpp>
 
 #include <glgeom/extension/primitive_buffer.hpp>
+#include <glgeom/extension/mappers.hpp>
 
 #include <lx0/lxengine.hpp>
 #include <lx0/extensions/rasterizer.hpp>
@@ -768,11 +769,7 @@ protected:
         //
         auto addGeometry = [this,index](glgeom::primitive_buffer* primitive) {
 
-            auto spGeometry = mspRasterizer->createQuadList(primitive->indices, 
-                                                            primitive->face.flags, 
-                                                            primitive->vertex.positions, 
-                                                            primitive->vertex.normals, 
-                                                            primitive->vertex.colors);
+            auto spGeometry = mspRasterizer->createGeometry(*primitive);
             spGeometry->mBBox = primitive->bbox;
             delete primitive;
 
@@ -792,11 +789,18 @@ protected:
             if (!lx0::Engine::acquire()->isShuttingDown())
             {
                 lx0::TimeSection section(timer);
+                
                 lx_message("Loading Blender model '%1%'", filename);
                 glgeom::primitive_buffer* primitive = new glgeom::primitive_buffer;
                 glm::mat4 scaleMat = glm::scale(glm::mat4(), glm::vec3(1, 1, 1));
                 lx0::primitive_buffer_from_blendfile(*primitive, filename.c_str(), scaleMat);
-                    
+
+                lx_message("Generating UVs...");
+                glgeom::compute_uv_mapping(*primitive, 0, [](const glgeom::point3f& p, const glgeom::vector3f& n) -> glgeom::point2f {
+                    return glgeom::scale( glgeom::mapper_planar_xy(p), glgeom::vector2f(10, 10));
+                });
+
+                // Local copy of addGeometry since lamdbas can only capture from the enclosing scope
                 auto f = addGeometry;
                 if (!lx0::Engine::acquire()->isShuttingDown())
                     lx0::Engine::acquire()->sendTask([primitive,f](){ f(primitive); });

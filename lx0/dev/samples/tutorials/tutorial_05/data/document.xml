@@ -23,6 +23,7 @@
 
     <Material id="toon1" src="TerrainSimple" />
     <Material src="SurfaceWireframe" />
+	<Material src="CheckerUV" />
     <Material id="phong_defaults">
       {
       graph : {

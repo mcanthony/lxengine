@@ -498,6 +498,12 @@ RasterizerGL::acquireMaterial (std::string className, std::string instanceName)
 {
     lx0::ProfileSection section(profile.acquireMaterial);
 
+    //
+    // The instance name can be empty (i.e. use the defaults), but the class name
+    // cannot be.
+    //
+    lx_check_error(!className.empty())
+
     std::string materialName = className + "." + instanceName;
 
     //
@@ -540,7 +546,7 @@ RasterizerGL::acquireMaterial (std::string className, std::string instanceName)
             if (graphSource.empty())
             {
                 // At least the fragment shader must be defined
-                lx_check_error(!fragSource.empty());
+                lx_check_error(!fragSource.empty(), "No fragment shader source for '%1%'", className);
 
                 //
                 // Create the shader from the source strings.  Note that it's okay
@@ -996,6 +1002,11 @@ RasterizerGL::createGeometry (glgeom::primitive_buffer& primitive)
         throw lx_error_exception("Unknown primitive type '%s'", primitive.type);
 
     check_glerror();
+
+    //
+    // Copy bounds information
+    //
+    pGeom->mBBox = primitive.bbox;
     
     return GeometryPtr(pGeom);
 }
