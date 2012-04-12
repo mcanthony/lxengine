@@ -1,0 +1,106 @@
+
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <title>Raphaël · Pie Chart</title>
+        <link rel="stylesheet" href="demo.css"media="screen">
+        <script src="../shared/script/extern/raphael.js"></script>
+        <script src="../shared/script/extern/jquery-1.7.2.min.js"></script>
+        <script src="pie.js"></script>
+        <style media="screen">
+            #holder {
+                margin: -350px 0 0 -350px;
+                width: 700px;
+                height: 700px;
+            }
+        </style>
+    </head>
+    <body>
+        <table>
+            <tbody>
+                <tr>
+                    <th scope="row">C++</th>
+                    <td>40</td>
+                    <td>
+                        C++ is a popular programming language.
+                    </td>
+                </tr>
+                <tr>
+                    <th scope="row">JavaScript</th>
+                    <td>26</td>
+                    <td>
+                        JavaScript is a very popular language used primarily in
+                        web browsers.
+                    </td>
+                </tr>
+                <tr>
+                    <th scope="row">C</th>
+                    <td>12</td>
+                    <td>
+                        C is a extremely portable language.
+                    </td>
+                </tr>                
+                <tr>
+                    <th scope="row">Shell</th>
+                    <td>5</td>
+                    <td>
+                        Shell programming is often a convenient way to automate
+                        custom tasks.
+                    </td>
+                </tr>
+                <tr>
+                    <th scope="row">Python</th>
+                    <td>5</td>
+                    <td>
+                        Google has embraced Python in many contexts.
+                    </td>
+                </tr>
+                <tr>
+                    <th scope="row">PHP</th>
+                    <td>4</td>
+                    <td>
+                        PHP is a traditional server-side web programming language.
+                    </td>
+                </tr>
+                <tr>
+                    <th scope="row">Perl</th>
+                    <td>3</td>
+                    <td>
+                        Perl offers great flexibility to programmers experienced
+                        with the language.
+                    </td>
+                </tr>
+                <tr>
+                    <th scope="row">C#</th>
+                    <td>2</td>
+                    <td>
+                        C# has extremely fast compile times.
+                    </td>
+                </tr>
+                <tr>
+                    <th scope="row">Java</th>
+                    <td>2</td>
+                    <td>
+                        Java is the primary language for Android smartphone
+                        development.
+                    </td>
+                </tr>
+                <tr>
+                    <th scope="row">Objective-C</th>
+                    <td>2</td>
+                    <td>
+                        Objective-C is a necessary language to know for iPhone
+                        development.
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+
+        <div id="holder" style="border: none;"></div>
+        <div id="desc" style="position: absolute; width: 700px; left: 50%; bottom: 64px; margin-left: -350px;">
+        </div>
+        
+        <p id="copy">Adapation of the <a href="http://raphaeljs.com/">Raphaël</a> Pie Chart Demo</p>
+    </body>
+</html>
