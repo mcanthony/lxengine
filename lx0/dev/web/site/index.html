@@ -105,6 +105,19 @@
                 <h3>Web Tools</h3>
                 <table class="nav-table">                    
                     <tr>
+                        <td><a href="tools/color-picker2" target="_blank">Floating-point Color Picker</a></td>
+                        <td>&nbsp;</td>
+                        <td>
+                            <div class="trigger" style="display: none">
+                                A slightly modified version of the 
+                                <a href="http://raphaeljs.com/picker.html" target="_blank">Raphael color picker</a>
+                                demo that displays
+                                selected colors in floating-point RGB form - useful for GLSL and other 
+                                float based color systems.
+                            </div>                        
+                        </td>
+                    </tr>
+                    <tr>
                         <td><a href="tools/seamlessGenerator" target="_blank">Seamless 2D Tiles</a></td>
                         <td>v0.1.0</td>
                         <td>
@@ -310,9 +323,15 @@
         <!--
             $(document).ready(function () {
                 $(".trigger").each(function () {
-                    var trigger = $("<a>more info...</a>");
+                    var text = [ "more...", "...less" ];
+                    var trigger = $("<a/>");
+                    var state = 0;
+                    trigger.text(text[state]);
                     trigger.attr("href", "#");
                     trigger.click(function () {
+                        state = (state + 1) % 2;
+                        trigger.text(text[state]);
+                            
                         $(this).next().slideToggle();
                         return false;
                     });
