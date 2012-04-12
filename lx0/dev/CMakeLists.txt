@@ -278,9 +278,6 @@ SET_PROPERTY(TARGET cpp_remove_duplicates   PROPERTY FOLDER "Samples/Misc")
 
 SET_PROPERTY(TARGET procedural2d            PROPERTY FOLDER "Samples/Tools")
 
-SET_PROPERTY(TARGET bm_lxvar                    PROPERTY FOLDER "Benchmarks/lxcore")
-SET_PROPERTY(TARGET primitive_buffer_adjacency  PROPERTY FOLDER "Benchmarks/GLGeom")
-
 SET_PROPERTY(TARGET blendload               PROPERTY FOLDER "Sandbox")
 SET_PROPERTY(TARGET elm_reference           PROPERTY FOLDER "Sandbox")
 SET_PROPERTY(TARGET elm_function            PROPERTY FOLDER "Sandbox")
