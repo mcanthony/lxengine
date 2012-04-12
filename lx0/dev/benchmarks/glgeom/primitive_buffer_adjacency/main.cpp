@@ -41,17 +41,18 @@
 int g_innerCount = 4;
 
 static void
-multi_test(std::string name, std::function<void()> f, std::function<void()> g)
+multi_test(std::string name, std::function<void()> e, std::function<void()> f, std::function<void()> g)
 {
     lx0::Timer timer;
     for (int i = 0; i < g_innerCount; ++i)
     {
+        e();
         timer.start();
         f();
         timer.stop();
         g();
     }
-    lx_message("Bench %20s :: %5ums", name, timer.totalMs());
+    lx_message("%-40s :: %5ums", name, timer.totalMs());
 }
 
 static void 
@@ -110,18 +111,45 @@ main (int argc, char** argv)
     lx0::EnginePtr spEngine = lx0::Engine::acquire();
     spEngine->initialize();   
     {
-        glgeom::primitive_buffer primitive = load_data();    
+        glgeom::primitive_buffer primitive = load_data();  
+        glgeom::primitive_buffer original = primitive;
         
         for (int i = 0; i < 4; ++i)
         {
             lx_message("=== Iteration %1% ===", i);
-            multi_test("Test 1", 
+
+            multi_test("compute_face_normals",
+                [&]() { primitive = original; },
+                [&]() { glgeom::compute_face_normals(primitive); }, 
+                [](){}
+            );
+            multi_test("compute_vertex_normals",
+                [&]() { primitive = original; },
+                [&]() { glgeom::compute_face_normals(primitive); }, 
+                [](){}
+            );
+            multi_test("compute_adjacency_vertex_to_faces", 
+                [&]() { primitive = original; },
                 [&]() { glgeom::compute_adjacency_vertex_to_faces(primitive); }, 
                 [&]() { glgeom::verify_adjacency_vertex_to_faces(primitive, true); } 
             );
-            multi_test("Test 2",
+
+            multi_test("create_vertex_normals_mesh",
+                [&]() { primitive = original; },
+                [&]() { create_vertex_normals_mesh(primitive); }, 
+                [](){}
+            );
+            multi_test("create_face_normals_mesh",
+                [&]() { primitive = original; },
+                [&]() { create_vertex_normals_mesh(primitive); }, 
+                [](){}
+            );
+
+
+            multi_test("custom vertex_to_faces",
+                [&]() { primitive = original; },
                 [&]() { test2(primitive); }, 
-                []() { } 
+                [](){}
             );
         }
     }
