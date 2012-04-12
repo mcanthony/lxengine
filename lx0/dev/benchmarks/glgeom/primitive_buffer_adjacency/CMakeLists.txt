@@ -1,0 +1,1 @@
+simple_executable(primitive_buffer_adjacency)

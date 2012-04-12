@@ -52,9 +52,11 @@ set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${PROJECT_BINARY_DIR}")
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY "${PROJECT_BINARY_DIR}")
 
 # LxEngine
-include_directories( libs/lxengine/include )
 include_directories( libs/glgeom/include )
+include_directories( libs/lxcore/include )
+include_directories( libs/lxengine/include )
 include_directories( libs/lxrasterizer/include )
+
 
 # Boost
 include_directories(${Boost_INCLUDE_DIR})
@@ -86,6 +88,7 @@ message(STATUS "CMAKE_EXE_LINKER_FLAGS=${CMAKE_EXE_LINKER_FLAGS}")
 #
 
 set( LX_ALL_LIBS 
+    lxcore
     lxengine
     lxrasterizer
     ${V8_LIBS} 
@@ -219,6 +222,7 @@ endmacro(recurse_subdirectories_includes BASEDIR)
 
 recurse_subdirectories_includes(plugins)
 
+add_subdirectory( libs/lxcore )
 add_subdirectory( libs/lxengine )
 add_subdirectory( libs/lxengine/unittest )
 add_subdirectory( libs/glgeom/unittest )
@@ -239,6 +243,7 @@ SET_PROPERTY(GLOBAL PROPERTY USE_FOLDERS ON)
 
 SET_PROPERTY(TARGET lxengineapp             PROPERTY FOLDER "Apps/LxEngineApp")
 
+SET_PROPERTY(TARGET lxcore                  PROPERTY FOLDER "Libs")
 SET_PROPERTY(TARGET lxengine                PROPERTY FOLDER "Libs")
 SET_PROPERTY(TARGET glgeom_benchmark        PROPERTY FOLDER "Libs")
 SET_PROPERTY(TARGET glgeom_unittest         PROPERTY FOLDER "Libs")
@@ -273,7 +278,9 @@ SET_PROPERTY(TARGET cpp_remove_duplicates   PROPERTY FOLDER "Samples/Misc")
 
 SET_PROPERTY(TARGET procedural2d            PROPERTY FOLDER "Samples/Tools")
 
-SET_PROPERTY(TARGET bm_lxvar                PROPERTY FOLDER "Benchmarks")
+SET_PROPERTY(TARGET bm_lxvar                    PROPERTY FOLDER "Benchmarks/lxcore")
+SET_PROPERTY(TARGET primitive_buffer_adjacency  PROPERTY FOLDER "Benchmarks/GLGeom")
+
 SET_PROPERTY(TARGET blendload               PROPERTY FOLDER "Sandbox")
 SET_PROPERTY(TARGET elm_reference           PROPERTY FOLDER "Sandbox")
 SET_PROPERTY(TARGET elm_function            PROPERTY FOLDER "Sandbox")

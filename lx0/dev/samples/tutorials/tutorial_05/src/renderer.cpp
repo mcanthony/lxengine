@@ -800,6 +800,9 @@ protected:
                     return glgeom::scale( glgeom::mapper_planar_xy(p), glgeom::vector2f(10, 10));
                 });
 
+                
+
+
                 // Local copy of addGeometry since lamdbas can only capture from the enclosing scope
                 auto f = addGeometry;
                 if (!lx0::Engine::acquire()->isShuttingDown())

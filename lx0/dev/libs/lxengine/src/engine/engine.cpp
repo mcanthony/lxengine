@@ -279,6 +279,14 @@ namespace lx0 { namespace engine_ns {
     void
     Engine::initialize()
     {
+        //
+        // Set up GLGeom
+        //
+        glgeom::set_error_handler([](const char* msg) { 
+            throw lx_error_exception("%1%", msg);
+        });
+
+
         // Convenience code to reset the working path automatically.
         if (lx_in_debugger())
             _lx_change_current_path_to_lx_root();
