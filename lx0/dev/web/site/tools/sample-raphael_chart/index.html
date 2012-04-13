@@ -3,7 +3,7 @@
 <html lang="en">
     <head>
         <meta charset="utf-8">
-        <title>Raphaël · Pie Chart</title>
+        <title>Raphaël - Test Page</title>
         <link rel="stylesheet" href="demo.css"media="screen">
         <script src="../shared/script/extern/raphael.js"></script>
         <script src="../shared/script/extern/jquery-1.7.2.min.js"></script>
@@ -21,14 +21,14 @@
             <tbody>
                 <tr>
                     <th scope="row">C++</th>
-                    <td>40</td>
+                    <td id="cpp_data">40</td>
                     <td>
                         C++ is a popular programming language.
                     </td>
                 </tr>
                 <tr>
                     <th scope="row">JavaScript</th>
-                    <td>26</td>
+                    <td id="javascript_data">26</td>
                     <td>
                         JavaScript is a very popular language used primarily in
                         web browsers.
@@ -65,7 +65,7 @@
                 </tr>
                 <tr>
                     <th scope="row">Perl</th>
-                    <td>3</td>
+                    <td id="perl_data">3</td>
                     <td>
                         Perl offers great flexibility to programmers experienced
                         with the language.
@@ -100,6 +100,16 @@
         <div id="holder" style="border: none;"></div>
         <div id="desc" style="position: absolute; width: 700px; left: 50%; bottom: 64px; margin-left: -350px;">
         </div>
+		
+		<div id="button" style="position: absolute; top: 30%">
+			&raquo; <span id="add_js" class="cbutton">Add more Javascript</span>
+			<br/><br/>
+			&raquo; <span id="add_cpp" class="cbutton">Add more C++</span>
+			<br/><br/>
+			&raquo; <span id="remove_js" class="cbutton">Less Javascript</span>
+			<br/><br/>
+			&raquo; <span id="remove_cpp" class="cbutton">Less C++</span>
+		</div>
         
         <p id="copy">Adapation of the <a href="http://raphaeljs.com/">Raphaël</a> Pie Chart Demo</p>
     </body>
