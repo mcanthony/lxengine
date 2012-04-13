@@ -1,8 +1,9 @@
-Raphael.fn.pieChart = function (cx, cy, r, values, labels, descriptions, stroke) {
+Raphael.fn.pieChart = function (cx, cy, r, values, labels, descriptions, stroke, animate) {
     
     var paper = this;
     var rad = Math.PI / 180;
     var chart = paper.set();
+    var blocks = paper.set();
     
     var total = 0;
     var start = 50;
@@ -53,6 +54,7 @@ Raphael.fn.pieChart = function (cx, cy, r, values, labels, descriptions, stroke)
         $("#desc").append(txt3);
         
         overFuncs.push(function () {
+            blocks.attr({opacity: 1});
             p.stop().toFront().animate({transform: "s1.0 1.1 " + cx + " " + centerY, fill: color2 }, ms, "easeIn");
             txt.stop().toFront().animate({opacity: 1}, ms, "easeIn");
             txt2.stop().toFront().animate({opacity: 1}, ms, "easeIn");
@@ -72,7 +74,8 @@ Raphael.fn.pieChart = function (cx, cy, r, values, labels, descriptions, stroke)
         chart.push(p);
         chart.push(txt);
         chart.push(txt2);
-        start += .1;
+        blocks.push(p);
+
     };
    
 
@@ -101,51 +104,73 @@ Raphael.fn.pieChart = function (cx, cy, r, values, labels, descriptions, stroke)
     }
     
        overlay.mousemove(function (e) {
-            if (this._gin || true)
-            {              
-                var i = compute_index(e);
-                console.log(i, this._gindex);
-                
-                if (this._gindex !== i)
-                {
-                    console.log("Show " + i, "Hide " + this._gindex);
-                    if (this._gindex !== undefined)
-                        outFuncs[this._gindex]();
-                    overFuncs[i]();
-                    this._gindex = i;
-                }
+    
+            var i = compute_index(e);
+            console.log(i, this._gindex);
+            
+            if (this._gindex !== i)
+            {
+                console.log("Show " + i, "Hide " + this._gindex);
+                if (this._gindex !== undefined)
+                    outFuncs[this._gindex]();
+                overFuncs[i]();
+                this._gindex = i;
             }
        });
-       overlay.mouseover(function (e) {
-            /*this._gin = true;
-            this._gindex = compute_index(e);
-            console.log(this._gin, this._gindex);
-            if (this._gindex != undefined)
-                outFuncs[this._gindex]();*/
-            
+       overlay.mouseover(function (e) {           
         }).mouseout(function () {
-            //this._gin = false;
             if (this._gindex !== undefined)
                 outFuncs[this._gindex]();
             delete this._gindex;
         });  
- 
+        
+     
+    if (animate)
+    {
+        blocks.attr({ opacity : 0.25 });
+        var anim = Raphael.animation({opacity : 1}, 1000, "easeIn");
+        blocks.animate(anim.delay(1500));
+    }
     return chart;
 };
 
 $(function () {
-    var values = [];
-    var labels = [];
-    var descs = [];
+    function setup(animate) 
+    {
+        $("#holder").html("");
+        
+        var values = [];
+        var labels = [];
+        var descs = [];
+        
+        $("tr").each(function () {
+            var value = parseInt( $(this).children().eq(1).text(), 10);
+            var desc = $(this).children().eq(2).text();
+        
+            values.push(value);
+            labels.push($("th", this).text());
+            descs.push(desc);
+        });
+        $("table").hide();
+        Raphael("holder", 700, 700).pieChart(350, 350, 200, values, labels, descs, "#333", animate);
+    }
     
-    $("tr").each(function () {
-        var value = parseInt( $(this).children().eq(1).text(), 10);
-        var desc = $(this).children().eq(2).text();
+    setup(true);
     
-        values.push(value);
-        labels.push($("th", this).text());
-        descs.push(desc);
-    });
-    $("table").hide();
-    Raphael("holder", 700, 700).pieChart(350, 350, 200, values, labels, descs, "#333");
+    function create_handler(name, factor) {
+        return function() {
+            var value = parseInt($(name).text(), 10);
+            value *= factor;
+            $(name).text(value);
+            setup(false);
+        } 
+    }
+    
+    
+    $("#add_cpp").click( create_handler("#cpp_data", 1.2) );
+    $("#add_js").click( create_handler("#javascript_data", 1.2) );
+    $("#remove_cpp").click( create_handler("#cpp_data", .8) );
+    $("#remove_js").click( create_handler("#javascript_data", .8) );
+    
+
 });

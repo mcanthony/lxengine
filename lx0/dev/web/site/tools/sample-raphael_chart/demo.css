@@ -22,3 +22,13 @@ body {
 #copy a {
     color: #fff;
 }
+.cbutton {
+	border: solid 1px #CCA; 
+	border-radius: 6px; 
+	padding: 2px 8px; 
+	background: #668; 
+	box-shadow: 2px 2px 2px 3px rgba(0,0,0,.1);
+}
+.cbutton:hover {
+	color: #93bee1;
+}
