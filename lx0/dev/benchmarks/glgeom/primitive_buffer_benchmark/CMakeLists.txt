@@ -1,0 +1,2 @@
+simple_executable(primitive_buffer_benchmark)
+SET_PROPERTY(TARGET primitive_buffer_benchmark  PROPERTY FOLDER "Benchmarks/GLGeom")

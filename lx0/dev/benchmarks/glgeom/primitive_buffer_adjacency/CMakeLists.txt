@@ -1,2 +1,0 @@
-simple_executable(primitive_buffer_adjacency)
-SET_PROPERTY(TARGET primitive_buffer_adjacency  PROPERTY FOLDER "Benchmarks/GLGeom")
