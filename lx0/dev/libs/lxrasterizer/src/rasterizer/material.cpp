@@ -362,6 +362,20 @@ Material::_generateInstruction(RasterizerGL* pRasterizer, const Attribute& attri
             check_glerror();
         };
     }
+    else if (attribute.name == "vertTangent")
+    {
+        return [=]() {
+            auto& vbo = pRasterizer->mContext.spGeometry->mVboTangent;
+            if (vbo)
+            {
+                gl->bindBuffer(GL_ARRAY_BUFFER, vbo);
+                gl->vertexAttribPointer(location, 3, GL_FLOAT, GL_FALSE, 0, 0);
+                gl->enableVertexAttribArray(location);
+            }
+            else
+                gl->disableVertexAttribArray(location);
+        };
+    }
     else if (attribute.name == "gl_Vertex")
     {
         return [=]() {

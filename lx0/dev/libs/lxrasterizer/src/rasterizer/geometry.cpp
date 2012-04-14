@@ -42,6 +42,8 @@ Geometry::~Geometry()
         gl->deleteBuffers(1, &mVboNormal);
     if (mVboColors)
         gl->deleteBuffers(1, &mVboColors);
+    if (mVboTangent)
+        gl->deleteBuffers(1, &mVboTangent);
 
     for (int i = 0; i < 8; ++i)
         if (mVboUVs[i])

@@ -943,6 +943,7 @@ RasterizerGL::createGeometry (glgeom::primitive_buffer& primitive)
         pGeom->mVboColors     = _genArrayBuffer(GL_ARRAY_BUFFER, primitive.vertex.colors);
         for (int i = 0; i < 8 && i < (int)primitive.vertex.uv.size(); ++i)
             pGeom->mVboUVs[i] = _genArrayBuffer(GL_ARRAY_BUFFER, primitive.vertex.uv[i]);
+        pGeom->mVboTangent    = _genArrayBuffer(GL_ARRAY_BUFFER, primitive.vertex.tangents);
 
         pGeom->mtbFlatShading = (pGeom->mVboNormal == 0);
 
@@ -978,6 +979,7 @@ RasterizerGL::createGeometry (glgeom::primitive_buffer& primitive)
             pGeom->mVboPosition   = _genArrayBuffer(GL_ARRAY_BUFFER, _expandQuadsToTris(primitive.vertex.positions));
             pGeom->mVboNormal     = _genArrayBuffer(GL_ARRAY_BUFFER, _expandQuadsToTris(primitive.vertex.normals));
             pGeom->mVboColors     = _genArrayBuffer(GL_ARRAY_BUFFER, _expandQuadsToTris(primitive.vertex.colors));
+            pGeom->mVboTangent    = _genArrayBuffer(GL_ARRAY_BUFFER, _expandQuadsToTris(primitive.vertex.tangents));
             pGeom->mCount         = primitive.vertex.positions.size() * 3 / 2;
 
             for (int i = 0; i < 8 && i < (int)primitive.vertex.uv.size(); ++i)
@@ -991,6 +993,7 @@ RasterizerGL::createGeometry (glgeom::primitive_buffer& primitive)
             pGeom->mVboPosition   = _genArrayBuffer(GL_ARRAY_BUFFER, primitive.vertex.positions);
             pGeom->mVboNormal     = _genArrayBuffer(GL_ARRAY_BUFFER, primitive.vertex.normals);
             pGeom->mVboColors     = _genArrayBuffer(GL_ARRAY_BUFFER, primitive.vertex.colors);
+            pGeom->mVboTangent    = _genArrayBuffer(GL_ARRAY_BUFFER, primitive.vertex.tangents);
 
             for (int i = 0; i < 8 && i < (int)primitive.vertex.uv.size(); ++i)
                 pGeom->mVboUVs[i] = _genArrayBuffer(GL_ARRAY_BUFFER, primitive.vertex.uv[i]);
@@ -1011,6 +1014,10 @@ RasterizerGL::createGeometry (glgeom::primitive_buffer& primitive)
     return GeometryPtr(pGeom);
 }
 
+/*
+    Deprecated: createGeometry() has superceded this function.  However, it has not yet been
+    deleted as "faceFlags" is not yet supported by the createGeometry method().
+ */
 GeometryPtr
 RasterizerGL::createQuadList (const std::vector<unsigned short>& quadIndices, 
                               const std::vector<lx0::uint8>& faceFlags,

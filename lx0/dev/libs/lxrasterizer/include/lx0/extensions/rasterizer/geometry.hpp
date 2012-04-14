@@ -49,6 +49,7 @@ namespace lx0
                     , mVboNormal     (0)
                     , mCount         (0)
                     , mVboColors     (0)
+                    , mVboTangent    (0)
                     , mTexFlags      (0) 
                     , mFaceCount     (0)
                 {
@@ -74,6 +75,7 @@ namespace lx0
                 GLuint  mVboNormal;
                 GLuint  mVboColors;
                 GLuint  mVboUVs[8];
+                GLuint  mVboTangent;
 
                 GLuint  mVboIndices;
                 GLuint  mTexFlags;

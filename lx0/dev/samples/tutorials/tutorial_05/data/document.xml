@@ -21,7 +21,8 @@
 
     <!-- Materials -->
 
-    <Material id="toon1" src="TerrainSimple" />
+    <Material src="NormalMapping" />
+	<Material src="TerrainSimple" />
     <Material src="SurfaceWireframe" />
 	<Material src="CheckerUV" />
     <Material id="phong_defaults">
@@ -35,7 +36,7 @@
     
     <Entities>
         <Geometry src="common/models/landscapes/mountain_valley_b-000.blend" />
-        <PointCloud />
+        <!-- <PointCloud /> -->
     </Entities>
     
   </Library>

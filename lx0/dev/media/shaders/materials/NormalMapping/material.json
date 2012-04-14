@@ -1,0 +1,6 @@
+{
+	parameters: {
+		unifDiffuseMap : "common/textures/normalmaps/brick_00/BurlywoodBrickwork-ColorMap.png",
+		unifNormalMap : "common/textures/normalmaps/brick_00/BurlywoodBrickwork-NormalMap.png"
+	}
+}

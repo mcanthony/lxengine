@@ -758,6 +758,130 @@ protected:
         mMaterials.push_back(spMaterial);
     }
 
+    static void 
+    test3 (glgeom::primitive_buffer& primitive)
+    {    
+        using namespace glgeom;
+
+        //
+        // The algorithm works by looking at the adjacent UV values for each
+        // vertex.  Therefore, we need the vertex -> adjacent vertices info.
+        //
+        if (primitive.adjacency.vertex_to_vertices.empty())
+            compute_adjacency_vertex_to_vertices(primitive);
+        if (primitive.vertex.normals.empty())
+            compute_vertex_normals(primitive);
+       
+    
+        //
+        // Get the data structures ready
+        //
+        std::vector<vector3f> tangents;
+        std::vector<vector3f> bitangents;
+
+        auto& positions = primitive.vertex.positions;
+        auto& uvs       = primitive.vertex.uv[0];
+        const size_t vertexCount = positions.size();
+    
+        tangents.resize(vertexCount);
+        bitangents.resize(vertexCount);
+
+        //
+        // Begin the main loop to compute the values for each vertex
+        //
+        for (size_t vi = 0; vi < vertexCount; ++vi)
+        {
+            // Create some aliases
+            auto& p0 = positions[vi];
+            auto& uv0 = uvs[vi];
+            auto& adjacent = primitive.adjacency.vertex_to_vertices[vi];
+
+            //
+            // This is the crux of the algorithm:
+            //
+            // - Compute each edge vector (change in position from the vertex to its neighbor)
+            // - Compute the change in UV for each edge vector
+            // - We know how the UV varies for each edge direction
+            //
+            // The next steps require a bit more explanation.  The change in UV (dUV) at
+            // a given position (P) in a particular direction (v) can be written as a 
+            // function F(P,v) = dUV.  We construct this function by writing it as a weighted
+            // sum of the changes in UV along each each, each weighted based on the dot 
+            // product between v and the edge vector.
+            //
+            // F(P,v) = sum( dot(v, e/|e|) * dUV/|e| ) / N
+            //
+            // Doing some algebraic transformation, we can rewrite the function as:
+            //
+            // F(P,v) = dot(v, sum((e * dUV)/|e|) / N)
+            //
+            // The code below is computing the value "sum((e * dUV)/|e|) / N" for both
+            // the U and V axes.
+            //
+            glm::vec3 sum[2];
+            const size_t N = adjacent.size();
+
+            for (auto it = adjacent.begin(); it != adjacent.end(); ++it)
+            {
+                const size_t vn = *it;
+                lx_check_error( vn != vi, "Vertex is adjacent to itself. Corrupt adjacency info.")
+
+                vector3f dP = positions[vn] - p0;
+                vector2f dUV = uvs[vn] - uv0;
+
+                const float len = glgeom::length(dP);
+                const glm::vec3 s0 = (dP * dUV[0]).vec / len;
+                const glm::vec3 s1 = (dP * dUV[1]).vec / len;
+                
+                sum[0] += s0;
+                sum[1] += s1;
+            }
+            sum[0] /= N;
+            sum[1] /= N;
+
+            lx_check_error( glgeom::is_finite(glgeom::vector3f(sum[0])) );
+            lx_check_error( glgeom::is_finite(glgeom::vector3f(sum[1])) );
+
+            //
+            // Lastly, we find where the derivative is 0 in order to find the
+            // maximum point of increasing U and V.  This works out to a 
+            // 3 equations, 3 unknowns problem.  Solve it for x, y, and z
+            // and we end up with the directions of maximal increase for 
+            // U and V - which is what the tangent and bitangent should be.
+            //
+            glgeom::vector3f result[2];
+            for (int i = 0; i < 2; ++i)
+            {
+                auto& r = result[i];
+                auto& q = sum[i];
+
+                r.z = -(q.x + q.y - q.z) / (2 * q.z);
+                r.y = -(q.z * r.z + q.x) / q.y;
+                r.x = -(q.y * r.y + q.z) / q.x;
+            }
+
+            //
+            // The mesh data isn't always well-formed. Catch what circumstances
+            // we can reasonably repair.
+            //
+            if (!is_finite(result[1]))
+                result[1] = glgeom::cross(primitive.vertex.normals[vi], result[0]);
+            else if (!is_finite(result[0]))
+                result[0] = glgeom::cross(result[1], primitive.vertex.normals[vi]);
+
+            //
+            // Store the results
+            //
+            tangents[vi]    = glgeom::normalize(result[0]);
+            bitangents[vi]  = glgeom::normalize(result[1]);
+
+            lx_check_error( glgeom::is_finite(tangents[vi]) );
+            lx_check_error( glgeom::is_finite(bitangents[vi]) );
+        }
+
+        primitive.vertex.tangents.swap(tangents);
+    }
+
     void
     _addGeometryBlender (const std::string filename, size_t index)
     {
@@ -797,8 +921,11 @@ protected:
 
                 lx_message("Generating UVs...");
                 glgeom::compute_uv_mapping(*primitive, 0, [](const glgeom::point3f& p, const glgeom::vector3f& n) -> glgeom::point2f {
-                    return glgeom::scale( glgeom::mapper_planar_xy(p), glgeom::vector2f(10, 10));
+                    return glgeom::scale( glgeom::mapper_planar_xy(p), glgeom::vector2f(10, 0));
                 });
+
+                // Generate tangent vectors
+                test3(*primitive);
 
                 
 
